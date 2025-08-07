@@ -18,7 +18,7 @@
     "migrate": "node scripts/run-migrations.js"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^7.0.0",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@hookform/resolvers": "^3.9.1",
@@ -61,7 +61,7 @@
     "cmdk": "1.0.4",
     "cookies": "^0.9.1",
     "cors": "^2.8.5",
-    "date-fns": "^4.1.0",
+    "date-fns": "^3.6.0",
     "dotenv": "^17.2.1",
     "embla-carousel-react": "8.5.1",
     "express-rate-limit": "^8.0.1",
@@ -88,8 +88,8 @@
     "recharts": "2.15.0",
     "sonner": "^1.7.4",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-react": "^5.27.0",
-    "sweetalert2": "^11.22.2",
+    "swagger-ui-react": "^3.29.0",
+    "sweetalert2": "^11.6.13",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.8.0",
