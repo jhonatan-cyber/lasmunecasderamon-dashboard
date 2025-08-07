@@ -1,0 +1,89 @@
+/* Estilos para el sidebar responsive */
+
+/* Animación de entrada del sidebar */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* Animación del overlay */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Clases para las animaciones */
+.sidebar-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+.sidebar-exit {
+  animation: slideOut 0.3s ease-in;
+}
+
+.overlay-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.overlay-exit {
+  animation: fadeOut 0.3s ease-in;
+}
+
+/* Estilos para el botón hamburguesa */
+.hamburger-button {
+  transition: all 0.2s ease;
+}
+
+.hamburger-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Estilos para el sidebar móvil */
+.mobile-sidebar {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para el overlay */
+.sidebar-overlay {
+  backdrop-filter: blur(2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1023px) {
+  .sidebar-content {
+    width: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar-content {
+    width: 100%;
+    max-width: 320px;
+  }
+} 

@@ -1,0 +1,157 @@
+import { NextApiRequest, NextApiResponse } from "next";
+import { query } from "@/lib/db";
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { id } = req.query;
+  const ventaId = parseInt(id as string);
+
+  if (isNaN(ventaId)) {
+    return res.status(400).json({ error: "ID de venta inválido" });
+  }
+
+  if (req.method === "GET") {
+    try {
+             // Obtener venta con detalles
+       const ventaSql = `
+         SELECT 
+           v.*,
+           CONCAT(c.nombre, " ",c.apellido) as cliente_nombre,
+           h.nombre as habitacion_numero
+         FROM ventas v
+         LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
+         LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+         WHERE v.id_venta = ?
+       `;
+
+      const ventas = await query(ventaSql, [ventaId]);
+      if (ventas.length === 0) {
+        return res.status(404).json({ error: "Venta no encontrada" });
+      }
+
+      const venta = ventas[0];
+
+             // Obtener detalles
+       const detallesSql = `
+         SELECT 
+           dv.*,
+           p.nombre as producto_nombre,
+           p.precio as producto_precio
+         FROM detalle_ventas dv
+         LEFT JOIN productos p ON dv.producto_id = p.id_producto
+         WHERE dv.venta_id = ?
+       `;
+
+      const detalles = await query(detallesSql, [ventaId]);
+
+             // Obtener usuarios
+       const usuariosSql = `
+         SELECT 
+           vu.*,
+           u.nick,
+           CONCAT(u.nombre," ",u.apellido) as usuario_nombre
+         FROM ventas_usuarios vu
+         LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario
+         WHERE vu.venta_id = ?
+       `;
+
+      const usuarios = await query(usuariosSql, [ventaId]);
+      const usuariosNombres = usuarios.map((u: any) => u.usuario_nombre).filter(Boolean);
+
+      const ventaCompleta = { 
+        ...venta, 
+        id: venta.id_venta || venta.id, // Asegurar que siempre use 'id'
+        detalles,
+        usuarios,
+        usuarios_nombres: usuariosNombres
+      };
+
+      return res.status(200).json(ventaCompleta);
+    } catch (error) {
+      console.error("Error al obtener venta:", error);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+  }
+
+  if (req.method === "PUT") {
+    try {
+      const { estado } = req.body;
+
+             // Validar que la venta existe
+       const ventaExistente = await query(
+         "SELECT * FROM ventas WHERE id_venta = ?",
+         [ventaId]
+       );
+
+      if (ventaExistente.length === 0) {
+        return res.status(404).json({ error: "Venta no encontrada" });
+      }
+
+      // Construir query de actualización
+      let updateSql = "UPDATE ventas SET";
+      const updateParams: any[] = [];
+
+      if (estado !== undefined) {
+        updateSql += " estado = ?,";
+        updateParams.push(estado);
+      }
+
+      // Si se cancela o devuelve la venta, agregar fecha_mod
+      if (estado === 'cancelada' || estado === 'devuelta') {
+        updateSql += " fecha_mod = NOW(),";
+      }
+
+      updateSql = updateSql.slice(0, -1); // Remover la última coma
+             updateSql += " WHERE id_venta = ?";
+       updateParams.push(ventaId);
+
+      await query(updateSql, updateParams);
+
+             // Obtener la venta actualizada
+       const ventaActualizada = await query(`
+         SELECT 
+           v.*,
+           CONCAT(c.nombre, " ",c.apellido) as cliente_nombre,
+           h.nombre as habitacion_numero
+         FROM ventas v
+         LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
+         LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+         WHERE v.id_venta = ?
+       `, [ventaId]);
+
+      return res.status(200).json(ventaActualizada[0]);
+    } catch (error) {
+      console.error("Error al actualizar venta:", error);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+  }
+
+  if (req.method === "DELETE") {
+    try {
+             // Obtener información de la venta antes de eliminar
+       const venta = await query(
+         "SELECT * FROM ventas WHERE id_venta = ?",
+         [ventaId]
+       );
+
+      if (venta.length === 0) {
+        return res.status(404).json({ error: "Venta no encontrada" });
+      }
+
+             // Eliminar detalles primero
+       await query("DELETE FROM detalle_ventas WHERE venta_id = ?", [ventaId]);
+
+       // Eliminar usuarios de la venta
+       await query("DELETE FROM ventas_usuarios WHERE venta_id = ?", [ventaId]);
+
+       // Eliminar venta
+       await query("DELETE FROM ventas WHERE id_venta = ?", [ventaId]);
+
+      return res.status(200).json({ message: "Venta eliminada correctamente" });
+    } catch (error) {
+      console.error("Error al eliminar venta:", error);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+  }
+
+  return res.status(405).json({ error: "Método no permitido" });
+} 
