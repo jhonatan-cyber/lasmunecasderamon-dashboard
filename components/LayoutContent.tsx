@@ -20,8 +20,8 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     return <>{children}</>;
   }
 
-  // Temporalmente deshabilitar useCurrentUser para debugging
-  // const { user } = useCurrentUser();
+  // Solo usar useCurrentUser si no es una página pública
+  const { user } = useCurrentUser();
   return (
     <SidebarProvider>
       <div className='flex h-screen bg-gray-50'>

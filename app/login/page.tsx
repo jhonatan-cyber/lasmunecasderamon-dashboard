@@ -53,7 +53,7 @@ export default function LoginPage() {
     // Protección robusta: verifica sesión con endpoint protegido
     async function checkSession() {
       try {
-        const res = await fetch('/api/auth/check-debug');
+                 const res = await fetch('/api/auth/check');
         if (res.ok) {
           router.replace('/');
         }
@@ -204,8 +204,8 @@ export default function LoginPage() {
                       // Login exitoso (admin/cajero)
                       toast.success('¡Bienvenido al sistema!');
                       setLoading(false);
-                      // Redirección inmediata
-                      router.push('/');
+                                             // Redirección inmediata
+                       window.location.href = '/';
                     } catch (err) {
                       toast.error('Error de red o servidor');
                       setLoading(false);
