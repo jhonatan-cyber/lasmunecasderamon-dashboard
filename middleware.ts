@@ -4,15 +4,14 @@ import type { NextRequest } from "next/server";
 // Rutas públicas que no requieren autenticación
 const PUBLIC_PATHS = [
   "/login",
-  "/login-debug",
+  // debug pages removidas
   "/confirmar-anulacion",
   "/confirmar-anulacion-servicio",
   "/api/login",
   "/api/logout",
   "/api/auth/check",
   "/api/auth/me",
-  "/api/test-login-redirect",
-  "/api/debug-cookies",
+  // endpoints de prueba removidos
   "/api/ventas/confirmar-anulacion",
   "/api/ventas/procesar-anulacion",
   "/api/ventas/solicitud-anulacion",
@@ -34,14 +33,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token");
 
-  // DEBUG: Log middleware execution
-  console.log('🔍 Middleware executing for:', pathname);
-  console.log('📊 Token present:', !!token);
-  console.log('📊 Token value:', token ? `${token.value.substring(0, 20)}...` : 'null');
+  // (logs removidos)
 
   // Configurar CORS global para todas las rutas API
   if (pathname.startsWith('/api/')) {
-    console.log('✅ API route, allowing CORS');
     const response = NextResponse.next();
     
     // Headers CORS (usar origen específico y permitir credenciales)
@@ -63,7 +58,6 @@ export function middleware(request: NextRequest) {
 
   // Si intenta acceder a /login y ya tiene sesión, redirigir a /dashboard
   if (pathname === "/login" && token) {
-    console.log('🔄 Redirecting from /login to / (user has token)');
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/";
     dashboardUrl.search = "";
@@ -72,20 +66,11 @@ export function middleware(request: NextRequest) {
 
   // Permitir acceso a rutas públicas
   if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
-    console.log('✅ Public path, allowing access:', pathname);
     return NextResponse.next();
   }
 
   // Si no hay token, redirigir a /login
   if (!token) {
-    console.log('❌ No token found, redirecting to /login from:', pathname);
-    
-    // TEMPORAL: Permitir acceso a / para debugging
-    if (pathname === '/') {
-      console.log('🔧 TEMPORAL: Allowing access to / without token for debugging');
-      return NextResponse.next();
-    }
-    
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = "";
@@ -93,12 +78,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Si hay token, permitir acceso
-  console.log('✅ Token found, allowing access to:', pathname);
+  // (logs removidos)
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/((?!api/login|api/logout|api/auth/check|api/auth/me|api/test-login-redirect|api/debug-cookies|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio|login-debug).*)",
+    "/((?!api/login|api/logout|api/auth/check|api/auth/me|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio).*)",
   ],
 };

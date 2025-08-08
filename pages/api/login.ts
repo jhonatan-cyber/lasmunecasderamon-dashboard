@@ -101,9 +101,7 @@ const registrarLogin = async (
 
 // Función principal del handler
 async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('🚀 Login handler started');
-  console.log('📊 Request method:', req.method);
-  console.log('📊 Request headers:', req.headers);
+  // logs removidos
   
   // Validar método HTTP
   if (req.method !== 'POST') {
@@ -114,21 +112,17 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  console.log('✅ Method validation passed');
+  
 
   const cookies = new Cookies(req, res);
   const clientIP = Array.isArray(req.headers['x-forwarded-for'])
     ? req.headers['x-forwarded-for'][0]
     : req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
 
-  console.log('📊 Client IP:', clientIP);
+  
 
   const { email, password, codigo } = req.body;
-  console.log('📊 Request body received:', { 
-    email: email ? 'provided' : 'missing', 
-    password: password ? 'provided' : 'missing',
-    codigo: codigo ? 'provided' : 'missing'
-  });
+  
 
   if (!email || !password) {
     console.log('❌ Missing credentials');
@@ -137,7 +131,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       .json({ success: false, message: 'Faltan credenciales', code: 'MISSING_CREDENTIALS' });
   }
 
-  console.log('✅ Credentials validation passed');
+  
 
   // Validar formato de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -148,22 +142,22 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       .json({ success: false, message: 'Formato de email inválido', code: 'INVALID_EMAIL_FORMAT' });
   }
 
-  console.log('✅ Email format validation passed');
+  
 
   // Si viene código, validar código en la base de datos
   if (codigo !== undefined) {
-    console.log('🔍 Validating code:', codigo);
+    
     try {
       const codeRes = (await query('SELECT codigo FROM codigos WHERE codigo = ?', [
         codigo
       ])) as any[];
       if (!Array.isArray(codeRes) || codeRes.length === 0) {
-        console.log('❌ Invalid code provided');
+        
         return res
           .status(400)
           .json({ success: false, message: 'Código inválido', code: 'INVALID_CODE' });
       }
-      console.log('✅ Code validation passed');
+       
     } catch (error) {
       console.error('❌ Error validating code:', error);
       return res
@@ -173,7 +167,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    console.log('🔍 Searching for user in database...');
+    
     // Buscar usuario por email con información del rol
     const users = (await query(
       `SELECT u.*, r.nombre as rol_nombre 
@@ -183,37 +177,34 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       [email]
     )) as any[];
 
-    console.log('📊 Database query completed');
-    console.log('📊 Users found:', Array.isArray(users) ? users.length : 'Not an array');
+    
 
     if (!Array.isArray(users) || users.length === 0) {
-      console.log('❌ No user found with email:', email);
+      
       return res
         .status(401)
         .json({ success: false, message: 'Credenciales inválidas', code: 'INVALID_CREDENTIALS' });
     }
 
     const user = users[0] as any;
-    console.log('✅ User found:', { id: user.id_usuario, email: user.email, role: user.rol_nombre });
+    
 
     // Verificar contraseña
-    console.log('🔍 Verifying password...');
     const isValidPassword = await bcrypt.compare(password, user.password);
-    console.log('📊 Password verification result:', isValidPassword);
     
     if (!isValidPassword) {
-      console.log('❌ Invalid password for user:', user.id_usuario);
+      
       return res
         .status(401)
         .json({ success: false, message: 'Credenciales inválidas', code: 'INVALID_CREDENTIALS' });
     }
 
-    console.log('✅ Password verification passed');
+    
 
     if (requiereCodigoVerificacion(user.rol_nombre)) {
-      console.log('🔍 Role requires verification code:', user.rol_nombre);
+      
       if (!codigo) {
-        console.log('❌ Code required but not provided');
+        
         const response = {
           success: false,
           requiereCodigo: true,
@@ -236,10 +227,10 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
           codigo
         ])) as any[];
         if (Array.isArray(codeRes) && codeRes.length > 0) {
-          console.log('✅ Code validation passed');
+          
           // Código válido, continuar
         } else {
-          console.log('❌ Invalid code provided');
+          
           // Código no existe
           return res
             .status(401)
@@ -258,7 +249,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Generar token JWT
-    console.log('🔍 Generating JWT token...');
+    
     const token = jwt.sign(
       {
         id: user.id_usuario,
@@ -270,36 +261,24 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       { expiresIn: '24h' }
     );
 
-    console.log('✅ JWT token generated');
+    
 
     // Configurar cookie usando las nuevas utilidades
-    console.log('🔍 Setting cookie...');
     const cookieSet = setSecureCookie(req, res, 'token', token);
-    
-    if (!cookieSet) {
-      console.log('⚠️ Cookie setting failed, but continuing with token in response');
-    }
-
-    console.log('✅ Cookie set successfully');
 
     // Registrar login exitoso
-    console.log('🔍 Recording login in database...');
     try {
       await registrarLogin(user.id_usuario, token, req);
-      console.log('✅ Login recorded successfully');
     } catch (loginError) {
-      console.log('⚠️ Login recording failed, but continuing:', loginError);
+      
       // Continuar sin registrar el login para debugging
     }
 
     // Registrar asistencia si corresponde
     if (isHoraAsistencia()) {
-      console.log('🔍 Recording attendance...');
       await registrarAsistencia(user.id_usuario, user.rol_nombre);
-      console.log('✅ Attendance recorded successfully');
     }
 
-    console.log('🎉 Login process completed successfully');
     return res.status(200).json({
       success: true,
       message: 'Login exitoso',
@@ -311,11 +290,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('❌ Error in login process:', error);
-    console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace'
-    });
+    console.error('Error en login:', error);
     return res
       .status(500)
       .json({ success: false, message: 'Error interno del servidor', code: 'INTERNAL_ERROR' });
