@@ -1,11 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import mysql from 'mysql2/promise';
+import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import Cookies from 'cookies';
+import { setSecureCookie } from '@/lib/middleware/cookieUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('🚀 Login test handler started');
+  console.log('🚀 Login production test handler started');
+  console.log('📊 Request method:', req.method);
+  console.log('📊 Environment:', process.env.NODE_ENV);
+  console.log('📊 Headers:', {
+    'x-forwarded-proto': req.headers['x-forwarded-proto'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-real-ip': req.headers['x-real-ip'],
+    host: req.headers.host
+  });
   
   if (req.method !== 'POST') {
     console.log('❌ Invalid method:', req.method);
@@ -28,45 +36,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('✅ Credentials validation passed');
 
-    // Configuración de conexión directa (igual que test-connection)
-    const config = {
-      host: process.env.DB_HOST || 'lasmunecasderamoncom-lasmunecasderamondb-jfteo0',
-      user: process.env.DB_USER || 'nuwe',
-      password: process.env.DB_PASSWORD || 'Ancasi96nuwe+',
-      database: process.env.DB_NAME || 'lasmunecasderamon',
-      port: parseInt(process.env.DB_PORT || '3306'),
-      waitForConnections: true,
-      connectionLimit: 1,
-      queueLimit: 0
-    };
-
-    console.log('🔍 Using connection config:', {
-      host: config.host,
-      user: config.user,
-      database: config.database,
-      port: config.port
-    });
-
-    // Crear conexión directa
-    console.log('📡 Creating direct connection...');
-    const connection = await mysql.createConnection(config);
-    console.log('✅ Connection created successfully');
-
     // Buscar usuario
-    console.log('🔍 Searching for user with email:', email);
-    const [users] = await connection.execute(
+    console.log('🔍 Searching for user in database...');
+    const users = await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
        WHERE u.email = ? AND u.estado = 1`,
       [email]
-    );
+    ) as any[];
 
+    console.log('📊 Database query completed');
     console.log('📊 Users found:', Array.isArray(users) ? users.length : 'Not an array');
 
     if (!Array.isArray(users) || users.length === 0) {
-      console.log('❌ No user found');
-      await connection.end();
+      console.log('❌ No user found with email:', email);
       return res.status(401).json({ 
         success: false, 
         message: 'Credenciales inválidas',
@@ -81,10 +65,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔍 Verifying password...');
     const isValidPassword = await bcrypt.compare(password, user.password);
     console.log('📊 Password verification result:', isValidPassword);
-
+    
     if (!isValidPassword) {
-      console.log('❌ Invalid password');
-      await connection.end();
+      console.log('❌ Invalid password for user:', user.id_usuario);
       return res.status(401).json({ 
         success: false, 
         message: 'Credenciales inválidas',
@@ -109,65 +92,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('✅ JWT token generated');
 
-    // Configurar cookie
-    console.log('🔍 Setting cookie...');
-    const cookies = new Cookies(req, res);
+    // Intentar configurar cookie con diferentes estrategias
+    console.log('🔍 Testing different cookie strategies...');
     
-    // En producción, siempre usar secure: false para evitar problemas de proxy
-    const isSecure = process.env.NODE_ENV === 'production' ? false : true;
+    let cookieStrategy = 'none';
+    let cookieSuccess = false;
     
-    console.log('📊 Cookie configuration:', {
-      nodeEnv: process.env.NODE_ENV,
-      isSecure: isSecure,
-      note: 'Using secure: false in production to avoid proxy issues'
-    });
+    // Estrategia 1: Usar utilidad personalizada
+    try {
+      cookieSuccess = setSecureCookie(req, res, 'token', token);
+      if (cookieSuccess) {
+        cookieStrategy = 'custom-utility';
+        console.log('✅ Cookie set with custom utility');
+      }
+    } catch (error) {
+      console.log('❌ Custom utility failed:', error);
+    }
     
-    cookies.set('token', token, {
-      httpOnly: true,
-      secure: isSecure, // false en producción para evitar problemas de proxy
-      sameSite: 'lax', // Cambiar a 'lax' para mejor compatibilidad
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
-      path: '/'
-    });
-
-    console.log('✅ Cookie set successfully');
+    // Estrategia 2: Cookie simple sin secure
+    if (!cookieSuccess) {
+      try {
+        const Cookies = require('cookies');
+        const cookies = new Cookies(req, res);
+        cookies.set('token', token, {
+          httpOnly: true,
+          secure: false, // Forzar false en producción
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000,
+          path: '/'
+        });
+        cookieSuccess = true;
+        cookieStrategy = 'simple-no-secure';
+        console.log('✅ Cookie set with simple strategy');
+      } catch (error) {
+        console.log('❌ Simple strategy failed:', error);
+      }
+    }
 
     // Registrar login exitoso
-    console.log('🔍 Recording login...');
-    await connection.execute('INSERT INTO logins (usuario_id) VALUES (?)', [user.id_usuario]);
+    console.log('🔍 Recording login in database...');
+    await query('INSERT INTO logins (usuario_id) VALUES (?)', [user.id_usuario]);
     console.log('✅ Login recorded successfully');
 
-    // Cerrar conexión
-    await connection.end();
-    console.log('✅ Connection closed');
-
-    console.log('🎉 Login test completed successfully');
+    console.log('🎉 Login process completed successfully');
 
     return res.status(200).json({
       success: true,
-      message: 'Login exitoso',
+      message: 'Login exitoso (production test)',
       user: {
         id: user.id_usuario,
         username: user.username,
         email: user.email,
         role: user.rol_nombre
       },
-      token: token, // Incluir token para debugging
+      token: token, // Siempre incluir token en respuesta
       debug: {
-        email,
-        userId: user.id_usuario,
-        passwordValid: true,
-        tokenGenerated: true
+        environment: process.env.NODE_ENV,
+        cookieStrategy,
+        cookieSuccess,
+        headers: {
+          'x-forwarded-proto': req.headers['x-forwarded-proto'],
+          host: req.headers.host
+        },
+        note: 'Token incluido en respuesta como respaldo'
       }
     });
 
   } catch (error) {
-    console.error('❌ Error in login test:', error);
+    console.error('❌ Error in login process:', error);
     console.error('❌ Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      errno: (error as any)?.errno,
-      sqlState: (error as any)?.sqlState,
       stack: error instanceof Error ? error.stack : 'No stack trace'
     });
     return res.status(500).json({
@@ -176,6 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       error: error instanceof Error ? error.message : 'Unknown error',
       debug: {
         step: 'error',
+        environment: process.env.NODE_ENV,
         error: error instanceof Error ? error.stack : 'Unknown error'
       }
     });
