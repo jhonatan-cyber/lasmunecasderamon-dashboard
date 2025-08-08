@@ -44,8 +44,11 @@ export function middleware(request: NextRequest) {
     console.log('✅ API route, allowing CORS');
     const response = NextResponse.next();
     
-    // Headers CORS
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    // Headers CORS (usar origen específico y permitir credenciales)
+    const requestOrigin = request.headers.get('origin') || request.nextUrl.origin;
+    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
+    response.headers.set('Vary', 'Origin');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     response.headers.set('Access-Control-Max-Age', '86400');
