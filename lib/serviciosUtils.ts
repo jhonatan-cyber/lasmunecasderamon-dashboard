@@ -3,9 +3,7 @@ import { ServicioWithDetails } from "@/types/servicio";
 // Función para solicitar anulación de un servicio
 export const solicitarAnulacionServicio = async (servicioId: number, motivo?: string): Promise<{ success: boolean; error?: string; message?: string }> => {
   try {
-    console.log(`🔍 Enviando solicitud de anulación para servicio ${servicioId}`);
-    console.log(`🔍 URL: /api/servicios/${servicioId}/solicitar-anulacion`);
-    console.log(`🔍 Credenciales incluidas: true`);
+
     
     const response = await fetch(`/api/servicios/${servicioId}/solicitar-anulacion`, {
       method: "POST",
@@ -18,25 +16,23 @@ export const solicitarAnulacionServicio = async (servicioId: number, motivo?: st
       }),
     });
 
-    console.log(`🔍 Response status: ${response.status}`);
-    console.log(`🔍 Response ok: ${response.ok}`);
-
+ 
     if (!response.ok) {
       // Intentar leer la respuesta como JSON primero
       let errorMessage = `Error ${response.status}: ${response.statusText}`;
       
       try {
         const errorData = await response.json();
-        console.log(`🔍 Error data:`, errorData);
+    
         errorMessage = errorData.error || errorMessage;
       } catch (jsonError) {
         // Si no es JSON válido, intentar leer como texto
         try {
           const textResponse = await response.text();
-          console.error("Respuesta no-JSON del servidor:", textResponse);
+      
           errorMessage = `Error del servidor: ${response.status}`;
         } catch (textError) {
-          console.error("Error al leer respuesta del servidor:", textError);
+
           errorMessage = `Error de conexión: ${response.status}`;
         }
       }
@@ -48,13 +44,13 @@ export const solicitarAnulacionServicio = async (servicioId: number, motivo?: st
     }
 
     const result = await response.json();
-    console.log(`🔍 Success result:`, result);
+  
     return { 
       success: true, 
       message: result.message || "Solicitud de anulación enviada correctamente"
     };
   } catch (error) {
-    console.error("Error al solicitar anulación de servicio:", error);
+   
     return { 
       success: false, 
       error: "Error de conexión al solicitar anulación"
