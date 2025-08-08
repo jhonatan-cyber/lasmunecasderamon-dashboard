@@ -7,13 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCreditCard,
-  faCoins,
-  faMoneyBill1Wave,
-  faHotel,
-} from "@fortawesome/free-solid-svg-icons";
+import { CreditCard, Coins, DollarSign, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -372,10 +366,7 @@ export default function CobrarCuentaModal({
                   Método de pago <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
-                  <FontAwesomeIcon
-                    icon={faCreditCard}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                  />
+                  <CreditCard className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4" />
                   <Select value={metodoPago} onValueChange={setMetodoPago}>
                     <SelectTrigger
                       className={`w-full pl-8 border focus:ring-0 focus:border-black bg-transparent py-1 text-center text-sm text-gray-500 rounded-full ${
@@ -407,10 +398,7 @@ export default function CobrarCuentaModal({
                     Habitación
                   </Label>
                   <div className="relative">
-                    <FontAwesomeIcon
-                      icon={faHotel}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                    />
+                    <Building2 className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4" />
                     <Select
                       value={habitacionId}
                       onValueChange={setHabitacionId}
@@ -451,10 +439,7 @@ export default function CobrarCuentaModal({
                   Propina
                 </Label>
                 <div className="relative">
-                  <FontAwesomeIcon
-                    icon={faCoins}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                  />
+                  <Coins className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4" />
                   <Input
                     className="w-full  pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1"
                     placeholder="Propina"
@@ -485,10 +470,7 @@ export default function CobrarCuentaModal({
                   Total Comisión
                 </Label>
                 <div className="relative ">
-                  <FontAwesomeIcon
-                    icon={faMoneyBill1Wave}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                  />
+                  <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4" />
                   <Input
                     className="w-full pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 font-semibold text-black"
                     value={formatCurrencyNoDecimals(

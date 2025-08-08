@@ -5,19 +5,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faSearch,
-  faGlassCheers,
-  faUsers,
-  faCoins,
-  faShoppingCart,
-  faTrash,
-  faPlus,
-  faMinus,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
+  ArrowLeft,
+  Search,
+  Wine,
+  Users,
+  Coins,
+  ShoppingCart,
+  Trash,
+  Plus,
+  Minus,
+  X,
+} from "lucide-react";
 
 import { useSales } from "@/hooks/useSales";
 import { toast } from "sonner";
@@ -737,8 +736,8 @@ export default function NewSale() {
           className="rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto"
           onClick={() => router.back()}
         >
-          <FontAwesomeIcon icon={faArrowLeft} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-          Atrás
+                      <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            Atrás
         </Button>
       </div>
 
@@ -749,8 +748,7 @@ export default function NewSale() {
         {/* Búsqueda de productos */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-4">
           <div className="relative w-full max-w-xs">
-            <FontAwesomeIcon
-              icon={faSearch}
+            <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4"
             />
             <Input
@@ -775,7 +773,7 @@ export default function NewSale() {
               className="rounded-full px-4 bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base"
               onClick={handleClearSearch}
             >
-              <FontAwesomeIcon icon={faTimes} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Limpiar
             </Button>
           )}
@@ -829,7 +827,7 @@ export default function NewSale() {
                             className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200"
                             onClick={() => handleAddProducto(producto)}
                           >
-                            <FontAwesomeIcon icon={faPlus} />
+                            <Plus />
                           </Button>
                         </td>
                       </tr>
@@ -896,7 +894,7 @@ export default function NewSale() {
           {/* Propina */}
           <div>
             <Label className="flex items-center gap-2 mb-2">
-              <FontAwesomeIcon icon={faCoins} />
+              <Coins />
               Propina
             </Label>
             <Input
@@ -930,10 +928,11 @@ export default function NewSale() {
                   : "bg-orange-50 text-orange-700 border border-orange-200"
               }`}
             >
-              <FontAwesomeIcon
-                icon={hasChampagneProducts ? faGlassCheers : faUsers}
-                className="mr-1"
-              />
+              {hasChampagneProducts ? (
+                <Wine className="mr-1" />
+              ) : (
+                <Users className="mr-1" />
+              )}
               {hasChampagneProducts && maxChampagnePrice >= 240000
                 ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`
                 : hasChampagneProducts && maxChampagnePrice >= 200000
@@ -974,7 +973,7 @@ export default function NewSale() {
             }
             className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FontAwesomeIcon icon={faShoppingCart} className="mr-2" />
+            <ShoppingCart className="mr-2" />
             {loading ? "Generando..." : "Generar Venta"}
           </Button>
         </div>
@@ -1031,7 +1030,7 @@ export default function NewSale() {
                              className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
                              disabled={producto.cantidad <= 1}
                            >
-                             <FontAwesomeIcon icon={faMinus} />
+                             <Minus />
                            </Button>
                            <span className="w-8 text-center font-medium">
                              {producto.cantidad}
@@ -1044,7 +1043,7 @@ export default function NewSale() {
                              }}
                              className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
                            >
-                             <FontAwesomeIcon icon={faPlus} />
+                             <Plus />
                            </Button>
                          </div>
                        </td>
@@ -1067,7 +1066,7 @@ export default function NewSale() {
                            onClick={() => handleRemoveProducto(index)}
                            className="text-red-500 hover:text-red-700"
                          >
-                           <FontAwesomeIcon icon={faTrash} />
+                           <Trash />
                          </Button>
                        </td>
                      </tr>

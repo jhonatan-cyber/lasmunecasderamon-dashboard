@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faUsers, faUserTie, faMoneyBillWave, faClock, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { User, Users, UserCheck, DollarSign, Clock, CheckCircle, Barcode } from "lucide-react";
 
 const badgeColors = [
   "bg-purple-300 text-purple-800",
@@ -46,13 +45,16 @@ export default function OrderTable({
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <div className="w-full sm:w-auto">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 sm:mb-1">
-                  <h3 className="font-medium text-gray-900 text-sm sm:text-base">{order.codigo}</h3>
+                                     <div className="flex items-center gap-2">
+                     <Barcode className="h-4 w-4 text-gray-500" />
+                     <h3 className="font-medium text-gray-900 text-sm sm:text-base">{order.codigo}</h3>
+                   </div>
                   {order.estado === 1 && (
                     <Badge
                       className="bg-purple-300 text-purple-800 hover:bg-purple-400 hover:text-purple-800 text-xs sm:text-sm"
                       variant="outline"
                     >
-                      <FontAwesomeIcon icon={faClock} className="w-3 h-3 mr-1" />
+                      <Clock className="w-3 h-3 mr-1" />
                       Pendiente
                     </Badge>
                   )}
@@ -61,21 +63,21 @@ export default function OrderTable({
                       className="bg-red-500 text-red-800 hover:bg-red-600 hover:text-red-800 text-xs sm:text-sm"
                       variant="outline"
                     >
-                      <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
+                      <CheckCircle className="w-3 h-3 mr-1" />
                       Cerrado
                     </Badge>
                   )}
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-2">
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faUserTie} className="h-3 w-3 text-gray-400" />
+                    <UserCheck className="h-3 w-3 text-gray-400" />
                     <span className="font-medium">
                       <b className="text-gray-600">Garzón:</b> {order.garzon}
                     </span>
                   </div>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                     <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faUsers} className="h-3 w-3 text-gray-400" />
+                      <Users className="h-3 w-3 text-gray-400" />
                       <b className="text-gray-600">Anfitrionas:</b>
                     </div>
                     <div className="flex flex-wrap gap-1 items-center">
@@ -98,7 +100,7 @@ export default function OrderTable({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faUser} className="h-3 w-3 text-gray-400" />
+                    <User className="h-3 w-3 text-gray-400" />
                     <span className="font-medium">
                       <b className="text-gray-600">Cliente:</b> {order.cliente}
                     </span>
@@ -109,7 +111,7 @@ export default function OrderTable({
             <div className="flex items-center gap-2 sm:gap-4 mt-3 sm:mt-0 w-full sm:w-auto">
               <div className="text-left sm:text-right w-full sm:w-auto">
                 <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faMoneyBillWave} className="h-3 w-3 text-green-500" />
+                  <DollarSign className="h-3 w-3 text-green-500" />
                   <p className="font-medium text-gray-900 text-sm sm:text-base">
                     <b className="text-gray-600">Total:</b>{" "}
                     {order.total.toLocaleString("es-CL", {

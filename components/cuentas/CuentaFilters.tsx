@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faRefresh } from "@fortawesome/free-solid-svg-icons";
+import { Search, RotateCcw } from "lucide-react";
 
 interface CuentaFiltersProps {
   searchTerm: string;
@@ -47,10 +46,7 @@ export default function CuentaFilters({
               Buscar
             </Label>
             <div className="relative">
-              <FontAwesomeIcon
-                icon={faSearch}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm sm:text-base"
-              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 id="search"
                 placeholder="Buscar por cliente o código..."
@@ -91,10 +87,7 @@ export default function CuentaFilters({
                 disabled={loading}
                 className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
               >
-                <FontAwesomeIcon 
-                  icon={faRefresh} 
-                  className={`mr-2 ${loading ? "animate-spin" : ""}`} 
-                />
+                <RotateCcw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 {loading ? "Cargando..." : "Actualizar"}
               </Button>
             </div>

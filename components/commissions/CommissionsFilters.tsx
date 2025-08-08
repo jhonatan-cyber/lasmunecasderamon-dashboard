@@ -2,8 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import SearchInput from "@/components/ui/SearchInput";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBroom } from "@fortawesome/free-solid-svg-icons";
+import { Sparkles } from "lucide-react";
 import SelectElements from "@/components/ui/select-elements";
 
 interface CommissionsFiltersProps {
@@ -62,7 +61,7 @@ export function CommissionsFilters({
                 variant="outline"
                 className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
               >
-                <FontAwesomeIcon icon={faBroom} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Limpiar Filtros
               </Button>
             </div>

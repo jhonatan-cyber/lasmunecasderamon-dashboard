@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 
 interface CartProduct {
@@ -78,7 +77,7 @@ const CartProductTable: React.FC<CartProductTableProps> = ({
                     onClick={() => onRemoveProducto(idx)}
                     className="text-red-500 hover:text-red-700"
                   >
-                    <FontAwesomeIcon icon={faTrash} />
+                    <Trash2 />
                   </Button>
                 )}
               </td>

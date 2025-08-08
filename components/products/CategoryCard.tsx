@@ -1,8 +1,6 @@
 'use client';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTag, faBox, faArrowRight } from '@fortawesome/free-solid-svg-icons';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tag, Package, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CardContainer, CardBody } from '@/components/ui/3d-card';
 
@@ -74,7 +72,7 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
               className='w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center'
               style={{ backgroundColor: categoryColor + '15' }}
             >
-              <FontAwesomeIcon icon={faTag} className='h-4 w-4 sm:h-6 sm:w-6' style={{ color: categoryColor }} />
+              <Tag className='h-4 w-4 sm:h-6 sm:w-6' style={{ color: categoryColor }} />
             </div>
             <div className='flex-1'>
               <div className='text-sm sm:text-lg font-semibold text-neutral-600 dark:text-white group-hover:text-blue-600 transition-colors'>
@@ -84,8 +82,7 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
             </div>
           </div>
           <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
-            <FontAwesomeIcon
-              icon={faArrowRight}
+            <ArrowRight
               className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400 transition-colors'
             />
           </div>
@@ -99,7 +96,7 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
               Activa
             </Badge>
             <div className='flex items-center gap-1 text-green-600 text-xs sm:text-sm'>
-              <FontAwesomeIcon icon={faBox} className='h-3 w-3' />
+              <Package className='h-3 w-3' />
               Disponible
             </div>
           </div>

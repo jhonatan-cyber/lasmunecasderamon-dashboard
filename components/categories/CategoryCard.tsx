@@ -1,15 +1,14 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faEdit,
-  faTrash,
-  faCheckCircle,
-  faTag,
-  faEye,
-  faBox,
-  faEyeSlash,
-  faEllipsisV,
-  faPowerOff
-} from '@fortawesome/free-solid-svg-icons';
+  Edit,
+  Trash2,
+  CheckCircle,
+  Tag,
+  Eye,
+  Package,
+  EyeOff,
+  MoreVertical,
+  Power
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -181,8 +180,7 @@ export default function CategoryCard({
               className='w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center'
               style={{ backgroundColor: categoryColor + '15' }}
             >
-              <FontAwesomeIcon
-                icon={faTag}
+              <Tag
                 className='h-4 w-4 sm:h-6 sm:w-6'
                 style={{ color: categoryColor }}
               />
@@ -204,7 +202,7 @@ export default function CategoryCard({
                 size='icon'
                 className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200 p-2'
               >
-                <FontAwesomeIcon icon={faEllipsisV} className="w-3 h-3 sm:w-4 sm:h-4" />
+                <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
@@ -215,8 +213,7 @@ export default function CategoryCard({
                       onClick={() => onEdit(category)}
                       className='cursor-pointer group'
                     >
-                      <FontAwesomeIcon
-                        icon={faEdit}
+                      <Edit
                         className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                       />
                       <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
@@ -238,8 +235,7 @@ export default function CategoryCard({
                         onClick={() => onDeactivate(category.id)}
                         className='cursor-pointer group'
                       >
-                        <FontAwesomeIcon
-                          icon={faPowerOff}
+                        <Power
                           className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                         />
                         <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
@@ -260,8 +256,7 @@ export default function CategoryCard({
                         onClick={() => onActivate(category.id)}
                         className='cursor-pointer group'
                       >
-                        <FontAwesomeIcon
-                          icon={faCheckCircle}
+                        <CheckCircle
                           className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                         />
                         <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
@@ -283,8 +278,7 @@ export default function CategoryCard({
                       className='cursor-pointer group'
                       onClick={handleDeleteClick}
                     >
-                      <FontAwesomeIcon
-                        icon={faTrash}
+                      <Trash2
                         className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                       />
                       <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>Eliminar</span>
@@ -311,12 +305,12 @@ export default function CategoryCard({
             </Badge>
             {category.status === 1 ? (
               <div className='flex items-center gap-1 text-green-600 text-xs sm:text-sm'>
-                <FontAwesomeIcon icon={faEye} className='h-3 w-3' />
+                <Eye className='h-3 w-3' />
                 <span className='hidden sm:inline'>Visible</span>
               </div>
             ) : (
               <div className='flex items-center gap-1 text-gray-500 text-xs sm:text-sm'>
-                <FontAwesomeIcon icon={faEyeSlash} className='h-3 w-3 opacity-50' />
+                <EyeOff className='h-3 w-3 opacity-50' />
                 <span className='hidden sm:inline'>Oculta</span>
               </div>
             )}
@@ -330,7 +324,7 @@ export default function CategoryCard({
           {/* Footer info */}
           <div className='flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700'>
             <div className='flex items-center gap-2'>
-              <FontAwesomeIcon icon={faBox} className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400' />
+              <Package className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400' />
               <span className='text-xs sm:text-sm text-gray-600 dark:text-neutral-300'>
                 {category.total_products || 0} productos
               </span>

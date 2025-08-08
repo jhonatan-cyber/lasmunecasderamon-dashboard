@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBed, faRulerCombined, faEllipsisV, faEdit, faTrash, faCheck, faPowerOff } from "@fortawesome/free-solid-svg-icons";
+import { Bed, Ruler, MoreVertical, Edit, Trash2, Check, Power } from "lucide-react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CardContainer, CardBody } from '@/components/ui/3d-card';
 
@@ -35,7 +34,7 @@ const RoomCard: React.FC<{
         <div className='flex items-start justify-between pb-3'>
           <div>
             <div className='text-sm sm:text-lg font-semibold text-neutral-600 dark:text-white flex items-center gap-2'>
-              <FontAwesomeIcon icon={faBed} className="text-blue-500 text-xs sm:text-sm" />
+              <Bed className="text-blue-500 text-xs sm:text-sm" />
               {room.name}
             </div>
           </div>
@@ -46,7 +45,7 @@ const RoomCard: React.FC<{
                 size="icon"
                 className="bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200"
               >
-                <FontAwesomeIcon icon={faEllipsisV} className="h-3 w-3 sm:h-4 sm:w-4" />
+                <MoreVertical className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -55,7 +54,7 @@ const RoomCard: React.FC<{
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuItem onClick={() => onEdit(room)} className="cursor-pointer group">
-                        <FontAwesomeIcon icon={faEdit} className="mr-2 text-blue-600" />
+                        <Edit className="mr-2 text-blue-600" />
                         <span className="group-hover:text-blue-600 transition-colors">Editar</span>
                       </DropdownMenuItem>
                     </TooltipTrigger>
@@ -68,7 +67,7 @@ const RoomCard: React.FC<{
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuItem onClick={() => onOccupy(room)} className="cursor-pointer group">
-                        <FontAwesomeIcon icon={faBed} className="mr-2 text-yellow-600" />
+                        <Bed className="mr-2 text-yellow-600" />
                         <span className="group-hover:text-yellow-600 transition-colors">Ocupar</span>
                       </DropdownMenuItem>
                     </TooltipTrigger>
@@ -81,7 +80,7 @@ const RoomCard: React.FC<{
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuItem onClick={() => onDeactivate(room)} className="cursor-pointer group">
-                        <FontAwesomeIcon icon={faPowerOff} className="mr-2 text-orange-600" />
+                        <Power className="mr-2 text-orange-600" />
                         <span className="group-hover:text-orange-600 transition-colors">Desactivar</span>
                       </DropdownMenuItem>
                     </TooltipTrigger>
@@ -94,7 +93,7 @@ const RoomCard: React.FC<{
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuItem onClick={() => onActivate(room)} className="cursor-pointer group">
-                        <FontAwesomeIcon icon={faCheck} className="mr-2 text-green-600" />
+                        <Check className="mr-2 text-green-600" />
                         <span className="group-hover:text-green-600 transition-colors">Activar</span>
                       </DropdownMenuItem>
                     </TooltipTrigger>
@@ -106,7 +105,7 @@ const RoomCard: React.FC<{
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuItem onClick={() => onDelete(room)} className="cursor-pointer group">
-                      <FontAwesomeIcon icon={faTrash} className="mr-2 text-red-600" />
+                      <Trash2 className="mr-2 text-red-600" />
                       <span className="group-hover:text-red-600 transition-colors">Eliminar</span>
                     </DropdownMenuItem>
                   </TooltipTrigger>
@@ -131,14 +130,14 @@ const RoomCard: React.FC<{
           <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
             <div className="text-center">
               <div className="font-medium flex items-center justify-center gap-1">
-                <FontAwesomeIcon icon={faBed} className="text-xs sm:text-sm" />
+                <Bed className="text-xs sm:text-sm" />
                 {room.time} min
               </div>
               <div className="text-xs text-gray-500 dark:text-neutral-300">Tiempo</div>
             </div>
             <div className="text-center">
               <div className="font-medium flex items-center justify-center gap-1">
-                <FontAwesomeIcon icon={faRulerCombined} className="text-xs sm:text-sm" />
+                <Ruler className="text-xs sm:text-sm" />
                 ${room.price.toLocaleString('es-CL')}
               </div>
               <div className="text-xs text-gray-500 dark:text-neutral-300">Precio</div>

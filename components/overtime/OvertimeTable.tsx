@@ -13,19 +13,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { Overtime } from "@/types/overtime";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faClock, faMoneyBillWave, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { User, Clock, DollarSign, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface OvertimeTableProps {
   loading: boolean;
   rows: Overtime[];
   rowsPerPage: number;
+  onViewDetail: (overtime: Overtime) => void;
 }
 
 export default function OvertimeTable({
   loading,
   rows,
   rowsPerPage,
+  onViewDetail,
 }: OvertimeTableProps) {
   if (rows.length === 0 && !loading) {
     return (
@@ -55,31 +57,35 @@ export default function OvertimeTable({
         rows.map((overtime) => (
           <Card key={overtime.id_usuario} className="p-4 sm:p-6">
             <CardContent className="space-y-3">
-              {/* Header con usuario y estado */}
+              {/* Header con usuario y botón de detalles */}
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUser} className="h-4 w-4 text-gray-400" />
+                  <User className="h-4 w-4 text-gray-400" />
                   <span className="font-medium text-sm sm:text-base">
                     {overtime.usuario}
                   </span>
                 </div>
-                <Badge className="bg-green-100 text-green-800 text-xs sm:text-sm">
-                  <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 mr-1" />
-                  Activo
-                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onViewDetail(overtime)}
+                  className="h-8 w-8 p-0 hover:bg-blue-50"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Información de horas extras */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faClock} className="h-3 w-3 text-gray-400" />
+                  <Clock className="h-3 w-3 text-gray-400" />
                   <span className="text-xs sm:text-sm text-gray-600">
                     Horas: {overtime.total_horas} hrs
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
-                  <FontAwesomeIcon icon={faMoneyBillWave} className="h-3 w-3 text-green-500" />
+                  <DollarSign className="h-3 w-3 text-green-500" />
                   <span className="text-sm sm:text-base font-semibold text-green-600">
                     Total: {formatCurrencyNoDecimals(overtime.total_monto)}
                   </span>
@@ -138,7 +144,14 @@ export default function OvertimeTable({
                     {formatCurrencyNoDecimals(overtime.total_monto)}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge className="bg-green-100 text-green-800 text-xs sm:text-sm">Activo</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewDetail(overtime)}
+                      className="h-8 w-8 p-0 hover:bg-blue-50"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

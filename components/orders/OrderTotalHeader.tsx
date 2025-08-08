@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import { ShoppingCart } from "lucide-react";
 import React from "react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 
@@ -18,7 +17,7 @@ const OrderTotalHeader: React.FC<OrderTotalHeaderProps> = ({ total, onSubmit }) 
       className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200"
       onClick={onSubmit}
     >
-      <FontAwesomeIcon icon={faCartShopping} className="mr-2" />
+      <ShoppingCart className="w-4 h-4 mr-2" />
       Generar pedido
     </Button>
   </div>

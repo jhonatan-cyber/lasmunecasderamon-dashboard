@@ -7,11 +7,11 @@ import OvertimeFilters from "@/components/overtime/OvertimeFilters";
 import OvertimeStatsCards from "@/components/overtime/OvertimeStatsCards";
 import OvertimeTable from "@/components/overtime/OvertimeTable";
 import OvertimeFormDialog from "@/components/overtime/OvertimeFormDialog";
+import OvertimeDetailModal from "@/components/overtime/OvertimeDetailModal";
 import Paginate from "@/components/ui/paginate";
 
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { Plus } from "lucide-react";
 
 export default function OvertimePage() {
   const { overtime, loading, error, getOvertime } = useOvertime();
@@ -19,6 +19,8 @@ export default function OvertimePage() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
   const [showFormDialog, setShowFormDialog] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedOvertime, setSelectedOvertime] = useState<{ id_usuario: number; usuario: string } | null>(null);
 
   // Asegurar que overtime sea siempre un array
   const overtimeData = overtime || [];
@@ -51,6 +53,16 @@ export default function OvertimePage() {
     setShowFormDialog(false);
   };
 
+  const handleViewDetail = (overtime: { id_usuario: number; usuario: string }) => {
+    setSelectedOvertime(overtime);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedOvertime(null);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
@@ -66,7 +78,7 @@ export default function OvertimePage() {
             className="whitespace-nowrap inline-flex items-center px-4 sm:px-6 py-2 bg-black text-white rounded-full hover:scale-105 duration-200 text-sm sm:text-base w-full sm:w-auto"
             onClick={handleOpenFormDialog}
           >
-            <FontAwesomeIcon icon={faPlus} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
             Nuevo
           </Button>
         </div>
@@ -92,6 +104,7 @@ export default function OvertimePage() {
           loading={loading}
           rows={paginatedOvertime}
           rowsPerPage={rowsPerPage}
+          onViewDetail={handleViewDetail}
         />
       </div>
 
@@ -107,6 +120,16 @@ export default function OvertimePage() {
         onClose={handleCloseFormDialog}
         onSuccess={handleRefresh}
       />
+
+      {/* Modal de detalles */}
+      {selectedOvertime && (
+        <OvertimeDetailModal
+          isOpen={showDetailModal}
+          onClose={handleCloseDetailModal}
+          userId={selectedOvertime.id_usuario}
+          userName={selectedOvertime.usuario}
+        />
+      )}
     </div>
   );
 }

@@ -5,8 +5,7 @@ import SelectElements from '@/components/ui/select-elements';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRefresh } from '@fortawesome/free-solid-svg-icons';
+import { RotateCcw } from 'lucide-react';
 
 interface TipsFiltersProps {
   searchTerm: string;
@@ -63,7 +62,7 @@ export default function TipsFilters({
                 variant='outline'
                 className='w-full sm:w-auto rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base'
               >
-                <FontAwesomeIcon icon={faRefresh} className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RotateCcw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Actualizar
               </Button>
             </div>

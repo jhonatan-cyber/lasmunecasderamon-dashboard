@@ -10,8 +10,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faTimes, faUser, faBed, faClock, faMoneyBill, faCreditCard, faCalendar } from '@fortawesome/free-solid-svg-icons';
+import { Eye, X, User, Bed, Clock, DollarSign, CreditCard, Calendar } from 'lucide-react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { formatCurrency, metodoPagoLabels } from '@/lib/salesUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -98,31 +97,31 @@ export const DevolucionTable = ({
               {/* Información del servicio */}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faUser} className='text-gray-500 w-4' />
+                  <User className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Cliente:</span>
                   <span className='text-gray-700'>{servicio.cliente_nombre || 'Sin cliente'}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faBed} className='text-gray-500 w-4' />
+                  <Bed className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Habitación:</span>
                   <span className='text-gray-700'>{servicio.habitacion_numero || 'Sin habitación'}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faClock} className='text-gray-500 w-4' />
+                  <Clock className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Tiempo:</span>
                   <span className='text-gray-700'>{servicio.tiempo} min</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faMoneyBill} className='text-gray-500 w-4' />
+                  <DollarSign className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Total:</span>
                   <span className='text-gray-700 font-semibold'>{formatCurrency(servicio.total)}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faCreditCard} className='text-gray-500 w-4' />
+                  <CreditCard className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Pago:</span>
                   <Badge variant='outline' className='text-xs'>
                     {servicio.metodo_pago
@@ -133,7 +132,7 @@ export const DevolucionTable = ({
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faCalendar} className='text-gray-500 w-4' />
+                  <Calendar className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Fecha:</span>
                   <span className='text-gray-700'>{formatDate(servicio.fecha_crea)}</span>
                 </div>
@@ -150,7 +149,7 @@ export const DevolucionTable = ({
                         onClick={() => onVerDetalles(servicio)}
                         className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
                       >
-                        <FontAwesomeIcon icon={faEye} className='w-3 h-3 mr-1' />
+                        <Eye className='w-3 h-3 mr-1' />
                         Ver Detalles
                       </Button>
                     </TooltipTrigger>
@@ -170,7 +169,7 @@ export const DevolucionTable = ({
                           onClick={() => onAnularServicio(servicio)}
                           className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white text-xs'
                         >
-                          <FontAwesomeIcon icon={faTimes} className='w-3 h-3 mr-1' />
+                          <X className='w-3 h-3 mr-1' />
                           Anular
                         </Button>
                       </TooltipTrigger>
@@ -234,7 +233,7 @@ export const DevolucionTable = ({
                           onClick={() => onVerDetalles(servicio)}
                           className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
                         >
-                          <FontAwesomeIcon icon={faEye} className='w-4 h-4' />
+                          <Eye className='w-4 h-4' />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -253,7 +252,7 @@ export const DevolucionTable = ({
                             onClick={() => onAnularServicio(servicio)}
                             className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white'
                           >
-                            <FontAwesomeIcon icon={faTimes} className='w-4 h-4' />
+                            <X className='w-4 h-4' />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>

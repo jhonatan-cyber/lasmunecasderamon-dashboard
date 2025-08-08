@@ -8,8 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHome } from "@fortawesome/free-solid-svg-icons";
+import { Home } from "lucide-react";
 
 interface Habitacion {
   id_habitacion?: number;
@@ -26,7 +25,7 @@ interface Habitacion {
 }
 
 interface RoomSelectProps {
-  habitaciones: Habitacion[];
+  habitaciones?: Habitacion[];
   value: string;
   onChange: (value: string) => void;
   label?: string;
@@ -58,6 +57,11 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
   // Filtrar habitaciones basado en el término de búsqueda y estado
   const filteredHabitaciones = useMemo(() => {
+    // Validar que habitaciones sea un array
+    if (!Array.isArray(habitaciones)) {
+      return [];
+    }
+    
     let filtered = habitaciones;
     
     // Filtrar por estado si se especifica
@@ -121,53 +125,77 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     return result;
   };
 
+  const handleValueChange = (newValue: string) => {
+    onChange(newValue);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    setSearchTerm(e.target.value);
+  };
+
   return (
     <div className={`flex flex-col ${className}`}>
       <Label className="block text-xs font-medium text-gray-500 mb-1">
-        <FontAwesomeIcon icon={faHome} />
+        <Home className="inline mr-1 w-4 h-4" />
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
       
-      <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="w-full rounded-full" disabled={disabled}>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent className="max-h-80">
-          {/* Barra de búsqueda */}
-          <div className="p-2 border-b">
-            <Input
-              placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-              disabled={disabled}
-            />
-          </div>
-          
-          {/* Lista de habitaciones */}
-          <div className="max-h-60 overflow-y-auto">
-            {filteredHabitaciones.length === 0 ? (
-              <div className="p-2 text-center text-gray-500 text-sm">
-                {searchTerm ? "No se encontraron habitaciones" : "No hay habitaciones disponibles"}
-              </div>
-            ) : (
-              filteredHabitaciones.map((habitacion) => {
-                const id = getHabitacionId(habitacion);
-                const displayName = getHabitacionDisplayName(habitacion);
-                
-                return (
-                  <SelectItem key={id} value={id?.toString() || ""} disabled={disabled}>
-                    {displayName || "Sin nombre"}
-                  </SelectItem>
-                );
-              })
-            )}
-          </div>
-        </SelectContent>
-      </Select>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
+          <Home className="w-4 h-4" />
+        </span>
+        <Select value={value} onValueChange={handleValueChange} disabled={disabled}>
+          <SelectTrigger 
+            className="w-full pl-10 rounded-full" 
+            disabled={disabled}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className="max-h-80" onClick={(e) => e.stopPropagation()}>
+            {/* Barra de búsqueda */}
+            <div className="p-2 border-b">
+              <Input
+                placeholder={searchPlaceholder}
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="w-full"
+                disabled={disabled}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            
+            {/* Lista de habitaciones */}
+            <div className="max-h-60 overflow-y-auto">
+              {filteredHabitaciones.length === 0 ? (
+                <div className="p-2 text-center text-gray-500 text-sm">
+                  {searchTerm ? "No se encontraron habitaciones" : "No hay habitaciones disponibles"}
+                </div>
+              ) : (
+                filteredHabitaciones.map((habitacion) => {
+                  const id = getHabitacionId(habitacion);
+                  const displayName = getHabitacionDisplayName(habitacion);
+                  
+                  return (
+                    <SelectItem 
+                      key={id} 
+                      value={id?.toString() || ""} 
+                      disabled={disabled}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {displayName || "Sin nombre"}
+                    </SelectItem>
+                  );
+                })
+              )}
+            </div>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };
 
-export default RoomSelect; 
+export default RoomSelect;

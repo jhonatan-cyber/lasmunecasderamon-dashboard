@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faClock,
-  faUsers,
-  faDollarSign,
-  faHome,
-  faUser,
-  faStop,
-  faCreditCard,
-} from "@fortawesome/free-solid-svg-icons";
+  Clock,
+  Users,
+  DollarSign,
+  Home,
+  User,
+  Square,
+  CreditCard,
+} from "lucide-react";
 import { ServicioWithDetails } from "@/types/servicio";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { useTimer } from "@/contexts/TimerContext";
@@ -165,7 +164,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
               {servicio.codigo}
             </CardTitle>
             <div className="flex items-center gap-2 mt-1">
-              <FontAwesomeIcon icon={faUser} className="text-gray-400 text-xs sm:text-sm" />
+              <User className="text-gray-400 text-xs sm:text-sm" />
               <span className="text-xs sm:text-sm text-gray-600">
                 {servicio.cliente_nombre || `Cliente ${servicio.cliente_id}`}
               </span>
@@ -178,7 +177,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
       <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
         {/* Habitación */}
         <div className="flex items-center gap-2">
-          <FontAwesomeIcon icon={faHome} className="text-blue-500 text-xs sm:text-sm" />
+          <Home className="text-blue-500 text-xs sm:text-sm" />
           <span className="text-xs sm:text-sm font-medium">
             Habitación {servicio.habitacion_numero || "N/A"}
           </span>
@@ -192,8 +191,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon 
-                icon={faClock} 
+              <Clock 
                 className={`text-xs sm:text-sm ${timer && timer.remainingTime <= 300 && timer.isActive ? 'text-red-500' : 'text-orange-500'}`} 
               />
               <span className="text-xs sm:text-sm font-medium text-gray-700">
@@ -207,7 +205,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
                 onClick={handleStopTimer}
                 className="h-6 px-2 text-xs border-red-300 text-red-600 hover:bg-red-50"
               >
-                <FontAwesomeIcon icon={faStop} className="text-xs mr-1" />
+                <Square className="text-xs mr-1" />
                 Finalizar
               </Button>
             )}
@@ -233,7 +231,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         <div className={`grid gap-2 sm:gap-4 ${servicio.metodo_pago === 'tarjeta' && servicio.iva && servicio.iva > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <div className="text-center p-2 sm:p-3 bg-gray-50 rounded">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <FontAwesomeIcon icon={faDollarSign} className="text-green-500 text-xs" />
+              <DollarSign className="text-green-500 text-xs" />
               <span className="text-xs text-gray-600">Servicio</span>
             </div>
             <div className="font-bold text-green-600 text-sm sm:text-base">
@@ -242,7 +240,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
           </div>
           <div className="text-center p-2 sm:p-3 bg-gray-50 rounded">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <FontAwesomeIcon icon={faHome} className="text-blue-500 text-xs" />
+              <Home className="text-blue-500 text-xs" />
               <span className="text-xs text-gray-600">Habitación</span>
             </div>
             <div className="font-bold text-blue-600 text-sm sm:text-base">
@@ -252,7 +250,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
           {servicio.metodo_pago === 'tarjeta' && servicio.iva && servicio.iva > 0 && (
             <div className="text-center p-2 sm:p-3 bg-gray-50 rounded">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <FontAwesomeIcon icon={faCreditCard} className="text-purple-500 text-xs" />
+                <CreditCard className="text-purple-500 text-xs" />
                 <span className="text-xs text-gray-600">IVA</span>
               </div>
               <div className="font-bold text-purple-600 text-sm sm:text-base">
@@ -273,7 +271,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         {/* Método de pago */}
         {servicio.metodo_pago && (
           <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faCreditCard} className="text-blue-500 text-xs sm:text-sm" />
+            <CreditCard className="text-blue-500 text-xs sm:text-sm" />
             <span className="text-xs sm:text-sm text-gray-600">
               {servicio.metodo_pago}
             </span>
@@ -283,7 +281,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         {/* Anfitrionas */}
         {servicio.anfitrionas_nombres && (
           <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faUsers} className="text-purple-500 text-xs sm:text-sm" />
+            <Users className="text-purple-500 text-xs sm:text-sm" />
             <span className="text-xs sm:text-sm text-gray-600">
               {servicio.anfitrionas_nombres}
             </span>

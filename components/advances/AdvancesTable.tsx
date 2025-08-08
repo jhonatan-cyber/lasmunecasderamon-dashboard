@@ -4,8 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faMoneyBill, faCalendar, faCheckCircle, faClock } from "@fortawesome/free-solid-svg-icons";
+import { User, DollarSign, Calendar, CheckCircle, Clock } from "lucide-react";
 
 export interface Advance {
   id: number;
@@ -31,10 +30,10 @@ export default function AdvancesTable({ advances, loading }: AdvancesTableProps)
 
   const getEstadoIcon = (estado: string) => {
     if (estado === "1") {
-      return <FontAwesomeIcon icon={faClock} className="text-red-500 w-4" />;
-    } else {
-      return <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 w-4" />;
-    }
+          return <Clock className="text-red-500 w-4" />;
+  } else {
+    return <CheckCircle className="text-green-500 w-4" />;
+  }
   };
 
   // Vista de tarjetas para móviles
@@ -72,19 +71,19 @@ export default function AdvancesTable({ advances, loading }: AdvancesTableProps)
                     {/* Información del anticipo */}
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                       <div className='flex items-center gap-2'>
-                        <FontAwesomeIcon icon={faMoneyBill} className='text-gray-500 w-4' />
+                        <Money className='text-gray-500 w-4' />
                         <span className='font-medium'>Monto:</span>
                         <span className='text-gray-700 font-semibold'>${a.monto.toLocaleString("es-CL")}</span>
                       </div>
 
                       <div className='flex items-center gap-2'>
-                        <FontAwesomeIcon icon={faCalendar} className='text-gray-500 w-4' />
+                        <Calendar className='text-gray-500 w-4' />
                         <span className='font-medium'>Fecha:</span>
                         <span className='text-gray-700'>{format(new Date(a.fecha_crea), "dd/MMM/yyyy", { locale: es })}</span>
                       </div>
 
                       <div className='flex items-center gap-2'>
-                        <FontAwesomeIcon icon={faUser} className='text-gray-500 w-4' />
+                        <User className='text-gray-500 w-4' />
                         <span className='font-medium'>Usuario:</span>
                         <span className='text-gray-700'>{a.usuario}</span>
                       </div>

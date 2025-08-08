@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Tag, FileText } from "lucide-react";
 
 export interface CategoryForm {
   name: string;
@@ -68,25 +69,35 @@ export default function CategoryFormDialog({
         <div className="space-y-4 sm:space-y-6">
           <div>
             <Label htmlFor="categoryName" className="text-sm sm:text-base">Nombre</Label>
-            <Input
-              id="categoryName"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="text-sm sm:text-base"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">
+                <Tag className="w-3 h-3 sm:w-4 sm:h-4" />
+              </span>
+              <Input
+                id="categoryName"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="text-sm sm:text-base pl-10 sm:pl-12"
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="categoryDescription" className="text-sm sm:text-base">Descripción</Label>
-            <Textarea
-              id="categoryDescription"
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              placeholder="Ingresa una descripción para la categoría..."
-              rows={3}
-              className="text-sm sm:text-base"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-3 text-gray-600">
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+              </span>
+              <Textarea
+                id="categoryDescription"
+                value={form.description}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
+                placeholder="Ingresa una descripción para la categoría..."
+                rows={3}
+                className="text-sm sm:text-base pl-10 sm:pl-12"
+              />
+            </div>
           </div>
           {error && <div className="text-red-500 text-xs sm:text-sm">{error}</div>}
           <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">

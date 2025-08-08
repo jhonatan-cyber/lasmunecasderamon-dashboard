@@ -8,6 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { User } from "@/types/user";
+import { User as UserIcon } from "lucide-react";
 
 interface GarzonSelectProps {
   users: User[];
@@ -31,8 +32,11 @@ export default function GarzonSelect({ users, value, onChange, placeholder }: Ga
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={placeholder || "Selecciona un garzón"} />
+      <SelectTrigger className="w-full rounded-full">
+        <div className="flex items-center gap-2">
+          <UserIcon className="h-4 w-4 text-gray-500" />
+          <SelectValue placeholder={placeholder || "Selecciona un garzón"} />
+        </div>
       </SelectTrigger>
       <SelectContent>
         <div className="p-2 pb-0">

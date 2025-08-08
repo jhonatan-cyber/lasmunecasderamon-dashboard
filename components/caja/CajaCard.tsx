@@ -2,8 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CajaWithUser } from "@/types/caja";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faLock, faDollarSign } from "@fortawesome/free-solid-svg-icons";
+import { Eye, Lock, DollarSign } from "lucide-react";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -32,19 +31,19 @@ const getEstadoInfo = (estado: number) => {
       return {
         label: "Abierta",
         color: "bg-green-100 text-green-800",
-        icon: faDollarSign,
+        icon: DollarSign,
       };
     case 0:
       return {
         label: "Cerrada",
         color: "bg-red-100 text-red-800",
-        icon: faLock,
+        icon: Lock,
       };
     default:
       return {
         label: "Eliminada",
         color: "bg-gray-100 text-gray-800",
-        icon: faLock,
+        icon: Lock,
       };
   }
 };
@@ -151,25 +150,25 @@ export const CajaCard = ({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 rounded-full px-3 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
+            className="flex-1 rounded-full px-2 sm:px-4 py-2 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm h-10 min-w-0"
             onClick={() => onViewDetails(caja)}
           >
-            <FontAwesomeIcon icon={faEye} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Ver Detalle
+            <Eye className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="truncate">Ver Detalle</span>
           </Button>
           {caja.estado === 1 && (
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 rounded-full px-3 sm:px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm"
+              className="flex-1 rounded-full px-2 sm:px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10 min-w-0"
               onClick={() => onCloseCaja(caja)}
             >
-              <FontAwesomeIcon icon={faLock} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Cerrar Caja
+              <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Cerrar Caja</span>
             </Button>
           )}
         </div>

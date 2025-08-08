@@ -18,15 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUser,
-  faHome,
-  faMoneyBill,
-  faCalendar,
-  faReceipt,
-  faUsers,
-} from "@fortawesome/free-solid-svg-icons";
+import { User, Home, DollarSign, Calendar, Receipt, Users } from "lucide-react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { toast } from "sonner";
 import AgregarProductosModal from "./AgregarProductosModal";
@@ -180,30 +172,21 @@ export default function CuentaDetailModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faReceipt}
-                      className="text-gray-500 w-4"
-                    />
+                    <Receipt className="text-gray-500 w-4 h-4" />
                     <Label className="text-sm font-medium">Código:</Label>
                     <span className="text-sm font-semibold">
                       {cuenta.codigo}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faUser}
-                      className="text-gray-500 w-4"
-                    />
+                    <User className="text-gray-500 w-4 h-4" />
                     <Label className="text-sm font-medium">Cliente:</Label>
                     <span className="text-sm">
                       {cuenta.cliente_nombre || "Sin cliente"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faUsers}
-                      className="text-gray-500 w-4"
-                    />
+                    <Users className="text-gray-500 w-4 h-4" />
                     <Label className="text-sm font-medium">Anfitrionas:</Label>
                     <span className="text-sm text-purple-600 font-medium">
                       {cuenta.anfitrionas_generales || "Sin anfitrionas"}
@@ -212,28 +195,19 @@ export default function CuentaDetailModal({
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faCalendar}
-                      className="text-gray-500 w-4"
-                    />
+                    <Calendar className="text-gray-500 w-4 h-4" />
                     <Label className="text-sm font-medium">Fecha:</Label>
                     <span className="text-sm">
                       {formatDate(cuenta.fecha_crea)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faMoneyBill}
-                      className="text-gray-500 w-4"
-                    />
+                    <DollarSign className="text-gray-500 w-4 h-4" />
                     <Label className="text-sm font-medium">Estado:</Label>
                     {getEstadoBadge(cuenta.estado)}
                   </div>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faHome}
-                      className="text-gray-500 w-4"
-                    />
+                    <Home className="text-gray-500 w-4 h-4" />
                     <Label className="text-sm font-medium">Habitación:</Label>
                     <span className="text-sm">
                       {cuenta.habitacion_numero || "Sin habitación"}

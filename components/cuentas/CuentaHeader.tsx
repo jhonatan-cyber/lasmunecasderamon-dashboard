@@ -1,7 +1,6 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faRotate } from "@fortawesome/free-solid-svg-icons";
+import { Plus, RotateCcw } from "lucide-react";
 
 interface CuentaHeaderProps {
   loading: boolean;
@@ -26,7 +25,7 @@ export function CuentaHeader({ loading, onRefresh }: CuentaHeaderProps) {
           variant="outline"
           className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base"
         >
-          <FontAwesomeIcon icon={faPlus} className='mr-2' />
+          <Plus className='mr-2 h-4 w-4' />
           Nuevo
         </Button>
         <Button
@@ -36,10 +35,7 @@ export function CuentaHeader({ loading, onRefresh }: CuentaHeaderProps) {
           variant="outline"
           className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
         >
-          <FontAwesomeIcon
-            icon={faRotate}
-            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-          />
+          <RotateCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Actualizar
         </Button>
       </div>

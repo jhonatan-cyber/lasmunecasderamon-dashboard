@@ -3,13 +3,12 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faExclamationTriangle,
-  faQuestionCircle,
-  faInfoCircle,
-  faCheckCircle
-} from '@fortawesome/free-solid-svg-icons';
+import { 
+  AlertTriangle, 
+  HelpCircle, 
+  Info, 
+  CheckCircle 
+} from 'lucide-react';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -43,15 +42,15 @@ export function ConfirmModal({
   const getIcon = () => {
     switch (type) {
       case 'warning':
-        return <FontAwesomeIcon icon={faExclamationTriangle} className='text-yellow-500' />;
+        return <AlertTriangle className='text-yellow-500' size={24} />;
       case 'question':
-        return <FontAwesomeIcon icon={faQuestionCircle} className='text-blue-500' />;
+        return <HelpCircle className='text-blue-500' size={24} />;
       case 'info':
-        return <FontAwesomeIcon icon={faInfoCircle} className='text-blue-500' />;
+        return <Info className='text-blue-500' size={24} />;
       case 'success':
-        return <FontAwesomeIcon icon={faCheckCircle} className='text-green-500' />;
+        return <CheckCircle className='text-green-500' size={24} />;
       default:
-        return <FontAwesomeIcon icon={faQuestionCircle} className='text-blue-500' />;
+        return <HelpCircle className='text-blue-500' size={24} />;
     }
   };
 

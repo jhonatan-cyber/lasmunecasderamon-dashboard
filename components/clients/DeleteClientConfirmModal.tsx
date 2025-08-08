@@ -1,6 +1,5 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,8 +36,7 @@ export function DeleteClientConfirmModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 mb-4">
-            <FontAwesomeIcon
-              icon={faExclamationTriangle}
+            <AlertTriangle
               className="text-red-500"
             />
             <span className="text-gray-900">Confirmar Eliminación</span>

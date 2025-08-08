@@ -4,13 +4,12 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
+
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { AlertTriangle } from 'lucide-react';
 
 interface DeleteUserConfirmModalProps {
   open: boolean;
@@ -39,7 +38,7 @@ export function DeleteUserConfirmModal({
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 mb-4'>
-            <FontAwesomeIcon icon={faExclamationTriangle} className='text-red-500 w-4 h-4 sm:w-5 sm:h-5' />
+            <AlertTriangle className='text-red-500 w-4 h-4 sm:w-5 sm:h-5' />
             <span className='text-gray-900 text-base sm:text-lg'>Confirmar Eliminación</span>
           </DialogTitle>
           <div className='text-left'>

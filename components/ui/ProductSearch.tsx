@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faTimes, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { Search, X, Plus } from "lucide-react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import Paginate from "@/components/ui/paginate";
 import {
@@ -97,10 +96,7 @@ export default function ProductSearch({
           <div className="w-full max-w-md">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <FontAwesomeIcon
-                  icon={faSearch}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder={placeholder}
                   value={searchTerm}
@@ -123,7 +119,7 @@ export default function ProductSearch({
                   className="rounded-full px-4 bg-black text-white hover:scale-105 transition-all duration-200"
                   onClick={handleClearSearch}
                 >
-                  <FontAwesomeIcon icon={faTimes} />
+                  <X className="w-4 h-4 mr-1" />
                   Limpiar
                 </Button>
               )}
@@ -184,7 +180,7 @@ export default function ProductSearch({
                               className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200"
                               onClick={() => handleAddProduct(producto)}
                             >
-                              <FontAwesomeIcon icon={faPlus} />
+                              <Plus className="w-4 h-4" />
                             </Button>
                           </TableCell>
                         </TableRow>

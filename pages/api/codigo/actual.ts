@@ -3,45 +3,6 @@ import { query } from '@/lib/db';
 import { withSecurity, validateMethod } from '@/lib/middleware/security';
 import { auditLogger } from '@/lib/logger';
 
-/**
- * @swagger
- * /api/codigo/actual:
- *   get:
- *     summary: Obtener código actual de verificación
- *     description: Endpoint para obtener el código actual de verificación (solo administradores)
- *     tags: [Código]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Código obtenido exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 codigo:
- *                   type: string
- *                   example: "1234"
- *                 message:
- *                   type: string
- *                   example: Código obtenido exitosamente
- *       401:
- *         description: No autorizado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       403:
- *         description: Acceso denegado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 
 async function getCodigoHandler(req: NextApiRequest, res: NextApiResponse) {
   try {

@@ -3,16 +3,7 @@ import moment from 'moment';
 import 'moment/locale/es';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faTrash,
-  faEdit,
-  faEye,
-  faPhone,
-  faUser,
-  faCalendar,
-  faEllipsisV
-} from '@fortawesome/free-solid-svg-icons';
+import { Trash, Pencil, Eye, Phone, User, Calendar, MoreVertical } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -67,8 +58,11 @@ export function ClientTable({
   const renderRun = (run: string | undefined | null) => {
     if (!run || run === '0') {
       return (
-        <Badge variant='outline' className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'>
-          <FontAwesomeIcon icon={faUser} className='h-3 w-3 mr-1' />
+        <Badge
+          variant='outline'
+          className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'
+        >
+          <User className='h-3 w-3 mr-1' />
           Sin RUN
         </Badge>
       );
@@ -79,8 +73,11 @@ export function ClientTable({
   const renderPhone = (phone: string | undefined | null | '0') => {
     if (!phone || phone === '0') {
       return (
-        <Badge variant='outline' className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'>
-          <FontAwesomeIcon icon={faPhone} className='h-3 w-3 mr-1' />
+        <Badge
+          variant='outline'
+          className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'
+        >
+          <Phone className='h-3 w-3 mr-1' />
           Sin teléfono
         </Badge>
       );
@@ -91,8 +88,11 @@ export function ClientTable({
   const renderDate = (date: string | undefined | null, defaultText: string = 'Sin fecha') => {
     if (!date) {
       return (
-        <Badge variant='outline' className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'>
-          <FontAwesomeIcon icon={faCalendar} className='h-3 w-3 mr-1' />
+        <Badge
+          variant='outline'
+          className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'
+        >
+          <Calendar className='h-3 w-3 mr-1' />
           {defaultText}
         </Badge>
       );
@@ -102,17 +102,17 @@ export function ClientTable({
 
   // Vista de tarjetas para móviles
   const MobileCardView = () => (
-    <div className="lg:hidden space-y-3">
+    <div className='lg:hidden space-y-3'>
       {clients.length === 0 ? (
-        <Card className="p-6 text-center">
-          <p className="text-gray-500 text-sm sm:text-base">No hay clientes</p>
+        <Card className='p-6 text-center'>
+          <p className='text-gray-500 text-sm sm:text-base'>No hay clientes</p>
         </Card>
       ) : (
         clients.map((client, idx) => (
-          <Card key={client.id} className="p-4 sm:p-6">
-            <CardContent className="space-y-3">
+          <Card key={client.id} className='p-4 sm:p-6'>
+            <CardContent className='space-y-3'>
               {/* Header con número y estado */}
-              <div className="flex justify-between items-start">
+              <div className='flex justify-between items-start'>
                 <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1 text-xs sm:text-sm'>
                   {(currentPage - 1) * pageSize + idx + 1}
                 </Badge>
@@ -128,38 +128,38 @@ export function ClientTable({
               </div>
 
               {/* Información del cliente */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUser} className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium text-sm sm:text-base">
+              <div className='space-y-2'>
+                <div className='flex items-center gap-2'>
+                  <User className='h-4 w-4 text-gray-400' />
+                  <span className='font-medium text-sm sm:text-base'>
                     {client.name} {client.lastName}
                   </span>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUser} className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs sm:text-sm text-gray-600">
+
+                <div className='flex items-center gap-2'>
+                  <User className='h-3 w-3 text-gray-400' />
+                  <span className='text-xs sm:text-sm text-gray-600'>
                     RUN: {renderRun(client.run)}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faPhone} className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs sm:text-sm text-gray-600">
+                <div className='flex items-center gap-2'>
+                  <Phone className='h-3 w-3 text-gray-400' />
+                  <span className='text-xs sm:text-sm text-gray-600'>
                     {renderPhone(client.phone)}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faCalendar} className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs sm:text-sm text-gray-500">
+                <div className='flex items-center gap-2'>
+                  <Calendar className='h-3 w-3 text-gray-400' />
+                  <span className='text-xs sm:text-sm text-gray-500'>
                     {renderDate(client.updated_at, 'Sin modificar')}
                   </span>
                 </div>
               </div>
 
               {/* Acciones */}
-              <div className="flex justify-end pt-2 border-t border-gray-200">
+              <div className='flex justify-end pt-2 border-t border-gray-200'>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -167,7 +167,7 @@ export function ClientTable({
                       size='icon'
                       className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
                     >
-                      <FontAwesomeIcon icon={faEllipsisV} className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end' className='w-40'>
@@ -178,10 +178,7 @@ export function ClientTable({
                             onClick={() => onViewDetails(client)}
                             className='cursor-pointer group'
                           >
-                            <FontAwesomeIcon
-                              icon={faEye}
-                              className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                            />
+                            <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                             <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
                               Ver detalles
                             </span>
@@ -197,10 +194,7 @@ export function ClientTable({
                             onClick={() => onEdit(client)}
                             className='cursor-pointer group'
                           >
-                            <FontAwesomeIcon
-                              icon={faEdit}
-                              className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                            />
+                            <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                             <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
                               Editar
                             </span>
@@ -216,10 +210,7 @@ export function ClientTable({
                             onClick={() => handleDeleteClick(client)}
                             className='cursor-pointer group'
                           >
-                            <FontAwesomeIcon
-                              icon={faTrash}
-                              className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                            />
+                            <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                             <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
                               Eliminar
                             </span>
@@ -240,15 +231,13 @@ export function ClientTable({
 
   // Vista de tabla para desktop
   const DesktopTableView = () => (
-    <div className="hidden lg:block">
+    <div className='hidden lg:block'>
       <div className='rounded-xl border bg-white overflow-hidden shadow-md'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-sm bg-white rounded-xl overflow-hidden text-center'>
             <TableHeader className='border-b last:border-b-0 bg-white group'>
               <TableRow>
-                <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
-                  #
-                </TableHead>
+                <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>#</TableHead>
                 <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>RUN</TableHead>
                 <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                   Nombre
@@ -319,7 +308,7 @@ export function ClientTable({
                             size='icon'
                             className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
                           >
-                            <FontAwesomeIcon icon={faEllipsisV} />
+                            <DotsThreeVertical />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end' className='w-40'>
@@ -330,10 +319,7 @@ export function ClientTable({
                                   onClick={() => onViewDetails(client)}
                                   className='cursor-pointer group'
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faEye}
-                                    className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors'
-                                  />
+                                  <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors' />
                                   <span className='group-hover:text-blue-700 transition-colors'>
                                     Ver detalles
                                   </span>
@@ -349,10 +335,7 @@ export function ClientTable({
                                   onClick={() => onEdit(client)}
                                   className='cursor-pointer group'
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faEdit}
-                                    className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors'
-                                  />
+                                  <PencilSimple className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
                                   <span className='group-hover:text-purple-700 transition-colors'>
                                     Editar
                                   </span>
@@ -368,10 +351,7 @@ export function ClientTable({
                                   onClick={() => handleDeleteClick(client)}
                                   className='cursor-pointer group'
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faTrash}
-                                    className='mr-2 text-red-600 group-hover:text-red-700 transition-colors'
-                                  />
+                                  <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
                                   <span className='group-hover:text-red-700 transition-colors'>
                                     Eliminar
                                   </span>

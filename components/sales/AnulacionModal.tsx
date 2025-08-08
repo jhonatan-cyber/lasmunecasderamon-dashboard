@@ -5,18 +5,13 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faExclamationTriangle,
-  faBan,
-} from "@fortawesome/free-solid-svg-icons";
+import { AlertTriangle } from "lucide-react";
 
 interface AnulacionModalProps {
   open: boolean;
@@ -56,7 +51,7 @@ export function AnulacionModal({
       <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600 mb-4 sm:mb-6 text-lg sm:text-xl">
-            <FontAwesomeIcon icon={faExclamationTriangle} className="w-4 h-4 sm:w-5 sm:h-5" />
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
             Solicitud Anulación
           </DialogTitle>
           <DialogDescription className="text-center text-sm sm:text-base">

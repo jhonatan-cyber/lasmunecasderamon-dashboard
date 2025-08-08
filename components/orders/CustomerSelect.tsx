@@ -1,7 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser } from "@fortawesome/free-solid-svg-icons";
+import { User } from "lucide-react";
 import SearchInput from "@/components/ui/SearchInput";
 import React from "react";
 
@@ -17,7 +16,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({ clientes, value, onChan
   <div className="flex-1 min-w-[200px]">
     <Label className="block text-xs font-medium text-gray-500 mb-1">Cliente</Label>
     <div className="relative">
-      <FontAwesomeIcon icon={faUser} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      <User className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none h-4 w-4" />
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full pl-8 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-1">
           <SelectValue placeholder="Seleccione un cliente" />

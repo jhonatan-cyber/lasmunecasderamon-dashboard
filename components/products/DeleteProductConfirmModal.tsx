@@ -1,6 +1,5 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -36,27 +35,26 @@ export function DeleteProductConfirmModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 mb-4">
-            <FontAwesomeIcon
-              icon={faExclamationTriangle}
-              className="text-red-500"
-            />
-            <span className="text-gray-900">Confirmar Eliminación</span>
-          </DialogTitle>
-          <DialogDescription className="text-left">
-            <p className="text-gray-700 mb-2 text-center">
-              ¿Estás seguro de que quieres eliminar el producto{" "}
-              <span className="font-semibold text-gray-900">
-                "{productName}"
-              </span>
-              ?
-            </p>
-            <p className="mt-3 text-sm text-red-400 font-medium text-center">
-              Esta acción no se puede revertir. El producto será eliminado
-              permanentemente.
-            </p>
-          </DialogDescription>
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-red-100 p-3 rounded-full">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+            <DialogTitle className="text-center">¿Estás seguro?</DialogTitle>
+          </div>
         </DialogHeader>
+        <DialogDescription className="text-left">
+          <p className="text-gray-700 mb-2 text-center">
+            ¿Estás seguro de que quieres eliminar el producto{" "}
+            <span className="font-semibold text-gray-900">
+              "{productName}"
+            </span>
+            ?
+          </p>
+          <p className="mt-3 text-sm text-red-400 font-medium text-center">
+            Esta acción no se puede revertir. El producto será eliminado
+            permanentemente.
+          </p>
+        </DialogDescription>
         <div className="flex justify-center items-center gap-4 pt-4">
           <Button
             size="sm"

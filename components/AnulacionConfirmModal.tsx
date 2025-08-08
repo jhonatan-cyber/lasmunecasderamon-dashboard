@@ -9,11 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCheckCircle,
-  faTimesCircle,
-} from "@fortawesome/free-solid-svg-icons";
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 interface AnulacionConfirmModalProps {
   open: boolean;
@@ -74,10 +73,11 @@ export function AnulacionConfirmModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 mb-4">
-            <FontAwesomeIcon
-              icon={isConfirmada ? faCheckCircle : faTimesCircle}
-              className={isConfirmada ? "text-green-500" : "text-red-500"}
-            />
+            {isConfirmada ? (
+              <CheckCircle className="text-green-500" />
+            ) : (
+              <XCircle className="text-red-500" />
+            )}
             <span className={isConfirmada ? "text-green-500" : "text-red-500"}>
               {isConfirmada
                 ? `✅ Anulación de ${isServicio ? 'Servicio' : 'Venta'} Confirmada`

@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserFriends } from "@fortawesome/free-solid-svg-icons";
+import { Users } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -93,15 +92,14 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   return (
     <div className={`flex flex-col ${className}`}>
       <Label className="block text-xs font-medium text-gray-500 mb-1">
-        <FontAwesomeIcon icon={faUserFriends} />
+        <Users className="inline mr-1 w-4 h-4" />
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
       
       <div className="relative">
-        <FontAwesomeIcon 
-          icon={faUserFriends} 
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" 
+        <Users 
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 w-4 h-4" 
         />
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>

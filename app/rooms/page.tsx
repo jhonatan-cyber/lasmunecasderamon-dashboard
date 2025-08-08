@@ -8,8 +8,7 @@ import { RoomFilters } from '@/components/rooms/RoomFilters';
 import Paginate from '@/components/ui/paginate';
 import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTable, faGripHorizontal, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Table, Grid3X3, Plus } from 'lucide-react';
 
 const pageSizes = [8, 12, 24, 48];
 
@@ -123,7 +122,7 @@ const RoomsPage = () => {
               onClick={() => setShowTableView(true)}
               className='rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
             >
-              <FontAwesomeIcon icon={faTable} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <Table className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Tabla
             </Button>
             <Button
@@ -132,7 +131,7 @@ const RoomsPage = () => {
               onClick={() => setShowTableView(false)}
               className='rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
             >
-              <FontAwesomeIcon icon={faGripHorizontal} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <Grid3X3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Cards
             </Button>
           </div>
@@ -145,7 +144,7 @@ const RoomsPage = () => {
             }}
             className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
           >
-            <FontAwesomeIcon icon={faPlus} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
             Nueva
           </Button>
         </div>

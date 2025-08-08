@@ -5,18 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faSearch,
-  faGlassCheers,
-  faUsers,
-  faShoppingCart,
-  faTrash,
-  faPlus,
-  faTimes,
-  faEllipsisV,
-} from "@fortawesome/free-solid-svg-icons";
+  ArrowLeft,
+  Search,
+  Wine,
+  Users,
+  ShoppingCart,
+  Trash,
+  Plus,
+  X,
+  MoreVertical,
+} from "lucide-react";
 import { useCuentas } from "@/hooks/useCuentas";
 import { useClients } from "@/hooks/useClients";
 import { useUsers } from "@/hooks/useUsers";
@@ -491,7 +490,7 @@ export default function NewCuentaPage() {
           className="rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200"
           onClick={() => router.back()}
         >
-          <FontAwesomeIcon icon={faArrowLeft} />
+          <ArrowLeft />
           Atrás
         </Button>
       </div>
@@ -500,8 +499,7 @@ export default function NewCuentaPage() {
         {/* Búsqueda de productos */}
         <div className="flex items-center justify-center gap-2 mb-4">
           <div className="relative w-full max-w-xs">
-            <FontAwesomeIcon
-              icon={faSearch}
+                            <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             />
             <Input
@@ -526,7 +524,7 @@ export default function NewCuentaPage() {
               className="rounded-full px-4 bg-black text-white hover:scale-105 transition-all duration-200"
               onClick={handleClearSearch}
             >
-              <FontAwesomeIcon icon={faTimes} />
+              <X />
               Limpiar
             </Button>
           )}
@@ -581,7 +579,7 @@ export default function NewCuentaPage() {
                                className="h-8 w-8 p-0 hover:bg-gray-100"
                              >
                                <span className="sr-only">Abrir menú</span>
-                               <FontAwesomeIcon icon={faEllipsisV} className="h-4 w-4 text-gray-600" />
+                               <MoreVertical className="h-4 w-4 text-gray-600" />
                              </Button>
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="w-32">
@@ -589,7 +587,7 @@ export default function NewCuentaPage() {
                                onClick={() => handleAddProducto(producto)}
                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
                              >
-                               <FontAwesomeIcon icon={faPlus} className="mr-2 h-4 w-4" />
+                               <Plus className="mr-2 h-4 w-4" />
                                Agregar
                              </DropdownMenuItem>
                            </DropdownMenuContent>
@@ -654,10 +652,11 @@ export default function NewCuentaPage() {
                   : "bg-orange-50 text-orange-700 border border-orange-200"
               }`}
             >
-              <FontAwesomeIcon
-                icon={hasChampagneProducts ? faGlassCheers : faUsers}
-                className="mr-1"
-              />
+              {hasChampagneProducts ? (
+                <Wine className="mr-1" />
+              ) : (
+                <Users className="mr-1" />
+              )}
               {hasChampagneProducts && maxChampagnePrice >= 240000
                 ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`
                 : hasChampagneProducts && maxChampagnePrice >= 200000
@@ -697,7 +696,7 @@ export default function NewCuentaPage() {
             }
             className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FontAwesomeIcon icon={faShoppingCart} className="mr-2" />
+            <ShoppingCart className="mr-2" />
             {loading ? "Generando..." : "Generar Cuenta"}
           </Button>
         </div>
@@ -773,7 +772,7 @@ export default function NewCuentaPage() {
                                className="h-8 w-8 p-0 hover:bg-gray-100"
                              >
                                <span className="sr-only">Abrir menú</span>
-                               <FontAwesomeIcon icon={faEllipsisV} className="h-4 w-4 text-gray-600" />
+                               <MoreVertical className="h-4 w-4 text-gray-600" />
                              </Button>
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="w-32">
@@ -781,7 +780,7 @@ export default function NewCuentaPage() {
                                onClick={() => handleRemoveProducto(index)}
                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                              >
-                               <FontAwesomeIcon icon={faTrash} className="mr-2 h-4 w-4" />
+                               <Trash className="mr-2 h-4 w-4" />
                                Eliminar
                              </DropdownMenuItem>
                            </DropdownMenuContent>

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 import SelectElements from '@/components/ui/select-elements';
 import SearchInput from '@/components/ui/SearchInput';
 import { Card, CardContent } from '@/components/ui/card';

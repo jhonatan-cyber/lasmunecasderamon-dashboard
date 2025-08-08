@@ -13,19 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CuentaWithDetails } from "@/types/cuenta";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEye,
-  faCashRegister,
-  faTrash,
-  faEllipsisV,
-  faCartPlus,
-  faUser,
-  faBed,
-  faCalendar,
-  faMoneyBill,
-  faReceipt,
-} from "@fortawesome/free-solid-svg-icons";
+import { Eye, CreditCard, Trash2, MoreVertical, ShoppingCart, User, Bed, Calendar, DollarSign, Receipt } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,37 +143,37 @@ export default function CuentaTable({
               {/* Información de la cuenta */}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faUser} className='text-gray-500 w-4' />
+                  <User className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Cliente:</span>
                   <span className='text-gray-700'>{cuenta.cliente_nombre || `Cliente ${cuenta.cliente_id}`}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faBed} className='text-gray-500 w-4' />
+                  <Bed className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Habitación:</span>
                   <span className='text-gray-700'>{cuenta.habitacion_numero || cuenta.habitacion_id || "N/A"}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faMoneyBill} className='text-gray-500 w-4' />
+                  <DollarSign className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Sub Total:</span>
                   <span className='text-gray-700 font-semibold'>{formatCurrencyNoDecimals(cuenta.sub_total)}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faReceipt} className='text-gray-500 w-4' />
+                  <Receipt className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Comisión:</span>
                   <span className='text-gray-700'>{formatCurrencyNoDecimals(cuenta.total_comision)}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faMoneyBill} className='text-gray-500 w-4' />
+                  <DollarSign className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Total:</span>
                   <span className='text-gray-700 font-semibold'>{formatCurrencyNoDecimals(cuenta.total)}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faCalendar} className='text-gray-500 w-4' />
+                  <Calendar className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Fecha:</span>
                   <span className='text-gray-700'>{formatDate(cuenta.fecha_crea)}</span>
                 </div>
@@ -199,7 +187,7 @@ export default function CuentaTable({
                   onClick={() => handleVerDetalles(cuenta.id_cuenta)}
                   className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
                 >
-                  <FontAwesomeIcon icon={faEye} className='w-3 h-3 mr-1' />
+                  <Eye className='w-3 h-3 mr-1' />
                   Ver Detalles
                 </Button>
 
@@ -211,7 +199,7 @@ export default function CuentaTable({
                       onClick={() => handleAgregarProductos(cuenta.id_cuenta)}
                       className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs'
                     >
-                      <FontAwesomeIcon icon={faCartPlus} className='w-3 h-3 mr-1' />
+                      <ShoppingCart className='w-3 h-3 mr-1' />
                       Agregar
                     </Button>
 
@@ -221,7 +209,7 @@ export default function CuentaTable({
                       onClick={() => handleCobrarCuenta(cuenta.id_cuenta)}
                       className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white text-xs'
                     >
-                      <FontAwesomeIcon icon={faCashRegister} className='w-3 h-3 mr-1' />
+                      <CreditCard className='w-3 h-3 mr-1' />
                       Cobrar
                     </Button>
                   </>
@@ -307,7 +295,7 @@ export default function CuentaTable({
                             size="sm"
                             className="bg-white hover:bg-gray-50 rounded-full"
                           >
-                            <FontAwesomeIcon icon={faEllipsisV} />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
@@ -315,7 +303,7 @@ export default function CuentaTable({
                             className="cursor-pointer hover:text-blue-700 hover:bg-blue-50"
                             onClick={() => handleVerDetalles(cuenta.id_cuenta)}
                           >
-                            <FontAwesomeIcon icon={faEye} />
+                            <Eye className="h-4 w-4" />
                             Ver detalles
                           </DropdownMenuItem>
                           {cuenta.estado === 1 && (
@@ -324,14 +312,14 @@ export default function CuentaTable({
                                 className="cursor-pointer hover:text-green-700 hover:bg-green-50"
                                 onClick={() => handleAgregarProductos(cuenta.id_cuenta)}
                               >
-                                <FontAwesomeIcon icon={faCartPlus} />
+                                <ShoppingCart className="h-4 w-4" />
                                 Agregar productos
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 className="cursor-pointer hover:text-red-700 hover:bg-red-50"
                                 onClick={() => handleCobrarCuenta(cuenta.id_cuenta)}
                               >
-                                <FontAwesomeIcon icon={faCashRegister} />
+                                <CreditCard className="h-4 w-4" />
                                 Cobrar
                               </DropdownMenuItem>
                             </>

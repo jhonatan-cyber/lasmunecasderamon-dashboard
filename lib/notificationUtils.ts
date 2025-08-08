@@ -3,7 +3,7 @@
  * Esta función debe ser llamada desde el cliente (browser), no desde el servidor
  */
 export function triggerPendingOrdersUpdate() {
-  console.log('🔄 Disparando evento updatePendingOrders');
+
   const event = new CustomEvent('updatePendingOrders');
   if (typeof window !== 'undefined') {
     window.dispatchEvent(event);
@@ -15,7 +15,7 @@ export function triggerPendingOrdersUpdate() {
  * Esta función debe ser llamada desde el cliente (browser), no desde el servidor
  */
 export function triggerOpenOrderModal(orderId: number) {
-  console.log('📱 Disparando evento openOrderModal para pedido:', orderId);
+
   const event = new CustomEvent('openOrderModal', {
     detail: { orderId }
   });

@@ -9,8 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faBroom } from '@fortawesome/free-solid-svg-icons';
+import { Search, Eraser } from 'lucide-react';
 import { DevolucionFilters as DevolucionFiltersType } from '@/hooks/useDevolucionFilters';
 
 interface DevolucionFiltersProps {
@@ -33,10 +32,7 @@ export const DevolucionFilters = ({
             Buscar
           </Label>
           <div className='relative'>
-            <FontAwesomeIcon
-              icon={faSearch}
-              className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm sm:text-base'
-            />
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm sm:text-base' />
             <Input
               id='search'
               placeholder='Buscar por código, cliente o habitación...'
@@ -96,7 +92,7 @@ export const DevolucionFilters = ({
               variant='outline'
               className='w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base'
             >
-              <FontAwesomeIcon icon={faBroom} className='mr-2' />
+              <Eraser className='mr-2' />
               Limpiar Filtros
             </Button>
           </div>

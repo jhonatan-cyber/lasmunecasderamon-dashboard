@@ -1,6 +1,3 @@
-import { Card } from "@/components/ui/card";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGlassCheers } from "@fortawesome/free-solid-svg-icons";
 import { useState, useRef } from "react";
 import OrderProductTable from "./OrderProductTable";
 import CategoryProductsModal from "@/components/orders/CategoryProductsModal";
@@ -43,10 +40,6 @@ export default function OrderForm({
   onRemoveProducto,
   onUpdateCantidad,
   onSubmit,
-  searchCliente = "",
-  setSearchCliente = () => {},
-  searchAnfitriona = "",
-  setSearchAnfitriona = () => {},
 }: OrderFormProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalCategoria, setModalCategoria] = useState<any>(null);
@@ -55,6 +48,9 @@ export default function OrderForm({
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // Calcular el total sumando los subtotales de los productos agregados
+  const total = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
 
   const handleOpenCategoria = async (cat: any) => {
     setModalCategoria(cat);
@@ -101,53 +97,53 @@ export default function OrderForm({
     }
   };
 
-  // Calcular el total sumando los subtotales de los productos agregados
-  const total = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
-
-  // Función para generar un código aleatorio de 8 caracteres alfanuméricos mayúsculos
   function generarCodigoPedido() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `PED-${timestamp}-${random}`;
   }
 
   const handleSubmit = async () => {
-    if (!productos || productos.length === 0) {
-      setError("Debes agregar al menos un producto al pedido.");
-      setTimeout(() => setError(""), 3000);
+    if (!selectedCliente) {
+      setError("Debe seleccionar un cliente");
       return;
     }
+
+    if (selectedAnfitrionas.length === 0) {
+      setError("Debe seleccionar al menos una anfitriona");
+      return;
+    }
+
+    if (productos.length === 0) {
+      setError("Debe agregar al menos un producto");
+      return;
+    }
+
     setError("");
+
     try {
-      // Obtener el usuario logueado desde el backend
-      const resUser = await fetch("/api/auth/me");
-      const dataUser = await resUser.json();
-      console.log("Respuesta de /api/auth/me:", dataUser);
-      if (!resUser.ok || !dataUser.success) {
-        showErrorToast("No hay sesión activa");
-        return;
-      }
-      const meseroId = dataUser.user.id;
-      console.log("Mesero ID obtenido:", meseroId);
-      const subtotal = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
-      const total = subtotal;
-      const totalComision = productos.reduce((acc, p) => acc + (p.comision ? p.comision * p.cantidad : 0), 0);
-      const detalles = productos.map((p) => ({
-        productoId: p.id_producto || p.id,
-        precio: p.precio || p.price,
-        comision: p.comision || 0,
-        cantidad: p.cantidad,
-        subtotal: p.subtotal,
-      }));
-      const usuarios = selectedAnfitrionas.map((id) => ({ usuarioId: Number(id) }));
       const codigo = generarCodigoPedido();
+      const subtotal = productos.reduce(
+        (sum, item) => sum + (item.subtotal || 0),
+        0
+      );
+      const totalComision = productos.reduce(
+        (sum, item) => sum + (item.comision || 0),
+        0
+      );
+      const total = subtotal;
+      const detalles = productos.map((item) => ({
+        producto_id: item.id_producto || item.id,
+        cantidad: item.cantidad,
+        precio: item.precio || item.price,
+        subtotal: item.subtotal,
+        comision: item.comision || 0,
+      }));
+      const usuarios = selectedAnfitrionas;
+
       const payload = {
         codigo,
-        meseroId,
-        clienteId: Number(selectedCliente) || 1, // Usar cliente ID 1 por defecto si no hay selección
+        cliente_id: selectedCliente,
         subtotal,
         total,
         totalComision,

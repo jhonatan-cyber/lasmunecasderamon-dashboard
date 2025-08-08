@@ -1,7 +1,6 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle, faCheckCircle, faCashRegister } from "@fortawesome/free-solid-svg-icons";
+import { AlertTriangle,  CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCashRegister } from "@/hooks/useCashRegister";
 import { useEffect } from "react";
@@ -23,7 +22,7 @@ export function CajaStatusCheck({ onStatusChange }: CajaStatusCheckProps) {
   if (loading) {
     return (
       <Alert className="mb-4">
-        <FontAwesomeIcon icon={faCashRegister} className="h-4 w-4" />
+        <CreditCard className="h-4 w-4" />
         <AlertDescription>
           Verificando estado de caja...
         </AlertDescription>
@@ -34,7 +33,7 @@ export function CajaStatusCheck({ onStatusChange }: CajaStatusCheckProps) {
   if (error) {
     return (
       <Alert className="mb-4 border-yellow-200 bg-yellow-50">
-        <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4 text-yellow-600" />
+        <AlertTriangle className="h-4 w-4 text-yellow-600" />
         <AlertDescription className="text-yellow-800">
           <div className="flex items-center justify-between">
             <span>
@@ -57,7 +56,7 @@ export function CajaStatusCheck({ onStatusChange }: CajaStatusCheckProps) {
   if (!hasOpenCaja) {
     return (
       <Alert className="mb-4 border-red-200 bg-red-50">
-        <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4 text-red-600" />
+        <AlertTriangle className="h-4 w-4 text-red-600" />
         <AlertDescription className="text-red-800">
           <div className="flex items-center justify-between">
             <span>

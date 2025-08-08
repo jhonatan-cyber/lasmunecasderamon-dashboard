@@ -2,6 +2,105 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Endpoint para obtener detalles de horas extras de un usuario específico
+  if (req.method === 'GET' && req.query.userId) {
+    try {
+      const userId = req.query.userId;
+      
+      console.log('=== ENDPOINT: Obteniendo detalles de horas extras ===');
+      console.log('userId:', userId);
+      
+      const result = await query(`
+        SELECT
+          HX.fecha_crea,
+          HX.fecha_mod,
+          CONCAT(U.nombre, ' ', U.apellido) AS usuario,
+          HX.hora,
+          HX.monto,
+          HX.total,
+          HX.estado
+        FROM horas_extras HX
+        INNER JOIN usuarios U ON U.id_usuario = HX.usuario_id
+        WHERE HX.usuario_id = ?
+        ORDER BY HX.fecha_crea DESC
+      `, [userId]);
+
+      console.log('Resultado de la consulta:', result);
+      console.log('Tipo de result:', typeof result);
+      console.log('Es array:', Array.isArray(result));
+      console.log('Longitud de result:', result ? result.length : 'null/undefined');
+      
+      // MySQL2 devuelve un array con los resultados en la primera posición
+      const rows = result;
+      console.log('Filas obtenidas:', rows);
+      console.log('Tipo de rows:', typeof rows);
+      console.log('Es array:', Array.isArray(rows));
+      console.log('Longitud de rows:', rows ? rows.length : 'null/undefined');
+      
+      // Asegurar que tenemos un array de resultados
+      let details = rows;
+      
+      // Si rows no es un array, intentar convertirlo
+      if (!Array.isArray(details)) {
+        console.log('Rows no es un array, convirtiendo...');
+        details = [details];
+      }
+      
+      console.log('Details a procesar:', details);
+      console.log('Tipo de details:', typeof details);
+      console.log('Es array:', Array.isArray(details));
+      console.log('Longitud:', details ? details.length : 'null/undefined');
+
+      // Verificar que details sea un array antes de procesar
+      if (!Array.isArray(details)) {
+        console.error('Error: details no es un array después de la conversión');
+        return res.status(500).json({
+          success: false,
+          error: 'Error en el formato de datos recibidos'
+        });
+      }
+
+      // Procesar los datos para asegurar tipos correctos
+      console.log('=== ENDPOINT: Procesando detalles ===');
+      console.log('Cantidad de detalles a procesar:', details.length);
+      
+      const processedDetails = details.map((detail, index) => {
+        console.log(`Procesando detalle ${index + 1}:`, detail);
+        return {
+          fecha_crea: detail.fecha_crea,
+          fecha_mod: detail.fecha_mod,
+          usuario: String(detail.usuario),
+          hora: Number(detail.hora),
+          monto: Number(detail.monto),
+          total: Number(detail.total),
+          estado: Number(detail.estado)
+        };
+      });
+
+      console.log('=== ENDPOINT: Details procesados ===');
+      console.log('Cantidad de registros:', processedDetails.length);
+      console.log('Primer registro:', processedDetails[0]);
+      console.log('Último registro:', processedDetails[processedDetails.length - 1]);
+
+      const response = {
+        success: true,
+        data: processedDetails
+      };
+
+      console.log('=== ENDPOINT: Respuesta final ===');
+      console.log('Response:', response);
+
+      return res.status(200).json(response);
+
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Error al obtener detalles de horas extras'
+      });
+    }
+  }
+  
+  // Endpoint para obtener el resumen de horas extras
   if (req.method === 'GET') {
     try {
       const rowsResult = (await query(`

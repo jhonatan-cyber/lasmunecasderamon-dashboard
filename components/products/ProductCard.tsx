@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faEdit,
-  faTrash,
-  faCheckCircle,
-  faPowerOff,
-  faEllipsisV
-} from '@fortawesome/free-solid-svg-icons';
+import { Pencil, Trash2, CheckCircle, Power, MoreVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   size='icon'
                   className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
                 >
-                  <FontAwesomeIcon icon={faEllipsisV} className='h-3 w-3 sm:h-4 sm:w-4' />
+                  <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
@@ -70,8 +63,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                         onClick={() => onEdit(product)}
                         className='cursor-pointer group'
                       >
-                        <FontAwesomeIcon
-                          icon={faEdit}
+                        <Pencil
                           className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors'
                         />
                         <span className='group-hover:text-purple-700 transition-colors'>
@@ -90,8 +82,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                           onClick={() => onDeactivate(product)}
                           className='cursor-pointer group'
                         >
-                          <FontAwesomeIcon
-                            icon={faPowerOff}
+                          <Power
                             className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors'
                           />
                           <span className='group-hover:text-orange-700 transition-colors'>
@@ -110,8 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                           onClick={() => onActivate(product)}
                           className='cursor-pointer group'
                         >
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
+                          <CheckCircle
                             className='mr-2 text-green-600 group-hover:text-green-700 transition-colors'
                           />
                           <span className='group-hover:text-green-700 transition-colors'>
@@ -130,8 +120,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                         onClick={handleDeleteClick}
                         className='cursor-pointer group'
                       >
-                        <FontAwesomeIcon
-                          icon={faTrash}
+                        <Trash2
                           className='mr-2 text-red-600 group-hover:text-red-700 transition-colors'
                         />
                         <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>

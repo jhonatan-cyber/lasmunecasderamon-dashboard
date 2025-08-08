@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import UserSelect from "@/components/advances/UserSelect";
+import { User, DollarSign } from "lucide-react";
 
 interface AdvanceFormDialogProps {
   open: boolean;
@@ -85,23 +85,37 @@ export default function AdvanceFormDialog({ open, setOpen, onCreated, children }
         <div className="space-y-4 sm:space-y-6">
           <div>
             <Label className="text-sm sm:text-base">Usuario</Label>
-            <UserSelect
-              users={users}
-              value={selectedUser}
-              onChange={setSelectedUser}
-              placeholder="Selecciona un usuario"
-            />
+            <div className="relative">
+              <Select value={selectedUser} onValueChange={setSelectedUser}>
+                                 <SelectTrigger className="w-full text-sm sm:text-base pl-10 rounded-full">
+                  <User className="absolute left-3 h-4 w-4 text-gray-400" />
+                  <SelectValue placeholder="Selecciona un usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users
+                    .filter((u) => u.roleId !== 1 && u.status === 1)
+                    .map((u) => (
+                      <SelectItem key={u.id} value={String(u.id)} className="text-sm sm:text-base">
+                        {u.name} {u.lastName} ({u.nick})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div>
             <Label className="text-sm sm:text-base">Monto</Label>
-            <Input
-              type="number"
-              min={1}
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="$"
-              className="text-sm sm:text-base"
-            />
+            <div className="relative">
+              <Input
+                type="number"
+                min={1}
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                placeholder="Monto de anticipo"
+                className="pl-10 text-sm sm:text-base"
+              />
+              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
           </div>
           {error && <div className="text-red-500 text-sm sm:text-base">{error}</div>}
           <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">

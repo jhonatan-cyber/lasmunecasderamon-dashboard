@@ -9,8 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faBroom } from '@fortawesome/free-solid-svg-icons';
+import { Search, Eraser } from 'lucide-react';
 import { DevolucionFilters } from '@/hooks/useDevolucionFilters';
 
 interface DevolucionFiltersProps {
@@ -19,7 +18,7 @@ interface DevolucionFiltersProps {
   clearFilters: () => void;
 }
 
-export const DevolucionFilters = ({ 
+export const DevolucionFiltersComponent = ({ 
   filters, 
   updateFilter, 
   clearFilters 
@@ -33,10 +32,7 @@ export const DevolucionFilters = ({
             Buscar
           </Label>
           <div className='relative'>
-            <FontAwesomeIcon
-              icon={faSearch}
-              className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4'
-            />
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4' />
             <Input
               id='search'
               placeholder='Buscar por código, cliente o habitación...'
@@ -48,7 +44,7 @@ export const DevolucionFilters = ({
         </div>
 
         {/* Controles - Responsive layout */}
-        <div className='flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end'>
+        <div className='flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end justify-center'>
           {/* Método de pago */}
           <div className='flex-1 sm:flex-none'>
             <Label htmlFor='payment' className='mb-2 text-sm sm:text-base'>
@@ -96,8 +92,8 @@ export const DevolucionFilters = ({
               variant='outline'
               className='w-full sm:w-auto rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base'
             >
-              <FontAwesomeIcon icon={faBroom} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Limpiar Filtros
+              <Eraser className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Limpiar 
             </Button>
           </div>
         </div>

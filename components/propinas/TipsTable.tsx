@@ -3,8 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye } from "@fortawesome/free-solid-svg-icons";
+import { Eye } from "lucide-react";
 import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/formatters";
 import { PropinaResumen } from "@/types/propina";
 
@@ -61,7 +60,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                         onClick={() => onVerDetalle(propina)}
                         className="hover:text-blue-600 border-none"
                       >
-                        <FontAwesomeIcon icon={faEye} className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Ver detalle</TooltipContent>

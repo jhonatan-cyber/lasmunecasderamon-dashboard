@@ -1,6 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGlassCheers, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { Wine, ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -61,7 +60,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
             onClick={() => onSelect(cat)}
           >
             <div className="text-3xl mb-2 text-gray-600">
-              {icon || <FontAwesomeIcon icon={faGlassCheers} />}
+              {icon || <Wine className="w-8 h-8" />}
             </div>
             <div className="text-center font-semibold text-gray-700 text-sm">
               {cat?.nombre || cat?.name || "Sin nombre"}
@@ -87,7 +86,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
             disabled={currentPage === 1}
             className="flex items-center gap-2"
           >
-            <FontAwesomeIcon icon={faChevronLeft} className="w-3 h-3" />
+            <ChevronLeft className="w-3 h-3" />
             Anterior
           </Button>
           
@@ -105,7 +104,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
             className="flex items-center gap-2"
           >
             Siguiente
-            <FontAwesomeIcon icon={faChevronRight} className="w-3 h-3" />
+            <ChevronRight className="w-3 h-3" />
           </Button>
         </div>
       )}

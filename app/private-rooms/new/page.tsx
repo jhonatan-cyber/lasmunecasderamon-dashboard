@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faMoneyBill1Wave,
-  faCoins,
-  faShoppingCart,
-} from "@fortawesome/free-solid-svg-icons";
+  ArrowLeft,
+  DollarSign,
+  Coins,
+  ShoppingCart,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
@@ -221,7 +220,7 @@ export default function NuevoServicioPage() {
           onClick={() => router.back()}
           type="button"
         >
-          <FontAwesomeIcon icon={faArrowLeft} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Atrás
         </Button>
       </div>
@@ -281,7 +280,7 @@ export default function NuevoServicioPage() {
           {/* Precio de servicio */}
           <div>
             <Label className="block text-xs font-medium text-gray-500 mb-1">
-              <FontAwesomeIcon icon={faMoneyBill1Wave} className="mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+                              <DollarSign className="mr-2 w-3 h-3 sm:w-4 sm:h-4" />
               Precio de servicio
             </Label>
             <Input
@@ -315,7 +314,7 @@ export default function NuevoServicioPage() {
           {/* IVA */}
           <div>
             <Label className="block text-xs font-medium text-gray-500 mb-1">
-              <FontAwesomeIcon icon={faCoins} className="mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+              <Coins className="mr-2 w-3 h-3 sm:w-4 sm:h-4" />
               Impuesto IVA
             </Label>
             <Input
@@ -346,7 +345,7 @@ export default function NuevoServicioPage() {
             disabled={loading}
             className="gap-2 rounded-full bg-black text-white font-bold hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto"
           >
-            <FontAwesomeIcon icon={faShoppingCart} className="w-3 h-3 sm:w-4 sm:h-4" />
+            <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
             Generar Servicio
           </Button>
         </div>

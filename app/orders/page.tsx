@@ -9,8 +9,7 @@ import OrderTable from '@/components/orders/OrderTable';
 import OrderDetailModal from '@/components/orders/OrderDetailModal';
 import { OrderFilters } from '@/components/orders/OrderFilters';
 import Paginate from '@/components/ui/paginate';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Plus } from 'lucide-react';
 
 
 export default function Orders() {
@@ -85,7 +84,7 @@ export default function Orders() {
           onClick={() => router.push('/orders/new')}
           type='button'
         >
-          <FontAwesomeIcon icon={faPlus} className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+          <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
           Nuevo
         </Button>
       </div>

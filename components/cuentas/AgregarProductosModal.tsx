@@ -10,14 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTimes,
-  faPlus,
-  faMinus,
-  faTrash,
-  faShoppingCart,
-} from "@fortawesome/free-solid-svg-icons";
+import { X, Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { toast } from "sonner";
 import CategoryCardList from "@/components/ui/CategoryCardList";
@@ -549,7 +542,7 @@ export default function AgregarProductosModal({
                 disabled={loadingAgregar || productosCarrito.length === 0}
                 className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FontAwesomeIcon icon={faShoppingCart} className="mr-2" />
+                <ShoppingCart className="mr-2 h-4 w-4" />
                 {loadingAgregar ? "Agregando..." : "Agregar"}
               </Button>
             </div>
@@ -603,7 +596,7 @@ export default function AgregarProductosModal({
                               }
                               className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
                             >
-                              <FontAwesomeIcon icon={faMinus} />
+                              <Minus className="h-3 w-3" />
                             </Button>
                             <span className="w-8 text-center">
                               {producto.cantidad}
@@ -616,7 +609,7 @@ export default function AgregarProductosModal({
                               }
                               className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
                             >
-                              <FontAwesomeIcon icon={faPlus} />
+                              <Plus className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
@@ -638,7 +631,7 @@ export default function AgregarProductosModal({
                             onClick={() => eliminarDelCarrito(index)}
                             className="rounded-full text-red-600 hover:text-red-700 hover:scale-105 transition-all duration-200"
                           >
-                            <FontAwesomeIcon icon={faTrash} />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </TableCell>
                       </TableRow>

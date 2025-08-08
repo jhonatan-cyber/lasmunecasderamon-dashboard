@@ -6,8 +6,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { toast } from 'sonner';
 import CategoryFormDialog from '@/components/categories/CategoryFormDialog';
 import CategoryCard from '@/components/categories/CategoryCard';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Plus } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
 import { CategoryFilters } from '@/components/categories/CategoryFilters';
 
@@ -130,7 +129,7 @@ export default function Categories() {
             type='button'
             size='sm'
           >
-            <FontAwesomeIcon icon={faPlus} className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
             Nuevo
           </Button>
         </CategoryFormDialog>

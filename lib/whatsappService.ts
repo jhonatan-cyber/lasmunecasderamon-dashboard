@@ -3,7 +3,8 @@ import twilio from 'twilio';
 // Configuración de Twilio
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '+14155238886';
+const whatsappNumber =
+  process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '+14155238886';
 
 // Verificar que las variables de entorno estén configuradas
 if (!accountSid || !authToken || !whatsappNumber) {
@@ -25,10 +26,6 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
   try {
     // Si no hay configuración de Twilio, solo log
     if (!client || !whatsappNumber) {
-      console.log("=== MENSAJE WHATSAPP (SIMULADO) ===");
-      console.log("Para:", numero);
-      console.log("Mensaje:", mensaje);
-      console.log("===================================");
       return true;
     }
 
@@ -45,20 +42,13 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
       to: `whatsapp:${numeroFormateado}`
     });
 
-    console.log('✅ Mensaje WhatsApp enviado exitosamente');
-    console.log('📱 SID:', message.sid);
-    console.log('📞 Para:', numeroFormateado);
-    console.log('📝 Estado:', message.status);
     return true;
-
   } catch (error) {
-    console.error('❌ Error al enviar WhatsApp:', error);
-    
     // Si es un error de Twilio, mostrar detalles
     if (error instanceof Error) {
       console.error('Detalles del error:', error.message);
     }
-    
+
     return false;
   }
 }
@@ -75,9 +65,10 @@ export async function enviarMensajeAnulacion(datos: {
   token?: string;
   baseUrl?: string;
 }): Promise<boolean> {
-  const anfitrionasTexto = datos.anfitrionas && datos.anfitrionas.length > 0 
-    ? `• Anfitrionas: ${datos.anfitrionas.join(', ')}`
-    : '• Anfitrionas: Venta en barra';
+  const anfitrionasTexto =
+    datos.anfitrionas && datos.anfitrionas.length > 0
+      ? `• Anfitrionas: ${datos.anfitrionas.join(', ')}`
+      : '• Anfitrionas: Venta en barra';
 
   const mensaje = `🚨 *SOLICITUD DE ANULACIÓN DE VENTA*
 
@@ -93,14 +84,18 @@ ${datos.motivo}
 
 👤 *Solicitado por:* ${datos.solicitadoPor}
 
-${datos.token && datos.baseUrl ? `
+${
+  datos.token && datos.baseUrl
+    ? `
 ✅ *Para confirmar o rechazar:* ${datos.baseUrl}/confirmar-anulacion?token=${datos.token}
 
-_Haz clic en el link para revisar y confirmar o rechazar esta solicitud_` : `
+_Haz clic en el link para revisar y confirmar o rechazar esta solicitud_`
+    : `
 ✅ *Para confirmar:* Responde "SI" o "CONFIRMAR"
 ❌ *Para rechazar:* Responde "NO" o "RECHAZAR"
 
-_El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`}`;
+_El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`
+}`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
 }
@@ -119,15 +114,16 @@ export async function enviarMensajeDevolucionServicio(datos: {
   token?: string;
   baseUrl?: string;
 }): Promise<boolean> {
-  const anfitrionasTexto = datos.anfitrionas && datos.anfitrionas.length > 0 
-    ? `• Anfitrionas: ${datos.anfitrionas.join(', ')}`
-    : '• Anfitrionas: No especificadas';
+  const anfitrionasTexto =
+    datos.anfitrionas && datos.anfitrionas.length > 0
+      ? `• Anfitrionas: ${datos.anfitrionas.join(', ')}`
+      : '• Anfitrionas: No especificadas';
 
-  const habitacionTexto = datos.habitacion 
+  const habitacionTexto = datos.habitacion
     ? `• Habitación: ${datos.habitacion}`
     : '• Habitación: No especificada';
 
-  const tiempoTexto = datos.tiempo 
+  const tiempoTexto = datos.tiempo
     ? `• Tiempo: ${datos.tiempo} minutos`
     : '• Tiempo: No especificado';
 
@@ -147,14 +143,18 @@ ${datos.motivo}
 
 👤 *Solicitado por:* ${datos.solicitadoPor}
 
-${datos.token && datos.baseUrl ? `
+${
+  datos.token && datos.baseUrl
+    ? `
 ✅ *Para confirmar o rechazar:* ${datos.baseUrl}/confirmar-anulacion-servicio?token=${datos.token}
 
-_Haz clic en el link para revisar y confirmar o rechazar esta solicitud_` : `
+_Haz clic en el link para revisar y confirmar o rechazar esta solicitud_`
+    : `
 ✅ *Para confirmar:* Responde "SI" o "CONFIRMAR"
 ❌ *Para rechazar:* Responde "NO" o "RECHAZAR"
 
-_El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`}`;
+_El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`
+}`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
-} 
+}
