@@ -1,24 +1,23 @@
-import { User } from '@/types/user';
+import { User as UserType } from '@/types/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faEllipsisV,
-  faEye,
-  faEdit,
-  faTrash,
-  faAt,
-  faPhone,
-  faMapMarkerAlt,
-  faPowerOff,
-  faCheck,
-  faUser,
-  faCalendar,
-  faDollarSign,
-  faPiggyBank,
-  faHome
-} from '@fortawesome/free-solid-svg-icons';
+  MoreVertical,
+  Eye,
+  Pencil,
+  Trash2,
+  AtSign,
+  Phone,
+  MapPin,
+  Power,
+  Check,
+  User,
+  Calendar,
+  DollarSign,
+  PiggyBank,
+  Home
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +35,12 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@radix-ui/react-label';
+import { formatCurrencyNoDecimals } from '@/lib/formatters';
 
 interface UserTableProps {
-  users: User[];
-  onViewDetails: (user: User) => void;
-  onEdit: (user: User) => void;
+  users: UserType[];
+  onViewDetails: (user: UserType) => void;
+  onEdit: (user: UserType) => void;
   onActivate: (userId: number) => void;
   onDeactivate: (userId: number) => void;
   onDelete: (userId: number) => void;
@@ -106,7 +106,7 @@ export function UserTable({
                         size='icon'
                         className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
                       >
-                        <FontAwesomeIcon icon={faEllipsisV} className='w-3 h-3 sm:w-4 sm:h-4' />
+                        <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end' className='w-40'>
@@ -117,8 +117,7 @@ export function UserTable({
                               onClick={() => onViewDetails(user)}
                               className='cursor-pointer group'
                             >
-                              <FontAwesomeIcon
-                                icon={faEye}
+                              <Eye
                                 className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                               />
                               <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
@@ -136,8 +135,7 @@ export function UserTable({
                               onClick={() => onEdit(user)}
                               className='cursor-pointer group'
                             >
-                              <FontAwesomeIcon
-                                icon={faEdit}
+                              <Pencil
                                 className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                               />
                               <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
@@ -156,8 +154,7 @@ export function UserTable({
                                 onClick={() => onActivate(user.id)}
                                 className='cursor-pointer group'
                               >
-                                <FontAwesomeIcon
-                                  icon={faCheck}
+                                <Check
                                   className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                                 />
                                 <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
@@ -176,8 +173,7 @@ export function UserTable({
                                 onClick={() => onDeactivate(user.id)}
                                 className='cursor-pointer group'
                               >
-                                <FontAwesomeIcon
-                                  icon={faPowerOff}
+                                <Power
                                   className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                                 />
                                 <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
@@ -189,15 +185,14 @@ export function UserTable({
                           </Tooltip>
                         </TooltipProvider>
                       )}
-    <TooltipProvider>
+                      <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <DropdownMenuItem
                               onClick={() => onDelete(user.id)}
                               className='cursor-pointer group'
                             >
-                              <FontAwesomeIcon
-                                icon={faTrash}
+                              <Trash2
                                 className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                               />
                               <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
@@ -244,46 +239,47 @@ export function UserTable({
                           {user.maritalStatus || 'Sin estado civil'}
                         </Badge>
                       </div>
-                      <p className='text-xs sm:text-sm text-gray-500'>@{user.nick}</p>
+                      <div className='text-xs sm:text-sm text-gray-500'>
+                        @{user.nick}{' '}
+                        <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
+                          {user.role}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faUser} className='h-3 w-3 text-gray-400' />
+                    <User className='h-3 w-3 text-gray-400' />
                     <span className='text-xs sm:text-sm text-gray-600'>RUN: {user.run}</span>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faAt} className='h-3 w-3 text-gray-400' />
+                    <AtSign className='h-3 w-3 text-gray-400' />
                     <span className='text-xs sm:text-sm text-gray-600'>{user.email}</span>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faPhone} className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-600'>{user.phone}</span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faMapMarkerAlt} className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-500'>
-                      {user.address || 'Sin dirección'}
+                    <Phone className='h-3 w-3 text-gray-400' />
+                    <span className='text-xs sm:text-sm text-gray-600'>
+                      Telefono : {user.phone}
                     </span>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faCalendar} className='h-3 w-3 text-gray-400' />
+                    <MapPin className='h-3 w-3 text-gray-400' />
                     <span className='text-xs sm:text-sm text-gray-500'>
-                      {user.updated_at ? formatDate(user.updated_at) : 'Sin fecha'}
+                      Direccion : {user.address || 'Sin dirección'}
                     </span>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
-                      {user.role}
-                    </Badge>
+                    <Calendar className='h-3 w-3 text-gray-400' />
+                    <span className='text-xs sm:text-sm text-gray-500'>
+                      Fecha creacion : {user.created_at ? formatDate(user.created_at) : 'Sin fecha'}
+                    </span>
                   </div>
                 </div>
-
+                
                 {/* Columna derecha - Información financiera */}
                 <div className='space-y-2'>
                   <div className='text-xs font-medium text-gray-700 mb-2'>
@@ -291,26 +287,35 @@ export function UserTable({
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faDollarSign} className='h-3 w-3 text-green-600' />
+                    <DollarSign className='h-3 w-3 text-green-600' />
                     <span className='text-xs sm:text-sm text-gray-600'>
-                      Sueldo: {formatCurrency(user.salary, 'sueldo')}
+                      Sueldo: {formatCurrencyNoDecimals(user.salary)}
                     </span>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faPiggyBank} className='h-3 w-3 text-blue-600' />
+                    <PiggyBank className='h-3 w-3 text-blue-600' />
                     <span className='text-xs sm:text-sm text-gray-600'>
-                      Aporte: {formatCurrency(user.contributions, 'aporte')}
+                      Aporte: {formatCurrencyNoDecimals(user.contributions)}
                     </span>
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <FontAwesomeIcon icon={faHome} className='h-3 w-3 text-orange-600' />
+                    <Home className='h-3 w-3 text-orange-600' />
                     <span className='text-xs sm:text-sm text-gray-600'>
                       Descuento:{' '}
                       {user.discount && user.discount > 0
-                        ? formatCurrency(user.discount, 'descuento')
+                        ? formatCurrencyNoDecimals(user.discount)
                         : 'Sin descuento'}
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <Home className='h-3 w-3 text-blue-600' />
+                    <span className='text-xs sm:text-sm text-gray-600'>
+                      Institucion de aporte :
+                      <Badge className='text-xs bg-blue-100 text-blue-700'>
+                        {user.afp || 'Sin AFP'}
+                      </Badge>{' '}
                     </span>
                   </div>
                 </div>
@@ -337,7 +342,7 @@ export function UserTable({
             <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-400'>
               Información
             </TableHead>
-            <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+            <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-400'>
               Finanzas
             </TableHead>
             <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
@@ -416,19 +421,17 @@ export function UserTable({
               <TableCell className='py-3 px-2 sm:px-4 text-start'>
                 <div className='space-y-1'>
                   <div className='flex items-center space-x-2'>
-                    <FontAwesomeIcon icon={faAt} className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4' />
+                    <AtSign className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4' />
                     <span className='text-xs sm:text-sm'>{user.email}</span>
                   </div>
                   <div className='flex items-center space-x-2'>
-                    <FontAwesomeIcon
-                      icon={faPhone}
+                    <Phone
                       className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4'
                     />
                     <span className='text-xs sm:text-sm'>{user.phone}</span>
                   </div>
                   <div className='flex items-center space-x-2'>
-                    <FontAwesomeIcon
-                      icon={faMapMarkerAlt}
+                    <MapPin
                       className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4'
                     />
                     <span className='text-xs sm:text-sm'>{user.address || 'Sin dirección'}</span>
@@ -437,23 +440,23 @@ export function UserTable({
               </TableCell>
               <TableCell className='py-3 px-2 sm:px-4 text-center'>
                 <div className='space-y-1'>
-                  <div className='flex items-center justify-center space-x-2'>
-                    <Label>Sueldo</Label>
+                  <div className='flex items-start justify-start space-x-2'>
+                    <Label className='text-xs sm:text-sm text-gray-600'>Sueldo</Label>
                     <span className='text-xs sm:text-sm font-medium'>
-                      {formatCurrency(user.salary, 'sueldo')}
+                      {formatCurrencyNoDecimals(user.salary)}
                     </span>
                   </div>
-                  <div className='flex items-center justify-center space-x-2'>
-                    <Label>Aporte AFP</Label>
-                    <span className='text-xs sm:text-sm'>
-                      {formatCurrency(user.contributions, 'aporte')}
+                  <div className='flex items-start justify-start space-x-2'>
+                    <Label className='text-xs sm:text-sm text-gray-600'>Aporte AFP</Label>
+                    <span className='text-xs sm:text-sm font-medium'>
+                      {formatCurrencyNoDecimals(user.contributions)}
                     </span>
                   </div>
-                  <div className='flex items-center justify-center space-x-2'>
-                    <Label>Descuento habitacion</Label>
-                    <span className='text-xs sm:text-sm'>
+                  <div className='flex items-start justify-start space-x-2'>
+                    <Label className='text-xs sm:text-sm text-gray-600'>Descuento habitacion</Label>
+                    <span className='text-xs sm:text-sm font-medium'>
                       {user.discount && user.discount > 0
-                        ? formatCurrency(user.discount, 'descuento')
+                        ? formatCurrencyNoDecimals(user.discount)
                         : 'Sin descuento'}
                     </span>
                   </div>
@@ -481,7 +484,7 @@ export function UserTable({
                       size='icon'
                       className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
                     >
-                      <FontAwesomeIcon icon={faEllipsisV} className='w-3 h-3 sm:w-4 sm:h-4' />
+                      <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end'>
@@ -492,8 +495,7 @@ export function UserTable({
                             onClick={() => onViewDetails(user)}
                             className='cursor-pointer group'
                           >
-                            <FontAwesomeIcon
-                              icon={faEye}
+                            <Eye
                               className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                             />
                             <span className='group-hover:text-blue-700 transition-colors text-xs sm:text-sm'>
@@ -511,8 +513,7 @@ export function UserTable({
                             onClick={() => onEdit(user)}
                             className='cursor-pointer group'
                           >
-                            <FontAwesomeIcon
-                              icon={faEdit}
+                            <Pencil
                               className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                             />
                             <span className='group-hover:text-purple-700 transition-colors text-xs sm:text-sm'>
@@ -531,8 +532,7 @@ export function UserTable({
                               onClick={() => onActivate(user.id)}
                               className='cursor-pointer group'
                             >
-                              <FontAwesomeIcon
-                                icon={faCheck}
+                              <Check
                                 className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                               />
                               <span className='group-hover:text-green-700 transition-colors text-xs sm:text-sm'>
@@ -551,8 +551,7 @@ export function UserTable({
                               onClick={() => onDeactivate(user.id)}
                               className='cursor-pointer group'
                             >
-                              <FontAwesomeIcon
-                                icon={faPowerOff}
+                              <Power
                                 className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                               />
                               <span className='group-hover:text-orange-700 transition-colors text-xs sm:text-sm'>
@@ -571,8 +570,7 @@ export function UserTable({
                             onClick={() => onDelete(user.id)}
                             className='cursor-pointer group'
                           >
-                            <FontAwesomeIcon
-                              icon={faTrash}
+                            <Trash2
                               className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
                             />
                             <span className='group-hover:text-red-700 transition-colors text-xs sm:text-sm'>

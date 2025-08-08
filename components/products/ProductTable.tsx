@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faEllipsisV,
-  faEdit,
-  faTrash,
-  faCheck,
-  faPowerOff
-} from '@fortawesome/free-solid-svg-icons';
+import { 
+  MoreVertical, 
+  Pencil, 
+  Trash, 
+  Check, 
+  Power 
+}  from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -138,7 +137,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                           size='icon'
                           className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
                         >
-                          <FontAwesomeIcon icon={faEllipsisV} className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end'>
@@ -149,8 +148,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                                 onClick={() => onEdit(product)}
                                 className='cursor-pointer group'
                               >
-                                <FontAwesomeIcon
-                                  icon={faEdit}
+                                <Pencil
                                   className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors'
                                 />
                                 <span className='group-hover:text-purple-700 transition-colors'>
@@ -169,8 +167,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                                   onClick={() => onDeactivate(product)}
                                   className='cursor-pointer group'
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faPowerOff}
+                                  <Power
                                     className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors'
                                   />
                                   <span className='group-hover:text-orange-700 transition-colors'>
@@ -189,8 +186,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                                   onClick={() => onActivate(product)}
                                   className='cursor-pointer group'
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faCheck}
+                                  <Check
                                     className='mr-2 text-green-600 group-hover:text-green-700 transition-colors'
                                   />
                                   <span className='group-hover:text-green-700 transition-colors'>
@@ -209,8 +205,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                                 onClick={() => handleDeleteClick(product)}
                                 className='cursor-pointer group'
                               >
-                                <FontAwesomeIcon
-                                  icon={faTrash}
+                                <Trash
                                   className='mr-2 text-red-600 group-hover:text-red-700 transition-colors'
                                 />
                                 <span className='group-hover:text-red-700 transition-colors'>

@@ -8,14 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CajaWithUser } from "@/types/caja";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faLock,
-  faDollarSign,
-  faCalendar,
-  faArrowTrendDown,
-  faArrowTrendUp,
-} from "@fortawesome/free-solid-svg-icons";
+  Lock,
+  DollarSign,
+  Calendar,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -44,19 +43,19 @@ const getEstadoInfo = (estado: number) => {
       return {
         label: "Abierta",
         color: "bg-green-100 text-green-800",
-        icon: faDollarSign,
+        icon: DollarSign,
       };
     case 0:
       return {
         label: "Cerrada",
         color: "bg-red-100 text-red-800",
-        icon: faLock,
+        icon: Lock,
       };
     default:
       return {
         label: "Eliminada",
         color: "bg-gray-100 text-gray-800",
-        icon: faLock,
+        icon: Lock,
       };
   }
 };
@@ -113,7 +112,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
 
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
-                <FontAwesomeIcon icon={faCalendar} />
+                <Calendar />
                 <span className="text-gray-500">Fecha de apertura:</span>
                 <span className="font-medium">
                   {new Date(caja.fecha_apertura).toLocaleDateString("es-ES", {
@@ -128,7 +127,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
 
               {caja.fecha_cierre && (
                 <div className="flex items-center gap-2 text-sm">
-                  <FontAwesomeIcon icon={faCalendar} />
+                  <Calendar />
                   <span className="text-gray-500">Fecha de cierre:</span>
                   <span className="font-medium">
                     {new Date(caja.fecha_cierre).toLocaleDateString("es-ES", {
@@ -159,7 +158,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               {/* Ingresos */}
               <div className="space-y-3">
                 <span className="font-xs text-green-600 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faArrowTrendUp} />
+                  <TrendingUp />
                   Ingresos
                 </span>
 
@@ -188,7 +187,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               {/* Gastos y balance */}
               <div className="space-y-3">
                 <h4 className="font-medium text-red-700 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faArrowTrendDown} />
+                  <TrendingDown />
                   Egresos
                 </h4>
 

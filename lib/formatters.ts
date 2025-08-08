@@ -80,7 +80,7 @@ export const formatDate = (dateString: string | null | undefined): string => {
       day: "numeric",
     });
   } catch (error) {
-    console.error("Error formateando fecha:", error);
+
     return "Fecha inválida";
   }
 };

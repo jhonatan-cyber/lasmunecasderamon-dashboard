@@ -3,8 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import SelectElements from "@/components/ui/select-elements";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBroom } from "@fortawesome/free-solid-svg-icons";
+import { Eraser } from "lucide-react";
 
 interface AdvancesFiltersProps {
   searchTerm: string;
@@ -45,9 +44,9 @@ export default function AdvancesFilters({
           </div>
 
           {/* Filtros y controles - Responsive layout */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end justify-center">
             {/* Anticipos por página */}
-            <div className="flex-1 sm:flex-none">
+            <div className="flex-1 sm:flex-none sm:w-auto">
               <SelectElements
                 rowsPerPage={rowsPerPage}
                 setRowsPerPage={setRowsPerPage}
@@ -58,15 +57,15 @@ export default function AdvancesFilters({
             </div>
 
             {/* Botón limpiar filtros */}
-            <div className="flex-1 sm:flex-none">
+            <div className="flex-1 sm:flex-none sm:w-auto">
               <Button
                 onClick={handleClear}
                 size="sm"
                 variant="outline"
                 className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
               >
-                <FontAwesomeIcon icon={faBroom} className="mr-2" />
-                Limpiar Filtros
+                              <Eraser className="mr-2" />
+              Limpiar 
               </Button>
             </div>
           </div>

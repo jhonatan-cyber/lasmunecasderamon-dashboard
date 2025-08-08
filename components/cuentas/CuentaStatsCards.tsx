@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CuentaWithDetails } from "@/types/cuenta";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faReceipt, faDollarSign, faUsers, faBuilding } from "@fortawesome/free-solid-svg-icons";
+import { Receipt, DollarSign, Users, Building2 } from "lucide-react";
 
 interface CuentaStatsCardsProps {
   cuentas: CuentaWithDetails[];
@@ -22,7 +21,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
     {
       title: "Total Cuentas",
       value: totalCuentas.toString(),
-      icon: faReceipt,
+      icon: Receipt,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       description: "Cuentas registradas"
@@ -30,7 +29,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
     {
       title: "Cuentas Activas",
       value: cuentasActivas.toString(),
-      icon: faUsers,
+      icon: Users,
       color: "text-green-600",
       bgColor: "bg-green-50",
       description: "Cuentas abiertas"
@@ -38,7 +37,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
     {
       title: "Total Ingresos",
       value: formatCurrency(totalIngresos),
-      icon: faDollarSign,
+      icon: DollarSign,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       description: "Ingresos totales"
@@ -46,7 +45,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
     {
       title: "Total Comisiones",
       value: formatCurrency(totalComisiones),
-      icon: faBuilding,
+      icon: Building2,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       description: "Comisiones generadas"
@@ -62,10 +61,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
               {stat.title}
             </CardTitle>
             <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-              <FontAwesomeIcon
-                icon={stat.icon}
-                className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`}
-              />
+              <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
             </div>
           </CardHeader>
           <CardContent className='p-4 sm:p-6 pt-0'>

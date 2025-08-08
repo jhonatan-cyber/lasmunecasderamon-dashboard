@@ -1,15 +1,8 @@
-"use client";
+'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 interface DeleteCategoryConfirmModalProps {
   open: boolean;
@@ -22,7 +15,7 @@ export function DeleteCategoryConfirmModal({
   open,
   onOpenChange,
   onConfirm,
-  categoryName,
+  categoryName
 }: DeleteCategoryConfirmModalProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -35,50 +28,45 @@ export function DeleteCategoryConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 mb-4">
-            <FontAwesomeIcon
-              icon={faExclamationTriangle}
-              className="text-red-500"
-            />
-            <span className="text-gray-900">
-              Confirmar Eliminación
-            </span>
+          <DialogTitle className='flex items-center gap-2 mb-4'>
+            <AlertCircle className='text-red-500' />
+            <span className='text-gray-900'>Confirmar Eliminación</span>
           </DialogTitle>
-          <div className="text-left">
+          <div className='text-left'>
             <div>
-              <p className="font-medium text-gray-900 mb-3">
+              <p className='font-medium text-gray-900 mb-3'>
                 ¿Estás seguro de que quieres eliminar la categoría?
               </p>
-              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                <div className="space-y-2 text-sm">
+              <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
+                <div className='space-y-2 text-sm'>
                   <p>
                     <strong>Categoría:</strong> {categoryName}
                   </p>
                 </div>
               </div>
-              <p className="mt-3 text-sm text-red-400 font-medium text-center">
+              <p className='mt-3 text-sm text-red-400 font-medium text-center'>
                 Esta acción no se puede revertir. La categoría será eliminada permanentemente.
               </p>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex justify-center items-center gap-4 pt-4">
+        <div className='flex justify-center items-center gap-4 pt-4'>
           <Button
             onClick={handleCancel}
-            variant="outline"
-            size="sm"
-            className="rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white"
+            variant='outline'
+            size='sm'
+            className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
           >
             Cancelar
           </Button>
           <Button
             onClick={handleConfirm}
-            size="sm"
-             variant="outline"
-                className="rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200"
+            size='sm'
+            variant='outline'
+            className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200'
           >
             Eliminar
           </Button>

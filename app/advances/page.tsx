@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import AdvanceFormDialog from "@/components/advances/AdvanceFormDialog";
 import AdvancesTable, { Advance } from "@/components/advances/AdvancesTable";
 import AdvancesFilters from "@/components/advances/AdvancesFilters";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { Plus } from "lucide-react";
 import Paginate from "@/components/ui/paginate";
 
 export default function AdvancesPage() {
@@ -68,7 +67,7 @@ export default function AdvancesPage() {
             onClick={() => setOpenDialog(true)}
             className="w-full sm:w-auto rounded-full bg-black text-white px-4 sm:px-6 py-2 shadow hover:scale-105 transition-all duration-200 text-sm sm:text-base"
           >
-            <FontAwesomeIcon icon={faPlus} className='mr-2' />
+            <Plus className='mr-2' />
             Nuevo
           </Button>
         </AdvanceFormDialog>

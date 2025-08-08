@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import OrderForm from "@/components/orders/OrderForm";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { ArrowLeft } from "lucide-react";
 import { useClientes } from "@/hooks/useClientes";
 import { useAnfitrionas } from "@/hooks/useAnfitrionas";
 
@@ -109,7 +108,7 @@ export default function NewOrder() {
           onClick={() => router.back()}
           type="button"
         >
-          <FontAwesomeIcon icon={faArrowLeft} />
+          <ArrowLeft />
           Atrás
         </Button>
       </div>

@@ -15,18 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCalendar,
-  faClock,
-  faTag,
-  faUser,
-  faMoneyBill,
-  faDollarSign,
-  faCreditCard,
-  faHome,
-  faBeer,
-} from "@fortawesome/free-solid-svg-icons";
+import { Calendar, Clock, Tag, User, DollarSign, CreditCard, Home, Beer } from "lucide-react";
 import { VentaWithDetails } from "@/types/venta";
 
 interface SalesDetailModalProps {
@@ -62,10 +51,7 @@ export function SalesDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faCalendar}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <Calendar className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">Fecha:</Label>
                 <span className="text-xs sm:text-sm">
                   {selectedVenta.fecha_crea
@@ -76,10 +62,7 @@ export function SalesDetailModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faClock}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <Clock className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">Hora:</Label>
                 <span className="text-xs sm:text-sm">
                   {selectedVenta.fecha_crea
@@ -93,20 +76,14 @@ export function SalesDetailModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faTag}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <Tag className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">Código:</Label>
                 <span className="text-xs sm:text-sm font-mono">
                   {selectedVenta.codigo || "Sin código"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">
                   Anfitriona(s):
                 </Label>
@@ -130,7 +107,7 @@ export function SalesDetailModal({
                     )
                   ) : (
                     <Badge className="bg-gray-300 text-gray-900">
-                      <FontAwesomeIcon icon={faBeer} className="mr-1 w-3 h-3 sm:w-4 sm:h-4" />
+                      <Beer className="mr-1 w-3 h-3 sm:w-4 sm:h-4" />
                       Venta en barra
                     </Badge>
                   )}
@@ -140,10 +117,7 @@ export function SalesDetailModal({
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">Cliente:</Label>
                 <span className="text-xs sm:text-sm">
                   {selectedVenta.cliente_nombre || "Sin cliente"}
@@ -152,10 +126,7 @@ export function SalesDetailModal({
               {hasAnfitrionas && (
                 <>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faHome}
-                      className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                    />
+                    <Home className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                     <Label className="text-xs sm:text-sm font-medium">
                       Habitación:
                     </Label>
@@ -165,10 +136,7 @@ export function SalesDetailModal({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faMoneyBill}
-                      className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                    />
+                    <DollarSign className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                     <Label className="text-xs sm:text-sm font-medium">
                       Comisión:
                     </Label>
@@ -187,20 +155,14 @@ export function SalesDetailModal({
                 </>
               )}
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faDollarSign}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <DollarSign className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">Propina:</Label>
                 <span className="text-xs sm:text-sm">
                   ${(selectedVenta.propina || 0).toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faCreditCard}
-                  className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4"
-                />
+                <CreditCard className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
                 <Label className="text-xs sm:text-sm font-medium">
                   Método de pago:
                 </Label>

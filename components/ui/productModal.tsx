@@ -6,8 +6,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import { Plus, Minus } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import {
@@ -119,7 +118,7 @@ export default function SaleProductModal({
                                   className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
                                   disabled={(cantidades[id] || 1) <= 1}
                                 >
-                                  <FontAwesomeIcon icon={faMinus} />
+                                  <Minus className="w-3 h-3" />
                                 </Button>
                                 <span className="w-8 text-center">
                                   {cantidades[id] || 1}
@@ -136,7 +135,7 @@ export default function SaleProductModal({
                                   }}
                                   className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
                                 >
-                                  <FontAwesomeIcon icon={faPlus} />
+                                  <Plus className="w-3 h-3" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -153,7 +152,7 @@ export default function SaleProductModal({
                                   handleAgregarProducto(p);
                                 }}
                               >
-                                <FontAwesomeIcon icon={faPlus} />
+                                <Plus className="w-4 h-4" />
                               </Button>
                             </TableCell>
                           </TableRow>

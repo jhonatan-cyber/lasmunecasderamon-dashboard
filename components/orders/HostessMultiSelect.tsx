@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserFriends } from "@fortawesome/free-solid-svg-icons";
+import { Users } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -21,7 +20,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ anfitrionas, va
     <div className="flex-1 min-w-[200px]">
       <Label className="block text-xs font-medium text-gray-500 mb-1">Anfitriona(s)</Label>
       <div className="relative">
-        <FontAwesomeIcon icon={faUserFriends} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+        <Users className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 h-4 w-4" />
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button

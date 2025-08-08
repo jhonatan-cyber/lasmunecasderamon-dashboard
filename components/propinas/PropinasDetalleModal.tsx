@@ -18,12 +18,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUser,
-  faDollarSign,
-  faXmark,
-} from "@fortawesome/free-solid-svg-icons";
+import { User, DollarSign, X } from "lucide-react";
 import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/formatters";
 import { useTipsDetalle } from "@/hooks/useTips";
 import { PropinaResumen } from "@/types/propina";
@@ -68,13 +63,13 @@ export default function PropinasDetalleModal({
         {/* Información del usuario */}
         <div className="border-b pb-4 mb-4 flex flex-col items-center gap-1 px-4 sm:px-6">
           <div className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
-            <FontAwesomeIcon icon={faUser} className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
+            <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-medium text-xs sm:text-sm">
               {usuario.nombre} {usuario.apellido}
             </span>
           </div>
           <div className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
-            <FontAwesomeIcon icon={faDollarSign} className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
+            <DollarSign className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-medium text-xs sm:text-sm">
               Total a pagar: {formatCurrencyNoDecimals(usuario.total)}
             </span>

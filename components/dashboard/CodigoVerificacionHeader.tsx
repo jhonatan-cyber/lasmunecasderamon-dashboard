@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRefresh } from '@fortawesome/free-solid-svg-icons';
+import { RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CodigoVerificacionHeaderProps {
@@ -89,7 +89,7 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
             disabled={loading}
             className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3'
           >
-            <FontAwesomeIcon icon={faRefresh} className={`${loading ? 'animate-spin' : ''} w-3 h-3 sm:w-4 sm:h-4`} />
+            <RotateCcw className={`${loading ? 'animate-spin' : ''} w-3 h-3 sm:w-4 sm:h-4`} />
             <span className='hidden sm:inline ml-1'>Actualizar</span>
           </Button>
         </div>

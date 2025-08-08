@@ -15,7 +15,7 @@ import {
   Bell,
   HelpCircle,
   UserCheck,
-  Tags,
+  Tag,
   Shield,
   Clock,
   CreditCard,
@@ -38,7 +38,7 @@ const navigation = [
   { name: 'Usuarios', href: '/users', icon: Users },
   { name: 'Clientes', href: '/clients', icon: UserCheck },
   { name: 'Productos', href: '/products', icon: Package },
-  { name: 'Categorías', href: '/categories', icon: Tags },
+  { name: 'Categorías', href: '/categories', icon: Tag },
   { name: 'Pedidos', href: '/orders', icon: ShoppingCart },
   { name: 'Reportes', href: '/reports', icon: FileText },
   { name: 'Ventas', href: '/sales', icon: TrendingUp }

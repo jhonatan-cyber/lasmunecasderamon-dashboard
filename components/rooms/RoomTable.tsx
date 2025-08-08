@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Room } from "@/types/room";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEllipsisV,
-  faEdit,
-  faTrash,
-  faCheck,
-  faPowerOff,
-  faBed,
-} from "@fortawesome/free-solid-svg-icons";
+import { MoreVertical, Edit, Trash2, Check, Power, Bed } from "lucide-react";
 import {
   Tooltip,
   TooltipProvider,
@@ -81,7 +73,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                     </td>
                     <td className='py-3 px-2 sm:px-4 text-center'>
                       <div className='flex items-center justify-center gap-2'>
-                        <FontAwesomeIcon icon={faBed} className='text-blue-500 text-xs sm:text-sm' />
+                        <Bed className='text-blue-500 text-xs sm:text-sm' />
                         <span className='font-medium text-gray-900 text-xs sm:text-sm'>{room.name}</span>
                       </div>
                     </td>
@@ -119,33 +111,33 @@ const RoomTable: React.FC<RoomTableProps> = ({
                             size='icon'
                             className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200'
                           >
-                            <FontAwesomeIcon icon={faEllipsisV} className='h-3 w-3 sm:h-4 sm:w-4' />
+                            <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end'>
                           <DropdownMenuItem onClick={() => onEdit(room)}>
-                            <FontAwesomeIcon icon={faEdit} className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                            <Edit className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                             Editar
                           </DropdownMenuItem>
                           {room.status === 0 ? (
                             <DropdownMenuItem onClick={() => onActivate(room)}>
-                              <FontAwesomeIcon icon={faCheck} className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                              <Check className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                               Activar
                             </DropdownMenuItem>
                           ) : room.status === 1 ? (
                             <>
                               <DropdownMenuItem onClick={() => onOccupy(room)}>
-                                <FontAwesomeIcon icon={faBed} className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                                <Bed className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                                 Ocupar
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => onDeactivate(room)}>
-                                <FontAwesomeIcon icon={faPowerOff} className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                                <Power className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                                 Desactivar
                               </DropdownMenuItem>
                             </>
                           ) : (
                             <DropdownMenuItem onClick={() => onActivate(room)}>
-                              <FontAwesomeIcon icon={faCheck} className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                              <Check className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                               Liberar
                             </DropdownMenuItem>
                           )}
@@ -153,7 +145,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                             onClick={() => onDelete(room)}
                             className='text-red-600 focus:text-red-600'
                           >
-                            <FontAwesomeIcon icon={faTrash} className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                            <Trash2 className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                             Eliminar
                           </DropdownMenuItem>
                         </DropdownMenuContent>

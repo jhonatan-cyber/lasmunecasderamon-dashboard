@@ -8,15 +8,11 @@ import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { NotificationProvider, NotificationStatus } from '@/components/notifications';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 
-import { config } from '@fortawesome/fontawesome-svg-core';
-import '@fortawesome/fontawesome-svg-core/styles.css';
-import '@/lib/fontawesome'; // Import FontAwesome configuration
 import 'sweetalert2/dist/sweetalert2.min.css';
 import './globals.css';
 import '@/styles/sidebar.css';
 
-// Prevent FontAwesome from adding its CSS since we did it manually above
-config.autoAddCss = false;
+
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',

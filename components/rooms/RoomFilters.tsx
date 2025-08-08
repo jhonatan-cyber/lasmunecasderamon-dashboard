@@ -11,8 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBroom } from "@fortawesome/free-solid-svg-icons";
+import { Sparkles } from "lucide-react";
 import SearchInput from "@/components/ui/SearchInput";
 import SelectElements from "@/components/ui/select-elements";
 
@@ -99,7 +98,7 @@ export function RoomFilters({
                 variant="outline"
                 className="w-full sm:w-auto rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
               >
-                <FontAwesomeIcon icon={faBroom} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Limpiar Filtros
               </Button>
             </div>

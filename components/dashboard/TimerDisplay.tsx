@@ -1,8 +1,7 @@
 'use client';
 
 import { useTimer } from '@/contexts/TimerContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faStop, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +45,7 @@ export function TimerDisplay() {
           <Card className='bg-white shadow-lg border border-gray-200'>
             <CardHeader className='pb-1'>
               <CardTitle className='text-xs font-semibold flex items-center gap-1'>
-                <FontAwesomeIcon icon={faClock} className='text-blue-600 text-xs' />
+                <Clock className='text-blue-600 text-xs' />
                 Temporizador
                 {timer.isPaused && (
                   <Badge variant='outline' className='text-yellow-600 border-yellow-600 text-xs'>
@@ -80,7 +79,7 @@ export function TimerDisplay() {
                       onClick={() => handleStopTimer(timer.id, timer.roomName)}
                       className='h-5 w-5 p-0'
                     >
-                      <FontAwesomeIcon icon={faStop} className='text-xs' />
+                      <Square className='text-xs' />
                     </Button>
                   )}
                 </div>
@@ -116,7 +115,7 @@ export function TimerDisplay() {
         <Card className='bg-white shadow-lg border border-gray-200'>
           <CardHeader className='pb-1'>
             <CardTitle className='text-xs font-semibold flex items-center gap-1'>
-              <FontAwesomeIcon icon={faClock} className='text-blue-600 text-xs' />
+              <Clock className='text-blue-600 text-xs' />
               Temporizadores
               <Badge variant='secondary' className='ml-auto text-xs'>
                 {timers.length}
@@ -154,7 +153,7 @@ export function TimerDisplay() {
                     onClick={() => handleStopTimer(firstTimer.id, firstTimer.roomName)}
                     className='h-5 w-5 p-0'
                   >
-                    <FontAwesomeIcon icon={faStop} className='text-xs' />
+                    <Square className='text-xs' />
                   </Button>
                 )}
               </div>
@@ -167,10 +166,11 @@ export function TimerDisplay() {
               onClick={() => setIsExpanded(!isExpanded)}
               className='w-full mt-1 h-6 text-xs'
             >
-              <FontAwesomeIcon 
-                icon={isExpanded ? faChevronUp : faChevronDown} 
-                className='text-xs mr-1' 
-              />
+              {isExpanded ? (
+                <ChevronUp className='text-xs mr-1' />
+              ) : (
+                <ChevronDown className='text-xs mr-1' />
+              )}
               {isExpanded ? 'Ocultar' : `Mostrar ${remainingCount} más`}
             </Button>
 
@@ -205,7 +205,7 @@ export function TimerDisplay() {
                           onClick={() => handleStopTimer(timer.id, timer.roomName)}
                           className='h-5 w-5 p-0'
                         >
-                          <FontAwesomeIcon icon={faStop} className='text-xs' />
+                          <Stop className='text-xs' />
                         </Button>
                       )}
                     </div>

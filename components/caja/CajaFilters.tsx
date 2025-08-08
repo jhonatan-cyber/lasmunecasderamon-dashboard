@@ -7,8 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { Search, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface CajaFiltersProps {
@@ -34,8 +33,7 @@ export const CajaFilters = ({
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           {/* Búsqueda */}
           <div className="relative flex-1">
-            <FontAwesomeIcon
-              icon={faSearch}
+            <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
             />
             <Input
@@ -75,7 +73,7 @@ export const CajaFilters = ({
                 onClick={onClearFilters}
                 className="w-full sm:w-auto flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2"
               >
-                <FontAwesomeIcon icon={faXmark} className="w-3 h-3 sm:w-4 sm:h-4" />
+                <X className="w-3 h-3 sm:w-4 sm:h-4" />
                 Limpiar
               </Button>
             </div>

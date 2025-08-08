@@ -109,10 +109,10 @@ export const solicitarAnulacionVenta = async (ventaId: number, motivo?: string):
         // Si no es JSON válido, intentar leer como texto
         try {
           const textResponse = await response.text();
-          console.error("Respuesta no-JSON del servidor:", textResponse);
+  
           errorMessage = `Error del servidor: ${response.status}`;
         } catch (textError) {
-          console.error("Error al leer respuesta del servidor:", textError);
+       
           errorMessage = `Error de conexión: ${response.status}`;
         }
       }
@@ -125,7 +125,7 @@ export const solicitarAnulacionVenta = async (ventaId: number, motivo?: string):
 
     return { success: true };
   } catch (error) {
-    console.error("Error al solicitar anulación de la venta:", error);
+   
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Error desconocido" 
@@ -146,7 +146,7 @@ export const getVentaDetails = async (ventaId: number, ventas: any[]) => {
         venta = await response.json();
       }
     } catch (error) {
-      console.error("Error al obtener detalles de la venta:", error);
+   
       return null;
     }
   }

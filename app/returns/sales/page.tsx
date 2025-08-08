@@ -9,7 +9,7 @@ import Paginate from '@/components/ui/paginate';
 import { SalesDetailModal } from '@/components/sales';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/salesUtils';
 import { DevolucionHeader } from '@/components/returns/sales/DevolucionHeader';
-import { DevolucionFilters } from '@/components/returns/sales/DevolucionFilters';
+import { DevolucionFiltersComponent } from '@/components/returns/sales/DevolucionFilters';
 import { DevolucionTable } from '@/components/returns/sales/DevolucionTable';
 import { DevolucionModal } from '@/components/returns/sales/DevolucionModal';
 
@@ -73,7 +73,7 @@ export default function DevolucionesVentasPage() {
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <DevolucionHeader />
 
-      <DevolucionFilters
+              <DevolucionFiltersComponent
         filters={filters}
         updateFilter={updateFilter}
         clearFilters={clearFilters}

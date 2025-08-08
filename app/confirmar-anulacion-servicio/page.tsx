@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,7 @@ interface SolicitudAnulacionServicio {
   anfitrionas?: string;
 }
 
-export default function ConfirmarAnulacionServicioPage() {
+function ConfirmarAnulacionServicioContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
 
@@ -304,5 +304,22 @@ export default function ConfirmarAnulacionServicioPage() {
 
       <Toaster richColors position='top-right' expand={true} closeButton={true} duration={4000} />
     </>
+  );
+}
+
+export default function ConfirmarAnulacionServicioPage() {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50'>
+        <Card className='w-full max-w-lg'>
+          <CardContent className='text-center py-8'>
+            <Loader2 className='animate-spin mx-auto mb-4' />
+            <p>Cargando...</p>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <ConfirmarAnulacionServicioContent />
+    </Suspense>
   );
 }

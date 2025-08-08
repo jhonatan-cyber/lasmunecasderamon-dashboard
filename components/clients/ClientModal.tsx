@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
+import { CreditCard, User, FileSignature, Phone } from 'lucide-react';
 
 interface ClientModalProps {
   open: boolean;
@@ -65,16 +66,21 @@ export function ClientModal({
               RUN
             </Label>
             <span className='text-xs text-gray-500'> (Opcional)</span>
-            <Input
-              id='client-run'
-              type='text'
-              {...register('run', {
-                minLength: { value: 6, message: 'Mínimo 6 caracteres' }
-              })}
-              placeholder='RUN del cliente'
-              disabled={isLoading}
-              className='text-sm sm:text-base'
-            />
+            <div className='relative'>
+              <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                <CreditCard className='w-3 h-3 sm:w-4 sm:h-4' />
+              </span>
+              <Input
+                id='client-run'
+                type='text'
+                {...register('run', {
+                  minLength: { value: 6, message: 'Mínimo 6 caracteres' }
+                })}
+                placeholder='RUN del cliente'
+                disabled={isLoading}
+                className='pl-10 sm:pl-12 text-sm sm:text-base'
+              />
+            </div>
             {errors.run && (
               <p className='text-red-600 text-xs mt-1'>{errors.run.message as string}</p>
             )}
@@ -84,17 +90,22 @@ export function ClientModal({
               Nombre
             </Label>
             <span className='text-xs text-red-500'> *</span>
-            <Input
-              id='client-name'
-              type='text'
-              {...register('name', {
-                required: 'El nombre es obligatorio',
-                minLength: { value: 2, message: 'Mínimo 2 caracteres' }
-              })}
-              placeholder='Nombre del cliente'
-              disabled={isLoading}
-              className='text-sm sm:text-base'
-            />
+            <div className='relative'>
+              <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                <User className='w-3 h-3 sm:w-4 sm:h-4' />
+              </span>
+              <Input
+                id='client-name'
+                type='text'
+                {...register('name', {
+                  required: 'El nombre es obligatorio',
+                  minLength: { value: 2, message: 'Mínimo 2 caracteres' }
+                })}
+                placeholder='Nombre del cliente'
+                disabled={isLoading}
+                className='pl-10 sm:pl-12 text-sm sm:text-base'
+              />
+            </div>
             {errors.name && (
               <p className='text-red-600 text-xs mt-1'>{errors.name.message as string}</p>
             )}
@@ -104,17 +115,22 @@ export function ClientModal({
               Apellido
             </Label>
             <span className='text-xs text-red-500'> *</span>
-            <Input
-              id='client-lastName'
-              type='text'
-              {...register('lastName', {
-                required: 'El apellido es obligatorio',
-                minLength: { value: 2, message: 'Mínimo 2 caracteres' }
-              })}
-              placeholder='Apellido del cliente'
-              disabled={isLoading}
-              className='text-sm sm:text-base'
-            />
+            <div className='relative'>
+              <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                <FileSignature className='w-3 h-3 sm:w-4 sm:h-4' />
+              </span>
+              <Input
+                id='client-lastName'
+                type='text'
+                {...register('lastName', {
+                  required: 'El apellido es obligatorio',
+                  minLength: { value: 2, message: 'Mínimo 2 caracteres' }
+                })}
+                placeholder='Apellido del cliente'
+                disabled={isLoading}
+                className='pl-10 sm:pl-12 text-sm sm:text-base'
+              />
+            </div>
             {errors.lastName && (
               <p className='text-red-600 text-xs mt-1'>{errors.lastName.message as string}</p>
             )}
@@ -124,16 +140,21 @@ export function ClientModal({
               Teléfono
             </Label>
             <span className='text-xs text-gray-500'> (Opcional)</span>
-            <Input
-              id='client-phone'
-              type='text'
-              {...register('phone', {
-                minLength: { value: 7, message: 'Mínimo 7 caracteres' }
-              })}
-              placeholder='Teléfono del cliente'
-              disabled={isLoading}
-              className='text-sm sm:text-base'
-            />
+            <div className='relative'>
+              <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                <Phone className='w-3 h-3 sm:w-4 sm:h-4' />
+              </span>
+              <Input
+                id='client-phone'
+                type='text'
+                {...register('phone', {
+                  minLength: { value: 7, message: 'Mínimo 7 caracteres' }
+                })}
+                placeholder='Teléfono del cliente'
+                disabled={isLoading}
+                className='pl-10 sm:pl-12 text-sm sm:text-base'
+              />
+            </div>
             {errors.phone && (
               <p className='text-red-600 text-xs mt-1'>{errors.phone.message as string}</p>
             )}

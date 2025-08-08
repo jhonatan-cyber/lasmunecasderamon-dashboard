@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell } from '@fortawesome/free-solid-svg-icons';
+import { Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -32,7 +31,7 @@ export function NotificationBadge({ className = '' }: NotificationBadgeProps) {
 
   return (
     <div className={`relative ${className}`}>
-      <FontAwesomeIcon icon={faBell} className="text-gray-600" />
+      <Bell className="text-gray-600" size={20} />
       <Badge 
         variant="destructive" 
         className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"

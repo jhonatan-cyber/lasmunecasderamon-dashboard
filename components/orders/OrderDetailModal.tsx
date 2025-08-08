@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faXmark,
-  faReceipt,
-  faCashRegister,
-  faCreditCard,
-  faCoins,
-  faMoneyBill1Wave,
-  faHotel
-} from '@fortawesome/free-solid-svg-icons';
+import { X, Receipt, CreditCard, Coins, DollarSign, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -96,9 +87,7 @@ export default function OrderDetailModal({
   const [isPropinaFocused, setIsPropinaFocused] = useState(false);
   const [propinaInputValue, setPropinaInputValue] = useState('');
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
-  // Remover los estados de anfitrionas ya que usaremos las del pedido
-  // const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
-  // const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
+
   useEffect(() => {
     if (!open) return;
     fetch('/api/rooms')
@@ -452,7 +441,6 @@ export default function OrderDetailModal({
 
     if (!response.ok) {
       const errorText = await response.text();
-      
 
       throw new Error('Error al actualizar el estado del pedido');
     }
@@ -469,9 +457,9 @@ export default function OrderDetailModal({
   });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl">
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl'>
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">
+          <DialogTitle className='text-lg sm:text-xl'>
             Detalles del Pedido - {orderCode}
           </DialogTitle>
         </DialogHeader>
@@ -569,10 +557,7 @@ export default function OrderDetailModal({
                 <div>
                   <Label className='block text-xs font-medium text-gray-500 mb-1'>Propina</Label>
                   <div className='relative'>
-                    <FontAwesomeIcon
-                      icon={faCoins}
-                      className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4'
-                    />
+                    <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4' />
                     <Input
                       className='w-full pl-6 sm:pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 text-xs sm:text-sm'
                       placeholder='Propina'
@@ -603,10 +588,7 @@ export default function OrderDetailModal({
                     Total Comisión
                   </Label>
                   <div className='relative'>
-                    <FontAwesomeIcon
-                      icon={faMoneyBill1Wave}
-                      className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4'
-                    />
+                    <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4' />
                     <Input
                       className='w-full pl-6 sm:pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 font-semibold text-black text-xs sm:text-sm'
                       value={detail[0]?.total_comision || '0'}
@@ -642,7 +624,7 @@ export default function OrderDetailModal({
               </table>
               <div className='mt-4 flex justify-end'>
                 <div className='text-xs sm:text-sm font-semibold text-gray-800'>
-                  SUBTOTAL: ${detail[0]?.total?.toLocaleString()}
+                  SUBTOTAL : ${detail[0]?.total?.toLocaleString()}
                   {propina > 0 && (
                     <div className='text-xs sm:text-sm text-blue-600 font-normal'>
                       + Propina: ${propina.toLocaleString()}
@@ -654,7 +636,7 @@ export default function OrderDetailModal({
                     </div>
                   )}
                   <div className='text-sm sm:text-base font-bold text-black'>
-                    TOTAL FINAL: $
+                    TOTAL : $
                     {((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString()}
                   </div>
                 </div>
@@ -669,7 +651,6 @@ export default function OrderDetailModal({
                 onClick={handleRegistrarVenta}
                 disabled={isRegistering}
               >
-                <FontAwesomeIcon icon={faCashRegister} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 {isRegistering ? 'Registrando...' : 'Registrar Venta'}
               </Button>
               <Button
@@ -677,7 +658,6 @@ export default function OrderDetailModal({
                 variant='outline'
                 className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
               >
-                <FontAwesomeIcon icon={faReceipt} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Registrar Cuenta
               </Button>
 
@@ -687,7 +667,6 @@ export default function OrderDetailModal({
                 className='rounded-full px-4 sm:px-6 bg-red-500 text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
                 onClick={handleRechazarPedido}
               >
-                <FontAwesomeIcon icon={faXmark} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Rechazar
               </Button>
             </div>

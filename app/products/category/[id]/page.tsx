@@ -10,13 +10,12 @@ import ProductTable from "@/components/products/ProductTable";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/product";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faTable,
-  faGripHorizontal,
-  faPlus,
-  faArrowLeft,
-} from "@fortawesome/free-solid-svg-icons";
+  Table,
+  Grid3X3,
+  Plus,
+  ArrowLeft,
+} from "lucide-react";
 import Paginate from "@/components/ui/paginate";
 
 const tablePageSizes = [5, 10, 20, 40];
@@ -168,7 +167,7 @@ const ProductCategoryPage = () => {
                className="flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
                onClick={() => setShowTableView(true)}
              >
-               <FontAwesomeIcon icon={faTable} className="w-3 h-3 sm:w-4 sm:h-4" />
+               <Table className="w-3 h-3 sm:w-4 sm:h-4" />
                Tabla
              </Button>
              <Button
@@ -177,7 +176,7 @@ const ProductCategoryPage = () => {
                className="flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
                onClick={() => setShowTableView(false)}
              >
-               <FontAwesomeIcon icon={faGripHorizontal} className="w-3 h-3 sm:w-4 sm:h-4" />
+               <Grid3X3 className="w-3 h-3 sm:w-4 sm:h-4" />
                Cards
              </Button>
            </div>
@@ -188,7 +187,7 @@ const ProductCategoryPage = () => {
               className="whitespace-nowrap inline-flex items-center hover:bg-black hover:text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto"
               onClick={() => router.push("/products")}
             >
-              <FontAwesomeIcon icon={faArrowLeft} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Atrás
             </Button>
             <Button
@@ -200,7 +199,7 @@ const ProductCategoryPage = () => {
                 setOpenDialog(true);
               }}
             >
-              <FontAwesomeIcon icon={faPlus} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Nuevo
             </Button>
           </div>

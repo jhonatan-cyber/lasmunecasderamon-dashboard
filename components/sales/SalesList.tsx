@@ -15,14 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faShoppingCart,
-  faBeer,
-  faEye,
-  faBan,
-  faEllipsisVertical,
-} from "@fortawesome/free-solid-svg-icons";
+import { ShoppingCart, Beer, Eye, Ban, MoreVertical } from "lucide-react";
 import { VentaWithDetails } from "@/types/venta";
 import { AnulacionModal } from "./AnulacionModal";
 
@@ -123,10 +116,7 @@ export function SalesList({
         </CardHeader>
         <CardContent className='p-4 sm:p-6'>
           <div className="text-center py-8 sm:py-12">
-            <FontAwesomeIcon
-              icon={faShoppingCart}
-              className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4"
-            />
+            <ShoppingCart className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
               {hasFilters
                 ? "No se encontraron ventas"
@@ -210,10 +200,7 @@ export function SalesList({
                             )
                           ) : (
                             <Badge className="bg-gray-300 text-gray-900 text-xs">
-                                                          <FontAwesomeIcon
-                              icon={faBeer}
-                              className="mr-1 w-3 h-3 sm:w-4 sm:h-4"
-                            />
+                              <Beer className="mr-1 w-3 h-3 sm:w-4 sm:h-4" />
                               Venta en barra
                             </Badge>
                           )}
@@ -254,7 +241,7 @@ export function SalesList({
                             size="sm"
                             className="h-8 w-8 p-0 self-end"
                           >
-                            <FontAwesomeIcon icon={faEllipsisVertical} className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -265,8 +252,7 @@ export function SalesList({
                                   onClick={() => onVerDetalles(venta?.id)}
                                   className="hover:text-blue-600 group"
                                 >
-                                  <FontAwesomeIcon
-                                    icon={faEye}
+                                  <Eye
                                     className="group-hover:text-blue-600 w-3 h-3 sm:w-4 sm:h-4"
                                   />
                                   <span className="ml-2 group-hover:text-blue-600">
@@ -285,8 +271,7 @@ export function SalesList({
                                     onClick={() => handleAnularClick(venta)}
                                     className="hover:text-red-600 group"
                                   >
-                                    <FontAwesomeIcon
-                                      icon={faBan}
+                                    <Ban
                                       className="group-hover:text-red-600 w-3 h-3 sm:w-4 sm:h-4"
                                     />
                                     <span className="ml-2 group-hover:text-red-600">

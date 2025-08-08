@@ -10,8 +10,7 @@ import { UserFilters } from '@/components/users/UserFilters';
 import { UserForm, UserFormValues } from '@/components/users/UserForm';
 import { DeleteUserConfirmModal } from '@/components/users/DeleteUserConfirmModal';
 import { ExportButtons } from '@/components/users/ExportButtons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -235,7 +234,7 @@ export default function Users() {
             variant='outline'
             className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
           >
-            <FontAwesomeIcon icon={faPlus} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
             Nuevo
           </Button>
         </div>

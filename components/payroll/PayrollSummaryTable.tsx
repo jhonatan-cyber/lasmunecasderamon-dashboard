@@ -10,11 +10,10 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Eye } from 'lucide-react'
-import { PayrollSummary } from '@/types/asistencia'
 import { formatCurrency } from '@/lib/utils'
 
 interface PayrollSummaryTableProps {
-  data: PayrollSummary[]
+  data: any[]
   isLoading?: boolean
 }
 

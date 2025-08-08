@@ -9,8 +9,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye } from '@fortawesome/free-solid-svg-icons';
+import { Eye } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrency, metodoPagoLabels } from '@/lib/salesUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -87,7 +86,7 @@ export const DevolucionTable = ({ ventas, loading, onVerDetalles }: DevolucionTa
                         onClick={() => onVerDetalles(venta)}
                         className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
                       >
-                        <FontAwesomeIcon icon={faEye} className='w-3 h-3 sm:w-4 sm:h-4' />
+                        <Eye className='w-3 h-3 sm:w-4 sm:h-4' />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

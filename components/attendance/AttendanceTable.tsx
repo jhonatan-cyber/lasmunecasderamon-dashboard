@@ -15,10 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faUser, faCalendar, faMoneyBill, faHandHoldingDollar, faMinusCircle, faCalculator } from "@fortawesome/free-solid-svg-icons";
+import { Eye, User, Calendar, DollarSign, Coins, MinusCircle, Calculator } from "lucide-react";
 import { AsistenciaResumen } from "@/types/asistencia";
-import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AttendanceDetailModal from "./AttendanceDetailModal";
 
@@ -100,7 +98,7 @@ export default function AttendanceTable() {
               {/* Información de asistencia */}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faCalendar} className='text-gray-500 w-4' />
+                  <Calendar className='text-gray-500 w-4' />
                   <span className='font-medium'>Asistencias:</span>
                   <Badge variant="success" className="bg-green-400 text-xs">
                     {item.total_asistencias} Días
@@ -108,25 +106,25 @@ export default function AttendanceTable() {
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faMoneyBill} className='text-gray-500 w-4' />
+                  <DollarSign className='text-gray-500 w-4' />
                   <span className='font-medium'>Sueldo:</span>
                   <span className='text-gray-700 font-semibold'>{formatCurrencyNoDecimals(item.sueldo_total)}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faHandHoldingDollar} className='text-gray-500 w-4' />
+                  <Coins className='text-gray-500 w-4' />
                   <span className='font-medium'>Aporte:</span>
                   <span className='text-gray-700'>{formatCurrencyNoDecimals(item.aporte_total)}</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <FontAwesomeIcon icon={faMinusCircle} className='text-gray-500 w-4' />
+                  <MinusCircle className='text-gray-500 w-4' />
                   <span className='font-medium'>Descuento:</span>
                   <span className='text-gray-700'>{formatCurrencyNoDecimals(item.descuento_total)}</span>
                 </div>
 
                 <div className='flex items-center gap-2 sm:col-span-2'>
-                  <FontAwesomeIcon icon={faCalculator} className='text-gray-500 w-4' />
+                  <Calculator className='text-gray-500 w-4' />
                   <span className='font-medium'>Total Final:</span>
                   <span className='text-gray-700 font-bold text-lg'>{formatCurrencyNoDecimals(item.total_final)}</span>
                 </div>
@@ -140,8 +138,8 @@ export default function AttendanceTable() {
                   className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
                   onClick={() => handleViewDetail(item)}
                 >
-                  <FontAwesomeIcon icon={faEye} className='w-3 h-3 mr-1' />
-                  Ver Detalle
+                                              <Eye className='w-3 h-3 mr-1' />
+                            Ver Detalle
                 </Button>
               </div>
             </div>
@@ -199,7 +197,7 @@ export default function AttendanceTable() {
                     onClick={() => handleViewDetail(item)}
                     className="h-8 w-8 p-0 hover:bg-blue-50"
                   >
-                    <FontAwesomeIcon icon={faEye} className="w-4 h-4" />
+                                                <Eye className="w-4 h-4" />
                   </Button>
                 </TableCell>
               </TableRow>

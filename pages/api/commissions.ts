@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
-import { emitNotification, createCommissionNotification } from '@/lib/notificationUtils';
+
 import {
   CommissionError,
   CommissionNotFoundError,
@@ -375,8 +375,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-      // Enviar notificación de comisión creada
-      await emitNotification(createCommissionNotification('created', result));
+
 
       return res.status(201).json({
         success: true,
@@ -538,8 +537,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-      // Enviar notificación de comisión actualizada
-      await emitNotification(createCommissionNotification('updated', result));
+
 
       return res.status(200).json({
         success: true,
@@ -662,13 +660,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-      // Enviar notificación de comisión eliminada
-      await emitNotification(
-        createCommissionNotification('deleted', {
-          id,
-          estado: commission.estado
-        })
-      );
+
 
       return res.status(200).json({
         success: true,

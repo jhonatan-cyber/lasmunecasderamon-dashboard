@@ -13,11 +13,11 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import PayrollSummaryTable from './PayrollSummaryTable'
-import { PayrollSummary } from '@/types/asistencia'
+
 import { CalendarIcon, FilterIcon, RefreshCw } from 'lucide-react'
 
 interface PayrollSummaryListProps {
-  data: PayrollSummary[]
+  data: any[]
   isLoading?: boolean
   onFilterChange?: (month: number, year: number) => void
 }

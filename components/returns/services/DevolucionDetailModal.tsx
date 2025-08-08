@@ -18,19 +18,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCalendar,
-  faClock,
-  faTag,
-  faUser,
-  faMoneyBill,
-  faDollarSign,
-  faCreditCard,
-  faHome,
-  faBeer,
-  faExclamationTriangle,
-} from "@fortawesome/free-solid-svg-icons";
+import { 
+  Calendar, 
+  Clock, 
+  Tag, 
+  User, 
+  DollarSign, 
+  CreditCard, 
+  Home, 
+  Beer, 
+  AlertTriangle 
+} from "lucide-react";
 import { ServicioWithDetails } from "@/types/servicio";
 import { formatCurrency } from "@/lib/salesUtils";
 
@@ -75,7 +73,7 @@ export function DevolucionDetailModal({
           {/* Alerta de devolución */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 w-4" />
+              <AlertTriangle className="text-red-500 w-4 h-4" />
               <span className="text-sm font-medium text-red-800">
                 Atención: Esta acción procesará la devolución del servicio
               </span>
@@ -86,10 +84,7 @@ export function DevolucionDetailModal({
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faCalendar}
-                  className="text-gray-500 w-4"
-                />
+                <Calendar className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Fecha:</Label>
                 <span className="text-sm">
                   {selectedServicio.fecha_crea
@@ -100,10 +95,7 @@ export function DevolucionDetailModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faClock}
-                  className="text-gray-500 w-4"
-                />
+                <Clock className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Hora:</Label>
                 <span className="text-sm">
                   {selectedServicio.fecha_crea
@@ -117,20 +109,14 @@ export function DevolucionDetailModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faTag}
-                  className="text-gray-500 w-4"
-                />
+                <Tag className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Código:</Label>
                 <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
                   {selectedServicio.codigo}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="text-gray-500 w-4"
-                />
+                <User className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Cliente:</Label>
                 <span className="text-sm">
                   {selectedServicio.cliente_nombre || "Sin cliente"}
@@ -140,30 +126,21 @@ export function DevolucionDetailModal({
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faHome}
-                  className="text-gray-500 w-4"
-                />
+                <Home className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Habitación:</Label>
                 <span className="text-sm">
                   {selectedServicio.habitacion_numero || "Sin habitación"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faClock}
-                  className="text-gray-500 w-4"
-                />
+                <Clock className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Tiempo:</Label>
                 <span className="text-sm">
                   {selectedServicio.tiempo} minutos
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faCreditCard}
-                  className="text-gray-500 w-4"
-                />
+                <CreditCard className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Método de Pago:</Label>
                 <Badge variant="outline" className="text-xs">
                   {selectedServicio.metodo_pago
@@ -173,10 +150,7 @@ export function DevolucionDetailModal({
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="text-gray-500 w-4"
-                />
+                <User className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Total Usuarios:</Label>
                 <span className="text-sm">
                   {selectedServicio.total_usuarios || 0}
@@ -189,7 +163,7 @@ export function DevolucionDetailModal({
           {hasAnfitrionas && (
             <div className="space-y-3">
               <Label className="text-sm font-medium flex items-center gap-2">
-                <FontAwesomeIcon icon={faUser} className="text-gray-500 w-4" />
+                <User className="text-gray-500 w-4 h-4" />
                 Anfitrionas:
               </Label>
               <div className="flex flex-wrap gap-2">
@@ -212,7 +186,7 @@ export function DevolucionDetailModal({
           {/* Información financiera */}
           <div className="space-y-3">
             <Label className="text-sm font-medium flex items-center gap-2">
-              <FontAwesomeIcon icon={faMoneyBill} className="text-gray-500 w-4" />
+              <DollarSign className="text-gray-500 w-4 h-4" />
               Información Financiera:
             </Label>
             <Table>
@@ -261,7 +235,7 @@ export function DevolucionDetailModal({
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <Label className="text-sm font-medium flex items-center gap-2">
-                <FontAwesomeIcon icon={faClock} className="text-gray-500 w-4" />
+                <Clock className="text-gray-500 w-4 h-4" />
                 Detalles del Servicio:
               </Label>
               <div className="bg-blue-50 p-4 rounded-lg space-y-2">
@@ -286,7 +260,7 @@ export function DevolucionDetailModal({
 
             <div className="space-y-3">
               <Label className="text-sm font-medium flex items-center gap-2">
-                <FontAwesomeIcon icon={faTag} className="text-gray-500 w-4" />
+                <Tag className="text-gray-500 w-4 h-4" />
                 Información del Sistema:
               </Label>
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
@@ -314,7 +288,7 @@ export function DevolucionDetailModal({
           {/* Campo de motivo de devolución */}
           <div className="space-y-3">
             <Label htmlFor="motivo" className="text-sm font-medium flex items-center gap-2">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 w-4" />
+              <AlertTriangle className="text-red-500 w-4 h-4" />
               Motivo de la Devolución:
             </Label>
             <Textarea

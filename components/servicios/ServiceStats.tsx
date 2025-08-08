@@ -1,13 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faLock, 
-  faClock, 
-  faDollarSign, 
-  faUsers 
-} from "@fortawesome/free-solid-svg-icons";
+import { Lock, Clock, DollarSign, Users } from "lucide-react";
 import { ServicioWithDetails } from "@/types/servicio";
 import { calculateServiceStats, calculateRoomStats } from "@/lib/serviceUtils";
 
@@ -27,7 +21,7 @@ export default function ServiceStats({ servicios, habitaciones }: ServiceStatsPr
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
           <CardTitle className="text-xs sm:text-sm font-medium">Total Servicios</CardTitle>
-          <FontAwesomeIcon icon={faLock} className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+          <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="text-lg sm:text-xl lg:text-2xl font-bold">{serviceStats.totalServicios}</div>
@@ -41,7 +35,7 @@ export default function ServiceStats({ servicios, habitaciones }: ServiceStatsPr
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
           <CardTitle className="text-xs sm:text-sm font-medium">Servicios Activos</CardTitle>
-          <FontAwesomeIcon icon={faClock} className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+          <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="text-lg sm:text-xl lg:text-2xl font-bold">{serviceStats.serviciosActivos}</div>
@@ -55,7 +49,7 @@ export default function ServiceStats({ servicios, habitaciones }: ServiceStatsPr
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
           <CardTitle className="text-xs sm:text-sm font-medium">Ingresos Totales</CardTitle>
-          <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="text-lg sm:text-xl lg:text-2xl font-bold">
@@ -71,7 +65,7 @@ export default function ServiceStats({ servicios, habitaciones }: ServiceStatsPr
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
           <CardTitle className="text-xs sm:text-sm font-medium">Promedio Tiempo</CardTitle>
-          <FontAwesomeIcon icon={faUsers} className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+          <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="text-lg sm:text-xl lg:text-2xl font-bold">{serviceStats.promedioTiempo}m</div>
@@ -85,7 +79,7 @@ export default function ServiceStats({ servicios, habitaciones }: ServiceStatsPr
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
           <CardTitle className="text-xs sm:text-sm font-medium">Habitaciones Disponibles</CardTitle>
-          <FontAwesomeIcon icon={faLock} className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+          <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{roomStats.habitacionesDisponibles}</div>
@@ -99,7 +93,7 @@ export default function ServiceStats({ servicios, habitaciones }: ServiceStatsPr
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
           <CardTitle className="text-xs sm:text-sm font-medium">Habitaciones Ocupadas</CardTitle>
-          <FontAwesomeIcon icon={faClock} className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
+          <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">{roomStats.habitacionesOcupadas}</div>

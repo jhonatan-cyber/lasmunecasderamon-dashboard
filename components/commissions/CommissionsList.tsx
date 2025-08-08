@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { Commission } from "@/types/commission";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDollarSign, faUser, faTag, faShoppingCart, faServer, faMoneyBillWave } from "@fortawesome/free-solid-svg-icons";
+import { DollarSign, User, Tag, ShoppingCart, Server, Coins } from "lucide-react";
 import Paginate from "@/components/ui/paginate";
 
 interface CommissionsListProps {
@@ -65,8 +64,7 @@ export function CommissionsList({
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 sm:py-12">
-            <FontAwesomeIcon
-              icon={faDollarSign}
+            <DollarSign
               className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4"
             />
             <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
@@ -90,7 +88,7 @@ export function CommissionsList({
             {/* Header con empleado y estado */}
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faUser} className="h-4 w-4 text-gray-400" />
+                <User className="h-4 w-4 text-gray-400" />
                 <span className="font-medium text-sm sm:text-base">
                   {commission.employeeName}
                 </span>
@@ -103,28 +101,28 @@ export function CommissionsList({
             {/* Información de la comisión */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faTag} className="h-3 w-3 text-gray-400" />
+                <Tag className="h-3 w-3 text-gray-400" />
                 <span className="text-xs sm:text-sm text-gray-600">
                   Nick: {commission.nick}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faShoppingCart} className="h-3 w-3 text-gray-400" />
+                <ShoppingCart className="h-3 w-3 text-gray-400" />
                 <span className="text-xs sm:text-sm text-gray-600">
                   Venta: {formatCurrencyNoDecimals(commission.venta)}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faServer} className="h-3 w-3 text-gray-400" />
+                <Server className="h-3 w-3 text-gray-400" />
                 <span className="text-xs sm:text-sm text-gray-600">
                   Servicio: {formatCurrencyNoDecimals(commission.servicio)}
                 </span>
               </div>
 
               <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
-                <FontAwesomeIcon icon={faMoneyBillWave} className="h-3 w-3 text-green-500" />
+                <Coins className="h-3 w-3 text-green-500" />
                 <span className="text-sm sm:text-base font-semibold text-green-600">
                   Total: {formatCurrencyNoDecimals(commission.total)}
                 </span>

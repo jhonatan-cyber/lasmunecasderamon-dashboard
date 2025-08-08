@@ -4,8 +4,7 @@ import React from 'react';
 import { useTimer } from '@/contexts/TimerContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faStop } from '@fortawesome/free-solid-svg-icons';
+import { Clock, Square } from 'lucide-react';
 
 export const TimerDisplay: React.FC = () => {
   const { timers, stopTimer, formatTime } = useTimer();
@@ -62,7 +61,7 @@ export const TimerDisplay: React.FC = () => {
           <CardHeader className="pb-0 pt-1">
             <CardTitle className="text-xs flex items-center justify-between">
               <span className="flex items-center gap-1">
-                <FontAwesomeIcon icon={faClock} className="text-orange-500 text-xs" />
+                <Clock className="text-orange-500 text-xs" />
                 <span className="truncate text-xs">{timer.roomName}</span>
               </span>
               <Button
@@ -71,7 +70,7 @@ export const TimerDisplay: React.FC = () => {
                 onClick={() => handleStopTimer(timer.id, timer.roomName, timer.servicioCode, timer.clienteNombre)}
                 className="h-3 px-1 text-xs"
               >
-                <FontAwesomeIcon icon={faStop} className="text-red-500 text-xs" />
+                <Square className="text-red-500 text-xs" />
               </Button>
             </CardTitle>
           </CardHeader>

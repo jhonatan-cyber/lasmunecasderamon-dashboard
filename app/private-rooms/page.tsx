@@ -1,8 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Plus } from 'lucide-react';
 import { useHabitaciones } from '@/hooks/useHabitaciones';
 import ServicioCard from '@/components/servicios/ServicioCard';
 import Paginate from '@/components/ui/paginate';
@@ -46,7 +45,7 @@ export default function ServiciosPage() {
           className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
           size='sm'
         >
-          <FontAwesomeIcon icon={faPlus} className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Nuevo
         </Button>
       </div>

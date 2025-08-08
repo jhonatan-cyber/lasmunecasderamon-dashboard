@@ -1,11 +1,6 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faExclamationTriangle,
-  faCheckCircle,
-  faCashRegister,
-} from "@fortawesome/free-solid-svg-icons";
+import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCashRegister } from "@/hooks/useCashRegister";
 
@@ -20,10 +15,7 @@ export function CajaStatusBanner() {
   if (error) {
     return (
       <Alert className="mb-4 border-yellow-200 bg-yellow-50">
-        <FontAwesomeIcon
-          icon={faExclamationTriangle}
-          className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600"
-        />
+        <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
         <AlertDescription className="text-yellow-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <span className="text-sm sm:text-base">
@@ -46,10 +38,7 @@ export function CajaStatusBanner() {
   if (!hasOpenCaja) {
     return (
       <Alert className="mb-4 border-red-200 bg-red-50">
-        <FontAwesomeIcon
-          icon={faExclamationTriangle}
-          className="h-3 w-3 sm:h-4 sm:w-4 text-red-600"
-        />
+        <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
         <AlertDescription className="text-red-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <span className="text-sm sm:text-base">

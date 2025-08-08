@@ -12,15 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ServicioWithDetails } from "@/types/servicio";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faEye,
-  faEdit,
-  faTrash,
-  faEllipsisV,
-  faClock,
-  faUsers,
-} from "@fortawesome/free-solid-svg-icons";
+  Eye,
+  PencilSimple,
+  Trash,
+  DotsThreeVertical,
+  Clock,
+  Users,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -168,7 +167,7 @@ export default function ServicioTable({
                 </TableCell>
                 <TableCell className="py-3 px-4 text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <FontAwesomeIcon icon={faClock} className="text-gray-400" />
+                    <Clock className="text-gray-400" />
                     {formatTime(servicio.tiempo)}
                   </div>
                 </TableCell>
@@ -187,7 +186,7 @@ export default function ServicioTable({
                           size="sm"
                           className="bg-white hover:bg-gray-50 rounded-full"
                         >
-                          <FontAwesomeIcon icon={faEllipsisV} />
+                          <DotsThreeVertical />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
@@ -195,7 +194,7 @@ export default function ServicioTable({
                           className="cursor-pointer hover:text-blue-700 hover:bg-blue-50"
                           onClick={() => handleVerDetalles(servicio.id_servicio!)}
                         >
-                          <FontAwesomeIcon icon={faEye} />
+                          <Eye />
                           Ver detalles
                         </DropdownMenuItem>
                         {servicio.estado === 1 && (
@@ -204,14 +203,14 @@ export default function ServicioTable({
                               className="cursor-pointer hover:text-green-700 hover:bg-green-50"
                               onClick={() => handleEditar(servicio.id_servicio!)}
                             >
-                              <FontAwesomeIcon icon={faEdit} />
+                              <PencilSimple />
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="cursor-pointer hover:text-red-700 hover:bg-red-50"
                               onClick={() => handleEliminar(servicio.id_servicio!)}
                             >
-                              <FontAwesomeIcon icon={faTrash} />
+                              <Trash />
                               Eliminar
                             </DropdownMenuItem>
                           </>

@@ -4,18 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faAt,
-  faPhone,
-  faLocation,
-  faMoneyBillTrendUp,
-  faMoneyBillTransfer,
-  faHandHoldingDollar,
-  faIdCard,
-  faBuildingColumns,
-  faHeart
-} from '@fortawesome/free-solid-svg-icons';
+  AtSign,
+  Phone,
+  MapPin,
+  TrendingUp,
+  DollarSign,
+  Coins,
+  CreditCard,
+  Building,
+  Heart
+} from 'lucide-react';
 
 interface UserDetailsProps {
   user: User | null;
@@ -88,7 +87,9 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
               >
                 {user.status === 1 ? 'Activo' : 'Inactivo'}
               </Badge>
-              <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>{user.role || 'Sin rol'}</Badge>
+              <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
+                {user.role || 'Sin rol'}
+              </Badge>
             </div>
           </div>
         </div>
@@ -107,57 +108,52 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
           {/* Información Personal */}
           <div className='space-y-3 sm:space-y-4'>
-            <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>Información Personal</h3>
+            <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>
+              Información Personal
+            </h3>
             <div className='space-y-2 sm:space-y-3'>
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faIdCard}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>RUN</p>
-                  <p className='text-xs sm:text-sm text-gray-600'>{user.run || 'No especificado'}</p>
+                  <p className='text-xs sm:text-sm text-gray-600'>
+                    {user.run || 'No especificado'}
+                  </p>
                 </div>
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faAt}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <AtSign className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>Email</p>
-                  <p className='text-xs sm:text-sm text-gray-600'>{user.email || 'No especificado'}</p>
+                  <p className='text-xs sm:text-sm text-gray-600'>
+                    {user.email || 'No especificado'}
+                  </p>
                 </div>
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faPhone}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <Phone className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>Teléfono</p>
-                  <p className='text-xs sm:text-sm text-gray-600'>{user.phone || 'No especificado'}</p>
+                  <p className='text-xs sm:text-sm text-gray-600'>
+                    {user.phone || 'No especificado'}
+                  </p>
                 </div>
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faLocation}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <MapPin className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>Dirección</p>
-                  <p className='text-xs sm:text-sm text-gray-600'>{user.address || 'No especificada'}</p>
+                  <p className='text-xs sm:text-sm text-gray-600'>
+                    {user.address || 'No especificada'}
+                  </p>
                 </div>
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faHeart}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <Heart className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>Estado Civil</p>
                   <Badge
@@ -175,13 +171,12 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faBuildingColumns}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <Building className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>AFP</p>
-                  <p className='text-xs sm:text-sm text-gray-600'>{user.afp || 'No especificada'}</p>
+                  <p className='text-xs sm:text-sm text-gray-600'>
+                    {user.afp || 'No especificada'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -189,13 +184,12 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
 
           {/* Información Financiera */}
           <div className='space-y-3 sm:space-y-4'>
-            <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>Información Financiera</h3>
+            <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>
+              Información Financiera
+            </h3>
             <div className='space-y-2 sm:space-y-3'>
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faMoneyBillTrendUp}
-                  className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <TrendingUp className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-xs sm:text-sm font-medium'>Sueldo</p>
                   <p className='text-sm text-gray-600'>{formatCurrency(user.salary, 'sueldo')}</p>
@@ -203,10 +197,7 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faMoneyBillTransfer}
-                  className='h-4 w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <DollarSign className='h-4 w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-sm font-medium'>Aporte AFP</p>
                   <p className='text-sm text-gray-600'>
@@ -216,10 +207,7 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
               </div>
 
               <div className='flex items-start'>
-                <FontAwesomeIcon
-                  icon={faHandHoldingDollar}
-                  className='h-4 w-4 mt-1 mr-2 text-gray-400 flex-shrink-0'
-                />
+                <Coins className='h-4 w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
                   <p className='text-sm font-medium'>Descuento de habitación</p>
                   <p className='text-sm text-gray-600'>

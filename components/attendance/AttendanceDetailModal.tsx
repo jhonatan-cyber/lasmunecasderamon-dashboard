@@ -13,8 +13,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendar, faClock, faUser, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { Calendar, Clock, User, X } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import Paginate from '@/components/ui/paginate';
 import SelectElements from '@/components/ui/select-elements';
@@ -131,45 +130,51 @@ export default function AttendanceDetailModal({
 
         <div className='space-y-4'>
                      {/* Información del usuario con resumen */}
-           <Card>
-             <CardContent className='p-6'>
-               <div className='flex justify-between items-center'>
-                 {/* Sección Izquierda: Información del Usuario */}
-                 <div className='flex flex-col space-y-1'>
-                   <div className='text-lg font-semibold text-gray-900'>{userName}</div>
-                   <div className='text-sm text-gray-600'>@{userNick}</div>
-                 </div>
+                       <Card>
+              <CardContent className='p-6'>
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                  {/* Sección Izquierda: Información del Usuario */}
+                  <div className='flex flex-col space-y-2'>
+                    <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>Información del Usuario</h4>
+                    <div className='space-y-1'>
+                      <div className='text-lg font-semibold text-gray-900'>{userName}</div>
+                      <div className='text-sm text-gray-600'>@{userNick}</div>
+                    </div>
+                  </div>
 
-                 {/* Sección Derecha: Totales Financieros */}
-                 <div className='flex flex-col space-y-2 text-right'>
-                   <div>
-                     <div className='text-sm text-gray-600'>Total sueldos</div>
-                     <div className='text-lg font-bold text-green-600'>
-                       {formatCurrencyNoDecimals(
-                         asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0)
-                       )}
-                     </div>
-                   </div>
-                   <div>
-                     <div className='text-sm text-gray-600'>Total aportes</div>
-                     <div className='text-lg font-bold text-blue-600'>
-                       {formatCurrencyNoDecimals(
-                         asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0)
-                       )}
-                     </div>
-                   </div>
-                   <div>
-                     <div className='text-sm text-gray-600'>Total a pagar</div>
-                     <div className='text-lg font-bold text-purple-600'>
-                       {formatCurrencyNoDecimals(
-                         asistencias.reduce((sum, a) => sum + (a.sueldo_final || 0), 0)
-                       )}
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
+                  {/* Sección Derecha: Totales Financieros */}
+                  <div className='flex flex-col space-y-2'>
+                    <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>Resumen Financiero</h4>
+                    <div className='space-y-3'>
+                      <div className='flex  items-center'>
+                        <span className='text-sm text-gray-600'>Total sueldos :</span>
+                        <span className='text-lg font-bold text-green-600 ml-5'>
+                          {formatCurrencyNoDecimals(
+                            asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0)
+                          )}
+                        </span>
+                      </div>
+                      <div className='flex  items-center'>
+                        <span className='text-sm text-gray-600'>Total aportes :</span>
+                        <span className='text-lg font-bold text-blue-600 ml-5'>
+                          {formatCurrencyNoDecimals(
+                            asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0)
+                          )}
+                        </span>
+                      </div>
+                      <div className='flex items-center'>
+                        <span className='text-sm text-gray-600'>Total a pagar :</span>
+                        <span className='text-lg font-bold text-purple-600 ml-5'>
+                          {formatCurrencyNoDecimals(
+                            asistencias.reduce((sum, a) => sum + (a.sueldo_final || 0), 0)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
           {/* Lista de asistencias */}
           {loading ? (
@@ -193,53 +198,64 @@ export default function AttendanceDetailModal({
             </Card>
           ) : (
             <div className='space-y-3'>
-              <h3 className='font-semibold text-lg'>Registro de Asistencias</h3>
-
-              {/* Controles de paginación para la tabla */}
               <div className='flex items-center justify-between'>
+                <h3 className='font-semibold text-lg'>Registro de Asistencias</h3>
+                
+                {/* Controles de paginación para la tabla */}
                 <SelectElements
                   rowsPerPage={pageSize}
                   setRowsPerPage={setPageSize}
                   setPage={setCurrentPage}
                   options={pageSizeOptions}
-                  label='Asistencias'
+                  label='Asistencias por página'
                 />
               </div>
 
-              {/* Vista móvil */}
-              <div className='lg:hidden space-y-3'>
-                {paginatedAsistencias.map(asistencia => (
-                  <Card key={asistencia.id_asistencia} className='shadow-sm'>
-                    <CardContent className='p-4'>
-                      <div className='space-y-2'>
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-2'>
-                            <FontAwesomeIcon icon={faCalendar} className='text-gray-500 w-4' />
-                            <span className='font-medium text-sm'>
-                              {formatDate(asistencia.fecha)}
-                            </span>
-                          </div>
-                          {getStatusBadge(asistencia.estado)}
-                        </div>
+                             {/* Vista móvil */}
+               <div className='lg:hidden space-y-3'>
+                 {paginatedAsistencias.map(asistencia => (
+                   <Card key={asistencia.id_asistencia} className='shadow-sm'>
+                     <CardContent className='p-4'>
+                       <div className='space-y-2'>
+                         <div className='flex items-center justify-between'>
+                           <div className='flex items-center gap-2'>
+                             <Calendar className='text-gray-500 w-4' />
+                             <span className='font-medium text-sm'>
+                               {formatDate(asistencia.fecha)}
+                             </span>
+                           </div>
+                           {getStatusBadge(asistencia.estado)}
+                         </div>
 
-                        <div className='flex items-center gap-2'>
-                          <FontAwesomeIcon icon={faClock} className='text-gray-500 w-4' />
-                          <span className='text-sm text-gray-600'>
-                            Hora: {formatTime(asistencia.hora)}
-                          </span>
-                        </div>
+                         <div className='flex items-center gap-2'>
+                           <Clock className='text-gray-500 w-4' />
+                           <span className='text-sm text-gray-600'>
+                             Hora: {formatTime(asistencia.hora)}
+                           </span>
+                         </div>
 
-                        {asistencia.observaciones && (
-                          <div className='text-sm text-gray-600 bg-gray-50 p-2 rounded'>
-                            <span className='font-medium'>Observación:</span>{' '}
-                            {asistencia.observaciones}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                         {asistencia.observaciones && (
+                           <div className='text-sm text-gray-600 bg-gray-50 p-2 rounded'>
+                             <span className='font-medium'>Observación:</span>{' '}
+                             {asistencia.observaciones}
+                           </div>
+                         )}
+                       </div>
+                     </CardContent>
+                   </Card>
+                 ))}
+
+                 {/* Paginación para móvil */}
+                 {totalPages > 1 && (
+                   <div className='flex justify-center mt-4'>
+                     <Paginate
+                       page={currentPage}
+                       totalPages={totalPages}
+                       setPage={handlePageChange}
+                     />
+                   </div>
+                 )}
+               </div>
 
               {/* Vista desktop */}
               <div className='hidden lg:block'>

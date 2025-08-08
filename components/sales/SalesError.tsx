@@ -1,9 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faExclamationTriangle,
-  faRotate,
-} from "@fortawesome/free-solid-svg-icons";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 
 interface SalesErrorProps {
   error: string;
@@ -15,10 +11,7 @@ export function SalesError({ error, onRetry }: SalesErrorProps) {
     <div className="p-4 sm:p-6">
       <div className="flex items-center justify-center h-48 sm:h-64">
         <div className="text-center">
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
-            className="h-8 w-8 sm:h-12 sm:w-12 text-red-500 mx-auto mb-4"
-          />
+          <AlertTriangle className="h-8 w-8 sm:h-12 sm:w-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
             Error al cargar datos
           </h3>
@@ -29,7 +22,7 @@ export function SalesError({ error, onRetry }: SalesErrorProps) {
             variant="outline"
             className="rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
           >
-            <FontAwesomeIcon icon={faRotate} className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             Reintentar
           </Button>
         </div>

@@ -1,8 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileExcel, faFilePdf } from "@fortawesome/free-solid-svg-icons";
+import { FileText as FilePdf, FileSpreadsheet as FileXls } from "lucide-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -15,7 +14,7 @@ interface ExportButtonsProps {
 }
 
 export function ExportButtons({ users }: ExportButtonsProps) {
-  const tableRef = useRef<HTMLTableElement>(null);
+
 
   const exportToExcel = () => {
     const data = users.map((user, index) => ({
@@ -123,7 +122,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         onClick={exportToPDF}
         className="gap-2 rounded-full hover:text-red-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
       >
-        <FontAwesomeIcon icon={faFilePdf} className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
+        <FilePdf className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
         PDF
       </Button>
       <Button
@@ -132,8 +131,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         onClick={exportToExcel}
         className="gap-2 rounded-full hover:text-green-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
       >
-        <FontAwesomeIcon
-          icon={faFileExcel}
+        <FileXls
           className="h-3 w-3 sm:h-4 sm:w-4 text-green-500"
         />
         Excel

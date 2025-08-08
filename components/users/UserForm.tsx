@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useState, useRef, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { User } from '@/types/user';
+import { User as UserType } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -22,23 +22,21 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faIdCard,
-  faUserSecret,
-  faUser,
-  faSignature,
-  faPhone,
-  faMapLocationDot,
-  faRestroom,
-  faHotel,
-  faMoneyBillTransfer,
-  faHandHoldingDollar,
-  faUsers,
-  faMoneyBill1Wave,
-  faImage,
-  faTrash
-} from '@fortawesome/free-solid-svg-icons';
+  CreditCard,
+  UserCircle,
+  User,
+  FileSignature,
+  Phone,
+  MapPin,
+  UserCheck,
+  Home,
+  DollarSign,
+  Coins,
+  Users,
+  Image,
+  Trash2
+} from 'lucide-react';
 import { Role } from '@/types/role';
 // Esquema de validación con Zod
 const userFormSchema = z.object({
@@ -50,10 +48,10 @@ const userFormSchema = z.object({
   telefono: z.string().min(8, 'El teléfono es requerido'),
   estado_civil: z.string().min(1, 'El estado civil es requerido'),
   afp: z.string().min(2, 'El establecimiento de aporte es requerido'),
-  sueldo: z.number().min(0, 'El sueldo no puede ser negativo').default(0),
-  aporte: z.number().min(0, 'El aporte no puede ser negativo').default(0),
-  descuento: z.number().min(0, 'El descuento no puede ser negativo').default(0),
-  housing_discount: z.boolean().default(false),
+  sueldo: z.number().min(0, 'El sueldo no puede ser negativo'),
+  aporte: z.number().min(0, 'El aporte no puede ser negativo'),
+  descuento: z.number().min(0, 'El descuento no puede ser negativo'),
+  housing_discount: z.boolean(),
   rol_id: z.string().min(1, 'El rol es requerido'),
   correo: z.string().optional(), // Completamente opcional, sin validación de email
   password: z.string().optional(),
@@ -62,7 +60,7 @@ const userFormSchema = z.object({
 export type UserFormValues = z.infer<typeof userFormSchema>;
 
 interface UserFormProps {
-  user?: User;
+  user?: UserType;
   onSubmit: (values: UserFormValues, file?: File) => void;
   onCancel: () => void;
   isEditMode?: boolean;
@@ -304,10 +302,14 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                   <FormLabel className='text-sm sm:text-base'>RUN</FormLabel>
                   <div className='relative'>
                     <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                      <FontAwesomeIcon icon={faIdCard} className='w-3 h-3 sm:w-4 sm:h-4' />
+                      <CreditCard className='w-3 h-3 sm:w-4 sm:h-4' />
                     </span>
                     <FormControl>
-                      <Input className='pl-10 sm:pl-12 text-sm sm:text-base' placeholder='Run del usuario' {...field} />
+                      <Input
+                        className='pl-10 sm:pl-12 text-sm sm:text-base'
+                        placeholder='Run del usuario'
+                        {...field}
+                      />
                     </FormControl>
                   </div>
                   <FormMessage />
@@ -324,10 +326,14 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                   <FormLabel className='text-sm sm:text-base'>Nick</FormLabel>
                   <div className='relative'>
                     <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                      <FontAwesomeIcon icon={faUserSecret} className='w-3 h-3 sm:w-4 sm:h-4' />
+                      <UserCircle className='w-3 h-3 sm:w-4 sm:h-4' />
                     </span>
                     <FormControl>
-                      <Input className='pl-10 sm:pl-12 text-sm sm:text-base' placeholder='Nick del usuario' {...field} />
+                      <Input
+                        className='pl-10 sm:pl-12 text-sm sm:text-base'
+                        placeholder='Nick del usuario'
+                        {...field}
+                      />
                     </FormControl>
                   </div>
                   <FormMessage />
@@ -373,7 +379,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                         />
                       ) : (
                         <div className='w-full h-full flex flex-col items-center justify-center text-gray-400'>
-                          <FontAwesomeIcon icon={faImage} size='2x' />
+                          <Image size={32} />
                           <span className='text-sm mt-1'>Seleccionar imagen</span>
                         </div>
                       )}
@@ -395,7 +401,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                           if (fileInputRef.current) fileInputRef.current.value = '';
                         }}
                       >
-                        <FontAwesomeIcon icon={faTrash} className='mr-1' />
+                        <Trash2 className='mr-1' />
                         Eliminar
                       </Button>
                     )}
@@ -419,10 +425,14 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel className='text-sm sm:text-base'>Nombre</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faUser} className='w-3 h-3 sm:w-4 sm:h-4' />
+                    <User className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <FormControl>
-                    <Input className='pl-10 sm:pl-12 text-sm sm:text-base' placeholder='Nombre(s)' {...field} />
+                    <Input
+                      className='pl-10 sm:pl-12 text-sm sm:text-base'
+                      placeholder='Nombre(s)'
+                      {...field}
+                    />
                   </FormControl>
                 </div>
                 <FormMessage />
@@ -439,10 +449,14 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel className='text-sm sm:text-base'>Apellido</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faSignature} className='w-3 h-3 sm:w-4 sm:h-4' />
+                    <FileSignature className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <FormControl>
-                    <Input className='pl-10 sm:pl-12 text-sm sm:text-base' placeholder='Apellido(s)' {...field} />
+                    <Input
+                      className='pl-10 sm:pl-12 text-sm sm:text-base'
+                      placeholder='Apellido(s)'
+                      {...field}
+                    />
                   </FormControl>
                 </div>
                 <FormMessage />
@@ -459,10 +473,14 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel className='text-sm sm:text-base'>Dirección</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faMapLocationDot} className='w-3 h-3 sm:w-4 sm:h-4' />
+                    <MapPin className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <FormControl>
-                    <Input className='pl-10 sm:pl-12 text-sm sm:text-base' placeholder='Dirección completa' {...field} />
+                    <Input
+                      className='pl-10 sm:pl-12 text-sm sm:text-base'
+                      placeholder='Dirección completa'
+                      {...field}
+                    />
                   </FormControl>
                 </div>
                 <FormMessage />
@@ -479,10 +497,14 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel className='text-sm sm:text-base'>Teléfono</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faPhone} className='w-3 h-3 sm:w-4 sm:h-4' />
+                    <Phone className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <FormControl>
-                    <Input className='pl-10 sm:pl-12 text-sm sm:text-base' placeholder='Telefono' {...field} />
+                    <Input
+                      className='pl-10 sm:pl-12 text-sm sm:text-base'
+                      placeholder='Telefono'
+                      {...field}
+                    />
                   </FormControl>
                 </div>
                 <FormMessage />
@@ -500,7 +522,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                   <FormLabel className='text-sm sm:text-base'>Estado Civil</FormLabel>
                   <div className='relative'>
                     <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                      <FontAwesomeIcon icon={faRestroom} />
+                      <UserCheck />
                     </span>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
@@ -532,7 +554,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel>Establecimiento de Aporte</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faHotel} />
+                    <Home />
                   </span>
                   <FormControl>
                     <Input className='pl-12' placeholder='Establecimiento AFP' {...field} />
@@ -552,7 +574,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel>Rol</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faUsers} />
+                    <Users />
                   </span>
                   <Select
                     onValueChange={field.onChange}
@@ -591,20 +613,20 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel>Sueldo </FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faMoneyBillTransfer} />
+                    <DollarSign />
                   </span>
-                                     <FormControl>
-                     <Input
-                       className='pl-12'
-                       type='number'
-                       min='0'
-                       step='0.01'
-                       value={field.value ?? ''}
-                       onChange={e => field.onChange(Number(e.target.value))}
-                       onFocus={() => field.onChange('')}
-                       placeholder='Sueldo'
-                     />
-                   </FormControl>
+                  <FormControl>
+                    <Input
+                      className='pl-12'
+                      type='number'
+                      min='0'
+                      step='0.01'
+                      value={field.value ?? ''}
+                      onChange={e => field.onChange(Number(e.target.value))}
+                      onFocus={() => field.onChange('')}
+                      placeholder='Sueldo'
+                    />
+                  </FormControl>
                 </div>
                 <FormMessage />
               </FormItem>
@@ -620,20 +642,20 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 <FormLabel>Aporte AFP</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FontAwesomeIcon icon={faHandHoldingDollar} />
+                    <Coins />
                   </span>
-                                     <FormControl>
-                     <Input
-                       className='pl-12'
-                       type='number'
-                       min='0'
-                       step='0.01'
-                       value={field.value ?? ''}
-                       onChange={e => field.onChange(Number(e.target.value))}
-                       onFocus={() => field.onChange('')}
-                       placeholder='Aporte AFP'
-                     />
-                   </FormControl>
+                  <FormControl>
+                    <Input
+                      className='pl-12'
+                      type='number'
+                      min='0'
+                      step='0.01'
+                      value={field.value ?? ''}
+                      onChange={e => field.onChange(Number(e.target.value))}
+                      onFocus={() => field.onChange('')}
+                      placeholder='Aporte AFP'
+                    />
+                  </FormControl>
                 </div>
                 <FormMessage />
               </FormItem>
@@ -670,20 +692,20 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                     <FormLabel>Monto del Descuento</FormLabel>
                     <div className='relative'>
                       <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                        <FontAwesomeIcon icon={faMoneyBill1Wave} />
+                        <DollarSign />
                       </span>
-                                             <FormControl>
-                         <Input
-                           className='pl-12'
-                           type='number'
-                           min='0'
-                           step='0.01'
-                           value={field.value ?? 0}
-                           onChange={e => field.onChange(Number(e.target.value))}
-                           onFocus={() => field.onChange('')}
-                           placeholder='Monto del descuento'
-                         />
-                       </FormControl>
+                      <FormControl>
+                        <Input
+                          className='pl-12'
+                          type='number'
+                          min='0'
+                          step='0.01'
+                          value={field.value ?? 0}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                          onFocus={() => field.onChange('')}
+                          placeholder='Monto del descuento'
+                        />
+                      </FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>

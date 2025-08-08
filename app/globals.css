@@ -123,15 +123,7 @@ body {
   }
 }
 
-/* Prevenir que los íconos se hagan grandes durante el loading */
-.fontawesome-icon {
-  width: 1rem !important;
-  height: 1rem !important;
-  min-width: 1rem !important;
-  min-height: 1rem !important;
-  max-width: 1rem !important;
-  max-height: 1rem !important;
-}
+
 
 /* Asegurar que los íconos de búsqueda mantengan su tamaño */
 .search-icon {
