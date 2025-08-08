@@ -4,12 +4,14 @@ import type { NextRequest } from "next/server";
 // Rutas públicas que no requieren autenticación
 const PUBLIC_PATHS = [
   "/login",
+  "/login-debug",
   "/confirmar-anulacion",
   "/confirmar-anulacion-servicio",
   "/api/login",
   "/api/logout",
   "/api/auth/check",
   "/api/auth/me",
+  "/api/test-login-redirect",
   "/api/ventas/confirmar-anulacion",
   "/api/ventas/procesar-anulacion",
   "/api/ventas/solicitud-anulacion",
@@ -76,6 +78,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/login|api/logout|api/auth/check|api/auth/me|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio).*)",
+    "/((?!api/login|api/logout|api/auth/check|api/auth/me|api/test-login-redirect|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio|login-debug).*)",
   ],
 };
