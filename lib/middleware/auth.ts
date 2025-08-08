@@ -101,18 +101,29 @@ export function withAuth(handler: NextApiHandler) {
     let token = null;
     const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
     
+    console.log('🔍 withAuth: Checking authentication for:', req.url);
+    console.log('📊 withAuth: Headers:', {
+      authorization: req.headers.authorization ? 'present' : 'missing',
+      cookie: req.headers.cookie ? 'present' : 'missing'
+    });
+    console.log('📊 withAuth: Cookies object:', req.cookies);
+    
     // 1. Buscar en el header Authorization
     const auth = req.headers.authorization;
     if (auth && auth.startsWith("Bearer ")) {
       token = auth.replace("Bearer ", "");
+      console.log('✅ withAuth: Token found in Authorization header');
     }
     
     // 2. Si no hay token, buscar en la cookie 'token'
     if (!token && req.cookies && req.cookies.token) {
       token = req.cookies.token;
+      console.log('✅ withAuth: Token found in cookies');
     }
     
     if (!token) {
+      console.log('❌ withAuth: No token found');
+      console.log('📊 withAuth: Available cookies:', Object.keys(req.cookies || {}));
       auditLogger.securityEvent(0, 'AUTH_FAILED', { 
         reason: 'No token provided',
         ip: clientIP,
