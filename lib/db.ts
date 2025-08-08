@@ -37,14 +37,32 @@ const pool = mysql.createPool(defaultConfig);
 
 console.log('📊 Connection pool created successfully');
 
+// Function to create a direct connection (more reliable for production)
+async function createConnection() {
+  console.log('🔍 Creating direct connection...');
+  const connection = await mysql.createConnection({
+    host: defaultConfig.host,
+    user: defaultConfig.user,
+    password: defaultConfig.password,
+    database: defaultConfig.database,
+    port: defaultConfig.port
+  });
+  console.log('✅ Direct connection created successfully');
+  return connection;
+}
+
 // Function to execute SQL queries
 export async function query(sql: string, params: any[] = []) {
   console.log('🔍 Executing query:', sql);
   console.log('🔍 Query parameters:', params);
   
+  let connection;
   try {
+    console.log('📡 Creating connection for query...');
+    connection = await createConnection();
+    
     console.log('📡 Attempting to execute query...');
-    const [rows] = await pool.execute(sql, params);
+    const [rows] = await connection.execute(sql, params);
     console.log('✅ Query executed successfully');
     console.log('📊 Query result rows:', Array.isArray(rows) ? rows.length : 'Not an array');
     return rows;
@@ -57,6 +75,12 @@ export async function query(sql: string, params: any[] = []) {
       sqlState: (error as any)?.sqlState
     });
     throw error;
+  } finally {
+    if (connection) {
+      console.log('🔓 Closing connection...');
+      await connection.end();
+      console.log('✅ Connection closed');
+    }
   }
 }
 
@@ -64,14 +88,24 @@ export async function query(sql: string, params: any[] = []) {
 export async function rawQuery(sql: string) {
   console.log('🔍 Executing raw query:', sql);
   
+  let connection;
   try {
+    console.log('📡 Creating connection for raw query...');
+    connection = await createConnection();
+    
     console.log('📡 Attempting to execute raw query...');
-    const [rows] = await pool.query(sql);
+    const [rows] = await connection.query(sql);
     console.log('✅ Raw query executed successfully');
     return rows;
   } catch (error) {
     console.error('❌ Database raw query error:', error);
     throw error;
+  } finally {
+    if (connection) {
+      console.log('🔓 Closing connection...');
+      await connection.end();
+      console.log('✅ Connection closed');
+    }
   }
 }
 
@@ -86,14 +120,14 @@ export async function testConnection() {
   });
   
   try {
-    console.log('📡 Attempting to get connection from pool...');
-    const connection = await pool.getConnection();
+    console.log('📡 Attempting to create direct connection...');
+    const connection = await createConnection();
     console.log('✅ Successfully connected to the database');
     console.log('📊 Connection details:', {
       threadId: connection.threadId
     });
-    connection.release();
-    console.log('🔓 Connection released back to pool');
+    await connection.end();
+    console.log('🔓 Connection closed');
     return true;
   } catch (error) {
     console.error('❌ Error connecting to the database:', error);
