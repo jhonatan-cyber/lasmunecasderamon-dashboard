@@ -40,7 +40,6 @@ async function getCodigoHandler(req: NextApiRequest, res: NextApiResponse) {
       message: 'Código obtenido exitosamente'
     });
   } catch (error) {
-    console.error('Error al obtener código:', error);
     auditLogger.error(error as Error, {
       action: 'GET_CODIGO',
       clientIP: req.headers['x-forwarded-for'] || req.connection.remoteAddress

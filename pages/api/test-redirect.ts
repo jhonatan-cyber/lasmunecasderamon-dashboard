@@ -95,10 +95,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('✅ Cookie set successfully');
 
-    // Registrar login exitoso
+    // Registrar login exitoso (temporalmente comentado para debugging)
     console.log('🔍 Recording login in database...');
-    await query('INSERT INTO logins (usuario_id) VALUES (?)', [user.id_usuario]);
-    console.log('✅ Login recorded successfully');
+    try {
+      await query('INSERT INTO logins (usuario_id) VALUES (?)', [user.id_usuario]);
+      console.log('✅ Login recorded successfully');
+    } catch (loginError) {
+      console.log('⚠️ Login recording failed, but continuing:', loginError);
+      // Continuar sin registrar el login para debugging
+    }
 
     console.log('🎉 Login process completed successfully');
 
