@@ -56,7 +56,16 @@ export function setSecureCookie(
     return true;
   } catch (error) {
     console.error('❌ Error setting cookie:', error);
-    return false;
+    // Fallback: reintentar sin secure si falló por conexión no encriptada
+    try {
+      console.log('↩️ Retry setting cookie with secure: false');
+      cookies.set(name, value, { ...defaultOptions, secure: false });
+      console.log('✅ Cookie set successfully on retry (secure: false)');
+      return true;
+    } catch (retryError) {
+      console.error('❌ Retry also failed setting cookie:', retryError);
+      return false;
+    }
   }
 }
 

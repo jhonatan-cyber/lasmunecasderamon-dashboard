@@ -43,7 +43,7 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
       setLoading(true);
       setError(null);
       
-             const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth/me", { credentials: 'include' });
       const data = await res.json();
       
       if (!res.ok || !data.success) {
