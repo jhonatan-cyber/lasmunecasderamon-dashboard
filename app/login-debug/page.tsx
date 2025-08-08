@@ -41,9 +41,22 @@ export default function LoginDebugPage() {
       localStorage.setItem('debug_token', data.token);
       console.log('🔍 Token saved to localStorage for debugging');
       
-      // Redirección directa sin usar router
-      console.log('🔄 Redirecting to dashboard...');
-      window.location.href = '/';
+      // Verificar cookies después del login
+      console.log('🔍 Checking cookies after login...');
+      try {
+        const cookieCheck = await fetch('/api/debug-cookies');
+        const cookieData = await cookieCheck.json();
+        console.log('📊 Cookie check result:', cookieData);
+      } catch (error) {
+        console.log('⚠️ Cookie check failed:', error);
+      }
+      
+      // Esperar un momento antes de redirigir para que las cookies se establezcan
+      console.log('⏳ Waiting 1 second before redirect...');
+      setTimeout(() => {
+        console.log('🔄 Redirecting to dashboard...');
+        window.location.href = '/';
+      }, 1000);
       
     } catch (err) {
       console.error('❌ Login error:', err);
