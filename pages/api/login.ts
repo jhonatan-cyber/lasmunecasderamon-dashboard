@@ -273,9 +273,22 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
 
     // Configurar cookie
     console.log('🔍 Setting cookie...');
+    const cookies = new Cookies(req, res);
+    
+    // Detectar si estamos en HTTPS
+    const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                    req.headers['x-forwarded-proto'] === 'https' ||
+                    process.env.NODE_ENV === 'production';
+    
+    console.log('📊 HTTPS detection:', {
+      xForwardedProto: req.headers['x-forwarded-proto'],
+      nodeEnv: process.env.NODE_ENV,
+      isHttps: isHttps
+    });
+    
     cookies.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isHttps, // Solo usar secure si estamos en HTTPS
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000, // 24 horas
       path: '/'
