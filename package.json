@@ -116,6 +116,7 @@
     "@types/punycode": "^2.1.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.32.0",
     "husky": "^9.1.7",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
