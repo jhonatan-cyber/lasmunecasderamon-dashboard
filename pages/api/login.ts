@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import Cookies from 'cookies';
 import bcrypt from 'bcryptjs';
+import { setSecureCookie } from '@/lib/middleware/cookieUtils';
 
 // Función para verificar si la hora está en el rango permitido para asistencia
 const isHoraAsistencia = (): boolean => {
@@ -271,28 +272,13 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
 
     console.log('✅ JWT token generated');
 
-    // Configurar cookie
+    // Configurar cookie usando las nuevas utilidades
     console.log('🔍 Setting cookie...');
-    const cookies = new Cookies(req, res);
+    const cookieSet = setSecureCookie(req, res, 'token', token);
     
-    // Detectar si estamos en HTTPS
-    const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
-                    req.headers['x-forwarded-proto'] === 'https' ||
-                    process.env.NODE_ENV === 'production';
-    
-    console.log('📊 HTTPS detection:', {
-      xForwardedProto: req.headers['x-forwarded-proto'],
-      nodeEnv: process.env.NODE_ENV,
-      isHttps: isHttps
-    });
-    
-    cookies.set('token', token, {
-      httpOnly: true,
-      secure: isHttps, // Solo usar secure si estamos en HTTPS
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
-      path: '/'
-    });
+    if (!cookieSet) {
+      console.log('⚠️ Cookie setting failed, but continuing with token in response');
+    }
 
     console.log('✅ Cookie set successfully');
 

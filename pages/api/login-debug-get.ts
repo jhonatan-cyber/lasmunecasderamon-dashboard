@@ -1,13 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import mysql from 'mysql2/promise';
+import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Cookies from 'cookies';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('🚀 Login test handler started');
+  console.log('🚀 Login debug GET handler started');
+  console.log('📊 Request method:', req.method);
   
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET') {
     console.log('❌ Invalid method:', req.method);
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -15,61 +16,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log('✅ Method validation passed');
 
   try {
-    const { email, password } = req.body;
-    console.log('📊 Request body:', { email: email ? 'provided' : 'missing', password: password ? 'provided' : 'missing' });
-
-    if (!email || !password) {
-      console.log('❌ Missing credentials');
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Faltan credenciales' 
-      });
-    }
-
-    console.log('✅ Credentials validation passed');
-
-    // Configuración de conexión directa (igual que test-connection)
-    const config = {
-      host: process.env.DB_HOST || 'lasmunecasderamoncom-lasmunecasderamondb-jfteo0',
-      user: process.env.DB_USER || 'nuwe',
-      password: process.env.DB_PASSWORD || 'Ancasi96nuwe+',
-      database: process.env.DB_NAME || 'lasmunecasderamon',
-      port: parseInt(process.env.DB_PORT || '3306'),
-      waitForConnections: true,
-      connectionLimit: 1,
-      queueLimit: 0
-    };
-
-    console.log('🔍 Using connection config:', {
-      host: config.host,
-      user: config.user,
-      database: config.database,
-      port: config.port
-    });
-
-    // Crear conexión directa
-    console.log('📡 Creating direct connection...');
-    const connection = await mysql.createConnection(config);
-    console.log('✅ Connection created successfully');
+    // Usar credenciales de prueba hardcodeadas para debugging
+    const email = 'admin@lasmuñecasderamon.com';
+    const password = 'admin123'; // Asegúrate de que esta contraseña existe en tu BD
+    
+    console.log('📊 Using test credentials:', { email, password: '***' });
 
     // Buscar usuario
-    console.log('🔍 Searching for user with email:', email);
-    const [users] = await connection.execute(
+    console.log('🔍 Searching for user in database...');
+    const users = await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
        WHERE u.email = ? AND u.estado = 1`,
       [email]
-    );
+    ) as any[];
 
+    console.log('📊 Database query completed');
     console.log('📊 Users found:', Array.isArray(users) ? users.length : 'Not an array');
 
     if (!Array.isArray(users) || users.length === 0) {
-      console.log('❌ No user found');
-      await connection.end();
+      console.log('❌ No user found with email:', email);
       return res.status(401).json({ 
         success: false, 
-        message: 'Credenciales inválidas',
+        message: 'Usuario no encontrado',
         debug: { email, userCount: 0 }
       });
     }
@@ -81,13 +51,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔍 Verifying password...');
     const isValidPassword = await bcrypt.compare(password, user.password);
     console.log('📊 Password verification result:', isValidPassword);
-
+    
     if (!isValidPassword) {
-      console.log('❌ Invalid password');
-      await connection.end();
+      console.log('❌ Invalid password for user:', user.id_usuario);
       return res.status(401).json({ 
         success: false, 
-        message: 'Credenciales inválidas',
+        message: 'Contraseña incorrecta',
         debug: { email, userId: user.id_usuario, passwordValid: false }
       });
     }
@@ -133,41 +102,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('✅ Cookie set successfully');
 
     // Registrar login exitoso
-    console.log('🔍 Recording login...');
-    await connection.execute('INSERT INTO logins (usuario_id) VALUES (?)', [user.id_usuario]);
+    console.log('🔍 Recording login in database...');
+    await query('INSERT INTO logins (usuario_id) VALUES (?)', [user.id_usuario]);
     console.log('✅ Login recorded successfully');
 
-    // Cerrar conexión
-    await connection.end();
-    console.log('✅ Connection closed');
-
-    console.log('🎉 Login test completed successfully');
+    console.log('🎉 Login process completed successfully');
 
     return res.status(200).json({
       success: true,
-      message: 'Login exitoso',
+      message: 'Login exitoso (GET)',
       user: {
         id: user.id_usuario,
         username: user.username,
         email: user.email,
         role: user.rol_nombre
       },
-      token: token, // Incluir token para debugging
+      token: token, // Incluir token en respuesta
       debug: {
+        method: 'GET',
         email,
         userId: user.id_usuario,
         passwordValid: true,
-        tokenGenerated: true
+        tokenGenerated: true,
+        cookieSet: true,
+        note: 'Login exitoso usando GET para debugging'
       }
     });
 
   } catch (error) {
-    console.error('❌ Error in login test:', error);
+    console.error('❌ Error in login process:', error);
     console.error('❌ Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      errno: (error as any)?.errno,
-      sqlState: (error as any)?.sqlState,
       stack: error instanceof Error ? error.stack : 'No stack trace'
     });
     return res.status(500).json({
