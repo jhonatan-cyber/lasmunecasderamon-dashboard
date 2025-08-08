@@ -39,24 +39,28 @@ export default function LoginSimplePage() {
       
       console.log('🔄 Attempting redirect...');
       
-      // Método 1: router.push
+      // Guardar token en localStorage para debugging
+      localStorage.setItem('debug_token', data.token);
+      console.log('🔍 Token saved to localStorage for debugging');
+      
+      // Método 1: window.location.href (más directo)
       try {
-        console.log('🔄 Method 1: router.push');
-        router.push('/');
+        console.log('🔄 Method 1: window.location.href to dashboard-simple');
+        window.location.href = '/dashboard-simple';
       } catch (error) {
-        console.error('❌ router.push failed:', error);
+        console.error('❌ window.location.href failed:', error);
         
-        // Método 2: window.location.href
+        // Método 2: router.push
         try {
-          console.log('🔄 Method 2: window.location.href');
-          window.location.href = '/';
+          console.log('🔄 Method 2: router.push to dashboard-simple');
+          router.push('/dashboard-simple');
         } catch (error2) {
-          console.error('❌ window.location.href failed:', error2);
+          console.error('❌ router.push failed:', error2);
           
           // Método 3: router.replace
           try {
-            console.log('🔄 Method 3: router.replace');
-            router.replace('/');
+            console.log('🔄 Method 3: router.replace to dashboard-simple');
+            router.replace('/dashboard-simple');
           } catch (error3) {
             console.error('❌ router.replace failed:', error3);
             toast.error('Error en la redirección');
