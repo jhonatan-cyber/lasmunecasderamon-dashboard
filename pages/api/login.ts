@@ -284,8 +284,13 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
 
     // Registrar login exitoso
     console.log('🔍 Recording login in database...');
-    await registrarLogin(user.id_usuario, token, req);
-    console.log('✅ Login recorded successfully');
+    try {
+      await registrarLogin(user.id_usuario, token, req);
+      console.log('✅ Login recorded successfully');
+    } catch (loginError) {
+      console.log('⚠️ Login recording failed, but continuing:', loginError);
+      // Continuar sin registrar el login para debugging
+    }
 
     // Registrar asistencia si corresponde
     if (isHoraAsistencia()) {
