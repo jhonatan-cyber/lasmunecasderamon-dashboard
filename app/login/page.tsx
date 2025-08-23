@@ -16,6 +16,16 @@ export default function LoginPage() {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [userTmp, setUserTmp] = useState<any>(null);
   const [step, setStep] = useState<'login' | 'codigo'>('login');
+  const [hasUsers, setHasUsers] = useState<boolean | null>(null);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    nombre: '',
+    apellido: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [registerLoading, setRegisterLoading] = useState(false);
   const router = useRouter();
 
   // Referencias para los inputs
@@ -50,10 +60,25 @@ export default function LoginPage() {
       setTheme('system');
       applyTheme('system');
     }
+    
+    // Verificar si hay usuarios registrados
+    async function checkUsers() {
+      try {
+        const res = await fetch('/api/auth/check-users');
+        if (res.ok) {
+          const data = await res.json();
+          setHasUsers(data.hasUsers);
+        }
+      } catch (error) {
+        console.error('Error verificando usuarios:', error);
+        setHasUsers(true); // Por defecto, asumir que hay usuarios
+      }
+    }
+    
     // Protección robusta: verifica sesión con endpoint protegido
     async function checkSession() {
       try {
-                 const res = await fetch('/api/auth/check');
+        const res = await fetch('/api/auth/check');
         if (res.ok) {
           router.replace('/');
         }
@@ -61,6 +86,8 @@ export default function LoginPage() {
         // Si hay error, permite el acceso al login
       }
     }
+    
+    checkUsers();
     checkSession();
   }, []);
 
@@ -96,6 +123,68 @@ export default function LoginPage() {
     { value: 'dark', label: 'Dark', icon: Moon },
     { value: 'system', label: 'System', icon: Monitor }
   ];
+
+  // Función para manejar el registro del primer usuario
+  const handleRegister = async () => {
+    if (registerData.password !== registerData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (registerData.password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    // Validación manual del email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerData.email)) {
+      toast.error('Por favor ingrese un email válido');
+      return;
+    }
+
+    setRegisterLoading(true);
+    try {
+      // Prevenir la codificación Punycode del navegador
+      const emailOriginal = registerData.email;
+      
+      const res = await fetch('/api/auth/register-first-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre: registerData.nombre.trim(),
+          apellido: registerData.apellido.trim(),
+          email: emailOriginal, // Email original sin codificación
+          password: registerData.password
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success('Usuario administrador creado exitosamente');
+        setShowRegisterModal(false);
+        setHasUsers(true);
+        // Limpiar formulario
+        setRegisterData({
+          nombre: '',
+          apellido: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
+        });
+      } else {
+        toast.error(data.message || 'Error al crear el usuario');
+      }
+    } catch (error) {
+      console.error('Error en registro:', error);
+      toast.error('Error interno del servidor');
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
 
   // Función para manejar la navegación con Enter
   const handleKeyDown = (
@@ -279,6 +368,30 @@ export default function LoginPage() {
                   >
                     {loading ? 'Validando...' : 'Iniciar sesión'}
                   </Button>
+
+                  {/* Botón de registro solo si no hay usuarios */}
+                  {hasUsers === false && (
+                    <div className='mt-4'>
+                      <div className='relative'>
+                        <div className='absolute inset-0 flex items-center'>
+                          <span className='w-full border-t border-gray-300 dark:border-gray-600' />
+                        </div>
+                        <div className='relative flex justify-center text-xs uppercase'>
+                          <span className='bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400'>
+                            O
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        className='mt-4 rounded-full px-6 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:scale-110 transition-all duration-200 w-full'
+                        onClick={() => setShowRegisterModal(true)}
+                      >
+                        Crear primer usuario administrador
+                      </Button>
+                    </div>
+                  )}
 
                   {loading && (
                     <div className='flex justify-center mt-2'>
@@ -495,6 +608,121 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Registro del Primer Usuario */}
+      {showRegisterModal && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl'>
+            <div className='text-center mb-6'>
+              <div className='w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4'>
+                <span className='text-2xl'>👑</span>
+              </div>
+              <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-2'>
+                Crear Administrador
+              </h2>
+              <p className='text-gray-600 dark:text-gray-400'>
+                Crea el primer usuario administrador del sistema
+              </p>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }} className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <Label htmlFor='nombre' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                    Nombre
+                  </Label>
+                  <Input
+                    id='nombre'
+                    type='text'
+                    value={registerData.nombre}
+                    onChange={(e) => setRegisterData({ ...registerData, nombre: e.target.value })}
+                    className='mt-1'
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor='apellido' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                    Apellido
+                  </Label>
+                  <Input
+                    id='apellido'
+                    type='text'
+                    value={registerData.apellido}
+                    onChange={(e) => setRegisterData({ ...registerData, apellido: e.target.value })}
+                    className='mt-1'
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor='email' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                  Email
+                </Label>
+                <Input
+                  id='email'
+                  type='text'
+                  value={registerData.email}
+                  onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                  className='mt-1'
+                  required
+                  autoComplete='email'
+                  placeholder='ejemplo@dominio.com'
+                />
+              </div>
+
+              <div>
+                <Label htmlFor='password' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                  Contraseña
+                </Label>
+                <Input
+                  id='password'
+                  type='password'
+                  value={registerData.password}
+                  onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                  className='mt-1'
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor='confirmPassword' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                  Confirmar Contraseña
+                </Label>
+                <Input
+                  id='confirmPassword'
+                  type='password'
+                  value={registerData.confirmPassword}
+                  onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                  className='mt-1'
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div className='flex gap-3 pt-4'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => setShowRegisterModal(false)}
+                  className='flex-1'
+                  disabled={registerLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='submit'
+                  className='flex-1 bg-green-600 hover:bg-green-700'
+                  disabled={registerLoading}
+                >
+                  {registerLoading ? 'Creando...' : 'Crear Administrador'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
