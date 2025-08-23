@@ -36,8 +36,11 @@ export default function LoginPage() {
       // Usar la URL actual del navegador para evitar problemas con dominios internacionalizados
       const protocol = window.location.protocol;
       const host = window.location.host;
-      return `${protocol}//${host}`;
+      const baseUrl = `${protocol}//${host}`;
+      console.log('🌐 [LOGIN] getBaseUrl() retorna:', baseUrl);
+      return baseUrl;
     }
+    console.log('🌐 [LOGIN] getBaseUrl() - window no disponible, retornando cadena vacía');
     return '';
   };
 
@@ -64,6 +67,8 @@ export default function LoginPage() {
   }, [step]);
 
   useEffect(() => {
+    console.log('🚀 [LOGIN] Componente cargado, iniciando verificaciones...');
+    
     // Al cargar, lee el tema guardado o usa system
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     if (saved === 'dark' || saved === 'light' || saved === 'system') {
@@ -76,12 +81,32 @@ export default function LoginPage() {
     
     // Verificar si hay usuarios registrados
     async function checkUsers() {
+      console.log('🔍 [LOGIN] Iniciando verificación de usuarios...');
       setDbStatus('checking');
       try {
         console.log('🔍 [LOGIN] Verificando conexión a la base de datos...');
         const baseUrl = getBaseUrl();
-        const res = await fetch(`${baseUrl}/api/auth/check-users`);
+        console.log('🌐 [LOGIN] URL base:', baseUrl);
+        
+        // Primero hacer una petición de prueba para verificar que llega al servidor
+        console.log('🧪 [LOGIN] Haciendo petición de prueba...');
+        try {
+          const testRes = await fetch(`${baseUrl}/api/auth/test-connection`, {
+            credentials: 'include'
+          });
+          const testData = await testRes.json();
+          console.log('🧪 [LOGIN] Prueba de conexión exitosa:', testData);
+        } catch (testError) {
+          console.error('🧪 [LOGIN] Error en prueba de conexión:', testError);
+        }
+        
+        const res = await fetch(`${baseUrl}/api/auth/check-users`, {
+          credentials: 'include'
+        });
+        console.log('📡 [LOGIN] Respuesta del servidor:', res.status, res.statusText);
+        
         const data = await res.json();
+        console.log('📊 [LOGIN] Datos recibidos:', data);
         
         if (res.ok && data.success) {
           console.log('✅ [LOGIN] Conexión a la base de datos exitosa');
@@ -113,19 +138,37 @@ export default function LoginPage() {
     
     // Protección robusta: verifica sesión con endpoint protegido
     async function checkSession() {
+      console.log('🔐 [LOGIN] Iniciando verificación de sesión...');
       try {
         const baseUrl = getBaseUrl();
-        const res = await fetch(`${baseUrl}/api/auth/check`);
+        console.log('🌐 [LOGIN] URL base para sesión:', baseUrl);
+        
+        const res = await fetch(`${baseUrl}/api/auth/check`, {
+          credentials: 'include'
+        });
+        console.log('📡 [LOGIN] Respuesta de sesión:', res.status, res.statusText);
+        
         if (res.ok) {
+          console.log('✅ [LOGIN] Usuario ya autenticado, redirigiendo...');
           router.replace('/');
+        } else if (res.status === 401) {
+          console.log('🔓 [LOGIN] No hay sesión activa (esperado en login)');
+          // 401 es esperado cuando no hay sesión - no es un error
+        } else {
+          console.warn('⚠️ [LOGIN] Respuesta inesperada del servidor:', res.status);
         }
-      } catch {
-        // Si hay error, permite el acceso al login
+      } catch (error) {
+        console.log('🔓 [LOGIN] Error de red al verificar sesión (permitiendo acceso al login):', error);
+        // Si hay error de red, permite el acceso al login
       }
     }
     
-    checkUsers();
-    checkSession();
+    // Ejecutar verificaciones con un pequeño delay para asegurar que el componente esté montado
+    setTimeout(() => {
+      console.log('⏰ [LOGIN] Ejecutando verificaciones después del delay...');
+      checkUsers();
+      checkSession();
+    }, 100);
   }, []);
 
   const applyTheme = (mode: string) => {
@@ -191,6 +234,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           nombre: registerData.nombre.trim(),
           apellido: registerData.apellido.trim(),
@@ -545,6 +589,7 @@ export default function LoginPage() {
                        const res = await fetch(`${baseUrl}/api/login`, {
                          method: 'POST',
                          headers: { 'Content-Type': 'application/json' },
+                         credentials: 'include',
                          body: JSON.stringify({
                            email: loginData.email,
                            password: loginData.password,
