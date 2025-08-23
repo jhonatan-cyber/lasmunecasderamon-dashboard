@@ -11,8 +11,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   try {
     // Obtener detalles del pedido
-    const results = await query("CALL get_order_detail_by_id(?)", [id]);
-    const details = Array.isArray((results as any)[0]) ? (results as any)[0] : results;
+    const details = await query(`
+      SELECT 
+        P.id_pedido,
+        
+        -- Concatenar nombres de anfitrionas
+        (
+            SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ')
+            FROM pedidos_usuarios PU
+            INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
+            WHERE PU.pedido_id = P.id_pedido
+        ) AS anfitriona,
+
+        -- Concatenar IDs de anfitrionas
+        (
+            SELECT GROUP_CONCAT(U2.id_usuario SEPARATOR ', ')
+            FROM pedidos_usuarios PU
+            INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
+            WHERE PU.pedido_id = P.id_pedido
+        ) AS anfitrionaIds,
+
+        DP.cantidad,
+        C.nombre AS categoria,
+        CONCAT(CL.nombre, ' ', CL.apellido) AS cliente,
+        P.cliente_id,
+        P.codigo,
+        DP.comision,
+        CONCAT(G.nombre, ' ', G.apellido) AS garzon,
+        PR.nombre AS producto,
+        PR.id_producto,
+        DP.precio,
+        DP.subtotal,
+        P.total,
+        P.total_comision,
+        P.subtotal AS total_subtotal,
+        P.fecha_crea
+
+      FROM detalle_pedidos DP
+      INNER JOIN pedidos P ON P.id_pedido = DP.pedido_id
+      LEFT JOIN productos PR ON PR.id_producto = DP.producto_id
+      LEFT JOIN categorias C ON C.id_categoria = PR.categoria_id
+      LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
+      LEFT JOIN usuarios G ON G.id_usuario = P.mesero_id
+
+      WHERE DP.pedido_id = ?
+    `, [id]) as any[];
     
     // Obtener las anfitrionas del pedido con sus IDs
     const anfitrionasQuery = `
