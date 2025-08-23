@@ -9,30 +9,28 @@ import {
 import React from "react";
 
 interface SelectElementsProps {
-  rowsPerPage: number;
-  setRowsPerPage: (value: number) => void;
-  setPage: (value: number) => void;
-  options?: number[];
+  value: number;
+  onChange: (value: number) => void;
+  options?: Array<{ value: string | number; label: string }> | number[];
   label?: string;
 }
 
-const SelectElements: React.FC<SelectElementsProps> = ({
-  rowsPerPage,
-  setRowsPerPage,
-  setPage,
-  options = [5, 10, 20, 40], // Valores por defecto
-  label = "Listado"
-}) => (
+const SelectElements: React.FC<SelectElementsProps> = (props) => {
+  const {
+    value,
+    onChange,
+    options = [5, 10, 20, 40], // Valores por defecto
+    label = "Listado"
+  } = props;
+  
+  return (
   <div>
     <Label htmlFor="rowsPerPage" className="mb-1">
       {label}
     </Label>
     <Select
-      value={String(rowsPerPage)}
-      onValueChange={(v) => {
-        setRowsPerPage(Number(v));
-        setPage(1);
-      }}
+      value={String(value)}
+      onValueChange={(v) => onChange(Number(v))}
     >
       <SelectTrigger
         id="rowsPerPage"
@@ -41,14 +39,19 @@ const SelectElements: React.FC<SelectElementsProps> = ({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option} className="text-center" value={String(option)}>
-            Listar {option} elementos
-          </SelectItem>
-        ))}
+        {options.map((option, index) => {
+          const optionValue = typeof option === 'object' ? option.value : option;
+          const optionLabel = typeof option === 'object' ? option.label : `Listar ${option} elementos`;
+          return (
+            <SelectItem key={index} className="text-center" value={String(optionValue)}>
+              {optionLabel}
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   </div>
-);
+  );
+};
 
 export default SelectElements;

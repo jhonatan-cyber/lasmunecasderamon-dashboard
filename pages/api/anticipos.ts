@@ -158,7 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "GET") {
     try {
       const anticipos = await query(
-        `SELECT A.id_anticipo, U.id_usuario, U.nombre, U.apellido, A.fecha_crea, A.monto, A.estado
+        `SELECT A.id_anticipo, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario, A.fecha_crea, A.monto, A.estado
          FROM anticipos A
          INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
          ORDER BY A.fecha_crea DESC`

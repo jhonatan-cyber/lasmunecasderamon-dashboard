@@ -55,43 +55,51 @@ if (process.env.NODE_ENV !== 'production') {
 // Funciones helper para logging específico
 export const auditLogger = {
   login: (userId: number, ip: string, success: boolean) => {
-    logger.info('Login attempt', { 
-      userId, 
-      ip, 
-      success, 
-      timestamp: new Date().toISOString(),
-      action: 'LOGIN'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info('Login attempt', { 
+        userId, 
+        ip, 
+        success, 
+        timestamp: new Date().toISOString(),
+        action: 'LOGIN'
+      });
+    }
   },
 
   logout: (userId: number, ip: string) => {
-    logger.info('Logout', { 
-      userId, 
-      ip, 
-      timestamp: new Date().toISOString(),
-      action: 'LOGOUT'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info('Logout', { 
+        userId, 
+        ip, 
+        timestamp: new Date().toISOString(),
+        action: 'LOGOUT'
+      });
+    }
   },
 
   dataAccess: (userId: number, action: string, resource: string, details?: any) => {
-    logger.info('Data access', { 
-      userId, 
-      action, 
-      resource, 
-      details,
-      timestamp: new Date().toISOString(),
-      action: 'DATA_ACCESS'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info('Data access', { 
+        userId, 
+        action, 
+        resource, 
+        details,
+        timestamp: new Date().toISOString(),
+        action: 'DATA_ACCESS'
+      });
+    }
   },
 
   securityEvent: (userId: number, event: string, details: any) => {
-    logger.warn('Security event', { 
-      userId, 
-      event, 
-      details,
-      timestamp: new Date().toISOString(),
-      action: 'SECURITY_EVENT'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      logger.warn('Security event', { 
+        userId, 
+        event, 
+        details,
+        timestamp: new Date().toISOString(),
+        action: 'SECURITY_EVENT'
+      });
+    }
   },
 
   error: (error: Error, context?: any) => {

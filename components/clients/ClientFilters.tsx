@@ -36,6 +36,11 @@ export function ClientFilters({
   setPageSize,
   setPage,
 }: ClientFiltersProps) {
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
+
   return (
     <Card className="shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
@@ -77,9 +82,8 @@ export function ClientFilters({
           {/* Elementos por página */}
           <div className="w-full lg:w-auto">
             <SelectElements
-              rowsPerPage={pageSize}
-              setRowsPerPage={setPageSize}
-              setPage={setPage}
+              value={pageSize}
+              onChange={handlePageSizeChange}
               options={[5, 10, 20, 40]}
               label="Clientes por página"
             />

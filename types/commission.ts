@@ -1,6 +1,6 @@
 // Tipos para el sistema de comisiones
 
-export type CommissionStatus = "pendiente" | "aprobada" | "pagada" | "retenida";
+export type CommissionStatus = "por_pagar" | "pagado" | "anulado";
 
 export type CommissionType = "producto" | "servicio" | "paquete" | "evento";
 

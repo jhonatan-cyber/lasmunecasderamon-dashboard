@@ -1,105 +1,77 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+'use client';
 
-const activities = [
-  {
-    id: 1,
-    user: "Ana García",
-    action: "realizó una compra",
-    amount: "$299.00",
-    time: "hace 2 minutos",
-    status: "completed",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: 2,
-    user: "Carlos López",
-    action: "se registró",
-    amount: null,
-    time: "hace 5 minutos",
-    status: "new",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: 3,
-    user: "María Rodríguez",
-    action: "canceló pedido",
-    amount: "$150.00",
-    time: "hace 10 minutos",
-    status: "cancelled",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: 4,
-    user: "Pedro Martín",
-    action: "realizó una compra",
-    amount: "$89.99",
-    time: "hace 15 minutos",
-    status: "completed",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: 5,
-    user: "Laura Sánchez",
-    action: "actualizó perfil",
-    amount: null,
-    time: "hace 20 minutos",
-    status: "updated",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-]
-
-const statusColors = {
-  completed: "bg-green-100 text-green-800",
-  new: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-  updated: "bg-yellow-100 text-yellow-800",
-}
-
-const statusLabels = {
-  completed: "Completado",
-  new: "Nuevo",
-  cancelled: "Cancelado",
-  updated: "Actualizado",
-}
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity, TrendingUp, Users, DollarSign } from "lucide-react";
 
 export function RecentActivity() {
+  const activities = [
+    {
+      id: 1,
+      type: 'venta',
+      description: 'Nueva venta registrada',
+      amount: '₡25,000',
+      time: '2 min ago',
+      icon: DollarSign,
+      color: 'text-green-600'
+    },
+    {
+      id: 2,
+      type: 'usuario',
+      description: 'Usuario logueado',
+      amount: 'Anfitriona',
+      time: '5 min ago',
+      icon: Users,
+      color: 'text-blue-600'
+    },
+    {
+      id: 3,
+      type: 'tendencia',
+      description: 'Ventas aumentando',
+      amount: '+15%',
+      time: '10 min ago',
+      icon: TrendingUp,
+      color: 'text-orange-600'
+    },
+    {
+      id: 4,
+      type: 'actividad',
+      description: 'Sistema actualizado',
+      amount: 'v2.1.0',
+      time: '1 hora ago',
+      icon: Activity,
+      color: 'text-purple-600'
+    }
+  ];
+
   return (
-    <Card className="border-gray-200">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-900">Actividad Reciente</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          Actividad Reciente
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex items-center gap-4">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={activity.avatar || "/placeholder.svg"} />
-                <AvatarFallback>
-                  {activity.user
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-gray-900 truncate">{activity.user}</p>
-                  <Badge variant="secondary" className={statusColors[activity.status as keyof typeof statusColors]}>
-                    {statusLabels[activity.status as keyof typeof statusLabels]}
-                  </Badge>
+          {activities.map((activity) => {
+            const IconComponent = activity.icon;
+            return (
+              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className={`p-2 rounded-full bg-white shadow-sm ${activity.color}`}>
+                  <IconComponent className="h-4 w-4" />
                 </div>
-                <p className="text-sm text-gray-500">
-                  {activity.action}
-                  {activity.amount && <span className="font-medium text-gray-900 ml-1">{activity.amount}</span>}
-                </p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{activity.description}</p>
+                  <p className="text-xs text-gray-500">{activity.time}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900">{activity.amount}</p>
+                </div>
               </div>
-              <div className="text-xs text-gray-400">{activity.time}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -20,7 +20,7 @@ const orderUserSchema = z.object({
 const orderSchema = z.object({
   codigo: z.string().min(1),
   meseroId: z.number(),
-  clienteId: z.number(),
+  clienteId: z.number().default(1), // Cliente por defecto = 1
   subtotal: z.number(),
   total: z.number(),
   totalComision: z.number(),
@@ -82,11 +82,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Obtener información del cliente y mesero para la notificación
     const clienteResults = await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteId]) as any[];
-    const meseroResults = await query('SELECT nombre FROM usuarios WHERE id_usuario = ?', [meseroId]) as any[];
     const clienteResult = clienteResults[0];
-    const meseroResult = meseroResults[0];
-    
     const clienteNombre = clienteResult?.nombre || 'Cliente';
+    
+    const meseroResults = await query('SELECT nombre FROM usuarios WHERE id_usuario = ?', [meseroId]) as any[];
+    const meseroResult = meseroResults[0];
     const meseroNombre = meseroResult?.nombre || 'Mesero';
     
     console.log('📤 Información obtenida - Cliente:', clienteNombre, 'Mesero:', meseroNombre);

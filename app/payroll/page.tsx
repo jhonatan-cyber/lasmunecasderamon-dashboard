@@ -1,35 +1,56 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import PayrollTable from '@/components/payroll/PayrollTable';
+import PayrollFilters from '@/components/payroll/PayrollFilters';
+import PayrollRoleButtons from '@/components/payroll/PayrollRoleButtons';
+import usePayroll from '@/hooks/usePayroll';
 
 export default function PayrollPage() {
-  const [isLoading, setIsLoading] = useState(false)
+  const {
+    // data
+    paginated,
+    loading,
+    error,
+    // filters
+    roleFilter,
+    setRoleFilter,
+    searchTerm,
+    setSearchTerm,
+    rowsPerPage,
+    setRowsPerPage,
+    page,
+    setPage,
+    totalPages,
+    clearFilters,
+    fetchPayroll
+  } = usePayroll();
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Planillas</h1>
-        <Button variant="default">
-          Generar Planilla
-        </Button>
+    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+        <div className='flex flex-col'>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Pagos a Trabajadores</h1>
+          <p className='text-sm sm:text-base text-gray-600'>Gestiona los sueldos pendientes de los trabajadores</p>
+        </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Módulo en Desarrollo</CardTitle>
-          <CardDescription>
-            El módulo de planillas está siendo reconstruido. Pronto estará disponible.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Este módulo permitirá generar planillas de pago basadas en asistencias,
-            calcular descuentos y generar reportes de pago.
-          </p>
-        </CardContent>
-      </Card>
+      <PayrollFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+        setPage={setPage}
+        onClear={clearFilters}
+      />
+      <PayrollRoleButtons roleFilter={roleFilter} setRoleFilter={setRoleFilter} />
+      <PayrollTable
+        rows={paginated}
+        loading={loading}
+        error={error}
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+        onRefetch={fetchPayroll}
+      />
     </div>
-  )
+  );
 }

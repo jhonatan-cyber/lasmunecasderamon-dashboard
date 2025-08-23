@@ -203,9 +203,11 @@ export default function AttendanceDetailModal({
                 
                 {/* Controles de paginación para la tabla */}
                 <SelectElements
-                  rowsPerPage={pageSize}
-                  setRowsPerPage={setPageSize}
-                  setPage={setCurrentPage}
+                  value={pageSize}
+                  onChange={(value) => {
+                    setPageSize(value);
+                    setCurrentPage(1);
+                  }}
                   options={pageSizeOptions}
                   label='Asistencias por página'
                 />

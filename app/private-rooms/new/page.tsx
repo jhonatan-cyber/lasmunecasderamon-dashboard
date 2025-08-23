@@ -40,7 +40,7 @@ export default function NuevoServicioPage() {
 
   // Form data
   const [formData, setFormData] = useState({
-    cliente_id: 0,
+    cliente_id: null as number | null,
     usuarios: [] as number[],
     habitacion_id: null as number | null,
     precio_habitacion: 0,
@@ -231,12 +231,12 @@ export default function NuevoServicioPage() {
           <CustomerSelect
             clientes={clientes}
             value={
-              formData.cliente_id === 0 ? "" : formData.cliente_id.toString()
+              formData.cliente_id === null ? "" : formData.cliente_id.toString()
             }
             onChange={(value) =>
               setFormData({
                 ...formData,
-                cliente_id: value ? parseInt(value) : 0,
+                cliente_id: value ? parseInt(value) : null,
               })
             }
             label="Cliente"
@@ -280,23 +280,27 @@ export default function NuevoServicioPage() {
           {/* Precio de servicio */}
           <div>
             <Label className="block text-xs font-medium text-gray-500 mb-1">
-                              <DollarSign className="mr-2 w-3 h-3 sm:w-4 sm:h-4" />
               Precio de servicio
             </Label>
-            <Input
-              type="number"
-              value={
-                formData.precio_servicio === 0 ? "" : formData.precio_servicio
-              }
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  precio_servicio: parseInt(e.target.value) || 0,
-                })
-              }
-              className="w-full bg-transparent py-1 text-sm sm:text-base"
-              placeholder="0"
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <DollarSign className="w-4 h-4" />
+              </span>
+              <Input
+                type="number"
+                value={
+                  formData.precio_servicio === 0 ? "" : formData.precio_servicio
+                }
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    precio_servicio: parseInt(e.target.value) || 0,
+                  })
+                }
+                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base"
+                placeholder="0"
+              />
+            </div>
           </div>
 
           {/* Método de pago */}
@@ -314,19 +318,23 @@ export default function NuevoServicioPage() {
           {/* IVA */}
           <div>
             <Label className="block text-xs font-medium text-gray-500 mb-1">
-              <Coins className="mr-2 w-3 h-3 sm:w-4 sm:h-4" />
               Impuesto IVA
             </Label>
-            <Input
-              type="number"
-              value={formData.iva === 0 ? "" : formData.iva}
-              onChange={(e) =>
-                setFormData({ ...formData, iva: parseInt(e.target.value) || 0 })
-              }
-              className="w-full bg-transparent py-1 text-sm sm:text-base"
-              placeholder="0"
-              disabled={formData.metodo_pago !== "tarjeta"}
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <Coins className="w-4 h-4" />
+              </span>
+              <Input
+                type="number"
+                value={formData.iva === 0 ? "" : formData.iva}
+                onChange={(e) =>
+                  setFormData({ ...formData, iva: parseInt(e.target.value) || 0 })
+                }
+                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base"
+                placeholder="0"
+                disabled={formData.metodo_pago !== "tarjeta"}
+              />
+            </div>
           </div>
         </div>
 

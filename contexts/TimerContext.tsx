@@ -37,6 +37,7 @@ interface TimerContextType {
   getTimerByRoomId: (roomId: number) => Timer | undefined;
   getTimerByServicioId: (servicioId: number) => Timer | undefined;
   formatTime: (seconds: number) => string;
+  setRefreshCallback: (callback: () => void) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -84,6 +85,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [timers, setTimers] = useState<Timer[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [expiredTimers, setExpiredTimers] = useState<Set<string>>(new Set());
+  const [refreshCallback, setRefreshCallback] = useState<(() => void) | null>(null);
   const { modalState, showConfirm, closeModal } = useConfirmModal();
 
   // Cargar timers desde localStorage al inicializar
@@ -294,17 +296,27 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // Mostrar toast de confirmación
             toast.success(`Habitación ${timer.roomName} liberada`);
+            
+            // Ejecutar callback de actualización si existe
+            if (refreshCallback) {
+              refreshCallback();
+            }
           }
         } else {
           // Si es una parada manual, solo actualizar el estado de la habitación y mostrar toast
           await updateRoomStatus(timer.roomId, 1);
           toast.success(`Habitación ${timer.roomName} liberada manualmente`);
+          
+          // Ejecutar callback de actualización si existe
+          if (refreshCallback) {
+            refreshCallback();
+          }
         }
       }
 
       setTimers(prev => prev.filter(t => t.id !== timerId));
     },
-    [timers, updateRoomStatus, updateServiceStatus, showConfirm]
+    [timers, updateRoomStatus, updateServiceStatus, showConfirm, refreshCallback]
   );
 
   // Función para detener el temporizador por ID de habitación
@@ -484,7 +496,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     resumeTimerByServicioId,
     getTimerByRoomId,
     getTimerByServicioId,
-    formatTime
+    formatTime,
+    setRefreshCallback
   };
 
   return (

@@ -21,6 +21,7 @@ import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
 import { useRoles, Role } from '@/hooks/useRoles';
 import { RoleModal } from '@/components/roles/RoleModal';
+import { DeleteRoleConfirmModal } from '@/components/roles/DeleteRoleConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
 
 // Las interfaces Role y Permission se importan desde los hooks
@@ -34,7 +35,8 @@ export default function RolesPage() {
     createRole,
     updateRole,
     deactivateRole,
-    activateRole
+    activateRole,
+    deleteRole
   } = useRoles();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,11 +47,61 @@ export default function RolesPage() {
   const [editRoleId, setEditRoleId] = useState<number | null>(null);
   const [newRole, setNewRole] = useState({ name: '', description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [roleToAction, setRoleToAction] = useState<Role | null>(null);
+  const [modalAction, setModalAction] = useState<'delete' | 'deactivate'>('delete');
 
   // Cargar los roles al montar el componente
   useEffect(() => {
     fetchRoles();
   }, []); // Removed fetchRoles from dependencies
+
+  // Función para configurar la tabla de roles si no existen
+  const setupRolesTable = async () => {
+    try {
+      const response = await fetch("/api/roles/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showSuccessToast("Tabla de roles configurada correctamente");
+        await fetchRoles(); // Recargar roles después de configurar
+      } else {
+        showErrorToast(result.message || "Error al configurar roles");
+      }
+    } catch (error) {
+      showErrorToast("Error al configurar la tabla de roles");
+    }
+  };
+
+  // Función para asignar todos los permisos al administrador
+  const assignAllPermissionsToAdmin = async () => {
+    try {
+      const response = await fetch("/api/roles/admin-permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showSuccessToast(`Todos los permisos asignados al administrador (${result.data.assignedPermissions} permisos)`);
+        // Si hay un rol seleccionado y es el administrador, recargar sus permisos
+        if (selectedRole && selectedRole.name === 'Administrador') {
+          // Recargar permisos del rol seleccionado
+          const event = new Event('roleSelected');
+          window.dispatchEvent(event);
+        }
+      } else {
+        showErrorToast(result.message || "Error al asignar permisos al administrador");
+      }
+    } catch (error) {
+      showErrorToast("Error al asignar permisos al administrador");
+    }
+  };
 
   const handleAddRole = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,17 +128,18 @@ export default function RolesPage() {
     setIsAddRoleModalOpen(true);
   };
 
-  const handleSubmitRole = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitRole = async (data: { name: string; description: string }) => {
     if (isSubmitting) return;
+
+    console.log('🔵 [ROLES PAGE] handleSubmitRole llamado con datos:', data);
 
     try {
       setIsSubmitting(true);
       if (isEditMode && editRoleId) {
-        await updateRole(editRoleId, newRole.name, newRole.description);
+        await updateRole(editRoleId, data.name, data.description);
         showSuccessToast('Rol actualizado correctamente');
       } else {
-        await createRole(newRole);
+        await createRole(data);
         showSuccessToast('Rol creado correctamente');
       }
       setIsAddRoleModalOpen(false);
@@ -123,32 +176,7 @@ export default function RolesPage() {
     return status === 1 ? 'Activo' : 'Inactivo';
   };
 
-  const handleDeactivateRole = async (roleId: number) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: '¿Deseas desactivar este rol?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, desactivar',
-      cancelButtonText: 'Cancelar',
-      customClass: {
-        confirmButton: 'swal2-confirm-sm-outline',
-        cancelButton: 'swal2-cancel-sm-outline'
-      }
-    });
 
-    if (!result.isConfirmed) return;
-
-    try {
-      await deactivateRole(roleId);
-      showSuccessToast('Rol desactivado correctamente');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al desactivar el rol';
-      showErrorToast(errorMessage);
-    }
-  };
 
   const handleActivateRole = async (roleId: number) => {
     const result = await Swal.fire({
@@ -173,6 +201,36 @@ export default function RolesPage() {
       showSuccessToast('Rol activado correctamente');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al activar el rol';
+      showErrorToast(errorMessage);
+    }
+  };
+
+  const handleDeleteRole = async (role: Role) => {
+    setRoleToAction(role);
+    setModalAction('delete');
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleDeactivateRole = async (role: Role) => {
+    setRoleToAction(role);
+    setModalAction('deactivate');
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmAction = async () => {
+    if (!roleToAction) return;
+
+    try {
+      if (modalAction === 'delete') {
+        await deleteRole(roleToAction.id);
+        showSuccessToast('Rol eliminado correctamente');
+      } else {
+        await deactivateRole(roleToAction.id);
+        showSuccessToast('Rol desactivado correctamente');
+      }
+      setRoleToAction(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `Error al ${modalAction === 'delete' ? 'eliminar' : 'desactivar'} el rol`;
       showErrorToast(errorMessage);
     }
   };
@@ -203,19 +261,28 @@ export default function RolesPage() {
             setNewRole({ name: '', description: '' });
           }}
         />
+
+        {/* Confirmation Modal */}
+        <DeleteRoleConfirmModal
+          open={isConfirmModalOpen}
+          onOpenChange={setIsConfirmModalOpen}
+          onConfirm={confirmAction}
+          roleName={roleToAction?.name || ''}
+          action={modalAction}
+        />
         <div className='container mx-auto px-4 sm:px-6 py-4 sm:py-6 mt-4 sm:mt-6 lg:mt-10 space-y-4 sm:space-y-6'>
           {/* Header */}
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
             <div>
-              <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-black'>
+              <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-neutral-100'>
                 Gestión de Roles
               </h2>
-              <p className='text-sm sm:text-base text-zinc-600 mt-1'>
+              <p className='text-sm sm:text-base text-zinc-600 dark:text-neutral-300 mt-1'>
                 Administra roles y permisos del sistema
               </p>
             </div>
             <button
-              className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-xl hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
+              className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-full hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
               onClick={() => {
                 setIsAddRoleModalOpen(true);
                 setIsEditMode(false);
@@ -257,72 +324,95 @@ export default function RolesPage() {
             />
           </div>
 
-          {/* Filters */}
-          <div className='bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6'>
-            <div className='flex flex-col sm:flex-row gap-4'>
-              <div className='flex-1'>
-                <div className='relative'>
-                  <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400' />
-                  <input
-                    type='text'
-                    placeholder='Buscar roles...'
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className='w-full pl-10 pr-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base'
-                  />
+          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6'>
+            {/* Columna izquierda - Filtros y Roles (2 columnas) */}
+            <div className='lg:col-span-2 space-y-4'>
+              {/* Filters */}
+              <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
+                <div className='flex flex-col sm:flex-row gap-4'>
+                  <div className='flex-1'>
+                    <div className='relative'>
+                      <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-neutral-500' />
+                      <input
+                        type='text'
+                        placeholder='Buscar roles...'
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className='w-full pl-10 pr-4 py-2 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100 placeholder:text-zinc-400 dark:placeholder:text-neutral-500'
+                      />
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <select
+                      value={filterStatus}
+                      onChange={e =>
+                        setFilterStatus(e.target.value === 'all' ? 'all' : Number(e.target.value))
+                      }
+                      className='px-3 py-2 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
+                    >
+                      <option value='all'>Todos</option>
+                      <option value={1}>Activo</option>
+                      <option value={0}>Inactivo</option>
+                    </select>
+                    <button
+                      onClick={assignAllPermissionsToAdmin}
+                      className='inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'
+                      title='Asignar todos los permisos al administrador'
+                    >
+                      <Shield className='h-4 w-4 mr-1' />
+                      Admin Permisos
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className='flex items-center gap-2'>
-                <select
-                  value={filterStatus}
-                  onChange={e =>
-                    setFilterStatus(e.target.value === 'all' ? 'all' : Number(e.target.value))
-                  }
-                  className='px-3 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base'
-                >
-                  <option value='all'>Todos</option>
-                  <option value={1}>Activo</option>
-                  <option value={0}>Inactivo</option>
-                </select>
-              </div>
-            </div>
-          </div>
 
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-            {/* Roles List */}
-            <div className='space-y-4 overflow-y-auto max-h-96 pr-3 pl-3 pt-3'>
-              {filteredRoles.length === 0 ? (
-                <div className='text-center py-8'>
-                  <Shield className='h-8 w-8 sm:h-12 sm:w-12 text-zinc-400 mx-auto mb-4' />
-                  <h3 className='text-base sm:text-lg font-medium text-zinc-600 mb-2'>
-                    No se encontraron roles
-                  </h3>
-                  <p className='text-xs sm:text-sm text-zinc-500'>
-                    {searchTerm || filterStatus !== 'all'
-                      ? 'Intenta ajustar los filtros de búsqueda'
-                      : 'No hay roles registrados en el sistema'}
-                  </p>
-                </div>
-              ) : (
-                filteredRoles.map(role => (
-                  <RoleCard
-                    key={role.id || `role-${Math.random()}`}
-                    role={role}
-                    selected={selectedRole?.id === role.id}
-                    onSelect={() => setSelectedRole(role)}
-                    onEdit={() => handleEditRole(role)}
-                    onDeactivate={() => handleDeactivateRole(role.id)}
-                    onActivate={() => handleActivateRole(role.id)}
-                  />
-                ))
-              )}
+              {/* Roles List */}
+              <div className='space-y-4 overflow-y-auto max-h-[500px] pr-3 pl-3 pt-3'>
+                {filteredRoles.length === 0 ? (
+                  <div className='text-center py-8'>
+                    <Shield className='h-8 w-8 sm:h-12 sm:w-12 text-zinc-400 mx-auto mb-4' />
+                    <h3 className='text-base sm:text-lg font-medium text-zinc-600 dark:text-neutral-300 mb-2'>
+                      No se encontraron roles
+                    </h3>
+                    <p className='text-xs sm:text-sm text-zinc-500 dark:text-neutral-400 mb-4'>
+                      {searchTerm || filterStatus !== 'all'
+                        ? 'Intenta ajustar los filtros de búsqueda'
+                        : 'No hay roles registrados en el sistema'}
+                    </p>
+                    {!searchTerm && filterStatus === 'all' && (
+                      <button
+                        onClick={setupRolesTable}
+                        className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
+                      >
+                        <Shield className='h-4 w-4 mr-2' />
+                        Configurar Roles del Sistema
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  filteredRoles.map(role => (
+                    <RoleCard
+                      key={role.id || `role-${Math.random()}`}
+                      role={role}
+                      selected={selectedRole?.id === role.id}
+                      onSelect={() => setSelectedRole(role)}
+                      onEdit={() => handleEditRole(role)}
+                      onDeactivate={() => handleDeactivateRole(role)}
+                      onActivate={() => handleActivateRole(role.id)}
+                      onDelete={() => handleDeleteRole(role)}
+                    />
+                  ))
+                )}
+              </div>
             </div>
-            {/* Permissions Panel */}
-            <div
-              className='bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-96'
-              style={{ height: '384px' }}
-            >
-              <PermissionsPanel selectedRole={selectedRole} />
+            
+            {/* Columna derecha - Permissions Panel (1 columna) */}
+            <div className='lg:col-span-1'>
+              <div
+                className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'
+              >
+                <PermissionsPanel selectedRole={selectedRole} />
+              </div>
             </div>
           </div>
         </div>

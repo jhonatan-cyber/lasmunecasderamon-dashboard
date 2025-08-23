@@ -27,6 +27,11 @@ export default function ServiceFilters({
   setItemsPerPage,
   setCurrentPage
 }: ServiceFiltersProps) {
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+  };
+
   return (
     <Card className="mb-4 sm:mb-6 shadow-sm">
       <CardContent className="p-4 sm:p-6">
@@ -57,9 +62,8 @@ export default function ServiceFilters({
             {/* Elementos por página */}
             <div className="flex-1 sm:flex-none">
               <SelectElements
-                rowsPerPage={itemsPerPage}
-                setRowsPerPage={setItemsPerPage}
-                setPage={setCurrentPage}
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
                 options={[8, 16, 24, 48]}
                 label='Elementos por página'
               />

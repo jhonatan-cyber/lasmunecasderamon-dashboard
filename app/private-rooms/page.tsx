@@ -1,16 +1,22 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 import { useHabitaciones } from '@/hooks/useHabitaciones';
 import ServicioCard from '@/components/servicios/ServicioCard';
 import Paginate from '@/components/ui/paginate';
 import ServiceStats from '@/components/servicios/ServiceStats';
 import ServiceFilters from '@/components/servicios/ServiceFilters';
 import { useServiceLogic } from '@/hooks/useServiceLogic';
+import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+import { useTimer } from '@/contexts/TimerContext';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export default function ServiciosPage() {
   const { habitaciones } = useHabitaciones();
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
+  const { setRefreshCallback } = useTimer();
   const {
     servicios,
     loading,
@@ -31,6 +37,23 @@ export default function ServiciosPage() {
     handleStopTimer
   } = useServiceLogic();
 
+  // Configurar callback de actualización para cuando termine un timer
+  useEffect(() => {
+    setRefreshCallback(() => {
+      // Actualizar solo los datos de servicios sin recargar la página
+      // Esto evita el parpadeo y mejora la experiencia del usuario
+      // Los datos se actualizarán automáticamente cuando el timer termine
+    });
+  }, [setRefreshCallback]);
+
+  const handleCreateServicioWithCheck = () => {
+    if (!hasOpenCaja) {
+      toast.error('No se puede crear un servicio sin caja abierta. Por favor, abra una caja primero.');
+      return;
+    }
+    handleCreateServicio();
+  };
+
   return (
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       {/* Header */}
@@ -40,18 +63,54 @@ export default function ServiciosPage() {
           <p className='text-sm sm:text-base text-gray-600 mt-2'>Gestiona los servicios privados y habitaciones VIP</p>
         </div>
         <Button
-          onClick={handleCreateServicio}
+          onClick={handleCreateServicioWithCheck}
+          disabled={cajaLoading || !hasOpenCaja}
           variant='outline'
-          className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
+          className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+            hasOpenCaja 
+              ? 'bg-black text-white hover:scale-105' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
           size='sm'
         >
-          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-          Nuevo
+          {cajaLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1" />
+              Verificando...
+            </>
+          ) : hasOpenCaja ? (
+            <>
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Nuevo
+            </>
+          ) : (
+            <>
+              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Sin Caja
+            </>
+          )}
         </Button>
       </div>
 
       {/* Estadísticas de servicios */}
       <ServiceStats servicios={servicios} habitaciones={habitaciones} />
+
+      {/* Mensaje de advertencia cuando no hay caja abierta */}
+      {!cajaLoading && !hasOpenCaja && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-yellow-800">
+                Caja cerrada
+              </h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                No se pueden crear nuevos servicios sin una caja abierta. Por favor, abra una caja en el módulo de caja primero.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contenido principal */}
       <div className='bg-white rounded-lg shadow-sm border p-4 sm:p-6'>

@@ -51,7 +51,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (estado) {
       sql += " AND l.estado = ?";
-      params.push(estado);
+      // Convertir 'activo' a 1 y 'cerrado' a 0 si es necesario
+      const estadoValue = estado === 'activo' ? 1 : estado === 'cerrado' ? 0 : estado;
+      params.push(estadoValue);
     }
 
     if (usuario_id) {

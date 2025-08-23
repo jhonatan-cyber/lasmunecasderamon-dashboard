@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev --turbopack --port 8000",
+    "dev": "next dev --turbopack --hostname 0.0.0.0",
     "lint": "next lint",
-    "start": "next start --port 8000",
+    "start": "next start --hostname 0.0.0.0",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -15,7 +15,8 @@
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "migrate": "node scripts/run-migrations.js"
+    "migrate": "node scripts/run-migrations.js",
+    "check-db": "node scripts/check-database.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -49,6 +50,7 @@
     "@tanstack/react-query": "^5.84.1",
     "@tanstack/react-query-devtools": "^5.84.1",
     "@types/bcryptjs": "^3.0.0",
+    "@types/formidable": "^3.4.5",
     "@types/react-toastify": "^4.1.0",
     "@types/winston": "^2.4.4",
     "autoprefixer": "^10.4.21",
@@ -62,6 +64,7 @@
     "dotenv": "^17.2.1",
     "embla-carousel-react": "8.6.0",
     "express-rate-limit": "^8.0.1",
+    "formidable": "^3.5.4",
     "helmet": "^8.1.0",
     "input-otp": "1.4.2",
     "jsonwebtoken": "^9.0.2",

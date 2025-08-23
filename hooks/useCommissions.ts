@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { showSuccessToast, showErrorToast } from "@/lib/toastUtils";
 import {
   Commission,
-  CommissionStats,
   ApiResponse
 } from "@/types/commission";
 
@@ -346,8 +345,8 @@ export function useCommissions(): UseCommissionsReturn {
   // Calcular estadísticas
   const totalCommissions = commissions.reduce((sum, commission) => sum + commission.total, 0);
   const totalSales = commissions.reduce((sum, commission) => sum + commission.venta + commission.servicio, 0);
-  const pendingCommissions = commissions.filter((commission) => commission.status === "pendiente").length;
-  const paidCommissions = commissions.filter((commission) => commission.status === "pagada").length;
+  const pendingCommissions = commissions.filter((commission) => commission.status === "por_pagar").length;
+  const paidCommissions = commissions.filter((commission) => commission.status === "pagado").length;
   const avgCommissionRate = commissions.length > 0
     ? commissions.reduce((sum, commission) => {
         const saleAmount = commission.venta + commission.servicio;

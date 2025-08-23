@@ -28,18 +28,14 @@ export default function AttendanceStatsCard({ stats, isLoading = false }: Attend
         <CardTitle className='text-lg sm:text-xl'>Estadísticas de Asistencia</CardTitle>
       </CardHeader>
       <CardContent className='p-4 sm:p-6'>
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-3">
           <div className="flex flex-col">
-            <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total</span>
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Usuarios</span>
             <span className="text-lg sm:text-xl lg:text-2xl font-bold">{stats.total}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground">Presentes</span>
             <span className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{stats.presentes}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs sm:text-sm font-medium text-muted-foreground">Tardanzas</span>
-            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-600">{stats.tardanzas}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground">Ausentes</span>

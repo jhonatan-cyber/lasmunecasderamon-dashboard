@@ -6,6 +6,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useSessionCheck } from '@/hooks/useSessionCheck';
 import React from 'react';
 
 export default function LayoutContent({ children }: { children: React.ReactNode }) {
@@ -22,14 +23,18 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
 
   // Solo usar useCurrentUser si no es una página pública
   const { user } = useCurrentUser();
+  
+  // Verificar sesión periódicamente (solo en páginas protegidas)
+  useSessionCheck();
+  
   return (
     <SidebarProvider>
-      <div className='flex h-screen bg-gray-50'>
+      <div className='flex h-screen bg-background'>
         <Sidebar />
         <div className='flex-1 flex flex-col overflow-hidden'>
           <Header />
 
-          <main className='flex-1 overflow-x-auto overflow-y-auto bg-gray-50 pb-4 sm:pb-6'>
+          <main className='flex-1 overflow-x-auto overflow-y-auto bg-background pb-4 sm:pb-6'>
             <div className='min-h-full'>
               {children}
             </div>

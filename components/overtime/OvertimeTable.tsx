@@ -55,7 +55,7 @@ export default function OvertimeTable({
       ) : (
         // Data cards
         rows.map((overtime) => (
-          <Card key={overtime.id_usuario} className="p-4 sm:p-6">
+          <Card key={overtime.id_hora_extra} className="p-4 sm:p-6">
             <CardContent className="space-y-3">
               {/* Header con usuario y botón de detalles */}
               <div className="flex justify-between items-start">
@@ -80,14 +80,21 @@ export default function OvertimeTable({
                 <div className="flex items-center gap-2">
                   <Clock className="h-3 w-3 text-gray-400" />
                   <span className="text-xs sm:text-sm text-gray-600">
-                    Horas: {overtime.total_horas} hrs
+                    Horas: {overtime.hora} hrs
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-3 w-3 text-blue-500" />
+                  <span className="text-xs sm:text-sm text-gray-600">
+                    Precio/hora: {formatCurrencyNoDecimals(overtime.monto)}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
                   <DollarSign className="h-3 w-3 text-green-500" />
                   <span className="text-sm sm:text-base font-semibold text-green-600">
-                    Total: {formatCurrencyNoDecimals(overtime.total_monto)}
+                    Total: {formatCurrencyNoDecimals(overtime.total)}
                   </span>
                 </div>
               </div>
@@ -133,15 +140,15 @@ export default function OvertimeTable({
             ) : (
               // Data rows
               rows.map((overtime) => (
-                <TableRow key={overtime.id_usuario}>
+                <TableRow key={overtime.id_hora_extra}>
                   <TableCell className="text-center font-medium text-sm sm:text-base">
                     {overtime.usuario}
                   </TableCell>
                   <TableCell className="text-center text-sm sm:text-base">
-                    {overtime.total_horas} hrs
+                    {overtime.hora} hrs
                   </TableCell>
                   <TableCell className="text-center font-semibold text-sm sm:text-base">
-                    {formatCurrencyNoDecimals(overtime.total_monto)}
+                    {formatCurrencyNoDecimals(overtime.total)}
                   </TableCell>
                   <TableCell className="text-center">
                     <Button

@@ -1,178 +1,177 @@
-import { useState, useEffect, useCallback } from "react";
-import { PropinaResumen, PropinaDetalle } from "@/types/propina";
+'use client'
 
-// Hook para obtener resumen de tips
-export const useTipsResumen = () => {
-  const [tips, setTips] = useState<PropinaResumen[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+import { useState, useEffect, useCallback } from 'react'
+import { useCurrentUser } from './useCurrentUser'
 
-  const getTips = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/tips?tipo=resumen");
-      if (!response.ok) {
-        throw new Error("Error al cargar tips");
-      }
-      const data = await response.json();
-      if (data.success) {
-        setTips(data.data);
-      } else {
-        throw new Error(data.message || "Error al cargar tips");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getTips();
-  }, []);
-
-  return {
-    tips,
-    loading,
-    error,
-    getTips,
-  };
-};
-
-// Hook para obtener detalle de tips de un usuario
-export function useTipsDetalle(usuarioId?: number) {
-  const [detalles, setDetalles] = useState<PropinaDetalle[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchDetalles = useCallback(async (id?: number) => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/tips?tipo=detalle&usuario_id=${id}`);
-      if (!response.ok) {
-        throw new Error(`Error al cargar detalles: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.success) {
-        setDetalles(data.data);
-      } else {
-        throw new Error(data.message || "Error al cargar detalles");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Auto-fetch cuando cambia el usuarioId
-  useEffect(() => {
-    if (usuarioId) {
-      fetchDetalles(usuarioId);
-    }
-  }, [usuarioId, fetchDetalles]);
-
-  return {
-    detalles,
-    loading,
-    error,
-    fetchDetalles,
-    setDetalles,
-  };
+interface UseTipsReturn {
+  data: any[]
+  loading: boolean
+  error: string | null
+  fetchTips: () => Promise<void>
 }
 
-// Hook consolidado que proporciona ambas funcionalidades
-export const useTips = () => {
-  const [resumen, setResumen] = useState<PropinaResumen[]>([]);
-  const [detalles, setDetalles] = useState<PropinaDetalle[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface UseTipsResumenReturn {
+  data: any[]
+  loading: boolean
+  error: string | null
+  fetchTipsResumen: () => Promise<void>
+}
 
-  const getResumen = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/tips?tipo=resumen");
-      if (!response.ok) {
-        throw new Error("Error al cargar resumen de tips");
-      }
-      const data = await response.json();
-      if (data.success) {
-        setResumen(data.data);
-      } else {
-        throw new Error(data.message || "Error al cargar resumen de tips");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  };
+interface UseTipsDetalleReturn {
+  detalles: any[]
+  loading: boolean
+  error: string | null
+  fetchDetalles: (usuarioId: number) => Promise<void>
+}
 
-  const getDetalles = async (usuarioId: number) => {
-    if (!usuarioId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/tips?tipo=detalle&usuario_id=${usuarioId}`);
-      if (!response.ok) {
-        throw new Error(`Error al cargar detalles: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.success) {
-        setDetalles(data.data);
-      } else {
-        throw new Error(data.message || "Error al cargar detalles");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function useTips(): UseTipsReturn {
+  const { user } = useCurrentUser()
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const registrarTip = async (ventaId: number, monto: number) => {
-    setLoading(true);
-    setError(null);
+  const fetchTips = useCallback(async () => {
     try {
-      const response = await fetch("/api/tips", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ venta_id: ventaId, monto }),
-      });
+      setLoading(true)
+      setError(null)
+      
+      // Determinar qué endpoint usar basado en el rol del usuario
+      const endpoint = user?.role?.toLowerCase() === 'cajero' 
+        ? '/api/tips/user' 
+        : '/api/tips?tipo=resumen'
+      
+      const response = await fetch(endpoint)
       
       if (!response.ok) {
-        throw new Error("Error al registrar tip");
+        throw new Error('Error al obtener las propinas')
       }
       
-      const data = await response.json();
-      if (data.success) {
-        // Recargar el resumen después de registrar
-        await getResumen();
-        return data;
-      } else {
-        throw new Error(data.message || "Error al registrar tip");
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error al obtener las propinas')
       }
+      
+      setData(result.data || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-      throw err;
+      console.error('Error en useTips:', err)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+      setData([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }, [user])
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    if (user) {
+      fetchTips()
+    }
+  }, [fetchTips, user])
 
   return {
-    resumen,
+    data,
+    loading,
+    error,
+    fetchTips
+  }
+}
+
+export function useTipsResumen(): UseTipsResumenReturn {
+  const { user } = useCurrentUser()
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchTipsResumen = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Determinar qué endpoint usar basado en el rol del usuario
+      const endpoint = user?.role?.toLowerCase() === 'cajero' 
+        ? '/api/tips/user-resumen' 
+        : '/api/tips?tipo=resumen'
+      
+      const response = await fetch(endpoint)
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener el resumen de propinas')
+      }
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error al obtener el resumen de propinas')
+      }
+      
+      setData(result.data || [])
+    } catch (err) {
+      console.error('Error en useTipsResumen:', err)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+      setData([])
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    if (user) {
+      fetchTipsResumen()
+    }
+  }, [fetchTipsResumen, user])
+
+  return {
+    data,
+    loading,
+    error,
+    fetchTipsResumen
+  }
+}
+
+export function useTipsDetalle(usuarioId?: number): UseTipsDetalleReturn {
+  const { user } = useCurrentUser()
+  const [detalles, setDetalles] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchDetalles = useCallback(async (userId: number) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Determinar qué endpoint usar basado en el rol del usuario
+      const endpoint = user?.role?.toLowerCase() === 'cajero' 
+        ? `/api/tips/user?tipo=detalle` 
+        : `/api/tips?tipo=detalle&usuario_id=${userId}`
+      
+      const response = await fetch(endpoint)
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener los detalles de propinas')
+      }
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error al obtener los detalles de propinas')
+      }
+      
+      setDetalles(result.data || [])
+    } catch (err) {
+      console.error('Error en useTipsDetalle:', err)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+      setDetalles([])
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
+
+  return {
     detalles,
     loading,
     error,
-    getResumen,
-    getDetalles,
-    registrarTip,
-  };
-}; 
+    fetchDetalles
+  }
+} 

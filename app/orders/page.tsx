@@ -1,139 +1,417 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import useOrders from '@/hooks/useOrders';
-import { useRouter } from 'next/navigation';
-import OrderTable from '@/components/orders/OrderTable';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import OrderDetailModal from '@/components/orders/OrderDetailModal';
-import { OrderFilters } from '@/components/orders/OrderFilters';
-import Paginate from '@/components/ui/paginate';
-import { Plus } from 'lucide-react';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+import { toast } from 'sonner';
 
+interface Order {
+  id_pedido: number;
+  cliente: string;
+  codigo: string;
+  garzon: string;
+  nicks: string;
+  subtotal: number;
+  total: number;
+  estado: number;
+  fecha_crea: string;
+}
 
-export default function Orders() {
+export default function OrdersPage() {
   const router = useRouter();
-  const { orders, isLoading, error, refetch, orderDetail, fetchOrderDetail, isDetailLoading, detailError } = useOrders();
+  const { hasPermission } = useUserPermissions();
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const [selectedOrderCode, setSelectedOrderCode] = useState<string>("");
+
+  // Estados para el modal
   const [modalOpen, setModalOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [selectedOrderCode, setSelectedOrderCode] = useState('');
+  const [orderDetail, setOrderDetail] = useState<any[]>([]);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
-  // Función para limpiar filtros
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setPageSize(5);
-    setPage(1);
-  };
-
-
-
-  // Resetear página cuando cambien los filtros
   useEffect(() => {
-    setPage(1);
-  }, [searchTerm, pageSize]);
+    fetchOrders();
+  }, []);
 
-  // Filtrado
-  const filteredOrders = orders.filter((order: any) => {
-    const matchesSearch =
-      order.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.garzon && order.garzon.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.nicks && order.nicks.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.cliente && order.cliente.toLowerCase().includes(searchTerm.toLowerCase()));
+  useEffect(() => {
+    filterOrders();
+  }, [orders, searchTerm]);
 
-    return matchesSearch;
-  });
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/orders');
+      const data = await response.json();
 
-  // Paginación
-  const getPaginatedOrders = () => {
-    const start = (page - 1) * pageSize;
-    return filteredOrders.slice(start, start + pageSize);
+      if (data.success) {
+        setOrders(data.data);
+      } else {
+        console.error('Error fetching orders:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const paginatedOrders = getPaginatedOrders();
-  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const fetchOrderDetail = async (orderId: number) => {
+    try {
+      setIsDetailLoading(true);
+      setDetailError(null);
+      const response = await fetch(`/api/orders/detail?id=${orderId}`);
+      const data = await response.json();
 
-  const handleOpenDetail = (order: any) => {
-    setSelectedOrderId(order.id_pedido);
-    setSelectedOrderCode(order.codigo);
+      if (data.success) {
+        setOrderDetail(data.data);
+      } else {
+        setDetailError(data.message || 'Error al cargar los detalles del pedido');
+      }
+    } catch (error) {
+      setDetailError('Error de red al cargar los detalles del pedido');
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
+  const filterOrders = () => {
+    let filtered = orders;
+
+    // Filtrar por búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(
+        order =>
+          order.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.garzon.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.nicks.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredOrders(filtered);
+  };
+
+  const getStatusBadge = (estado: number) => {
+    switch (estado) {
+      case 0:
+        return <Badge variant='default'>Completado</Badge>;
+      case 1:
+        return (
+          <Badge className='bg-red-300 text-red-900 font-medium hover:bg-red-300 hover:text-red-900'>
+            Pendiente
+          </Badge>
+        );
+      case 2:
+        return <Badge variant='destructive'>Cancelado</Badge>;
+      default:
+        return <Badge variant='outline'>Desconocido</Badge>;
+    }
+  };
+
+  const getStatusText = (estado: number) => {
+    switch (estado) {
+      case 0:
+        return 'Completado';
+      case 1:
+        return 'Pendiente';
+      case 2:
+        return 'Cancelado';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const handleOrderClick = (orderId: number, orderCode: string) => {
+    // Verificar si tiene permiso para procesar pedidos
+    if (!hasPermission('orders', 'process')) {
+      toast.error('No tienes permisos para procesar pedidos');
+      return;
+    }
+
+    // Verificar si hay caja abierta para procesar pedidos
+    if (!hasOpenCaja) {
+      toast.error('No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.');
+      return;
+    }
+    
+    setSelectedOrderId(orderId);
+    setSelectedOrderCode(orderCode);
     setModalOpen(true);
-    fetchOrderDetail(order.id_pedido);
+    fetchOrderDetail(orderId);
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedOrderId(null);
-    setSelectedOrderCode("");
+    setSelectedOrderCode('');
+    setOrderDetail([]);
+    setDetailError(null);
   };
 
+  const handleOrderStatusChange = () => {
+    fetchOrders(); // Recargar la lista de pedidos
+  };
+
+  const handleCreateOrder = () => {
+    if (!hasOpenCaja) {
+      toast.error('No se puede crear un nuevo pedido sin caja abierta. Por favor, abra una caja primero.');
+      return;
+    }
+    router.push('/orders/new');
+  };
+
+  if (loading) {
+    return (
+      <div className='p-6 flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
+          <p className='text-gray-600'>Cargando órdenes...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
-        <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Pedidos</h1>
-          <p className='text-sm sm:text-base text-gray-600'>Gestiona todos los pedidos del club</p>
+    <PermissionGuard module='orders' action='view'>
+      <div className='p-6 space-y-6'>
+        {/* Header */}
+        <div className='flex items-center justify-between'>
+          <div>
+            <h1 className='text-2xl font-bold text-gray-900'>Gestión de Órdenes</h1>
+            <p className='text-gray-600'>Administra todas las órdenes del sistema</p>
+          </div>
+          <div className='flex gap-2'>
+            <Button onClick={() => router.back()} variant='outline' className='rounded-full'>
+              <ArrowLeft className='h-4 w-4 mr-2' />
+              Atrás
+            </Button>
+            <PermissionGuard module='orders' action='create'>
+              <Button
+                onClick={handleCreateOrder}
+                disabled={cajaLoading || !hasOpenCaja}
+                className={`rounded-full transition-all duration-200 ${
+                  hasOpenCaja 
+                    ? 'bg-black text-white hover:scale-105' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {cajaLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2" />
+                    Verificando...
+                  </>
+                ) : hasOpenCaja ? (
+                  <>
+                    <Plus className='h-4 w-4 mr-2' />
+                    Nuevo
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className='h-4 w-4 mr-2' />
+                    Sin Caja
+                  </>
+                )}
+              </Button>
+            </PermissionGuard>
+          </div>
         </div>
 
-        <Button
-          variant='outline'
-          size='sm'
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
-          onClick={() => router.push('/orders/new')}
-          type='button'
-        >
-          <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-          Nuevo
-        </Button>
+        {/* Mensaje de advertencia cuando no hay caja abierta */}
+        {!cajaLoading && !hasOpenCaja && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Caja cerrada
+                </h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  No se pueden crear nuevos pedidos sin una caja abierta. Por favor, abra una caja en el módulo de caja primero.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Estadísticas */}
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+          <Card>
+            <CardContent className='p-4'>
+              <div className='text-center'>
+                <p className='text-2xl font-bold text-blue-600'>{orders.length}</p>
+                <p className='text-sm text-gray-600'>Total Órdenes</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className='p-4'>
+              <div className='text-center'>
+                <p className='text-2xl font-bold text-yellow-600'>
+                  {orders.filter(o => o.estado === 1).length}
+                </p>
+                <p className='text-sm text-gray-600'>Pendientes</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className='p-4'>
+              <div className='text-center'>
+                <p className='text-2xl font-bold text-green-600'>
+                  {orders.filter(o => o.estado === 0).length}
+                </p>
+                <p className='text-sm text-gray-600'>Completadas</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className='p-4'>
+              <div className='text-center'>
+                <p className='text-2xl font-bold text-red-600'>
+                  {orders.filter(o => o.estado === 2).length}
+                </p>
+                <p className='text-sm text-gray-600'>Canceladas</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros */}
+        <Card>
+          <CardContent className='space-y-4'>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2 mt-2'>Buscar</label>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  placeholder='Buscar por cliente, código, garzon...'
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className='pl-10'
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lista de órdenes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Órdenes ({filteredOrders.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredOrders.length === 0 ? (
+              <div className='text-center py-8'>
+                <p className='text-gray-500'>No se encontraron órdenes</p>
+              </div>
+            ) : (
+              <div className='space-y-4'>
+                {filteredOrders.map(order => {
+                  const hasProcessPermission = hasPermission('orders', 'process');
+                  const canProcess = hasProcessPermission && hasOpenCaja;
+                  return (
+                    <div
+                      key={order.id_pedido}
+                      className={`p-4 border border-gray-200 rounded-lg transition-colors ${
+                        canProcess 
+                          ? 'hover:bg-gray-50 cursor-pointer' 
+                          : 'cursor-not-allowed opacity-60'
+                      }`}
+                      onClick={() => handleOrderClick(order.id_pedido, order.codigo)}
+                    >
+                    <div className='flex items-center justify-between'>
+                      <div className='flex-1'>
+                        <div className='flex items-center gap-4 mb-2'>
+                          <h3 className='font-medium text-gray-900'>{order.codigo}</h3>
+                          {getStatusBadge(order.estado)}
+                          {!hasProcessPermission && (
+                            <Badge className='bg-gray-100 text-gray-600 text-xs'>
+                              Sin permiso para procesar
+                            </Badge>
+                          )}
+                          {hasProcessPermission && !hasOpenCaja && (
+                            <Badge className='bg-yellow-100 text-yellow-700 text-xs'>
+                              Sin caja abierta
+                            </Badge>
+                          )}
+                        </div>
+                        <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600'>
+                          <div>
+                            <span className='font-medium'>Cliente:</span> {order.cliente}
+                          </div>
+                          <div>
+                            <span className='font-medium'>Garzón:</span> {order.garzon}
+                          </div>
+                          <div>
+                            <span className='font-medium'>Total:</span> $
+                            {order.total.toLocaleString()}
+                          </div>
+                        </div>
+                        {order.nicks && (
+                          <div className='mt-2'>
+                            <span className='text-sm font-medium text-gray-700'>
+                              Anfitriona(s):
+                            </span>
+                            <div className='mt-1 flex flex-wrap gap-1'>
+                              {order.nicks.split(',').map((nick, index) => (
+                                <Badge
+                                  key={index}
+                                  className={`text-xs font-medium ${
+                                    index % 6 === 0
+                                      ? 'bg-blue-500 text-white'
+                                      : index % 6 === 1
+                                        ? 'bg-green-500 text-white'
+                                        : index % 6 === 2
+                                          ? 'bg-purple-500 text-white'
+                                          : index % 6 === 3
+                                            ? 'bg-orange-500 text-white'
+                                            : index % 6 === 4
+                                              ? 'bg-pink-500 text-white'
+                                              : 'bg-red-500 text-white'
+                                  }`}
+                                >
+                                  {nick.trim()}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <OrderFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        setPage={setPage}
-        onClearFilters={handleClearFilters}
-      />
-
-      <Card className='shadow-sm'>
-        <CardHeader>
-          <CardTitle className='text-lg sm:text-xl'>
-            Lista de Pedidos ({paginatedOrders.length} de {filteredOrders.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='p-4 sm:p-6'>
-          {isLoading ? (
-            <div className='text-sm sm:text-base'>Cargando pedidos...</div>
-          ) : error ? (
-            <div className='text-red-500 text-sm sm:text-base'>{error}</div>
-          ) : (
-            <div className='overflow-x-auto'>
-              <OrderTable orders={paginatedOrders} onRowClick={handleOpenDetail} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {totalPages > 1 && (
-        <div className='flex justify-center mt-4 sm:mt-6'>
-          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-        </div>
+      {/* Modal de detalles del pedido */}
+      {modalOpen && selectedOrderId && (
+        <OrderDetailModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          detail={orderDetail}
+          isLoading={isDetailLoading}
+          error={detailError}
+          orderId={selectedOrderId}
+          orderCode={selectedOrderCode}
+          onOrderStatusChange={handleOrderStatusChange}
+        />
       )}
-
-      <OrderDetailModal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        detail={orderDetail}
-        isLoading={isDetailLoading}
-        error={detailError}
-        orderId={selectedOrderId}
-        orderCode={selectedOrderCode}
-        onVentaRegistrada={refetch}
-        onOrderStatusChange={refetch}
-      />
-    </div>
+    </PermissionGuard>
   );
 }

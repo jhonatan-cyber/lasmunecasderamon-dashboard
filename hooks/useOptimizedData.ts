@@ -145,7 +145,7 @@ export function useSalesStats() {
       }
       return response.json();
     },
-    staleTime: 30 * 1000, // 30 segundos (datos muy dinámicos)
+    staleTime: 30 * 1000, // 30 segundos (datos dinámicos sin parpadeo)
   });
 }
 
@@ -161,7 +161,7 @@ export function useCashRegisterStatus() {
       return response.json();
     },
     staleTime: 10 * 1000, // 10 segundos
-    refetchInterval: 30 * 1000, // Refetch cada 30 segundos
+    refetchInterval: 30 * 1000, // Refetch cada 30 segundos sin parpadeo
   });
 }
 

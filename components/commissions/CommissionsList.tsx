@@ -94,7 +94,7 @@ export function CommissionsList({
                 </span>
               </div>
               <Badge className={`${getStatusColor(commission.status)} text-xs sm:text-sm`}>
-                {commission.status}
+                {commission.status === 'por_pagar' ? 'Por pagar' : commission.status === 'pagado' ? 'Pagado' : 'Anulado'}
               </Badge>
             </div>
 
@@ -171,7 +171,7 @@ export function CommissionsList({
                   </TableCell>
                   <TableCell>
                     <Badge className={`${getStatusColor(commission.status)} text-xs sm:text-sm`}>
-                      {commission.status}
+                      {commission.status === 'por_pagar' ? 'Por pagar' : commission.status === 'pagado' ? 'Pagado' : 'Anulado'}
                     </Badge>
                   </TableCell>
                 </TableRow>

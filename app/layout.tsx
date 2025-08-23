@@ -5,7 +5,8 @@ import { AnulacionProvider } from '@/contexts/AnulacionContext';
 import { TimerProvider } from '@/contexts/TimerContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
-import { NotificationProvider, NotificationStatus } from '@/components/notifications';
+import { NotificationProvider, NotificationStatus, ClientOnly } from '@/components/notifications';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 
 import 'sweetalert2/dist/sweetalert2.min.css';
@@ -21,31 +22,39 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='es'>
+    <html lang='es' suppressHydrationWarning>
       <head>
         <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
+        />
       </head>
       <body className='font-sans antialiased'>
-        <QueryProvider>
-          <AnulacionProvider>
-            <TimerProvider>
-              <NotificationProvider>
-                <LayoutContent>{children}</LayoutContent>
-                <div className='fixed bottom-4 left-4 z-50'>
-                  <NotificationStatus />
-                </div>
-                <Toaster
-                  richColors
-                  position='top-right'
-                  expand={true}
-                  closeButton={true}
-                  duration={4000}
-                />
-                <AnulacionNotificationModal />
-              </NotificationProvider>
-            </TimerProvider>
-          </AnulacionProvider>
-        </QueryProvider>
+        <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+          <QueryProvider>
+            <AnulacionProvider>
+              <TimerProvider>
+                <NotificationProvider>
+                  <LayoutContent>{children}</LayoutContent>
+                  <div className='fixed bottom-4 left-4 z-50'>
+                    <ClientOnly>
+                      <NotificationStatus />
+                    </ClientOnly>
+                  </div>
+                  <Toaster
+                    richColors
+                    position='top-right'
+                    expand={true}
+                    closeButton={true}
+                    duration={4000}
+                  />
+                  <AnulacionNotificationModal />
+                </NotificationProvider>
+              </TimerProvider>
+            </AnulacionProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
