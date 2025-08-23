@@ -7,6 +7,7 @@ import { useDevolucionLogic } from '@/hooks/useDevolucionLogic';
 import { useDevolucionResponse } from '@/hooks/useDevolucionResponse';
 import { useServicioTimerSync } from '@/hooks/useServicioTimerSync';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
+import { useTimer } from '@/contexts/TimerContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/ui/paginate';
@@ -32,6 +33,7 @@ export default function DevolucionesServiciosPage() {
   } = useDevolucionLogic();
 
   const { setRefreshCallback } = useAnulacionContext();
+  const { setRefreshCallback: setTimerRefreshCallback } = useTimer();
 
   // Sincronizar temporizadores con el estado de servicios
   useServicioTimerSync();
@@ -45,9 +47,20 @@ export default function DevolucionesServiciosPage() {
     getServicios();
   }, [getServicios]);
 
+  // Configurar callback de actualización para cuando termine un timer
+  const timerUpdateCallback = useCallback(() => {
+    console.log('🔄 Actualizando servicios después de timer terminado');
+    // Actualizar solo los datos sin recargar la página
+    // Los datos se actualizarán automáticamente cuando el timer termine
+  }, []);
+
   useEffect(() => {
     setRefreshCallback(updateCallback);
   }, [setRefreshCallback, updateCallback]);
+
+  useEffect(() => {
+    setTimerRefreshCallback(timerUpdateCallback);
+  }, [setTimerRefreshCallback, timerUpdateCallback]);
 
   // Filtrar servicios según el estado seleccionado
   const serviciosFiltrados = showAnulados

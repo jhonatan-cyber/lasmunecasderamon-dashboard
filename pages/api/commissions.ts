@@ -63,7 +63,7 @@ interface Commission {
   venta: number; // venta
   servicio: number; // servicio
   total: number; // total (suma de venta + servicio)
-  status: 'pendiente' | 'pagado' | 'anulado';
+  status: 'por_pagar' | 'pagado' | 'anulado';
   // Campos adicionales para compatibilidad con el frontend existente
   saleAmount?: number;
   commissionRate?: number;
@@ -93,7 +93,7 @@ const paginationSchema = z.object({
 
 const filterSchema = z.object({
   employeeId: z.string().optional(),
-  status: z.enum(['pendiente', 'pagado', 'anulado']).optional(),
+  status: z.enum(['por_pagar', 'pagado', 'anulado']).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   minAmount: z
@@ -159,7 +159,7 @@ const mapCommissionFromDB = (row: any): Commission => {
     venta: venta, // venta = venta (campo calculado)
     servicio: servicio, // servicio = servicio (campo calculado)
     total: total, // total = total (campo calculado)
-    status: row.estado === 1 ? 'pendiente' : row.estado === 0 ? 'pagado' : 'anulado',
+    status: row.estado === 1 ? 'por_pagar' : row.estado === 0 ? 'pagado' : 'anulado',
 
     // Campos adicionales para compatibilidad con el frontend existente
     saleAmount: venta + servicio,
@@ -235,12 +235,14 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
     console.log('Solicitando lista de comisiones...');
 
-    // Consulta simple para probar
+    // Consulta que distingue entre comisiones de ventas y servicios
     const simpleQuery = `
       SELECT 
         U.id_usuario,
         U.nick,
         CONCAT(U.nombre, ' ', U.apellido) AS anfitriona,
+        COALESCE(SUM(CASE WHEN C.venta_id != 0 THEN DC.comision ELSE 0 END), 0) AS venta,
+        COALESCE(SUM(CASE WHEN C.servicio_id != 0 THEN DC.comision ELSE 0 END), 0) AS servicio,
         SUM(DC.comision) AS total,
         C.estado
       FROM comisiones C
@@ -264,25 +266,31 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       console.log('Campos disponibles:', Object.keys(results[0]));
     }
 
-    // Mapeo simplificado
-    const mappedResults = results.map((row: any) => ({
-      id: row.id_usuario?.toString(),
-      employeeId: row.id_usuario?.toString(),
-      employeeName: row.anfitriona,
-      nick: row.nick,
-      venta: parseFloat(row.total || 0),
-      servicio: 0,
-      total: parseFloat(row.total || 0),
-      status: row.estado === 1 ? 'pendiente' : 'pagado',
-      saleAmount: parseFloat(row.total || 0),
-      commissionRate: 0,
-      commissionAmount: parseFloat(row.total || 0),
-      saleType: 'producto',
-      period: new Date().toISOString().slice(0, 7),
-      date: new Date(),
-      description: `Comisión de ${row.anfitriona}`,
-      clientName: undefined
-    }));
+    // Mapeo que distingue entre ventas y servicios
+    const mappedResults = results.map((row: any) => {
+      const venta = parseFloat(row.venta || 0);
+      const servicio = parseFloat(row.servicio || 0);
+      const total = parseFloat(row.total || 0);
+      
+      return {
+        id: row.id_usuario?.toString(),
+        employeeId: row.id_usuario?.toString(),
+        employeeName: row.anfitriona,
+        nick: row.nick,
+        venta: venta,
+        servicio: servicio,
+        total: total,
+        status: row.estado === 1 ? 'por_pagar' : 'pagado',
+        saleAmount: total,
+        commissionRate: 0,
+        commissionAmount: total,
+        saleType: venta > servicio ? 'producto' : 'servicio',
+        period: new Date().toISOString().slice(0, 7),
+        date: new Date(),
+        description: `Comisión de ${row.anfitriona} - Venta: $${venta}, Servicio: $${servicio}`,
+        clientName: undefined
+      };
+    });
 
     console.log('Resultados mapeados:', mappedResults);
 
@@ -432,7 +440,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const statusMap: Record<number, string> = {
         0: 'pagado',
-        1: 'pendiente',
+        1: 'por_pagar',
         2: 'anulado'
       };
 
@@ -489,7 +497,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
                 setClauses.push(`${dbField} = ?`);
                 if (key === 'status') {
                   const statusMap: Record<string, number> = {
-                    pendiente: 1,
+                    por_pagar: 1,
                     pagado: 0,
                     anulado: 2
                   };

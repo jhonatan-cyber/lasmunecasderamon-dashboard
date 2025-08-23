@@ -97,7 +97,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
           <Users className="w-4 h-4" />
         </span>
-        <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <Select value={value || ""} onValueChange={onChange || (() => {})} disabled={disabled}>
           <SelectTrigger className="w-full pl-10 rounded-full" disabled={disabled}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>

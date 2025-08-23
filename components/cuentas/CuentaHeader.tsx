@@ -1,6 +1,8 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus, RotateCcw } from "lucide-react";
+import { Plus, RotateCcw, AlertCircle } from "lucide-react";
+import { useCashRegisterStatus } from "@/hooks/useCashRegisterStatus";
+import { toast } from "sonner";
 
 interface CuentaHeaderProps {
   loading: boolean;
@@ -9,6 +11,15 @@ interface CuentaHeaderProps {
 
 export function CuentaHeader({ loading, onRefresh }: CuentaHeaderProps) {
   const router = useRouter();
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
+
+  const handleCreateAccount = () => {
+    if (!hasOpenCaja) {
+      toast.error('No se puede crear una nueva cuenta sin caja abierta. Por favor, abra una caja primero.');
+      return;
+    }
+    router.push("/accounts/new");
+  };
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
@@ -20,23 +31,32 @@ export function CuentaHeader({ loading, onRefresh }: CuentaHeaderProps) {
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
         <Button
-          onClick={() => router.push("/accounts/new")}
+          onClick={handleCreateAccount}
+          disabled={cajaLoading || !hasOpenCaja}
           size="sm"
           variant="outline"
-          className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base"
+          className={`w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 transition-all duration-200 text-sm sm:text-base ${
+            hasOpenCaja 
+              ? 'bg-black text-white hover:scale-105' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
-          <Plus className='mr-2 h-4 w-4' />
-          Nuevo
-        </Button>
-        <Button
-          onClick={onRefresh}
-          disabled={loading}
-          size="sm"
-          variant="outline"
-          className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
-        >
-          <RotateCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          Actualizar
+          {cajaLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2" />
+              Verificando...
+            </>
+          ) : hasOpenCaja ? (
+            <>
+              <Plus className='mr-2 h-4 w-4' />
+              Nuevo
+            </>
+          ) : (
+            <>
+              <AlertCircle className='mr-2 h-4 w-4' />
+              Sin Caja
+            </>
+          )}
         </Button>
       </div>
     </div>

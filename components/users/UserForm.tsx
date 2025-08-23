@@ -37,7 +37,7 @@ import {
   Image,
   Trash2
 } from 'lucide-react';
-import { Role } from '@/types/role';
+import { useRoles } from '@/hooks/useRoles';
 // Esquema de validación con Zod
 const userFormSchema = z.object({
   run: z.string().min(8, 'El RUN es requerido'),
@@ -69,10 +69,17 @@ interface UserFormProps {
 export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
+  const { roles, isLoading: isLoadingRoles } = useRoles();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Debug: Log roles cuando cambien
+  useEffect(() => {
+    console.log('🔵 [USERFORM] Roles cargados:', roles.length);
+    if (roles.length > 0) {
+      console.log('🔵 [USERFORM] Primer rol:', roles[0]);
+    }
+  }, [roles]);
 
   // Función para mapear valores de BD a valores del select
   const mapEstadoCivilToSelect = (estadoCivil: string | undefined): string => {
@@ -148,29 +155,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
   const descuentoValue = form.watch('descuento');
   const hasDescuento = descuentoValue !== undefined && descuentoValue > 0;
 
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await fetch('/api/roles');
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && Array.isArray(result.data)) {
-            setRoles(result.data);
-          } else {
-            console.error('Error: La respuesta de roles no tiene el formato esperado', result);
-            setRoles([]);
-          }
-        }
-      } catch (error) {
-        console.error('Error al cargar roles:', error);
-        setRoles([]);
-      } finally {
-        setIsLoadingRoles(false);
-      }
-    };
 
-    fetchRoles();
-  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

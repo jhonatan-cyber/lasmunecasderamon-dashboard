@@ -42,13 +42,14 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
             rows.map((propina) => (
               <TableRow key={propina.id_usuario} className="hover:bg-gray-50">
                 <TableCell className="text-xs sm:text-sm text-gray-700">
-                  <div className="font-medium text-gray-800">{propina.nombre} {propina.apellido}</div>
+                  <div className="font-medium text-gray-800">{propina.nombre_completo}</div>
+                  <div className="text-xs text-gray-500">@{propina.nick}</div>
                 </TableCell>
-                <TableCell className="font-semibold text-xs sm:text-sm text-gray-700">{formatCurrencyNoDecimals(propina.total)}</TableCell>
+                <TableCell className="font-semibold text-xs sm:text-sm text-gray-700">{formatCurrencyNoDecimals(propina.total_propinas)}</TableCell>
                 <TableCell className="text-xs sm:text-sm text-gray-700">{formatFechaLarga(propina.fecha_crea)}</TableCell>
                 <TableCell className="text-xs sm:text-sm">
                   <Badge variant="secondary" className="text-xs sm:text-sm px-2 py-1 rounded-full">
-                    {formatCurrencyNoDecimals(propina.total)}
+                    {formatCurrencyNoDecimals(propina.total_propinas)}
                   </Badge>
                 </TableCell>
                 <TableCell>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useOvertime } from "@/hooks/useOvertime";
+import { useCashRegisterStatus } from "@/hooks/useCashRegisterStatus";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import OvertimeFilters from "@/components/overtime/OvertimeFilters";
 import OvertimeStatsCards from "@/components/overtime/OvertimeStatsCards";
@@ -11,10 +12,12 @@ import OvertimeDetailModal from "@/components/overtime/OvertimeDetailModal";
 import Paginate from "@/components/ui/paginate";
 
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function OvertimePage() {
   const { overtime, loading, error, getOvertime } = useOvertime();
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
@@ -46,6 +49,10 @@ export default function OvertimePage() {
   };
 
   const handleOpenFormDialog = () => {
+    if (!hasOpenCaja) {
+      toast.error('No se puede crear horas extras sin caja abierta. Por favor, abra una caja primero.');
+      return;
+    }
     setShowFormDialog(true);
   };
 
@@ -75,14 +82,50 @@ export default function OvertimePage() {
         <div className="flex gap-2 w-full sm:w-auto">
           <Button
             size="sm"
-            className="whitespace-nowrap inline-flex items-center px-4 sm:px-6 py-2 bg-black text-white rounded-full hover:scale-105 duration-200 text-sm sm:text-base w-full sm:w-auto"
+            disabled={cajaLoading || !hasOpenCaja}
+            className={`whitespace-nowrap inline-flex items-center px-4 sm:px-6 py-2 rounded-full duration-200 text-sm sm:text-base w-full sm:w-auto ${
+              hasOpenCaja 
+                ? 'bg-black text-white hover:scale-105' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
             onClick={handleOpenFormDialog}
           >
-            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Nuevo
+            {cajaLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1" />
+                Verificando...
+              </>
+            ) : hasOpenCaja ? (
+              <>
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Nuevo
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Sin Caja
+              </>
+            )}
           </Button>
         </div>
       </div>
+
+      {/* Mensaje de advertencia cuando no hay caja abierta */}
+      {!cajaLoading && !hasOpenCaja && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-yellow-800">
+                Caja cerrada
+              </h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                No se pueden crear nuevas horas extras sin una caja abierta. Por favor, abra una caja en el módulo de caja primero.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <OvertimeStatsCards
         overtime={overtimeData}

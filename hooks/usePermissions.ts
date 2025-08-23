@@ -94,6 +94,10 @@ export function usePermissions() {
 
   const updateRolePermissions = useCallback(async (roleId: string, permissionIds: string[]) => {
     try {
+      console.log('=== UPDATE ROLE PERMISSIONS HOOK ===');
+      console.log('Role ID:', roleId);
+      console.log('Permission IDs:', permissionIds);
+      
       const response = await fetch(`/api/roles/${roleId}/permissions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -101,17 +105,22 @@ export function usePermissions() {
       });
       
       const result = await response.json();
+      console.log('API Response:', result);
       
       if (!response.ok) {
+        console.error('API Error Response:', result);
         throw new Error(result.message || 'Error al actualizar los permisos del rol');
       }
       
       if (!result.success) {
+        console.error('API Success False:', result);
         throw new Error(result.message || 'Error al actualizar los permisos del rol');
       }
       
+      console.log('Update successful:', result);
       return result;
     } catch (err) {
+      console.error('Hook Error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error al actualizar los permisos del rol';
       throw new Error(errorMessage);
     }

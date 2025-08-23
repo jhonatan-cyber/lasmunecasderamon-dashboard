@@ -31,6 +31,11 @@ export default function OvertimeFilters({
     setPage(1);
   };
 
+  const handleRowsPerPageChange = (value: number) => {
+    setRowsPerPage(value);
+    setPage(1);
+  };
+
   return (
     <Card className="mb-4 shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
@@ -53,9 +58,8 @@ export default function OvertimeFilters({
             {/* Elementos por página */}
             <div className="flex-1 sm:flex-none">
               <SelectElements
-                rowsPerPage={rowsPerPage}
-                setRowsPerPage={setRowsPerPage}
-                setPage={setPage}
+                value={rowsPerPage}
+                onChange={handleRowsPerPageChange}
                 options={[5, 10, 20, 40]}
                 label="Horas extras por página"
               />

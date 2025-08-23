@@ -40,13 +40,13 @@ export function PermissionsManager() {
   const modules = [
     'users', 'roles', 'sales', 'products', 'categories', 
     'rooms', 'cash_register', 'orders', 'services', 'tips', 
-    'settings', 'reports'
+    'settings', 'reports', 'cash_box', 'worker_payments', 'payroll_details', 'private'
   ];
 
   const actions = [
     'view', 'create', 'edit', 'delete', 'activate', 'deactivate',
     'permissions', 'reports', 'export', 'open', 'close', 'process',
-    'distribute'
+    'distribute', 'details'
   ];
 
   return (

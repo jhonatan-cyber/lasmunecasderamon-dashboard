@@ -1,4 +1,5 @@
 ﻿import type { NextApiRequest, NextApiResponse } from "next";
+import { withAuth } from "@/lib/middleware/auth";
 import { query } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
@@ -487,7 +488,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   switch (req.method) {
     case "GET":
       return await handleGet(req, res);
@@ -504,6 +505,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ success: false, message: `Método ${req.method} no permitido` });
   }
 }
+
+export default withAuth(handler);
 
 // Funciones exportadas para uso externo
 export const activateUser = async (userId: number) => {

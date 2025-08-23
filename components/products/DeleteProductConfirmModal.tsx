@@ -41,20 +41,19 @@ export function DeleteProductConfirmModal({
             </div>
             <DialogTitle className="text-center">¿Estás seguro?</DialogTitle>
           </div>
+          <DialogDescription className="sr-only">
+            Confirmación para eliminar el producto
+          </DialogDescription>
         </DialogHeader>
-        <DialogDescription className="text-left">
-          <p className="text-gray-700 mb-2 text-center">
-            ¿Estás seguro de que quieres eliminar el producto{" "}
-            <span className="font-semibold text-gray-900">
-              "{productName}"
-            </span>
-            ?
-          </p>
-          <p className="mt-3 text-sm text-red-400 font-medium text-center">
-            Esta acción no se puede revertir. El producto será eliminado
-            permanentemente.
-          </p>
-        </DialogDescription>
+        <div className="text-left">
+          <div className="text-gray-700 mb-2 text-center">
+            ¿Estás seguro de que quieres eliminar el producto
+            <span className="font-semibold text-gray-900"> "{productName}"</span>?
+          </div>
+          <div className="mt-3 text-sm text-red-400 font-medium text-center">
+            Esta acción no se puede revertir. El producto será eliminado permanentemente.
+          </div>
+        </div>
         <div className="flex justify-center items-center gap-4 pt-4">
           <Button
             size="sm"

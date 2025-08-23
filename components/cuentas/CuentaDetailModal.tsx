@@ -151,10 +151,10 @@ export default function CuentaDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-neutral-900">
         <DialogHeader>
           <div className="flex items-center justify-center mt-4">
-            <DialogTitle className="text-xl font-semibold">
+            <DialogTitle className="text-xl font-semibold text-black dark:text-neutral-100">
               Detalles de Cuenta
             </DialogTitle>
           </div>
@@ -162,54 +162,54 @@ export default function CuentaDetailModal({
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            <span className="ml-2">Cargando detalles...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-neutral-200"></div>
+            <span className="ml-2 text-black dark:text-neutral-200">Cargando detalles...</span>
           </div>
         ) : cuenta ? (
           <div className="space-y-6">
             {/* Información general */}
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gray-50 dark:bg-neutral-800 p-4 rounded-lg">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Receipt className="text-gray-500 w-4 h-4" />
-                    <Label className="text-sm font-medium">Código:</Label>
-                    <span className="text-sm font-semibold">
+                    <Receipt className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
+                    <Label className="text-sm font-medium text-black dark:text-neutral-200">Código:</Label>
+                    <span className="text-sm font-semibold text-black dark:text-neutral-100">
                       {cuenta.codigo}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <User className="text-gray-500 w-4 h-4" />
-                    <Label className="text-sm font-medium">Cliente:</Label>
-                    <span className="text-sm">
+                    <User className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
+                    <Label className="text-sm font-medium text-black dark:text-neutral-200">Cliente:</Label>
+                    <span className="text-sm text-black dark:text-neutral-100">
                       {cuenta.cliente_nombre || "Sin cliente"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Users className="text-gray-500 w-4 h-4" />
-                    <Label className="text-sm font-medium">Anfitrionas:</Label>
-                    <span className="text-sm text-purple-600 font-medium">
+                    <Users className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
+                    <Label className="text-sm font-medium text-black dark:text-neutral-200">Anfitrionas:</Label>
+                    <span className="text-sm text-purple-600 dark:text-purple-300 font-medium">
                       {cuenta.anfitrionas_generales || "Sin anfitrionas"}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="text-gray-500 w-4 h-4" />
-                    <Label className="text-sm font-medium">Fecha:</Label>
-                    <span className="text-sm">
+                    <Calendar className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
+                    <Label className="text-sm font-medium text-black dark:text-neutral-200">Fecha:</Label>
+                    <span className="text-sm text-black dark:text-neutral-100">
                       {formatDate(cuenta.fecha_crea)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <DollarSign className="text-gray-500 w-4 h-4" />
-                    <Label className="text-sm font-medium">Estado:</Label>
+                    <DollarSign className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
+                    <Label className="text-sm font-medium text-black dark:text-neutral-200">Estado:</Label>
                     {getEstadoBadge(cuenta.estado)}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Home className="text-gray-500 w-4 h-4" />
-                    <Label className="text-sm font-medium">Habitación:</Label>
-                    <span className="text-sm">
+                    <Home className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
+                    <Label className="text-sm font-medium text-black dark:text-neutral-200">Habitación:</Label>
+                    <span className="text-sm text-black dark:text-neutral-100">
                       {cuenta.habitacion_numero || "Sin habitación"}
                     </span>
                   </div>
@@ -218,14 +218,14 @@ export default function CuentaDetailModal({
             </div>
 
             {/* Resumen financiero */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-center mb-4 text-blue-800">
+            <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-center mb-4 text-blue-800 dark:text-blue-300">
                 Resumen Financiero
               </h3>
               <div className="grid grid-cols-1  gap-4 text-center">
                 <div>
-                  <div className="text-sm text-gray-600">Total</div>
-                  <div className="text-lg font-bold text-green-600">
+                  <div className="text-sm text-gray-600 dark:text-neutral-400">Total</div>
+                  <div className="text-lg font-bold text-green-600 dark:text-green-400">
                     {formatCurrencyNoDecimals(cuenta.total)}
                   </div>
                 </div>
@@ -235,57 +235,57 @@ export default function CuentaDetailModal({
             {/* Detalle de productos */}
             <div className="border-t pt-4">
               <div className="flex items-center justify-center mb-4">
-                <h3 className="text-sm font-semibold">Detalle de Productos</h3>
+                <h3 className="text-sm font-semibold text-black dark:text-neutral-100">Detalle de Productos</h3>
               </div>
               {cuenta.detalles && cuenta.detalles.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>PRODUCTO</TableHead>
-                        <TableHead className="text-center">CANTIDAD</TableHead>
-                        <TableHead className="text-right">PRECIO</TableHead>
-                        <TableHead className="text-right">SUB TOTAL</TableHead>
-                        <TableHead className="text-right">COMISIÓN</TableHead>
+                        <TableHead className="text-black dark:text-neutral-200">PRODUCTO</TableHead>
+                        <TableHead className="text-center text-black dark:text-neutral-200">CANTIDAD</TableHead>
+                        <TableHead className="text-right text-black dark:text-neutral-200">PRECIO</TableHead>
+                        <TableHead className="text-right text-black dark:text-neutral-200">SUB TOTAL</TableHead>
+                        <TableHead className="text-right text-black dark:text-neutral-200">COMISIÓN</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {cuenta.detalles.map((detalle, index) => (
                         <TableRow key={`${detalle.id_producto}-${index}`}>
                           <TableCell>
-                            <div className="font-medium">
+                            <div className="font-medium text-black dark:text-neutral-100">
                               {detalle.producto ||
                                 `Producto ID: ${detalle.id_producto}` ||
                                 "Producto sin nombre"}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            {detalle.cantidad || 0}
+                            <span className="text-black dark:text-neutral-100">{detalle.cantidad || 0}</span>
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrencyNoDecimals(detalle.precio || 0)}
+                            <span className="text-black dark:text-neutral-100">{formatCurrencyNoDecimals(detalle.precio || 0)}</span>
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrencyNoDecimals(detalle.sub_total || 0)}
+                            <span className="text-black dark:text-neutral-100">{formatCurrencyNoDecimals(detalle.sub_total || 0)}</span>
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrencyNoDecimals(detalle.comision || 0)}
+                            <span className="text-black dark:text-neutral-100">{formatCurrencyNoDecimals(detalle.comision || 0)}</span>
                           </TableCell>
                         </TableRow>
                       ))}
                       {/* Fila de resumen */}
-                      <TableRow className="bg-gray-50 font-semibold">
+                      <TableRow className="bg-gray-50 dark:bg-neutral-800 font-semibold">
                         <TableCell colSpan={2}>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 dark:text-neutral-400">
                             Total ({cuenta.detalles.length} producto
                             {cuenta.detalles.length !== 1 ? "s" : ""})
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="text-sm text-gray-600">-</div>
+                          <div className="text-sm text-gray-600 dark:text-neutral-400">-</div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="text-sm text-blue-600 font-bold">
+                          <div className="text-sm text-blue-600 dark:text-blue-400 font-bold">
                             {formatCurrencyNoDecimals(
                               cuenta.detalles.reduce(
                                 (sum, detalle) =>
@@ -296,7 +296,7 @@ export default function CuentaDetailModal({
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="text-sm text-orange-600 font-bold">
+                          <div className="text-sm text-orange-600 dark:text-orange-400 font-bold">
                             {formatCurrencyNoDecimals(
                               cuenta.detalles.reduce(
                                 (sum, detalle) => sum + (detalle.comision || 0),
@@ -310,8 +310,8 @@ export default function CuentaDetailModal({
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-6 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">
+                <div className="text-center py-6 bg-gray-50 dark:bg-neutral-800 rounded-lg">
+                  <p className="text-gray-500 dark:text-neutral-400">
                     No hay productos registrados en esta cuenta
                   </p>
                 </div>
@@ -331,7 +331,7 @@ export default function CuentaDetailModal({
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-neutral-400">
               No se encontraron detalles de la cuenta
             </p>
           </div>

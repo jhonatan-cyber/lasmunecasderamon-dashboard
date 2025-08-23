@@ -7,6 +7,7 @@ import OrderTotalHeader from "@/components/orders/OrderTotalHeader";
 import CategoryCardList from "@/components/ui/CategoryCardList";
 import { showSuccessToast, showErrorToast } from "@/lib/toastUtils";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface OrderFormProps {
   clientes: any[];
@@ -48,6 +49,7 @@ export default function OrderForm({
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
   const [error, setError] = useState("");
   const router = useRouter();
+  const { user } = useCurrentUser();
 
   // Calcular el total sumando los subtotales de los productos agregados
   const total = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
@@ -104,10 +106,7 @@ export default function OrderForm({
   }
 
   const handleSubmit = async () => {
-    if (!selectedCliente) {
-      setError("Debe seleccionar un cliente");
-      return;
-    }
+    // Cliente es opcional, no validamos que esté seleccionado
 
     if (selectedAnfitrionas.length === 0) {
       setError("Debe seleccionar al menos una anfitriona");
@@ -116,6 +115,11 @@ export default function OrderForm({
 
     if (productos.length === 0) {
       setError("Debe agregar al menos un producto");
+      return;
+    }
+
+    if (!user?.id) {
+      setError("No se pudo identificar al usuario actual (mesero)");
       return;
     }
 
@@ -133,23 +137,24 @@ export default function OrderForm({
       );
       const total = subtotal;
       const detalles = productos.map((item) => ({
-        producto_id: item.id_producto || item.id,
-        cantidad: item.cantidad,
-        precio: item.precio || item.price,
-        subtotal: item.subtotal,
-        comision: item.comision || 0,
+        productoId: Number(item.id_producto || item.id),
+        cantidad: Number(item.cantidad),
+        precio: Number(item.precio || item.price),
+        subtotal: Number(item.subtotal),
+        comision: Number(item.comision || 0),
       }));
-      const usuarios = selectedAnfitrionas;
+      const usuarios = selectedAnfitrionas.map((id) => ({ usuarioId: Number(id) }));
 
-      const payload = {
-        codigo,
-        cliente_id: selectedCliente,
-        subtotal,
-        total,
-        totalComision,
-        detalles,
-        usuarios,
-      };
+             const payload = {
+         codigo,
+         meseroId: Number(user.id),
+         clienteId: selectedCliente ? Number(selectedCliente) : 1, // Cliente por defecto = 1
+         subtotal: Number(subtotal),
+         total: Number(total),
+         totalComision: Number(totalComision),
+         detalles,
+         usuarios,
+       };
       console.log("Payload a enviar:", payload);
       const res = await fetch("/api/orders", {
         method: "POST",

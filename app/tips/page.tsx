@@ -1,58 +1,118 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { useTipsResumen } from '@/hooks/useTips';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import PropinasDetalleModal from '@/components/propinas/PropinasDetalleModal';
 import { PropinaResumen } from '@/types/propina';
+import TipsTable from '@/components/propinas/TipsTable';
 import TipsFilters from '@/components/propinas/TipsFilters';
 import TipsStatsCards from '@/components/propinas/TipsStatsCards';
-import TipsTable from '@/components/propinas/TipsTable';
 import Paginate from '@/components/ui/paginate';
 
 export default function TipsPage() {
-  const { tips, loading, getTips } = useTipsResumen();
-  const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
+  const { data: tips, loading, fetchTipsResumen } = useTipsResumen();
   const [selectedUsuario, setSelectedUsuario] = useState<PropinaResumen | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
-  const filteredTips = tips.filter(tip => {
-    const fullName = `${tip.nombre} ${tip.apellido}`.toLowerCase();
-    return fullName.includes(searchTerm.toLowerCase());
-  });
+  // Filtrar datos por término de búsqueda
+  const filteredTips = useMemo(() => {
+    if (!tips) return [];
+    
+    return tips.filter((tip: any) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        tip.nombre_completo?.toLowerCase().includes(searchLower) ||
+        tip.nick?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [tips, searchTerm]);
 
-  // Paginación simple (solo frontend)
+  // Calcular estadísticas
+  const stats = useMemo(() => {
+    if (!filteredTips) {
+      return {
+        totalTips: 0,
+        totalUsuarios: 0,
+        maxTip: 0
+      };
+    }
+
+    const totalTips = filteredTips.reduce((sum: number, tip: any) => sum + (tip.total_propinas || 0), 0);
+    const totalUsuarios = filteredTips.length;
+    const maxTip = Math.max(...filteredTips.map((tip: any) => tip.total_propinas || 0), 0);
+
+    return {
+      totalTips,
+      totalUsuarios,
+      maxTip
+    };
+  }, [filteredTips]);
+
+  // Función para formatear moneda
+  const formatCurrency = (n: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(n);
+  };
+
+  // Paginación
   const paginatedTips = filteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages = Math.ceil(filteredTips.length / rowsPerPage) || 1;
 
   const handleVerDetalle = (usuario: PropinaResumen) => {
     setSelectedUsuario(usuario);
     setIsModalOpen(true);
   };
 
-  const totalTips = tips.reduce((acc, t) => acc + t.total, 0);
-  const totalUsuarios = tips.length;
-  const maxTip = tips.length > 0 ? Math.max(...tips.map(t => t.total)) : 0;
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setRowsPerPage(10);
+    setPage(1);
+  };
 
-  const totalPages = Math.ceil(filteredTips.length / rowsPerPage) || 1;
+  const handleRefresh = () => {
+    fetchTipsResumen();
+  };
 
   return (
     <TooltipProvider>
       <div className='container mx-auto py-4 sm:py-6 px-4 sm:px-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col mb-4 sm:mb-6'>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Propinas</h1>
-          <p className='text-sm sm:text-base text-gray-600'>Gestiona todas las propinas de los empleados.</p>
+        <div className='flex items-center justify-between mb-4 sm:mb-6'>
+          <div>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Propinas</h1>
+            <p className='text-sm sm:text-base text-gray-600'>Gestiona todas las propinas de los empleados.</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+            className="rounded-full bg-black text-white hover:scale-105 transition-all duration-200"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Atrás
+          </Button>
         </div>
+
+        {/* Estadísticas */}
         <TipsStatsCards
-          totalTips={totalTips}
-          totalUsuarios={totalUsuarios}
-          maxTip={maxTip}
-          formatCurrency={formatCurrencyNoDecimals}
+          totalTips={stats.totalTips}
+          totalUsuarios={stats.totalUsuarios}
+          maxTip={stats.maxTip}
+          formatCurrency={formatCurrency}
         />
-        {/* Filtros y búsqueda */}
+
+        {/* Filtros */}
         <TipsFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -60,8 +120,9 @@ export default function TipsPage() {
           setRowsPerPage={setRowsPerPage}
           setPage={setPage}
           loading={loading}
-          onRefresh={getTips}
+          onRefresh={handleRefresh}
         />
+
         {/* Lista de tips */}
         <div className='overflow-x-auto'>
           <TipsTable

@@ -11,9 +11,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    // Cerrar todas las sesiones activas
+    // Cerrar todas las sesiones activas (estado 1 -> 0)
     const result = await query(
-      "UPDATE logins SET estado = 'cerrado', fecha_logout = NOW() WHERE estado = 'activo'"
+      "UPDATE logins SET estado = 0, fecha_logout = NOW() WHERE estado = 1"
     );
 
     return res.status(200).json({

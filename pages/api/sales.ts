@@ -387,53 +387,64 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    // Actualizar la caja activa con las comisiones
-    if (totalComision > 0) {
-      const cajaActiva = await query(
-        "SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1"
-      ) as any[];
+    // Actualizar la caja activa con las ventas y comisiones
+    const cajaActiva = await query(
+      "SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1"
+    ) as any[];
 
-      if (cajaActiva && cajaActiva.length > 0) {
-        const cajaId = cajaActiva[0].id_caja;
-        
-        // Calcular el monto según el método de pago
-        let montoEfectivo = 0;
-        let montoTarjeta = 0;
-        let montoTransferencia = 0;
-        
-        switch (metodo_pago) {
-          case 'efectivo':
-            montoEfectivo = total;
-            break;
-          case 'tarjeta':
-            montoTarjeta = total;
-            break;
-          case 'transferencia':
-            montoTransferencia = total;
-            break;
-          default:
-            montoEfectivo = total; // Por defecto efectivo
-        }
-
-        // Actualizar la caja con los montos correspondientes
-        await query(
-          `UPDATE cajas SET 
-            venta = venta + ?,
-            efectivo = efectivo + ?,
-            tarjeta = tarjeta + ?,
-            transferencia = transferencia + ?,
-            comision = comision + ?
-          WHERE id_caja = ?`,
-          [
-            total, // ventas
-            montoEfectivo,
-            montoTarjeta,
-            montoTransferencia,
-            totalComision, // comisión total
-            cajaId
-          ]
-        );
+    if (cajaActiva && cajaActiva.length > 0) {
+      const cajaId = cajaActiva[0].id_caja;
+      
+      // Calcular el monto según el método de pago (INCLUYENDO propina)
+      let montoEfectivo = 0;
+      let montoTarjeta = 0;
+      let montoTransferencia = 0;
+      
+      switch (metodo_pago) {
+        case 'efectivo':
+          montoEfectivo = total;
+          break;
+        case 'tarjeta':
+          montoTarjeta = total;
+          break;
+        case 'transferencia':
+          montoTransferencia = total;
+          break;
+        default:
+          montoEfectivo = total; // Por defecto efectivo
       }
+
+      // Actualizar la caja con los montos correspondientes (INCLUYENDO propina)
+      await query(
+        `UPDATE cajas SET 
+          venta = venta + ?,
+          propina = propina + ?,
+          efectivo = efectivo + ?,
+          tarjeta = tarjeta + ?,
+          transferencia = transferencia + ?,
+          comision = comision + ?
+        WHERE id_caja = ?`,
+        [
+          total, // ventas incluyendo propina
+          propina || 0, // propina por separado
+          montoEfectivo,
+          montoTarjeta,
+          montoTransferencia,
+          totalComision, // comisión total
+          cajaId
+        ]
+      );
+
+      console.log("Caja actualizada con venta:", {
+        cajaId,
+        metodoPago: metodo_pago,
+        total,
+        propina,
+        montoEfectivo,
+        montoTarjeta,
+        montoTransferencia,
+        totalComision
+      });
     }
 
     // Obtener la venta completa con información relacionada

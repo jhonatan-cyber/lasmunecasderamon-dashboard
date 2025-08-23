@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DollarSign, TrendingUp, Users, Percent } from "lucide-react"
 import {
   CommissionsStatsCard,
   CommissionsFilters,
@@ -29,13 +28,11 @@ export default function CommissionsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pendiente":
-        return "bg-purple-100 text-purple-800"
-      case "aprobada":
+      case "por_pagar":
         return "bg-yellow-100 text-yellow-800"
-      case "pagada":
+      case "pagado":
         return "bg-green-100 text-green-800"
-      case "retenida":
+      case "anulado":
         return "bg-red-100 text-red-800"
       default:
         return "bg-gray-100 text-gray-800"

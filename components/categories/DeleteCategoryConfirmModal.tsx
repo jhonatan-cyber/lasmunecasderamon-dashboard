@@ -32,21 +32,21 @@ export function DeleteCategoryConfirmModal({
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 mb-4'>
             <AlertCircle className='text-red-500' />
-            <span className='text-gray-900'>Confirmar Eliminación</span>
+            <span className='text-gray-900 dark:text-neutral-100'>Confirmar Eliminación</span>
           </DialogTitle>
           <div className='text-left'>
             <div>
-              <p className='font-medium text-gray-900 mb-3'>
+              <p className='font-medium text-gray-900 dark:text-neutral-100 mb-3'>
                 ¿Estás seguro de que quieres eliminar la categoría?
               </p>
-              <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
-                <div className='space-y-2 text-sm'>
+              <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-lg border border-red-200 dark:border-red-800'>
+                <div className='space-y-2 text-sm text-red-900 dark:text-red-100'>
                   <p>
                     <strong>Categoría:</strong> {categoryName}
                   </p>
                 </div>
               </div>
-              <p className='mt-3 text-sm text-red-400 font-medium text-center'>
+              <p className='mt-3 text-sm text-red-400 dark:text-red-300 font-medium text-center'>
                 Esta acción no se puede revertir. La categoría será eliminada permanentemente.
               </p>
             </div>

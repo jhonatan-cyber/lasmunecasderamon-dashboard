@@ -142,19 +142,12 @@ export function DevolucionDetailModal({
               <div className="flex items-center gap-2">
                 <CreditCard className="text-gray-500 w-4 h-4" />
                 <Label className="text-sm font-medium">Método de Pago:</Label>
-                <Badge variant="outline" className="text-xs">
+                 <Badge variant="outline" className="text-xs bg-black text-white dark:bg-white dark:text-black">
                   {selectedServicio.metodo_pago
                     ? metodoPagoLabels[selectedServicio.metodo_pago] ||
                       selectedServicio.metodo_pago
                     : "No especificado"}
                 </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="text-gray-500 w-4 h-4" />
-                <Label className="text-sm font-medium">Total Usuarios:</Label>
-                <span className="text-sm">
-                  {selectedServicio.total_usuarios || 0}
-                </span>
               </div>
             </div>
           </div>
@@ -170,11 +163,7 @@ export function DevolucionDetailModal({
                 {selectedServicio.anfitrionas_nombres?.split(',').map((anfitriona, index) => (
                   <Badge
                     key={index}
-                    className="text-xs"
-                    style={{
-                      backgroundColor: anfitrionaColors[index % anfitrionaColors.length],
-                      color: 'white'
-                    }}
+                    className="text-xs bg-black text-white dark:bg-white dark:text-black"
                   >
                     {anfitriona.trim()}
                   </Badge>

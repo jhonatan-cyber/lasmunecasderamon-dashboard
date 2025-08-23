@@ -72,6 +72,10 @@ export default async function handler(
           );
         }
 
+        // NOTA: La propina ya se registra junto con la venta en el endpoint de ventas
+        // No es necesario actualizar la caja aquí para evitar doble registro
+        console.log("Propina registrada en la base de datos (la caja se actualiza en el endpoint de ventas)");
+
         await rawQuery("COMMIT");
         console.log("Transacción completada exitosamente");
 
@@ -132,21 +136,22 @@ export default async function handler(
         const propinasResumen = await query(`
           SELECT 
             U.id_usuario, 
-            U.nombre, 
-            U.apellido, 
+            U.nick,
+            CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
             MAX(DP.fecha_crea) AS fecha_crea,
             SUM(CASE 
                 WHEN P.estado = 1 THEN DP.monto 
                 ELSE 0 
-            END) AS total
+            END) AS total_propinas
           FROM propinas P 
           INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
           INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
           GROUP BY 
             U.id_usuario, 
+            U.nick,
             U.nombre, 
             U.apellido
-          ORDER BY total DESC
+          ORDER BY total_propinas DESC
         `) as any[];
 
         return res.status(200).json({
