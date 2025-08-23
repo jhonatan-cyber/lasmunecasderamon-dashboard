@@ -13,11 +13,21 @@ export default function OvertimeStatsCards({
   overtime,
   formatCurrency,
 }: OvertimeStatsCardsProps) {
-  const totalMonto = overtime.reduce((acc, o) => acc + o.total_monto, 0);
-  const totalUsuarios = overtime.length;
-  const totalHoras = overtime.reduce((acc, o) => acc + o.total_horas, 0);
-  const promedioPorHora = overtime.length > 0 
-    ? totalMonto / totalHoras 
+  // Calcular totales usando los nuevos campos
+  const totalMonto = overtime.reduce((acc, o) => acc + o.total, 0);
+  const totalHoras = overtime.reduce((acc, o) => acc + o.hora, 0);
+  
+  // Contar usuarios únicos
+  const usuariosUnicos = new Set(overtime.map(o => o.id_usuario));
+  const totalUsuarios = usuariosUnicos.size;
+  
+  // Calcular promedio por hora (solo de registros por cobrar)
+  const horasExtrasPorCobrar = overtime.filter(o => o.estado === "1");
+  const totalMontoPorCobrar = horasExtrasPorCobrar.reduce((acc, o) => acc + o.total, 0);
+  const totalHorasPorCobrar = horasExtrasPorCobrar.reduce((acc, o) => acc + o.hora, 0);
+  
+  const promedioPorHora = totalHorasPorCobrar > 0 
+    ? totalMontoPorCobrar / totalHorasPorCobrar 
     : 0;
 
   return (
@@ -28,9 +38,9 @@ export default function OvertimeStatsCards({
           <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
-          <div className="text-lg sm:text-xl lg:text-2xl font-bold">{totalHoras.toFixed(1)} hrs</div>
+          <div className="text-lg sm:text-xl lg:text-2xl font-bold">{totalHorasPorCobrar.toFixed(1)} hrs</div>
           <p className="text-xs text-muted-foreground">
-            Horas acumuladas
+            Horas por cobrar
           </p>
         </CardContent>
       </Card>
@@ -54,9 +64,9 @@ export default function OvertimeStatsCards({
           <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
-          <div className="text-lg sm:text-xl lg:text-2xl font-bold">{formatCurrency(totalMonto)}</div>
+          <div className="text-lg sm:text-xl lg:text-2xl font-bold">{formatCurrency(totalMontoPorCobrar)}</div>
           <p className="text-xs text-muted-foreground">
-            Monto total
+            Monto por cobrar
           </p>
         </CardContent>
       </Card>

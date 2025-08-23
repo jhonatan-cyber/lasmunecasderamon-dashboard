@@ -5,7 +5,7 @@ const clients = new Set<NextApiResponse>();
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
-    console.log('🔔 SSE: Nueva conexión solicitada');
+    // debug logs removidos
 
     // Configurar headers para SSE
     res.setHeader('Content-Type', 'text/event-stream');
@@ -18,6 +18,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     // Agregar cliente a la lista
     clients.add(res);
     console.log('🔔 SSE: Cliente conectado. Total de clientes:', clients.size);
+    
 
     // Enviar mensaje inicial
     const initialMessage = JSON.stringify({
@@ -26,7 +27,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       timestamp: new Date().toISOString()
     });
 
-    console.log('🔔 SSE: Enviando mensaje inicial:', initialMessage);
+    
     res.write(`data: ${initialMessage}\n\n`);
 
     // Mantener la conexión viva con ping
@@ -35,7 +36,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         try {
           res.write('data: {"type":"ping","timestamp":"' + new Date().toISOString() + '"}\n\n');
         } catch (error) {
-          console.log('🔔 SSE: Error enviando ping, eliminando cliente');
+          // silent
           clients.delete(res);
           clearInterval(keepAlive);
         }
@@ -46,13 +47,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Manejar desconexión del cliente
     req.on('close', () => {
-      console.log('🔔 SSE: Cliente desconectado');
+      // silent
       clients.delete(res);
       clearInterval(keepAlive);
     });
 
     req.on('error', error => {
-      console.log('🔔 SSE: Error en conexión:', error);
+      // silent
       clients.delete(res);
       clearInterval(keepAlive);
     });
@@ -63,11 +64,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
 // Función para enviar notificaciones a todos los clientes
 export function sendNotificationToAll(type: string, data: any) {
-  console.log('🔔 SSE: Enviando notificación a todos los clientes:', type, data);
-  console.log('🔔 SSE: Total de clientes conectados:', clients.size);
+  console.log('🔔 SSE: Enviando notificación:', type, data);
+  console.log('🔔 SSE: Clientes conectados:', clients.size);
   
   if (clients.size === 0) {
-    console.log('⚠️ SSE: No hay clientes conectados para recibir la notificación');
+    console.log('🔔 SSE: No hay clientes conectados');
     return;
   }
   

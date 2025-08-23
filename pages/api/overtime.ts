@@ -105,27 +105,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const rowsResult = (await query(`
         SELECT 
+          HR.id_hora_extra,
           U.id_usuario, 
           CONCAT(U.nombre, ' ', U.apellido) AS usuario, 
-          CAST(SUM(HR.hora) AS DECIMAL(10,2)) AS total_horas, 
-          CAST(SUM(HR.total) AS DECIMAL(10,2)) AS total_monto, 
+          HR.hora,
+          HR.monto,
+          HR.total,
+          HR.fecha_crea,
+          HR.fecha_mod,
           HR.estado
         FROM horas_extras HR
         INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
-        GROUP BY U.id_usuario, U.nombre, U.apellido, HR.estado
-        ORDER BY usuario ASC
+        ORDER BY HR.fecha_crea DESC
       `)) as any[];
-      const rows = rowsResult[0];
 
-      // Asegurar que rows sea siempre un array
-      const rowsArray = Array.isArray(rows) ? rows : [rows];
+      // Asegurar que rowsResult sea siempre un array
+      const rowsArray = Array.isArray(rowsResult) ? rowsResult : [rowsResult];
 
       // Convertir los datos para asegurar tipos correctos
       const processedRows = rowsArray.map((row: any) => ({
+        id_hora_extra: Number(row.id_hora_extra),
         id_usuario: Number(row.id_usuario),
         usuario: String(row.usuario),
-        total_horas: Number(row.total_horas),
-        total_monto: Number(row.total_monto),
+        hora: Number(row.hora),
+        monto: Number(row.monto),
+        total: Number(row.total),
+        fecha_crea: String(row.fecha_crea),
+        fecha_mod: String(row.fecha_mod || ''),
         estado: String(row.estado)
       }));
 

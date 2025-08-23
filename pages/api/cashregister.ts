@@ -85,78 +85,92 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     if (resumen === '1') {
-      // Obtener resumen de cajas
-      const resumenResult = await query(`
+      // Identificar caja abierta más reciente
+      const [cajaAbiertaRow] = (await query(`
         SELECT 
-          COALESCE(SUM(venta), 0) as total_ventas,
-          COALESCE(SUM(efectivo), 0) as total_efectivo,
-          COALESCE(SUM(tarjeta), 0) as total_tarjeta,
-          COALESCE(SUM(transferencia), 0) as total_transferencia,
-          COALESCE(SUM(servicio), 0) as total_servicios,
-          COALESCE(SUM(devolucion), 0) as total_devoluciones,
-          COALESCE(SUM(iva), 0) as total_iva,
-          COALESCE(SUM(propina), 0) as total_propina,
-          COALESCE(SUM(anticipo), 0) as total_anticipo,
-          COUNT(CASE WHEN estado = 1 THEN 1 END) as cajas_abiertas,
-          COUNT(CASE WHEN estado = 0 THEN 1 END) as cajas_cerradas,
-          COUNT(CASE WHEN venta > 0 THEN 1 END) as cantidad_ventas,
-          COUNT(CASE WHEN servicio > 0 THEN 1 END) as cantidad_servicios,
-          CASE 
-            WHEN COUNT(CASE WHEN venta > 0 THEN 1 END) > 0 
-            THEN COALESCE(SUM(venta), 0) / COUNT(CASE WHEN venta > 0 THEN 1 END)
-            ELSE 0 
-          END as promedio_venta,
-          CASE 
-            WHEN COUNT(CASE WHEN servicio > 0 THEN 1 END) > 0 
-            THEN COALESCE(SUM(servicio), 0) / COUNT(CASE WHEN servicio > 0 THEN 1 END)
-            ELSE 0 
-          END as promedio_servicio
-        FROM cajas
-        WHERE estado IN (0, 1)
-      `);
-
-      const resumenData = Array.isArray(resumenResult) ? resumenResult[0] : resumenResult;
-
-      // Calcular balance total
-      const balanceTotal = ((resumenData as any).total_efectivo || 0) + 
-                          ((resumenData as any).total_tarjeta || 0) + 
-                          ((resumenData as any).total_transferencia || 0) - 
-                          ((resumenData as any).total_devoluciones || 0);
-
-      // Obtener información de la caja abierta actual
-      const cajaAbiertaResult = await query(`
-        SELECT 
-          fecha_apertura,
+          c.*, 
           CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
         FROM cajas c
         LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
         WHERE c.estado = 1
-        ORDER BY fecha_apertura DESC
+        ORDER BY c.fecha_apertura DESC
         LIMIT 1
-      `) as any[];
+      `)) as RowDataPacket[];
 
-      const cajaAbierta = Array.isArray(cajaAbiertaResult) ? cajaAbiertaResult[0] : cajaAbiertaResult;
+      // Contadores de cajas
+      const [cajasCount] = (await query(`
+        SELECT 
+          COUNT(CASE WHEN estado = 1 THEN 1 END) AS cajas_abiertas,
+          COUNT(CASE WHEN estado = 0 THEN 1 END) AS cajas_cerradas
+        FROM cajas
+        WHERE estado IN (0,1)
+      `)) as RowDataPacket[];
+
+      let cantidadVentas = 0;
+      let promedioVenta = 0;
+      let cantidadServicios = 0;
+      let promedioServicio = 0;
+
+      if (cajaAbiertaRow && (cajaAbiertaRow as any).fecha_apertura) {
+        // Estadísticas de ventas desde la apertura de la caja
+        const [ventasStats] = (await query(
+          `SELECT 
+              COALESCE(COUNT(*), 0) AS cantidad,
+              COALESCE(AVG(total), 0) AS promedio
+           FROM ventas v
+           WHERE v.estado = 1 AND v.fecha_crea >= ?`,
+          [(cajaAbiertaRow as any).fecha_apertura]
+        )) as RowDataPacket[];
+
+        cantidadVentas = Number((ventasStats as any)?.cantidad || 0);
+        promedioVenta = Number((ventasStats as any)?.promedio || 0);
+
+        // Estadísticas de servicios desde la apertura de la caja
+        const [serviciosStats] = (await query(
+          `SELECT 
+              COALESCE(COUNT(*), 0) AS cantidad,
+              COALESCE(AVG(total), 0) AS promedio
+           FROM servicios s
+           WHERE s.estado = 1 AND s.fecha_crea >= ?`,
+          [(cajaAbiertaRow as any).fecha_apertura]
+        )) as RowDataPacket[];
+
+        cantidadServicios = Number((serviciosStats as any)?.cantidad || 0);
+        promedioServicio = Number((serviciosStats as any)?.promedio || 0);
+      }
+
+      const totalVentas = Number((cajaAbiertaRow as any)?.venta || 0);
+      const totalEfectivo = Number((cajaAbiertaRow as any)?.efectivo || 0);
+      const totalTarjeta = Number((cajaAbiertaRow as any)?.tarjeta || 0);
+      const totalTransferencia = Number((cajaAbiertaRow as any)?.transferencia || 0);
+      const totalServicios = Number((cajaAbiertaRow as any)?.servicio || 0);
+      const totalDevoluciones = Number((cajaAbiertaRow as any)?.devolucion || 0);
+      const totalIva = Number((cajaAbiertaRow as any)?.iva || 0);
+      const totalPropina = Number((cajaAbiertaRow as any)?.propina || 0);
+      const totalAnticipo = Number((cajaAbiertaRow as any)?.anticipo || 0);
+
+      const balanceTotal = totalEfectivo + totalTarjeta + totalTransferencia - totalDevoluciones;
 
       const resumenCompleto: CajaResumen = {
-        total_ventas: (resumenData as any).total_ventas || 0,
-        total_efectivo: (resumenData as any).total_efectivo || 0,
-        total_tarjeta: (resumenData as any).total_tarjeta || 0,
-        total_transferencia: (resumenData as any).total_transferencia || 0,
-        total_servicios: (resumenData as any).total_servicios || 0,
-        total_devoluciones: (resumenData as any).total_devoluciones || 0,
-        total_iva: (resumenData as any).total_iva || 0,
-        total_propina: (resumenData as any).total_propina || 0,
-        total_anticipo: (resumenData as any).total_anticipo || 0,
-        cajas_abiertas: (resumenData as any).cajas_abiertas || 0,
-        cajas_cerradas: (resumenData as any).cajas_cerradas || 0,
+        total_ventas: totalVentas,
+        total_efectivo: totalEfectivo,
+        total_tarjeta: totalTarjeta,
+        total_transferencia: totalTransferencia,
+        total_servicios: totalServicios,
+        total_devoluciones: totalDevoluciones,
+        total_iva: totalIva,
+        total_propina: totalPropina,
+        total_anticipo: totalAnticipo,
+        cajas_abiertas: Number((cajasCount as any)?.cajas_abiertas || 0),
+        cajas_cerradas: Number((cajasCount as any)?.cajas_cerradas || 0),
         balance_total: balanceTotal,
-        cantidad_ventas: (resumenData as any).cantidad_ventas || 0,
-        cantidad_servicios: (resumenData as any).cantidad_servicios || 0,
-        promedio_venta: (resumenData as any).promedio_venta || 0,
-        promedio_servicio: (resumenData as any).promedio_servicio || 0,
-        tiempo_abierta: cajaAbierta ? new Date().toISOString() : undefined,
-        fecha_apertura: (cajaAbierta as any)?.fecha_apertura,
-        usuario_apertura: (cajaAbierta as any)?.usuario_apertura
+        cantidad_ventas: cantidadVentas,
+        cantidad_servicios: cantidadServicios,
+        promedio_venta: promedioVenta,
+        promedio_servicio: promedioServicio,
+        tiempo_abierta: cajaAbiertaRow ? new Date().toISOString() : undefined,
+        fecha_apertura: (cajaAbiertaRow as any)?.fecha_apertura,
+        usuario_apertura: (cajaAbiertaRow as any)?.usuario_apertura
       };
 
       return res.status(200).json({
@@ -257,7 +271,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
-          errors: validationError.errors.map(err => ({
+          errors: validationError.issues.map((err: z.ZodIssue) => ({
             field: err.path.join('.'),
             message: err.message
           }))
@@ -397,7 +411,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
-          errors: validationError.errors.map(err => ({
+          errors: validationError.issues.map((err: z.ZodIssue) => ({
             field: err.path.join('.'),
             message: err.message
           }))
@@ -477,7 +491,7 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
-          errors: validationError.errors.map(err => ({
+          errors: validationError.issues.map((err: z.ZodIssue) => ({
             field: err.path.join('.'),
             message: err.message
           }))
@@ -520,21 +534,45 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    // Cerrar la caja
+    // Primero: cerrar todas las sesiones excepto administradores y cajeros
+    console.log('🔒 [CAJA] Cerrando sesiones de usuarios al cerrar caja...');
+    
+    // Obtener usuarios con logins activos que NO sean administradores ni cajeros
+    const loginsActivos = (await query(`
+      SELECT l.id_login, l.usuario_id, u.rol_nombre
+      FROM logins l
+      INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
+      WHERE l.estado = 1 
+      AND u.rol_nombre NOT IN ('administrador', 'cajero')
+    `)) as RowDataPacket[];
+    
+    if (loginsActivos && loginsActivos.length > 0) {
+      console.log(`🔒 [CAJA] Cerrando ${loginsActivos.length} sesiones activas...`);
+      
+      // Cerrar logins de usuarios que no son administradores ni cajeros
+      await query(`
+        UPDATE logins l
+        INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
+        SET l.estado = 0
+        WHERE l.estado = 1 
+        AND u.rol_nombre NOT IN ('administrador', 'cajero')
+      `);
+      
+      console.log('✅ [CAJA] Sesiones cerradas exitosamente');
+    } else {
+      console.log('ℹ️ [CAJA] No hay sesiones activas para cerrar');
+    }
+
+    // Luego: cerrar la caja
     (await query(
       `UPDATE cajas 
-       SET monto_cierre = ?, 
+       SET 
            usuario_id_cierre = ?, 
            fecha_cierre = NOW(), 
            estado = 0
        WHERE id_caja = ?`,
-      [validatedData.monto_cierre, validatedData.usuario_id_cierre, validatedData.id_caja]
+      [validatedData.usuario_id_cierre, validatedData.id_caja]
     )) as RowDataPacket[];
-
-    // Cerrar todas las sesiones activas cuando se cierra la caja
-    await query(
-      "UPDATE logins SET estado = 'cerrado', fecha_logout = NOW() WHERE estado = 'activo'"
-    );
 
     // Obtener la caja cerrada
     const [cajaCerrada] = (await query(

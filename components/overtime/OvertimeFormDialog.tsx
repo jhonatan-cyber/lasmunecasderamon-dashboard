@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useGarzones } from "@/hooks/useGarzones";
+import { useEmployees } from "@/hooks/useEmployees";
 import { useOvertime } from "@/hooks/useOvertime";
 import { toast } from "sonner";
 import GarzonSelect from "@/components/overtime/GarzonSelect";
@@ -27,7 +27,7 @@ export default function OvertimeFormDialog({
   onClose,
   onSuccess,
 }: OvertimeFormDialogProps) {
-  const { garzones } = useGarzones();
+  const { employees } = useEmployees();
   const { createOvertime } = useOvertime();
   const [selectedUser, setSelectedUser] = useState("");
   const [hora, setHora] = useState("");
@@ -108,13 +108,13 @@ export default function OvertimeFormDialog({
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <Label htmlFor="usuario" className="text-xs sm:text-sm font-medium">
-              Garzón <span className="text-red-500">*</span>
+              Empleado <span className="text-red-500">*</span>
             </Label>
             <GarzonSelect
-              users={garzones}
+              users={employees}
               value={selectedUser}
               onChange={setSelectedUser}
-              placeholder="Selecciona un garzón"
+              placeholder="Selecciona un empleado"
             />
           </div>
 

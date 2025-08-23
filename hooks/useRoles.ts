@@ -122,7 +122,7 @@ export function useRoles() {
 
   const deactivateRole = useCallback(async (id: number) => {
     try {
-      const response = await fetch(`/api/roles?id=${id}`, {
+      const response = await fetch(`/api/roles/${id}?action=deactivate`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
       });
@@ -146,7 +146,7 @@ export function useRoles() {
 
   const activateRole = useCallback(async (id: number) => {
     try {
-      const response = await fetch(`/api/roles?id=${id}&action=activate`, {
+      const response = await fetch(`/api/roles/${id}?action=activate`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
       });
@@ -168,6 +168,30 @@ export function useRoles() {
     }
   }, [fetchRoles]);
 
+  const deleteRole = useCallback(async (id: number) => {
+    try {
+      const response = await fetch(`/api/roles/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || "Error al eliminar el rol");
+      }
+      
+      if (!result.success) {
+        throw new Error(result.message || "Error al eliminar el rol");
+      }
+      
+      await fetchRoles();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al eliminar el rol";
+      throw new Error(errorMessage);
+    }
+  }, [fetchRoles]);
+
   return {
     roles,
     isLoading,
@@ -177,5 +201,6 @@ export function useRoles() {
     updateRole,
     deactivateRole,
     activateRole,
+    deleteRole,
   };
 } 

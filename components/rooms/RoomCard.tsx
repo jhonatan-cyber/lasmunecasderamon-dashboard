@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Room } from "@/types/room";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Bed, Ruler, MoreVertical, Edit, Trash2, Check, Power } from "lucide-react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CardContainer, CardBody } from '@/components/ui/3d-card';
+import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
 
 const statusColors: Record<number, string> = {
   1: "bg-green-100 text-green-800", // Disponible
@@ -27,6 +28,7 @@ const RoomCard: React.FC<{
   onDeactivate: (room: Room) => void;
   onOccupy: (room: Room) => void;
 }> = ({ room, onEdit, onDelete, onActivate, onDeactivate, onOccupy }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <CardContainer className='inter-var'>
       <CardBody className='bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border'>
@@ -101,10 +103,23 @@ const RoomCard: React.FC<{
                   </Tooltip>
                 </TooltipProvider>
               )}
+              {room.status === 2 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuItem onClick={() => onActivate(room)} className="cursor-pointer group">
+                        <Check className="mr-2 text-green-600" />
+                        <span className="group-hover:text-green-600 transition-colors">Liberar</span>
+                      </DropdownMenuItem>
+                    </TooltipTrigger>
+                    <TooltipContent>Liberar habitación ocupada</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <DropdownMenuItem onClick={() => onDelete(room)} className="cursor-pointer group">
+                      <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="cursor-pointer group">
                       <Trash2 className="mr-2 text-red-600" />
                       <span className="group-hover:text-red-600 transition-colors">Eliminar</span>
                     </DropdownMenuItem>
@@ -154,6 +169,12 @@ const RoomCard: React.FC<{
           </div>
         </div>
       </CardBody>
+      <ConfirmDeleteRoomDialog
+        open={confirmOpen}
+        room={room}
+        onOpenChange={setConfirmOpen}
+        onConfirm={(r) => onDelete(r)}
+      />
     </CardContainer>
   );
 };

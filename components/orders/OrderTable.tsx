@@ -15,12 +15,14 @@ interface OrderTableProps {
   orders: any[];
   onRowClick?: (order: any) => void;
   searchBar?: ReactNode;
+  isGarzon?: boolean;
 }
 
 export default function OrderTable({
   orders,
   onRowClick,
   searchBar,
+  isGarzon = false,
 }: OrderTableProps) {
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -39,8 +41,12 @@ export default function OrderTable({
         return (
           <div
             key={order.id_pedido}
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
-            onClick={() => onRowClick?.(order)}
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border border-gray-100 rounded-lg transition-all duration-200 ${
+              isGarzon 
+                ? 'cursor-default' 
+                : 'hover:bg-gray-50 cursor-pointer'
+            }`}
+            onClick={() => !isGarzon && onRowClick?.(order)}
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <div className="w-full sm:w-auto">

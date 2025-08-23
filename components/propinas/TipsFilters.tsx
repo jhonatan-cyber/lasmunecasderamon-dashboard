@@ -26,6 +26,11 @@ export default function TipsFilters({
   loading,
   onRefresh
 }: TipsFiltersProps) {
+  const handleRowsPerPageChange = (value: number) => {
+    setRowsPerPage(value);
+    setPage(1);
+  };
+
   return (
     <Card className='mb-4 sm:mb-6 shadow-sm'>
       <CardContent className='mt-3 p-4 sm:p-6'>
@@ -47,9 +52,8 @@ export default function TipsFilters({
           <div className='flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end'>
             <div className='flex-1 sm:flex-none'>
               <SelectElements
-                rowsPerPage={rowsPerPage}
-                setRowsPerPage={setRowsPerPage}
-                setPage={setPage}
+                value={rowsPerPage}
+                onChange={handleRowsPerPageChange}
                 options={[5, 10, 20, 40]}
                 label='Comisiones por página'
               />

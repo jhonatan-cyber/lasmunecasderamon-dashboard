@@ -22,6 +22,11 @@ export function OrderFilters({
   setPage,
   onClearFilters,
 }: OrderFiltersProps) {
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
+
   return (
     <Card className="shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
@@ -43,9 +48,8 @@ export function OrderFilters({
           {/* Elementos por página */}
           <div className="w-full lg:w-auto">
             <SelectElements
-              rowsPerPage={pageSize}
-              setRowsPerPage={setPageSize}
-              setPage={setPage}
+              value={pageSize}
+              onChange={handlePageSizeChange}
               options={[5, 10, 20, 50]}
               label="Pedidos por página"
             />

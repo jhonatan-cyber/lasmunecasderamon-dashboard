@@ -163,37 +163,9 @@ export function validateOrigin(allowedOrigins: string[]) {
 // Middleware para logging de requests
 export function requestLogger(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
-    const startTime = Date.now();
-    const { method, url } = req;
-    const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
-    const userAgent = req.headers['user-agent'] || 'unknown';
-
-    // Log del request
-    logger.info('API Request', {
-      method,
-      url,
-      ip: clientIP,
-      userAgent,
-      timestamp: new Date().toISOString()
-    });
-
-    // Interceptar la respuesta para logging
-    const originalSend = res.send;
-    res.send = function(data) {
-      const duration = Date.now() - startTime;
-      
-      logger.info('API Response', {
-        method,
-        url,
-        statusCode: res.statusCode,
-        duration: `${duration}ms`,
-        ip: clientIP,
-        timestamp: new Date().toISOString()
-      });
-
-      return originalSend.call(this, data);
-    };
-
+    // Desactivar logs de información para limpiar la consola
+    // Solo mantener logs de errores y warnings
+    
     return handler(req, res);
   };
 }

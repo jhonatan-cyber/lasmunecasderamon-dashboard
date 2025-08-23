@@ -5,9 +5,12 @@ import { useCuentas } from "@/hooks/useCuentas";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from "@/components/cuentas";
 import Paginate from "@/components/ui/paginate";
+import { useCashRegisterStatus } from "@/hooks/useCashRegisterStatus";
+import { AlertCircle } from "lucide-react";
 
 export default function AccountsPage() {
   const { cuentas, loading, error, getCuentas } = useCuentas();
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
@@ -15,11 +18,7 @@ export default function AccountsPage() {
   // Asegurar que cuentas sea siempre un array
   const cuentasData = cuentas || [];
 
-  console.log("=== PÁGINA CUENTAS ===");
-  console.log("Datos en la página:", cuentasData);
-  console.log("Loading:", loading);
-  console.log("Error:", error);
-  console.log("===========================");
+  
 
   const filteredCuentas = cuentasData.filter((cuenta) => {
     return cuenta.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,6 +46,23 @@ export default function AccountsPage() {
         cuentas={cuentasData}
         formatCurrency={formatCurrencyNoDecimals}
       />
+
+      {/* Mensaje de advertencia cuando no hay caja abierta */}
+      {!cajaLoading && !hasOpenCaja && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-yellow-800">
+                Caja cerrada
+              </h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                No se pueden crear nuevas cuentas sin una caja abierta. Por favor, abra una caja en el módulo de caja primero.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CuentaFilters
         searchTerm={searchTerm}

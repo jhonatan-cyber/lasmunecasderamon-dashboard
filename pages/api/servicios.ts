@@ -86,12 +86,15 @@ export default async function handler(
       } = req.body;
 
       // Validaciones
-      if (!cliente_id || !precio_servicio || !tiempo) {
+      if (!precio_servicio || !tiempo) {
         return res.status(400).json({
           success: false,
-          message: "Cliente, precio de servicio y tiempo son requeridos",
+          message: "Precio de servicio y tiempo son requeridos",
         });
       }
+
+      // Si no se proporciona cliente_id, usar cliente por defecto (ID = 1)
+      const clienteIdFinal = cliente_id || 1;
 
              // Generar código único
        const codigo = generateUniqueCode();
@@ -108,7 +111,7 @@ export default async function handler(
            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
            [
              codigo,
-             cliente_id,
+             clienteIdFinal,
              habitacion_id,
              precio_habitacion || 0,
              precio_servicio,
@@ -203,13 +206,14 @@ export default async function handler(
                     montoEfectivo = total; // Por defecto efectivo
                 }
 
-                // Actualizar la caja con los montos correspondientes
+                // Actualizar la caja con los montos correspondientes, incluyendo IVA del servicio
                 await query(
                   `UPDATE cajas SET 
                     servicio = servicio + ?,
                     efectivo = efectivo + ?,
                     tarjeta = tarjeta + ?,
                     transferencia = transferencia + ?,
+                    iva = iva + ?,
                     comision = comision + ?
                   WHERE id_caja = ?`,
                   [
@@ -217,6 +221,7 @@ export default async function handler(
                     montoEfectivo,
                     montoTarjeta,
                     montoTransferencia,
+                    iva || 0,
                     usuarios ? Math.floor(precio_servicio / usuarios.length) * usuarios.length : 0, // comisión total
                     cajaId
                   ]

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
+import { query, rawQuery } from "@/lib/db";
 import { z } from "zod";
 
 
@@ -19,7 +19,7 @@ const mapCategoryFromDB = (row: any) => ({
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log("Obteniendo categorías...");
+    // logs removidos
     
     const results = await query(`
       SELECT 
@@ -37,10 +37,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       ORDER BY C.nombre ASC
     `, []);
     
-    console.log("Resultados de la consulta:", results);
+    
     
     const categories = Array.isArray(results) ? results.map(mapCategoryFromDB) : [];
-    console.log("Categorías mapeadas:", categories);
     
     return res.status(200).json({ success: true, data: categories });
   } catch (error) {
@@ -57,7 +56,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const parse = categorySchema.safeParse(req.body);
     if (!parse.success) {
-      return res.status(400).json({ success: false, message: "Datos inválidos", errors: parse.error.errors });
+      return res.status(400).json({ success: false, message: "Datos inválidos", errors: (parse as any).error?.issues });
     }
     // Validar duplicado por nombre
     const dup = await query("SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?)", [parse.data.name]);
@@ -80,7 +79,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!id) return res.status(400).json({ success: false, message: "Falta el id" });
     const parse = categorySchema.safeParse(req.body);
     if (!parse.success) {
-      return res.status(400).json({ success: false, message: "Datos inválidos", errors: parse.error.errors });
+      return res.status(400).json({ success: false, message: "Datos inválidos", errors: (parse as any).error?.issues });
     }
     // Validar duplicado por nombre (excluyendo el actual)
     const dup = await query("SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?) AND id_categoria != ?", [parse.data.name, id]);
@@ -107,9 +106,18 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
   else if (action === "deactivate") newStatus = 0;
   else return res.status(400).json({ success: false, message: "Acción no válida" });
   try {
+    await rawQuery('START TRANSACTION');
     await query("UPDATE categorias SET estado = ? WHERE id_categoria = ?", [newStatus, id]);
-    return res.status(200).json({ success: true, message: `Categoría ${action === "activate" ? "activada" : "desactivada"} correctamente` });
+    // Si desactivamos la categoría, desactivar todos sus productos asociados
+    if (newStatus === 0) {
+      await query("UPDATE productos SET estado = 0 WHERE categoria_id = ?", [id]);
+    } else if (newStatus === 1) {
+      await query("UPDATE productos SET estado = 1 WHERE categoria_id = ?", [id]);
+    }
+    await rawQuery('COMMIT');
+    return res.status(200).json({ success: true, message: `Categoría ${action === "activate" ? "activada" : "desactivada"} correctamente${newStatus === 0 ? ' y productos asociados desactivados' : ' y productos asociados activados'}` });
   } catch (error) {
+    await rawQuery('ROLLBACK');
     return res.status(500).json({ success: false, message: `Error al ${action === "activate" ? "activar" : "desactivar"} categoría`, error });
   }
 };
@@ -118,10 +126,15 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   const { id } = req.query;
   if (!id) return res.status(400).json({ success: false, message: "Falta el id" });
   try {
+    // Eliminar productos asociados y luego la categoría en una transacción
+    await rawQuery('START TRANSACTION');
+    await query("DELETE FROM productos WHERE categoria_id = ?", [id]);
     await query("DELETE FROM categorias WHERE id_categoria = ?", [id]);
-    return res.status(200).json({ success: true, message: "Categoría eliminada correctamente" });
+    await rawQuery('COMMIT');
+    return res.status(200).json({ success: true, message: "Categoría y productos asociados eliminados correctamente" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Error al eliminar categoría", error });
+    await rawQuery('ROLLBACK');
+    return res.status(500).json({ success: false, message: "Error al eliminar categoría y sus productos", error });
   }
 };
 

@@ -58,15 +58,15 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
     
     switch (estadoNum) {
       case 0:
-        return <Badge className="bg-gray-100 text-gray-800 text-xs sm:text-sm">Terminado</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 text-xs sm:text-sm">Terminado</Badge>;
       case 1:
-        return <Badge className="bg-green-100 text-green-800 text-xs sm:text-sm">En Proceso</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs sm:text-sm">En Proceso</Badge>;
       case 2:
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs sm:text-sm">Pendiente Anulación</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 text-xs sm:text-sm">Pendiente Anulación</Badge>;
       case 3:
-        return <Badge className="bg-red-100 text-red-800 text-xs sm:text-sm">Anulado</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs sm:text-sm">Anulado</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 text-xs sm:text-sm">Desconocido</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 text-xs sm:text-sm">Desconocido</Badge>;
     }
   };
 
@@ -156,16 +156,16 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
   };
 
   return (
-    <Card className="w-full bg-white shadow-md hover:shadow-lg transition-shadow duration-200">
+    <Card className="w-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-md hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3 p-4 sm:p-6">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base sm:text-lg font-bold text-gray-900">
+            <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-neutral-100">
               {servicio.codigo}
             </CardTitle>
             <div className="flex items-center gap-2 mt-1">
               <User className="text-gray-400 text-xs sm:text-sm" />
-              <span className="text-xs sm:text-sm text-gray-600">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-neutral-300">
                 {servicio.cliente_nombre || `Cliente ${servicio.cliente_id}`}
               </span>
             </div>
@@ -178,23 +178,23 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         {/* Habitación */}
         <div className="flex items-center gap-2">
           <Home className="text-blue-500 text-xs sm:text-sm" />
-          <span className="text-xs sm:text-sm font-medium">
+          <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-neutral-100">
             Habitación {servicio.habitacion_numero || "N/A"}
           </span>
         </div>
 
         {/* Temporizador */}
         <div className={`p-3 sm:p-4 rounded-lg border ${
-          timer && timer.remainingTime <= 300 && timer.isActive 
-            ? 'bg-red-50 border-red-200' 
-            : 'bg-orange-50 border-orange-200'
+          timer && timer.isActive && timer.remainingTime <= 300
+            ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+            : 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock 
-                className={`text-xs sm:text-sm ${timer && timer.remainingTime <= 300 && timer.isActive ? 'text-red-500' : 'text-orange-500'}`} 
+                className={`text-xs sm:text-sm ${timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-500' : 'text-orange-500'}`} 
               />
-              <span className="text-xs sm:text-sm font-medium text-gray-700">
+              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-neutral-300">
                 {showAllServices ? `${servicio.tiempo} minutos` : 'Tiempo restante'}
               </span>
             </div>
@@ -203,7 +203,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
                 variant="outline"
                 size="sm"
                 onClick={handleStopTimer}
-                className="h-6 px-2 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                className="h-6 px-2 text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-900/20"
               >
                 <Square className="text-xs mr-1" />
                 Finalizar
@@ -212,15 +212,15 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
           </div>
           <div className="text-center mt-2">
             <div className={`text-xl sm:text-2xl lg:text-3xl font-mono font-bold ${
-              timer && timer.remainingTime <= 300 && timer.isActive ? 'text-red-600' : 'text-orange-600'
+              timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-600' : 'text-orange-600'
             }`}>
               {showAllServices 
                 ? `${servicio.tiempo}:00` 
                 : (timer ? formatTime(timer.remainingTime) : '00:00')
               }
             </div>
-            {timer && timer.remainingTime <= 300 && timer.isActive && !showAllServices && (
-              <div className="text-xs text-red-500 mt-1">
+            {timer && timer.isActive && timer.remainingTime <= 300 && !showAllServices && (
+              <div className="text-xs text-red-600 mt-1">
                 ¡Tiempo por agotarse!
               </div>
             )}
@@ -229,29 +229,29 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
 
         {/* Precios */}
         <div className={`grid gap-2 sm:gap-4 ${servicio.metodo_pago === 'tarjeta' && servicio.iva && servicio.iva > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          <div className="text-center p-2 sm:p-3 bg-gray-50 rounded">
+          <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-neutral-800 rounded">
             <div className="flex items-center justify-center gap-1 mb-1">
               <DollarSign className="text-green-500 text-xs" />
-              <span className="text-xs text-gray-600">Servicio</span>
+              <span className="text-xs text-gray-600 dark:text-neutral-300">Servicio</span>
             </div>
             <div className="font-bold text-green-600 text-sm sm:text-base">
               {formatCurrencyNoDecimals(servicio.precio_servicio)}
             </div>
           </div>
-          <div className="text-center p-2 sm:p-3 bg-gray-50 rounded">
+          <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-neutral-800 rounded">
             <div className="flex items-center justify-center gap-1 mb-1">
               <Home className="text-blue-500 text-xs" />
-              <span className="text-xs text-gray-600">Habitación</span>
+              <span className="text-xs text-gray-600 dark:text-neutral-300">Habitación</span>
             </div>
             <div className="font-bold text-blue-600 text-sm sm:text-base">
               {formatCurrencyNoDecimals(servicio.precio_habitacion)}
             </div>
           </div>
           {servicio.metodo_pago === 'tarjeta' && servicio.iva && servicio.iva > 0 && (
-            <div className="text-center p-2 sm:p-3 bg-gray-50 rounded">
+            <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-neutral-800 rounded">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <CreditCard className="text-purple-500 text-xs" />
-                <span className="text-xs text-gray-600">IVA</span>
+                <span className="text-xs text-gray-600 dark:text-neutral-300">IVA</span>
               </div>
               <div className="font-bold text-purple-600 text-sm sm:text-base">
                 {formatCurrencyNoDecimals(servicio.iva)}
@@ -261,7 +261,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         </div>
 
         {/* Total */}
-        <div className="text-center p-3 sm:p-4 bg-black text-white rounded-lg">
+        <div className="text-center p-3 sm:p-4 bg-black text-white rounded-lg dark:bg-white dark:text-black">
           <div className="text-xs mb-1">TOTAL</div>
           <div className="text-lg sm:text-xl font-bold">
             {formatCurrencyNoDecimals(servicio.total)}
@@ -272,7 +272,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         {servicio.metodo_pago && (
           <div className="flex items-center gap-2">
             <CreditCard className="text-blue-500 text-xs sm:text-sm" />
-            <span className="text-xs sm:text-sm text-gray-600">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-neutral-300">
               {servicio.metodo_pago}
             </span>
           </div>
@@ -282,7 +282,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
         {servicio.anfitrionas_nombres && (
           <div className="flex items-center gap-2">
             <Users className="text-purple-500 text-xs sm:text-sm" />
-            <span className="text-xs sm:text-sm text-gray-600">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-neutral-300">
               {servicio.anfitrionas_nombres}
             </span>
           </div>
@@ -290,7 +290,7 @@ export default function ServicioCard({ servicio, onStopTimer, showAllServices = 
 
         {/* Fecha de creación */}
         {servicio.fecha_crea && (
-          <div className="text-xs text-gray-400 mt-2">
+          <div className="text-xs text-gray-400 dark:text-neutral-400 mt-2">
             Creado: {formatDate(servicio.fecha_crea)}
           </div>
         )}

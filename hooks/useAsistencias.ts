@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AsistenciaResumen, AsistenciaResponse } from '@/types/asistencia'
+import { useCurrentUser } from './useCurrentUser'
 
 interface UseAsistenciasReturn {
   data: AsistenciaResumen[]
@@ -13,6 +14,7 @@ interface UseAsistenciasReturn {
 }
 
 export default function useAsistencias(): UseAsistenciasReturn {
+  const { user } = useCurrentUser()
   const [data, setData] = useState<AsistenciaResumen[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +24,12 @@ export default function useAsistencias(): UseAsistenciasReturn {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/asistencias')
+      // Determinar qué endpoint usar basado en el rol del usuario
+      const endpoint = user?.role?.toLowerCase() === 'cajero' 
+        ? '/api/asistencias/user' 
+        : '/api/asistencias'
+      
+      const response = await fetch(endpoint)
       
       if (!response.ok) {
         throw new Error('Error al obtener las asistencias')
@@ -42,7 +49,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user])
 
   const registrarAsistencia = useCallback(async (usuarioId: number): Promise<boolean> => {
     try {
@@ -76,8 +83,10 @@ export default function useAsistencias(): UseAsistenciasReturn {
 
   // Cargar datos al montar el componente
   useEffect(() => {
-    fetchAsistencias()
-  }, [fetchAsistencias])
+    if (user) {
+      fetchAsistencias()
+    }
+  }, [fetchAsistencias, user])
 
   return {
     data,

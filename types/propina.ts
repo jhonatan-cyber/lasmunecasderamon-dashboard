@@ -8,8 +8,8 @@ export interface PropinaDetalle {
 
 export interface PropinaResumen {
   id_usuario: number;
-  nombre: string;
-  apellido: string;
+  nick: string;
+  nombre_completo: string;
   fecha_crea: string;
-  total: number;
+  total_propinas: number;
 }

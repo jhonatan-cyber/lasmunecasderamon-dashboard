@@ -114,6 +114,66 @@ body {
   }
 }
 
+/* Dark mode overrides para clases Tailwind comunes usadas en componentes legacy */
+/* Nota: Estas reglas aseguran consistencia visual sin refactorizar cada componente. */
+.dark .bg-white {
+  background-color: hsl(var(--card)) !important;
+}
+.dark .bg-gray-50 {
+  background-color: hsl(var(--background)) !important;
+}
+.dark .bg-gray-100 {
+  background-color: hsl(var(--muted)) !important;
+}
+.dark .text-gray-900 {
+  color: hsl(var(--foreground)) !important;
+}
+.dark .text-black {
+  color: hsl(var(--foreground)) !important;
+}
+.dark .text-gray-800 {
+  color: hsl(var(--foreground)) !important;
+}
+.dark .text-gray-700 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-gray-600 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-gray-500 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-zinc-900 {
+  color: hsl(var(--foreground)) !important;
+}
+.dark .text-zinc-700 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-zinc-600 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-zinc-500 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-zinc-400 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .border-gray-200 {
+  border-color: hsl(var(--border)) !important;
+}
+.dark .border-gray-300 {
+  border-color: hsl(var(--border)) !important;
+}
+.dark .hover\:bg-gray-50:hover {
+  background-color: hsl(var(--muted)) !important;
+}
+.dark .hover\:bg-gray-100:hover {
+  background-color: hsl(var(--muted)) !important;
+}
+.dark .ring-gray-200 {
+  --tw-ring-color: hsl(var(--ring)) !important;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -122,8 +182,6 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
-
 
 /* Asegurar que los íconos de búsqueda mantengan su tamaño */
 .search-icon {
@@ -175,3 +233,4 @@ body {
 .badge-blink {
   animation: blink 1.5s ease-in-out infinite;
 }
+

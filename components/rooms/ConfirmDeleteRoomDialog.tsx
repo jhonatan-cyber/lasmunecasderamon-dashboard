@@ -1,0 +1,63 @@
+'use client';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
+import { Room } from '@/types/room';
+
+interface ConfirmDeleteRoomDialogProps {
+  open: boolean;
+  room: Room | null;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (room: Room) => void;
+}
+
+export default function ConfirmDeleteRoomDialog({
+  open,
+  room,
+  onOpenChange,
+  onConfirm
+}: ConfirmDeleteRoomDialogProps) {
+  if (!room) return null;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='sm:max-w-[420px]'>
+        <DialogHeader>
+          <DialogTitle className='flex items-center gap-2 mb-2'>
+            <AlertTriangle className='text-red-500' />
+            Confirmar eliminación
+          </DialogTitle>
+          <DialogDescription className='text-center'>
+            ¿Seguro que deseas eliminar la habitación "{room.name}"? Esta acción no se puede
+            deshacer.
+          </DialogDescription>
+        </DialogHeader>
+        <div className='flex justify-center gap-3 pt-2'>
+          <Button
+            variant='outline'
+            onClick={() => onOpenChange(false)}
+            className='rounded-full hover:bg-black hover:text-white hover:scale-105 transition-all duration-200'
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant='outline'
+            onClick={() => {
+              onConfirm(room);
+              onOpenChange(false);
+            }}
+            className='bg-black rounded-full text-white hover:scale-105 transition-all duration-200'
+          >
+            Eliminar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

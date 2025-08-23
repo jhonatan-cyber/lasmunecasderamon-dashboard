@@ -53,7 +53,7 @@ export default async function handler(
     // Calcular balance total de cajas abiertas
     const balanceStats = await query(`
       SELECT 
-        COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - devolucion), 0) as balance_total
+        COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - COALESCE(devoluciones, 0)), 0) as balance_total
       FROM cajas
       WHERE estado = 1
     `) as RowDataPacket[];
@@ -93,6 +93,14 @@ export default async function handler(
 
       // Balance total
       balance_total: parseFloat(balanceStats[0]?.balance_total || 0),
+
+      // Debug logs para el balance total
+      debug_balance: {
+        raw_balance: balanceStats[0]?.balance_total,
+        parsed_balance: parseFloat(balanceStats[0]?.balance_total || 0),
+        ventas_stats: ventasStats[0],
+        servicios_stats: serviciosStats[0]
+      },
 
       // Información de tiempo
       tiempo_abierta: cajaInfo.length > 0 

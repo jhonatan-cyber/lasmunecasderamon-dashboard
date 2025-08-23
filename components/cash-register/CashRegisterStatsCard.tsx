@@ -1,22 +1,12 @@
 import { DollarSign, TrendingUp, Activity, CreditCard, ArrowUpDown } from "lucide-react";
 import { StatsCard, StatCard } from "@/components/ui/StatsCard";
 import { useCashRegister } from "@/hooks/useCashRegister";
-import { formatCurrencyAbbreviated, formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/formatters";
 
 export function CashRegisterStatsCard() {
   const { resumen: stats, loading: isLoading, error } = useCashRegister();
 
-  // Formatear el balance total con formato abreviado para números muy grandes
-  const formattedBalanceTotal = formatCurrencyAbbreviated(stats?.balance_total || 0);
-
   const statsCards: StatCard[] = [
-    {
-      title: "Balance Total",
-      value: formattedBalanceTotal,
-      subtitle: "En todas las cajas abiertas",
-      icon: DollarSign,
-      formatAsCurrency: false, // No usar el formateo automático
-    },
     {
       title: "Total Ventas",
       value: formatCurrencyNoDecimals(stats?.total_ventas || 0),
@@ -55,11 +45,26 @@ export function CashRegisterStatsCard() {
   ];
 
   return (
-    <StatsCard
-      stats={statsCards}
-      columns={2} // Cambiar a 2 columnas para mejor responsive
-      error={error}
-      isLoading={isLoading}
-    />
+    <div className="space-y-6 w-full">
+      {/* Primera fila: Total Ventas y Total Servicios */}
+      <div className="w-full">
+        <StatsCard
+          stats={statsCards.slice(0, 2)} // Solo los primeros 2 cards
+          columns={2}
+          error={error}
+          isLoading={isLoading}
+        />
+      </div>
+      
+      {/* Segunda fila: Total Efectivo, Total Tarjeta, Total Transferencias */}
+      <div className="w-full">
+        <StatsCard
+          stats={statsCards.slice(2, 5)} // Los últimos 3 cards
+          columns={3}
+          error={error}
+          isLoading={isLoading}
+        />
+      </div>
+    </div>
   );
 } 

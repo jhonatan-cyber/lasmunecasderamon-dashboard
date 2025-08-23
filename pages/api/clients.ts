@@ -3,11 +3,6 @@ import { query } from "@/lib/db";
 import { Client } from "@/types/client";
 import { RowDataPacket } from "mysql2/promise";
 
-
-
-// Simulación de base de datos temporal
-interface ClientWithRowData extends Client, RowDataPacket {}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
