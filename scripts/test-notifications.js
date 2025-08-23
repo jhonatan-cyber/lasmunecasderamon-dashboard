@@ -1,78 +1,49 @@
-#!/usr/bin/env node
+// Script para probar notificaciones en tiempo real
+const BASE_URL = 'http://localhost:3000';
 
-/**
- * Script para probar las notificaciones en tiempo real
- * Uso: node scripts/test-notifications.js
- */
+async function testNotifications() {
+  console.log('🧪 Iniciando prueba de notificaciones...');
 
-const EventSource = require('eventsource');
-
-console.log('🧪 Iniciando prueba de notificaciones en tiempo real...\n');
-
-// Conectar al SSE endpoint
-const eventSource = new EventSource('http://localhost:3000/api/notifications/sse');
-
-let messageCount = 0;
-let newOrderCount = 0;
-const processedNotifications = new Set();
-
-eventSource.onopen = () => {
-  console.log('✅ Conectado al servidor SSE');
-  console.log('📡 Esperando notificaciones...\n');
-};
-
-eventSource.onmessage = (event) => {
-  messageCount++;
-  const data = JSON.parse(event.data);
-  
-  console.log(`📨 Mensaje #${messageCount} recibido:`);
-  console.log(`   Tipo: ${data.type}`);
-  console.log(`   Timestamp: ${data.timestamp}`);
-  
-  if (data.type === 'new_order') {
-    newOrderCount++;
-    const notificationId = `${data.data.id}_${data.data.codigo}_${data.data.timestamp}`;
+  try {
+    // 1. Probar conexión SSE
+    console.log('📡 Probando conexión SSE...');
+    const eventSource = new EventSource(`${BASE_URL}/api/notifications/sse`);
     
-    if (processedNotifications.has(notificationId)) {
-      console.log(`   🚫 DUPLICADO DETECTADO! ID: ${notificationId}`);
-    } else {
-      processedNotifications.add(notificationId);
-      console.log(`   🎉 ¡NUEVO PEDIDO! #${data.data.codigo}`);
-      console.log(`   👤 Cliente: ${data.data.cliente}`);
-      console.log(`   🧑‍💼 Mesero: ${data.data.mesero}`);
-      console.log(`   💰 Total: $${data.data.total.toLocaleString()}`);
-      console.log(`   🆔 ID único: ${notificationId}`);
-    }
-  } else if (data.type === 'connected') {
-    console.log(`   🔗 ${data.message}`);
-    console.log(`   🆔 Client ID: ${data.clientId}`);
-  } else if (data.type === 'ping') {
-    console.log(`   🏓 Ping recibido`);
+    eventSource.onopen = () => {
+      console.log('✅ Conexión SSE establecida');
+    };
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('📨 Mensaje SSE recibido:', data);
+      
+      if (data.type === 'new_order') {
+        console.log('🎉 ¡Notificación de pedido recibida!');
+        console.log('📋 Detalles del pedido:', data.data);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('❌ Error en conexión SSE:', error);
+    };
+
+    // 2. Simular creación de pedido (requiere autenticación)
+    console.log('📝 Para probar notificaciones completas:');
+    console.log('1. Abre múltiples pestañas del dashboard');
+    console.log('2. Inicia sesión con diferentes usuarios (admin, cajero, garzón)');
+    console.log('3. Crea un pedido con el garzón');
+    console.log('4. Verifica que aparezcan notificaciones en las otras pestañas');
+
+    // 3. Mantener conexión abierta
+    setTimeout(() => {
+      console.log('⏰ Prueba completada. Cerrando conexión...');
+      eventSource.close();
+    }, 10000);
+
+  } catch (error) {
+    console.error('❌ Error en la prueba:', error);
   }
-  
-  console.log('');
-};
+}
 
-eventSource.onerror = (error) => {
-  console.error('❌ Error en conexión SSE:', error);
-};
-
-// Manejar cierre del script
-process.on('SIGINT', () => {
-  console.log('\n🛑 Cerrando conexión...');
-  console.log(`📊 Resumen:`);
-  console.log(`   - Total de mensajes: ${messageCount}`);
-  console.log(`   - Nuevos pedidos: ${newOrderCount}`);
-  console.log(`   - Notificaciones únicas: ${processedNotifications.size}`);
-  console.log(`   - Duplicados detectados: ${newOrderCount - processedNotifications.size}`);
-  eventSource.close();
-  process.exit(0);
-});
-
-// Mostrar estadísticas cada 30 segundos
-setInterval(() => {
-  console.log(`📊 Estadísticas: ${messageCount} mensajes, ${newOrderCount} pedidos, ${processedNotifications.size} únicos`);
-}, 30000);
-
-console.log('💡 Para simular un nuevo pedido, crea uno desde la aplicación web');
-console.log('💡 Presiona Ctrl+C para salir\n'); 
+// Ejecutar prueba
+testNotifications();

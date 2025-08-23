@@ -17,29 +17,23 @@ const defaultConfig: DatabaseConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'admin_dashboard',
-  port: parseInt(process.env.DB_PORT || '3306'),
+  database: process.env.DB_NAME || 'nuwesoft',
+  port: parseInt(process.env.DB_PORT || '3307'),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 };
 
-console.log('🔍 Database Configuration:', {
-  host: defaultConfig.host,
-  user: defaultConfig.user,
-  database: defaultConfig.database,
-  port: defaultConfig.port,
-  passwordSet: !!defaultConfig.password
-});
+// Debug logs removed
 
 // Create a connection pool
 const pool = mysql.createPool(defaultConfig);
 
-console.log('📊 Connection pool created successfully');
+// Debug logs removed
 
 // Function to create a direct connection (more reliable for production)
 async function createConnection() {
-  console.log('🔍 Creating direct connection...');
+  // Debug logs removed
   const connection = await mysql.createConnection({
     host: defaultConfig.host,
     user: defaultConfig.user,
@@ -47,24 +41,16 @@ async function createConnection() {
     database: defaultConfig.database,
     port: defaultConfig.port
   });
-  console.log('✅ Direct connection created successfully');
+  // Debug logs removed
   return connection;
 }
 
 // Function to execute SQL queries
 export async function query(sql: string, params: any[] = []) {
-  console.log('🔍 Executing query:', sql);
-  console.log('🔍 Query parameters:', params);
-  
   let connection;
   try {
-    console.log('📡 Creating connection for query...');
     connection = await createConnection();
-    
-    console.log('📡 Attempting to execute query...');
     const [rows] = await connection.execute(sql, params);
-    console.log('✅ Query executed successfully');
-    console.log('📊 Query result rows:', Array.isArray(rows) ? rows.length : 'Not an array');
     return rows;
   } catch (error) {
     console.error('❌ Database query error:', error);
@@ -77,57 +63,33 @@ export async function query(sql: string, params: any[] = []) {
     throw error;
   } finally {
     if (connection) {
-      console.log('🔓 Closing connection...');
       await connection.end();
-      console.log('✅ Connection closed');
     }
   }
 }
 
 // Function to execute raw SQL queries (no prepared statements)
 export async function rawQuery(sql: string) {
-  console.log('🔍 Executing raw query:', sql);
-  
   let connection;
   try {
-    console.log('📡 Creating connection for raw query...');
     connection = await createConnection();
-    
-    console.log('📡 Attempting to execute raw query...');
     const [rows] = await connection.query(sql);
-    console.log('✅ Raw query executed successfully');
     return rows;
   } catch (error) {
     console.error('❌ Database raw query error:', error);
     throw error;
   } finally {
     if (connection) {
-      console.log('🔓 Closing connection...');
       await connection.end();
-      console.log('✅ Connection closed');
     }
   }
 }
 
 // Test the database connection
 export async function testConnection() {
-  console.log('🔍 Testing database connection...');
-  console.log('📊 Connection config:', {
-    host: defaultConfig.host,
-    user: defaultConfig.user,
-    database: defaultConfig.database,
-    port: defaultConfig.port
-  });
-  
   try {
-    console.log('📡 Attempting to create direct connection...');
     const connection = await createConnection();
-    console.log('✅ Successfully connected to the database');
-    console.log('📊 Connection details:', {
-      threadId: connection.threadId
-    });
     await connection.end();
-    console.log('🔓 Connection closed');
     return true;
   } catch (error) {
     console.error('❌ Error connecting to the database:', error);

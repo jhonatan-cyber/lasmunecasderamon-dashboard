@@ -27,12 +27,7 @@ async function getCodigoHandler(req: NextApiRequest, res: NextApiResponse) {
 
     const codigo = codeRes[0].codigo;
 
-    // Log de acceso al código
-    auditLogger.dataAccess(0, 'CÓDIGO_ACCEDIDO', '/api/codigo/actual', {
-      userRole,
-      clientIP: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      timestamp: new Date().toISOString()
-    });
+
 
     return res.status(200).json({
       success: true,
@@ -40,10 +35,6 @@ async function getCodigoHandler(req: NextApiRequest, res: NextApiResponse) {
       message: 'Código obtenido exitosamente'
     });
   } catch (error) {
-    auditLogger.error(error as Error, {
-      action: 'GET_CODIGO',
-      clientIP: req.headers['x-forwarded-for'] || req.connection.remoteAddress
-    });
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

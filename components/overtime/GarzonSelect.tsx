@@ -20,14 +20,14 @@ interface GarzonSelectProps {
 export default function GarzonSelect({ users, value, onChange, placeholder }: GarzonSelectProps) {
   const [search, setSearch] = useState("");
   
-  // Filtrar por búsqueda (los usuarios ya vienen filtrados como garzones activos)
+  // Filtrar por búsqueda (los usuarios ya vienen filtrados como garzones y cajeros activos)
   const filteredGarzones = users.filter((u) =>
     (`${u.name} ${u.lastName} ${u.nick}`.toLowerCase().includes(search.toLowerCase()))
   );
 
   console.log("=== GARZON SELECT DEBUG ===");
-  console.log("Garzones recibidos:", users.length);
-  console.log("Garzones filtrados:", filteredGarzones.length);
+  console.log("Usuarios recibidos (garzones + cajeros):", users.length);
+  console.log("Usuarios filtrados:", filteredGarzones.length);
   console.log("===========================");
 
   return (
@@ -35,14 +35,14 @@ export default function GarzonSelect({ users, value, onChange, placeholder }: Ga
       <SelectTrigger className="w-full rounded-full">
         <div className="flex items-center gap-2">
           <UserIcon className="h-4 w-4 text-gray-500" />
-          <SelectValue placeholder={placeholder || "Selecciona un garzón"} />
+          <SelectValue placeholder={placeholder || "Selecciona un empleado"} />
         </div>
       </SelectTrigger>
       <SelectContent>
         <div className="p-2 pb-0">
           <Input
             autoFocus
-            placeholder="Buscar garzón..."
+            placeholder="Buscar empleado..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="mb-2"
@@ -50,7 +50,7 @@ export default function GarzonSelect({ users, value, onChange, placeholder }: Ga
         </div>
         {filteredGarzones.length === 0 && (
           <div className="px-4 py-2 text-gray-400 text-sm">
-            {users.length === 0 ? "No hay garzones disponibles" : "Sin resultados"}
+            {users.length === 0 ? "No hay empleados disponibles" : "Sin resultados"}
           </div>
         )}
         {filteredGarzones.map((u) => (

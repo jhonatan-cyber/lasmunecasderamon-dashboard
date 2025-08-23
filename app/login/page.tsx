@@ -191,6 +191,12 @@ export default function LoginPage() {
                       // Verificar si requiere código PRIMERO
                       if (data.requiereCodigo === true) {
                         setUserTmp(data.user);
+                        
+                        // Guardar el rol en localStorage para evitar flash de permisos
+                        if (data.user?.role) {
+                          localStorage.setItem('userRole', data.user.role);
+                        }
+                        
                         setStep('codigo');
                         setLoading(false);
                         return;
@@ -204,9 +210,15 @@ export default function LoginPage() {
                       }
                       // Login exitoso (admin/cajero)
                       toast.success('¡Bienvenido al sistema!');
+                      
+                      // Guardar el rol en localStorage para evitar flash de permisos
+                      if (data.user?.role) {
+                        localStorage.setItem('userRole', data.user.role);
+                      }
+                      
                       setLoading(false);
-                                             // Redirección inmediata
-                       window.location.href = '/';
+                      // Redirección inmediata
+                      window.location.href = '/';
                     } catch (err) {
                       toast.error('Error de red o servidor');
                       setLoading(false);
@@ -369,6 +381,12 @@ export default function LoginPage() {
                         return;
                       }
                       toast.success('¡Bienvenido al sistema, ' + (userTmp?.username || '') + '!');
+                      
+                      // Guardar el rol en localStorage para evitar flash de permisos
+                      if (data.user?.role) {
+                        localStorage.setItem('userRole', data.user.role);
+                      }
+                      
                       setLoading(false);
                       setTimeout(() => {
                         window.location.href = '/';

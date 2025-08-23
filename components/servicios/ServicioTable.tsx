@@ -16,7 +16,7 @@ import {
   Eye,
   PencilSimple,
   Trash,
-  DotsThreeVertical,
+  MoreVertical,
   Clock,
   Users,
 } from "lucide-react";
@@ -186,7 +186,7 @@ export default function ServicioTable({
                           size="sm"
                           className="bg-white hover:bg-gray-50 rounded-full"
                         >
-                          <DotsThreeVertical />
+                          <MoreVertical />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">

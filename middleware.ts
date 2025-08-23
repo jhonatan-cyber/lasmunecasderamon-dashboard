@@ -1,51 +1,86 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Rutas públicas que no requieren autenticación
-const PUBLIC_PATHS = [
-  "/login",
-  // debug pages removidas
-  "/confirmar-anulacion",
-  "/confirmar-anulacion-servicio",
-  "/api/login",
-  "/api/logout",
-  "/api/auth/check",
-  "/api/auth/me",
-  // endpoints de prueba removidos
-  "/api/ventas/confirmar-anulacion",
-  "/api/ventas/procesar-anulacion",
-  "/api/ventas/solicitud-anulacion",
-  "/api/servicios/solicitud-anulacion",
-  "/api/servicios/procesar-anulacion",
-  "/api/notifications/pending",
-  "/api-docs",
-  "/api/docs",
-  "/_next",
-  "/favicon.ico",
-  "/img",
-  "/fonts",
-  "/manifest.json",
-  "/robots.txt",
-  "/sitemap.xml",
-];
+  // Rutas públicas que no requieren autenticación
+  const PUBLIC_PATHS = [
+    "/login",
+    // debug pages removidas
+    "/confirmar-anulacion",
+    "/confirmar-anulacion-servicio",
+    "/api/auth/login",
+    "/api/login",
+    "/api/auth/me",
+    "/api/logout",
+    "/api/auth/check",
+    "/api/auth/check-session",
+    // endpoints de usuario para la app
+    "/api/asistencias/user",
+    "/api/anticipos/user",
+    "/api/commissions/user",
+    "/api/servicios/user",
+    "/api/tips/user",
+    "/api/overtime/user",
+    "/api/orders/user",
+    // endpoints para pedidos (clientes y anfitrionas)
+    "/api/clients",
+    "/api/users",
+    "/api/anfitrionas",
+    // endpoints para categorías
+    "/api/categories",
+    // endpoints para productos
+    "/api/products",
+    // endpoints para pedidos/órdenes
+    "/api/orders",
+    // endpoints de prueba removidos
+    "/api/ventas/confirmar-anulacion",
+    "/api/ventas/procesar-anulacion",
+    "/api/ventas/solicitud-anulacion",
+    "/api/servicios/solicitud-anulacion",
+    "/api/servicios/procesar-anulacion",
+    "/api/notifications/pending",
+    "/api/notifications/sse",
+    "/api-docs",
+    "/api/docs",
+    "/_next",
+    "/favicon.ico",
+    "/img",
+    "/fonts",
+    "/manifest.json",
+    "/robots.txt",
+    "/sitemap.xml",
+  ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token");
 
-  // (logs removidos)
-
   // Configurar CORS global para todas las rutas API
   if (pathname.startsWith('/api/')) {
     const response = NextResponse.next();
     
-    // Headers CORS (usar origen específico y permitir credenciales)
-    const requestOrigin = request.headers.get('origin') || request.nextUrl.origin;
-    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
+    // Headers CORS - Permitir desde la app React Native
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://192.168.0.100:3000',
+      'http://192.168.0.100:8081', // Expo dev server
+      'exp://192.168.0.100:8081',  // Expo
+      'http://localhost:8081',     // Expo local
+      'exp://localhost:8081'       // Expo local
+    ];
+    
+    const requestOrigin = request.headers.get('origin');
+    const isAllowedOrigin = requestOrigin && allowedOrigins.includes(requestOrigin);
+    
+    if (isAllowedOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', requestOrigin);
+    } else {
+      response.headers.set('Access-Control-Allow-Origin', '*');
+    }
+    
     response.headers.set('Vary', 'Origin');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
     response.headers.set('Access-Control-Max-Age', '86400');
     
     // Manejar preflight requests
@@ -78,12 +113,11 @@ export function middleware(request: NextRequest) {
   }
 
   // Si hay token, permitir acceso
-  // (logs removidos)
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/((?!api/login|api/logout|api/auth/check|api/auth/me|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio).*)",
+    "/((?!api/auth/login|api/login|api/auth/me|api/logout|api/auth/check|api/auth/check-session|api/asistencias/user|api/anticipos/user|api/commissions/user|api/servicios/user|api/tips/user|api/overtime/user|api/orders/user|api/clients|api/users|api/anfitrionas|api/categories|api/products|api/orders|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api/notifications/sse|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio).*)",
   ],
 };

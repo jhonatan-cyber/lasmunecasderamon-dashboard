@@ -87,11 +87,21 @@ export const CerrarCajaDialog = ({
     }
 
     try {
-      // Asegurar que se envíe la fecha actual al momento del cierre
+      // Calcular monto de cierre automáticamente si no se pide al usuario
+      const devoluciones = (caja.devoluciones as number) || 0;
+      const montoCierreCalculado =
+        (caja.monto_apertura || 0) +
+        (caja.efectivo || 0) +
+        (caja.tarjeta || 0) +
+        (caja.transferencia || 0) -
+        devoluciones;
+
+      // Asegurar que se envíe la fecha actual al momento del cierre y el monto_cierre requerido por la API
       const dataToSend = {
         ...formData,
+        monto_cierre: Number(montoCierreCalculado) || 0,
         fecha_cierre: new Date().toISOString(),
-      };
+      } as CajaCierre & { monto_cierre: number };
 
       await onCerrarCaja(dataToSend);
       onOpenChange(false);

@@ -56,7 +56,7 @@ export default function PropinasDetalleModal({
       <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[700px] max-h-[80vh] overflow-y-auto p-0">
         <DialogHeader>
           <DialogTitle className="text-center text-base sm:text-lg font-semibold pt-4 sm:pt-6 pb-2">
-            Información de los Tips
+            Información de los Propinas
           </DialogTitle>
         </DialogHeader>
 
@@ -65,13 +65,18 @@ export default function PropinasDetalleModal({
           <div className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
             <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-medium text-xs sm:text-sm">
-              {usuario.nombre} {usuario.apellido}
+              {usuario.nombre_completo}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+            <span className="text-xs text-gray-500">
+              @{usuario.nick}
             </span>
           </div>
           <div className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
             <DollarSign className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-medium text-xs sm:text-sm">
-              Total a pagar: {formatCurrencyNoDecimals(usuario.total)}
+              Total a pagar: {formatCurrencyNoDecimals(usuario.total_propinas)}
             </span>
           </div>
         </div>
@@ -79,7 +84,7 @@ export default function PropinasDetalleModal({
         {/* Tabla de detalles */}
         <div className="px-4 sm:px-6 pb-2">
           <h3 className="text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600">
-            Detalle de Tips
+            Detalle de las Propinas
           </h3>
           <div className="overflow-x-auto">
             <Table>

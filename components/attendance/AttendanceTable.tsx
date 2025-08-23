@@ -31,8 +31,12 @@ interface AttendanceData {
   total_final: number;
 }
 
-export default function AttendanceTable() {
-  const { data, loading, error } = useAsistencias();
+interface AttendanceTableProps {
+  data?: any[];
+}
+
+export default function AttendanceTable({ data }: AttendanceTableProps) {
+  const { loading, error } = useAsistencias();
   const [selectedUser, setSelectedUser] = useState<{
     id: number;
     name: string;
@@ -72,11 +76,21 @@ export default function AttendanceTable() {
     );
   }
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
-      <p className="text-sm sm:text-base text-gray-500">
-        No hay datos de asistencia disponibles
-      </p>
+      <div className="text-center py-8">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay asistencias</h3>
+            <p className="text-sm text-gray-500">
+              No se encontraron registros de asistencia para mostrar
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 

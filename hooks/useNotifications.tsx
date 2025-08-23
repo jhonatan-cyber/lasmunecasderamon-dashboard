@@ -26,6 +26,7 @@ export function useNotifications() {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [lastNotification, setLastNotification] = useState<NotificationData | null>(null);
+  const [mounted, setMounted] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const isConnectingRef = useRef(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,6 +35,11 @@ export function useNotifications() {
   
   // Obtener el usuario actual
   const { user } = useCurrentUser();
+
+  // Marcar como montado después de la hidratación
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Función para reproducir sonido de notificación
   const playNotificationSound = useCallback(() => {
@@ -65,26 +71,16 @@ export function useNotifications() {
     (data: NotificationData) => {
       // Verificar si el usuario actual es el que creó el pedido
       if (user && data.createdBy && user.id === data.createdBy) {
+        // Si el usuario actual creó el pedido, solo actualizar contador sin mostrar notificación
         const event = new CustomEvent('updatePendingOrders');
         window.dispatchEvent(event);
         return;
       }
 
-      // Verificar si el usuario tiene rol de garzon o anfitriona
-      if (user && user.role) {
-        const roleLower = user.role.toLowerCase();
-        if (roleLower.includes('garzon') || roleLower.includes('mesero') || roleLower.includes('anfitriona')) {
-          // Solo actualizar contador de pedidos pendientes sin mostrar notificación ni abrir modal
-          const event = new CustomEvent('updatePendingOrders');
-          window.dispatchEvent(event);
-          return;
-        }
-      }
-
-      // Reproducir sonido
+      // Reproducir sonido para todos los usuarios (excepto el que creó el pedido)
       playNotificationSound();
 
-      // Mostrar toast
+      // Mostrar toast para todos los usuarios (excepto el que creó el pedido)
       toast.success(`¡NUEVO PEDIDO! #${data.codigo}`, {
         description: (
           <div className='space-y-1 text-sm'>
@@ -133,12 +129,13 @@ export function useNotifications() {
     }
 
     // Crear nueva conexión SSE
-   
+    console.log('🔔 useNotifications: Conectando a SSE...');
     const eventSource = new EventSource('/api/notifications/sse');
     eventSourceRef.current = eventSource;
 
 
     eventSource.onopen = () => {
+      console.log('🔔 useNotifications: Conexión SSE establecida');
       setIsConnected(true);
       isConnectingRef.current = false;
       setConnectionAttempts(0); // Resetear intentos al conectar exitosamente
@@ -266,6 +263,11 @@ export function useNotifications() {
   }, [connectionAttempts, lastNotification, showNotification]);
 
   useEffect(() => {
+    // Solo conectar cuando esté montado
+    if (!mounted) {
+      return;
+    }
+
     // Evitar múltiples instancias del hook
     if (isHookActive) {
       return;
@@ -276,13 +278,17 @@ export function useNotifications() {
       return;
     }
 
-    isHookActive = true;
+    // Esperar a que el componente esté completamente montado
+    const timer = setTimeout(() => {
+      isHookActive = true;
 
-    // Iniciar conexión
-    connectSSE();
+      // Iniciar conexión
+      connectSSE();
+    }, 100);
 
     // Limpiar al desmontar
     return () => {
+      clearTimeout(timer);
       isHookActive = false;
       isConnectingRef.current = false;
       if (reconnectTimeoutRef.current) {
@@ -292,8 +298,10 @@ export function useNotifications() {
         eventSourceRef.current.close();
       }
     };
+  }, [mounted, connectSSE]);
 
-    // Limpiar Set de notificaciones procesadas cada 5 minutos
+  // Limpiar Set de notificaciones procesadas cada 5 minutos
+  useEffect(() => {
     const cleanupInterval = setInterval(
       () => {
         if (processedNotificationsRef.current.size > 100) {
@@ -303,22 +311,17 @@ export function useNotifications() {
       5 * 60 * 1000
     ); // 5 minutos
 
-    // Limpiar al desmontar
     return () => {
-      isHookActive = false;
-      isConnectingRef.current = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
       clearInterval(cleanupInterval);
     };
-  }, [connectSSE]);
+  }, []);
 
   // Reconectar cuando la ventana vuelve a estar activa
   useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+
     const handleVisibilityChange = () => {
       if (!document.hidden && !isConnected && connectionAttempts < maxReconnectAttempts) {
         connectSSE();
@@ -327,7 +330,7 @@ export function useNotifications() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isConnected, connectionAttempts, connectSSE]);
+  }, [mounted, isConnected, connectionAttempts, connectSSE]);
 
   return {
     isConnected,

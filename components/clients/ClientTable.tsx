@@ -308,7 +308,7 @@ export function ClientTable({
                             size='icon'
                             className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
                           >
-                            <DotsThreeVertical />
+                            <MoreVertical />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end' className='w-40'>
@@ -335,7 +335,7 @@ export function ClientTable({
                                   onClick={() => onEdit(client)}
                                   className='cursor-pointer group'
                                 >
-                                  <PencilSimple className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
+                                  <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
                                   <span className='group-hover:text-purple-700 transition-colors'>
                                     Editar
                                   </span>

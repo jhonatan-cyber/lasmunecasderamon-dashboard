@@ -114,6 +114,16 @@ export default async function handler(
         });
       }
 
+      // Obtener IVA previo para calcular delta y ajustar caja
+      const [servicioPrevio] = (await query(
+        `SELECT iva FROM servicios WHERE id_servicio = ?`,
+        [servicioId]
+      )) as any[];
+
+      const ivaPrevio = Number(servicioPrevio?.iva || 0);
+      const ivaNuevo = Number(iva || 0);
+      const ivaDelta = ivaNuevo - ivaPrevio;
+
       // Actualizar servicio
       await query(`
         UPDATE servicios SET
@@ -131,12 +141,27 @@ export default async function handler(
         habitacion_id,
         precio_habitacion || 0,
         precio_servicio,
-        iva || 0,
+        ivaNuevo,
         sub_total,
         total,
         tiempo,
         servicioId,
       ]);
+
+      // Ajustar IVA en caja abierta con el delta
+      if (ivaDelta !== 0) {
+        const cajaActiva = (await query(
+          `SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
+        )) as any[];
+
+        if (Array.isArray(cajaActiva) && cajaActiva.length > 0) {
+          const cajaId = cajaActiva[0].id_caja;
+          await query(
+            `UPDATE cajas SET iva = GREATEST(0, iva + ?) WHERE id_caja = ?`,
+            [ivaDelta, cajaId]
+          );
+        }
+      }
 
       // Eliminar detalles existentes
       await query("DELETE FROM detalle_servicios WHERE servicio_id = ?", [servicioId]);

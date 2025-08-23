@@ -33,6 +33,11 @@ export function CategoryFilters({
   setPageSize,
   setPage,
 }: CategoryFiltersProps) {
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
+
   return (
     <Card className="shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
@@ -74,9 +79,8 @@ export function CategoryFilters({
           {/* Elementos por página */}
           <div className="w-full lg:w-auto">
             <SelectElements
-              rowsPerPage={pageSize}
-              setRowsPerPage={setPageSize}
-              setPage={setPage}
+              value={pageSize}
+              onChange={handlePageSizeChange}
               options={[6, 12, 24, 48]}
               label="Categorías por página"
             />

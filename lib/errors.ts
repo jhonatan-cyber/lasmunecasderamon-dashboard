@@ -124,10 +124,9 @@ export const formatErrorResponse = (error: unknown) => {
  */
 export const validateStatusTransition = (currentStatus: string, newStatus: string): boolean => {
   const transitions: Record<string, string[]> = {
-    'pendiente': ['aprobada', 'retenida'],
-    'aprobada': ['pagada', 'retenida'],
-    'retenida': ['aprobada'],
-    'pagada': [], // Estado final, no permite transiciones
+    'por_pagar': ['pagado', 'anulado'],
+    'pagado': [],
+    'anulado': [],
   };
 
   return transitions[currentStatus]?.includes(newStatus) || false;

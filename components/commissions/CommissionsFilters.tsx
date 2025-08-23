@@ -22,6 +22,11 @@ export function CommissionsFilters({
   setRowsPerPage,
   setPage,
 }: CommissionsFiltersProps) {
+  const handleRowsPerPageChange = (value: number) => {
+    setRowsPerPage(value);
+    setPage(1);
+  };
+
   return (
     <Card className="shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
@@ -45,9 +50,8 @@ export function CommissionsFilters({
             {/* Elementos por página */}
             <div className="flex-1 sm:flex-none">
               <SelectElements
-                rowsPerPage={rowsPerPage}
-                setRowsPerPage={setRowsPerPage}
-                setPage={setPage}
+                value={rowsPerPage}
+                onChange={handleRowsPerPageChange}
                 options={[5, 10, 20, 40]}
                 label="Comisiones por página"
               />

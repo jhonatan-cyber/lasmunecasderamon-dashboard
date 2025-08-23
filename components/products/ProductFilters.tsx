@@ -40,6 +40,11 @@ export function ProductFilters({
   const tablePageSizes = [5, 10, 20, 40];
   const cardPageSizes = [8, 12, 24, 48];
 
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
+
   return (
     <Card className='shadow-sm'>
       <CardContent className='mt-3 p-4 sm:p-6'>
@@ -84,9 +89,8 @@ export function ProductFilters({
           {/* Elementos por página */}
           <div className='w-full sm:w-auto lg:w-48'>
             <SelectElements
-              rowsPerPage={pageSize}
-              setRowsPerPage={setPageSize}
-              setPage={setPage}
+              value={pageSize}
+              onChange={handlePageSizeChange}
               options={viewMode === 'table' ? tablePageSizes : cardPageSizes}
               label='Por página'
             />

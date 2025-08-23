@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
 
 interface RoomTableProps {
   rooms: Room[];
@@ -33,6 +34,9 @@ const RoomTable: React.FC<RoomTableProps> = ({
   onDeactivate,
   onOccupy,
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
+
   return (
     <TooltipProvider>
       <div className='rounded-xl border bg-white overflow-hidden shadow-md'>
@@ -142,7 +146,10 @@ const RoomTable: React.FC<RoomTableProps> = ({
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
-                            onClick={() => onDelete(room)}
+                            onClick={() => {
+                              setRoomToDelete(room);
+                              setConfirmOpen(true);
+                            }}
                             className='text-red-600 focus:text-red-600'
                           >
                             <Trash2 className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
@@ -158,6 +165,12 @@ const RoomTable: React.FC<RoomTableProps> = ({
           </table>
         </div>
       </div>
+      <ConfirmDeleteRoomDialog
+        open={confirmOpen}
+        room={roomToDelete}
+        onOpenChange={setConfirmOpen}
+        onConfirm={(room) => onDelete(room)}
+      />
     </TooltipProvider>
   );
 };

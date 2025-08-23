@@ -11,6 +11,9 @@ interface CurrentUser {
   foto?: string;
   username?: string;
   permissions?: any;
+  phone?: string;
+  address?: string;
+  fecha_crea?: string;
 }
 
 interface UseCurrentUserReturn {

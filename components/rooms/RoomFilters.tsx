@@ -42,6 +42,11 @@ export function RoomFilters({
   const pageSizeOptions = showTableView ? [5, 10, 20, 40] : [8, 16, 24, 48];
   const label = showTableView ? "Habitaciones por página" : "Habitaciones por página";
 
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
+
   return (
     <Card className="shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
@@ -82,9 +87,8 @@ export function RoomFilters({
             {/* Elementos por página */}
             <div className="flex-1 sm:flex-none">
               <SelectElements
-                rowsPerPage={pageSize}
-                setRowsPerPage={setPageSize}
-                setPage={setPage}
+                value={pageSize}
+                onChange={handlePageSizeChange}
                 options={pageSizeOptions}
                 label={label}
               />

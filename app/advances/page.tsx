@@ -1,77 +1,109 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Plus, AlertCircle } from "lucide-react";
+import { useCashRegisterStatus } from "@/hooks/useCashRegisterStatus";
+import useAnticipos from "@/hooks/useAnticipos";
 import AdvanceFormDialog from "@/components/advances/AdvanceFormDialog";
 import AdvancesTable, { Advance } from "@/components/advances/AdvancesTable";
 import AdvancesFilters from "@/components/advances/AdvancesFilters";
-import { Plus } from "lucide-react";
 import Paginate from "@/components/ui/paginate";
+import { toast } from "sonner";
 
 export default function AdvancesPage() {
+  const router = useRouter();
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
+  const { data: anticipos, loading, fetchAnticipos } = useAnticipos();
   const [openDialog, setOpenDialog] = useState(false);
-  const [advances, setAdvances] = useState<Advance[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
 
+  // Convertir datos del hook al formato esperado por la tabla
+  const advances: Advance[] = anticipos.map((a) => ({
+    id: a.id_anticipo,
+    usuario: a.usuario || 'Usuario sin nombre',
+    monto: Number(a.monto || 0),
+    fecha_crea: a.fecha_crea || '',
+    estado: String(a.estado || 0),
+  }));
 
   // Filtro frontend por usuario
   const filteredAdvances = advances.filter((a) =>
-    a.usuario.toLowerCase().includes(searchTerm.toLowerCase())
+    (a.usuario || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
   const paginatedAdvances = filteredAdvances.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  // Fetch anticipos desde el backend
-  const fetchAdvances = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/anticipos");
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setAdvances(
-          (data.data || []).map((a: any) => ({
-            id: a.id_anticipo,
-            usuario: `${a.nombre} ${a.apellido}`.trim(),
-            monto: Number(a.monto),
-            fecha_crea: a.fecha_crea,
-            estado: String(a.estado),
-          }))
-        );
-      } else {
-        setAdvances([]);
-      }
-    } catch {
-      setAdvances([]);
-    } finally {
-      setLoading(false);
+  const handleOpenDialog = () => {
+    if (!hasOpenCaja) {
+      toast.error('No se puede crear anticipos sin caja abierta. Por favor, abra una caja primero.');
+      return;
     }
+    setOpenDialog(true);
   };
-
-  useEffect(() => {
-    fetchAdvances();
-  }, []);
 
   const totalPages = Math.ceil(filteredAdvances.length / rowsPerPage) || 1;
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 pt-4 sm:pt-8 px-4 sm:px-8">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Anticipos</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">Gestiona los anticipos de sueldo del personal</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Anticipos</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">Gestiona los anticipos de sueldo del personal</p>
+          </div>
         </div>
-        <AdvanceFormDialog open={openDialog} setOpen={setOpenDialog} onCreated={fetchAdvances}>
+        <AdvanceFormDialog open={openDialog} setOpen={setOpenDialog} onCreated={fetchAnticipos}>
           <Button
-            onClick={() => setOpenDialog(true)}
-            className="w-full sm:w-auto rounded-full bg-black text-white px-4 sm:px-6 py-2 shadow hover:scale-105 transition-all duration-200 text-sm sm:text-base"
+            onClick={handleOpenDialog}
+            disabled={cajaLoading || !hasOpenCaja}
+            className={`w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 shadow transition-all duration-200 text-sm sm:text-base ${
+              hasOpenCaja 
+                ? 'bg-black text-white hover:scale-105' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
-            <Plus className='mr-2' />
-            Nuevo
+            {cajaLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2" />
+                Verificando...
+              </>
+            ) : hasOpenCaja ? (
+              <>
+                <Plus className='mr-2' />
+                Nuevo
+              </>
+            ) : (
+              <>
+                <AlertCircle className='mr-2' />
+                Sin Caja
+              </>
+            )}
           </Button>
         </AdvanceFormDialog>
       </div>
+
+      {/* Mensaje de advertencia cuando no hay caja abierta */}
+      {!cajaLoading && !hasOpenCaja && (
+        <div className="px-4 sm:px-8">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Caja cerrada
+                </h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  No se pueden crear nuevos anticipos sin una caja abierta. Por favor, abra una caja en el módulo de caja primero.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-4 sm:px-8 mt-4 sm:mt-6">
         <AdvancesFilters
           searchTerm={searchTerm}

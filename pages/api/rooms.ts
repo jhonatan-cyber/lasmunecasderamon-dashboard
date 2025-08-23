@@ -170,10 +170,25 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!id)
     return res.status(400).json({ success: false, message: "Falta el id" });
   try {
-    await query("DELETE FROM habitaciones WHERE id_habitacion = ?", [id]);
-    return res
-      .status(200)
-      .json({ success: true, message: "Habitación eliminada correctamente" });
+    // Verificar referencias en servicios
+    const refs: any = await query(
+      'SELECT COUNT(*) AS cnt FROM servicios WHERE habitacion_id = ?',
+      [id]
+    );
+    const count = Array.isArray(refs) ? (refs[0]?.cnt ?? 0) : 0;
+
+    if (count > 0) {
+      // Si hay referencias, no eliminar: desactivar por seguridad
+      await query('UPDATE habitaciones SET estado = 0 WHERE id_habitacion = ?', [id]);
+      return res.status(200).json({
+        success: true,
+        message:
+          'La habitación está asociada a servicios y no puede eliminarse. Se desactivó en su lugar.'
+      });
+    }
+
+    await query('DELETE FROM habitaciones WHERE id_habitacion = ?', [id]);
+    return res.status(200).json({ success: true, message: 'Habitación eliminada correctamente' });
   } catch (error) {
     return res
       .status(500)
