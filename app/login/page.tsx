@@ -37,10 +37,8 @@ export default function LoginPage() {
       const protocol = window.location.protocol;
       const host = window.location.host;
       const baseUrl = `${protocol}//${host}`;
-      console.log('🌐 [LOGIN] getBaseUrl() retorna:', baseUrl);
       return baseUrl;
     }
-    console.log('🌐 [LOGIN] getBaseUrl() - window no disponible, retornando cadena vacía');
     return '';
   };
 
@@ -67,8 +65,6 @@ export default function LoginPage() {
   }, [step]);
 
   useEffect(() => {
-    console.log('🚀 [LOGIN] Componente cargado, iniciando verificaciones...');
-    
     // Al cargar, lee el tema guardado o usa system
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     if (saved === 'dark' || saved === 'light' || saved === 'system') {
@@ -81,94 +77,52 @@ export default function LoginPage() {
     
     // Verificar si hay usuarios registrados
     async function checkUsers() {
-      console.log('🔍 [LOGIN] Iniciando verificación de usuarios...');
       setDbStatus('checking');
       try {
-        console.log('🔍 [LOGIN] Verificando conexión a la base de datos...');
         const baseUrl = getBaseUrl();
-        console.log('🌐 [LOGIN] URL base:', baseUrl);
-        
-        // Primero hacer una petición de prueba para verificar que llega al servidor
-        console.log('🧪 [LOGIN] Haciendo petición de prueba...');
-        try {
-          const testRes = await fetch(`${baseUrl}/api/auth/test-connection`, {
-            credentials: 'include'
-          });
-          const testData = await testRes.json();
-          console.log('🧪 [LOGIN] Prueba de conexión exitosa:', testData);
-        } catch (testError) {
-          console.error('🧪 [LOGIN] Error en prueba de conexión:', testError);
-        }
         
         const res = await fetch(`${baseUrl}/api/auth/check-users`, {
           credentials: 'include'
         });
-        console.log('📡 [LOGIN] Respuesta del servidor:', res.status, res.statusText);
         
         const data = await res.json();
-        console.log('📊 [LOGIN] Datos recibidos:', data);
         
         if (res.ok && data.success) {
-          console.log('✅ [LOGIN] Conexión a la base de datos exitosa');
           setDbStatus('connected');
           setHasUsers(data.hasUsers);
           setDbError(null);
-          
-          // Mostrar notificación de éxito solo si es la primera vez
-          if (data.userCount === 0) {
-            toast.success('✅ Conexión a la base de datos establecida. No hay usuarios registrados.');
-          } else {
-            toast.success(`✅ Conexión a la base de datos establecida. ${data.userCount} usuario(s) encontrado(s).`);
-          }
         } else {
-          console.error('❌ [LOGIN] Error en la respuesta del servidor:', data);
           setDbStatus('error');
           setDbError(data.message || 'Error desconocido');
           setHasUsers(true); // Por defecto, asumir que hay usuarios
-          toast.error(`❌ Error de conexión: ${data.message || 'Error desconocido'}`);
         }
       } catch (error) {
-        console.error('❌ [LOGIN] Error verificando usuarios:', error);
         setDbStatus('error');
         setDbError('Error de red o servidor');
         setHasUsers(true); // Por defecto, asumir que hay usuarios
-        toast.error('❌ Error de conexión: No se pudo conectar al servidor');
       }
     }
     
     // Protección robusta: verifica sesión con endpoint protegido
     async function checkSession() {
-      console.log('🔐 [LOGIN] Iniciando verificación de sesión...');
       try {
         const baseUrl = getBaseUrl();
-        console.log('🌐 [LOGIN] URL base para sesión:', baseUrl);
         
         const res = await fetch(`${baseUrl}/api/auth/check`, {
           credentials: 'include'
         });
-        console.log('📡 [LOGIN] Respuesta de sesión:', res.status, res.statusText);
         
         if (res.ok) {
-          console.log('✅ [LOGIN] Usuario ya autenticado, redirigiendo...');
           router.replace('/');
-        } else if (res.status === 401) {
-          console.log('🔓 [LOGIN] No hay sesión activa (esperado en login)');
-          // 401 es esperado cuando no hay sesión - no es un error
-        } else {
-          console.warn('⚠️ [LOGIN] Respuesta inesperada del servidor:', res.status);
         }
       } catch (error) {
-        console.log('🔓 [LOGIN] Error de red al verificar sesión (permitiendo acceso al login):', error);
         // Si hay error de red, permite el acceso al login
       }
     }
     
-    // Ejecutar verificaciones con un pequeño delay para asegurar que el componente esté montado
-    setTimeout(() => {
-      console.log('⏰ [LOGIN] Ejecutando verificaciones después del delay...');
-      checkUsers();
-      checkSession();
-    }, 100);
+    // Ejecutar verificaciones
+    checkUsers();
+    checkSession();
   }, []);
 
   const applyTheme = (mode: string) => {
@@ -334,29 +288,7 @@ export default function LoginPage() {
             </div>
 
                          <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
-               {/* Indicador de estado de la base de datos */}
-               {dbStatus && (
-                 <div className='mb-4 p-3 rounded-lg text-sm font-medium'>
-                   {dbStatus === 'checking' && (
-                     <div className='flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'>
-                       <div className='animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full'></div>
-                       <span>Verificando conexión a la base de datos...</span>
-                     </div>
-                   )}
-                   {dbStatus === 'connected' && (
-                     <div className='flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'>
-                       <span>✅</span>
-                       <span>Base de datos conectada</span>
-                     </div>
-                   )}
-                   {dbStatus === 'error' && (
-                     <div className='flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'>
-                       <span>❌</span>
-                       <span>Error de conexión: {dbError}</span>
-                     </div>
-                   )}
-                 </div>
-               )}
+               
 
                <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
                  {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
