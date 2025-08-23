@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [userTmp, setUserTmp] = useState<any>(null);
   const [step, setStep] = useState<'login' | 'codigo'>('login');
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
+  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error' | null>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerData, setRegisterData] = useState({
     nombre: '',
@@ -63,15 +65,37 @@ export default function LoginPage() {
     
     // Verificar si hay usuarios registrados
     async function checkUsers() {
+      setDbStatus('checking');
       try {
+        console.log('🔍 [LOGIN] Verificando conexión a la base de datos...');
         const res = await fetch('/api/auth/check-users');
-        if (res.ok) {
-          const data = await res.json();
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          console.log('✅ [LOGIN] Conexión a la base de datos exitosa');
+          setDbStatus('connected');
           setHasUsers(data.hasUsers);
+          setDbError(null);
+          
+          // Mostrar notificación de éxito solo si es la primera vez
+          if (data.userCount === 0) {
+            toast.success('✅ Conexión a la base de datos establecida. No hay usuarios registrados.');
+          } else {
+            toast.success(`✅ Conexión a la base de datos establecida. ${data.userCount} usuario(s) encontrado(s).`);
+          }
+        } else {
+          console.error('❌ [LOGIN] Error en la respuesta del servidor:', data);
+          setDbStatus('error');
+          setDbError(data.message || 'Error desconocido');
+          setHasUsers(true); // Por defecto, asumir que hay usuarios
+          toast.error(`❌ Error de conexión: ${data.message || 'Error desconocido'}`);
         }
       } catch (error) {
-        console.error('Error verificando usuarios:', error);
+        console.error('❌ [LOGIN] Error verificando usuarios:', error);
+        setDbStatus('error');
+        setDbError('Error de red o servidor');
         setHasUsers(true); // Por defecto, asumir que hay usuarios
+        toast.error('❌ Error de conexión: No se pudo conectar al servidor');
       }
     }
     
@@ -251,15 +275,39 @@ export default function LoginPage() {
               <Image src='/img/system/logo2.png' alt='Logo' width={200} height={80} />
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
-              <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
-                {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
-              </h2>
-              <p className='text-gray-600 dark:text-gray-300 text-center mb-6 text-sm transition-colors duration-300'>
-                {step === 'login'
-                  ? 'Ingrese sus datos para iniciar sesión en su cuenta'
-                  : 'Complete la verificación de seguridad'}
-              </p>
+                         <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
+               {/* Indicador de estado de la base de datos */}
+               {dbStatus && (
+                 <div className='mb-4 p-3 rounded-lg text-sm font-medium'>
+                   {dbStatus === 'checking' && (
+                     <div className='flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'>
+                       <div className='animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full'></div>
+                       <span>Verificando conexión a la base de datos...</span>
+                     </div>
+                   )}
+                   {dbStatus === 'connected' && (
+                     <div className='flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'>
+                       <span>✅</span>
+                       <span>Base de datos conectada</span>
+                     </div>
+                   )}
+                   {dbStatus === 'error' && (
+                     <div className='flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'>
+                       <span>❌</span>
+                       <span>Error de conexión: {dbError}</span>
+                     </div>
+                   )}
+                 </div>
+               )}
+
+               <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
+                 {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
+               </h2>
+               <p className='text-gray-600 dark:text-gray-300 text-center mb-6 text-sm transition-colors duration-300'>
+                 {step === 'login'
+                   ? 'Ingrese sus datos para iniciar sesión en su cuenta'
+                   : 'Complete la verificación de seguridad'}
+               </p>
 
               {step === 'login' && (
                 <form
