@@ -100,9 +100,12 @@ export default function OrderForm({
   };
 
   function generarCodigoPedido() {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `PED-${timestamp}-${random}`;
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 
   const handleSubmit = async () => {
