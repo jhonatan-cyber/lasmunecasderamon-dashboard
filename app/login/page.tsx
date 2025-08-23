@@ -30,6 +30,17 @@ export default function LoginPage() {
   const [registerLoading, setRegisterLoading] = useState(false);
   const router = useRouter();
 
+  // Función para obtener la URL base correcta
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      // Usar la URL actual del navegador para evitar problemas con dominios internacionalizados
+      const protocol = window.location.protocol;
+      const host = window.location.host;
+      return `${protocol}//${host}`;
+    }
+    return '';
+  };
+
   // Referencias para los inputs
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +79,8 @@ export default function LoginPage() {
       setDbStatus('checking');
       try {
         console.log('🔍 [LOGIN] Verificando conexión a la base de datos...');
-        const res = await fetch('/api/auth/check-users');
+        const baseUrl = getBaseUrl();
+        const res = await fetch(`${baseUrl}/api/auth/check-users`);
         const data = await res.json();
         
         if (res.ok && data.success) {
@@ -102,7 +114,8 @@ export default function LoginPage() {
     // Protección robusta: verifica sesión con endpoint protegido
     async function checkSession() {
       try {
-        const res = await fetch('/api/auth/check');
+        const baseUrl = getBaseUrl();
+        const res = await fetch(`${baseUrl}/api/auth/check`);
         if (res.ok) {
           router.replace('/');
         }
@@ -172,7 +185,8 @@ export default function LoginPage() {
       // Prevenir la codificación Punycode del navegador
       const emailOriginal = registerData.email;
       
-      const res = await fetch('/api/auth/register-first-user', {
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/auth/register-first-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -316,12 +330,13 @@ export default function LoginPage() {
                     e.preventDefault();
                     setLoading(true);
                     try {
-                      const res = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify(loginData)
-                      });
+                                             const baseUrl = getBaseUrl();
+                       const res = await fetch(`${baseUrl}/api/login`, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         credentials: 'include',
+                         body: JSON.stringify(loginData)
+                       });
 
                       const data = await res.json();
 
@@ -526,15 +541,16 @@ export default function LoginPage() {
                     }
                     setLoading(true);
                     try {
-                      const res = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          email: loginData.email,
-                          password: loginData.password,
-                          codigo
-                        })
-                      });
+                                             const baseUrl = getBaseUrl();
+                       const res = await fetch(`${baseUrl}/api/login`, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({
+                           email: loginData.email,
+                           password: loginData.password,
+                           codigo
+                         })
+                       });
                       const data = await res.json();
                       if (!data.success) {
                         toast.error(data.message || 'Código incorrecto');
