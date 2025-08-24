@@ -9,8 +9,8 @@ interface AnulacionContextType {
   refreshCallback: (() => void) | null;
   // Nuevo estado para modal de servicios
   modalData: {
-    tipo: "confirmada" | "rechazada";
-    tipo_operacion: "venta" | "servicio";
+    tipo: 'confirmada' | 'rechazada';
+    tipo_operacion: 'venta' | 'servicio';
     venta?: {
       codigo: string;
       cliente: string;
@@ -36,31 +36,34 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   const [refreshCallback, setRefreshCallbackState] = useState<(() => void) | null>(null);
   const [modalData, setModalData] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Usar useRef para mantener una referencia estable al callback
   const refreshCallbackRef = useRef<(() => void) | null>(null);
-  
+
   // Actualizar la referencia cuando cambie el callback
   useEffect(() => {
     refreshCallbackRef.current = refreshCallback;
   }, [refreshCallback]);
 
-  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-    switch (type) {
-      case 'success':
-        toast.success(message);
-        break;
-      case 'error':
-        toast.error(message);
-        break;
-      case 'warning':
-        toast.warning(message);
-        break;
-      default:
-        toast.info(message);
-        break;
-    }
-  }, []);
+  const showNotification = useCallback(
+    (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+      switch (type) {
+        case 'success':
+          toast.success(message);
+          break;
+        case 'error':
+          toast.error(message);
+          break;
+        case 'warning':
+          toast.warning(message);
+          break;
+        default:
+          toast.info(message);
+          break;
+      }
+    },
+    []
+  );
 
   const setRefreshCallback = useCallback((callback: () => void) => {
     setRefreshCallbackState(() => callback);
@@ -78,23 +81,19 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
   // Escuchar notificaciones SSE para servicios
   useEffect(() => {
-    console.log('🔔 Contexto: Iniciando EventSource para notificaciones');
     const eventSource = new EventSource('/api/notifications/sse');
-    
-    eventSource.onopen = () => {
-      console.log('🔔 Contexto: EventSource conectado');
-    };
-    
-    eventSource.onmessage = (event) => {
-      console.log('🔔 Contexto: Mensaje recibido:', event.data);
+
+    eventSource.onopen = () => {};
+
+    eventSource.onmessage = event => {
       try {
         const data = JSON.parse(event.data);
-        console.log('🔔 Contexto: Datos parseados:', data);
-        
+
         // Manejar notificaciones de anulación de servicios
-        if (data.type === 'anulacion_servicio_confirmada' || data.type === 'anulacion_servicio_rechazada') {
-          console.log('🔔 Contexto: Recibida notificación de servicio:', data);
-          
+        if (
+          data.type === 'anulacion_servicio_confirmada' ||
+          data.type === 'anulacion_servicio_rechazada'
+        ) {
           const modalData = {
             tipo: data.type === 'anulacion_servicio_confirmada' ? 'confirmada' : 'rechazada',
             tipo_operacion: 'servicio',
@@ -107,13 +106,11 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
               anfitrionas: data.data.anfitrionas
             }
           };
-          
-          console.log('🔔 Contexto: Abriendo modal con datos:', modalData);
+
           openModal(modalData);
-          
+
           // Ejecutar callback de actualización si existe
           if (refreshCallbackRef.current) {
-            console.log('🔄 Contexto: Ejecutando callback de actualización');
             try {
               refreshCallbackRef.current();
             } catch (error) {
@@ -122,20 +119,18 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
           } else {
             console.log('⚠️ Contexto: No hay callback de actualización configurado');
           }
-          
+
           // Mostrar toast
           showNotification(
-            data.type === 'anulacion_servicio_confirmada' 
+            data.type === 'anulacion_servicio_confirmada'
               ? '✅ Anulación de servicio confirmada'
               : '❌ Anulación de servicio rechazada',
             'success'
           );
         }
-        
+
         // Manejar notificaciones de anulación de ventas (mantener compatibilidad)
         if (data.type === 'anulacion_confirmada' || data.type === 'anulacion_rechazada') {
-          console.log('🔔 Contexto: Recibida notificación de venta:', data);
-          
           const modalData = {
             tipo: data.type === 'anulacion_confirmada' ? 'confirmada' : 'rechazada',
             tipo_operacion: 'venta',
@@ -145,13 +140,11 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
               total: data.data.total
             }
           };
-          
-          console.log('🔔 Contexto: Abriendo modal con datos:', modalData);
+
           openModal(modalData);
-          
+
           // Ejecutar callback de actualización si existe
           if (refreshCallbackRef.current) {
-            console.log('🔄 Contexto: Ejecutando callback de actualización para venta');
             try {
               refreshCallbackRef.current();
             } catch (error) {
@@ -160,10 +153,10 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
           } else {
             console.log('⚠️ Contexto: No hay callback de actualización configurado');
           }
-          
+
           // Mostrar toast
           showNotification(
-            data.type === 'anulacion_confirmada' 
+            data.type === 'anulacion_confirmada'
               ? '✅ Anulación de venta confirmada'
               : '❌ Anulación de venta rechazada',
             'success'
@@ -174,12 +167,11 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    eventSource.onerror = (error) => {
+    eventSource.onerror = error => {
       console.error('🔔 Contexto: Error en SSE:', error);
     };
 
     return () => {
-      console.log('🔔 Contexto: Cerrando EventSource');
       eventSource.close();
     };
   }, [openModal, showNotification]);
@@ -188,21 +180,20 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkPendingNotifications = async () => {
       try {
-        console.log('🔔 Contexto: Verificando notificaciones pendientes...');
         const response = await fetch('/api/notifications/pending');
         const data = await response.json();
-        
+
         if (data.success && data.notifications.length > 0) {
-          console.log('🔔 Contexto: Notificaciones pendientes encontradas:', data.notifications);
-          
           // Procesar cada notificación pendiente
           data.notifications.forEach((notification: any) => {
             try {
               const notificationData = JSON.parse(notification.datos);
-              console.log('🔔 Contexto: Procesando notificación pendiente:', notification.tipo, notificationData);
-              
+
               // Procesar según el tipo
-              if (notification.tipo === 'anulacion_confirmada' || notification.tipo === 'anulacion_rechazada') {
+              if (
+                notification.tipo === 'anulacion_confirmada' ||
+                notification.tipo === 'anulacion_rechazada'
+              ) {
                 const modalData = {
                   tipo: notification.tipo === 'anulacion_confirmada' ? 'confirmada' : 'rechazada',
                   tipo_operacion: 'venta',
@@ -212,20 +203,25 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
                     total: notificationData.total
                   }
                 };
-                
-                console.log('🔔 Contexto: Abriendo modal con datos pendientes:', modalData);
+
                 openModal(modalData);
-                
+
                 // Mostrar toast
                 showNotification(
-                  notification.tipo === 'anulacion_confirmada' 
+                  notification.tipo === 'anulacion_confirmada'
                     ? '✅ Anulación de venta confirmada'
                     : '❌ Anulación de venta rechazada',
                   'success'
                 );
-              } else if (notification.tipo === 'anulacion_servicio_confirmada' || notification.tipo === 'anulacion_servicio_rechazada') {
+              } else if (
+                notification.tipo === 'anulacion_servicio_confirmada' ||
+                notification.tipo === 'anulacion_servicio_rechazada'
+              ) {
                 const modalData = {
-                  tipo: notification.tipo === 'anulacion_servicio_confirmada' ? 'confirmada' : 'rechazada',
+                  tipo:
+                    notification.tipo === 'anulacion_servicio_confirmada'
+                      ? 'confirmada'
+                      : 'rechazada',
                   tipo_operacion: 'servicio',
                   servicio: {
                     codigo: notificationData.codigo,
@@ -236,13 +232,12 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
                     anfitrionas: notificationData.anfitrionas
                   }
                 };
-                
-                console.log('🔔 Contexto: Abriendo modal con datos pendientes:', modalData);
+
                 openModal(modalData);
-                
+
                 // Mostrar toast
                 showNotification(
-                  notification.tipo === 'anulacion_servicio_confirmada' 
+                  notification.tipo === 'anulacion_servicio_confirmada'
                     ? '✅ Anulación de servicio confirmada'
                     : '❌ Anulación de servicio rechazada',
                   'success'
@@ -252,8 +247,6 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
               console.error('🔔 Contexto: Error parseando notificación pendiente:', parseError);
             }
           });
-        } else {
-          console.log('🔔 Contexto: No hay notificaciones pendientes');
         }
       } catch (error) {
         console.error('🔔 Contexto: Error verificando notificaciones pendientes:', error);
@@ -262,20 +255,16 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
     // Verificar notificaciones pendientes después de un pequeño delay
     const timer = setTimeout(checkPendingNotifications, 1000);
-    
+
     return () => clearTimeout(timer);
   }, [openModal, showNotification]);
 
   // Listener para eventos de test
   useEffect(() => {
     const handleTestNotification = (event: CustomEvent) => {
-      console.log('🧪 Contexto: Recibido evento de test:', event.detail);
-      
       const data = event.detail;
-      
+
       if (data.type === 'anulacion_confirmada' || data.type === 'anulacion_rechazada') {
-        console.log('🧪 Contexto: Procesando notificación de test de venta:', data);
-        
         const modalData = {
           tipo: data.type === 'anulacion_confirmada' ? 'confirmada' : 'rechazada',
           tipo_operacion: 'venta',
@@ -285,13 +274,12 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
             total: data.data.total
           }
         };
-        
-        console.log('🧪 Contexto: Abriendo modal con datos de test:', modalData);
+
         openModal(modalData);
-        
+
         // Mostrar toast
         showNotification(
-          data.type === 'anulacion_confirmada' 
+          data.type === 'anulacion_confirmada'
             ? '✅ Test: Anulación de venta confirmada'
             : '❌ Test: Anulación de venta rechazada',
           'success'
@@ -307,15 +295,17 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   }, [openModal, showNotification]); // Removido refreshCallback de las dependencias
 
   return (
-    <AnulacionContext.Provider value={{
-      showNotification,
-      setRefreshCallback,
-      refreshCallback,
-      modalData,
-      isModalOpen,
-      openModal,
-      closeModal,
-    }}>
+    <AnulacionContext.Provider
+      value={{
+        showNotification,
+        setRefreshCallback,
+        refreshCallback,
+        modalData,
+        isModalOpen,
+        openModal,
+        closeModal
+      }}
+    >
       {children}
     </AnulacionContext.Provider>
   );
@@ -327,4 +317,4 @@ export function useAnulacionContext() {
     throw new Error('useAnulacionContext must be used within an AnulacionProvider');
   }
   return context;
-} 
+}

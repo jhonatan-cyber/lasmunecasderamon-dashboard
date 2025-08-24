@@ -106,9 +106,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Eliminar timers duplicados basándose en roomId y servicioCode
     const uniqueTimers = updatedTimers.filter(
-      (timer, index, self) => index === self.findIndex(t => 
-        t.roomId === timer.roomId && t.servicioCode === timer.servicioCode
-      )
+      (timer, index, self) =>
+        index ===
+        self.findIndex(t => t.roomId === timer.roomId && t.servicioCode === timer.servicioCode)
     );
 
     // Limpiar localStorage de timers duplicados si es necesario
@@ -125,9 +125,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (isInitialized) {
       // Limpiar timers duplicados antes de guardar
       const uniqueTimers = timers.filter(
-        (timer, index, self) => index === self.findIndex(t => 
-          t.roomId === timer.roomId && t.servicioCode === timer.servicioCode
-        )
+        (timer, index, self) =>
+          index ===
+          self.findIndex(t => t.roomId === timer.roomId && t.servicioCode === timer.servicioCode)
       );
       saveTimersToStorage(uniqueTimers);
 
@@ -154,10 +154,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!response.ok) {
         throw new Error('Error al actualizar estado de habitación');
       }
-
-      console.log(`Habitación ${roomId} actualizada a estado ${status}`);
     } catch (error) {
-      console.error('Error al actualizar habitación:', error);
       toast.error('Error al actualizar estado de habitación');
     }
   }, []);
@@ -176,10 +173,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!response.ok) {
         throw new Error('Error al actualizar estado del servicio');
       }
-
-      console.log(`Servicio ${servicioId} actualizado a estado ${status}`);
     } catch (error) {
-      console.error('Error al actualizar servicio:', error);
       toast.error('Error al actualizar estado del servicio');
     }
   }, []);
@@ -194,22 +188,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       servicioCode: string,
       clienteNombre: string
     ) => {
-      console.log('🔍 startTimer llamado con parámetros:', {
-        servicioId,
-        roomId,
-        roomName,
-        duration,
-        servicioCode,
-        clienteNombre
-      });
-
       // Verificar si ya existe un timer para esta habitación y servicio específico
-      const existingTimer = timers.find(timer => 
-        timer.roomId === roomId && timer.servicioCode === servicioCode
+      const existingTimer = timers.find(
+        timer => timer.roomId === roomId && timer.servicioCode === servicioCode
       );
       if (existingTimer) {
         // Si ya existe, no crear uno nuevo
-        console.log(`Timer ya existe para habitación ${roomId} y servicio ${servicioCode}, no se creará uno nuevo`);
+
         return;
       }
 
@@ -222,14 +207,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         !duration ||
         duration <= 0
       ) {
-        console.error('Parámetros inválidos para iniciar timer:', {
-          servicioId,
-          roomId,
-          duration,
-          roomName,
-          servicioCode,
-          clienteNombre
-        });
         return;
       }
 
@@ -250,14 +227,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setTimers(prev => {
         // Verificar que no haya duplicados antes de agregar
-        const existingTimer = prev.find(t => 
-          t.roomId === roomId && t.servicioCode === servicioCode
+        const existingTimer = prev.find(
+          t => t.roomId === roomId && t.servicioCode === servicioCode
         );
         if (existingTimer) {
-          console.log(`Timer duplicado detectado para habitación ${roomId} y código ${servicioCode}`);
           return prev; // No agregar si ya existe
         }
-        console.log(`Agregando nuevo timer para habitación ${roomId} y código ${servicioCode}`);
+
         const newTimers = [...prev, newTimer];
         return newTimers;
       });
@@ -296,7 +272,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // Mostrar toast de confirmación
             toast.success(`Habitación ${timer.roomName} liberada`);
-            
+
             // Ejecutar callback de actualización si existe
             if (refreshCallback) {
               refreshCallback();
@@ -306,7 +282,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Si es una parada manual, solo actualizar el estado de la habitación y mostrar toast
           await updateRoomStatus(timer.roomId, 1);
           toast.success(`Habitación ${timer.roomName} liberada manualmente`);
-          
+
           // Ejecutar callback de actualización si existe
           if (refreshCallback) {
             refreshCallback();
@@ -348,44 +324,28 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   // Función para pausar el temporizador por ID de servicio
-           const pauseTimerByServicioId = useCallback(
-           (servicioId: number) => {
-             console.log(`🚨 PAUSE REQUEST: Pausando temporizador para servicio ${servicioId}`);
-             console.log(`📊 Timers antes de pausar:`, timers.filter(t => t.servicioId === servicioId));
-             
+  const pauseTimerByServicioId = useCallback(
+    (servicioId: number) => {
+      setTimers(prev => {
+        const updatedTimers = prev.map(timer => {
+          if (timer.servicioId === servicioId) {
+            return { ...timer, isPaused: true };
+          }
+          return timer;
+        });
 
-             
-             setTimers(prev => {
-               console.log(`🔄 setTimers ejecutándose para servicio ${servicioId}`);
-               console.log(`📊 Estado previo:`, prev.filter(t => t.servicioId === servicioId));
-               
-               const updatedTimers = prev.map(timer => {
-                 if (timer.servicioId === servicioId) {
-                   console.log(`🎯 Actualizando timer ${servicioId}: isPaused de ${timer.isPaused} a true`);
-                   return { ...timer, isPaused: true };
-                 }
-                 return timer;
-               });
-               
-               console.log(`📊 Timers después de actualizar:`, updatedTimers.filter(t => t.servicioId === servicioId));
-               return updatedTimers;
-             });
-           },
-           [timers]
-         );
+        return updatedTimers;
+      });
+    },
+    [timers]
+  );
 
   // Función para reanudar el temporizador por ID de servicio
-  const resumeTimerByServicioId = useCallback(
-    (servicioId: number) => {
-      setTimers(prev => prev.map(timer => 
-        timer.servicioId === servicioId 
-          ? { ...timer, isPaused: false }
-          : timer
-      ));
-      console.log(`Temporizador reanudado para servicio ${servicioId}`);
-    },
-    []
-  );
+  const resumeTimerByServicioId = useCallback((servicioId: number) => {
+    setTimers(prev =>
+      prev.map(timer => (timer.servicioId === servicioId ? { ...timer, isPaused: false } : timer))
+    );
+  }, []);
 
   // Función para obtener temporizador por ID de habitación
   const getTimerByRoomId = useCallback(
@@ -423,19 +383,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTimers(prev => {
         // Limpiar timers duplicados primero
         const uniqueTimers = prev.filter(
-          (timer, index, self) => index === self.findIndex(t => 
-            t.roomId === timer.roomId && t.servicioCode === timer.servicioCode
-          )
+          (timer, index, self) =>
+            index ===
+            self.findIndex(t => t.roomId === timer.roomId && t.servicioCode === timer.servicioCode)
         );
 
-                       const updatedTimers = uniqueTimers.map(timer => {
-                 // Skip processing if timer is already stopped, expired, or paused
-                 if (!timer.isActive || timer.remainingTime <= 0 || timer.isPaused) {
-                   // if (timer.isPaused) {
-                   //   console.log(`⏸️ Timer pausado ${timer.servicioCode} - no procesando`);
-                   // }
-                   return timer;
-                 }
+        const updatedTimers = uniqueTimers.map(timer => {
+          // Skip processing if timer is already stopped, expired, or paused
+          if (!timer.isActive || timer.remainingTime <= 0 || timer.isPaused) {
+            return timer;
+          }
 
           const newRemainingTime = timer.remainingTime - 1;
 
@@ -475,7 +432,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Limpiar localStorage de timers expirados inmediatamente
         if (activeTimers.length !== updatedTimers.length) {
-          console.log('Eliminando timers expirados:', updatedTimers.length - activeTimers.length);
           saveTimersToStorage(activeTimers);
         }
 
