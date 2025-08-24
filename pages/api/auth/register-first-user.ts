@@ -11,11 +11,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    console.log('🔍 [REGISTER] Iniciando registro del primer usuario...');
+    console.log('📧 [REGISTER] Datos recibidos:', req.body);
+    
     // Verificar si ya hay usuarios registrados
+    console.log('🔍 [REGISTER] Verificando usuarios existentes...');
     const users = await query('SELECT COUNT(*) as count FROM usuarios WHERE estado = 1') as any[];
     const userCount = users[0]?.count || 0;
+    console.log('📊 [REGISTER] Usuarios encontrados:', userCount);
 
     if (userCount > 0) {
+      console.log('❌ [REGISTER] Ya existen usuarios registrados');
       return res.status(403).json({
         success: false,
         message: 'Ya existen usuarios registrados. No se puede crear el primer usuario.'
@@ -52,8 +58,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Obtener el ID del rol administrador
+    console.log('🔍 [REGISTER] Buscando rol de administrador...');
     const adminRole = await query('SELECT id_rol FROM roles WHERE nombre = "Administrador"') as any[];
+    console.log('📊 [REGISTER] Rol encontrado:', adminRole);
+    
     if (adminRole.length === 0) {
+      console.error('❌ [REGISTER] No se encontró el rol de administrador');
       return res.status(500).json({
         success: false,
         message: 'No se encontró el rol de administrador'
@@ -61,17 +71,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const rolId = adminRole[0].id_rol;
+    console.log('✅ [REGISTER] Rol ID:', rolId);
 
     // Encriptar la contraseña
+    console.log('🔐 [REGISTER] Encriptando contraseña...');
     const hashedPassword = await bcrypt.hash(password, 12);
+    console.log('✅ [REGISTER] Contraseña encriptada');
 
     // Crear el usuario administrador
+    console.log('🔍 [REGISTER] Insertando usuario en la base de datos...');
+    console.log('📋 [REGISTER] Datos a insertar:', { nombre, apellido, email: emailSinCodificar, rolId });
+    
     const result = await query(
       'INSERT INTO usuarios (nombre, apellido, email, password, rol_id, estado) VALUES (?, ?, ?, ?, ?, 1)',
       [nombre, apellido, emailSinCodificar, hashedPassword, rolId]
     ) as any;
 
-    console.log('✅ Primer usuario administrador creado:', { email: emailSinCodificar, userId: result.insertId });
+    console.log('✅ [REGISTER] Usuario creado exitosamente:', { email: emailSinCodificar, userId: result.insertId });
 
     return res.status(201).json({
       success: true,
@@ -80,7 +96,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('Error creando primer usuario:', error);
+    console.error('❌ [REGISTER] Error creando primer usuario:', error);
+    console.error('❌ [REGISTER] Detalles del error:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
