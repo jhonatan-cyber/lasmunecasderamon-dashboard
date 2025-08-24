@@ -1,4 +1,4 @@
-name: Deploy Next.js App
+name: Deploy Docker
 
 on:
   push:
@@ -10,31 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Copy SSH key
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-      - name: Add server to known_hosts
+      - name: Update known_hosts
         run: |
           mkdir -p ~/.ssh
-          # Agrega directamente la entrada del known_host de tu servidor
-          echo "***REMOVED*** ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAlUC400SiFTmB/j8+Q/lG10TNYLSR3FXAGW0+/s3E3D" >> ~/.ssh/known_hosts
+          ssh-keygen -f ~/.ssh/known_hosts -R "***REMOVED***"
+          ssh-keyscan -t ed25519 ***REMOVED*** >> ~/.ssh/known_hosts
 
-      - name: Deploy with Docker Compose
+      - name: Deploy via SSH
         run: |
           ssh -i ~/.ssh/id_ed25519 root@***REMOVED*** "\
           cd /root/lasmunecasderamon && \
