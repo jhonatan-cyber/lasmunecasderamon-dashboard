@@ -1,9 +1,4 @@
-version: '3.8'
-
 services:
-
-
-
   app:
     image: node:22.18.0
     container_name: lasmunecasderamon
@@ -11,16 +6,12 @@ services:
       - .env
     working_dir: /app
     volumes:
-      - ./lasmunecasderamon:/app
+      - .:/app
     command: sh -c "npm install && npm run dev"
     ports:
       - "3000:3000"
     networks:
       - lasmunecasnet
-
 networks:
   lasmunecasnet:
     external: true
-
-volumes:
-  db_data:
