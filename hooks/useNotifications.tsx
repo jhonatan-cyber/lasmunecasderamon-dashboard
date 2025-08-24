@@ -32,7 +32,7 @@ export function useNotifications() {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const processedNotificationsRef = useRef<Set<string>>(new Set());
   const maxReconnectAttempts = 5;
-  
+
   // Obtener el usuario actual
   const { user } = useCurrentUser();
 
@@ -106,7 +106,7 @@ export function useNotifications() {
       // Disparar evento para actualizar contador de pedidos pendientes
       const event = new CustomEvent('updatePendingOrders');
       window.dispatchEvent(event);
-      
+
       // También disparar evento para abrir modal del pedido (opcional)
       const openModalEvent = new CustomEvent('openOrderModal', {
         detail: { orderId: data.id }
@@ -129,13 +129,11 @@ export function useNotifications() {
     }
 
     // Crear nueva conexión SSE
-    console.log('🔔 useNotifications: Conectando a SSE...');
+
     const eventSource = new EventSource('/api/notifications/sse');
     eventSourceRef.current = eventSource;
 
-
     eventSource.onopen = () => {
-      console.log('🔔 useNotifications: Conexión SSE establecida');
       setIsConnected(true);
       isConnectingRef.current = false;
       setConnectionAttempts(0); // Resetear intentos al conectar exitosamente
@@ -143,9 +141,7 @@ export function useNotifications() {
 
     eventSource.onmessage = event => {
       try {
-        console.log('🔔 useNotifications: Mensaje SSE recibido:', event.data);
         const data: NotificationEvent = JSON.parse(event.data);
-        console.log('🔔 useNotifications: Datos parseados:', data);
 
         if (data.type === 'new_order') {
           // Crear un ID único para la notificación usando más campos
@@ -167,21 +163,17 @@ export function useNotifications() {
             }
           }
         } else if (data.type === 'anulacion_confirmada' || data.type === 'anulacion_rechazada') {
-          console.log('🔔 Notificación de anulación recibida:', data);
-          
           // Crear un ID único para la notificación de anulación
           const notificationId = `${data.data.id}_${data.data.codigo}_${data.data.timestamp}`;
 
           // Evitar notificaciones duplicadas usando Set
           if (!processedNotificationsRef.current.has(notificationId)) {
             processedNotificationsRef.current.add(notificationId);
-            
+
             // Mostrar notificación de anulación
             const accion = data.type === 'anulacion_confirmada' ? 'CONFIRMADA' : 'RECHAZADA';
             const icono = data.type === 'anulacion_confirmada' ? '✅' : '❌';
-            
-            console.log('🔔 Mostrando toast de anulación:', `${icono} ANULACIÓN ${accion}`);
-            
+
             toast.success(`${icono} ANULACIÓN ${accion}`, {
               description: (
                 <div className='space-y-1 text-sm'>
@@ -205,12 +197,12 @@ export function useNotifications() {
             });
 
             // Disparar evento para actualizar ventas
-            console.log('🔔 Disparando evento updateSales');
+
             const event = new CustomEvent('updateSales');
             window.dispatchEvent(event);
 
             // Disparar evento para mostrar modal de anulación
-            console.log('🔔 Disparando evento anulacion-notification');
+
             const modalEvent = new CustomEvent('anulacion-notification', {
               detail: {
                 type: data.type,
@@ -223,8 +215,6 @@ export function useNotifications() {
             if (processedNotificationsRef.current.size > 50) {
               processedNotificationsRef.current.clear();
             }
-          } else {
-            console.log('🔔 Notificación de anulación duplicada, ignorando');
           }
         } else if (data.type === 'connected') {
           // Conexión establecida
