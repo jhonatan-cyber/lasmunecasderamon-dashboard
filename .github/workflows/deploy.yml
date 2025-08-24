@@ -44,6 +44,8 @@ jobs:
           else \
             git pull origin main; \
           fi && \
+          docker-compose stop app && \
+          docker-compose rm -f app && \
           docker-compose build app && \
-          docker-compose up -d --build --no-recreate \
+          docker-compose up -d app \
           "
