@@ -45,5 +45,5 @@ jobs:
             git pull origin main; \
           fi && \
           docker-compose build app && \
-          docker-compose up -d --build \
+          docker-compose up -d --build --no-recreate \
           "
