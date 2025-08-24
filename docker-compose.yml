@@ -9,7 +9,7 @@ services:
     ports:
       - "3307:3306"
     networks:
-      - lasmunecasderamon-network
+      - lasmunecasnet
     volumes:
       - db_data:/var/lib/mysql
 
@@ -23,7 +23,7 @@ services:
     ports:
       - "8000:80"
     networks:
-      - lasmunecasderamon-network
+      - lasmunecasnet
     depends_on:
       - db
 
@@ -39,12 +39,12 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - lasmunecasderamon-network
+      - lasmunecasnet
     depends_on:
       - db
 
 networks:
-  lasmunecasderamon-network:
+  lasmunecasnet:
     external: true
 
 volumes:
