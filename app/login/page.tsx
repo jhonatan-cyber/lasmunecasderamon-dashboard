@@ -75,9 +75,42 @@ export default function LoginPage() {
       applyTheme('system');
     }
     
+    // Verificar estado de la base de datos al cargar la página
+    const checkDatabaseStatus = async () => {
+      console.log('🔍 [LOGIN] Verificando estado de la base de datos...');
+      
+      try {
+        const baseUrl = getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/db-status`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+        
+        console.log('📊 [LOGIN] Respuesta del servidor:', data);
+        
+        if (data.success) {
+          console.log('✅ [LOGIN] Base de datos conectada');
+          console.log('📋 [LOGIN] Configuración:', data.environment);
+          setDbStatus('connected');
+        } else {
+          console.error('❌ [LOGIN] Error de conexión a la base de datos');
+          console.error('❌ [LOGIN] Detalles:', data);
+          setDbStatus('error');
+          setDbError(data.error || 'Error desconocido');
+        }
+      } catch (error) {
+        console.error('❌ [LOGIN] Error al verificar base de datos:', error);
+        setDbStatus('error');
+        setDbError(error instanceof Error ? error.message : 'Error de red');
+      }
+    };
+
     // Verificar si hay usuarios registrados
     async function checkUsers() {
-      setDbStatus('checking');
+      console.log('🔍 [LOGIN] Verificando si hay usuarios registrados...');
+      
       try {
         const baseUrl = getBaseUrl();
         
@@ -87,16 +120,21 @@ export default function LoginPage() {
         
         const data = await res.json();
         
+        console.log('📊 [LOGIN] Usuarios encontrados:', data);
+        
         if (res.ok && data.success) {
           setDbStatus('connected');
           setHasUsers(data.hasUsers);
           setDbError(null);
+          console.log('👥 [LOGIN] Hay usuarios registrados:', data.hasUsers);
         } else {
+          console.error('❌ [LOGIN] Error al verificar usuarios:', data);
           setDbStatus('error');
           setDbError(data.message || 'Error desconocido');
           setHasUsers(true); // Por defecto, asumir que hay usuarios
         }
       } catch (error) {
+        console.error('❌ [LOGIN] Error al verificar usuarios:', error);
         setDbStatus('error');
         setDbError('Error de red o servidor');
         setHasUsers(true); // Por defecto, asumir que hay usuarios
@@ -121,6 +159,7 @@ export default function LoginPage() {
     }
     
     // Ejecutar verificaciones
+    checkDatabaseStatus(); // Verificar DB primero
     checkUsers();
     checkSession();
   }, []);
@@ -160,6 +199,9 @@ export default function LoginPage() {
 
   // Función para manejar el registro del primer usuario
   const handleRegister = async () => {
+    console.log('📝 [LOGIN] Intentando registrar usuario...');
+    console.log('📧 [LOGIN] Datos de registro:', registerData);
+    
     if (registerData.password !== registerData.confirmPassword) {
       toast.error('Las contraseñas no coinciden');
       return;
@@ -198,8 +240,11 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      
+      console.log('📊 [LOGIN] Respuesta del registro:', data);
 
       if (res.ok && data.success) {
+        console.log('✅ [LOGIN] Usuario registrado exitosamente');
         toast.success('Usuario administrador creado exitosamente');
         setShowRegisterModal(false);
         setHasUsers(true);
@@ -215,7 +260,7 @@ export default function LoginPage() {
         toast.error(data.message || 'Error al crear el usuario');
       }
     } catch (error) {
-      console.error('Error en registro:', error);
+      console.error('❌ [LOGIN] Error en registro:', error);
       toast.error('Error interno del servidor');
     } finally {
       setRegisterLoading(false);
@@ -289,6 +334,27 @@ export default function LoginPage() {
 
                          <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
                
+               {/* Estado de la base de datos */}
+               <div className='mb-4 p-3 rounded-lg text-sm'>
+                 {dbStatus === 'checking' && (
+                   <div className='flex items-center text-blue-600'>
+                     <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+                     Verificando conexión a la base de datos...
+                   </div>
+                 )}
+                 {dbStatus === 'connected' && (
+                   <div className='flex items-center text-green-600'>
+                     <div className='w-2 h-2 bg-green-600 rounded-full mr-2'></div>
+                     ✅ Base de datos conectada
+                   </div>
+                 )}
+                 {dbStatus === 'error' && (
+                   <div className='flex items-center text-red-600'>
+                     <div className='w-2 h-2 bg-red-600 rounded-full mr-2'></div>
+                     ❌ Error de conexión: {dbError}
+                   </div>
+                 )}
+               </div>
 
                <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
                  {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
@@ -304,6 +370,8 @@ export default function LoginPage() {
                   className='space-y-5'
                   onSubmit={async e => {
                     e.preventDefault();
+                    console.log('🔐 [LOGIN] Intentando iniciar sesión...');
+                    console.log('📧 [LOGIN] Email:', loginData.email);
                     setLoading(true);
                     try {
                                              const baseUrl = getBaseUrl();
@@ -314,10 +382,13 @@ export default function LoginPage() {
                          body: JSON.stringify(loginData)
                        });
 
-                      const data = await res.json();
+                                            const data = await res.json();
+                      
+                      console.log('📊 [LOGIN] Respuesta del servidor:', data);
 
                       // Verificar si requiere código PRIMERO
                       if (data.requiereCodigo === true) {
+                        console.log('🔐 [LOGIN] Requiere código de verificación');
                         setUserTmp(data.user);
                         
                         // Guardar el rol en localStorage para evitar flash de permisos
@@ -332,22 +403,26 @@ export default function LoginPage() {
 
                       // Solo verificar success si NO requiere código
                       if (!data.success) {
+                        console.error('❌ [LOGIN] Error de autenticación:', data.message);
                         toast.error(data.message || 'Error de autenticación');
                         setLoading(false);
                         return;
                       }
                       // Login exitoso (admin/cajero)
+                      console.log('✅ [LOGIN] Login exitoso');
+                      console.log('👤 [LOGIN] Usuario:', data.user);
                       toast.success('¡Bienvenido al sistema!');
                       
                       // Guardar el rol en localStorage para evitar flash de permisos
                       if (data.user?.role) {
-                        localStorage.setItem('userRole', data.user.role);
+                          localStorage.setItem('userRole', data.user.role);
                       }
                       
                       setLoading(false);
                       // Redirección inmediata
                       window.location.href = '/';
                     } catch (err) {
+                      console.error('❌ [LOGIN] Error de red o servidor:', err);
                       toast.error('Error de red o servidor');
                       setLoading(false);
                     }
@@ -402,8 +477,8 @@ export default function LoginPage() {
                     ref={submitButtonRef}
                     type='submit'
                     variant='outline'
+                    disabled={dbStatus === 'error' || loading}
                     className='rounded-full px-6 bg-black dark:bg-white text-white dark:text-black border-black dark:border-white  dark:hover:bg-gray-200 hover:scale-110 transition-all duration-200 w-full'
-                    disabled={loading}
                   >
                     {loading ? 'Validando...' : 'Iniciar sesión'}
                   </Button>

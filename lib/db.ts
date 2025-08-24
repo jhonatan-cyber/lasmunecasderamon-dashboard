@@ -24,7 +24,13 @@ const defaultConfig: DatabaseConfig = {
   queueLimit: 0
 };
 
-// Debug logs removed
+// Log database configuration (without password)
+console.log('🔍 [DB] Configuración de base de datos:');
+console.log('   Host:', defaultConfig.host);
+console.log('   User:', defaultConfig.user);
+console.log('   Database:', defaultConfig.database);
+console.log('   Port:', defaultConfig.port);
+console.log('   Password:', defaultConfig.password ? '***SET***' : '***NOT SET***');
 
 // Create a connection pool
 const pool = mysql.createPool(defaultConfig);
@@ -33,16 +39,21 @@ const pool = mysql.createPool(defaultConfig);
 
 // Function to create a direct connection (more reliable for production)
 async function createConnection() {
-  // Debug logs removed
-  const connection = await mysql.createConnection({
-    host: defaultConfig.host,
-    user: defaultConfig.user,
-    password: defaultConfig.password,
-    database: defaultConfig.database,
-    port: defaultConfig.port
-  });
-  // Debug logs removed
-  return connection;
+  console.log('🔌 [DB] Intentando conectar a la base de datos...');
+  try {
+    const connection = await mysql.createConnection({
+      host: defaultConfig.host,
+      user: defaultConfig.user,
+      password: defaultConfig.password,
+      database: defaultConfig.database,
+      port: defaultConfig.port
+    });
+    console.log('✅ [DB] Conexión exitosa a la base de datos');
+    return connection;
+  } catch (error) {
+    console.error('❌ [DB] Error al conectar:', error);
+    throw error;
+  }
 }
 
 // Function to execute SQL queries
@@ -87,13 +98,15 @@ export async function rawQuery(sql: string) {
 
 // Test the database connection
 export async function testConnection() {
+  console.log('🧪 [DB] Iniciando prueba de conexión...');
   try {
     const connection = await createConnection();
+    console.log('✅ [DB] Prueba de conexión exitosa');
     await connection.end();
     return true;
   } catch (error) {
-    console.error('❌ Error connecting to the database:', error);
-    console.error('❌ Connection error details:', {
+    console.error('❌ [DB] Error en prueba de conexión:', error);
+    console.error('❌ [DB] Detalles del error:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       code: (error as any)?.code,
       errno: (error as any)?.errno,
