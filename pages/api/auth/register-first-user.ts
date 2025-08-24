@@ -83,8 +83,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('📋 [REGISTER] Datos a insertar:', { nombre, apellido, email: emailSinCodificar, rolId });
     
     const result = await query(
-      'INSERT INTO usuarios (nombre, apellido, email, password, rol_id, estado) VALUES (?, ?, ?, ?, ?, 1)',
-      [nombre, apellido, emailSinCodificar, hashedPassword, rolId]
+      `INSERT INTO usuarios (
+        nombre, apellido, email, password, rol_id, estado,
+        run, direccion, telefono, estado_civil, afp, aporte, sueldo
+      ) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        nombre, apellido, emailSinCodificar, hashedPassword, rolId,
+        '00000000-0', // run por defecto
+        'Dirección por defecto', // direccion por defecto
+        '00000000', // telefono por defecto
+        'Soltero', // estado_civil por defecto
+        'AFP por defecto', // afp por defecto
+        0, // aporte por defecto
+        0 // sueldo por defecto
+      ]
     ) as any;
 
     console.log('✅ [REGISTER] Usuario creado exitosamente:', { email: emailSinCodificar, userId: result.insertId });
