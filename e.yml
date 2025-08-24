@@ -1,0 +1,5 @@
+[33m7046759[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: agregar logs detallados de registro y remover archivos .env del tracking
+[33mce372fe[m feat: agregar logs de conexión a base de datos en login
+[33mfd50f5a[m Fix volume mapping for package.json
+[33m6a6a7ca[m cpm
+[33m1274c5f[m worknet
