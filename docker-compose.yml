@@ -2,8 +2,31 @@ services:
   app:
     image: node:22.18.0
     container_name: lasmunecasderamon
-    env_file:
-      - .env
+    environment:
+      # Database configuration
+      DB_HOST: db
+      DB_USER: lasmuecasderamon
+      DB_PASSWORD: Ancasi96nuwe+
+      DB_NAME: lasmunecasderamon
+      DB_PORT: 3306
+      
+      # JWT configuration
+      JWT_SECRET: Ancasi96nuwe+
+      
+      # Twilio configuration
+      TWILIO_ACCOUNT_SID: AC15bf3ea3e84f2ed90307bb070e1d0794
+      TWILIO_AUTH_TOKEN: c65257bd3131e5afbf621a91ec1dc73d
+      TWILIO_WHATSAPP_NUMBER: whatsapp:+14155238886
+      ADMIN_WHATSAPP_NUMBER: whatsapp:+59172419112
+      
+      # Application configuration
+      NEXT_PUBLIC_API_URL: /api
+      NEXT_PUBLIC_BASE_URL: https://xn--lasmuecasderamon-bub.com
+      NEXT_PUBLIC_SOCKET_URL: https://xn--lasmuecasderamon-bub.com
+      CORS_ORIGINS: https://xn--lasmuecasderamon-bub.com
+      
+      # Node environment
+      NODE_ENV: production
     working_dir: /app
     volumes:
       - .:/app
