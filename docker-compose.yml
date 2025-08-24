@@ -5,7 +5,7 @@ services:
     environment:
       # Database configuration
       DB_HOST: db
-      DB_USER: lasmuecasderamon
+      DB_USER: root
       DB_PASSWORD: Ancasi96nuwe+
       DB_NAME: lasmunecasderamon
       DB_PORT: 3306
