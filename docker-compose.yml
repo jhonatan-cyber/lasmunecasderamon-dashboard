@@ -1,50 +1,51 @@
-version: "3.9"
+version: '3.8'
 
 services:
   db:
-    image: mariadb:10.11
+    image: mariadb:latest
     container_name: db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: Ancasi96nuwe+
-      MYSQL_DATABASE: lasmunecasderamon
-      MYSQL_USER: lasmuecasderamon
-      MYSQL_PASSWORD: Ancasi96nuwe+
+    env_file:
+      - .env
     ports:
       - "3307:3306"
     networks:
-      - lasmunecasnet
+      - lasmunecasderamon-network
+    volumes:
+      - db_data:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
-    restart: always
     environment:
       PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: Ancasi96nuwe+
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8000:80"
     networks:
-      - lasmunecasnet
-
-  app:
-    build: .
-    container_name: lasmunecasderamon-app
-    restart: always
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: lasmunecasderamon
-      DB_USER: lasmuecasderamon
-      DB_PASSWORD: Ancasi96nuwe+
-      NODE_ENV: production
-    ports:
-      - "3000:3000"
+      - lasmunecasderamon-network
     depends_on:
       - db
+
+  app:
+    image: node:18
+    container_name: lasmunecasderamon
+    env_file:
+      - .env
+    working_dir: /app
+    volumes:
+      - ./lasmunecasderamon:/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
     networks:
-      - lasmunecasnet
+      - lasmunecasderamon-network
+    depends_on:
+      - db
 
 networks:
-  lasmunecasnet:
-    driver: bridge
+  lasmunecasderamon-network:
+    external: true
+
+volumes:
+  db_data:
