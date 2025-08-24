@@ -29,14 +29,15 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
 
       - name: Add server to known_hosts
-        run: |
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
-      - name: Deploy with Docker Compose
+  
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "\
+          mkdir -p /root/lasmunecasderamon && \
           cd /root/lasmunecasderamon && \
-          git pull origin main && \
-          docker-compose down && \
-          docker-compose up -d --build \
-          "
+          if [ ! -d .git ]; then \
+            git clone https://github.com/jhonatan-cyber/lasmunecasderamon.git . ; \
+          else \
+            git pull origin main ; \
+          fi && \
+          docker-compose up -d --build"
+
