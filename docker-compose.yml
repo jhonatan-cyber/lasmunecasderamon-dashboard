@@ -28,7 +28,7 @@ services:
       - db
 
   app:
-    image: node:18
+    image: node:22.18.0
     container_name: lasmunecasderamon
     env_file:
       - .env
