@@ -44,6 +44,6 @@ jobs:
           else \
             git pull origin main; \
           fi && \
-          docker-compose down && \
+          docker-compose build app && \
           docker-compose up -d --build \
           "
