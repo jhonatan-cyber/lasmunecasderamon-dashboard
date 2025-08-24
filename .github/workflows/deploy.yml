@@ -27,11 +27,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          # Crear known_hosts vacío si no existe
+          touch ~/.ssh/known_hosts
 
       - name: Update known_hosts
         run: |
-          mkdir -p ~/.ssh
-          ssh-keygen -f ~/.ssh/known_hosts -R "***REMOVED***"
+          ssh-keygen -f ~/.ssh/known_hosts -R "***REMOVED***" || true
           ssh-keyscan -t ed25519 ***REMOVED*** >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH
