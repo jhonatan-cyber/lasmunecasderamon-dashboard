@@ -4,7 +4,6 @@ import LayoutContent from '@/components/LayoutContent';
 import { AnulacionProvider } from '@/contexts/AnulacionContext';
 import { TimerProvider } from '@/contexts/TimerContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
-import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { NotificationProvider, NotificationStatus, ClientOnly } from '@/components/notifications';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
@@ -16,7 +15,7 @@ import '@/styles/sidebar.css';
 
 
 export const metadata: Metadata = {
-  title: 'Admin Dashboard',
+  title: 'Las Muñecas de Ramón',
   description: 'Panel de administración del club'
 };
 
@@ -24,7 +23,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang='es' suppressHydrationWarning>
       <head>
-        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
