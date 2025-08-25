@@ -17,8 +17,6 @@ export default function LoginPage() {
   const [userTmp, setUserTmp] = useState<any>(null);
   const [step, setStep] = useState<'login' | 'codigo'>('login');
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
-  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error' | null>(null);
-  const [dbError, setDbError] = useState<string | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerData, setRegisterData] = useState({
     nombre: '',
@@ -74,51 +72,39 @@ export default function LoginPage() {
       setTheme('system');
       applyTheme('system');
     }
-    
-    // Verificar estado de la base de datos al cargar la página
-    const checkDatabaseStatus = async () => {
-      // Función simplificada - asumir conexión exitosa
-      setDbStatus('connected');
-    };
 
     // Verificar si hay usuarios registrados
     async function checkUsers() {
       try {
         const baseUrl = getBaseUrl();
-        
+
         const res = await fetch(`${baseUrl}/api/auth/check-users`, {
           credentials: 'include'
         });
-        
+
         const data = await res.json();
-        
+
         if (res.ok && data.success) {
-          setDbStatus('connected');
           setHasUsers(data.hasUsers);
-          setDbError(null);
         } else {
           console.error('❌ [LOGIN] Error al verificar usuarios:', data);
-          setDbStatus('error');
-          setDbError(data.message || 'Error desconocido');
           setHasUsers(true); // Por defecto, asumir que hay usuarios
         }
       } catch (error) {
         console.error('❌ [LOGIN] Error al verificar usuarios:', error);
-        setDbStatus('error');
-        setDbError('Error de red o servidor');
         setHasUsers(true); // Por defecto, asumir que hay usuarios
       }
     }
-    
+
     // Protección robusta: verifica sesión con endpoint protegido
     async function checkSession() {
       try {
         const baseUrl = getBaseUrl();
-        
+
         const res = await fetch(`${baseUrl}/api/auth/check`, {
           credentials: 'include'
         });
-        
+
         if (res.ok) {
           router.replace('/');
         }
@@ -126,9 +112,8 @@ export default function LoginPage() {
         // Si hay error de red, permite el acceso al login
       }
     }
-    
+
     // Ejecutar verificaciones
-    checkDatabaseStatus(); // Verificar DB primero
     checkUsers();
     checkSession();
   }, []);
@@ -168,7 +153,6 @@ export default function LoginPage() {
 
   // Función para manejar el registro del primer usuario
   const handleRegister = async () => {
-    
     if (registerData.password !== registerData.confirmPassword) {
       toast.error('Las contraseñas no coinciden');
       return;
@@ -190,12 +174,12 @@ export default function LoginPage() {
     try {
       // Prevenir la codificación Punycode del navegador
       const emailOriginal = registerData.email;
-      
+
       const baseUrl = getBaseUrl();
       const res = await fetch(`${baseUrl}/api/auth/register-first-user`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -203,7 +187,7 @@ export default function LoginPage() {
           apellido: registerData.apellido.trim(),
           email: emailOriginal, // Email original sin codificación
           password: registerData.password
-        }),
+        })
       });
 
       const data = await res.json();
@@ -296,38 +280,15 @@ export default function LoginPage() {
               <Image src='/img/system/logo2.png' alt='Logo' width={200} height={80} />
             </div>
 
-                         <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
-               
-               {/* Estado de la base de datos */}
-               <div className='mb-4 p-3 rounded-lg text-sm'>
-                 {dbStatus === 'checking' && (
-                   <div className='flex items-center text-blue-600'>
-                     <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
-                     Verificando conexión a la base de datos...
-                   </div>
-                 )}
-                 {dbStatus === 'connected' && (
-                   <div className='flex items-center text-green-600'>
-                     <div className='w-2 h-2 bg-green-600 rounded-full mr-2'></div>
-                     ✅ Base de datos conectada
-                   </div>
-                 )}
-                 {dbStatus === 'error' && (
-                   <div className='flex items-center text-red-600'>
-                     <div className='w-2 h-2 bg-red-600 rounded-full mr-2'></div>
-                     ❌ Error de conexión: {dbError}
-                   </div>
-                 )}
-               </div>
-
-               <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
-                 {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
-               </h2>
-               <p className='text-gray-600 dark:text-gray-300 text-center mb-6 text-sm transition-colors duration-300'>
-                 {step === 'login'
-                   ? 'Ingrese sus datos para iniciar sesión en su cuenta'
-                   : 'Complete la verificación de seguridad'}
-               </p>
+            <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
+              <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
+                {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
+              </h2>
+              <p className='text-gray-600 dark:text-gray-300 text-center mb-6 text-sm transition-colors duration-300'>
+                {step === 'login'
+                  ? 'Ingrese sus datos para iniciar sesión en su cuenta'
+                  : 'Complete la verificación de seguridad'}
+              </p>
 
               {step === 'login' && (
                 <form
@@ -336,25 +297,25 @@ export default function LoginPage() {
                     e.preventDefault();
                     setLoading(true);
                     try {
-                                             const baseUrl = getBaseUrl();
-                       const res = await fetch(`${baseUrl}/api/login`, {
-                         method: 'POST',
-                         headers: { 'Content-Type': 'application/json' },
-                         credentials: 'include',
-                         body: JSON.stringify(loginData)
-                       });
+                      const baseUrl = getBaseUrl();
+                      const res = await fetch(`${baseUrl}/api/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(loginData)
+                      });
 
-                                            const data = await res.json();
+                      const data = await res.json();
 
                       // Verificar si requiere código PRIMERO
                       if (data.requiereCodigo === true) {
                         setUserTmp(data.user);
-                        
+
                         // Guardar el rol en localStorage para evitar flash de permisos
                         if (data.user?.role) {
                           localStorage.setItem('userRole', data.user.role);
                         }
-                        
+
                         setStep('codigo');
                         setLoading(false);
                         return;
@@ -369,12 +330,12 @@ export default function LoginPage() {
                       }
                       // Login exitoso (admin/cajero)
                       toast.success('¡Bienvenido al sistema!');
-                      
+
                       // Guardar el rol en localStorage para evitar flash de permisos
                       if (data.user?.role) {
-                          localStorage.setItem('userRole', data.user.role);
+                        localStorage.setItem('userRole', data.user.role);
                       }
-                      
+
                       setLoading(false);
                       // Redirección inmediata
                       window.location.href = '/';
@@ -390,13 +351,12 @@ export default function LoginPage() {
                       Correo
                     </Label>
                     <div className='relative'>
-                                             <Mail
-                         className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none'
-                       />
+                      <Mail className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none mr-2' />
                       <Input
                         ref={emailInputRef}
                         type='text'
-                        placeholder='Correo electrónico'
+                        placeholder=' Correo electrónico'
+                        autoComplete='email'
                         className='pl-10 bg-white dark:bg-gray-800  dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400  transition-all duration-300'
                         value={loginData.email}
                         onChange={e => setLoginData({ ...loginData, email: e.target.value })}
@@ -410,13 +370,11 @@ export default function LoginPage() {
                       Contraseña
                     </Label>
                     <div className='relative'>
-                      <Lock
-                        className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none'
-                      />
+                      <Lock className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none mr-2' />
                       <Input
                         ref={passwordInputRef}
                         type='password'
-                        placeholder='Contraseña'
+                        placeholder=' Contraseña'
                         className='pl-10 bg-white dark:bg-gray-800  dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400  transition-all duration-300'
                         value={loginData.password}
                         onChange={e =>
@@ -434,7 +392,7 @@ export default function LoginPage() {
                     ref={submitButtonRef}
                     type='submit'
                     variant='outline'
-                    disabled={dbStatus === 'error' || loading}
+                    disabled={loading}
                     className='rounded-full px-6 bg-black dark:bg-white text-white dark:text-black border-black dark:border-white  dark:hover:bg-gray-200 hover:scale-110 transition-all duration-200 w-full'
                   >
                     {loading ? 'Validando...' : 'Iniciar sesión'}
@@ -481,19 +439,13 @@ export default function LoginPage() {
                           aria-label='Cambiar tema'
                         >
                           {theme === 'light' && (
-                            <Sun
-                              className='text-yellow-500 dark:text-yellow-400'
-                            />
+                            <Sun className='text-yellow-500 dark:text-yellow-400' />
                           )}
                           {theme === 'dark' && (
-                            <Moon
-                              className='text-blue-600 dark:text-blue-400'
-                            />
+                            <Moon className='text-blue-600 dark:text-blue-400' />
                           )}
                           {theme === 'system' && (
-                            <Monitor
-                              className='text-gray-600 dark:text-gray-400'
-                            />
+                            <Monitor className='text-gray-600 dark:text-gray-400' />
                           )}
                         </Button>
                       </PopoverTrigger>
@@ -549,17 +501,17 @@ export default function LoginPage() {
                     }
                     setLoading(true);
                     try {
-                                             const baseUrl = getBaseUrl();
-                       const res = await fetch(`${baseUrl}/api/login`, {
-                         method: 'POST',
-                         headers: { 'Content-Type': 'application/json' },
-                         credentials: 'include',
-                         body: JSON.stringify({
-                           email: loginData.email,
-                           password: loginData.password,
-                           codigo
-                         })
-                       });
+                      const baseUrl = getBaseUrl();
+                      const res = await fetch(`${baseUrl}/api/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                          email: loginData.email,
+                          password: loginData.password,
+                          codigo
+                        })
+                      });
                       const data = await res.json();
                       if (!data.success) {
                         toast.error(data.message || 'Código incorrecto');
@@ -567,12 +519,12 @@ export default function LoginPage() {
                         return;
                       }
                       toast.success('¡Bienvenido al sistema, ' + (userTmp?.username || '') + '!');
-                      
+
                       // Guardar el rol en localStorage para evitar flash de permisos
                       if (data.user?.role) {
                         localStorage.setItem('userRole', data.user.role);
                       }
-                      
+
                       setLoading(false);
                       setTimeout(() => {
                         window.location.href = '/';
@@ -605,9 +557,7 @@ export default function LoginPage() {
                       Código de Verificación
                     </Label>
                     <div className='relative'>
-                      <Lock
-                        className='absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 text-base pointer-events-none'
-                      />
+                      <Lock className='absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 text-base pointer-events-none mr-2' />
                       <Input
                         type='text'
                         placeholder='0000'
@@ -698,30 +648,42 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }} className='space-y-4'>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleRegister();
+              }}
+              className='space-y-4'
+            >
               <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <Label htmlFor='nombre' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                  <Label
+                    htmlFor='nombre'
+                    className='text-sm font-medium text-gray-700 dark:text-gray-200'
+                  >
                     Nombre
                   </Label>
                   <Input
                     id='nombre'
                     type='text'
                     value={registerData.nombre}
-                    onChange={(e) => setRegisterData({ ...registerData, nombre: e.target.value })}
+                    onChange={e => setRegisterData({ ...registerData, nombre: e.target.value })}
                     className='mt-1'
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor='apellido' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                  <Label
+                    htmlFor='apellido'
+                    className='text-sm font-medium text-gray-700 dark:text-gray-200'
+                  >
                     Apellido
                   </Label>
                   <Input
                     id='apellido'
                     type='text'
                     value={registerData.apellido}
-                    onChange={(e) => setRegisterData({ ...registerData, apellido: e.target.value })}
+                    onChange={e => setRegisterData({ ...registerData, apellido: e.target.value })}
                     className='mt-1'
                     required
                   />
@@ -729,14 +691,17 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <Label htmlFor='email' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                <Label
+                  htmlFor='email'
+                  className='text-sm font-medium text-gray-700 dark:text-gray-200'
+                >
                   Email
                 </Label>
                 <Input
                   id='email'
                   type='text'
                   value={registerData.email}
-                  onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                  onChange={e => setRegisterData({ ...registerData, email: e.target.value })}
                   className='mt-1'
                   required
                   autoComplete='email'
@@ -745,14 +710,17 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <Label htmlFor='password' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                <Label
+                  htmlFor='password'
+                  className='text-sm font-medium text-gray-700 dark:text-gray-200'
+                >
                   Contraseña
                 </Label>
                 <Input
                   id='password'
                   type='password'
                   value={registerData.password}
-                  onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                  onChange={e => setRegisterData({ ...registerData, password: e.target.value })}
                   className='mt-1'
                   required
                   minLength={6}
@@ -760,14 +728,19 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <Label htmlFor='confirmPassword' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                <Label
+                  htmlFor='confirmPassword'
+                  className='text-sm font-medium text-gray-700 dark:text-gray-200'
+                >
                   Confirmar Contraseña
                 </Label>
                 <Input
                   id='confirmPassword'
                   type='password'
                   value={registerData.confirmPassword}
-                  onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                  onChange={e =>
+                    setRegisterData({ ...registerData, confirmPassword: e.target.value })
+                  }
                   className='mt-1'
                   required
                   minLength={6}
