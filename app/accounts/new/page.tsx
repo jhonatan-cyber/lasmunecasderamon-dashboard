@@ -161,7 +161,7 @@ export default function NewCuentaPage() {
   };
 
   const handleAddProducto = (producto: any) => {
-    console.log("Producto a agregar:", producto);
+    
     const cantidad = cantidades[producto.id_producto] || 1;
     const precio = producto.precio || producto.price || 0;
     const comision = producto.commission || producto.comision || 0; // La API devuelve 'commission'
@@ -173,7 +173,7 @@ export default function NewCuentaPage() {
       comision: comision, // Comisión por unidad
       subtotal: precio * cantidad
     };
-    console.log("Nuevo producto procesado:", nuevoProducto);
+    
     setProductos(prev => [...prev, nuevoProducto]);
     setCantidades(prev => {
       const newCantidades = { ...prev };
@@ -420,16 +420,7 @@ export default function NewCuentaPage() {
         comision: producto.comision || 0
       }));
 
-      console.log("=== DEBUG CREAR CUENTA ===");
-      console.log("Sub Total:", subTotal);
-      console.log("Total Comisión productos:", totalComision);
-      console.log("Anfitrionas extra:", anfitrionasExtra);
-      console.log("Comisión anfitrionas recargo:", comisionAnfitrionasRecargo);
-      console.log("Total Comisión Final:", totalComisionFinal);
-      console.log("Recargo anfitrionas:", recargoAnfitrionas);
-      console.log("Total Final:", total);
-      console.log("Detalles preparados:", detalles);
-      console.log("==========================");
+
 
       // Datos obligatorios
       const cuentaData: CreateCuentaRequest = {

@@ -32,7 +32,6 @@ export function useHabitaciones() {
       }
     } catch (err) {
       setError("Error de conexión");
-      console.error("Error al cargar habitaciones:", err);
     } finally {
       setLoading(false);
     }

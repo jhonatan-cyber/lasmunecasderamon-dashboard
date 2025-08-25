@@ -9,7 +9,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const userData = getCurrentUser(req);
-    
+
     if (!userData) {
       return res.status(401).json({ success: false, message: 'No autorizado' });
     }
@@ -52,7 +52,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: tips
     });
   } catch (error) {
-    console.error('Error obteniendo resumen de propinas del usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

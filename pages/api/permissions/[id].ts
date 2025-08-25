@@ -15,18 +15,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      await query(`
+      await query(
+        `
         UPDATE permissions 
         SET name = ?, description = ?, module = ?, action = ?, updated_at = NOW()
         WHERE id = ?
-      `, [name, description, module, action, id]);
+      `,
+        [name, description, module, action, id]
+      );
 
       res.status(200).json({
         success: true,
         message: 'Permiso actualizado correctamente'
       });
     } catch (error) {
-      console.error('Error updating permission:', error);
       res.status(500).json({
         success: false,
         message: 'Error al actualizar el permiso'
@@ -34,18 +36,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'DELETE') {
     try {
-      await query(`
+      await query(
+        `
         UPDATE permissions 
         SET deleted_at = NOW()
         WHERE id = ?
-      `, [id]);
+      `,
+        [id]
+      );
 
       res.status(200).json({
         success: true,
         message: 'Permiso eliminado correctamente'
       });
     } catch (error) {
-      console.error('Error deleting permission:', error);
       res.status(500).json({
         success: false,
         message: 'Error al eliminar el permiso'

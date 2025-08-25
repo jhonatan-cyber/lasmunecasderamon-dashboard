@@ -1,16 +1,12 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
-import { withTransaction } from "@/lib/transactionUtils";
+import { NextApiRequest, NextApiResponse } from 'next';
+import { query } from '@/lib/db';
+import { withTransaction } from '@/lib/transactionUtils';
 
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ 
-      success: false, 
-      message: "Método no permitido" 
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      success: false,
+      message: 'Método no permitido'
     });
   }
 
@@ -19,45 +15,31 @@ export default async function handler(
   if (!id || Array.isArray(id)) {
     return res.status(400).json({
       success: false,
-      message: "ID de cuenta es requerido"
+      message: 'ID de cuenta es requerido'
     });
   }
 
   const cuentaId = parseInt(id);
 
   try {
-    const {
-      cuenta_id,
-      metodo_pago,
-      propina = 0,
-      total_cobrado,
-      habitacion_id = null,
-    } = req.body;
+    const { cuenta_id, metodo_pago, propina = 0, total_cobrado, habitacion_id = null } = req.body;
 
     // Validaciones
     if (!cuenta_id || !metodo_pago || total_cobrado === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Faltan campos requeridos: cuenta_id, metodo_pago, total_cobrado"
+        message: 'Faltan campos requeridos: cuenta_id, metodo_pago, total_cobrado'
       });
     }
 
     // Validar método de pago
-    const metodosValidos = ["efectivo", "tarjeta", "transferencia"];
+    const metodosValidos = ['efectivo', 'tarjeta', 'transferencia'];
     if (!metodosValidos.includes(metodo_pago)) {
       return res.status(400).json({
         success: false,
-        message: "Método de pago inválido"
+        message: 'Método de pago inválido'
       });
     }
-
-    console.log("=== COBRANDO CUENTA ===");
-    console.log("Cuenta ID:", cuenta_id);
-    console.log("Método de pago:", metodo_pago);
-    console.log("Propina:", propina);
-    console.log("Total cobrado:", total_cobrado);
-    console.log("Habitación ID:", habitacion_id);
-    console.log("==========================");
 
     // Actualizar el estado de la cuenta a "Cobrada" (estado = 0)
     const updateCuentaSql = `
@@ -83,17 +65,9 @@ export default async function handler(
         ) VALUES (?, ?, ?, ?, ?, NOW())
       `;
 
-      await query(insertCobroSql, [
-        cuenta_id,
-        metodo_pago,
-        propina,
-        total_cobrado,
-        habitacion_id
-      ]);
-
-      console.log("Cobro registrado exitosamente");
+      await query(insertCobroSql, [cuenta_id, metodo_pago, propina, total_cobrado, habitacion_id]);
     } catch (error) {
-      console.log("Tabla cobros_cuentas no existe, solo se actualizó el estado de la cuenta");
+      console.log('Tabla cobros_cuentas no existe, solo se actualizó el estado de la cuenta');
     }
 
     // Si hay habitación seleccionada, actualizar su estado a "Ocupada" (estado = 2)
@@ -105,17 +79,14 @@ export default async function handler(
           WHERE id_habitacion = ?
         `;
         await query(updateHabitacionSql, [habitacion_id]);
-        console.log("Habitación actualizada a ocupada");
       } catch (error) {
-        console.error("Error al actualizar habitación:", error);
+        console.error('Error al actualizar habitación:', error);
       }
     }
 
-
-
     return res.status(200).json({
       success: true,
-      message: "Cuenta cobrada exitosamente",
+      message: 'Cuenta cobrada exitosamente',
       data: {
         cuenta_id,
         metodo_pago,
@@ -125,12 +96,10 @@ export default async function handler(
         fecha_cobro: new Date().toISOString()
       }
     });
-
   } catch (error) {
-    console.error("Error al cobrar cuenta:", error);
     return res.status(500).json({
       success: false,
-      message: "Error interno del servidor al cobrar la cuenta"
+      message: 'Error interno del servidor al cobrar la cuenta'
     });
   }
-} 
+}

@@ -1,15 +1,14 @@
-﻿import type { NextApiRequest, NextApiResponse } from "next";
-import { withAuth } from "@/lib/middleware/auth";
-import { query } from "@/lib/db";
-import bcrypt from "bcryptjs";
+﻿import type { NextApiRequest, NextApiResponse } from 'next';
+import { withAuth } from '@/lib/middleware/auth';
+import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 // Configurar para que Next.js no parseé automáticamente el body
 export const config = {
   api: {
-    bodyParser: false,
-  },
+    bodyParser: false
+  }
 };
-
 
 // Función para generar email a partir del nick
 const generateEmail = (nick: string): string => {
@@ -116,7 +115,6 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       data: usuarios.map(mapUserFromDB)
     });
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener usuarios',
@@ -127,22 +125,16 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log('🔵 handlePost - Content-Type:', req.headers['content-type']);
-    
     let fields: any = {};
-    
+
     // Determinar si es FormData o JSON
     const contentType = req.headers['content-type'] || '';
-    
+
     if (contentType.includes('multipart/form-data')) {
       // Es FormData, usar función personalizada para parsear
-      console.log('🔵 handlePost - Parseando FormData...');
+
       fields = await parseFormData(req);
-      
-      console.log('🔵 handlePost - fields:', fields);
     } else {
-      // Es JSON
-      console.log('🔵 handlePost - Parseando JSON...');
       fields = req.body;
     }
 
@@ -209,12 +201,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       descuento || null // descuento es opcional
     ];
 
-    console.log('🔵 handlePost - Parámetros para la consulta:', params);
-
     // Verificar que no haya undefined en los parámetros
-    const undefinedParams = params.map((param, index) => ({ param, index })).filter(({ param }) => param === undefined);
+    const undefinedParams = params
+      .map((param, index) => ({ param, index }))
+      .filter(({ param }) => param === undefined);
     if (undefinedParams.length > 0) {
-      console.log('🔵 handlePost - ERROR: Parámetros undefined:', undefinedParams);
       return res.status(400).json({
         success: false,
         message: `Campos undefined detectados: ${undefinedParams.map(p => p.index).join(', ')}`
@@ -224,9 +215,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Generar email y password automáticamente
     const email = generateEmail(nick);
     const password = await generatePassword(run);
-
-    console.log('🔵 handlePost - Email generado:', email);
-    console.log('🔵 handlePost - Password generado para RUN:', run);
 
     // Insertar nuevo usuario con email y password
     const result = await query(
@@ -243,7 +231,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       id: (result as any).insertId
     });
   } catch (error) {
-    console.error('Error al crear usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al crear usuario',
@@ -254,33 +241,26 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log('🔵 handlePut - Content-Type:', req.headers['content-type']);
-    
     let fields: any = {};
     let userId: string | number | undefined;
 
     // Determinar si es FormData o JSON
     const contentType = req.headers['content-type'] || '';
-    
+
     if (contentType.includes('multipart/form-data')) {
       // Es FormData, usar función personalizada para parsear
-      console.log('🔵 handlePut - Parseando FormData...');
+
       fields = await parseFormData(req);
-      
-      console.log('🔵 handlePut - fields:', fields);
-      
+
       userId = fields.id;
     } else {
       // Es JSON
-      console.log('🔵 handlePut - Parseando JSON...');
+
       fields = req.body;
       userId = req.query.id || req.body.id;
     }
 
-    console.log('🔵 handlePut - userId:', userId);
-
     if (!userId) {
-      console.log('🔵 handlePut - ERROR: No se encontró ID de usuario');
       return res.status(400).json({
         success: false,
         message: 'ID de usuario es requerido'
@@ -289,10 +269,8 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Convertir userId a número si es string
     const userIdNumber = parseInt(userId as string, 10);
-    console.log('🔵 handlePut - userIdNumber:', userIdNumber);
-    
+
     if (isNaN(userIdNumber)) {
-      console.log('🔵 handlePut - ERROR: ID no es un número válido');
       return res.status(400).json({
         success: false,
         message: 'ID de usuario debe ser un número válido'
@@ -315,8 +293,17 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Validar que todos los campos requeridos estén presentes
     const requiredFields = {
-      run, nick, nombre, apellido, direccion, telefono, 
-      estado_civil, afp, rol_id, sueldo, aporte
+      run,
+      nick,
+      nombre,
+      apellido,
+      direccion,
+      telefono,
+      estado_civil,
+      afp,
+      rol_id,
+      sueldo,
+      aporte
     };
 
     const missingFields = Object.entries(requiredFields)
@@ -324,26 +311,15 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       .map(([key]) => key);
 
     if (missingFields.length > 0) {
-      console.log('🔵 handlePut - ERROR: Campos faltantes:', missingFields);
       return res.status(400).json({
         success: false,
         message: `Campos requeridos faltantes: ${missingFields.join(', ')}`
       });
     }
 
-    console.log('🔵 handlePut - Campos extraídos:', {
-      run, nick, nombre, apellido, direccion, telefono,
-      estado_civil, afp, rol_id, sueldo, aporte, descuento
-    });
-    console.log('🔵 handlePut - rol_id type:', typeof rol_id);
-    console.log('🔵 handlePut - rol_id value:', rol_id);
-
     // Generar email y password automáticamente
     const email = generateEmail(nick);
     const password = await generatePassword(run);
-
-    console.log('🔵 handlePut - Email generado:', email);
-    console.log('🔵 handlePut - Password generado para RUN:', run);
 
     // Verificar si el usuario existe
     const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [
@@ -389,7 +365,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       message: 'Usuario actualizado exitosamente'
     });
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar usuario',
@@ -439,7 +414,6 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
       message: `Usuario ${action === 'activate' ? 'activado' : 'desactivado'} exitosamente`
     });
   } catch (error) {
-    console.error('Error al cambiar estado de usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al cambiar estado de usuario',
@@ -479,7 +453,6 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       message: 'Usuario eliminado exitosamente'
     });
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al eliminar usuario',
@@ -490,18 +463,18 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   switch (req.method) {
-    case "GET":
+    case 'GET':
       return await handleGet(req, res);
-    case "POST":
+    case 'POST':
       return await handlePost(req, res);
-    case "PUT":
+    case 'PUT':
       return await handlePut(req, res);
-    case "PATCH":
+    case 'PATCH':
       return await handlePatch(req, res);
-    case "DELETE":
+    case 'DELETE':
       return await handleDelete(req, res);
     default:
-      res.setHeader("Allow", ["GET", "POST", "PUT", "PATCH", "DELETE"]);
+      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
       return res.status(405).json({ success: false, message: `Método ${req.method} no permitido` });
   }
 }
@@ -514,7 +487,6 @@ export const activateUser = async (userId: number) => {
     await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [userId]);
     return { success: true, message: 'Usuario activado exitosamente' };
   } catch (error) {
-    console.error('Error al activar usuario:', error);
     return { success: false, message: 'Error al activar usuario' };
   }
 };
@@ -524,7 +496,6 @@ export const deactivateUser = async (userId: number) => {
     await query('UPDATE usuarios SET estado = 0 WHERE id_usuario = ?', [userId]);
     return { success: true, message: 'Usuario desactivado exitosamente' };
   } catch (error) {
-    console.error('Error al desactivar usuario:', error);
     return { success: false, message: 'Error al desactivar usuario' };
   }
 };
@@ -534,27 +505,28 @@ export const deleteUser = async (userId: number) => {
     await query('DELETE FROM usuarios WHERE id_usuario = ?', [userId]);
     return { success: true, message: 'Usuario eliminado exitosamente' };
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
     return { success: false, message: 'Error al eliminar usuario' };
   }
 };
 
 export const getUserById = async (userId: number) => {
   try {
-    const result = await query(`
+    const result = (await query(
+      `
       SELECT u.*, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol 
       WHERE u.id_usuario = ?
-    `, [userId]) as any[];
-    
+    `,
+      [userId]
+    )) as any[];
+
     if (result.length === 0) {
       return null;
     }
-    
+
     return mapUserFromDB(result[0]);
   } catch (error) {
-    console.error('Error al obtener usuario:', error);
     return null;
   }
 };

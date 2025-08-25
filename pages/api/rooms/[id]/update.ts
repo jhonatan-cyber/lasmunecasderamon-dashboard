@@ -35,7 +35,7 @@ export default async function handler(
       return res.status(400).json({
         success: false,
         message: "Datos inválidos",
-        errors: parse.error.errors,
+        errors: parse.error.issues,
       });
     }
 
@@ -72,7 +72,7 @@ export default async function handler(
     });
 
   } catch (error) {
-    console.error("Error al actualizar habitación:", error);
+   
     return res.status(500).json({
       success: false,
       message: "Error interno del servidor",

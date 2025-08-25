@@ -14,20 +14,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           estado,
           fecha_crea,
           fecha_mod,
-          fecha_baja,
-          (SELECT COUNT(*) FROM usuarios WHERE rol_id = roles.id_rol) as userCount
+          fecha_baja
         FROM roles 
+        WHERE estado = 1
         ORDER BY nombre`
       ) as any[];
 
-      console.log('🔵 Roles obtenidos de la base de datos:', roles);
+   
 
       return res.status(200).json({ 
         success: true, 
         data: roles 
       });
     } catch (error) {
-      console.error('Error al obtener roles:', error);
+    
       return res.status(500).json({ 
         success: false, 
         message: "Error interno del servidor" 
@@ -57,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         data: { id: result.insertId }
       });
     } catch (error) {
-      console.error('Error al crear rol:', error);
+      
       return res.status(500).json({
         success: false,
         message: "Error al crear el rol"
@@ -86,7 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         message: "Rol actualizado correctamente"
       });
     } catch (error) {
-      console.error('Error al actualizar rol:', error);
+      
       return res.status(500).json({
         success: false,
         message: "Error al actualizar el rol"

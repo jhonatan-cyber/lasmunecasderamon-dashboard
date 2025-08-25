@@ -40,7 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         message: message
       });
     } catch (error) {
-      console.error('Error al cambiar estado del rol:', error);
+    
       return res.status(500).json({
         success: false,
         message: "Error al cambiar el estado del rol"

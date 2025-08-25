@@ -21,7 +21,7 @@ export default async function handler(
       );
       
       if (Array.isArray(results) && results.length > 0) {
-        const room = results[0];
+        const room = results[0] as any;
         return res.status(200).json({
           success: true,
           data: {
@@ -42,7 +42,7 @@ export default async function handler(
         });
       }
     } catch (error) {
-      console.error("Error al obtener habitación:", error);
+     
       return res.status(500).json({
         success: false,
         message: "Error al obtener habitación",
@@ -70,14 +70,14 @@ export default async function handler(
         });
       }
 
-      console.log(`Actualizando habitación ${id} a estado ${newStatus}`);
+
 
       await query(
         "UPDATE habitaciones SET estado = ? WHERE id_habitacion = ?",
         [newStatus, id]
       );
 
-      console.log("Habitación actualizada exitosamente");
+      
 
       return res.status(200).json({ 
         success: true, 
@@ -85,7 +85,7 @@ export default async function handler(
       });
 
     } catch (error) {
-      console.error("Error al actualizar habitación:", error);
+      
       return res.status(500).json({
         success: false,
         message: "Error al actualizar habitación",

@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Sidebar } from '@/components/sidebar';
 import { SidebarProvider } from '@/contexts/SidebarContext';
+import { UserImageProvider } from '@/contexts/UserImageContext';
 
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -28,20 +29,22 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   useSessionCheck();
   
   return (
-    <SidebarProvider>
-      <div className='flex h-screen bg-background'>
-        <Sidebar />
-        <div className='flex-1 flex flex-col overflow-hidden'>
-          <Header />
+    <UserImageProvider>
+      <SidebarProvider>
+        <div className='flex h-screen bg-background'>
+          <Sidebar />
+          <div className='flex-1 flex flex-col overflow-hidden'>
+            <Header />
 
-          <main className='flex-1 overflow-x-auto overflow-y-auto bg-background pb-4 sm:pb-6'>
-            <div className='min-h-full'>
-              {children}
-            </div>
-          </main>
+            <main className='flex-1 overflow-x-auto overflow-y-auto bg-background pb-4 sm:pb-6'>
+              <div className='min-h-full'>
+                {children}
+              </div>
+            </main>
+          </div>
+          <TimerDisplay />
         </div>
-        <TimerDisplay />
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </UserImageProvider>
   );
 }

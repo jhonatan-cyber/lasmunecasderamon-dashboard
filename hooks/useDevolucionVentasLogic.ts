@@ -25,7 +25,7 @@ export const useDevolucionVentasLogic = () => {
     }
 
     try {
-      const response = await fetch(`/api/ventas/${selectedVenta.id_venta}/solicitar-devolucion`, {
+      const response = await fetch(`/api/ventas/${selectedVenta.id}/solicitar-devolucion`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export const useDevolucionVentasLogic = () => {
 
       await getVentas();
     } catch (error) {
-      console.error('Error al procesar devolución:', error);
+    
       showErrorToast('Error al procesar la devolución de la venta');
     }
   };

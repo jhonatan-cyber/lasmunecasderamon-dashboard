@@ -30,7 +30,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const handleError = (error: any, message: string) => {
-    console.error(`Error en useCashRegister - ${message}:`, error);
+  
     const errorMessage = error?.message || message;
     setError(errorMessage);
     toast.error(errorMessage);
@@ -114,7 +114,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         setError(data.message || "Error al verificar estado de caja");
       }
     } catch (err) {
-      console.error("Error verificando estado de caja:", err);
+    
       setError(err instanceof Error ? err.message : "Error desconocido");
       setHasOpenCaja(false);
       setCajaInfo(null);

@@ -30,10 +30,11 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
   const pathname = usePathname();
 
   // Verificar si es una página pública
-  const isPublicPage = pathname === '/login' || 
-                      pathname === '/api-docs' || 
-                      pathname === '/confirmar-anulacion' || 
-                      pathname === '/confirmar-anulacion-servicio';
+  const isPublicPage =
+    pathname === '/login' ||
+    pathname === '/api-docs' ||
+    pathname === '/confirmar-anulacion' ||
+    pathname === '/confirmar-anulacion-servicio';
 
   const fetchCurrentUser = async () => {
     // Si es una página pública, no hacer la llamada
@@ -45,19 +46,19 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
     try {
       setLoading(true);
       setError(null);
-      
-      const res = await fetch("/api/auth/me", { credentials: 'include' });
+
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
       const data = await res.json();
-      
+
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Error al obtener usuario actual");
+        throw new Error(data.message || 'Error al obtener usuario actual');
       }
-      
+
       setUser(data.user);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error desconocido";
+      const message = err instanceof Error ? err.message : 'Error desconocido';
       setError(message);
-      console.error("Error fetching current user:", err);
+     
     } finally {
       setLoading(false);
     }
@@ -71,6 +72,6 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
     user,
     loading,
     error,
-    refetch: fetchCurrentUser,
+    refetch: fetchCurrentUser
   };
-}; 
+};

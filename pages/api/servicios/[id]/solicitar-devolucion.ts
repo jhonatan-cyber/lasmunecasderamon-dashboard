@@ -42,14 +42,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
 
-    const servicio = servicios[0];
+    const servicio = servicios[0] as any;
 
     // Verificar que el servicio esté activo
     if (servicio.estado !== 1) {
       return res.status(400).json({ error: 'El servicio no está activo' });
     }
 
-    console.log(`🔄 API: Cambiando estado del servicio ${servicioId} de ${servicio.estado} a 2`);
+
     
     // Cambiar estado a 2 (pendiente de devolución)
     await query(
@@ -57,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [servicioId]
     );
     
-    console.log(`✅ API: Estado actualizado correctamente para servicio ${servicioId}`);
+
 
     // Pausar el temporizador del servicio (estado 2 = pausado)
     // Esto se maneja en el frontend con el contexto de temporizador
@@ -92,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Preparar datos de anfitrionas
     const anfitrionas = servicio.anfitrionas_nombres 
-      ? servicio.anfitrionas_nombres.split(', ').filter(nombre => nombre.trim())
+      ? servicio.anfitrionas_nombres.split(', ').filter((nombre: string) => nombre.trim())
       : [];
 
     // Enviar mensaje WhatsApp
@@ -126,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error("Error al solicitar devolución:", error);
+  
     return res.status(500).json({ 
       error: 'Error interno del servidor',
       details: error instanceof Error ? error.message : 'Error desconocido'

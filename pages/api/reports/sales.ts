@@ -31,7 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           dateFilter = 'v.fecha_crea >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)';
           break;
         case 'month':
-          dateFilter = 'YEAR(v.fecha_crea) = YEAR(CURDATE()) AND MONTH(v.fecha_crea) = MONTH(CURDATE())';
+          dateFilter =
+            'YEAR(v.fecha_crea) = YEAR(CURDATE()) AND MONTH(v.fecha_crea) = MONTH(CURDATE())';
           break;
         case 'custom':
           // Si falta alguna fecha, caer a hoy
@@ -41,8 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           dateFilter = 'DATE(v.fecha_crea) = CURDATE()';
       }
     }
-
-    console.log('📊 [SALES REPORT] Ejecutando reporte con filtro:', dateFilter);
 
     // 1. Estadísticas principales
     const statsQuery = `
@@ -55,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE v.estado = 1 AND ${dateFilter}
     `;
 
-    const stats = await query(statsQuery, params) as any[];
+    const stats = (await query(statsQuery, params)) as any[];
 
     // 2. Ventas por método de pago
     const paymentMethodsQuery = `
@@ -67,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       GROUP BY v.metodo_pago
     `;
 
-    const paymentMethods = await query(paymentMethodsQuery, params) as any[];
+    const paymentMethods = (await query(paymentMethodsQuery, params)) as any[];
 
     // 3. Ventas por día (para el período seleccionado)
     const dailySalesQuery = `
@@ -82,9 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ORDER BY fecha DESC
     `;
 
-    const dailySales = await query(dailySalesQuery, params) as any[];
-
-
+    const dailySales = (await query(dailySalesQuery, params)) as any[];
 
     // Procesar datos de métodos de pago
     const ventasPorMetodo = {
@@ -120,17 +117,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ventasPorDia
     };
 
-    console.log('📊 [SALES REPORT] Datos obtenidos exitosamente');
-    console.log('📊 [SALES REPORT] Total ventas:', result.totalVentas);
-    console.log('📊 [SALES REPORT] Cantidad ventas:', result.cantidadVentas);
-
     res.status(200).json({
       success: true,
       data: result
     });
-
   } catch (error) {
-    console.error('❌ [SALES REPORT] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',

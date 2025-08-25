@@ -64,9 +64,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Endpoint para verificar estado de caja (equivalente a caja-status.ts)
     if (status === 'check') {
-      const cajaResult = await query(
-        "SELECT id_caja, usuario_id_apertura, fecha_apertura FROM cajas WHERE estado = 1 LIMIT 1"
-      ) as any[];
+      const cajaResult = (await query(
+        'SELECT id_caja, usuario_id_apertura, fecha_apertura FROM cajas WHERE estado = 1 LIMIT 1'
+      )) as any[];
 
       const hasOpenCaja = cajaResult.length > 0;
       const cajaInfo = hasOpenCaja ? cajaResult[0] : null;
@@ -75,11 +75,13 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         success: true,
         data: {
           hasOpenCaja,
-          cajaInfo: cajaInfo ? {
-            id_caja: cajaInfo.id_caja,
-            usuario_id_apertura: cajaInfo.usuario_id_apertura,
-            fecha_apertura: cajaInfo.fecha_apertura
-          } : null
+          cajaInfo: cajaInfo
+            ? {
+                id_caja: cajaInfo.id_caja,
+                usuario_id_apertura: cajaInfo.usuario_id_apertura,
+                fecha_apertura: cajaInfo.fecha_apertura
+              }
+            : null
         }
       });
     }
@@ -249,7 +251,6 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
   } catch (error) {
-    console.error('Error en la API de cash register:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener datos de cash register',
@@ -351,7 +352,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       data: mapCajaWithUserFromDB(nuevaCaja)
     });
   } catch (error) {
-    console.error('Error al crear caja:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -469,7 +469,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       data: mapCajaWithUserFromDB(cajaActualizada)
     });
   } catch (error) {
-    console.error('Error al actualizar caja:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -534,9 +533,6 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    // Primero: cerrar todas las sesiones excepto administradores y cajeros
-    console.log('🔒 [CAJA] Cerrando sesiones de usuarios al cerrar caja...');
-    
     // Obtener usuarios con logins activos que NO sean administradores ni cajeros
     const loginsActivos = (await query(`
       SELECT l.id_login, l.usuario_id, u.rol_nombre
@@ -545,10 +541,8 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       WHERE l.estado = 1 
       AND u.rol_nombre NOT IN ('administrador', 'cajero')
     `)) as RowDataPacket[];
-    
+
     if (loginsActivos && loginsActivos.length > 0) {
-      console.log(`🔒 [CAJA] Cerrando ${loginsActivos.length} sesiones activas...`);
-      
       // Cerrar logins de usuarios que no son administradores ni cajeros
       await query(`
         UPDATE logins l
@@ -557,8 +551,6 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
         WHERE l.estado = 1 
         AND u.rol_nombre NOT IN ('administrador', 'cajero')
       `);
-      
-      console.log('✅ [CAJA] Sesiones cerradas exitosamente');
     } else {
       console.log('ℹ️ [CAJA] No hay sesiones activas para cerrar');
     }
@@ -595,7 +587,6 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       data: mapCajaWithUserFromDB(cajaCerrada)
     });
   } catch (error) {
-    console.error('Error al cerrar caja:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -653,7 +644,6 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       message: 'Caja eliminada exitosamente'
     });
   } catch (error) {
-    console.error('Error al eliminar caja:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
@@ -684,11 +674,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
     }
   } catch (error: any) {
-    console.error('Error en la API de cash register:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-} 
+}
