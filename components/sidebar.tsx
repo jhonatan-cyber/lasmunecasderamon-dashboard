@@ -122,11 +122,11 @@ export function Sidebar() {
     // El administrador siempre tiene acceso a todo
     if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
 
-    // Si está cargando el usuario o los permisos, mostrar todo (fallback)
-    if (userLoading || permissionsLoading) return true;
+    // Si está cargando el usuario, mostrar todo (fallback)
+    if (userLoading) return true;
 
-    // Si no hay permisos cargados, mostrar todo (fallback)
-    if (!permissions.length) return true;
+    // Si no hay permisos cargados después de un tiempo, mostrar todo (fallback)
+    if (!permissions.length && !permissionsLoading) return true;
 
     // Mapear módulos y acciones del frontend a los de la base de datos
     let mappedModule = module;
@@ -211,20 +211,7 @@ export function Sidebar() {
       </div>
 
       <nav className='flex-1 px-4 py-6 space-y-8 overflow-y-auto'>
-        {/* Sección de Permisos del Rol */}
-        {userLoading || permissionsLoading ? (
-          <div className='mb-6'>
-            <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
-              Cargando permisos...
-            </h3>
-            <div className='px-3'>
-              <div className='animate-pulse bg-gray-100 dark:bg-neutral-800 rounded-lg p-3'>
-                <div className='h-4 bg-gray-200 dark:bg-neutral-700 rounded mb-2'></div>
-                <div className='h-3 bg-gray-200 dark:bg-neutral-700 rounded w-3/4'></div>
-              </div>
-            </div>
-          </div>
-        ) : null}
+     
 
         <div>
           <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
