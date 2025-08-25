@@ -81,7 +81,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       data: logins,
     });
   } catch (error) {
-    console.error("Error en GET /api/logins:", error);
+    
     return res.status(500).json({
       success: false,
       message: "Error interno del servidor",

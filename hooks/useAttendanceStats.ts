@@ -40,7 +40,7 @@ export const useAttendanceStats = () => {
         throw new Error(result.error || 'Error desconocido');
       }
     } catch (err) {
-      console.error('Error al obtener estadísticas de asistencia:', err);
+     
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);

@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const stats = await query(statsSql, params);
 
     // Obtener el resultado como objeto
-    const statsResult = Array.isArray(stats) ? stats[0] : stats;
+    const statsResult = (Array.isArray(stats) ? stats[0] : stats) as any;
 
     const responseData = {
       success: true,
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json(responseData);
 
   } catch (error) {
-    console.error("Error al obtener estadísticas de ventas:", error);
+   
     res.status(500).json({ 
       success: false, 
       error: "Error interno del servidor" 

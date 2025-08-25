@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Login } from '@/types/asistencia';
+import { Login } from '@/types/login';
 
 interface UseLoginsReturn {
   logins: Login[];
@@ -37,7 +37,7 @@ export const useLogins = (): UseLoginsReturn => {
   const cerrarSesiones = async (): Promise<boolean> => {
     try {
       const response = await fetch('/api/logins/cerrar-sesiones', {
-        method: 'POST',
+        method: 'POST'
       });
 
       const result = await response.json();
@@ -63,6 +63,6 @@ export const useLogins = (): UseLoginsReturn => {
     loading,
     error,
     refetch: fetchLogins,
-    cerrarSesiones,
+    cerrarSesiones
   };
-}; 
+};

@@ -82,22 +82,8 @@ export default function GarzonDashboard() {
       const horasExtrasPendientes = horasExtras.filter((horaExtra: any) => horaExtra.estado === 1).length;
       const totalHorasExtrasPendientes = horasExtras.filter((horaExtra: any) => horaExtra.estado === 1).reduce((sum: number, horaExtra: any) => sum + (horaExtra.total || 0), 0);
 
-      // Debug logs
-      console.log('🔍 [DEBUG] Dashboard Garzon - Datos recibidos:');
-      console.log('Asistencias:', asistencias);
-      console.log('Anticipos:', anticipos);
-      console.log('Propinas:', propinas);
-      console.log('Horas Extras:', horasExtras);
-      console.log('🔍 [DEBUG] Dashboard Garzon - Cálculos:');
-      console.log('totalACobrarAsistencias:', totalACobrarAsistencias);
-      console.log('totalAnticiposPendientes:', totalAnticiposPendientes);
-      console.log('totalPropinasPendientes:', totalPropinasPendientes);
-      console.log('totalHorasExtrasPendientes:', totalHorasExtrasPendientes);
-
       // Total a cobrar (asistencias + propinas pendientes + horas extras pendientes - anticipos pendientes)
       const totalACobrar = totalACobrarAsistencias + totalPropinasPendientes + totalHorasExtrasPendientes - totalAnticiposPendientes;
-      
-      console.log('🔍 [DEBUG] Dashboard Garzon - Total a cobrar:', totalACobrar);
 
       setDashboardData({
         totalAsistencias: asistencias.length,

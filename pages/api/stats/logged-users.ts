@@ -2,16 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   try {
-
     // Obtener anfitrionas logueadas hoy usando la consulta específica
-    console.log('🔍 [STATS] Consultando anfitrionas logueadas...');
-    
     const anfitrionas = await query(`
       SELECT U.id_usuario, U.nick, L.last_login, L.estado
       FROM logins L 
@@ -19,13 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       INNER JOIN roles R ON R.id_rol = U.rol_id
       WHERE R.nombre = 'Anfitriona' AND L.estado = 1 
     `);
-    
-    console.log('📊 [STATS] Anfitrionas encontradas:', anfitrionas);
-  
 
     // Obtener garzones logueados hoy
-    console.log('🔍 [STATS] Consultando garzones logueados...');
-    
     const garzones = await query(`
       SELECT U.id_usuario, U.nick, L.last_login, L.estado
       FROM logins L 
@@ -33,13 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       INNER JOIN roles R ON R.id_rol = U.rol_id
       WHERE R.nombre = 'Garzon' AND L.estado = 1 
     `);
-    
-    console.log('📊 [STATS] Garzones encontrados:', garzones);
-
 
     // Obtener cajeros logueados hoy
-    console.log('🔍 [STATS] Consultando cajeros logueados...');
-    
     const cajeros = await query(`
       SELECT U.id_usuario, U.nick, L.last_login, L.estado
       FROM logins L 
@@ -47,9 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       INNER JOIN roles R ON R.id_rol = U.rol_id
       WHERE R.nombre = 'Cajero' AND L.estado = 1 
     `);
-    
-    console.log('📊 [STATS] Cajeros encontrados:', cajeros);
-
 
     // Obtener total de usuarios activos por rol
     const totalUsersStats = await query(`
@@ -92,31 +75,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const rol = item.rol.toLowerCase();
         if (rol === 'anfitriona') {
           stats.anfitrionas.total = item.total_usuarios;
-          stats.anfitrionas.porcentaje = item.total_usuarios > 0 
-            ? Math.round((stats.anfitrionas.logueadas / item.total_usuarios) * 100) 
-            : 0;
+          stats.anfitrionas.porcentaje =
+            item.total_usuarios > 0
+              ? Math.round((stats.anfitrionas.logueadas / item.total_usuarios) * 100)
+              : 0;
         } else if (rol === 'garzon') {
           stats.garzones.total = item.total_usuarios;
-          stats.garzones.porcentaje = item.total_usuarios > 0 
-            ? Math.round((stats.garzones.logueadas / item.total_usuarios) * 100) 
-            : 0;
+          stats.garzones.porcentaje =
+            item.total_usuarios > 0
+              ? Math.round((stats.garzones.logueadas / item.total_usuarios) * 100)
+              : 0;
         } else if (rol === 'cajero') {
           stats.cajeros.total = item.total_usuarios;
-          stats.cajeros.porcentaje = item.total_usuarios > 0 
-            ? Math.round((stats.cajeros.logueadas / item.total_usuarios) * 100) 
-            : 0;
+          stats.cajeros.porcentaje =
+            item.total_usuarios > 0
+              ? Math.round((stats.cajeros.logueadas / item.total_usuarios) * 100)
+              : 0;
         }
       });
     }
-
 
     return res.status(200).json({
       success: true,
       data: stats
     });
-
   } catch (error) {
- 
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

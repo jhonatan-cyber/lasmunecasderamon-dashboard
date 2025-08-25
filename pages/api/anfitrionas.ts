@@ -50,7 +50,7 @@ export default async function handler(
       data: anfitrionasData.map(mapUserFromDB)
     });
   } catch (error) {
-    console.error('Error al obtener anfitrionas:', error);
+
     return res.status(500).json({
       success: false,
       message: 'Error al obtener anfitrionas',

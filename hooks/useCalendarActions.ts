@@ -38,7 +38,7 @@ export const useCalendarActions = (startDate?: string, endDate?: string) => {
         throw new Error(result.error || 'Error desconocido');
       }
     } catch (err) {
-      console.error('Error al obtener acciones del calendario:', err);
+      
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);

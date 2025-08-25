@@ -46,12 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     sqlQuery += ` ORDER BY he.fecha_crea DESC`;
 
-    console.log('📅 [HORAS_EXTRAS] Query:', sqlQuery);
-    console.log('📅 [HORAS_EXTRAS] Params:', params);
-
     const horasExtras = await query(sqlQuery, params);
-
-    console.log('📅 [HORAS_EXTRAS] Resultados:', Array.isArray(horasExtras) ? horasExtras.length : 0);
 
     return res.status(200).json({
       success: true,
@@ -59,7 +54,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       message: 'Horas extras obtenidas exitosamente'
     });
   } catch (error) {
-    console.error('❌ [HORAS_EXTRAS] Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

@@ -54,7 +54,7 @@ export default function useTips(): UseTipsReturn {
       
       setData(result.data || [])
     } catch (err) {
-      console.error('Error en useTips:', err)
+
       setError(err instanceof Error ? err.message : 'Error desconocido')
       setData([])
     } finally {
@@ -107,7 +107,7 @@ export function useTipsResumen(): UseTipsResumenReturn {
       
       setData(result.data || [])
     } catch (err) {
-      console.error('Error en useTipsResumen:', err)
+      
       setError(err instanceof Error ? err.message : 'Error desconocido')
       setData([])
     } finally {
@@ -160,7 +160,7 @@ export function useTipsDetalle(usuarioId?: number): UseTipsDetalleReturn {
       
       setDetalles(result.data || [])
     } catch (err) {
-      console.error('Error en useTipsDetalle:', err)
+   
       setError(err instanceof Error ? err.message : 'Error desconocido')
       setDetalles([])
     } finally {

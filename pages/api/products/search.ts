@@ -1,12 +1,12 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { query } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ success: false, message: "Método no permitido" });
+  if (req.method !== 'GET') {
+    return res.status(405).json({ success: false, message: 'Método no permitido' });
   }
 
-  const { name = "" } = req.query;
+  const { name = '' } = req.query;
   const search = String(name).trim().toLowerCase();
 
   // Si el parámetro está vacío, retorna vacío
@@ -36,6 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const productos = await query(sql, params);
     res.status(200).json({ success: true, data: productos });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error al buscar productos", error });
+    res.status(500).json({ success: false, message: 'Error al buscar productos', error });
   }
-} 
+}

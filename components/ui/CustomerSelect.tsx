@@ -129,7 +129,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
                   return (
                     <SelectItem
                       key={id}
-                      value={id?.toString() || ""}
+                      value={id ? id.toString() : ""}
                       disabled={disabled}
                     >
                       {displayName || "Sin nombre"}

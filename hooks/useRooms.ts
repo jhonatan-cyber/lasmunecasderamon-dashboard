@@ -62,7 +62,7 @@ export default function useRooms(): UseRooms {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Datos enviados a /api/rooms:', room);
+     
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

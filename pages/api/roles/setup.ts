@@ -65,7 +65,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
   } catch (error) {
-    console.error('Error al configurar roles:', error);
+
     return res.status(500).json({
       success: false,
       message: "Error al configurar la tabla de roles",

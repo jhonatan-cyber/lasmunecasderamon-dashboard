@@ -51,7 +51,7 @@ export default function useAnticipos(): UseAnticiposReturn {
       
       setData(result.data || [])
     } catch (err) {
-      console.error('Error en useAnticipos:', err)
+  
       setError(err instanceof Error ? err.message : 'Error desconocido')
       setData([])
     } finally {

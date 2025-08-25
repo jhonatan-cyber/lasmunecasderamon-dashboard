@@ -38,13 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Debug logs
     console.log('🔍 [LOGIN] Datos del usuario obtenidos de la BD:');
-    console.log('   ID:', user.id_usuario);
-    console.log('   Nombre:', user.nombre);
-    console.log('   Apellido:', user.apellido);
-    console.log('   Email:', user.email);
-    console.log('   Rol:', user.rol_nombre);
-    console.log('   Foto:', user.foto);
-    console.log('   Estado:', user.estado);
+    
 
     // Verificar contraseña
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -56,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 1. Verificar y cerrar sesiones activas del usuario
-    console.log('🔍 [LOGIN] Verificando sesiones activas del usuario:', user.id_usuario);
+    
 
     try {
       // Cerrar todas las sesiones activas del usuario (estado 1 -> 0)
@@ -66,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [user.id_usuario]
       );
 
-      console.log('✅ [LOGIN] Sesiones activas cerradas para el usuario:', user.id_usuario);
+      
     } catch (error) {
       console.error('❌ [LOGIN] Error al cerrar sesiones activas:', error);
     }
@@ -84,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     // 3. Registrar el nuevo login
-    console.log('📝 [LOGIN] Registrando nuevo login para el usuario:', user.id_usuario);
+    
 
     try {
       await query(
@@ -96,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [user.id_usuario]
       );
 
-      console.log('✅ [LOGIN] Nuevo login registrado exitosamente');
+   
     } catch (error) {
       console.error('❌ [LOGIN] Error al registrar nuevo login:', error);
     }
@@ -121,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       codigo: 200
     });
   } catch (error) {
-    console.error('Error en login:', error);
+  
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

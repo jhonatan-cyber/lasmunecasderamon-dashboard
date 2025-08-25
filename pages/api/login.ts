@@ -46,13 +46,11 @@ const requiereCodigoVerificacion = async (rol: string, usuarioId: number): Promi
 
   // Si no es un rol que requiere código, no pedir código
   if (!rolesConCodigo.includes(rolLower)) {
-    console.log('👤 [LOGIN] Rol no requiere código:', rolLower);
     return false;
   }
 
   // Si está en horario libre diurno (06:00-20:00), no pedir código
   if (horaActual >= horaLibreInicio && horaActual < horaLibreFin) {
-    console.log('☀️ [LOGIN] Horario libre diurno (06:00-20:00), no requiere código');
     return false;
   }
 
@@ -60,13 +58,11 @@ const requiereCodigoVerificacion = async (rol: string, usuarioId: number): Promi
   // Manejar el caso que cruza la medianoche
   const esMadrugada = horaActual >= horaMadrugadaInicio || horaActual <= horaMadrugadaFin;
   if (esMadrugada) {
-    console.log('🌙 [LOGIN] Horario de madrugada (23:00-06:00), no requiere código');
     return false;
   }
 
   // Si está en el horario de trabajo (20:00-23:00), verificar si ya tiene asistencia registrada
   if (horaActual >= horaInicio && horaActual <= horaFin) {
-    console.log('⏰ [LOGIN] Horario de trabajo (20:00-23:00), verificando asistencia...');
     try {
       const asistenciaExistente = await query(
         'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = CURDATE()',
@@ -75,22 +71,18 @@ const requiereCodigoVerificacion = async (rol: string, usuarioId: number): Promi
 
       // Si ya tiene asistencia registrada, no pedir código
       if (Array.isArray(asistenciaExistente) && asistenciaExistente.length > 0) {
-        console.log('✅ [LOGIN] Usuario ya tiene asistencia registrada, no requiere código');
         return false;
       }
 
       // Si no tiene asistencia y está en horario, requiere código
-      console.log('⚠️ [LOGIN] Usuario no tiene asistencia registrada, requiere código');
       return true;
     } catch (error) {
-      console.error('❌ [LOGIN] Error verificando asistencia:', error);
       // En caso de error, pedir código por seguridad
       return true;
     }
   }
 
   // Si está fuera del horario de trabajo, no pedir código
-  console.log('⏰ [LOGIN] Fuera de horario de trabajo, no requiere código');
   return false;
 };
 
@@ -121,7 +113,6 @@ const registrarAsistencia = async (usuarioId: number, rol: string): Promise<void
     // Horario de madrugada (23:00-06:00) - no registrar asistencia
     const esMadrugada = horaActualMinutos >= 23 * 60 || horaActualMinutos <= 6 * 60;
     if (esMadrugada) {
-      console.log('🌙 [LOGIN] Horario de madrugada, no se registra asistencia');
       return;
     } else if (horaActualMinutos > 20 * 60) {
       // Entre 20:00 y 23:00, es tardanza
@@ -170,7 +161,6 @@ const registrarLogin = async (
 
     // Verificar si está en horario libre diurno (06:00-20:00) - no registrar login
     if (horaActual >= horaLibreInicio && horaActual < horaLibreFin) {
-      console.log('☀️ [LOGIN] Horario libre diurno (06:00-20:00), no se registra login');
       return; // No registrar login
     }
 
@@ -183,7 +173,6 @@ const registrarLogin = async (
     if (esMadrugada) {
       // En horario de madrugada, primero poner en estado 0 todos los logins anteriores del usuario
       await query('UPDATE logins SET estado = 0 WHERE usuario_id = ?', [usuarioId]);
-      console.log('🔄 [LOGIN] Todos los logins anteriores del usuario puestos en estado 0');
 
       // Verificar si ya existe un login con estado 0
       const loginExistente = await query(
@@ -193,23 +182,18 @@ const registrarLogin = async (
 
       if (Array.isArray(loginExistente) && loginExistente.length > 0) {
         // Actualizar el login existente de estado 0 a 1
-        console.log('🔄 [LOGIN] Actualizando login existente de estado 0 a 1');
         const login = loginExistente[0] as any;
         await query('UPDATE logins SET estado = 1, last_login = NOW() WHERE id_login = ?', [
           login.id_login
         ]);
       } else {
         // Crear nuevo login con estado 1
-        console.log('📝 [LOGIN] Creando nuevo login en horario de madrugada');
         await query('INSERT INTO logins (usuario_id,last_login, estado) VALUES (?, NOW(), 1)', [
           usuarioId
         ]);
       }
     } else if (rolesEspeciales.includes(rolLower) && esHorarioTrabajo) {
       // Lógica especial para Anfitriona y Garzón en horario de trabajo (20:00-23:00)
-      console.log(
-        `👤 [LOGIN] Rol especial (${rolLower}) en horario de trabajo, verificando login existente...`
-      );
 
       // Verificar si ya existe un login para hoy (activo o inactivo)
       const loginExistente = await query(
@@ -226,38 +210,29 @@ const registrarLogin = async (
         const login = loginExistente[0] as any;
 
         if (login.estado === 1) {
-          console.log('✅ [LOGIN] Usuario ya tiene login activo en horario de trabajo');
           return; // No hacer nada
         } else {
-          console.log('🔄 [LOGIN] Reactivando login existente (estado 0 → 1)');
           await query('UPDATE logins SET estado = 1, last_login = NOW() WHERE id_login = ?', [
             login.id_login
           ]);
-          console.log('✅ [LOGIN] Login reactivado exitosamente');
         }
       } else {
-        console.log('📝 [LOGIN] No existe login en horario de trabajo, creando nuevo...');
-
         // Poner en estado 0 todos los demás logins del usuario
         await query('UPDATE logins SET estado = 0 WHERE usuario_id = ?', [usuarioId]);
-        console.log('🔄 [LOGIN] Todos los logins anteriores del usuario puestos en estado 0');
 
         // Crear nuevo login
         await query('INSERT INTO logins (usuario_id, estado, last_login) VALUES (?, 1, NOW())', [
           usuarioId
         ]);
-        console.log('✅ [LOGIN] Nuevo login creado para horario de trabajo');
       }
     } else if (horaActual > horaMadrugadaFin) {
       // Horario libre (después de 06:00), no registrar login
-      console.log('☀️ [LOGIN] Horario libre, no se registra login');
+      return;
     } else {
       // Fuera de horario de madrugada pero antes de 06:00, crear login normal
-      console.log('📝 [LOGIN] Creando login normal');
 
       // Primero poner en estado 0 todos los logins anteriores del usuario
       await query('UPDATE logins SET estado = 0 WHERE usuario_id = ? ', [usuarioId]);
-      console.log('🔄 [LOGIN] Todos los logins anteriores del usuario puestos en estado 0');
 
       // Crear nuevo login
       await query('INSERT INTO logins (usuario_id, estado, last_login) VALUES (?, 1, NOW())', [
@@ -275,7 +250,6 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
 
   // Validar método HTTP
   if (req.method !== 'POST') {
-    console.log('❌ Invalid method:', req.method);
     return res.status(405).json({
       message: 'Method not allowed',
       allowedMethods: ['POST']
@@ -290,7 +264,6 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
   const { email, password, codigo } = req.body;
 
   if (!email || !password) {
-    console.log('❌ Missing credentials');
     return res
       .status(400)
       .json({ success: false, message: 'Faltan credenciales', code: 'MISSING_CREDENTIALS' });
@@ -299,7 +272,6 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
   // Validar formato de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    console.log('❌ Invalid email format:', email);
     return res
       .status(400)
       .json({ success: false, message: 'Formato de email inválido', code: 'INVALID_EMAIL_FORMAT' });
@@ -317,7 +289,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
           .json({ success: false, message: 'Código inválido', code: 'INVALID_CODE' });
       }
     } catch (error) {
-      console.error('❌ Error validating code:', error);
+    
       return res
         .status(500)
         .json({ success: false, message: 'Error interno del servidor', code: 'INTERNAL_ERROR' });
@@ -371,26 +343,15 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       }
 
       // Validar código si se proporcionó
-      console.log('🔍 [LOGIN] Validando código proporcionado:', codigo);
+
       try {
         const codeRes = (await query('SELECT codigo FROM codigos WHERE codigo = ?', [
           codigo
         ])) as any[];
 
-        console.log('📊 [LOGIN] Resultado de validación:', codeRes);
-
         if (Array.isArray(codeRes) && codeRes.length > 0) {
-          console.log('✅ [LOGIN] Código válido encontrado');
           // Código válido, continuar
         } else {
-          console.log('❌ [LOGIN] Código no encontrado en la base de datos');
-
-          // Obtener el código actual para debug
-          const currentCodeRes = (await query(
-            'SELECT codigo FROM codigos ORDER BY fecha_crea DESC LIMIT 1'
-          )) as any[];
-          console.log('🔍 [LOGIN] Código actual en BD:', currentCodeRes);
-
           // Código no existe
           return res.status(401).json({
             success: false,
@@ -399,7 +360,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
           });
         }
       } catch (error) {
-        console.error('❌ [LOGIN] Error validando código:', error);
+        
         return res
           .status(500)
           .json({ success: false, message: 'Error interno del servidor', code: 'INTERNAL_ERROR' });
@@ -455,9 +416,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
     const esLibreDiurno = horaActual >= horaLibreInicio && horaActual < horaLibreFin;
 
     if (esMadrugada) {
-      console.log('🌙 [LOGIN] Horario de madrugada (23:00-06:00), no se registra asistencia');
     } else if (esLibreDiurno) {
-      console.log('☀️ [LOGIN] Horario libre diurno (06:00-20:00), no se registra asistencia');
     } else if (isHoraAsistencia()) {
       try {
         const asistenciaExistente = await query(
@@ -466,16 +425,12 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
         );
 
         if (!Array.isArray(asistenciaExistente) || asistenciaExistente.length === 0) {
-          console.log('📝 [LOGIN] Registrando asistencia para el usuario');
           await registrarAsistencia(user.id_usuario, user.rol_nombre);
-        } else {
-          console.log('✅ [LOGIN] Usuario ya tiene asistencia registrada, no se registra nueva');
         }
       } catch (error) {
         console.error('❌ [LOGIN] Error verificando/registrando asistencia:', error);
       }
     } else {
-      console.log('⏰ [LOGIN] Fuera de horario de asistencia, no se registra');
     }
 
     return res.status(200).json({
@@ -494,7 +449,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('Error en login:', error);
+  
     return res
       .status(500)
       .json({ success: false, message: 'Error interno del servidor', code: 'INTERNAL_ERROR' });

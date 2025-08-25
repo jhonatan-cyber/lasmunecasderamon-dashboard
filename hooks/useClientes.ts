@@ -35,7 +35,7 @@ export function useClientes() {
       }
     } catch (err) {
       setError("Error de conexión");
-      console.error("Error al cargar clientes:", err);
+  
     } finally {
       setLoading(false);
     }

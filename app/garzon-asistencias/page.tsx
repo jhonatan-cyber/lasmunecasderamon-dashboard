@@ -37,10 +37,10 @@ export default function GarzonAsistenciasPage() {
     try {
       const res = await fetch("/api/asistencias/user?tipo=detalle");
       const data = await res.json();
-      console.log('🔍 [DEBUG] Asistencias response:', data);
+
       if (data.success) {
         setAsistencias(data.data || []);
-        console.log('🔍 [DEBUG] Asistencias set:', data.data?.length || 0);
+
       } else {
         console.error('Error fetching asistencias:', data.message);
       }

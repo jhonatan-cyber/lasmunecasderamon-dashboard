@@ -38,10 +38,10 @@ export default function AnfitrionaAsistenciasPage() {
     try {
       const res = await fetch("/api/asistencias/user");
       const data = await res.json();
-      console.log('Response from API:', data); // Debug log
+
       if (res.ok && data.success) {
         setAttendances(data.data || []);
-        console.log('Attendances loaded:', data.data); // Debug log
+
       } else {
         console.error('API error:', data.message);
         setAttendances([]);

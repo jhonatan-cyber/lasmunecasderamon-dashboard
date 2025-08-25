@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.redirect(302, confirmUrl);
     
   } catch (error) {
-    console.error('Error al procesar solicitud:', error);
+    
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

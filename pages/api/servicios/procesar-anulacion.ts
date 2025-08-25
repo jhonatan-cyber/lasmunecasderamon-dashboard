@@ -10,12 +10,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const { token, action } = req.body;
 
-  console.log(`🔍 API: Procesando anulación de servicio`);
-  console.log(`🔍 API: Token: ${token}`);
-  console.log(`🔍 API: Action: ${action}`);
-
   if (!token || !action || !['confirmar', 'rechazar'].includes(action)) {
-    console.log(`🔍 API: Error - Token o acción inválidos`);
     return res.status(400).json({ error: 'Token y acción requeridos' });
   }
 
@@ -42,12 +37,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       GROUP BY sas.servicio_id
     `;
 
-    console.log(`🔍 API: Buscando solicitud con token: ${token}`);
     const solicitudResult = await query(solicitudSql, [token]);
-    console.log(`🔍 API: Resultado de búsqueda:`, solicitudResult);
 
     if (!Array.isArray(solicitudResult) || solicitudResult.length === 0) {
-      console.log(`🔍 API: Solicitud no encontrada`);
       return res.status(404).json({
         error: 'Solicitud no encontrada o ya procesada',
         message: 'La solicitud de anulación no existe o ya fue procesada'
@@ -55,7 +47,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const solicitud = solicitudResult[0] as any;
-    console.log(`🔍 API: Solicitud encontrada:`, solicitud);
 
     const servicioId = solicitud.servicio_id;
     const codigoServicio = solicitud.codigo;
@@ -67,7 +58,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Actualizar el estado de la solicitud
     const nuevoEstado = action === 'confirmar' ? 'confirmada' : 'rechazada';
-    console.log(`🔍 API: Actualizando estado de solicitud a: ${nuevoEstado}`);
 
     await query('UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE token = ?', [
       nuevoEstado,
@@ -76,13 +66,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     if (action === 'confirmar') {
       // Si se confirma, cambiar el estado del servicio a anulado (3)
-      console.log(`🔍 API: Confirmando anulación - cambiando servicio ${servicioId} a estado 3`);
+
       await query('UPDATE servicios SET estado = 3, fecha_mod = NOW() WHERE id_servicio = ?', [
         servicioId
       ]);
 
       // Cambiar estado de comisiones asociadas al servicio
-      console.log(`🔍 API: Cambiando estado de comisiones asociadas al servicio ${servicioId}`);
+
       try {
         // Actualizar el estado de las comisiones a 2 (anulado)
         await query(
@@ -93,14 +83,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
          `,
           [servicioId]
         );
-        console.log(`🔍 API: Estado de comisiones actualizado a 2 para el servicio ${servicioId}`);
       } catch (comisionError) {
         console.error('🔍 API: Error actualizando estado de comisiones:', comisionError);
         // No fallar la operación si la actualización de comisiones falla
       }
 
       // Actualizar caja con los descuentos correspondientes
-      console.log(`🔍 API: Actualizando caja para servicio ${servicioId}`);
+
       try {
         // Obtener la caja actual (estado = 1)
         const cajaActualSql = `
@@ -116,8 +105,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ) as any;
 
         if (cajaActual) {
-          console.log('🔍 API: Caja actual encontrada:', cajaActual);
-
           // Descontar el total del servicio del efectivo
           const nuevoEfectivo = Math.max(0, cajaActual.efectivo - totalServicio);
           // Descontar el total del servicio de la columna servicio
@@ -125,23 +112,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           // Sumar el total del servicio a la columna devolucion
           const nuevaDevolucion = (cajaActual.devolucion || 0) + totalServicio;
 
-          console.log('🔍 API: Valores calculados para caja:', {
-            nuevoEfectivo,
-            nuevoServicio,
-            nuevaDevolucion,
-            totalServicio
-          });
-
           await query(
             `UPDATE cajas 
               SET efectivo = ?, servicio = ?, devolucion = ?
               WHERE id_caja = ?`,
             [nuevoEfectivo, nuevoServicio, nuevaDevolucion, cajaActual.id_caja]
           );
-
-          console.log('🔍 API: Caja actualizada exitosamente');
-        } else {
-          console.log('🔍 API: No se encontró caja activa');
         }
       } catch (cajaError) {
         console.error('🔍 API: Error actualizando caja:', cajaError);
@@ -168,7 +144,6 @@ El servicio ya no está activo en el sistema.`;
 
       try {
         await enviarWhatsApp(adminWhatsApp, mensajeConfirmacion);
-        console.log('🔍 API: WhatsApp enviado exitosamente');
       } catch (whatsappError) {
         console.error('🔍 API: Error enviando WhatsApp:', whatsappError);
         // No fallar la operación si WhatsApp falla
@@ -187,13 +162,6 @@ El servicio ya no está activo en el sistema.`;
         timestamp: new Date().toISOString()
       };
 
-      console.log(
-        '🔔 Enviando notificación de anulación de servicio confirmada:',
-        notificationData
-      );
-      console.log('🔔 Tipo de notificación: anulacion_servicio_confirmada');
-      console.log('🔔 Datos de notificación:', JSON.stringify(notificationData, null, 2));
-
       // Guardar notificación en la base de datos
       try {
         await query(
@@ -203,21 +171,19 @@ El servicio ya no está activo en el sistema.`;
         `,
           ['anulacion_servicio_confirmada', JSON.stringify(notificationData)]
         );
-        console.log('🔔 Notificación guardada en la base de datos');
       } catch (dbError) {
         console.error('🔔 Error guardando notificación en BD:', dbError);
       }
 
       try {
         sendNotificationToAll('anulacion_servicio_confirmada', notificationData);
-        console.log('🔔 Notificación enviada exitosamente');
       } catch (notificationError) {
         console.error('🔔 Error enviando notificación:', notificationError);
         // No fallar la operación si las notificaciones fallan
       }
     } else {
       // Si se rechaza, cambiar el estado del servicio de vuelta a activo (1)
-      console.log(`🔍 API: Rechazando anulación - cambiando servicio ${servicioId} a estado 1`);
+
       await query('UPDATE servicios SET estado = 1, fecha_mod = NOW() WHERE id_servicio = ?', [
         servicioId
       ]);
@@ -242,7 +208,6 @@ El servicio permanece activo en el sistema.`;
 
       try {
         await enviarWhatsApp(adminWhatsApp, mensajeRechazo);
-        console.log('🔍 API: WhatsApp enviado exitosamente');
       } catch (whatsappError) {
         console.error('🔍 API: Error enviando WhatsApp:', whatsappError);
         // No fallar la operación si WhatsApp falla
@@ -261,10 +226,6 @@ El servicio permanece activo en el sistema.`;
         timestamp: new Date().toISOString()
       };
 
-      console.log('🔔 Enviando notificación de anulación de servicio rechazada:', notificationData);
-      console.log('🔔 Tipo de notificación: anulacion_servicio_rechazada');
-      console.log('🔔 Datos de notificación:', JSON.stringify(notificationData, null, 2));
-
       // Guardar notificación en la base de datos
       try {
         await query(
@@ -274,21 +235,18 @@ El servicio permanece activo en el sistema.`;
         `,
           ['anulacion_servicio_rechazada', JSON.stringify(notificationData)]
         );
-        console.log('🔔 Notificación guardada en la base de datos');
       } catch (dbError) {
         console.error('🔔 Error guardando notificación en BD:', dbError);
       }
 
       try {
         sendNotificationToAll('anulacion_servicio_rechazada', notificationData);
-        console.log('🔔 Notificación enviada exitosamente');
       } catch (notificationError) {
         console.error('🔔 Error enviando notificación:', notificationError);
         // No fallar la operación si las notificaciones fallan
       }
     }
 
-    console.log(`🔍 API: Procesamiento completado exitosamente`);
     return res.status(200).json({
       success: true,
       message:
@@ -307,14 +265,6 @@ El servicio permanece activo en el sistema.`;
       }
     });
   } catch (error) {
-    console.error('Error al procesar anulación de servicio:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      name: error instanceof Error ? error.name : 'Unknown',
-      token,
-      action
-    });
     return res.status(500).json({
       error: 'Error interno del servidor',
       message: 'Error al procesar la anulación'

@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
 
@@ -38,7 +37,6 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       return await handleGetLista(req, res);
     }
   } catch (error) {
-    console.error('Error en GET /api/sales:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -95,18 +93,19 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     const totalPages = Math.ceil(total / limitNum);
 
     // Procesar los datos para formatear usuarios como array y obtener detalles
-    const processedSales = await Promise.all(salesResult.map(async (venta) => {
-      // Convertir usuarios_nicks de string a array
-      const usuariosNicks = venta.usuarios_nicks ? venta.usuarios_nicks.split(', ') : [];
-      
-      // Crear array de usuarios
-      const usuarios = usuariosNicks.map((nick: string) => ({
-        nick,
-        usuario_nombre: nick
-      }));
+    const processedSales = await Promise.all(
+      salesResult.map(async venta => {
+        // Convertir usuarios_nicks de string a array
+        const usuariosNicks = venta.usuarios_nicks ? venta.usuarios_nicks.split(', ') : [];
 
-      // Obtener detalles de la venta
-      const detallesSql = `
+        // Crear array de usuarios
+        const usuarios = usuariosNicks.map((nick: string) => ({
+          nick,
+          usuario_nombre: nick
+        }));
+
+        // Obtener detalles de la venta
+        const detallesSql = `
         SELECT 
           dv.*,
           p.nombre as producto_nombre,
@@ -115,18 +114,21 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         LEFT JOIN productos p ON dv.producto_id = p.id_producto
         WHERE dv.venta_id = ?
       `;
-      const detalles = await query(detallesSql, [venta.id_venta]);
+        const detalles = await query(detallesSql, [venta.id_venta]);
 
-      return {
-        ...venta,
-        id: venta.id_venta, // Asegurar que el frontend use 'id'
-        usuarios,
-        detalles,
-        // Mantener compatibilidad con el frontend
-        cliente_nombre: venta.cliente_nombre ? `${venta.cliente_nombre} ${venta.cliente_apellido || ''}`.trim() : 'Sin cliente',
-        habitacion_numero: venta.habitacion_nombre || 'Sin habitación'
-      };
-    }));
+        return {
+          ...venta,
+          id: venta.id_venta, // Asegurar que el frontend use 'id'
+          usuarios,
+          detalles,
+          // Mantener compatibilidad con el frontend
+          cliente_nombre: venta.cliente_nombre
+            ? `${venta.cliente_nombre} ${venta.cliente_apellido || ''}`.trim()
+            : 'Sin cliente',
+          habitacion_numero: venta.habitacion_nombre || 'Sin habitación'
+        };
+      })
+    );
 
     return res.status(200).json({
       success: true,
@@ -139,7 +141,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('Error al obtener lista de ventas:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener ventas',
@@ -229,7 +230,6 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('Error al obtener resumen de ventas:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener resumen de ventas',
@@ -240,8 +240,6 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log('🔍 POST /api/sales - Datos recibidos:', req.body);
-
     const {
       total,
       detalles,
@@ -254,25 +252,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       total_comision
     } = req.body;
 
-    console.log('🔍 Datos extraídos:', {
-      total,
-      detalles,
-      cliente_id,
-      metodo_pago,
-      propina,
-      usuarios,
-      habitacion_id,
-      sub_total,
-      total_comision
-    });
-
     if (!total || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
-      console.log('🔍 Error de validación:', {
-        total: !!total,
-        detalles: !!detalles,
-        isArray: Array.isArray(detalles),
-        length: detalles?.length
-      });
       return res.status(400).json({
         success: false,
         message: 'Total y detalles son requeridos'
@@ -295,8 +275,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       const comision = detalle.comision || 0;
       return acc + comision; // La comisión ya viene calculada desde el frontend
     }, 0);
-
-    console.log('🔍 Total de comisiones calculado:', totalComision);
 
     const insertVentaSql = `
       INSERT INTO ventas (
@@ -327,7 +305,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
       // Usar los datos del detalle directamente
       const comisionPorUnidad = (detalle.comision || 0) / (detalle.cantidad || 1); // Calcular comisión por unidad
-      const subTotalProducto = detalle.sub_total || (detalle.precio * detalle.cantidad);
+      const subTotalProducto = detalle.sub_total || detalle.precio * detalle.cantidad;
 
       await query(insertDetalleVentaSql, [
         ventaId,
@@ -347,13 +325,13 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         `;
         await query(insertVentaUsuarioSql, [ventaId, usuarioId]);
       }
-    } 
+    }
 
     // Registrar comisiones para cada anfitriona
     if (usuarios && Array.isArray(usuarios) && usuarios.length > 0 && totalComision > 0) {
       // Calcular comisión por anfitriona (dividir el total de comisiones entre las anfitrionas)
       const comisionPorAnfitriona = Math.floor(totalComision / usuarios.length);
-      
+
       for (const usuarioId of usuarios) {
         // Crear comisión para cada anfitriona
         const comisionResult: any = await query(
@@ -378,28 +356,22 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             usuario_id,
             comision
           ) VALUES (?, ?, ?)`,
-          [
-            comisionId,
-            usuarioId,
-            comisionPorAnfitriona
-          ]
+          [comisionId, usuarioId, comisionPorAnfitriona]
         );
       }
     }
 
     // Actualizar la caja activa con las ventas y comisiones
-    const cajaActiva = await query(
-      "SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1"
-    ) as any[];
+    const cajaActiva = (await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1')) as any[];
 
     if (cajaActiva && cajaActiva.length > 0) {
       const cajaId = cajaActiva[0].id_caja;
-      
+
       // Calcular el monto según el método de pago (INCLUYENDO propina)
       let montoEfectivo = 0;
       let montoTarjeta = 0;
       let montoTransferencia = 0;
-      
+
       switch (metodo_pago) {
         case 'efectivo':
           montoEfectivo = total;
@@ -434,17 +406,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           cajaId
         ]
       );
-
-      console.log("Caja actualizada con venta:", {
-        cajaId,
-        metodoPago: metodo_pago,
-        total,
-        propina,
-        montoEfectivo,
-        montoTarjeta,
-        montoTransferencia,
-        totalComision
-      });
     }
 
     // Obtener la venta completa con información relacionada
@@ -465,20 +426,21 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const ventaCompletaResult = (await query(ventaCompletaSql, [ventaId])) as any[];
     const ventaCompleta = ventaCompletaResult[0];
 
-
-
     return res.status(201).json({
       success: true,
       message: 'Venta creada exitosamente',
       data: {
         ...ventaCompleta,
-        comisiones_creadas: usuarios && usuarios.length > 0 && totalComision > 0 ? usuarios.length : 0,
-        comision_por_anfitriona: usuarios && usuarios.length > 0 && totalComision > 0 ? Math.floor(totalComision / usuarios.length) : 0,
+        comisiones_creadas:
+          usuarios && usuarios.length > 0 && totalComision > 0 ? usuarios.length : 0,
+        comision_por_anfitriona:
+          usuarios && usuarios.length > 0 && totalComision > 0
+            ? Math.floor(totalComision / usuarios.length)
+            : 0,
         total_comision: totalComision
       }
     });
   } catch (error) {
-    console.error('Error al crear venta:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al crear venta',
