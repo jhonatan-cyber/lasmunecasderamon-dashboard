@@ -66,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).send(imageBuffer);
 
   } catch (error) {
-    console.error('Error sirviendo imagen:', error);
+    
     return res.status(500).json({ success: false, message: 'Error interno del servidor' });
   }
 }

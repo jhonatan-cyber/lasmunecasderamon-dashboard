@@ -68,6 +68,11 @@ export default function OrdersPage() {
     }
   };
 
+  // Helper: verificar permiso de procesar (soporta claves antiguas y nuevas)
+  const hasProcessPermission = () =>
+    hasPermission('orders', 'procesar_pedidos') ||
+    hasPermission('pedidos', 'procesar_pedidos');
+
   const fetchOrderDetail = async (orderId: number) => {
     try {
       setIsDetailLoading(true);
@@ -136,7 +141,7 @@ export default function OrdersPage() {
 
   const handleOrderClick = (orderId: number, orderCode: string) => {
     // Verificar si tiene permiso para procesar pedidos
-    if (!hasPermission('orders', 'process')) {
+    if (!hasProcessPermission()) {
       toast.error('No tienes permisos para procesar pedidos');
       return;
     }
@@ -319,29 +324,30 @@ export default function OrdersPage() {
             ) : (
               <div className='space-y-4'>
                 {filteredOrders.map(order => {
-                  const hasProcessPermission = hasPermission('orders', 'process');
-                  const canProcess = hasProcessPermission && hasOpenCaja;
+                  const canProcess = hasProcessPermission() && hasOpenCaja;
                   return (
                     <div
                       key={order.id_pedido}
                       className={`p-4 border border-gray-200 rounded-lg transition-colors ${
                         canProcess 
                           ? 'hover:bg-gray-50 cursor-pointer' 
-                          : 'cursor-not-allowed opacity-60'
+                          : 'cursor-not-allowed opacity-60 pointer-events-none'
                       }`}
-                      onClick={() => handleOrderClick(order.id_pedido, order.codigo)}
+                      onClick={canProcess ? () => handleOrderClick(order.id_pedido, order.codigo) : undefined}
+                      aria-disabled={!canProcess}
+                      role={canProcess ? 'button' : undefined}
                     >
                     <div className='flex items-center justify-between'>
                       <div className='flex-1'>
                         <div className='flex items-center gap-4 mb-2'>
                           <h3 className='font-medium text-gray-900'>{order.codigo}</h3>
                           {getStatusBadge(order.estado)}
-                          {!hasProcessPermission && (
+                          {!hasProcessPermission() && (
                             <Badge className='bg-gray-100 text-gray-600 text-xs'>
                               Sin permiso para procesar
                             </Badge>
                           )}
-                          {hasProcessPermission && !hasOpenCaja && (
+                          {hasProcessPermission() && !hasOpenCaja && (
                             <Badge className='bg-yellow-100 text-yellow-700 text-xs'>
                               Sin caja abierta
                             </Badge>

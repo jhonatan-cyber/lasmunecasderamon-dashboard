@@ -117,7 +117,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
               console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
             }
           } else {
-            console.log('⚠️ Contexto: No hay callback de actualización configurado');
+            // No hay callback de actualización configurado
           }
 
           // Mostrar toast
@@ -151,7 +151,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
               console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
             }
           } else {
-            console.log('⚠️ Contexto: No hay callback de actualización configurado');
+            // No hay callback de actualización configurado
           }
 
           // Mostrar toast

@@ -554,11 +554,7 @@ export default function NewSale() {
       };
 
       const resultado = await createVenta(ventaData);
-      console.log('=== RESULTADO CREATEVENTA ===');
-      console.log('resultado:', resultado);
-      console.log('resultado.id_venta:', resultado?.id_venta);
-      console.log('resultado type:', typeof resultado);
-      console.log('=============================');
+
 
       if (resultado && resultado.data) {
         // Registrar propina si hay un monto

@@ -21,9 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Obtener el rol del usuario
-    const userResult = await query(`
+    const userResult = (await query(
+      `
       SELECT rol_id FROM usuarios WHERE id_usuario = ?
-    `, [userId]) as any[];
+    `,
+      [userId]
+    )) as any[];
 
     if (!userResult || userResult.length === 0) {
       return res.status(404).json({
@@ -43,7 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Obtener los permisos del rol del usuario
-    const permissions = await query(`
+    const permissions = (await query(
+      `
       SELECT 
         p.id,
         p.name,
@@ -54,17 +58,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       INNER JOIN role_permissions rp ON p.id = rp.permission_id
       WHERE rp.role_id = ? AND p.deleted_at IS NULL
       ORDER BY p.module, p.action
-    `, [roleId]) as any[];
-
-    console.log(`Permisos obtenidos para usuario ${userId} (rol ${roleId}):`, permissions);
+    `,
+      [roleId]
+    )) as any[];
 
     return res.status(200).json({
       success: true,
       data: permissions
     });
-
   } catch (error) {
-    console.error('Error fetching user permissions:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener los permisos del usuario'

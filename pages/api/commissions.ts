@@ -140,20 +140,9 @@ const mapCommissionFromDB = (row: any): Commission => {
   const servicio = parseFloat(row.servicio || 0);
   const total = parseFloat(row.total || 0);
 
-  // Debug: Ver qué valores se están procesando
-  console.log('=== DEBUG MAPEO COMISIÓN ===');
-  console.log('Row completo:', row);
-  console.log('venta:', row.venta);
-  console.log('servicio:', row.servicio);
-  console.log('total:', row.total);
-  console.log('venta procesada:', venta);
-  console.log('servicio procesado:', servicio);
-  console.log('total procesado:', total);
-  console.log('===========================');
-
   return {
-    id: row.id_usuario?.toString(),
-    employeeId: row.id_usuario?.toString(),
+    id: row.id_usuario ? row.id_usuario.toString() : "",
+    employeeId: row.id_usuario ? row.id_usuario.toString() : "",
     employeeName: row.anfitriona, // empleado = anfitriona
     nick: row.nick, // nick = nick
     venta: venta, // venta = venta (campo calculado)
@@ -177,14 +166,13 @@ const mapCommissionFromDB = (row: any): Commission => {
 // Handlers por método HTTP
 export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log('=== INICIANDO HANDLEGET ===');
+
 
     const { id, stats } = req.query;
     const commissionId = Array.isArray(id) ? id[0] : id;
 
     // Si se solicitan las estadísticas
     if (stats === 'true') {
-      console.log('Solicitando estadísticas...');
       try {
         const cajaActiva = (await query(`
           SELECT id_caja, fecha_apertura 
@@ -218,7 +206,7 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
           porcentaje_servicios: parseInt(statsData.porcentaje_servicios || 0)
         });
       } catch (error) {
-        console.error('Error al obtener estadísticas:', error);
+       
         return res.json({
           total_comisiones: 0,
           comision_ventas: 0,
@@ -232,8 +220,6 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         });
       }
     }
-
-    console.log('Solicitando lista de comisiones...');
 
     // Consulta que distingue entre comisiones de ventas y servicios
     const simpleQuery = `
@@ -254,17 +240,7 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       LIMIT 5
     `;
 
-    console.log('Ejecutando consulta:', simpleQuery);
-
     const results = (await query(simpleQuery)) as RowDataPacket[];
-
-    console.log('Resultados obtenidos:', results);
-    console.log('Cantidad de resultados:', results.length);
-
-    if (results.length > 0) {
-      console.log('Primer resultado:', results[0]);
-      console.log('Campos disponibles:', Object.keys(results[0]));
-    }
 
     // Mapeo que distingue entre ventas y servicios
     const mappedResults = results.map((row: any) => {
@@ -273,8 +249,8 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       const total = parseFloat(row.total || 0);
       
       return {
-        id: row.id_usuario?.toString(),
-        employeeId: row.id_usuario?.toString(),
+        id: row.id_usuario ? row.id_usuario.toString() : "",
+        employeeId: row.id_usuario ? row.id_usuario.toString() : "",
         employeeName: row.anfitriona,
         nick: row.nick,
         venta: venta,
@@ -292,8 +268,6 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       };
     });
 
-    console.log('Resultados mapeados:', mappedResults);
-
     return res.status(200).json({
       success: true,
       data: mappedResults,
@@ -307,11 +281,7 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('=== ERROR EN COMMISSIONS API ===');
-    console.error('Error completo:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('================================');
-
+   
     return res.status(500).json({
       success: false,
       message: 'Error al obtener las comisiones',
@@ -398,7 +368,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       throw error; // Propagar otros errores al siguiente catch
     }
   } catch (error) {
-    console.error('Error al crear comisión:', error);
+ 
 
     // Manejar errores de validación de Zod
     if (error instanceof z.ZodError) {
@@ -406,7 +376,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         success: false,
         code: 'VALIDATION_ERROR',
         message: 'Datos de entrada inválidos',
-        errors: error.errors.map(err => ({
+        errors: error.issues.map((err: any) => ({
           field: err.path.join('.'),
           message: err.message
         }))
@@ -560,14 +530,14 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       throw error;
     }
   } catch (error) {
-    console.error('Error al actualizar comisión:', error);
+
 
     // Manejar errores de validación de Zod
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         message: 'Datos de entrada inválidos',
-        errors: error.errors.map(err => ({
+        errors: error.issues.map((err: any) => ({
           field: err.path.join('.'),
           message: err.message
         }))
@@ -682,7 +652,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       throw error;
     }
   } catch (error) {
-    console.error('Error al eliminar comisión:', error);
+ 
     const response = formatErrorResponse(error);
     return res.status(response.error?.code === 'DATABASE_ERROR' ? 500 : 400).json(response);
   }
@@ -699,10 +669,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new CommissionError(`Método ${method} no permitido`, 'METHOD_NOT_ALLOWED', 405);
     }
 
-    // Registrar inicio de la petición en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[${new Date().toISOString()}] ${method} ${req.url}`);
-    }
+
 
     try {
       // Ejecutar el handler correspondiente

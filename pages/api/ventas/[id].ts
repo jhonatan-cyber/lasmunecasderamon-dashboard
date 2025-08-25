@@ -23,12 +23,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          WHERE v.id_venta = ?
        `;
 
-      const ventas = await query(ventaSql, [ventaId]);
+      const ventas = await query(ventaSql, [ventaId]) as any[];
       if (ventas.length === 0) {
         return res.status(404).json({ error: "Venta no encontrada" });
       }
 
-      const venta = ventas[0];
+      const venta = ventas[0] as any;
 
              // Obtener detalles
        const detallesSql = `
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          WHERE dv.venta_id = ?
        `;
 
-      const detalles = await query(detallesSql, [ventaId]);
+      const detalles = await query(detallesSql, [ventaId]) as any[];
 
              // Obtener usuarios
        const usuariosSql = `
@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          WHERE vu.venta_id = ?
        `;
 
-      const usuarios = await query(usuariosSql, [ventaId]);
+      const usuarios = await query(usuariosSql, [ventaId]) as any[];
       const usuariosNombres = usuarios.map((u: any) => u.usuario_nombre).filter(Boolean);
 
       const ventaCompleta = { 
@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(ventaCompleta);
     } catch (error) {
-      console.error("Error al obtener venta:", error);
+    
       return res.status(500).json({ error: "Error interno del servidor" });
     }
   }
@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        const ventaExistente = await query(
          "SELECT * FROM ventas WHERE id_venta = ?",
          [ventaId]
-       );
+       ) as any[];
 
       if (ventaExistente.length === 0) {
         return res.status(404).json({ error: "Venta no encontrada" });
@@ -116,11 +116,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
          LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
          WHERE v.id_venta = ?
-       `, [ventaId]);
+       `, [ventaId]) as any[];
 
-      return res.status(200).json(ventaActualizada[0]);
+      return res.status(200).json(ventaActualizada[0] as any);
     } catch (error) {
-      console.error("Error al actualizar venta:", error);
+  
       return res.status(500).json({ error: "Error interno del servidor" });
     }
   }
@@ -131,7 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        const venta = await query(
          "SELECT * FROM ventas WHERE id_venta = ?",
          [ventaId]
-       );
+       ) as any[];
 
       if (venta.length === 0) {
         return res.status(404).json({ error: "Venta no encontrada" });
@@ -148,7 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ message: "Venta eliminada correctamente" });
     } catch (error) {
-      console.error("Error al eliminar venta:", error);
+   
       return res.status(500).json({ error: "Error interno del servidor" });
     }
   }

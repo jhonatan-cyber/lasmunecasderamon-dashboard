@@ -28,11 +28,7 @@ export default function OvertimePage() {
   // Asegurar que overtime sea siempre un array
   const overtimeData = overtime || [];
 
-  console.log("=== PÁGINA HORAS EXTRAS ===");
-  console.log("Datos en la página:", overtimeData);
-  console.log("Loading:", loading);
-  console.log("Error:", error);
-  console.log("===========================");
+  
 
   const filteredOvertime = overtimeData.filter((overtime) => {
     return overtime.usuario.toLowerCase().includes(searchTerm.toLowerCase());

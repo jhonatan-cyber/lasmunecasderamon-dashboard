@@ -120,7 +120,7 @@ export function useCommissions(): UseCommissionsReturn {
           ? err.message
           : "Error desconocido al cargar comisiones";
       setError(message);
-      console.error("Error fetching commissions:", err);
+ 
       showErrorToast(message);
     } finally {
       setIsLoading(false);
@@ -152,7 +152,7 @@ export function useCommissions(): UseCommissionsReturn {
           ? err.message
           : "Error desconocido al obtener comisión";
       setError(message);
-      console.error("Error getting commission by ID:", err);
+      
       showErrorToast(message);
       return null;
     }
@@ -209,7 +209,7 @@ export function useCommissions(): UseCommissionsReturn {
           message: data.message || "Comisión creada exitosamente",
         };
       } catch (err) {
-        console.error("Error en createCommission:", err);
+
         const message =
           err instanceof Error
             ? err.message
@@ -267,7 +267,7 @@ export function useCommissions(): UseCommissionsReturn {
           message: data.message || "Comisión actualizada exitosamente",
         };
       } catch (err) {
-        console.error("Error en updateCommission:", err);
+      
         const message =
           err instanceof Error
             ? err.message
@@ -321,7 +321,7 @@ export function useCommissions(): UseCommissionsReturn {
           message: data.message || "Comisión eliminada exitosamente",
         };
       } catch (err) {
-        console.error("Error en deleteCommission:", err);
+     
         const message =
           err instanceof Error
             ? err.message

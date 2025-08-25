@@ -18,14 +18,14 @@ export default function AnulacionNotificationModal() {
   const handleAccept = () => {
     // Ejecutar callback de actualización si existe
     if (refreshCallbackRef.current) {
-      console.log('🔄 Modal: Ejecutando callback de actualización al aceptar');
+
       try {
         refreshCallbackRef.current();
       } catch (error) {
         console.error('🔔 Modal: Error ejecutando callback de actualización:', error);
       }
     } else {
-      console.log('⚠️ Modal: No hay callback de actualización configurado');
+      
     }
     
     closeModal();

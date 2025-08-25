@@ -23,7 +23,7 @@ export default async function handler(
     
     // Solo permitir actualización de estado
     if (req.body.estado !== undefined) {
-      console.log("Actualizando estado del pedido:", id, "a:", req.body.estado);
+
       
       // Validar que el estado sea válido (0, 1, o 2)
       if (![0, 1, 2].includes(req.body.estado)) {
@@ -38,7 +38,7 @@ export default async function handler(
         [req.body.estado, id]
       );
       
-      console.log("Estado actualizado exitosamente");
+   
       
       return res
         .status(200)
@@ -52,7 +52,7 @@ export default async function handler(
     });
     
   } catch (error) {
-    console.error("Error al actualizar estado del pedido:", error);
+   
     return res
       .status(500)
       .json({ success: false, message: "Error al actualizar el estado del pedido", error });

@@ -17,8 +17,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Agregar cliente a la lista
     clients.add(res);
-    console.log('🔔 SSE: Cliente conectado. Total de clientes:', clients.size);
-    
 
     // Enviar mensaje inicial
     const initialMessage = JSON.stringify({
@@ -27,7 +25,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       timestamp: new Date().toISOString()
     });
 
-    
     res.write(`data: ${initialMessage}\n\n`);
 
     // Mantener la conexión viva con ping
@@ -64,14 +61,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
 // Función para enviar notificaciones a todos los clientes
 export function sendNotificationToAll(type: string, data: any) {
-  console.log('🔔 SSE: Enviando notificación:', type, data);
-  console.log('🔔 SSE: Clientes conectados:', clients.size);
-  
   if (clients.size === 0) {
-    console.log('🔔 SSE: No hay clientes conectados');
     return;
   }
-  
+
   const message = JSON.stringify({
     type,
     data,
@@ -93,5 +86,3 @@ export function sendNotificationToAll(type: string, data: any) {
     clients.delete(client);
   });
 }
-
-

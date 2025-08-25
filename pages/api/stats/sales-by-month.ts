@@ -43,30 +43,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [selectedYear]
     );
 
-    console.log('📊 [API MONTHLY] Datos raw de la BD:', salesData);
-    console.log('📊 [API MONTHLY] Año consultado:', selectedYear);
-
-    // Calcular totales
-    console.log('📊 [API MONTHLY] Datos procesados antes del cálculo:', salesData);
-    
     const totalVentas = (salesData as any[]).reduce((sum: number, month: any) => {
-      console.log(`📊 [API MONTHLY] Sumando mes ${month.mes}: ${month.total} (tipo: ${typeof month.total})`);
       return sum + (Number(month.total) || 0);
     }, 0);
-    
+
     const totalCantidad = (salesData as any[]).reduce(
       (sum: number, month: any) => sum + (Number(month.cantidad_ventas) || 0),
       0
     );
-
-    console.log('📊 [API MONTHLY] Total ventas calculado:', totalVentas);
-    console.log('📊 [API MONTHLY] Tipo de total ventas:', typeof totalVentas);
-    
-    // Verificar si el total es razonable (no más de 10 millones)
-    if (totalVentas > 10000000) {
-      console.log('⚠️ [API MONTHLY] Total ventas muy alto, verificando datos...');
-      console.log('📊 [API MONTHLY] Valores individuales por mes:', (salesData as any[]).map(m => ({ mes: m.mes, total: m.total })));
-    }
 
     // Obtener el mes con más ventas
     const mesMaxVentas = (salesData as any[]).reduce(

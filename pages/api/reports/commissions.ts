@@ -12,22 +12,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let dateFilter = '';
     let queryParams: any[] = [];
 
-         // Construir filtro de fechas
-     if (period === 'custom' && startDate && endDate) {
-       dateFilter = 'AND DATE(c.fecha_crea) BETWEEN ? AND ?';
-       queryParams = [startDate as string, endDate as string];
-     } else if (period === 'current_month') {
-       dateFilter = 'AND YEAR(c.fecha_crea) = YEAR(CURDATE()) AND MONTH(c.fecha_crea) = MONTH(CURDATE())';
-     } else if (period === 'last_month') {
-       dateFilter = 'AND YEAR(c.fecha_crea) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(c.fecha_crea) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))';
-     } else if (period === 'current_year') {
-       dateFilter = 'AND YEAR(c.fecha_crea) = YEAR(CURDATE())';
-     } else if (period === 'last_year') {
-       dateFilter = 'AND YEAR(c.fecha_crea) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 YEAR))';
-     }
+    // Construir filtro de fechas
+    if (period === 'custom' && startDate && endDate) {
+      dateFilter = 'AND DATE(c.fecha_crea) BETWEEN ? AND ?';
+      queryParams = [startDate as string, endDate as string];
+    } else if (period === 'current_month') {
+      dateFilter =
+        'AND YEAR(c.fecha_crea) = YEAR(CURDATE()) AND MONTH(c.fecha_crea) = MONTH(CURDATE())';
+    } else if (period === 'last_month') {
+      dateFilter =
+        'AND YEAR(c.fecha_crea) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(c.fecha_crea) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))';
+    } else if (period === 'current_year') {
+      dateFilter = 'AND YEAR(c.fecha_crea) = YEAR(CURDATE())';
+    } else if (period === 'last_year') {
+      dateFilter = 'AND YEAR(c.fecha_crea) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 YEAR))';
+    }
 
-         // Consulta principal para comisiones por anfitriona
-     const commissionsQuery = `
+    // Consulta principal para comisiones por anfitriona
+    const commissionsQuery = `
        SELECT 
          u.id_usuario,
          u.nombre,
@@ -54,8 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        ORDER BY total_comisiones DESC
      `;
 
-         // Consulta para estadísticas generales - Simplificada para evitar duplicaciones
-     const statsQuery = `
+    // Consulta para estadísticas generales - Simplificada para evitar duplicaciones
+    const statsQuery = `
        SELECT 
          (SELECT COUNT(DISTINCT u2.id_usuario) FROM usuarios u2 WHERE u2.rol_id = (SELECT id_rol FROM roles WHERE nombre = 'Anfitriona')) AS total_anfitrionas,
          COALESCE(SUM(CASE WHEN c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_general,
@@ -76,8 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          ${dateFilter}
      `;
 
-         // Consulta para top performers
-     const topPerformersQuery = `
+    // Consulta para top performers
+    const topPerformersQuery = `
        SELECT 
          u.id_usuario,
          CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo,
@@ -101,8 +103,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        LIMIT 5
      `;
 
-         // Consulta para comisiones por día de la semana
-     const dailyCommissionsQuery = `
+    // Consulta para comisiones por día de la semana
+    const dailyCommissionsQuery = `
        SELECT 
          DAYNAME(c.fecha_crea) AS dia_semana,
          CASE DAYNAME(c.fecha_crea)
@@ -133,31 +135,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
      `;
 
     // Ejecutar todas las consultas
-    const [commissionsData, statsData, topPerformersData, dailyCommissionsData] = await Promise.all([
-      query(commissionsQuery, queryParams),
-      query(statsQuery, queryParams),
-      query(topPerformersQuery, queryParams),
-      query(dailyCommissionsQuery, queryParams)
-    ]);
+    const [commissionsData, statsData, topPerformersData, dailyCommissionsData] =
+      (await Promise.all([
+        query(commissionsQuery, queryParams),
+        query(statsQuery, queryParams),
+        query(topPerformersQuery, queryParams),
+        query(dailyCommissionsQuery, queryParams)
+      ])) as any[];
 
     // Calcular promedio por anfitriona de manera separada
-    const totalComisiones = statsData?.[0]?.total_comisiones_general || 0;
-    const totalAnfitrionas = statsData?.[0]?.total_anfitrionas || 1;
+    const totalComisiones = (statsData as any[])?.[0]?.total_comisiones_general || 0;
+    const totalAnfitrionas = (statsData as any[])?.[0]?.total_anfitrionas || 1;
     const promedioPorAnfitriona = totalAnfitrionas > 0 ? totalComisiones / totalAnfitrionas : 0;
-
-    console.log('📊 [COMMISSIONS REPORT] Datos de comisiones:', commissionsData);
-    console.log('📊 [COMMISSIONS REPORT] Estadísticas generales:', statsData);
-    console.log('📊 [COMMISSIONS REPORT] Total comisiones:', totalComisiones);
-    console.log('📊 [COMMISSIONS REPORT] Total anfitrionas:', totalAnfitrionas);
-    console.log('📊 [COMMISSIONS REPORT] Promedio por anfitriona calculado:', promedioPorAnfitriona);
 
     const result = {
       period: period,
       startDate: startDate || null,
       endDate: endDate || null,
-      commissions: commissionsData || [],
+      commissions: (commissionsData as any[]) || [],
       statistics: {
-        ...statsData?.[0],
+        ...(statsData as any[])?.[0],
         promedio_comision_por_anfitriona: promedioPorAnfitriona
       },
       topPerformers: topPerformersData || [],
@@ -168,9 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       data: result
     });
-
   } catch (error) {
-    console.error('Error en reporte de comisiones:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',

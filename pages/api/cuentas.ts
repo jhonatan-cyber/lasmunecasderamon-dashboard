@@ -24,13 +24,11 @@ export default async function handler(
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log("=== GET CUENTAS ===");
     
     // Verificar si las tablas existen
     const tablesExist = await checkTablesExist();
     
     if (!tablesExist) {
-      console.log("Tablas no existen, retornando datos de prueba");
       return res.status(200).json(getTestData());
     }
 
@@ -67,11 +65,10 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     `;
 
     const results = await query(sql);
-    console.log("Resultados obtenidos:", results);
 
     return res.status(200).json(results);
   } catch (error) {
-    console.error("Error en GET cuentas:", error);
+ 
     return res.status(500).json({ 
       success: false, 
       message: "Error al obtener cuentas",
@@ -82,12 +79,8 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log("=== POST CUENTA ===");
-    console.log("Datos recibidos:", req.body);
 
     const { codigo, cliente_id, total_comision, sub_total, total, habitacion_id, detalles, usuarios } = req.body;
-    
-    console.log("habitacion_id:", habitacion_id, "tipo:", typeof habitacion_id);
 
     // Validaciones
     if (!codigo || !cliente_id || total_comision === undefined || sub_total === undefined || total === undefined || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
@@ -101,7 +94,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const tablesExist = await checkTablesExist();
     
     if (!tablesExist) {
-      console.log("Tablas no existen, retornando simulación");
       return res.status(201).json({
         success: true,
         message: "Cuenta creada exitosamente (simulación)",
@@ -130,7 +122,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
       // 2. Insertar detalles
       for (const detalle of detalles) {
-        console.log("Detalle a insertar:", detalle);
         
         // Validar que todos los campos requeridos estén presentes
         if (!detalle.producto_id || !detalle.precio || !detalle.cantidad || !detalle.sub_total) {
@@ -175,8 +166,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       };
     });
 
-    console.log("Cuenta creada exitosamente:", result);
-
     return res.status(201).json({
       success: true,
       message: "Cuenta creada exitosamente",
@@ -184,7 +173,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
   } catch (error) {
-    console.error("Error en POST cuenta:", error);
+   
     return res.status(500).json({
       success: false,
       message: "Error al crear la cuenta",
@@ -200,7 +189,6 @@ const checkTablesExist = async () => {
     await query("SELECT 1 FROM cuentas_usuarios LIMIT 1");
     return true;
   } catch (error) {
-    console.log("Tablas de cuentas no existen:", error);
     return false;
   }
 };

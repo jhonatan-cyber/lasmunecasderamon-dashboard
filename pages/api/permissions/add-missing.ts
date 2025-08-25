@@ -56,7 +56,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
   } catch (error) {
-    console.error('Error agregando permisos faltantes:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor al agregar permisos'

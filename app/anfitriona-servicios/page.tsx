@@ -40,10 +40,10 @@ export default function AnfitrionaServiciosPage() {
     try {
       const res = await fetch("/api/servicios/user");
       const data = await res.json();
-      console.log('Response from API:', data); // Debug log
+
       if (res.ok && data.success) {
         setServices(data.data || []);
-        console.log('Services loaded:', data.data); // Debug log
+
       } else {
         console.error('API error:', data.message);
         setServices([]);

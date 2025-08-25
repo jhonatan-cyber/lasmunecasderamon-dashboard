@@ -29,10 +29,10 @@ function ConfirmarAnulacionContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🔍 Token recibido:', token);
+
 
     if (!token) {
-      console.log('🔍 No hay token, mostrando error');
+
       setError('Token de anulación no válido');
       setLoading(false);
       return;
@@ -41,18 +41,18 @@ function ConfirmarAnulacionContent() {
     // Cargar datos de la solicitud
     const cargarSolicitud = async () => {
       try {
-        console.log('🔍 Cargando solicitud con token:', token);
+  
         const response = await fetch(`/api/ventas/solicitud-anulacion?token=${token}`);
-        console.log('🔍 Response status:', response.status);
+        
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.log('🔍 Error data:', errorData);
+          
           throw new Error(errorData.message || 'Solicitud no encontrada o ya procesada');
         }
 
         const data = await response.json();
-        console.log('🔍 Response data:', data);
+        
         setSolicitud(data.solicitud);
       } catch (err) {
         console.error('🔍 Error cargando solicitud:', err);

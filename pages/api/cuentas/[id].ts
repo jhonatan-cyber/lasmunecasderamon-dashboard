@@ -1,63 +1,56 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
-import { withTransaction } from "@/lib/transactionUtils";
+import { NextApiRequest, NextApiResponse } from 'next';
+import { query } from '@/lib/db';
+import { withTransaction } from '@/lib/transactionUtils';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
   if (!id || Array.isArray(id)) {
     return res.status(400).json({
       success: false,
-      message: "ID de cuenta es requerido"
+      message: 'ID de cuenta es requerido'
     });
   }
 
   const cuentaId = parseInt(id);
 
-  if (req.method === "GET") {
+  if (req.method === 'GET') {
     try {
-      console.log("=== OBTENIENDO CUENTA POR ID ===");
-      console.log("ID:", cuentaId);
-
       // Verificar si la tabla existe
-      const [tableCheck] = await query(`
+      const tableCheck = (await query(`
         SHOW TABLES LIKE 'cuentas'
-      `);
+      `)) as any[];
 
       // Para la cuenta MPXS119F, siempre usar datos de prueba
       if (cuentaId === 1 || !tableCheck || tableCheck.length === 0) {
-        console.log("Usando datos de prueba para cuenta ID:", cuentaId);
         const testData = {
           id_cuenta: cuentaId,
-          codigo: "80W3XKXI",
+          codigo: '80W3XKXI',
           cliente_id: 1,
-          cliente_nombre: "Jaime Arrieta",
+          cliente_nombre: 'Jaime Arrieta',
           total_comision: 20000,
           habitacion_id: 4,
-          habitacion_numero: "Pieza 4",
+          habitacion_numero: 'Pieza 4',
           sub_total: 120000,
           total: 200000,
           pedido_id: null,
           servicio_id: null,
-          fecha_crea: "2025-07-30 01:21:00",
+          fecha_crea: '2025-07-30 01:21:00',
           estado: 1,
-          anfitrionas_ids: "4,6,3,7",
-          anfitrionas_generales: "Lizi, Kike, fede, Sami",
+          anfitrionas_ids: '4,6,3,7',
+          anfitrionas_generales: 'Lizi, Kike, fede, Sami',
           detalles: [
             {
               precio: 120000,
               cantidad: 1,
               sub_total: 120000,
               comision: 20000,
-              fecha_crea: "2025-07-30 01:21:00",
-              anfitrionaId: "4,6,3,7",
-              anfitrionas: "Lizi, Kike, fede, Sami",
-              producto: "Moet",
+              fecha_crea: '2025-07-30 01:21:00',
+              anfitrionaId: '4,6,3,7',
+              anfitrionas: 'Lizi, Kike, fede, Sami',
+              producto: 'Moet',
               id_producto: 1,
-              categoria: "Champaña"
+              categoria: 'Champaña'
             }
           ],
           usuarios: [
@@ -65,25 +58,25 @@ export default async function handler(
               id_cuenta_usuario: 1,
               cuenta_id: cuentaId,
               usuario_id: 4,
-              usuario_nombre: "Lizi"
+              usuario_nombre: 'Lizi'
             },
             {
               id_cuenta_usuario: 2,
               cuenta_id: cuentaId,
               usuario_id: 6,
-              usuario_nombre: "Kike"
+              usuario_nombre: 'Kike'
             },
             {
               id_cuenta_usuario: 3,
               cuenta_id: cuentaId,
               usuario_id: 3,
-              usuario_nombre: "fede"
+              usuario_nombre: 'fede'
             },
             {
               id_cuenta_usuario: 4,
               cuenta_id: cuentaId,
               usuario_id: 7,
-              usuario_nombre: "Sami"
+              usuario_nombre: 'Sami'
             }
           ]
         };
@@ -91,7 +84,8 @@ export default async function handler(
       }
 
       // Obtener la cuenta con detalles y anfitrionas generales
-      const cuentaResult = await query(`
+      const cuentaResult = (await query(
+        `
         SELECT 
           c.id_cuenta,
           c.codigo,
@@ -117,20 +111,22 @@ export default async function handler(
         GROUP BY c.id_cuenta, c.codigo, c.cliente_id, c.total_comision, c.habitacion_id, 
                  c.sub_total, c.total, c.pedido_id, c.servicio_id, c.fecha_crea, c.estado,
                  cl.nombre, cl.apellido, h.nombre
-      `, [cuentaId]);
+      `,
+        [cuentaId]
+      )) as any[];
 
       if (!cuentaResult || cuentaResult.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "Cuenta no encontrada"
+          message: 'Cuenta no encontrada'
         });
       }
 
       const cuenta = cuentaResult[0];
-      console.log("Cuenta encontrada:", cuenta);
 
       // Obtener detalles de la cuenta con productos y anfitrionas
-      const detallesResult = await query(`
+      const detallesResult = await query(
+        `
         SELECT 
           DC.precio, 
           DC.cantidad, 
@@ -147,12 +143,13 @@ export default async function handler(
         LEFT JOIN usuarios U ON U.id_usuario = CU.usuario_id
         WHERE DC.cuenta_id = ?
         GROUP BY DC.precio, DC.cantidad, DC.sub_total, DC.comision, DC.fecha_crea, PR.nombre, PR.id_producto
-      `, [cuentaId]);
-
-      console.log("Detalles encontrados:", detallesResult);
+      `,
+        [cuentaId]
+      );
 
       // Obtener usuarios asociados con nombres
-      const usuariosResult = await query(`
+      const usuariosResult = await query(
+        `
         SELECT 
           cu.id_cuenta_usuario,
           cu.cuenta_id,
@@ -161,7 +158,9 @@ export default async function handler(
         FROM cuentas_usuarios cu
         LEFT JOIN usuarios u ON u.id_usuario = cu.usuario_id
         WHERE cu.cuenta_id = ?
-      `, [cuentaId]);
+      `,
+        [cuentaId]
+      );
 
       const cuentaCompleta = {
         ...cuenta,
@@ -169,44 +168,42 @@ export default async function handler(
         usuarios: Array.isArray(usuariosResult) ? usuariosResult : []
       };
 
-      console.log("Cuenta encontrada:", cuentaCompleta);
       return res.status(200).json(cuentaCompleta);
-
     } catch (error) {
-      console.error("Error al obtener cuenta:", error);
       return res.status(500).json({
         success: false,
-        message: "Error al obtener la cuenta",
+        message: 'Error al obtener la cuenta',
         error: error instanceof Error ? error.message : String(error)
       });
     }
-  } else if (req.method === "PUT") {
+  } else if (req.method === 'PUT') {
     try {
       const { estado, detalles, usuarios } = req.body;
-
-      console.log("=== ACTUALIZANDO CUENTA ===");
-      console.log("ID:", cuentaId);
-      console.log("Datos a actualizar:", { estado, detalles, usuarios });
-
       // Verificar si la cuenta existe
-      const [cuentaExistente] = await query(`
+      const cuentaExistente = (await query(
+        `
         SELECT id_cuenta, estado FROM cuentas WHERE id_cuenta = ?
-      `, [cuentaId]);
+      `,
+        [cuentaId]
+      )) as any[];
 
-      if (!cuentaExistente) {
+      if (!cuentaExistente || cuentaExistente.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "Cuenta no encontrada"
+          message: 'Cuenta no encontrada'
         });
       }
 
       // Actualizar usando transacción
-      await withTransaction(async (trx) => {
+      await withTransaction(async trx => {
         // 1. Actualizar estado si se proporciona
         if (estado !== undefined) {
-          await trx(`
+          await trx(
+            `
             UPDATE cuentas SET estado = ? WHERE id_cuenta = ?
-          `, [estado, cuentaId]);
+          `,
+            [estado, cuentaId]
+          );
         }
 
         // 2. Actualizar detalles si se proporcionan
@@ -214,126 +211,146 @@ export default async function handler(
           // Calcular totales de los nuevos productos
           let nuevoSubTotal = 0;
           let nuevaComisionTotal = 0;
-          
+
           for (const detalle of detalles) {
             nuevoSubTotal += detalle.sub_total;
             nuevaComisionTotal += detalle.comision;
           }
 
           // Obtener valores actuales de la cuenta
-          const [cuentaActual] = await trx(`
+          const cuentaActual = (await trx(
+            `
             SELECT sub_total, total_comision, total FROM cuentas WHERE id_cuenta = ?
-          `, [cuentaId]);
+          `,
+            [cuentaId]
+          )) as any[];
 
           // Calcular nuevos totales
-          const nuevoSubTotalFinal = (cuentaActual?.sub_total || 0) + nuevoSubTotal;
-          const nuevaComisionFinal = (cuentaActual?.total_comision || 0) + nuevaComisionTotal;
+          const nuevoSubTotalFinal = (cuentaActual?.[0]?.sub_total || 0) + nuevoSubTotal;
+          const nuevaComisionFinal = (cuentaActual?.[0]?.total_comision || 0) + nuevaComisionTotal;
           const nuevoTotalFinal = nuevoSubTotalFinal; // El total es igual al subtotal
 
           // Actualizar la cuenta con los nuevos totales
-          await trx(`
+          await trx(
+            `
             UPDATE cuentas 
             SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = NOW()
             WHERE id_cuenta = ?
-          `, [nuevoSubTotalFinal, nuevaComisionFinal, nuevoTotalFinal, cuentaId]);
+          `,
+            [nuevoSubTotalFinal, nuevaComisionFinal, nuevoTotalFinal, cuentaId]
+          );
 
           // Insertar nuevos detalles (sin eliminar los existentes)
           for (const detalle of detalles) {
-            await trx(`
+            await trx(
+              `
               INSERT INTO detalle_cuentas (
                 cuenta_id, producto_id, precio, cantidad, sub_total, comision, fecha_crea
               ) VALUES (?, ?, ?, ?, ?, ?, NOW())
-            `, [
-              cuentaId,
-              detalle.producto_id,
-              detalle.precio,
-              detalle.cantidad,
-              detalle.sub_total,
-              detalle.comision
-            ]);
+            `,
+              [
+                cuentaId,
+                detalle.producto_id,
+                detalle.precio,
+                detalle.cantidad,
+                detalle.sub_total,
+                detalle.comision
+              ]
+            );
           }
         }
 
         // 3. Actualizar usuarios si se proporcionan
         if (usuarios && Array.isArray(usuarios)) {
           // Eliminar usuarios existentes
-          await trx(`
+          await trx(
+            `
             DELETE FROM cuentas_usuarios WHERE cuenta_id = ?
-          `, [cuentaId]);
+          `,
+            [cuentaId]
+          );
 
           // Insertar nuevos usuarios
           for (const usuarioId of usuarios) {
-            await trx(`
+            await trx(
+              `
               INSERT INTO cuentas_usuarios (cuenta_id, usuario_id)
               VALUES (?, ?)
-            `, [cuentaId, usuarioId]);
+            `,
+              [cuentaId, usuarioId]
+            );
           }
         }
       });
 
       return res.status(200).json({
         success: true,
-        message: "Cuenta actualizada exitosamente"
+        message: 'Cuenta actualizada exitosamente'
       });
-
     } catch (error) {
-      console.error("Error al actualizar cuenta:", error);
       return res.status(500).json({
         success: false,
-        message: "Error al actualizar la cuenta",
+        message: 'Error al actualizar la cuenta',
         error: error instanceof Error ? error.message : String(error)
       });
     }
-  } else if (req.method === "DELETE") {
+  } else if (req.method === 'DELETE') {
     try {
-      console.log("=== ELIMINANDO CUENTA ===");
-      console.log("ID:", cuentaId);
-
       // Verificar si la cuenta existe
-      const [cuentaExistente] = await query(`
+      const cuentaExistente = (await query(
+        `
         SELECT id_cuenta, estado FROM cuentas WHERE id_cuenta = ?
-      `, [cuentaId]);
+      `,
+        [cuentaId]
+      )) as any[];
 
-      if (!cuentaExistente) {
+      if (!cuentaExistente || cuentaExistente.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "Cuenta no encontrada"
+          message: 'Cuenta no encontrada'
         });
       }
 
       // Eliminar usando transacción
-      await withTransaction(async (trx) => {
+      await withTransaction(async trx => {
         // 1. Eliminar detalles de la cuenta
-        await trx(`
+        await trx(
+          `
           DELETE FROM detalle_cuentas WHERE cuenta_id = ?
-        `, [cuentaId]);
+        `,
+          [cuentaId]
+        );
 
         // 2. Eliminar usuarios asociados
-        await trx(`
+        await trx(
+          `
           DELETE FROM cuentas_usuarios WHERE cuenta_id = ?
-        `, [cuentaId]);
+        `,
+          [cuentaId]
+        );
 
         // 3. Eliminar la cuenta principal
-        await trx(`
+        await trx(
+          `
           DELETE FROM cuentas WHERE id_cuenta = ?
-        `, [cuentaId]);
+        `,
+          [cuentaId]
+        );
       });
 
       return res.status(200).json({
         success: true,
-        message: "Cuenta eliminada exitosamente"
+        message: 'Cuenta eliminada exitosamente'
       });
-
     } catch (error) {
-      console.error("Error al eliminar cuenta:", error);
       return res.status(500).json({
         success: false,
-        message: "Error al eliminar la cuenta",
+        message: 'Error al eliminar la cuenta',
         error: error instanceof Error ? error.message : String(error)
       });
     }
   } else {
-    res.setHeader("Allow", ["GET", "PUT", "DELETE"]);
+    res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-} 
+}

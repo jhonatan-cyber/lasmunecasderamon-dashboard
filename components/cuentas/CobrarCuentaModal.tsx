@@ -119,21 +119,7 @@ export default function CobrarCuentaModal({
     ? anfitrionasDeLaCuenta.split(", ").filter((a: string) => a.trim() !== "")
     : [];
 
-  // Debug: Mostrar datos reales de la cuenta
-  console.log("=== DATOS REALES DE LA CUENTA ===");
-  console.log("Cuenta completa:", cuenta);
-  console.log("ID:", cuenta?.id_cuenta);
-  console.log("Código:", cuenta?.codigo);
-  console.log("Cliente:", cuenta?.cliente_nombre);
-  console.log("Sub Total:", cuenta?.sub_total);
-  console.log("Total:", cuenta?.total);
-  console.log("Total Comisión:", cuenta?.total_comision);
-  console.log("Anfitrionas IDs:", cuenta?.anfitrionas_ids);
-  console.log("Anfitrionas Generales:", cuenta?.anfitrionas_generales);
-  console.log("Habitación:", cuenta?.habitacion_numero);
-  console.log("Fecha:", cuenta?.fecha_crea);
-  console.log("Detalles:", cuenta?.detalles);
-  console.log("==================================");
+  
   const extra = cuenta?.total - cuenta?.sub_total;
   const handleCobrarCuenta = async () => {
     setShowMetodoPagoError(true);
@@ -160,16 +146,7 @@ export default function CobrarCuentaModal({
         habitacion_id: habitacionId ? parseInt(habitacionId) : null,
       };
 
-      console.log("=== DATOS PARA COBRO ===");
-      console.log("Cuenta ID:", cuenta?.id_cuenta);
-      console.log("Sub Total de la cuenta:", cuenta?.sub_total);
-      console.log("Total de la cuenta:", cuenta?.total);
-      console.log("Propina agregada:", propina);
-      console.log("Total Final calculado:", totalFinal);
-      console.log("Método de pago:", metodoPago);
-      console.log("Habitación seleccionada:", habitacionId);
-      console.log("Datos completos para cobro:", cobroData);
-      console.log("==========================");
+
 
       const response = await fetch(`/api/cuentas/${cuenta?.id_cuenta}/cobrar`, {
         method: "POST",
@@ -206,9 +183,7 @@ export default function CobrarCuentaModal({
            usuarios: cuenta?.usuarios?.map((usuario: any) => usuario.usuario_id) || []
          };
 
-         console.log("=== DATOS PARA REGISTRAR VENTA ===");
-         console.log("ventaData:", ventaData);
-         console.log("================================");
+         
 
          const ventaResponse = await fetch("/api/sales", {
            method: "POST",
@@ -224,7 +199,7 @@ export default function CobrarCuentaModal({
            // No lanzar error aquí, solo log para debugging
                    } else {
             const ventaResult = await ventaResponse.json();
-            console.log("Venta registrada exitosamente:", ventaResult);
+
             toast.success("Venta registrada en el sistema");
             
             // Registrar propina usando el ID de la venta

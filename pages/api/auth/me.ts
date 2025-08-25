@@ -54,7 +54,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
   } catch (error) {
-    console.error('Error obteniendo datos del usuario:', error);
+  
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

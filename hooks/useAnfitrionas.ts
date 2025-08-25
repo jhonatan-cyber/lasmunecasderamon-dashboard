@@ -28,7 +28,6 @@ export function useAnfitrionas() {
       }
     } catch (err) {
       setError("Error de conexión");
-      console.error("Error al cargar anfitrionas:", err);
     } finally {
       setLoading(false);
     }

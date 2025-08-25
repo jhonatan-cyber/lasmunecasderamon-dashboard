@@ -62,7 +62,7 @@ export default function Users() {
         Object.entries(values).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             formData.append(key, String(value));
-            console.log(`🔵 Agregando campo: ${key} = ${value}`);
+    
           }
         });
 
@@ -71,29 +71,27 @@ export default function Users() {
         if (isEditing && selectedUser) {
           // Solo generar nuevo correo si el nick cambió
           shouldGenerateEmail = values.nick !== selectedUser.nick;
-          console.log('🔵 Modo edición - nick cambió:', shouldGenerateEmail);
+    
         }
 
         if (shouldGenerateEmail) {
           const correo = `${values.nick}@lasmuñecasderamon.com`;
           formData.set('correo', correo);
-          console.log(`🔵 Correo generado: ${correo}`);
-        } else {
-          console.log('🔵 No se genera nuevo correo - nick no cambió');
-        }
+                  // Correo generado
+      } else {
+        // No se genera nuevo correo - nick no cambió
+      }
 
         formData.set('password', values.run);
-        console.log(`🔵 Password: ${values.run}`);
+  
 
         if (file) {
           formData.append('foto', file);
-          console.log('🔵 Archivo adjunto:', file.name);
+  
         }
 
         if (isEditing && selectedUser) {
-          console.log('🔵 Modo edición - llamando updateUser');
-          const result = await updateUser(selectedUser.id, formData);
-          console.log('🔵 Resultado de updateUser:', result);
+                  const result = await updateUser(selectedUser.id, formData);
                             if (result.success) {
             toast.success(result.message || 'Usuario actualizado exitosamente');
             setIsFormOpen(false);
@@ -104,9 +102,7 @@ export default function Users() {
             toast.error(result.message || 'Error al actualizar usuario');
           }
         } else {
-          console.log('🔵 Modo creación - llamando createUser');
-          const result = await createUser(formData);
-          console.log('🔵 Resultado de createUser:', result);
+                  const result = await createUser(formData);
           if (result.success) {
             toast.success(result.message || 'Usuario creado exitosamente');
             setIsFormOpen(false);

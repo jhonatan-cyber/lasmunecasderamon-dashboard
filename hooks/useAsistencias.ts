@@ -43,7 +43,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
       
       setData(result.data || [])
     } catch (err) {
-      console.error('Error en useAsistencias:', err)
+   
       setError(err instanceof Error ? err.message : 'Error desconocido')
       setData([])
     } finally {
@@ -75,7 +75,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
       await fetchAsistencias()
       return true
     } catch (error) {
-      console.error('Error al registrar asistencia:', error)
+     
       setError(error instanceof Error ? error.message : 'Error al registrar asistencia')
       return false
     }

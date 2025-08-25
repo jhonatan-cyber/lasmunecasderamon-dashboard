@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Token requerido' });
     }
 
-    console.log('🔍 Buscando solicitud con token:', token);
+  
 
     // Buscar la solicitud por token (consulta corregida según estructura real de la tabla)
     const solicitudSql = `
@@ -31,12 +31,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE sa.token = ? AND sa.estado = 'pendiente'
     `;
 
-    console.log('🔍 Ejecutando consulta SQL:', solicitudSql);
-    console.log('🔍 Parámetros:', [token]);
+
 
     const solicitudResult = await query(solicitudSql, [token]);
     
-    console.log('🔍 Resultado de la consulta:', solicitudResult);
+
     
     if (!Array.isArray(solicitudResult) || solicitudResult.length === 0) {
       return res.status(404).json({ 
@@ -61,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     
   } catch (error) {
-    console.error('Error al obtener solicitud de anulación:', error);
+   
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 } 

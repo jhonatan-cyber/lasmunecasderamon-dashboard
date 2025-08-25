@@ -20,27 +20,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         LEFT JOIN role_permissions rp ON p.id = rp.permission_id AND rp.role_id = ?
         WHERE p.deleted_at IS NULL
         ORDER BY p.module, p.action
-      `, [roleId]);
+      `, [roleId]) as any[];
 
       // Convertir assigned de number a boolean
-      const processedPermissions = rolePermissions.map(permission => ({
+      const processedPermissions = rolePermissions.map((permission: any) => ({
         ...permission,
         assigned: Boolean(permission.assigned)
       }));
 
-      console.log('🔍 [API] Role permissions raw:', rolePermissions);
-      console.log('🔍 [API] Permisos procesados:', processedPermissions);
-      console.log('🔍 [API] Permisos de pedidos específicos:');
-      processedPermissions.filter(p => p.module === 'pedidos').forEach(p => {
-        console.log(`   ${p.module}.${p.action} (ID: ${p.id}) - assigned: ${p.assigned} (tipo: ${typeof p.assigned})`);
-      });
+
 
       res.status(200).json({
         success: true,
         data: processedPermissions
       });
     } catch (error) {
-      console.error('Error fetching role permissions:', error);
+   
       res.status(500).json({
         success: false,
         message: 'Error al obtener los permisos del rol'
@@ -50,15 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { permissions } = req.body;
       
-      console.log('Received permissions update request:', {
-        roleId,
-        permissions,
-        permissionsType: typeof permissions,
-        isArray: Array.isArray(permissions)
-      });
-
       if (!Array.isArray(permissions)) {
-        console.error('Invalid permissions format:', permissions);
         return res.status(400).json({
           success: false,
           message: 'Los permisos deben ser un array'
@@ -68,7 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Verificar que el rol existe
       const roleExists = await query('SELECT id_rol FROM roles WHERE id_rol = ?', [roleId]);
       if (!roleExists || (Array.isArray(roleExists) && roleExists.length === 0)) {
-        console.error('Role not found:', roleId);
         return res.status(404).json({
           success: false,
           message: 'Rol no encontrado'
@@ -87,7 +73,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
         
         if (!existingPermissions || (Array.isArray(existingPermissions) && existingPermissions.length !== permissionIds.length)) {
-          console.error('Some permissions not found:', permissionIds);
           return res.status(400).json({
             success: false,
             message: 'Algunos permisos no existen'
@@ -101,21 +86,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `, [roleId]) as any[];
       
       const currentPermissionIds = currentPermissions.map(p => p.permission_id.toString());
-      console.log('=== PERMISSIONS COMPARISON ===');
-      console.log('Current permissions in DB:', currentPermissionIds);
-      console.log('New permissions from frontend:', permissions);
-      console.log('Current count:', currentPermissionIds.length);
-      console.log('New count:', permissions.length);
 
       // Simplificar: eliminar todos y reinsertar
-      console.log('Deleting all current permissions...');
       await query(`
         DELETE FROM role_permissions WHERE role_id = ?
       `, [roleId]);
 
       // Insertar los nuevos permisos
       if (permissions.length > 0) {
-        console.log('Inserting new permissions:', permissions);
         const values = permissions.map(permissionId => [roleId, parseInt(permissionId)]);
         const placeholders = values.map(() => '(?, ?)').join(', ');
         
@@ -123,15 +101,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           INSERT INTO role_permissions (role_id, permission_id) 
           VALUES ${placeholders}
         `, values.flat());
-        console.log('Inserted permissions count:', permissions.length);
       }
 
       // Verificar que se guardaron correctamente
       const savedPermissions = await query(`
         SELECT permission_id FROM role_permissions WHERE role_id = ?
-      `, [roleId]);
-      
-      console.log('Saved permissions count:', savedPermissions ? savedPermissions.length : 0);
+      `, [roleId]) as any[];
 
       res.status(200).json({
         success: true,
@@ -143,7 +118,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     } catch (error) {
-      console.error('Error updating role permissions:', error);
+      
       res.status(500).json({
         success: false,
         message: 'Error al actualizar los permisos del rol',

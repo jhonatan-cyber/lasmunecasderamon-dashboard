@@ -25,9 +25,7 @@ export default function GarzonSelect({ users, value, onChange, placeholder }: Ga
     (`${u.name} ${u.lastName} ${u.nick}`.toLowerCase().includes(search.toLowerCase()))
   );
 
-  console.log("=== GARZON SELECT DEBUG ===");
-  console.log("Usuarios recibidos (garzones + cajeros):", users.length);
-  console.log("Usuarios filtrados:", filteredGarzones.length);
+  
   console.log("===========================");
 
   return (

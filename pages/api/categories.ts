@@ -43,7 +43,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     
     return res.status(200).json({ success: true, data: categories });
   } catch (error) {
-    console.error("Error al obtener categorías:", error);
+
     return res.status(500).json({ 
       success: false, 
       message: "Error al obtener categorías", 

@@ -89,7 +89,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: tips
     });
   } catch (error) {
-    console.error('Error obteniendo propinas del usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

@@ -32,13 +32,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE sds.token = ? AND sds.estado = 'pendiente'
     `;
 
-    const solicitudes = await query(solicitudSql, [token]);
+    const solicitudes = await query(solicitudSql, [token]) as any[];
     
     if (!Array.isArray(solicitudes) || solicitudes.length === 0) {
       return res.status(404).json({ error: 'Solicitud no encontrada o ya procesada' });
     }
 
-    const solicitud = solicitudes[0];
+    const solicitud = solicitudes[0] as any;
     const servicioId = solicitud.servicio_id;
 
     // Actualizar estado de la solicitud
@@ -100,7 +100,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [nuevoEfectivo, nuevaIva, nuevaDevoluciones, caja.id_caja]
           );
 
-          console.log(`Caja actualizada: efectivo=${nuevoEfectivo}, iva=${nuevaIva}, devoluciones=${nuevaDevoluciones}`);
         }
       }
     }
@@ -138,7 +137,7 @@ ${action === 'confirmar' ?
     });
 
   } catch (error) {
-    console.error("Error al procesar devolución:", error);
+    
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

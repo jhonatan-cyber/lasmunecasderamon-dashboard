@@ -42,7 +42,6 @@ WHERE P.mesero_id = ? AND P.estado = 1;
       data: orders
     });
   } catch (error) {
-    console.error('Error fetching user orders:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

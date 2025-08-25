@@ -39,7 +39,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: notifications
       });
     } catch (error) {
-      console.error('Error al obtener historial de notificaciones:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener historial de notificaciones'

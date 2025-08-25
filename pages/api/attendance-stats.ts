@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
-    console.error('Error al obtener estadísticas de asistencia:', error);
+  
     return res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
