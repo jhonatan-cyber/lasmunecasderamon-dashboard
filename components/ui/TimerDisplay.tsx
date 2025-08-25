@@ -11,9 +11,10 @@ export const TimerDisplay: React.FC = () => {
 
 
 
-  const handleStopTimer = (timerId: string, roomName: string, servicioCode: string, clienteNombre: string) => {
-    if (typeof window !== 'undefined' && window.Swal) {
-      window.Swal.fire({
+  const handleStopTimer = async (timerId: string, roomName: string, servicioCode: string, clienteNombre: string) => {
+    try {
+      const Swal = (await import('sweetalert2')).default;
+      const result = await Swal.fire({
         title: '¿Finalizar Servicio?',
         html: `
           <div class="text-left">
@@ -42,7 +43,12 @@ export const TimerDisplay: React.FC = () => {
           stopTimer(timerId, true); // Indicar que es una parada manual
         }
       });
-    } else {
+      
+      if (result.isConfirmed) {
+        stopTimer(timerId, true); // Indicar que es una parada manual
+      }
+    } catch (error) {
+      console.error('Error al cargar SweetAlert2:', error);
       // Fallback si SweetAlert2 no está disponible
       if (confirm(`¿Estás seguro de que quieres finalizar el servicio ${servicioCode} de la habitación ${roomName}?`)) {
         stopTimer(timerId, true); // Indicar que es una parada manual
@@ -67,7 +73,7 @@ export const TimerDisplay: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleStopTimer(timer.id, timer.roomName, timer.servicioCode, timer.clienteNombre)}
+                onClick={async () => await handleStopTimer(timer.id, timer.roomName, timer.servicioCode, timer.clienteNombre)}
                 className="h-3 px-1 text-xs"
               >
                 <Square className="text-red-500 text-xs" />
