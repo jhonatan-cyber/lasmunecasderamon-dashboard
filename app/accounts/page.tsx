@@ -47,7 +47,6 @@ export default function AccountsPage() {
         formatCurrency={formatCurrencyNoDecimals}
       />
 
-      {/* Mensaje de advertencia cuando no hay caja abierta */}
       {!cajaLoading && !hasOpenCaja && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center">
