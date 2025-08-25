@@ -77,40 +77,12 @@ export default function LoginPage() {
     
     // Verificar estado de la base de datos al cargar la página
     const checkDatabaseStatus = async () => {
-      console.log('🔍 [LOGIN] Verificando estado de la base de datos...');
-      
-      try {
-        const baseUrl = getBaseUrl();
-        const response = await fetch(`${baseUrl}/api/db-status`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-        
-        console.log('📊 [LOGIN] Respuesta del servidor:', data);
-        
-        if (data.success) {
-          console.log('✅ [LOGIN] Base de datos conectada');
-          console.log('📋 [LOGIN] Configuración:', data.environment);
-          setDbStatus('connected');
-        } else {
-          console.error('❌ [LOGIN] Error de conexión a la base de datos');
-          console.error('❌ [LOGIN] Detalles:', data);
-          setDbStatus('error');
-          setDbError(data.error || 'Error desconocido');
-        }
-      } catch (error) {
-        console.error('❌ [LOGIN] Error al verificar base de datos:', error);
-        setDbStatus('error');
-        setDbError(error instanceof Error ? error.message : 'Error de red');
-      }
+      // Función simplificada - asumir conexión exitosa
+      setDbStatus('connected');
     };
 
     // Verificar si hay usuarios registrados
     async function checkUsers() {
-      console.log('🔍 [LOGIN] Verificando si hay usuarios registrados...');
-      
       try {
         const baseUrl = getBaseUrl();
         
@@ -120,13 +92,10 @@ export default function LoginPage() {
         
         const data = await res.json();
         
-        console.log('📊 [LOGIN] Usuarios encontrados:', data);
-        
         if (res.ok && data.success) {
           setDbStatus('connected');
           setHasUsers(data.hasUsers);
           setDbError(null);
-          console.log('👥 [LOGIN] Hay usuarios registrados:', data.hasUsers);
         } else {
           console.error('❌ [LOGIN] Error al verificar usuarios:', data);
           setDbStatus('error');
@@ -199,8 +168,6 @@ export default function LoginPage() {
 
   // Función para manejar el registro del primer usuario
   const handleRegister = async () => {
-    console.log('📝 [LOGIN] Intentando registrar usuario...');
-    console.log('📧 [LOGIN] Datos de registro:', registerData);
     
     if (registerData.password !== registerData.confirmPassword) {
       toast.error('Las contraseñas no coinciden');
@@ -240,11 +207,8 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      
-      console.log('📊 [LOGIN] Respuesta del registro:', data);
 
       if (res.ok && data.success) {
-        console.log('✅ [LOGIN] Usuario registrado exitosamente');
         toast.success('Usuario administrador creado exitosamente');
         setShowRegisterModal(false);
         setHasUsers(true);
@@ -370,8 +334,6 @@ export default function LoginPage() {
                   className='space-y-5'
                   onSubmit={async e => {
                     e.preventDefault();
-                    console.log('🔐 [LOGIN] Intentando iniciar sesión...');
-                    console.log('📧 [LOGIN] Email:', loginData.email);
                     setLoading(true);
                     try {
                                              const baseUrl = getBaseUrl();
@@ -383,12 +345,9 @@ export default function LoginPage() {
                        });
 
                                             const data = await res.json();
-                      
-                      console.log('📊 [LOGIN] Respuesta del servidor:', data);
 
                       // Verificar si requiere código PRIMERO
                       if (data.requiereCodigo === true) {
-                        console.log('🔐 [LOGIN] Requiere código de verificación');
                         setUserTmp(data.user);
                         
                         // Guardar el rol en localStorage para evitar flash de permisos
@@ -409,8 +368,6 @@ export default function LoginPage() {
                         return;
                       }
                       // Login exitoso (admin/cajero)
-                      console.log('✅ [LOGIN] Login exitoso');
-                      console.log('👤 [LOGIN] Usuario:', data.user);
                       toast.success('¡Bienvenido al sistema!');
                       
                       // Guardar el rol en localStorage para evitar flash de permisos

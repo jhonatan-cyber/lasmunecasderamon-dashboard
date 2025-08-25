@@ -51,7 +51,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         .json({
           success: false,
           message: "Datos inválidos",
-          errors: parse.error.errors,
+          errors: parse.error.issues,
         });
     }
     // Validar duplicado por nombre
@@ -97,7 +97,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         .json({
           success: false,
           message: "Datos inválidos",
-          errors: parse.error.errors,
+          errors: parse.error.issues,
         });
     }
     // Validar duplicado por nombre (excluyendo el actual)

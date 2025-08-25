@@ -49,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: servicios
     });
   } catch (error) {
-    console.error('Error obteniendo servicios:', error);
+ 
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

@@ -81,12 +81,6 @@ export function WeeklySalesChart() {
       const result = await response.json();
 
       if (result.success) {
-        console.log('📊 [WEEKLY SALES] Datos recibidos:', result.data);
-        console.log('📊 [WEEKLY SALES] Total ventas:', result.data.summary.totalVentas);
-        console.log(
-          '📊 [WEEKLY SALES] Tipo de total ventas:',
-          typeof result.data.summary.totalVentas
-        );
         setSalesData(result.data);
       } else {
         throw new Error(result.message || 'Error en la respuesta');

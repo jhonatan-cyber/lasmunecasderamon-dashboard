@@ -27,32 +27,22 @@ export const useDevolucionLogic = () => {
     }
 
     try {
-      console.log(`📤 Enviando solicitud de anulación para servicio ${selectedServicio.codigo} (ID: ${selectedServicio.id_servicio})`);
-      console.log(`📊 Estado del servicio antes de enviar solicitud:`, selectedServicio);
-
-      // La función solicitarAnulacionServicio ya maneja la lógica de envío
-      // Esta función se llamará desde el modal de anulación
       setIsAnulacionModalOpen(false);
       setSelectedServicio(null);
-      
-      // Recargar datos después de la anulación
-      console.log(`⏳ Recargando datos para detectar cambio de estado...`);
+
       await getServicios();
-      
+
       // Pequeño delay para asegurar que el hook de sincronización se ejecute después
-      setTimeout(() => {
-        console.log(`✅ Datos recargados, el hook de sincronización debería detectar el cambio de estado`);
-      }, 500);
+      setTimeout(() => {}, 500);
     } catch (error) {
-      console.error('Error al procesar anulación:', error);
       let errorMessage = 'Error al procesar la anulación del servicio';
-      
+
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'object' && error !== null && 'details' in error) {
         errorMessage = (error as any).details || errorMessage;
       }
-      
+
       showErrorToast(errorMessage);
     }
   };
@@ -73,4 +63,4 @@ export const useDevolucionLogic = () => {
     handleConfirmarAnulacion,
     resetAnulacionModal
   };
-}; 
+};

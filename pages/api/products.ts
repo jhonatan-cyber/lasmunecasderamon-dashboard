@@ -104,7 +104,7 @@ async function parseFormData(
 ): Promise<{ fields: Record<string, string>; files: any }> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => {
+    req.on('data', chunk => {
       body += chunk.toString();
     });
 
@@ -115,41 +115,29 @@ async function parseFormData(
           return reject(new Error('No se encontró el boundary en Content-Type'));
         }
 
-        console.log('Boundary encontrado:', boundary);
-        console.log('Body length:', body.length);
-
         const parts = body.split(`--${boundary}`);
         const fields: Record<string, string> = {};
         const files: any = {};
 
-        console.log('Número de partes encontradas:', parts.length);
-
         for (let i = 0; i < parts.length; i++) {
           const part = parts[i];
-          console.log(`Procesando parte ${i}:`, part.substring(0, 100) + '...');
 
           if (part.includes('Content-Disposition: form-data')) {
             // Buscar el nombre del campo
             const nameMatch = part.match(/name="([^"]+)"/);
             if (!nameMatch) continue;
-            
+
             const name = nameMatch[1];
-            console.log('Nombre encontrado:', name);
 
             // Buscar si es un archivo
             const filenameMatch = part.match(/filename="([^"]+)"/);
             const isFile = !!filenameMatch;
             const filename = filenameMatch ? filenameMatch[1] : '';
-            
-            if (isFile) {
-              console.log('Archivo encontrado:', filename);
-            }
 
             // Extraer el contenido después de la línea vacía
             const contentMatch = part.match(/\r?\n\r?\n([\s\S]*?)(?=\r?\n--|$)/);
             if (contentMatch) {
               const value = contentMatch[1].trim();
-              console.log(`Campo ${name}:`, value.substring(0, 50) + '...');
 
               if (isFile && filename) {
                 files[name] = {
@@ -172,18 +160,13 @@ async function parseFormData(
           }
         }
 
-        // Debug: imprimir los campos extraídos
-        console.log('Campos extraídos:', fields);
-        console.log('Archivos extraídos:', Object.keys(files));
-
         resolve({ fields, files });
       } catch (error) {
-        console.error('Error al parsear FormData:', error);
         reject(error);
       }
     });
 
-    req.on('error', (error) => {
+    req.on('error', error => {
       reject(error);
     });
   });
@@ -238,20 +221,10 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const { fields, files } = await parseFormData(req);
     uploadedFile = files?.foto;
 
-    // Debug: imprimir todos los campos recibidos
-    console.log('=== DEBUG FORM DATA ===');
-    console.log('Todos los campos recibidos:', fields);
-    console.log('Campos requeridos:', ['code', 'name', 'category_id', 'price', 'commission', 'description']);
-    console.log('Archivos recibidos:', Object.keys(files));
-
     // Validar que todos los campos requeridos estén presentes
     const requiredFields = ['code', 'name', 'category_id', 'price', 'commission', 'description'];
     const missingFields = requiredFields.filter(field => !fields[field] || fields[field] === '');
-    
-    console.log('Campos faltantes:', missingFields);
-    console.log('Valores de campos requeridos:', requiredFields.map(field => ({ field, value: fields[field] })));
-    console.log('=== FIN DEBUG ===');
-    
+
     if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
@@ -289,7 +262,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({
         success: false,
         message: 'Datos inválidos',
-        errors: parse.error.errors
+        errors: parse.error.issues
       });
     }
 
@@ -304,7 +277,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     } catch (imageError) {
       console.error('Error al procesar imagen:', imageError);
-  
     }
 
     const result: any = await query(
@@ -363,7 +335,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     // Validar que todos los campos requeridos estén presentes
     const requiredFields = ['code', 'name', 'category_id', 'price', 'commission', 'description'];
     const missingFields = requiredFields.filter(field => !fields[field] || fields[field] === '');
-    
+
     if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
@@ -404,7 +376,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({
         success: false,
         message: 'Datos inválidos',
-        errors: parse.error.errors
+        errors: parse.error.issues
       });
     }
 
@@ -429,7 +401,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
             try {
               await fs.access(oldPhotoPath);
               await fs.unlink(oldPhotoPath);
-    
             } catch (unlinkError) {
               console.error('Error al eliminar la imagen anterior:', unlinkError);
             }
@@ -523,7 +494,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
     }
   } catch (error: any) {
-   
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',

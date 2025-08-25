@@ -158,14 +158,14 @@ export default function OrderForm({
          detalles,
          usuarios,
        };
-      console.log("Payload a enviar:", payload);
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      console.log("Respuesta del servidor:", data);
+
       if (res.status === 201 && data.success) {
         showSuccessToast("¡Pedido generado exitosamente!");
         // Limpiar formularios

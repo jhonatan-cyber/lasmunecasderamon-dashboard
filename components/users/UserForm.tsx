@@ -143,7 +143,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
       sueldo: user?.salary || 0,
       aporte: user?.contributions || 0,
       descuento: user?.discount || 0,
-      rol_id: user?.roleId?.toString() || '',
+      rol_id: user?.roleId ? user.roleId.toString() : '',
       correo: '', // No inicializar con email en modo edición
       password: '',
       foto: user?.foto || '',
@@ -254,12 +254,8 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
       // Si estamos editando y el RUN cambió, actualizar la contraseña al nuevo RUN
       if (isEditMode && user && processedValues.run !== user.run) {
         processedValues.password = processedValues.run;
-        console.log('🔵 RUN cambiado, contraseña actualizada al nuevo RUN:', processedValues.run);
       }
-
-      console.log('Valores procesados antes de enviar:', processedValues);
       await onSubmit(processedValues, imageFile || undefined);
-      console.log('✅ onSubmit completado');
     } catch (error) {
       console.error('Error al enviar el formulario:', error);
       // Mostrar error general
@@ -272,7 +268,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
     }
   };
 
-  console.log('Errores del formulario:', form.formState.errors);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-4 sm:space-y-6'>
@@ -346,7 +342,6 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                     ref={fileInputRef}
                     name={name}
                     onBlur={onBlur}
-                    value={undefined}
                   />
 
                   <div className='flex flex-col items-center'>

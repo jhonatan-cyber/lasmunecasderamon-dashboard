@@ -78,7 +78,7 @@ export default function NewOrder() {
   const handleSubmit = () => {
     // Si no hay cliente seleccionado, usar cliente ID 1 por defecto
     const clienteId = selectedCliente || "1";
-    console.log("Pedido generado (mock) - Cliente ID:", clienteId);
+    
   };
 
   const hasChampagne = productos.some((item: any) => {

@@ -17,11 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log('🔍 [SESSION] Iniciando verificación de sesión...');
-    
     // Verificar token desde header Authorization o desde cookies
     let token = req.headers.authorization?.replace('Bearer ', '');
-    
+
     // Si no hay token en el header, intentar obtenerlo de las cookies
     if (!token) {
       const cookies = req.headers.cookie;
@@ -32,20 +30,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     }
-    
+
     if (!token) {
-      console.log('❌ [SESSION] No se encontró token');
       return res.status(401).json({ success: false, message: 'Token no proporcionado' });
     }
-
-    console.log('🔍 [SESSION] Verificando token...');
     const decoded = verifyToken(token) as any;
     if (!decoded) {
-      console.log('❌ [SESSION] Token inválido');
       return res.status(401).json({ success: false, message: 'Token inválido' });
     }
-
-    console.log('✅ [SESSION] Token válido, datos decodificados:', { id: decoded.id, role: decoded.role });
     const userId = decoded.id;
     const userRole = decoded.role;
     const ahora = new Date();
@@ -53,16 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const minutos = ahora.getMinutes();
     const horaActual = hora * 60 + minutos;
 
-    console.log(`🔍 [SESSION] Verificando sesión para usuario ${userId} (${userRole})`);
-    console.log(`⏰ [SESSION] Hora actual: ${hora.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')} (${horaActual} minutos)`);
-
     // Roles que requieren verificación de asistencia
     const rolesConRestriccion = ['garzon', 'anfitriona'];
     const roleLower = userRole?.toLowerCase() || '';
 
     // Si no es un rol que requiere verificación, permitir continuar
     if (!rolesConRestriccion.includes(roleLower)) {
-      console.log(`✅ [SESSION] Rol ${userRole} no requiere verificación de asistencia`);
       return res.status(200).json({
         success: true,
         debeDesconectar: false,
@@ -84,15 +72,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Hora de fin libre diurno: 20:00 (1200 minutos)
     const horaFinLibreDiurno = 20 * 60;
 
-    console.log(`📅 [SESSION] Horario de trabajo: 20:00-23:00 (${horaInicioTrabajo}-${horaFinTrabajo} minutos)`);
-    console.log(`🌙 [SESSION] Horario de madrugada: 23:00-06:00 (${horaInicioMadrugada}-${horaFinMadrugada} minutos)`);
-    console.log(`☀️ [SESSION] Horario libre diurno: 06:00-20:00 (${horaInicioLibreDiurno}-${horaFinLibreDiurno} minutos)`);
-    console.log(`🔍 [SESSION] ¿Es horario de trabajo? ${horaActual >= horaInicioTrabajo && horaActual <= horaFinTrabajo ? 'Sí' : 'No'}`);
-
     // Verificar si está en horario libre diurno (06:00-20:00) - no hay restricciones
     const esLibreDiurno = horaActual >= horaInicioLibreDiurno && horaActual < horaFinLibreDiurno;
     if (esLibreDiurno) {
-      console.log(`☀️ [SESSION] Horario libre diurno (06:00-20:00), no hay restricciones`);
       return res.status(200).json({
         success: true,
         debeDesconectar: false,
@@ -102,9 +84,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verificar si está en horario de madrugada (23:00-06:00) - no hay restricciones
-    const esMadrugada = (horaActual >= horaInicioMadrugada) || (horaActual <= horaFinMadrugada);
+    const esMadrugada = horaActual >= horaInicioMadrugada || horaActual <= horaFinMadrugada;
     if (esMadrugada) {
-      console.log(`🌙 [SESSION] Horario de madrugada (23:00-06:00), no hay restricciones`);
       return res.status(200).json({
         success: true,
         debeDesconectar: false,
@@ -115,8 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verificar si está en horario de trabajo (20:00-23:00)
     if (horaActual >= horaInicioTrabajo && horaActual <= horaFinTrabajo) {
-      console.log(`🔍 [SESSION] En horario de trabajo, verificando situación del usuario...`);
-      
       try {
         // Verificar si el usuario tiene un login registrado en horario de trabajo (>= 20:00)
         const loginTrabajo = await query(
@@ -128,12 +107,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [userId]
         );
 
-        console.log(`📊 [SESSION] Resultado de consulta login:`, loginTrabajo);
-
         // Si NO tiene login de trabajo, significa que se conectó en horario libre
         if (!Array.isArray(loginTrabajo) || loginTrabajo.length === 0) {
-          console.log(`⚠️ [SESSION] Usuario sin login de trabajo - probablemente conectado en horario libre, debe desconectarse`);
-          
           return res.status(200).json({
             success: true,
             debeDesconectar: true,
@@ -141,20 +116,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             hora: `${hora.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`
           });
         }
-        
-        console.log(`✅ [SESSION] Usuario tiene login válido de horario de trabajo, verificando asistencia...`);
-        
+
         // Verificar si el usuario tiene asistencia registrada para hoy
         const asistenciaExistente = await query(
           'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = CURDATE()',
           [userId]
         );
 
-        console.log(`📊 [SESSION] Resultado de consulta asistencia:`, asistenciaExistente);
-
         if (!Array.isArray(asistenciaExistente) || asistenciaExistente.length === 0) {
           // Usuario no tiene asistencia registrada, debe ser desconectado
-          console.log(`🔒 [SESSION] Usuario ${userId} debe ser desconectado - No tiene asistencia registrada`);
           return res.status(200).json({
             success: true,
             debeDesconectar: true,
@@ -163,7 +133,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         } else {
           // Usuario tiene asistencia registrada, puede continuar
-          console.log(`✅ [SESSION] Usuario ${userId} puede continuar - Tiene asistencia registrada`);
           return res.status(200).json({
             success: true,
             debeDesconectar: false,
@@ -172,7 +141,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         }
       } catch (dbError) {
-        console.error('❌ [SESSION] Error en consulta de base de datos:', dbError);
         return res.status(500).json({
           success: false,
           message: 'Error en consulta de base de datos'
@@ -180,7 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     } else {
       // Después de las 23:00 pero antes de las 06:00 (madrugada ya cubierta)
-      console.log(`✅ [SESSION] Fuera de horarios definidos, no hay restricciones`);
+
       return res.status(200).json({
         success: true,
         debeDesconectar: false,
@@ -189,7 +157,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
   } catch (error) {
-    console.error('❌ [SESSION] Error verificando sesión:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

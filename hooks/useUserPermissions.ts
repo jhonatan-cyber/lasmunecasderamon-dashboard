@@ -53,7 +53,7 @@ export function useUserPermissions() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al obtener los permisos del usuario';
       setError(errorMessage);
-      console.error('Error fetching user permissions:', err);
+     
     } finally {
       setIsLoading(false);
     }

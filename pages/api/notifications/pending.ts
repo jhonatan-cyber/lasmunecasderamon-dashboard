@@ -12,8 +12,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       notifications: []
     });
   } catch (error) {
-    console.error('Error obteniendo notificaciones pendientes:', error);
-
     // Si hay error, retornar array vacío
     return res.status(200).json({
       success: true,

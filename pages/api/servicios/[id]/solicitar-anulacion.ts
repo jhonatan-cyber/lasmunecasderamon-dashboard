@@ -8,15 +8,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  console.log(`🔍 API: Solicitud de anulación recibida para servicio ${req.query.id}`);
-  console.log(`🔍 API: Headers:`, req.headers);
-  console.log(`🔍 API: Cookies:`, req.cookies);
+ 
 
   // Obtener usuario logueado
   // @ts-ignore
   const usuarioLogueado = req.user;
   
-  console.log(`🔍 API: Usuario logueado:`, usuarioLogueado);
+ 
   
   // Obtener nombre completo del usuario desde la base de datos
   let nombreCompleto = "Usuario del Sistema";
@@ -32,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         nombreCompleto = (usuarioResult[0] as any).nombre_completo || "Usuario del Sistema";
       }
     } catch (error) {
-      console.error("Error al obtener nombre completo del usuario:", error);
+      
       nombreCompleto = usuarioLogueado.nick || "Usuario del Sistema";
     }
   }
@@ -81,7 +79,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Preparar datos de anfitrionas
     const anfitrionas = servicio.anfitrionas_nombres 
-      ? servicio.anfitrionas_nombres.split(', ').filter(nombre => nombre.trim())
+      ? servicio.anfitrionas_nombres.split(', ').filter((nombre: string) => nombre.trim())
       : [];
 
     // Usar el nombre completo del usuario logueado
@@ -167,7 +165,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
   } catch (error) {
-    console.error("Error al solicitar anulación de servicio:", error);
+
     return res.status(500).json({
       success: false,
       message: "Error interno del servidor",

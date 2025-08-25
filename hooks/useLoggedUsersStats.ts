@@ -32,17 +32,17 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
         setLoading(true);
       }
       setError(null);
-      
+
       const res = await fetch('/api/stats/logged-users', {
         credentials: 'include'
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Error al obtener estadísticas');
       }
-      
+
       setStats(data.data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido';
@@ -50,7 +50,6 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
       if (!stats) {
         setError(message);
       }
-      console.error('Error fetching logged users stats:', err);
     } finally {
       if (isInitial) {
         setLoading(false);
@@ -61,12 +60,12 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
   useEffect(() => {
     // Carga inicial
     fetchStats(true);
-    
+
     // Actualizar automáticamente cada 30 segundos sin parpadeo visual
     const interval = setInterval(() => {
       fetchStats(false);
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -74,6 +73,6 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
     stats,
     loading,
     error,
-    refetch: () => fetchStats(true),
+    refetch: () => fetchStats(true)
   };
 };

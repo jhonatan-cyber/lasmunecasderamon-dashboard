@@ -27,13 +27,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const userId = decoded.id;
         const userRole = decoded.role?.toLowerCase() || '';
         
-        console.log(`🔓 [LOGOUT] Cerrando sesión para usuario ${userId} (${userRole})`);
+    
         
         // Solo desactivar logins para garzones y anfitrionas
         const rolesConLogin = ['garzon', 'anfitriona'];
         
         if (rolesConLogin.includes(userRole)) {
-          console.log(`🔄 [LOGOUT] Desactivando login para ${userRole}`);
+          
           
           // Desactivar el login activo del usuario (estado = 0)
           await query(
@@ -41,10 +41,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [userId]
           );
           
-          console.log(`✅ [LOGOUT] Login desactivado para usuario ${userId}`);
-        } else {
-          console.log(`ℹ️ [LOGOUT] Rol ${userRole} no requiere desactivación de login`);
-        }
+      
+        } 
       }
     }
   } catch (error) {

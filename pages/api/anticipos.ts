@@ -136,7 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ...result
           });
         } catch (error) {
-          console.error("Error en transacción de anticipo:", error);
+         
           return res.status(400).json({ 
             success: false, 
             message: error instanceof Error ? error.message : "Error al procesar el anticipo" 
@@ -150,7 +150,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
     } catch (error) {
-      console.error("Error al procesar anticipo:", error);
+    
       return res.status(500).json({ success: false, message: "Error interno del servidor" });
     }
   }

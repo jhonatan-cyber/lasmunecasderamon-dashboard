@@ -41,7 +41,7 @@ export function useRoles() {
         throw new Error("La respuesta de roles no tiene el formato esperado");
       }
       
-      console.log('Raw roles data:', result.data);
+    
       const formattedData = result.data.map((role: any) => ({
         id: role.id_rol || role.id,
         name: role.nombre || role.name || 'Sin nombre',
@@ -54,7 +54,7 @@ export function useRoles() {
         color: "bg-gray-500",
         permissions: [],
       }));
-      console.log('Formatted roles data:', formattedData);
+    
       
       setRoles(formattedData);
       setError(null);

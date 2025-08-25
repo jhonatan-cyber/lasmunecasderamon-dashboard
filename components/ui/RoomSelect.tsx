@@ -181,7 +181,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                   return (
                     <SelectItem 
                       key={id} 
-                      value={id?.toString() || ""} 
+                      value={id ? id.toString() : ""} 
                       disabled={disabled}
                       onClick={(e) => e.stopPropagation()}
                     >

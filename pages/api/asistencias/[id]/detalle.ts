@@ -1,13 +1,15 @@
 // pages/api/asistencias/[id]/detalle.ts
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { rawQuery } from '@/lib/db'
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { rawQuery } from '@/lib/db';
 
 interface AsistenciaDetalle {
   id_asistencia: number;
   fecha: string;
   hora: string;
   estado: string;
-  observaciones?: string;
+  sueldo: number;
+  aporte: number;
+  sueldo_final: number;
 }
 
 interface DetalleResponse {
@@ -16,14 +18,11 @@ interface DetalleResponse {
   error?: string;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DetalleResponse>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<DetalleResponse>) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      error: 'Método no permitido' 
+      error: 'Método no permitido'
     });
   }
 
@@ -31,9 +30,9 @@ export default async function handler(
   const userId = parseInt(id as string);
 
   if (!userId || isNaN(userId)) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
-      error: 'ID de usuario inválido' 
+      error: 'ID de usuario inválido'
     });
   }
 
@@ -55,31 +54,28 @@ export default async function handler(
       WHERE A.usuario_id = ${userId}
       ORDER BY A.fecha DESC
     `;
-    
+
     const rawData = await rawQuery(sql);
-    
+
     // Transformar los datos para que coincidan con la interfaz esperada
-    const transformedData = rawData.map((item: any) => ({
+    const transformedData = (rawData as any[]).map((item: any) => ({
       id_asistencia: item.id_asistencia,
       fecha: item.fecha,
       hora: item.hora,
       estado: item.estado, // Mantener como número: 1 = Por Pagar, 0 = Pagado
-      observaciones: null, // No hay campo observaciones en la consulta original
       sueldo: item.sueldo,
       aporte: item.aporte,
       sueldo_final: item.sueldo_final
     }));
-    
+
     return res.status(200).json({
       success: true,
       data: transformedData || []
-    })
-    
+    });
   } catch (error) {
-    console.error('Error al obtener detalle de asistencias:', error)
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
       error: 'Error al obtener detalle de asistencias'
-    })
+    });
   }
-} 
+}

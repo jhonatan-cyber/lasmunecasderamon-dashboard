@@ -44,9 +44,6 @@ export function SalesChart() {
       const result = await response.json();
       
       if (result.success) {
-        console.log('📊 [MONTHLY SALES] Datos recibidos:', result.data);
-        console.log('📊 [MONTHLY SALES] Total ventas:', result.data.summary.totalVentas);
-        console.log('📊 [MONTHLY SALES] Tipo de total ventas:', typeof result.data.summary.totalVentas);
         setSalesData(result.data);
       } else {
         throw new Error(result.message || 'Error en la respuesta');
@@ -162,8 +159,7 @@ export function SalesChart() {
     return null;
   }
 
-  console.log('📊 [MONTHLY SALES] Render - Total ventas:', salesData.summary.totalVentas);
-  console.log('📊 [MONTHLY SALES] Render - Formateado:', formatNumber(salesData.summary.totalVentas));
+
 
   const maxValue = getMaxValue();
 
@@ -271,7 +267,7 @@ export function SalesChart() {
                 const chartHeight = 256; // Altura del contenedor en píxeles (h-64 = 256px)
                 const barHeightPx = (month.total / maxValue) * chartHeight;
                 
-                console.log(`📊 [BAR] ${month.mes}: Valor=${month.total}, Altura=${barHeightPx}px`);
+
                 
                 return (
                   <div key={month.mes_num} className="flex flex-col items-center group">

@@ -110,7 +110,7 @@ export default async function handler(
         ? new Date(cajaInfo[0].fecha_apertura).toLocaleDateString('es-ES')
         : "N/A",
       usuario_apertura: cajaInfo.length > 0 
-        ? cajaInfo[0].usuario_id_apertura?.toString() || "N/A"
+        ? (cajaInfo[0].usuario_id_apertura ? cajaInfo[0].usuario_id_apertura.toString() : "N/A")
         : "N/A",
 
       // Total de ingresos (ventas + servicios)
@@ -119,7 +119,7 @@ export default async function handler(
 
     return res.status(200).json(stats);
   } catch (error) {
-    console.error("Error al obtener estadísticas de caja:", error);
+ 
     return res.status(500).json({
       success: false,
       message: "Error interno del servidor",

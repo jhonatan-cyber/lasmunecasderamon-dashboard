@@ -264,7 +264,7 @@ export default function NuevoServicioPage() {
           {/* Habitación */}
           <RoomSelect
             habitaciones={habitaciones}
-            value={formData.habitacion_id?.toString() || ""}
+            value={formData.habitacion_id ? formData.habitacion_id.toString() : ""}
             onChange={(value) =>
               setFormData({ ...formData, habitacion_id: parseInt(value) })
             }

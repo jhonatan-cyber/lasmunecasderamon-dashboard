@@ -49,9 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        )
      `, [startDate, endDate]);
 
-     console.log('📊 [API WEEKLY] Datos raw de la BD:', salesData);
-     console.log('📊 [API WEEKLY] Fechas de consulta:', { startDate, endDate });
-
      // Mapear nombres en español y agregar orden
     const diasEspanol: { [key: string]: string } = {
       'Monday': 'Lunes',
@@ -71,21 +68,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }));
 
     // Calcular totales
-    console.log('📊 [API WEEKLY] Datos procesados antes del cálculo:', processedData);
-    
     const totalVentas = processedData.reduce((sum: number, day: any) => {
-      console.log(`📊 [API WEEKLY] Sumando día ${day.dia_espanol}: ${day.total} (tipo: ${typeof day.total})`);
       return sum + day.total;
     }, 0);
-    
-    console.log('📊 [API WEEKLY] Total ventas calculado:', totalVentas);
-    console.log('📊 [API WEEKLY] Tipo de total ventas:', typeof totalVentas);
-    
-    // Verificar si el total es razonable (no más de 1 millón)
-    if (totalVentas > 1000000) {
-      console.log('⚠️ [API WEEKLY] Total ventas muy alto, verificando datos...');
-      console.log('📊 [API WEEKLY] Valores individuales por día:', processedData.map(d => ({ dia: d.dia_espanol, total: d.total })));
-    }
     
     const promedioDiario = totalVentas / 7;
     const diaMaxVentas = processedData.reduce((max: any, day: any) => 

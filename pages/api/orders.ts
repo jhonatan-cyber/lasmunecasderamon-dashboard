@@ -47,7 +47,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({
         success: false,
         message: 'Datos inválidos',
-        errors: parse.error.errors
+        errors: parse.error.issues
       });
     }
     const { codigo, meseroId, clienteId, subtotal, total, totalComision, detalles, usuarios } =
@@ -78,7 +78,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     await rawQuery('COMMIT');
 
-    console.log('📤 Pedido creado exitosamente, ID:', pedidoId);
+ 
 
     // Obtener información del cliente y mesero para la notificación
     const clienteResults = await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteId]) as any[];
@@ -89,7 +89,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const meseroResult = meseroResults[0];
     const meseroNombre = meseroResult?.nombre || 'Mesero';
     
-    console.log('📤 Información obtenida - Cliente:', clienteNombre, 'Mesero:', meseroNombre);
+  
     
     // Enviar notificación en tiempo real
     const notificationData = {
@@ -102,7 +102,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       createdBy: meseroId // Añadir el ID del usuario que creó el pedido
     };
     
-    console.log('📤 Enviando notificación de nuevo pedido:', notificationData);
+   
     sendNotificationToAll('new_order', notificationData);
 
     return res.status(201).json({

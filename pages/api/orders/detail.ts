@@ -76,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     return res.status(200).json({ success: true, data: details });
   } catch (error) {
-    console.error("Error al obtener el detalle del pedido:", error);
+
     return res.status(500).json({ success: false, message: "Error al obtener el detalle del pedido", error });
   }
 } 

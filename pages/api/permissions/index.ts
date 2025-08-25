@@ -23,7 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: permissions
       });
     } catch (error) {
-      console.error('Error fetching permissions:', error);
       res.status(500).json({
         success: false,
         message: 'Error al obtener los permisos'
@@ -40,18 +39,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const result = await query(`
+      const result = await query(
+        `
         INSERT INTO permissions (name, description, module, action) 
         VALUES (?, ?, ?, ?)
-      `, [name, description, module, action]);
+      `,
+        [name, description, module, action]
+      );
 
       res.status(201).json({
         success: true,
         message: 'Permiso creado correctamente',
-        data: { id: result.insertId }
+        data: { id: (result as any).insertId }
       });
     } catch (error) {
-      console.error('Error creating permission:', error);
       res.status(500).json({
         success: false,
         message: 'Error al crear el permiso'
@@ -64,4 +65,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: `Method ${req.method} Not Allowed`
     });
   }
-} 
+}

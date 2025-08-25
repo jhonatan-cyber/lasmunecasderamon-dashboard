@@ -112,7 +112,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: data || []
     });
   } catch (error) {
-    console.error('Error al obtener asistencias del usuario:', error);
+   
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
