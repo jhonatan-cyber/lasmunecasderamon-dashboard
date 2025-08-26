@@ -1,0 +1,18 @@
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2025-08-29","startDate":"2025-08-03","type":"ventas"},"timestamp":"2025-08-26 08:02:32"}
+{"endDate":"2025-08-29","level":"info","message":"Parámetros recibidos:","startDate":"2025-08-03","timestamp":"2025-08-26 08:02:32","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2025-08-03 - 2025-08-29","timestamp":"2025-08-26 08:02:32"}
+{"endDate":"2025-08-29","level":"info","message":"Ejecutando query de ventas:","startDate":"2025-08-03","timestamp":"2025-08-26 08:02:32"}
+{"level":"info","message":"Query SQL:","timestamp":"2025-08-26 08:02:32"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2025-08-26 08:02:32"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2025-08-26","startDate":"2025-08-26","type":"ventas"},"timestamp":"2025-08-26 08:04:56"}
+{"endDate":"2025-08-26","level":"info","message":"Parámetros recibidos:","startDate":"2025-08-26","timestamp":"2025-08-26 08:04:56","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2025-08-26 - 2025-08-26","timestamp":"2025-08-26 08:04:56"}
+{"endDate":"2025-08-26","level":"info","message":"Ejecutando query de ventas:","startDate":"2025-08-26","timestamp":"2025-08-26 08:04:56"}
+{"level":"info","message":"Query SQL:","timestamp":"2025-08-26 08:04:56"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2025-08-26 08:04:56"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2025-08-26","startDate":"2025-08-26","type":"servicios"},"timestamp":"2025-08-26 08:06:33"}
+{"endDate":"2025-08-26","level":"info","message":"Parámetros recibidos:","startDate":"2025-08-26","timestamp":"2025-08-26 08:06:33","type":"servicios"}
+{"level":"info","message":"Obteniendo datos de servicios para el rango: 2025-08-26 - 2025-08-26","timestamp":"2025-08-26 08:06:33"}
+{"endDate":"2025-08-26","level":"info","message":"Ejecutando query de servicios:","startDate":"2025-08-26","timestamp":"2025-08-26 08:06:33"}
+{"level":"info","message":"Query SQL:","timestamp":"2025-08-26 08:06:33"}
+{"level":"info","message":"Se encontraron 1 servicios","timestamp":"2025-08-26 08:06:33"}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCuentas } from "@/hooks/useCuentas";
+import useOrders from "@/hooks/useOrders";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from "@/components/cuentas";
 import Paginate from "@/components/ui/paginate";
@@ -10,6 +11,7 @@ import { AlertCircle } from "lucide-react";
 
 export default function AccountsPage() {
   const { cuentas, loading, error, getCuentas } = useCuentas();
+  const { refetch: refetchOrders } = useOrders();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -79,6 +81,7 @@ export default function AccountsPage() {
           rows={paginatedCuentas}
           rowsPerPage={rowsPerPage}
           onRefresh={handleRefresh}
+          onOrderStatusChange={refetchOrders}
         />
       </div>
 

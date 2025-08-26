@@ -1,13 +1,15 @@
 // Constantes para el módulo de ventas
 export const statusColors: Record<number, string> = {
-  1: "bg-green-100 text-green-800", // Vendido/Finalizado
+  1: "bg-green-100 text-green-800", // Vendido
   2: "bg-yellow-100 text-yellow-800", // Pendiente de anulación
+  3: "bg-green-100 text-green-800", // Vendido
   0: "bg-red-100 text-red-800", // Anulado
 };
 
 export const statusLabels: Record<number, string> = {
   1: "Vendido",
   2: "Pendiente de anulación",
+  3: "Vendido",
   0: "Anulado",
 };
 

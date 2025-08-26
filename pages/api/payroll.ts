@@ -76,7 +76,7 @@ LEFT JOIN (
 ) AS PROP ON PROP.usuario_id = U.id_usuario
 
 LEFT JOIN (
-  SELECT usuario_id, SUM(hora) AS total_horas, SUM(monto) AS total_monto_horas 
+  SELECT usuario_id, SUM(hora) AS total_horas, SUM(total) AS total_monto_horas 
   FROM horas_extras
   WHERE estado = 1 
   GROUP BY usuario_id
@@ -121,7 +121,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [userId]
           )) as any;
 
-          // 3) Servicios del usuario (vía detalle_servicios): estado 0 -> 4
+          // 3) Ventas del usuario (vía comisiones): estado 1 -> 3
+          const ventas = (await trx(
+            `UPDATE ventas 
+             SET estado = 3, fecha_mod = NOW()
+             WHERE estado = 1 AND id_venta IN (
+               SELECT c.venta_id FROM comisiones c 
+               INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision 
+               WHERE dc.usuario_id = ? AND c.venta_id <> 0
+             )`,
+            [userId]
+          )) as any;
+
+          // 4) Servicios del usuario (vía detalle_servicios): estado 0 -> 4
           const servicios = (await trx(
             `UPDATE servicios 
              SET estado = 4, fecha_mod = NOW()
@@ -131,19 +143,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [userId]
           )) as any;
 
-          // 4) Detalle Propinas: estado 1 -> 0
+          // 5) Detalle Propinas: estado 1 -> 0
           const detallePropinas = (await trx(
             'UPDATE detalle_propinas SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
             [userId]
           )) as any;
 
-          // 5) Anticipos: estado 1 -> 0
+          // 5.1) Actualizar propinas principales cuando todas las propinas de detalle están pagadas
+          const propinas = (await trx(
+            `UPDATE propinas 
+             SET estado = 0, fecha_mod = NOW()
+             WHERE estado = 1 AND id_propina IN (
+               SELECT DISTINCT dp.propina_id 
+               FROM detalle_propinas dp 
+               WHERE dp.propina_id IN (
+                 SELECT DISTINCT propina_id FROM detalle_propinas WHERE usuario_id = ?
+               )
+               AND NOT EXISTS (
+                 SELECT 1 FROM detalle_propinas dp2 
+                 WHERE dp2.propina_id = dp.propina_id AND dp2.estado = 1
+               )
+             )`,
+            [userId]
+          )) as any;
+
+          // 6) Anticipos: estado 1 -> 0
           const anticipos = (await trx(
             'UPDATE anticipos SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
             [userId]
           )) as any;
 
-          // 6) Horas Extras: estado 1 -> 0
+          // 7) Horas Extras: estado 1 -> 0
           const horasExtras = (await trx(
             'UPDATE horas_extras SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
             [userId]
@@ -153,8 +183,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             affected: {
               asistencias,
               detalleComisiones,
+              ventas,
               servicios,
               detallePropinas,
+              propinas,
               anticipos,
               horasExtras
             }

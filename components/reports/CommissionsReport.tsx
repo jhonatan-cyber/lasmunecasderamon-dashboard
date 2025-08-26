@@ -130,12 +130,11 @@ export function CommissionsReport() {
       return '0';
     }
     
-    // Si el número es muy grande, redondearlo
-    if (amount > 999999999) {
-      return Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    }
+    // Redondear el número para eliminar decimales
+    const roundedAmount = Math.round(amount);
     
-    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Formatear con puntos de miles
+    return roundedAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
   const getPerformanceBadge = (comisiones: number, promedio: number) => {
@@ -448,6 +447,8 @@ export function CommissionsReport() {
           </div>
         </CardContent>
       </Card>
+
+
     </div>
   );
 }

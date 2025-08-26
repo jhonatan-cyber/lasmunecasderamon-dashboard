@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Calendar, Clock, User, X } from 'lucide-react';
+import { Calendar, Clock, User, X, Info } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import Paginate from '@/components/ui/paginate';
 import SelectElements from '@/components/ui/select-elements';
@@ -26,7 +26,11 @@ interface AsistenciaDetalle {
   observaciones?: string;
   sueldo?: number;
   aporte?: number;
+  descuento?: number;
+  semanas_con_descuento?: number;
   sueldo_final?: number;
+  descuento_total?: number;
+  total_final?: number;
 }
 
 interface AttendanceDetailModalProps {
@@ -119,6 +123,17 @@ export default function AttendanceDetailModal({
     setCurrentPage(page);
   };
 
+  // Calcular totales
+  const totalSueldos = asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0);
+  const totalAportes = asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0);
+  const totalDescuentos = asistencias.reduce((sum, a) => sum + (a.descuento_total || 0), 0);
+  const totalFinal = asistencias.reduce((sum, a) => sum + (a.total_final || 0), 0);
+
+  // Obtener información del descuento (tomar del primer registro ya que es la misma para todos)
+  const primerRegistro = asistencias[0];
+  const semanasConDescuento = primerRegistro?.semanas_con_descuento || 0;
+  const montoDescuento = primerRegistro?.descuento || 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
@@ -129,52 +144,87 @@ export default function AttendanceDetailModal({
         </DialogHeader>
 
         <div className='space-y-4'>
-                     {/* Información del usuario con resumen */}
-                       <Card>
-              <CardContent className='p-6'>
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                  {/* Sección Izquierda: Información del Usuario */}
-                  <div className='flex flex-col space-y-2'>
-                    <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>Información del Usuario</h4>
-                    <div className='space-y-1'>
-                      <div className='text-lg font-semibold text-gray-900'>{userName}</div>
-                      <div className='text-sm text-gray-600'>@{userNick}</div>
-                    </div>
+          {/* Información del usuario con resumen */}
+          <Card>
+            <CardContent className='p-6'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                {/* Sección Izquierda: Información del Usuario */}
+                <div className='flex flex-col space-y-2'>
+                  <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>
+                    Información del Usuario
+                  </h4>
+                  <div className='space-y-1'>
+                    <div className='text-lg font-semibold text-gray-900'>{userName}</div>
+                    <div className='text-sm text-gray-600'>@{userNick}</div>
                   </div>
+                </div>
 
-                  {/* Sección Derecha: Totales Financieros */}
-                  <div className='flex flex-col space-y-2'>
-                    <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>Resumen Financiero</h4>
-                    <div className='space-y-3'>
-                      <div className='flex  items-center'>
-                        <span className='text-sm text-gray-600'>Total sueldos :</span>
-                        <span className='text-lg font-bold text-green-600 ml-5'>
-                          {formatCurrencyNoDecimals(
-                            asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0)
-                          )}
-                        </span>
-                      </div>
-                      <div className='flex  items-center'>
-                        <span className='text-sm text-gray-600'>Total aportes :</span>
-                        <span className='text-lg font-bold text-blue-600 ml-5'>
-                          {formatCurrencyNoDecimals(
-                            asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0)
-                          )}
-                        </span>
-                      </div>
-                      <div className='flex items-center'>
-                        <span className='text-sm text-gray-600'>Total a pagar :</span>
-                        <span className='text-lg font-bold text-purple-600 ml-5'>
-                          {formatCurrencyNoDecimals(
-                            asistencias.reduce((sum, a) => sum + (a.sueldo_final || 0), 0)
-                          )}
-                        </span>
-                      </div>
+                {/* Sección Derecha: Totales Financieros */}
+                <div className='flex flex-col space-y-2'>
+                  <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>
+                    Resumen Financiero
+                  </h4>
+                  <div className='space-y-3'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm text-gray-600'>Total sueldos:</span>
+                      <span className='text-lg font-bold'>
+                        {formatCurrencyNoDecimals(totalSueldos)}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm text-gray-600'>Total aportes:</span>
+                      <span className='text-lg font-bold '>
+                        {formatCurrencyNoDecimals(totalAportes)}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm text-gray-600'>Descuento habitación:</span>
+                      <span className='text-lg font-bold '>
+                        {formatCurrencyNoDecimals(totalDescuentos)}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between border-t pt-2'>
+                      <span className='text-sm font-medium text-gray-700'>Total a pagar:</span>
+                      <span className='text-lg font-bold text-green-600'>
+                        {formatCurrencyNoDecimals(totalFinal)}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Información adicional sobre el descuento */}
+              {semanasConDescuento > 0 && (
+                <div className='mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                  <div className='flex items-start gap-2'>
+                    <Info className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0' />
+                    <div className='text-sm text-blue-800'>
+                      <p className='font-medium mb-1'>Información del Descuento por Habitación:</p>
+                      <ul className='space-y-1 text-xs'>
+                        <li>
+                          • <strong>Semanas con descuento:</strong> {semanasConDescuento}
+                        </li>
+                        <li>
+                          • <strong>Monto por semana:</strong>{' '}
+                          {formatCurrencyNoDecimals(montoDescuento)}
+                        </li>
+                        <li>
+                          • <strong>Total descuento:</strong>{' '}
+                          {formatCurrencyNoDecimals(totalDescuentos)}
+                        </li>
+                        <li>
+                          •{' '}
+                          <em>
+                            El descuento se aplica una vez por semana, no por cada día de asistencia
+                          </em>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Lista de asistencias */}
           {loading ? (
@@ -200,11 +250,11 @@ export default function AttendanceDetailModal({
             <div className='space-y-3'>
               <div className='flex items-center justify-between'>
                 <h3 className='font-semibold text-lg'>Registro de Asistencias</h3>
-                
+
                 {/* Controles de paginación para la tabla */}
                 <SelectElements
                   value={pageSize}
-                  onChange={(value) => {
+                  onChange={value => {
                     setPageSize(value);
                     setCurrentPage(1);
                   }}
@@ -213,51 +263,59 @@ export default function AttendanceDetailModal({
                 />
               </div>
 
-                             {/* Vista móvil */}
-               <div className='lg:hidden space-y-3'>
-                 {paginatedAsistencias.map(asistencia => (
-                   <Card key={asistencia.id_asistencia} className='shadow-sm'>
-                     <CardContent className='p-4'>
-                       <div className='space-y-2'>
-                         <div className='flex items-center justify-between'>
-                           <div className='flex items-center gap-2'>
-                             <Calendar className='text-gray-500 w-4' />
-                             <span className='font-medium text-sm'>
-                               {formatDate(asistencia.fecha)}
-                             </span>
-                           </div>
-                           {getStatusBadge(asistencia.estado)}
-                         </div>
+              {/* Vista móvil */}
+              <div className='lg:hidden space-y-3'>
+                {paginatedAsistencias.map(asistencia => (
+                  <Card key={asistencia.id_asistencia} className='shadow-sm'>
+                    <CardContent className='p-4'>
+                      <div className='space-y-2'>
+                        <div className='flex items-center justify-between'>
+                          <div className='flex items-center gap-2'>
+                            <Calendar className='text-gray-500 w-4' />
+                            <span className='font-medium text-sm'>
+                              {formatDate(asistencia.fecha)}
+                            </span>
+                          </div>
+                          {getStatusBadge(asistencia.estado)}
+                        </div>
 
-                         <div className='flex items-center gap-2'>
-                           <Clock className='text-gray-500 w-4' />
-                           <span className='text-sm text-gray-600'>
-                             Hora: {formatTime(asistencia.hora)}
-                           </span>
-                         </div>
+                        <div className='flex items-center gap-2'>
+                          <Clock className='text-gray-500 w-4' />
+                          <span className='text-sm text-gray-600'>
+                            Hora: {formatTime(asistencia.hora)}
+                          </span>
+                        </div>
 
-                         {asistencia.observaciones && (
-                           <div className='text-sm text-gray-600 bg-gray-50 p-2 rounded'>
-                             <span className='font-medium'>Observación:</span>{' '}
-                             {asistencia.observaciones}
-                           </div>
-                         )}
-                       </div>
-                     </CardContent>
-                   </Card>
-                 ))}
+                        <div className='grid grid-cols-2 gap-2 text-xs'>
+                          <div>
+                            <span className='text-gray-500'>Sueldo:</span>
+                            <span className='font-medium ml-1'>
+                              {formatCurrencyNoDecimals(asistencia.sueldo || 0)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className='text-gray-500'>Aporte AFP:</span>
+                            <span className='font-medium ml-1'>
+                              {formatCurrencyNoDecimals(asistencia.aporte || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
 
-                 {/* Paginación para móvil */}
-                 {totalPages > 1 && (
-                   <div className='flex justify-center mt-4'>
-                     <Paginate
-                       page={currentPage}
-                       totalPages={totalPages}
-                       setPage={handlePageChange}
-                     />
-                   </div>
-                 )}
-               </div>
+                {/* Paginación para móvil */}
+                {totalPages > 1 && (
+                  <div className='flex justify-center mt-4'>
+                    <Paginate
+                      page={currentPage}
+                      totalPages={totalPages}
+                      setPage={handlePageChange}
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Vista desktop */}
               <div className='hidden lg:block'>
@@ -270,6 +328,12 @@ export default function AttendanceDetailModal({
                         </TableHead>
                         <TableHead className='text-left py-2 px-3 text-sm font-medium text-gray-700'>
                           Hora
+                        </TableHead>
+                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700'>
+                          Sueldo
+                        </TableHead>
+                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700'>
+                          Aporte AFP
                         </TableHead>
                         <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700'>
                           Estado
@@ -287,6 +351,12 @@ export default function AttendanceDetailModal({
                           </TableCell>
                           <TableCell className='py-3 px-3 text-sm'>
                             {formatTime(asistencia.hora)}
+                          </TableCell>
+                          <TableCell className='py-3 px-3 text-sm text-center text-green-600 font-medium'>
+                            {formatCurrencyNoDecimals(asistencia.sueldo || 0)}
+                          </TableCell>
+                          <TableCell className='py-3 px-3 text-sm text-center text-blue-600 font-medium'>
+                            {formatCurrencyNoDecimals(asistencia.aporte || 0)}
                           </TableCell>
                           <TableCell className='py-3 px-3 text-center'>
                             {getStatusBadge(asistencia.estado)}

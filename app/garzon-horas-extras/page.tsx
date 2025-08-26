@@ -10,9 +10,9 @@ import SelectElements from '@/components/ui/select-elements';
 import Paginate from '@/components/ui/paginate';
 
 interface Overtime {
-  id_horas_extras?: number;
+  id_hora_extra?: number;
   fecha_crea: string;
-  fecha_mod: string;
+  fecha_mod: string | null;
   hora: number;
   total: number;
   estado: number;
@@ -123,10 +123,12 @@ export default function GarzonHorasExtrasPage() {
     .reduce((sum, item) => sum + (item.hora || 0), 0);
 
   // Formatear fecha
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString: string | null) => {
     if (!dateString) return { date: "N/A", time: "N/A" };
     
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return { date: "N/A", time: "N/A" };
+    
     const day = date.getDate();
     const month = date.toLocaleDateString('es-ES', { month: 'long' });
     const year = date.getFullYear();
@@ -297,7 +299,7 @@ export default function GarzonHorasExtrasPage() {
                     const creacionDate = formatDateTime(item.fecha_crea);
                     const pagoDate = formatDateTime(item.fecha_mod);
                     return (
-                      <tr key={`${item.id_horas_extras || index}`} className="border-b border-gray-100 hover:bg-gray-50">
+                                             <tr key={`${item.id_hora_extra || index}`} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <div className="w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm">
                             {startIndex + index + 1}
@@ -310,13 +312,13 @@ export default function GarzonHorasExtrasPage() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          {item.fecha_mod ? (
+                          {item.estado === 0 && item.fecha_mod ? (
                             <div>
                               <div className="font-medium text-gray-900">{pagoDate.date}</div>
                               <div className="text-sm text-gray-500">{pagoDate.time}</div>
                             </div>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                               Por cobrar
                             </span>
                           )}
