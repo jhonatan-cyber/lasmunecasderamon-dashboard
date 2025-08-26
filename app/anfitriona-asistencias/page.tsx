@@ -31,32 +31,59 @@ export default function AnfitrionaAsistenciasPage() {
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Attendance>('fecha');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [housingDiscountTotal, setHousingDiscountTotal] = useState<number>(0);
+  const [weeksWithDiscount, setWeeksWithDiscount] = useState<number>(0);
+  const [discountPerWeek, setDiscountPerWeek] = useState<number>(0);
 
-  // Fetch asistencias del usuario desde el endpoint específico
+  // Fetch asistencias del usuario desde el endpoint específico (detalle)
   const fetchAttendances = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/asistencias/user");
+      // 1) Detalle por asistencia
+      const res = await fetch("/api/asistencias/user?tipo=detalle");
       const data = await res.json();
 
       if (res.ok && data.success) {
         setAttendances(data.data || []);
-
       } else {
         console.error('API error:', data.message);
         setAttendances([]);
       }
+
+      // 2) Resumen para calcular descuento por habitación (se aplica por semana)
+      const resSummary = await fetch('/api/asistencias/user');
+      const summary = await resSummary.json();
+      if (resSummary.ok && summary.success && Array.isArray(summary.data) && summary.data.length > 0) {
+        const row = summary.data[0];
+        // Esperamos campos: descuento_total, descuento (monto semanal) y posiblemente semanas_con_descuento
+        setHousingDiscountTotal(Number(row.descuento_total || 0));
+        setDiscountPerWeek(Number(row.descuento || 0));
+        // Si no tenemos semanas, derivar: semanas = descuento_total / descuento (evitar división por 0)
+        const weeks = row.semanas_con_descuento !== undefined && row.semanas_con_descuento !== null
+          ? Number(row.semanas_con_descuento)
+          : (Number(row.descuento || 0) > 0 ? Math.round(Number(row.descuento_total || 0) / Number(row.descuento || 0)) : 0);
+        setWeeksWithDiscount(weeks);
+      } else {
+        setHousingDiscountTotal(0);
+        setDiscountPerWeek(0);
+        setWeeksWithDiscount(0);
+      }
     } catch (error) {
       console.error('Error fetching attendances:', error);
       setAttendances([]);
+      setHousingDiscountTotal(0);
+      setDiscountPerWeek(0);
+      setWeeksWithDiscount(0);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAttendances();
-  }, []);
+    if (user && !userLoading) {
+      fetchAttendances();
+    }
+  }, [user, userLoading]);
 
   // Verificar que el usuario sea anfitriona - DESPUÉS de todos los hooks
   if (userLoading) {
@@ -81,10 +108,12 @@ export default function AnfitrionaAsistenciasPage() {
     );
   }
 
-  // Calcular totales
-  const totalSalary = attendances.reduce((sum, attendance) => sum + (attendance.sueldo || 0), 0);
-  const totalContribution = attendances.reduce((sum, attendance) => sum + (attendance.aporte || 0), 0);
-  const totalToCollect = totalSalary - totalContribution;
+  // Calcular totales - solo asistencias pendientes (estado = 1)
+  const asistenciasPendientes = attendances.filter(attendance => attendance.estado === 1);
+  const totalSalary = asistenciasPendientes.reduce((sum, attendance) => sum + (attendance.sueldo || 0), 0);
+  const totalContribution = asistenciasPendientes.reduce((sum, attendance) => sum + (attendance.aporte || 0), 0);
+  const totalToCollectBase = totalSalary - totalContribution;
+  const totalToCollect = Math.max(0, totalToCollectBase - (housingDiscountTotal || 0));
 
   // Ordenar y filtrar asistencias
   const filteredAttendances = attendances.filter((attendance) => {
@@ -205,7 +234,7 @@ export default function AnfitrionaAsistenciasPage() {
 
       {/* Totales centrados */}
       <div className="text-center space-y-2">
-        <div className="flex justify-center gap-8">
+        <div className="flex justify-center gap-8 flex-wrap">
           <div>
             <p className="text-sm text-gray-500">Total Sueldo:</p>
             <p className="text-xl font-bold text-gray-900">$ {totalSalary.toLocaleString()}</p>
@@ -215,8 +244,15 @@ export default function AnfitrionaAsistenciasPage() {
             <p className="text-xl font-bold text-gray-900">$ {totalContribution.toLocaleString()}</p>
           </div>
           <div>
+            <p className="text-sm text-gray-500">Descuento Habitación (semanal):</p>
+            <p className="text-sm text-gray-600">
+              Semanas: {weeksWithDiscount} | Monto/semana: $ {discountPerWeek.toLocaleString()}
+            </p>
+            <p className="text-xl font-bold text-gray-900">$ {housingDiscountTotal.toLocaleString()}</p>
+          </div>
+          <div>
             <p className="text-sm text-gray-500">Total a cobrar:</p>
-            <p className="text-xl font-bold text-gray-900">$ {totalToCollect.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-gray-900">$ {totalToCollect.toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -326,14 +362,14 @@ export default function AnfitrionaAsistenciasPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
+                  <tr key="loading">
                     <td colSpan={7} className="px-6 py-4 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-600">Cargando asistencias...</p>
                     </td>
                   </tr>
                 ) : paginatedAttendances.length === 0 ? (
-                  <tr>
+                  <tr key="empty">
                     <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                       No se encontraron asistencias
                     </td>
@@ -341,7 +377,7 @@ export default function AnfitrionaAsistenciasPage() {
                 ) : (
                   paginatedAttendances.map((attendance, index) => {
                     return (
-                      <tr key={attendance.id_asistencia} className="hover:bg-gray-50">
+                      <tr key={`${attendance.id_asistencia}-${(page - 1) * rowsPerPage + index}`} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-8 h-8 bg-purple-300 text-white rounded-full flex items-center justify-center text-sm font-medium">
                             {(page - 1) * rowsPerPage + index + 1}

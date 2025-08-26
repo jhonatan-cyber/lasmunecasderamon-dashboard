@@ -36,10 +36,8 @@ interface CuentaDetalle {
   sub_total: number;
   comision: number;
   fecha_crea: string;
-  anfitrionaId?: string;
-  anfitrionas?: string;
   producto?: string;
-  id_producto: number;
+  id_producto?: number;
 }
 
 interface CuentaUsuario {
@@ -65,8 +63,6 @@ interface CuentaCompleta {
   estado: number;
   detalles: CuentaDetalle[];
   usuarios: CuentaUsuario[];
-  anfitrionas_ids?: string;
-  anfitrionas_generales?: string;
 }
 
 export default function CuentaDetailModal({
@@ -189,7 +185,9 @@ export default function CuentaDetailModal({
                     <Users className="text-gray-500 dark:text-neutral-400 w-4 h-4" />
                     <Label className="text-sm font-medium text-black dark:text-neutral-200">Anfitrionas:</Label>
                     <span className="text-sm text-purple-600 dark:text-purple-300 font-medium">
-                      {cuenta.anfitrionas_generales || "Sin anfitrionas"}
+                      {cuenta.usuarios && cuenta.usuarios.length > 0 
+                        ? cuenta.usuarios.map(u => u.usuario_nombre).join(', ')
+                        : "Sin anfitrionas"}
                     </span>
                   </div>
                 </div>

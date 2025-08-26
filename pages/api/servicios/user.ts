@@ -15,7 +15,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const userId = userData.id;
 
-    // Obtener servicios del usuario
+    // Obtener servicios del usuario (todos los estados)
     const servicios = (await query(
       `
      SELECT 
@@ -28,13 +28,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         GROUP_CONCAT(U.nick SEPARATOR ', ') AS anfitriona,
         CONCAT(CL.nombre, ' ', CL.apellido) AS cliente, 
         GROUP_CONCAT(U.id_usuario SEPARATOR ', ') AS anfitrionaId,
-        C.estado
+        S.estado
     FROM servicios S
     INNER JOIN habitaciones H ON H.id_habitacion = S.habitacion_id
     INNER JOIN clientes CL ON CL.id_cliente = S.cliente_id
     INNER JOIN detalle_servicios DS ON DS.servicio_id = S.id_servicio
     INNER JOIN usuarios U ON U.id_usuario = DS.usuario_id
-    INNER JOIN comisiones C ON C.servicio_id = S.id_servicio
     WHERE S.id_servicio IN (
         SELECT servicio_id FROM detalle_servicios WHERE usuario_id = ?
     )

@@ -21,69 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SHOW TABLES LIKE 'cuentas'
       `)) as any[];
 
-      // Para la cuenta MPXS119F, siempre usar datos de prueba
-      if (cuentaId === 1 || !tableCheck || tableCheck.length === 0) {
-        const testData = {
-          id_cuenta: cuentaId,
-          codigo: '80W3XKXI',
-          cliente_id: 1,
-          cliente_nombre: 'Jaime Arrieta',
-          total_comision: 20000,
-          habitacion_id: 4,
-          habitacion_numero: 'Pieza 4',
-          sub_total: 120000,
-          total: 200000,
-          pedido_id: null,
-          servicio_id: null,
-          fecha_crea: '2025-07-30 01:21:00',
-          estado: 1,
-          anfitrionas_ids: '4,6,3,7',
-          anfitrionas_generales: 'Lizi, Kike, fede, Sami',
-          detalles: [
-            {
-              precio: 120000,
-              cantidad: 1,
-              sub_total: 120000,
-              comision: 20000,
-              fecha_crea: '2025-07-30 01:21:00',
-              anfitrionaId: '4,6,3,7',
-              anfitrionas: 'Lizi, Kike, fede, Sami',
-              producto: 'Moet',
-              id_producto: 1,
-              categoria: 'Champaña'
-            }
-          ],
-          usuarios: [
-            {
-              id_cuenta_usuario: 1,
-              cuenta_id: cuentaId,
-              usuario_id: 4,
-              usuario_nombre: 'Lizi'
-            },
-            {
-              id_cuenta_usuario: 2,
-              cuenta_id: cuentaId,
-              usuario_id: 6,
-              usuario_nombre: 'Kike'
-            },
-            {
-              id_cuenta_usuario: 3,
-              cuenta_id: cuentaId,
-              usuario_id: 3,
-              usuario_nombre: 'fede'
-            },
-            {
-              id_cuenta_usuario: 4,
-              cuenta_id: cuentaId,
-              usuario_id: 7,
-              usuario_nombre: 'Sami'
-            }
-          ]
-        };
-        return res.status(200).json(testData);
+      // Si no existen las tablas, devolver error
+      if (!tableCheck || tableCheck.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Tabla de cuentas no encontrada'
+        });
       }
 
-      // Obtener la cuenta con detalles y anfitrionas generales
+      // Obtener la cuenta principal
       const cuentaResult = (await query(
         `
         SELECT 
@@ -99,18 +45,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           c.fecha_crea,
           c.estado,
           CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
-          h.nombre as habitacion_numero,
-          GROUP_CONCAT(DISTINCT U.id_usuario ORDER BY U.id_usuario SEPARATOR ',') as anfitrionas_ids,
-          GROUP_CONCAT(DISTINCT U.nick ORDER BY U.id_usuario SEPARATOR ', ') as anfitrionas_generales
+          h.nombre as habitacion_numero
         FROM cuentas c
         LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id
         LEFT JOIN habitaciones h ON h.id_habitacion = c.habitacion_id
-        LEFT JOIN cuentas_usuarios CU ON CU.cuenta_id = c.id_cuenta
-        LEFT JOIN usuarios U ON U.id_usuario = CU.usuario_id
         WHERE c.id_cuenta = ?
-        GROUP BY c.id_cuenta, c.codigo, c.cliente_id, c.total_comision, c.habitacion_id, 
-                 c.sub_total, c.total, c.pedido_id, c.servicio_id, c.fecha_crea, c.estado,
-                 cl.nombre, cl.apellido, h.nombre
       `,
         [cuentaId]
       )) as any[];
@@ -124,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const cuenta = cuentaResult[0];
 
-      // Obtener detalles de la cuenta con productos y anfitrionas
+      // Obtener detalles de la cuenta con productos
       const detallesResult = await query(
         `
         SELECT 
@@ -133,28 +72,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           DC.sub_total, 
           DC.comision, 
           DC.fecha_crea,
-          GROUP_CONCAT(U.id_usuario SEPARATOR ', ') AS anfitrionaId, 
-          GROUP_CONCAT(U.nick SEPARATOR ', ') AS anfitrionas,
           PR.nombre AS producto, 
           PR.id_producto
         FROM detalle_cuentas DC 
         LEFT JOIN productos PR ON PR.id_producto = DC.producto_id
-        LEFT JOIN cuentas_usuarios CU ON CU.cuenta_id = DC.cuenta_id
-        LEFT JOIN usuarios U ON U.id_usuario = CU.usuario_id
         WHERE DC.cuenta_id = ?
-        GROUP BY DC.precio, DC.cantidad, DC.sub_total, DC.comision, DC.fecha_crea, PR.nombre, PR.id_producto
       `,
         [cuentaId]
       );
 
-      // Obtener usuarios asociados con nombres
+      // Obtener usuarios asociados con nick
       const usuariosResult = await query(
         `
         SELECT 
           cu.id_cuenta_usuario,
           cu.cuenta_id,
           cu.usuario_id,
-          CONCAT(u.nombre, ' ', u.apellido) as usuario_nombre
+          u.nick as usuario_nombre
         FROM cuentas_usuarios cu
         LEFT JOIN usuarios u ON u.id_usuario = cu.usuario_id
         WHERE cu.cuenta_id = ?

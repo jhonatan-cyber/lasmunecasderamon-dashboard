@@ -35,20 +35,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          u.nombre,
          u.apellido,
          CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo,
-         COUNT(DISTINCT CASE WHEN c.venta_id != 0 THEN c.venta_id ELSE NULL END) AS total_ventas,
-         COUNT(DISTINCT CASE WHEN c.servicio_id != 0 THEN c.servicio_id ELSE NULL END) AS total_servicios,
-         COALESCE(SUM(CASE WHEN c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_monto,
-         COALESCE(SUM(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE 0 END), 0) AS total_servicios_monto,
+         COUNT(DISTINCT CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN c.venta_id ELSE NULL END) AS total_ventas,
+         COUNT(DISTINCT CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN c.servicio_id ELSE NULL END) AS total_servicios,
+         COALESCE(SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_monto,
+         COALESCE(SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE 0 END), 0) AS total_servicios_monto,
          COALESCE(SUM(dc.comision), 0) AS total_comisiones,
-         COALESCE(AVG(CASE WHEN c.venta_id != 0 THEN v.total ELSE NULL END), 0) AS promedio_por_venta,
-         COALESCE(AVG(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE NULL END), 0) AS promedio_por_servicio,
+         COALESCE(AVG(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE NULL END), 0) AS promedio_por_venta,
+         COALESCE(AVG(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE NULL END), 0) AS promedio_por_servicio,
          COALESCE(COUNT(DISTINCT DATE(c.fecha_crea)), 0) AS dias_trabajados,
          COALESCE(SUM(dc.comision) / COUNT(DISTINCT DATE(c.fecha_crea)), 0) AS promedio_diario
        FROM usuarios u
        LEFT JOIN detalle_comisiones dc ON u.id_usuario = dc.usuario_id
        LEFT JOIN comisiones c ON dc.comision_id = c.id_comision
        LEFT JOIN ventas v ON c.venta_id = v.id_venta AND v.estado = 1
-       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND s.estado = 1
+       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND (s.estado = 0 OR s.estado = 1 OR s.estado IS NULL)
        WHERE u.rol_id = (SELECT id_rol FROM roles WHERE nombre = 'Anfitriona')
          AND c.estado = 1
          ${dateFilter}
@@ -60,19 +60,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const statsQuery = `
        SELECT 
          (SELECT COUNT(DISTINCT u2.id_usuario) FROM usuarios u2 WHERE u2.rol_id = (SELECT id_rol FROM roles WHERE nombre = 'Anfitriona')) AS total_anfitrionas,
-         COALESCE(SUM(CASE WHEN c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_general,
-         COALESCE(SUM(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE 0 END), 0) AS total_servicios_general,
+         COALESCE(SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_general,
+         COALESCE(SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE 0 END), 0) AS total_servicios_general,
          COALESCE(SUM(dc.comision), 0) AS total_comisiones_general,
-         COALESCE(AVG(CASE WHEN c.venta_id != 0 THEN v.total ELSE NULL END), 0) AS promedio_venta_general,
-         COALESCE(AVG(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE NULL END), 0) AS promedio_servicio_general,
+         COALESCE(AVG(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE NULL END), 0) AS promedio_venta_general,
+         COALESCE(AVG(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE NULL END), 0) AS promedio_servicio_general,
          0 AS promedio_comision_por_anfitriona,
-         COALESCE(COUNT(DISTINCT CASE WHEN c.venta_id != 0 THEN c.venta_id ELSE NULL END), 0) AS total_ventas_count,
-         COALESCE(COUNT(DISTINCT CASE WHEN c.servicio_id != 0 THEN c.servicio_id ELSE NULL END), 0) AS total_servicios_count
+         COALESCE(COUNT(DISTINCT CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN c.venta_id ELSE NULL END), 0) AS total_ventas_count,
+         COALESCE(COUNT(DISTINCT CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN c.servicio_id ELSE NULL END), 0) AS total_servicios_count
        FROM comisiones c
        INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision
        INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
        LEFT JOIN ventas v ON c.venta_id = v.id_venta AND v.estado = 1
-       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND s.estado = 1
+       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND (s.estado = 0 OR s.estado = 1 OR s.estado IS NULL)
        WHERE u.rol_id = (SELECT id_rol FROM roles WHERE nombre = 'Anfitriona')
          AND c.estado = 1
          ${dateFilter}
@@ -84,17 +84,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          u.id_usuario,
          CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo,
          COALESCE(SUM(dc.comision), 0) AS total_comisiones,
-         COALESCE(SUM(CASE WHEN c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas,
-         COALESCE(SUM(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE 0 END), 0) AS total_servicios,
-         COUNT(DISTINCT CASE WHEN c.venta_id != 0 THEN c.venta_id ELSE NULL END) AS total_ventas_count,
-         COUNT(DISTINCT CASE WHEN c.servicio_id != 0 THEN c.servicio_id ELSE NULL END) AS total_servicios_count,
-         COALESCE(AVG(CASE WHEN c.venta_id != 0 THEN v.total ELSE NULL END), 0) AS promedio_por_venta,
-         COALESCE(AVG(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE NULL END), 0) AS promedio_por_servicio
+         COALESCE(SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas,
+         COALESCE(SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE 0 END), 0) AS total_servicios,
+         COUNT(DISTINCT CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN c.venta_id ELSE NULL END) AS total_ventas_count,
+         COUNT(DISTINCT CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN c.servicio_id ELSE NULL END) AS total_servicios_count,
+         COALESCE(AVG(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE NULL END), 0) AS promedio_por_venta,
+         COALESCE(AVG(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE NULL END), 0) AS promedio_por_servicio
        FROM usuarios u
        LEFT JOIN detalle_comisiones dc ON u.id_usuario = dc.usuario_id
        LEFT JOIN comisiones c ON dc.comision_id = c.id_comision
        LEFT JOIN ventas v ON c.venta_id = v.id_venta AND v.estado = 1
-       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND s.estado = 1
+       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND (s.estado = 0 OR s.estado = 1 OR s.estado IS NULL)
        WHERE u.rol_id = (SELECT id_rol FROM roles WHERE nombre = 'Anfitriona')
          AND c.estado = 1
          ${dateFilter}
@@ -116,17 +116,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
            WHEN 'Saturday' THEN 'Sábado'
            WHEN 'Sunday' THEN 'Domingo'
          END AS dia_espanol,
-         COUNT(DISTINCT CASE WHEN c.venta_id != 0 THEN c.venta_id ELSE NULL END) AS total_ventas,
-         COUNT(DISTINCT CASE WHEN c.servicio_id != 0 THEN c.servicio_id ELSE NULL END) AS total_servicios,
-         COALESCE(SUM(CASE WHEN c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_monto,
-         COALESCE(SUM(CASE WHEN c.servicio_id != 0 THEN s.precio_servicio ELSE 0 END), 0) AS total_servicios_monto,
+         COUNT(DISTINCT CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN c.venta_id ELSE NULL END) AS total_ventas,
+         COUNT(DISTINCT CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN c.servicio_id ELSE NULL END) AS total_servicios,
+         COALESCE(SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id != 0 THEN v.total ELSE 0 END), 0) AS total_ventas_monto,
+         COALESCE(SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id != 0 THEN COALESCE(s.precio_servicio, 0) ELSE 0 END), 0) AS total_servicios_monto,
          COALESCE(SUM(dc.comision), 0) AS total_comisiones,
          COALESCE(AVG(dc.comision), 0) AS promedio_comision
        FROM comisiones c
        INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
        INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
        LEFT JOIN ventas v ON c.venta_id = v.id_venta AND v.estado = 1
-       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND s.estado = 1
+       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio AND (s.estado = 0 OR s.estado = 1 OR s.estado IS NULL)
        WHERE c.estado = 1 
          AND u.rol_id = (SELECT id_rol FROM roles WHERE nombre = 'Anfitriona')
          ${dateFilter}

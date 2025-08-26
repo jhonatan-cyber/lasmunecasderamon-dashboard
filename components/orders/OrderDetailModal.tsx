@@ -424,6 +424,82 @@ export default function OrderDetailModal({
     }
   };
 
+  const handleRegistrarCuenta = async () => {
+    setIsRegistering(true);
+    try {
+      // Obtener información del pedido
+      const pedido = detail[0];
+
+      // Calcular el total de comisiones
+      const total_comision =
+        detail.reduce((acc, item) => acc + (item.comision || 0), 0) + recargoAnfitrionas;
+
+      // Calcular sub_total (suma de precios de productos)
+      const sub_total = detail.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+
+      // Generar código único para la cuenta
+      const generateCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 8; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+      };
+
+      // Obtener IDs de anfitrionas del pedido
+      const anfitrionasIds = detail[0]?.anfitrionas_con_ids?.map((anfitriona: any) => anfitriona.usuario_id) || [];
+
+      // Preparar datos para la cuenta
+      const cuentaData = {
+        codigo: generateCode(),
+        cliente_id: pedido.cliente_id || 1,
+        total_comision: total_comision,
+        sub_total: sub_total,
+        total: (pedido.total || 0) + recargoAnfitrionas, // Sin propina para cuentas
+        habitacion_id: habitacionId ? parseInt(habitacionId) : null,
+        detalles: detail.map((item: any) => ({
+          producto_id: item.id_producto || 1,
+          precio: item.precio || 0,
+          cantidad: item.cantidad || 0,
+          comision: item.comision || 0,
+          sub_total: (item.precio || 0) * (item.cantidad || 0)
+        })),
+        usuarios: anfitrionasIds
+      };
+
+      // Crear la cuenta
+      const response = await fetch('/api/cuentas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(cuentaData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear la cuenta');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Cuenta registrada exitosamente');
+        onClose();
+        onVentaRegistrada?.(); // Llamar al callback cuando se registra la cuenta
+        onOrderStatusChange?.(); // Actualizar el contador de pedidos pendientes
+      } else {
+        throw new Error(result.message || 'Error al crear la cuenta');
+      }
+    } catch (error) {
+      console.error('Error al registrar cuenta:', error);
+      toast.error('Error al registrar la cuenta');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   const actualizarEstadoPedido = async (nuevoEstado: number) => {
     if (!orderId) {
       throw new Error('No hay ID de pedido');
@@ -657,8 +733,10 @@ export default function OrderDetailModal({
                 size='sm'
                 variant='outline'
                 className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                onClick={handleRegistrarCuenta}
+                disabled={isRegistering}
               >
-                Registrar Cuenta
+                {isRegistering ? 'Registrando...' : 'Registrar Cuenta'}
               </Button>
 
               <Button

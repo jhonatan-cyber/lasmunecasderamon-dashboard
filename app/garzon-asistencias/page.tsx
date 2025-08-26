@@ -17,6 +17,8 @@ interface Asistencia {
   sueldo: number;
   aporte: number;
   estado: number;
+  total?: number;
+  fecha_pago?: string | null;
 }
 
 export default function GarzonAsistenciasPage() {
@@ -82,7 +84,8 @@ export default function GarzonAsistenciasPage() {
 
   // Filtrado
   const filteredAsistencias = asistencias.filter((asistencia) => {
-    const matchesSearch = asistencia.fecha?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+    const matchesSearch = (asistencia.fecha?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+      || (asistencia.hora?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     const matchesStatus = statusFilter === "all" || 
       (statusFilter === "pendiente" && asistencia.estado === 1) ||
       (statusFilter === "pagado" && asistencia.estado === 0);
@@ -113,9 +116,10 @@ export default function GarzonAsistenciasPage() {
   const paginatedAsistencias = sortedAsistencias.slice(startIndex, endIndex);
   const totalPages = Math.ceil(sortedAsistencias.length / rowsPerPage);
 
-  // Cálculos
-  const totalSalary = asistencias.reduce((sum, asistencia) => sum + (asistencia.sueldo || 0), 0);
-  const totalContribution = asistencias.reduce((sum, asistencia) => sum + (asistencia.aporte || 0), 0);
+  // Cálculos - solo asistencias pendientes (estado = 1)
+  const asistenciasPendientes = asistencias.filter(asistencia => asistencia.estado === 1);
+  const totalSalary = asistenciasPendientes.reduce((sum, asistencia) => sum + (asistencia.sueldo || 0), 0);
+  const totalContribution = asistenciasPendientes.reduce((sum, asistencia) => sum + (asistencia.aporte || 0), 0);
   const totalToCollect = totalSalary - totalContribution;
 
   // Formatear fecha
@@ -168,8 +172,23 @@ export default function GarzonAsistenciasPage() {
     } else {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
-          Pagado
+          Cobrado
         </span>
+      );
+    }
+  };
+
+  const getPaymentDateBadge = (fechaPago: string | null | undefined, estado: number) => {
+    if (!fechaPago || estado === 1) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          Por cobrar
+        </span>
+      );
+    } else {
+      const { date } = formatDateTime(fechaPago);
+      return (
+        <div className="text-sm text-gray-900">{date}</div>
       );
     }
   };
@@ -208,7 +227,7 @@ export default function GarzonAsistenciasPage() {
           </label>
           <input
             type="text"
-            placeholder="Buscar por fecha..."
+            placeholder="Buscar por fecha u hora..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -225,7 +244,7 @@ export default function GarzonAsistenciasPage() {
           >
             <option value="all">Todos</option>
             <option value="pendiente">Por cobrar</option>
-            <option value="pagado">Pagado</option>
+            <option value="pagado">Cobrado</option>
           </select>
         </div>
         <div>
@@ -240,6 +259,7 @@ export default function GarzonAsistenciasPage() {
             <option value="fecha">Fecha</option>
             <option value="sueldo">Sueldo</option>
             <option value="aporte">Aporte</option>
+            <option value="total">Total</option>
           </select>
         </div>
         <div>
@@ -294,14 +314,17 @@ export default function GarzonAsistenciasPage() {
                     <th className="text-left py-3 px-4 font-medium text-gray-900">FECHA</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">SUELDO</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">APORTE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">TOTAL</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">FECHA DE PAGO</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">ESTADO</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedAsistencias.map((asistencia, index) => {
-                    const { date, time } = formatDateTime(asistencia.fecha);
+                    const { date } = formatDateTime(asistencia.fecha);
+                    const hora = asistencia.hora ? asistencia.hora.slice(0, 5) : '';
                     return (
-                      <tr key={asistencia.id_asistencia} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr key={`${asistencia.id_asistencia}-${startIndex + index}`} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <div className="w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm">
                             {startIndex + index + 1}
@@ -310,11 +333,13 @@ export default function GarzonAsistenciasPage() {
                         <td className="py-3 px-4">
                           <div>
                             <div className="font-medium text-gray-900">{date}</div>
-                            <div className="text-sm text-gray-500">{time}</div>
+                            <div className="text-sm text-gray-500">{hora || '—'}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4 text-gray-900">$ {(asistencia.sueldo || 0).toLocaleString()}</td>
                         <td className="py-3 px-4 text-gray-900">$ {(asistencia.aporte || 0).toLocaleString()}</td>
+                        <td className="py-3 px-4 text-gray-900">$ {(asistencia.total || 0).toLocaleString()}</td>
+                        <td className="py-3 px-4">{getPaymentDateBadge(asistencia.fecha_pago ?? null, asistencia.estado)}</td>
                         <td className="py-3 px-4">
                           {getStatusBadge(asistencia.estado)}
                         </td>

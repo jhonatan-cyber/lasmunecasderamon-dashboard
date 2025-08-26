@@ -24,8 +24,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           A.usuario_id,
           A.fecha,
           A.hora,
+          A.fecha_pago,
           U.sueldo,
           U.aporte,
+          (U.sueldo - U.aporte) AS total,
           A.estado
         FROM asistencias A
         INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
@@ -40,7 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         queryParams.push(startDate as string, endDate as string);
       }
 
-      sql += ` ORDER BY A.fecha DESC`;
+      sql += ` ORDER BY A.fecha DESC, A.hora DESC`;
 
       const asistencias = (await query(sql, queryParams)) as any[];
 
@@ -112,7 +114,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: data || []
     });
   } catch (error) {
-   
+    
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

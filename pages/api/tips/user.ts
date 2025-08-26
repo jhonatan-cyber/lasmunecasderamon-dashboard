@@ -26,8 +26,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           DP.usuario_id,
           DP.monto,
           DP.fecha_crea,
-          P.estado,
-          P.fecha_crea AS propina_fecha_crea,
+          DP.estado,
+          DP.fecha_mod AS propina_fecha_crea,
           V.codigo AS codigo_venta
         FROM detalle_propinas DP
         INNER JOIN propinas P ON P.id_propina = DP.propina_id
@@ -62,8 +62,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         DP.usuario_id,
         DP.monto,
         DP.fecha_crea,
-        P.estado,
-        P.fecha_crea AS propina_fecha_crea,
+        DP.estado,
+        DP.fecha_mod AS propina_fecha_crea,
         V.codigo AS codigo_venta
       FROM detalle_propinas DP
       INNER JOIN propinas P ON P.id_propina = DP.propina_id

@@ -59,6 +59,7 @@ interface CobrarCuentaModalProps {
   onClose: () => void;
   cuenta: any;
   onCuentaCobrada?: () => void;
+  onOrderStatusChange?: () => void;
 }
 
 export default function CobrarCuentaModal({
@@ -66,6 +67,7 @@ export default function CobrarCuentaModal({
   onClose,
   cuenta,
   onCuentaCobrada,
+  onOrderStatusChange,
 }: CobrarCuentaModalProps) {
   const [rooms, setRooms] = useState<any[]>([]);
   const [searchRoom, setSearchRoom] = useState("");
@@ -114,10 +116,7 @@ export default function CobrarCuentaModal({
   };
 
   // Procesar anfitrionas desde la cuenta
-  const anfitrionasDeLaCuenta = cuenta?.anfitrionas_generales || "";
-  const anfitrionasArray = anfitrionasDeLaCuenta
-    ? anfitrionasDeLaCuenta.split(", ").filter((a: string) => a.trim() !== "")
-    : [];
+  const anfitrionasArray = cuenta?.usuarios?.map((usuario: any) => usuario.usuario_nombre) || [];
 
   
   const extra = cuenta?.total - cuenta?.sub_total;
@@ -197,46 +196,46 @@ export default function CobrarCuentaModal({
            const ventaErrorData = await ventaResponse.json();
            console.error("Error al registrar venta:", ventaErrorData);
            // No lanzar error aquí, solo log para debugging
-                   } else {
-            const ventaResult = await ventaResponse.json();
+         } else {
+           const ventaResult = await ventaResponse.json();
 
-            toast.success("Venta registrada en el sistema");
-            
-            // Registrar propina usando el ID de la venta
-            if (propina > 0) {
-              try {
-                const resPropina = await fetch("/api/tips", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                                     body: JSON.stringify({
-                     venta_id: ventaResult?.id_venta || ventaResult?.id,
-                     monto: propina,
-                   }),
-                });
+           toast.success("Venta registrada en el sistema");
+           
+           // Registrar propina usando el ID de la venta
+           if (propina > 0) {
+             try {
+               const resPropina = await fetch("/api/tips", {
+                 method: "POST",
+                 headers: {
+                   "Content-Type": "application/json",
+                 },
+                 body: JSON.stringify({
+                   venta_id: ventaResult?.data?.id_venta,
+                   monto: propina,
+                 }),
+               });
 
-                const dataPropina = await resPropina.json();
+               const dataPropina = await resPropina.json();
 
-                if (dataPropina.success) {
-                  toast.success(
-                    `Propina de ${formatCurrencyNoDecimals(
-                      propina
-                    )} registrada y distribuida entre ${
-                      dataPropina.data.usuarios_distribucion
-                    } usuarios`
-                  );
-                } else {
-                  toast.error(
-                    "Error al registrar la propina: " + dataPropina.message
-                  );
-                }
-              } catch (error) {
-                console.error("Error al registrar propina:", error);
-                toast.error("Error al registrar la propina");
-              }
-            }
-          }
+               if (dataPropina.success) {
+                 toast.success(
+                   `Propina de ${formatCurrencyNoDecimals(
+                     propina
+                   )} registrada y distribuida entre ${
+                     dataPropina.data.usuarios_distribucion
+                   } usuarios`
+                 );
+               } else {
+                 toast.error(
+                   "Error al registrar la propina: " + dataPropina.message
+                 );
+               }
+             } catch (error) {
+               console.error("Error al registrar propina:", error);
+               toast.error("Error al registrar la propina");
+             }
+           }
+         }
                } catch (ventaError) {
           console.error("Error al registrar venta:", ventaError);
           // No lanzar error aquí, solo log para debugging
@@ -245,9 +244,10 @@ export default function CobrarCuentaModal({
              // Nota: No se activa el temporizador al cobrar cuenta
        // El temporizador solo se activa al crear una nueva cuenta
 
-      toast.success("Cuenta cobrada exitosamente");
-      onClose();
-      onCuentaCobrada?.();
+             toast.success("Cuenta cobrada exitosamente");
+       onClose();
+       onCuentaCobrada?.();
+       onOrderStatusChange?.();
     } catch (error) {
       console.error("Error al cobrar cuenta:", error);
       toast.error(
@@ -323,7 +323,9 @@ export default function CobrarCuentaModal({
                   <b>Anfitriona(s):</b>
                 </span>{" "}
                 <span className="font-normal">
-                  {cuenta?.anfitrionas_generales || "Sin anfitrionas"}
+                  {anfitrionasArray.length > 0 
+                    ? anfitrionasArray.join(', ')
+                    : "Sin anfitrionas"}
                 </span>
               </div>
               <div>
