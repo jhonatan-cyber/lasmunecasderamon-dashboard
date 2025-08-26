@@ -80,8 +80,8 @@ export default function AttendancePage() {
         </Card>
       ) : (
         <>
-                             {/* Estadísticas */}
-                   <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
+          {/* Estadísticas */}
+          <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
 
           {/* Filtros */}
           <AttendanceFilters

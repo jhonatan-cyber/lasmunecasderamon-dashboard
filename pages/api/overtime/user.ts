@@ -20,6 +20,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       SELECT 
         he.id_hora_extra,
         he.fecha_crea,
+        he.fecha_mod,
         he.hora,
         he.monto,
         he.total,

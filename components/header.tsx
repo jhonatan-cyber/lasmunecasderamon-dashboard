@@ -43,9 +43,11 @@ export function Header() {
   const [modalOpen, setModalOpen] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
-  // Verificar si el usuario es anfitriona
+  // Verificar si el usuario es anfitriona, garzón o cajero
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
+  const isCajero = user?.role?.toLowerCase() === 'cajero';
+  const isAdmin = user?.role?.toLowerCase() === 'administrador';
 
   // Habilitar audio cuando el usuario interactúe
   const enableAudio = () => {
@@ -300,10 +302,12 @@ export function Header() {
                 <User className='mr-2 h-4 w-4' />
                 Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/configuracion')}>
-                <Settings className='mr-2 h-4 w-4' />
-                Configuración
-              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => router.push('/configuracion')}>
+                  <Settings className='mr-2 h-4 w-4' />
+                  Configuración
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className='text-red-600' onClick={handleLogout}>
                 Cerrar Sesión

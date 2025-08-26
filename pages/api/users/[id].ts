@@ -247,6 +247,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ? fields.estado_civil[0]
         : fields.estado_civil;
       const rol_id = Array.isArray(fields.rol_id) ? fields.rol_id[0] : fields.rol_id;
+      const password = Array.isArray(fields.password) ? fields.password[0] : fields.password;
+      const confirmPassword = Array.isArray(fields.confirmPassword) ? fields.confirmPassword[0] : fields.confirmPassword;
 
       // Validar campos requeridos
       const requiredFields = [
@@ -289,6 +291,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // Verificar si el RUN cambió para actualizar contraseña
       if (run !== currentUser.run) {
         newPassword = await generatePassword(run);
+      }
+
+      // Verificar si se proporcionó una nueva contraseña manualmente
+      if (password && confirmPassword) {
+        if (password !== confirmPassword) {
+          return res.status(400).json({
+            success: false,
+            message: 'Las contraseñas no coinciden'
+          });
+        }
+        
+        if (password.length < 6) {
+          return res.status(400).json({
+            success: false,
+            message: 'La contraseña debe tener al menos 6 caracteres'
+          });
+        }
+        
+        newPassword = await bcrypt.hash(password, 10);
       }
 
       // Verificar si el nick cambió para actualizar email
@@ -372,7 +393,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       let message = 'Perfil actualizado exitosamente';
       const changes = [];
 
-      if (newPassword) changes.push('contraseña actualizada (RUN cambió)');
+      if (newPassword) {
+        if (run !== currentUser.run) {
+          changes.push('contraseña actualizada (RUN cambió)');
+        } else {
+          changes.push('contraseña actualizada');
+        }
+      }
       if (newEmail) changes.push('email actualizado (nick cambió)');
       if (uploadedFile) changes.push('foto actualizada');
 

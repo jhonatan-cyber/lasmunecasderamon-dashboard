@@ -86,7 +86,10 @@ export default function AnfitrionaServiciosPage() {
   // Calcular totales
   const totalServices = services.length;
   const totalEarnings = services.reduce((sum, service) => sum + (service.precio_servicio || 0), 0);
-  const completedServices = services.filter(service => service.estado === 1).length;
+  const serviciosPorCobrar = services.filter(service => service.estado === 0).length;
+  const serviciosEnProceso = services.filter(service => service.estado === 1).length;
+  const serviciosCobrados = services.filter(service => service.estado === 4).length;
+  const serviciosAnulados = services.filter(service => service.estado === 3).length;
 
   // Ordenar y filtrar servicios
   const filteredServices = services.filter((service) => {
@@ -134,24 +137,43 @@ export default function AnfitrionaServiciosPage() {
   };
 
   const getStatusBadge = (estado: number) => {
-    if (estado === 1) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Completado
-        </span>
-      );
-    } else if (estado === 2) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          Anulado
-        </span>
-      );
-    } else {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          En proceso
-        </span>
-      );
+    switch (estado) {
+      case 0:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            Por cobrar
+          </span>
+        );
+      case 1:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            En proceso
+          </span>
+        );
+      case 2:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+            Pendiente anulación
+          </span>
+        );
+      case 3:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            Anulado
+          </span>
+        );
+      case 4:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            Cobrado
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            Desconocido
+          </span>
+        );
     }
   };
 
@@ -199,14 +221,26 @@ export default function AnfitrionaServiciosPage() {
 
       {/* Totales centrados */}
       <div className="text-center space-y-2">
-        <div className="flex justify-center gap-8">
+        <div className="flex justify-center gap-8 flex-wrap">
           <div>
             <p className="text-sm text-gray-500">Total Servicios:</p>
             <p className="text-xl font-bold text-gray-900">{totalServices}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Servicios Completados:</p>
-            <p className="text-xl font-bold text-gray-900">{completedServices}</p>
+            <p className="text-sm text-gray-500">Por Cobrar:</p>
+            <p className="text-xl font-bold text-purple-600">{serviciosPorCobrar}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">En Proceso:</p>
+            <p className="text-xl font-bold text-blue-600">{serviciosEnProceso}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Cobrados:</p>
+            <p className="text-xl font-bold text-green-600">{serviciosCobrados}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Anulados:</p>
+            <p className="text-xl font-bold text-red-600">{serviciosAnulados}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Total Ganado:</p>

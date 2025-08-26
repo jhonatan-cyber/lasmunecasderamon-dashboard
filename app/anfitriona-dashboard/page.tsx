@@ -35,50 +35,60 @@ export default function AnfitrionaDashboard() {
   const fetchDashboardData = async () => {
     setLoadingData(true);
     try {
-      // Fetch asistencias
-      const asistenciasRes = await fetch("/api/asistencias/user");
+      // Fetch asistencias (detalle y resumen para descuento)
+      const [asistenciasRes, asistenciasSummaryRes, comisionesRes, serviciosRes, anticiposRes] = await Promise.all([
+        fetch("/api/asistencias/user?tipo=detalle"),
+        fetch("/api/asistencias/user"),
+        fetch("/api/commissions/user"),
+        fetch("/api/servicios/user"),
+        fetch("/api/anticipos/user"),
+      ]);
+
       const asistenciasData = await asistenciasRes.json();
-      
-      // Fetch comisiones
-      const comisionesRes = await fetch("/api/commissions/user");
+      const asistenciasSummary = await asistenciasSummaryRes.json();
       const comisionesData = await comisionesRes.json();
-      
-      // Fetch servicios
-      const serviciosRes = await fetch("/api/servicios/user");
       const serviciosData = await serviciosRes.json();
-      
-      // Fetch anticipos
-      const anticiposRes = await fetch("/api/anticipos/user");
       const anticiposData = await anticiposRes.json();
 
       // Calcular totales
-      const asistencias = asistenciasData.success ? asistenciasData.data || [] : [];
-      const comisiones = comisionesData.success ? comisionesData.data || [] : [];
-      const servicios = serviciosData.success ? serviciosData.data || [] : [];
-      const anticipos = anticiposData.success ? anticiposData.data || [] : [];
+      const asistencias = asistenciasData.success ? (asistenciasData.data || []) : [];
+      const comisiones = comisionesData.success ? (comisionesData.data || []) : [];
+      const servicios = serviciosData.success ? (serviciosData.data || []) : [];
+      const anticipos = anticiposData.success ? (anticiposData.data || []) : [];
 
-      // Calcular totales de asistencias
-      const totalSalary = asistencias.reduce((sum: number, asistencia: any) => sum + (asistencia.sueldo || 0), 0);
-      const totalContribution = asistencias.reduce((sum: number, asistencia: any) => sum + (asistencia.aporte || 0), 0);
-      const totalACobrarAsistencias = totalSalary - totalContribution;
+      // Descuento habitación semanal desde resumen
+      let housingDiscountTotal = 0;
+      if (asistenciasSummary.success && Array.isArray(asistenciasSummary.data) && asistenciasSummary.data.length > 0) {
+        const row = asistenciasSummary.data[0];
+        housingDiscountTotal = Number(row.descuento_total || 0);
+      }
 
-      // Calcular totales de comisiones
-      const totalComisionesAmount = comisiones.reduce((sum: number, comision: any) => sum + (comision.comision || 0), 0);
-      const comisionesPendientes = comisiones.filter((comision: any) => comision.estado === 1).length;
-      const totalComisionesPendientes = comisiones.filter((comision: any) => comision.estado === 1).reduce((sum: number, comision: any) => sum + (comision.comision || 0), 0);
+      // Calcular totales de asistencias (estado 1)
+      const asistenciasEstado1 = asistencias.filter((a: any) => a.estado === 1);
+      const totalSalary = asistenciasEstado1.reduce((sum: number, a: any) => sum + (a.sueldo || 0), 0);
+      const totalContribution = asistenciasEstado1.reduce((sum: number, a: any) => sum + (a.aporte || 0), 0);
+      const totalACobrarAsistencias = Math.max(0, (totalSalary - totalContribution) - (housingDiscountTotal || 0));
 
-      // Calcular totales de servicios
-      const totalServiciosAmount = servicios.reduce((sum: number, servicio: any) => sum + (servicio.precio_servicio || 0), 0);
-      const serviciosCompletados = servicios.filter((servicio: any) => servicio.estado === 1).length;
-      const totalGanadoServicios = servicios.filter((servicio: any) => servicio.estado === 1).reduce((sum: number, servicio: any) => sum + (servicio.precio_servicio || 0), 0);
+      // Calcular totales de comisiones de ventas (solo pendientes estado = 1)
+      const comisionesVentas = comisiones.filter((c: any) => c.tipo === 'venta' && c.estado === 1);
+      const comisionesVentasCount = comisionesVentas.length;
+      const totalComisionesVentas = comisionesVentas.reduce((sum: number, c: any) => sum + (c.comision || 0), 0);
 
-      // Calcular totales de anticipos
-      const totalAnticiposAmount = anticipos.reduce((sum: number, anticipo: any) => sum + (anticipo.monto || 0), 0);
-      const anticiposPendientes = anticipos.filter((anticipo: any) => anticipo.estado === 1).length;
-      const totalAnticiposPendientes = anticipos.filter((anticipo: any) => anticipo.estado === 1).reduce((sum: number, anticipo: any) => sum + (anticipo.monto || 0), 0);
+      // Calcular totales de servicios (sumar comisiones de servicios estado = 0 y 1)
+      const serviciosCompletadosArr = servicios.filter((s: any) => s.estado === 0 || s.estado === 1);
+      const serviciosCompletados = serviciosCompletadosArr.length;
+      
+      // Obtener comisiones de servicios específicamente
+      const comisionesServicios = comisiones.filter((c: any) => c.tipo === 'servicio' && c.estado === 1);
+      const totalGanadoServicios = comisionesServicios.reduce((sum: number, c: any) => sum + (c.comision || 0), 0);
 
-      // Total a cobrar (asistencias + comisiones pendientes + servicios ganados - anticipos pendientes)
-      const totalACobrar = totalACobrarAsistencias + totalComisionesPendientes + totalGanadoServicios - totalAnticiposPendientes;
+      // Calcular totales de anticipos (solo pendientes estado = 1)
+      const anticiposPendientesArr = anticipos.filter((a: any) => a.estado === 1);
+      const anticiposPendientes = anticiposPendientesArr.length;
+      const totalAnticiposPendientes = anticiposPendientesArr.reduce((sum: number, a: any) => sum + (a.monto || 0), 0);
+
+      // Total a cobrar (asistencias - desc. habitación ya aplicado arriba + comisiones ventas + comisiones servicios - anticipos pendientes)
+      const totalACobrar = totalACobrarAsistencias + totalComisionesVentas + totalGanadoServicios - totalAnticiposPendientes;
 
       setDashboardData({
         totalAsistencias: asistencias.length,
@@ -86,7 +96,7 @@ export default function AnfitrionaDashboard() {
         totalServicios: servicios.length,
         totalAnticipos: anticipos.length,
         totalACobrar: totalACobrar,
-        comisionesPendientes: comisionesPendientes,
+        comisionesPendientes: comisionesVentasCount,
         anticiposPendientes: anticiposPendientes,
         serviciosCompletados: serviciosCompletados
       });
@@ -105,15 +115,15 @@ export default function AnfitrionaDashboard() {
   }, [user, loading]);
 
   if (loading) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+      return (
+        <div className="p-6 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando...</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   // Verificar que el usuario sea anfitriona
   if (user?.role?.toLowerCase() !== 'anfitriona') {

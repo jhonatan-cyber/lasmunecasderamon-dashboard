@@ -15,7 +15,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const userId = userData.id;
 
-    // Obtener comisiones del usuario (tanto ventas como servicios)
+    // Obtener comisiones del usuario (tanto ventas como servicios) - todas las comisiones
     const commissions = (await query(
       `
      SELECT 
@@ -34,7 +34,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     INNER JOIN comisiones C ON C.id_comision = DC.comision_id
     LEFT JOIN ventas V ON V.id_venta = C.venta_id
     LEFT JOIN servicios S ON S.id_servicio = C.servicio_id
-    WHERE DC.usuario_id = ? 
+    WHERE DC.usuario_id = ?
     ORDER BY DC.fecha_crea DESC
     `,
       [userId]

@@ -30,6 +30,7 @@ interface CuentaTableProps {
   rows: CuentaWithDetails[];
   rowsPerPage: number;
   onRefresh?: () => void;
+  onOrderStatusChange?: () => void;
 }
 
 export default function CuentaTable({
@@ -37,6 +38,7 @@ export default function CuentaTable({
   rows,
   rowsPerPage,
   onRefresh,
+  onOrderStatusChange,
 }: CuentaTableProps) {
   const [selectedCuentaId, setSelectedCuentaId] = useState<number | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -364,6 +366,7 @@ export default function CuentaTable({
         onClose={() => setCobrarCuentaOpen(false)}
         cuenta={selectedCuentaForCobro}
         onCuentaCobrada={handleCuentaCobrada}
+        onOrderStatusChange={onOrderStatusChange}
       />
     </>
   );

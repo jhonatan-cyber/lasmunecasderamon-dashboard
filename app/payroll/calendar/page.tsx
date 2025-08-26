@@ -837,7 +837,7 @@ export default function PayrollCalendarPage() {
                               <TableCell className='px-4 py-3'>
                                 <span
                                   className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    venta.estado === 1
+                                    (venta.estado === 1 || venta.estado === 3)
                                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                       : venta.estado === 0
                                         ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
@@ -846,10 +846,10 @@ export default function PayrollCalendarPage() {
                                           : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
                                   }`}
                                 >
-                                  {venta.estado === 1
-                                    ? 'Finalizada'
+                                  {(venta.estado === 1 || venta.estado === 3)
+                                    ? 'Vendido'
                                     : venta.estado === 0
-                                      ? 'Anulada'
+                                      ? 'Anulado'
                                       : venta.estado === 2
                                         ? 'Pendiente de anulación'
                                         : 'Desconocido'}

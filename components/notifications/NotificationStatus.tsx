@@ -2,54 +2,27 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff, RotateCcw } from 'lucide-react';
+import { Wifi } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 
 export function NotificationStatus() {
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const { isConnected, connectionAttempts, reconnect } = useNotifications();
+  const { isConnected } = useNotifications();
 
-  const handleReconnect = () => {
-    setIsReconnecting(true);
-    reconnect();
-    // Simular tiempo de reconexión
-    setTimeout(() => {
-      setIsReconnecting(false);
-    }, 2000);
-  };
+  // Si no está conectado, no mostrar nada (evita el badge rojo)
+  if (!isConnected) {
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-2">
       <Badge 
-        variant={isConnected ? "default" : "destructive"}
+        variant="default"
         className="flex items-center gap-1"
-        title={`Estado de conexión con el servidor de notificaciones. ${isConnected ? 'Conectado' : `Desconectado (${connectionAttempts} intentos)`}`}
+        title="Estado de conexión con el servidor de notificaciones. Conectado"
       >
-        {isConnected ? (
-          <>
-            <Wifi className="h-3 w-3" />
-            Conectado
-          </>
-        ) : (
-          <>
-            <WifiOff className="h-3 w-3" />
-            Desconectado
-          </>
-        )}
+        <Wifi className="h-3 w-3" />
+        Conectado
       </Badge>
-      {!isConnected && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleReconnect}
-          disabled={isReconnecting}
-          className="h-6 px-2"
-          title="Reconectar"
-        >
-          <RotateCcw className={`h-3 w-3 ${isReconnecting ? 'animate-spin' : ''}`} />
-        </Button>
-      )}
     </div>
   );
 } 
