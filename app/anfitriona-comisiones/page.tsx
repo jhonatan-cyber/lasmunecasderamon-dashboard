@@ -17,6 +17,7 @@ interface Commission {
   fecha_crea: string;
   fecha_mod: string;
   estado: number;
+  tipo: 'venta' | 'servicio' | 'otro';
 }
 
 export default function AnfitrionaComisionesPage() {
@@ -79,14 +80,17 @@ export default function AnfitrionaComisionesPage() {
     );
   }
 
-  // Calcular totales
-  const totalCommissions = commissions.length;
-  const totalAmount = commissions.reduce((sum, commission) => sum + (commission.comision || 0), 0);
-  const pendingCommissions = commissions.filter(commission => commission.estado === 1).length;
-  const totalPending = commissions.filter(commission => commission.estado === 1).reduce((sum, commission) => sum + (commission.comision || 0), 0);
+  // Filtrar solo comisiones de ventas
+  const comisionesVentas = commissions.filter(commission => commission.tipo === 'venta');
+  
+  // Calcular totales solo de ventas
+  const totalCommissions = comisionesVentas.length;
+  const totalAmount = comisionesVentas.reduce((sum, commission) => sum + (commission.comision || 0), 0);
+  const pendingCommissions = comisionesVentas.filter(commission => commission.estado === 1).length;
+  const totalPending = comisionesVentas.filter(commission => commission.estado === 1).reduce((sum, commission) => sum + (commission.comision || 0), 0);
 
-  // Ordenar y filtrar comisiones
-  const filteredCommissions = commissions.filter((commission) => {
+  // Ordenar y filtrar comisiones de ventas
+  const filteredCommissions = comisionesVentas.filter((commission) => {
     if (!searchTerm) return true;
     
     try {
@@ -173,9 +177,9 @@ export default function AnfitrionaComisionesPage() {
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm text-gray-500">LAS MUÑECAS DE RAMÓN</p>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Listado de Comisiones {user?.name} {user?.lastName}
-          </h1>
+                     <h1 className="text-2xl font-bold text-gray-900">
+             Listado de Comisiones de Ventas {user?.name} {user?.lastName}
+           </h1>
         </div>
         <Button
           variant="outline"
@@ -207,6 +211,14 @@ export default function AnfitrionaComisionesPage() {
             <p className="text-xl font-bold text-gray-900">$ {totalPending.toLocaleString()}</p>
           </div>
         </div>
+        
+                 {/* Información de comisiones de ventas */}
+         <div className="flex justify-center gap-8 mt-4 pt-4 border-t border-gray-200">
+           <div>
+             <p className="text-sm text-gray-500">Comisiones de Ventas:</p>
+             <p className="text-lg font-bold text-green-600">{comisionesVentas.length} comisiones • $ {totalAmount.toLocaleString()}</p>
+           </div>
+         </div>
       </div>
 
       {/* Filters */}
@@ -256,7 +268,7 @@ export default function AnfitrionaComisionesPage() {
                       onClick={() => handleSort('codigo')}
                       className="flex items-center gap-1 hover:text-gray-700"
                     >
-                      CÓDIGO
+                      CÓDIGO VENTA
                       {sortField === 'codigo' ? (
                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                       ) : <ChevronUp className="h-4 w-4 opacity-0" />}
@@ -278,14 +290,14 @@ export default function AnfitrionaComisionesPage() {
                       onClick={() => handleSort('fecha_crea')}
                       className="flex items-center gap-1 hover:text-gray-700"
                     >
-                      FECHA CREACIÓN
+                      FECHA VENTA
                       {sortField === 'fecha_crea' ? (
                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                       ) : <ChevronUp className="h-4 w-4 opacity-0" />}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    FECHA MODIFICACIÓN
+                    FECHA COBRO
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button

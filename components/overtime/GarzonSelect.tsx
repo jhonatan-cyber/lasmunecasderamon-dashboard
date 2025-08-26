@@ -11,29 +11,33 @@ import { User } from "@/types/user";
 import { User as UserIcon } from "lucide-react";
 
 interface GarzonSelectProps {
-  users: User[];
-  value: string;
+  users?: User[];
+  value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }
 
-export default function GarzonSelect({ users, value, onChange, placeholder }: GarzonSelectProps) {
+export default function GarzonSelect({ users = [], value, onChange, placeholder }: GarzonSelectProps) {
   const [search, setSearch] = useState("");
   
-  // Filtrar por búsqueda (los usuarios ya vienen filtrados como garzones y cajeros activos)
-  const filteredGarzones = users.filter((u) =>
+  // Filtrar por roles válidos (garzon y cajero) y activos
+  const eligible = (users || []).filter((u) => {
+    const role = (u.role || "").toLowerCase();
+    const isActive = u.status === 1 || u.status === undefined || u.status === null;
+    return isActive && (role === "garzon" || role === "cajero");
+  });
+
+  // Filtrar por búsqueda
+  const filtered = eligible.filter((u) =>
     (`${u.name} ${u.lastName} ${u.nick}`.toLowerCase().includes(search.toLowerCase()))
   );
-
-  
-  console.log("===========================");
 
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full rounded-full">
         <div className="flex items-center gap-2">
           <UserIcon className="h-4 w-4 text-gray-500" />
-          <SelectValue placeholder={placeholder || "Selecciona un empleado"} />
+          <SelectValue placeholder={placeholder || "Selecciona un empleado (garzón/cajero)"} />
         </div>
       </SelectTrigger>
       <SelectContent>
@@ -46,12 +50,12 @@ export default function GarzonSelect({ users, value, onChange, placeholder }: Ga
             className="mb-2"
           />
         </div>
-        {filteredGarzones.length === 0 && (
+        {filtered.length === 0 && (
           <div className="px-4 py-2 text-gray-400 text-sm">
-            {users.length === 0 ? "No hay empleados disponibles" : "Sin resultados"}
+            {eligible.length === 0 ? "No hay garzones o cajeros disponibles" : "Sin resultados"}
           </div>
         )}
-        {filteredGarzones.map((u) => (
+        {filtered.map((u) => (
           <SelectItem key={u.id} value={String(u.id)}>
             {u.name} {u.lastName} ({u.nick})
           </SelectItem>

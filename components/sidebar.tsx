@@ -104,35 +104,25 @@ export function Sidebar() {
   const { user, loading: userLoading } = useCurrentUser();
   const { userPermissions: permissions, isLoading: permissionsLoading } = useUserPermissions();
 
-  // Verificar si el usuario es anfitriona
+  // Verificar si el usuario es anfitriona o garzón
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
 
-  // Función para verificar si el usuario tiene permisos para un módulo específico
   const hasModulePermission = (module: string, action: string = 'view') => {
-    // Dashboard siempre está disponible
     if (module === 'dashboard') return true;
 
-    // Verificar si es administrador desde localStorage inmediatamente
     const isAdminFromStorage =
       typeof window !== 'undefined'
         ? localStorage.getItem('userRole')?.toLowerCase() === 'administrador'
         : false;
 
-    // El administrador siempre tiene acceso a todo
     if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
-
-    // Si está cargando el usuario, mostrar todo (fallback)
     if (userLoading) return true;
-
-    // Si no hay permisos cargados después de un tiempo, mostrar todo (fallback)
     if (!permissions.length && !permissionsLoading) return true;
 
-    // Mapear módulos y acciones del frontend a los de la base de datos
     let mappedModule = module;
     let mappedAction = action;
 
-    // Mapear módulos
     if (module === 'orders') mappedModule = 'pedidos';
     if (module === 'users') mappedModule = 'usuarios';
     if (module === 'clients') mappedModule = 'clientes';
@@ -148,7 +138,6 @@ export function Sidebar() {
     if (module === 'private_rooms') mappedModule = 'privados';
     if (module === 'reports') mappedModule = 'reportes';
 
-    // Mapear acciones
     if (action === 'view') mappedAction = 'ver';
     if (action === 'create') mappedAction = 'crear';
     if (action === 'edit') mappedAction = 'editar';
@@ -157,18 +146,15 @@ export function Sidebar() {
     if (action === 'close') mappedAction = 'cerrar';
     if (action === 'details') mappedAction = 'detalles';
 
-    const hasPermission = permissions.some(
+    return permissions.some(
       permission => permission.module === mappedModule && permission.action === mappedAction
     );
-
-    return hasPermission;
   };
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Evitar renderizado durante SSR para prevenir errores de hidratación
   if (!mounted) {
     return (
       <div className='hidden lg:flex h-full w-64 flex-col bg-white border-r border-gray-200'>
@@ -184,6 +170,18 @@ export function Sidebar() {
       </div>
     );
   }
+
+  // Filtrar listas por permisos
+  const allowedPrincipal = navigation.filter(item => {
+    if (isAnfitriona && item.name !== 'Dashboard') return false;
+    if (isGarzon && item.name !== 'Dashboard' && item.name !== 'Pedidos') return false;
+    return hasModulePermission(item.module, item.action);
+  });
+
+  const allowedHR = hrNavigation.filter(item => hasModulePermission(item.module, item.action));
+  const allowedFinance = financeNavigation.filter(item => hasModulePermission(item.module, item.action));
+  const allowedService = serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
+  const allowedSecondary = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
 
   const SidebarContent = () => (
     <div className='flex h-full w-64 flex-col bg-white dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 mobile-sidebar'>
@@ -201,7 +199,6 @@ export function Sidebar() {
             Panel Administrativo
           </span>
         </div>
-        {/* Botón de cerrar para móviles */}
         <button
           onClick={closeSidebar}
           className='lg:hidden ml-auto p-2 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors'
@@ -211,33 +208,19 @@ export function Sidebar() {
       </div>
 
       <nav className='flex-1 px-4 py-6 space-y-8 overflow-y-auto'>
-     
-
-        <div>
-          <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
-            Principal
-          </h3>
-          <ul className='space-y-1'>
-            {navigation
-              .filter(item => {
-                // Si es anfitriona, solo mostrar el dashboard
-                if (isAnfitriona && item.name !== 'Dashboard') {
-                  return false;
-                }
-                // Si es garzon, solo mostrar dashboard y pedidos
-                if (isGarzon && item.name !== 'Dashboard' && item.name !== 'Pedidos') {
-                  return false;
-                }
-                // Verificar permisos
-                return hasModulePermission(item.module, item.action);
-              })
-              .map(item => {
+        {allowedPrincipal.length > 0 && (
+          <div>
+            <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
+              Principal
+            </h3>
+            <ul className='space-y-1'>
+              {allowedPrincipal.map(item => {
                 const isActive = pathname === item.href;
                 return (
                   <li key={item.name}>
                     <Link
                       href={item.href}
-                      onClick={closeSidebar} // Cerrar sidebar al hacer clic en un enlace en móviles
+                      onClick={closeSidebar}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
                         isActive
@@ -251,133 +234,126 @@ export function Sidebar() {
                   </li>
                 );
               })}
-          </ul>
-        </div>
+            </ul>
+          </div>
+        )}
 
-        {!isAnfitriona && !isGarzon && (
+        {allowedHR.length > 0 && (
           <div>
             <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
               Recursos Humanos
             </h3>
             <ul className='space-y-1'>
-              {hrNavigation
-                .filter(item => hasModulePermission(item.module, item.action))
-                .map(item => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={closeSidebar} // Cerrar sidebar al hacer clic en un enlace en móviles
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-                        )}
-                      >
-                        <item.icon className='h-5 w-5' />
-                        {item.name}
-                      </Link>
-                    </li>
-                  );
-                })}
+              {allowedHR.map(item => {
+                const isActive = pathname === item.href;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                      )}
+                    >
+                      <item.icon className='h-5 w-5' />
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
 
-        {!isAnfitriona && !isGarzon && (
+        {allowedFinance.length > 0 && (
           <div>
             <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
               Finanzas
             </h3>
             <ul className='space-y-1'>
-              {financeNavigation
-                .filter(item => hasModulePermission(item.module, item.action))
-                .map(item => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={closeSidebar} // Cerrar sidebar al hacer clic en un enlace en móviles
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-                        )}
-                      >
-                        <item.icon className='h-5 w-5' />
-                        {item.name}
-                      </Link>
-                    </li>
-                  );
-                })}
+              {allowedFinance.map(item => {
+                const isActive = pathname === item.href;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                      )}
+                    >
+                      <item.icon className='h-5 w-5' />
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
 
-        {!isAnfitriona && !isGarzon && (
+        {allowedService.length > 0 && (
           <div>
             <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
               Servicios
             </h3>
             <ul className='space-y-1'>
-              {serviceNavigation
-                .filter(item => hasModulePermission(item.module, item.action))
-                .map(item => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={closeSidebar} // Cerrar sidebar al hacer clic en un enlace en móviles
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-                        )}
-                      >
-                        <item.icon className='h-5 w-5' />
-                        {item.name}
-                      </Link>
-                    </li>
-                  );
-                })}
+              {allowedService.map(item => {
+                const isActive = pathname === item.href;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                      )}
+                    >
+                      <item.icon className='h-5 w-5' />
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
 
-        {!isAnfitriona && !isGarzon && (
+        {allowedSecondary.length > 0 && (
           <div>
             <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
               Configuración
             </h3>
             <ul className='space-y-1'>
-              {secondaryNavigation
-                .filter(item => hasModulePermission(item.module, item.action))
-                .map(item => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={closeSidebar} // Cerrar sidebar al hacer clic en un enlace en móviles
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-                        )}
-                      >
-                        <item.icon className='h-5 w-5' />
-                        {item.name}
-                      </Link>
-                    </li>
-                  );
-                })}
+              {allowedSecondary.map(item => {
+                const isActive = pathname === item.href;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                      )}
+                    >
+                      <item.icon className='h-5 w-5' />
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
@@ -387,21 +363,15 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Sidebar para desktop - siempre visible */}
       <div className='hidden lg:block'>
         <SidebarContent />
       </div>
-
-      {/* Sidebar para móviles - con overlay */}
       {isSidebarOpen && (
         <div className='lg:hidden fixed inset-0 z-50'>
-          {/* Overlay */}
           <div
             className='fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 sidebar-overlay'
             onClick={closeSidebar}
           />
-
-          {/* Sidebar */}
           <div className='fixed inset-y-0 left-0 z-50 sidebar-enter'>
             <SidebarContent />
           </div>

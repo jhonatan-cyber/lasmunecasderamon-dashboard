@@ -1,20 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { useEmployees } from "@/hooks/useEmployees";
-import { useOvertime } from "@/hooks/useOvertime";
-import { toast } from "sonner";
-import GarzonSelect from "@/components/overtime/GarzonSelect";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useOvertime } from '@/hooks/useOvertime';
+import { toast } from 'sonner';
+import GarzonSelect from '@/components/overtime/GarzonSelect';
+import { formatCurrencyNoDecimals } from '@/lib/formatters';
 
 interface OvertimeFormDialogProps {
   open: boolean;
@@ -22,23 +17,20 @@ interface OvertimeFormDialogProps {
   onSuccess?: () => void;
 }
 
-export default function OvertimeFormDialog({
-  open,
-  onClose,
-  onSuccess,
-}: OvertimeFormDialogProps) {
-  const { employees } = useEmployees();
+export default function OvertimeFormDialog({ open, onClose, onSuccess }: OvertimeFormDialogProps) {
+  const { data: employeesResponse } = useEmployees();
+  const employees = employeesResponse?.data || [];
   const { createOvertime } = useOvertime();
-  const [selectedUser, setSelectedUser] = useState("");
-  const [hora, setHora] = useState("");
-  const [monto, setMonto] = useState("");
+  const [selectedUser, setSelectedUser] = useState('');
+  const [hora, setHora] = useState('');
+  const [monto, setMonto] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedUser || !hora || !monto) {
-      toast.error("Todos los campos son requeridos");
+      toast.error('Todos los campos son requeridos');
       return;
     }
 
@@ -46,12 +38,12 @@ export default function OvertimeFormDialog({
     const montoNum = parseFloat(monto);
 
     if (horaNum <= 0 || montoNum <= 0) {
-      toast.error("Las horas y el monto deben ser mayores a 0");
+      toast.error('Las horas y el monto deben ser mayores a 0');
       return;
     }
 
     if (horaNum > 24) {
-      toast.error("Las horas no pueden ser mayores a 24");
+      toast.error('Las horas no pueden ser mayores a 24');
       return;
     }
 
@@ -60,29 +52,26 @@ export default function OvertimeFormDialog({
       await createOvertime({
         usuario_id: parseInt(selectedUser),
         hora: horaNum,
-        monto: montoNum,
+        monto: montoNum
       });
 
-      toast.success("Hora extra creada exitosamente");
+      toast.success('Hora extra creada exitosamente');
       handleClose();
-      // Llamar callback de éxito para actualizar datos
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      console.error("Error al crear hora extra:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Error al crear la hora extra"
-      );
+      console.error('Error al crear hora extra:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear la hora extra');
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    setSelectedUser("");
-    setHora("");
-    setMonto("");
+    setSelectedUser('');
+    setHora('');
+    setMonto('');
     onClose();
   };
 
@@ -98,93 +87,93 @@ export default function OvertimeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px]">
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px]'>
         <DialogHeader>
-          <DialogTitle className="text-center text-lg sm:text-xl lg:text-2xl font-semibold">
+          <DialogTitle className='text-center text-lg sm:text-xl lg:text-2xl font-semibold'>
             Nueva Hora Extra
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
           <div>
-            <Label htmlFor="usuario" className="text-xs sm:text-sm font-medium">
-              Empleado <span className="text-red-500">*</span>
+            <Label htmlFor='usuario' className='text-xs sm:text-sm font-medium'>
+              Empleado <span className='text-red-500'>*</span>
             </Label>
             <GarzonSelect
               users={employees}
               value={selectedUser}
               onChange={setSelectedUser}
-              placeholder="Selecciona un empleado"
+              placeholder='Selecciona un empleado'
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <div>
-              <Label htmlFor="hora" className="text-xs sm:text-sm font-medium">
-                Horas <span className="text-red-500">*</span>
+              <Label htmlFor='hora' className='text-xs sm:text-sm font-medium'>
+                Horas <span className='text-red-500'>*</span>
               </Label>
               <Input
-                id="hora"
-                type="number"
-                step="0.5"
-                min="0.5"
-                max="24"
+                id='hora'
+                type='number'
+                step='0.5'
+                min='0.5'
+                max='24'
                 value={hora}
-                onChange={(e) => setHora(e.target.value)}
-                placeholder="Ej: 2.5"
-                className="mt-1 text-xs sm:text-sm"
+                onChange={e => setHora(e.target.value)}
+                placeholder='0'
+                className='mt-1 text-xs sm:text-sm'
               />
-              <p className="text-xs text-gray-500 mt-1">Máximo 24 horas</p>
+              <p className='text-xs text-gray-500 mt-1'>Máximo 24 horas</p>
             </div>
             <div>
-              <Label htmlFor="monto" className="text-xs sm:text-sm font-medium">
-                Precio por Hora <span className="text-red-500">*</span>
+              <Label htmlFor='monto' className='text-xs sm:text-sm font-medium'>
+                Precio por Hora <span className='text-red-500'>*</span>
               </Label>
               <Input
-                id="monto"
-                type="number"
-                step="0.01"
-                min="0"
+                id='monto'
+                type='number'
+                step='0.01'
+                min='0'
                 value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                placeholder="Ej: 15.00"
-                className="mt-1 text-xs sm:text-sm"
+                onChange={e => setMonto(e.target.value)}
+                placeholder='0'
+                className='mt-1 text-xs sm:text-sm'
               />
             </div>
           </div>
 
           {hora && monto && (
-            <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200 text-center">
-              <div className="text-xs sm:text-sm text-blue-700">
-                <strong className="font-bold text-xs sm:text-sm">Total calculado:</strong>{" "}
+            <div className='p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200 text-center'>
+              <div className='text-xs sm:text-sm text-blue-700'>
+                <strong className='font-bold text-xs sm:text-sm'>Total calculado:</strong>{' '}
                 {formatCurrencyNoDecimals(calculateTotal())}
               </div>
-              <div className="text-xs text-blue-600 mt-1">
-                {hora} horas × {formatCurrencyNoDecimals(parseFloat(monto))} ={" "}
+              <div className='text-xs text-blue-600 mt-1'>
+                {hora} horas × {formatCurrencyNoDecimals(parseFloat(monto))} ={' '}
                 {formatCurrencyNoDecimals(calculateTotal())}
               </div>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-center gap-2 w-full">
+          <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
             <Button
-              type="button"
+              type='button'
               onClick={handleClose}
               disabled={loading}
-              variant="outline"
-              size="sm"
-              className="rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm w-full sm:w-auto"
+              variant='outline'
+              size='sm'
+              className='rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm w-full sm:w-auto'
             >
               Cancelar
             </Button>
             <Button
-              type="submit"
+              type='submit'
               disabled={loading || !selectedUser || !hora || !monto}
-              variant="outline"
-              size="sm"
-              className="rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 bg-black text-white text-xs sm:text-sm w-full sm:w-auto"
+              variant='outline'
+              size='sm'
+              className='rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 bg-black text-white text-xs sm:text-sm w-full sm:w-auto'
             >
-              {loading ? "Guardando..." : "Guardar"}
+              {loading ? 'Guardando...' : 'Guardar'}
             </Button>
           </div>
         </form>

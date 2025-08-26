@@ -5,7 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, DollarSign, Calendar } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import SelectElements from '@/components/ui/select-elements';
 import Paginate from '@/components/ui/paginate';
 
@@ -28,7 +28,7 @@ export default function GarzonPropinasPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("fecha_crea");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -175,6 +175,26 @@ export default function GarzonPropinasPage() {
     }
   };
 
+  const renderFechaPago = (tip: Tip) => {
+    if (tip.estado === 1) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          Por cobrar
+        </span>
+      );
+    }
+    if (tip.propina_fecha_crea) {
+      const pagoDate = formatDateTime(tip.propina_fecha_crea);
+      return (
+        <div>
+          <div className="font-medium text-gray-900">{pagoDate.date}</div>
+          <div className="text-sm text-gray-500">{pagoDate.time}</div>
+        </div>
+      );
+    }
+    return '—';
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -250,7 +270,7 @@ export default function GarzonPropinasPage() {
           </label>
           <select
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+            onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
             className="w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="desc">Descendente</option>
@@ -295,23 +315,22 @@ export default function GarzonPropinasPage() {
                     <th className="text-left py-3 px-4 font-medium text-gray-900">#</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">CODIGO VENTA</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">PROPINA</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">FECHA CREACIÓN</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">FECHA VENTA</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">FECHA PAGO</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">ESTADO</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedTips.map((tip, index) => {
-                                         const creacionDate = formatDateTime(tip.fecha_crea);
-                     const pagoDate = formatDateTime(tip.propina_fecha_crea);
+                    const creacionDate = formatDateTime(tip.fecha_crea);
                     return (
-                                             <tr key={`${tip.codigo_venta}-${index}`} className="border-b border-gray-100 hover:bg-gray-50">
-                         <td className="py-3 px-4">
-                           <div className="w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm">
-                             {startIndex + index + 1}
-                           </div>
-                         </td>
-                         <td className="py-3 px-4 text-gray-900">{tip.codigo_venta || 'Sin código'}</td>
+                      <tr key={`${tip.codigo_venta}-${index}`} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div className="w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm">
+                            {startIndex + index + 1}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-gray-900">{tip.codigo_venta || 'Sin código'}</td>
                         <td className="py-3 px-4 text-gray-900">$ {(tip.monto || 0).toLocaleString()}</td>
                         <td className="py-3 px-4">
                           <div>
@@ -319,18 +338,7 @@ export default function GarzonPropinasPage() {
                             <div className="text-sm text-gray-500">{creacionDate.time}</div>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          {tip.propina_fecha_crea ? (
-                            <div>
-                              <div className="font-medium text-gray-900">{pagoDate.date}</div>
-                              <div className="text-sm text-gray-500">{pagoDate.time}</div>
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              Por cobrar
-                            </span>
-                          )}
-                        </td>
+                        <td className="py-3 px-4">{renderFechaPago(tip)}</td>
                         <td className="py-3 px-4">
                           {getStatusBadge(tip.estado)}
                         </td>

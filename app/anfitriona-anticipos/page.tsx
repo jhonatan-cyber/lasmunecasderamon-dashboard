@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { ArrowLeft, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -164,6 +164,25 @@ export default function AnfitrionaAnticiposPage() {
     }
   };
 
+  const renderFechaPago = (estado: number, fecha_mod: string) => {
+    if (estado === 1) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          Por pagar
+        </span>
+      );
+    }
+    if (fecha_mod) {
+      return (
+        <div>
+          <div className="text-sm font-medium text-gray-900">{formatDateTime(fecha_mod).date}</div>
+          <div className="text-sm text-gray-500">{formatDateTime(fecha_mod).time}</div>
+        </div>
+      );
+    }
+    return '—';
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -307,14 +326,7 @@ export default function AnfitrionaAnticiposPage() {
                           $ {(advance.monto || 0).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {advance.fecha_mod ? formatDateTime(advance.fecha_mod).date : '-'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {advance.fecha_mod ? formatDateTime(advance.fecha_mod).time : ''}
-                            </div>
-                          </div>
+                          {renderFechaPago(advance.estado, advance.fecha_mod)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(advance.estado)}

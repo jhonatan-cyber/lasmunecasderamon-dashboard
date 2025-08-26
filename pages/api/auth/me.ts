@@ -40,15 +40,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       success: true,
       user: {
         id: user.id_usuario,
-        name: user.nombre || user.username || '',
+        name: user.nombre || '',
         lastName: user.apellido || '',
         email: user.email,
         role: user.rol_nombre || 'garzon',
         status: user.estado,
         foto: user.foto || '',
-        username: user.username || user.nombre || '',
+        nick: user.nick || '',
+        run: user.run || '',
         phone: user.telefono || '',
         address: user.direccion || '',
+        estado_civil: user.estado_civil || '',
         fecha_crea: user.fecha_crea
       }
     });
