@@ -535,11 +535,12 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Obtener usuarios con logins activos que NO sean administradores ni cajeros
     const loginsActivos = (await query(`
-      SELECT l.id_login, l.usuario_id, u.rol_nombre
+      SELECT l.id_login, l.usuario_id, r.nombre as rol_nombre
       FROM logins l
       INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
+      INNER JOIN roles r ON u.rol_id = r.id_rol
       WHERE l.estado = 1 
-      AND u.rol_nombre NOT IN ('administrador', 'cajero')
+      AND r.nombre NOT IN ('administrador', 'cajero')
     `)) as RowDataPacket[];
 
     if (loginsActivos && loginsActivos.length > 0) {
@@ -547,9 +548,10 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       await query(`
         UPDATE logins l
         INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
+        INNER JOIN roles r ON u.rol_id = r.id_rol
         SET l.estado = 0
         WHERE l.estado = 1 
-        AND u.rol_nombre NOT IN ('administrador', 'cajero')
+        AND r.nombre NOT IN ('administrador', 'cajero')
       `);
     } else {
       console.log('ℹ️ [CAJA] No hay sesiones activas para cerrar');
