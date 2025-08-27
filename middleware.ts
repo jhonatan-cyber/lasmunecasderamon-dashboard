@@ -58,24 +58,8 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const response = NextResponse.next();
     
-    // Headers CORS - Permitir desde la app React Native
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://192.168.0.100:3000',
-      'http://192.168.0.100:8081', // Expo dev server
-      'exp://192.168.0.100:8081',  // Expo
-      'http://localhost:8081',     // Expo local
-      'exp://localhost:8081'       // Expo local
-    ];
-    
-    const requestOrigin = request.headers.get('origin');
-    const isAllowedOrigin = requestOrigin && allowedOrigins.includes(requestOrigin);
-    
-    if (isAllowedOrigin) {
-      response.headers.set('Access-Control-Allow-Origin', requestOrigin);
-    } else {
-      response.headers.set('Access-Control-Allow-Origin', '*');
-    }
+    // Headers CORS - Permitir todas las conexiones
+    response.headers.set('Access-Control-Allow-Origin', '*');
     
     response.headers.set('Vary', 'Origin');
     response.headers.set('Access-Control-Allow-Credentials', 'true');

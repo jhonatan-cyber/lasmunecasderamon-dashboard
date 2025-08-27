@@ -64,25 +64,28 @@ export default function GarzonDashboard() {
       const horasExtras = horasExtrasData.success ? horasExtrasData.data || [] : [];
       const pedidos = pedidosData.success ? pedidosData.data || [] : [];
 
-      // Calcular totales de asistencias (usando resumen)
-      const totalACobrarAsistencias = asistencias.length > 0 ? asistencias[0].total_final || 0 : 0;
+      // Calcular totales de asistencias (solo estado 1)
+      const asistenciasPendientes = asistencias.filter((asistencia: any) => asistencia.estado === 1);
+      const totalACobrarAsistencias = asistenciasPendientes.reduce((sum: number, asistencia: any) => {
+        const sueldo = asistencia.sueldo || 0;
+        const aporte = asistencia.aporte || 0;
+        const descuento = asistencia.descuento || 0;
+        return sum + (sueldo + aporte - descuento);
+      }, 0);
 
-      // Calcular totales de anticipos
-      const totalAnticiposAmount = anticipos.reduce((sum: number, anticipo: any) => sum + (anticipo.monto || 0), 0);
-      const anticiposPendientes = anticipos.filter((anticipo: any) => anticipo.estado === 1).length;
-      const totalAnticiposPendientes = anticipos.filter((anticipo: any) => anticipo.estado === 1).reduce((sum: number, anticipo: any) => sum + (anticipo.monto || 0), 0);
+      // Calcular totales de anticipos (solo estado 1)
+      const anticiposPendientes = anticipos.filter((anticipo: any) => anticipo.estado === 1);
+      const totalAnticiposPendientes = anticiposPendientes.reduce((sum: number, anticipo: any) => sum + (anticipo.monto || 0), 0);
 
-      // Calcular totales de propinas
-      const totalPropinasAmount = propinas.reduce((sum: number, propina: any) => sum + (propina.monto || 0), 0);
-      const propinasPendientes = propinas.filter((propina: any) => propina.estado === 1).length;
-      const totalPropinasPendientes = propinas.filter((propina: any) => propina.estado === 1).reduce((sum: number, propina: any) => sum + (propina.monto || 0), 0);
+      // Calcular totales de propinas (solo estado 1)
+      const propinasPendientes = propinas.filter((propina: any) => propina.estado === 1);
+      const totalPropinasPendientes = propinasPendientes.reduce((sum: number, propina: any) => sum + (propina.monto || 0), 0);
 
-      // Calcular totales de horas extras
-      const totalHorasExtrasAmount = horasExtras.reduce((sum: number, horaExtra: any) => sum + (horaExtra.total || 0), 0);
-      const horasExtrasPendientes = horasExtras.filter((horaExtra: any) => horaExtra.estado === 1).length;
-      const totalHorasExtrasPendientes = horasExtras.filter((horaExtra: any) => horaExtra.estado === 1).reduce((sum: number, horaExtra: any) => sum + (horaExtra.total || 0), 0);
+      // Calcular totales de horas extras (solo estado 1)
+      const horasExtrasPendientes = horasExtras.filter((horaExtra: any) => horaExtra.estado === 1);
+      const totalHorasExtrasPendientes = horasExtrasPendientes.reduce((sum: number, horaExtra: any) => sum + (horaExtra.total || 0), 0);
 
-      // Total a cobrar (asistencias + propinas pendientes + horas extras pendientes - anticipos pendientes)
+      // Total a cobrar (asistencias estado 1 + propinas estado 1 + horas extras estado 1 - anticipos estado 1)
       const totalACobrar = totalACobrarAsistencias + totalPropinasPendientes + totalHorasExtrasPendientes - totalAnticiposPendientes;
 
       setDashboardData({
@@ -92,9 +95,9 @@ export default function GarzonDashboard() {
         totalHorasExtras: horasExtras.length,
         totalPedidos: pedidos.length,
         totalACobrar: totalACobrar,
-        anticiposPendientes: anticiposPendientes,
-        propinasPendientes: propinasPendientes,
-        horasExtrasPendientes: horasExtrasPendientes
+        anticiposPendientes: anticiposPendientes.length,
+        propinasPendientes: propinasPendientes.length,
+        horasExtrasPendientes: horasExtrasPendientes.length
       });
 
     } catch (error) {
