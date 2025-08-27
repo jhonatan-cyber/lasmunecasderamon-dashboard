@@ -654,11 +654,14 @@ export default function ProfilePage() {
                       id='nick'
                       value={userData.nick || ''}
                       onChange={e => handleAdminNickChange(e.target.value)}
-                      disabled={!isEditing}
+                      disabled={!isEditing || userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon'}
                       placeholder='usuario123'
                     />
                     <p className='text-xs text-muted-foreground mt-1'>
                       El email se actualizará automáticamente: {userData.nick}@lasmuñecasderamon.com
+                      {(userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon') && (
+                        <span className='text-orange-600 font-medium'> - No editable para anfitrionas y garzones</span>
+                      )}
                     </p>
                   </div>
 
@@ -793,12 +796,15 @@ export default function ProfilePage() {
                       id='nick'
                       value={userData.nick || ''}
                       onChange={e => handleNickChange(e.target.value)}
-                      disabled={!isEditing}
+                      disabled={!isEditing || userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon'}
                       placeholder='usuario123'
                     />
                     <p className='text-xs text-muted-foreground mt-1'>
                       El email se actualizará automáticamente: {userData.nick || ''}
                       @lasmuñecasderamon.com
+                      {(userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon') && (
+                        <span className='text-orange-600 font-medium'> - No editable para anfitrionas y garzones</span>
+                      )}
                     </p>
                   </div>
 

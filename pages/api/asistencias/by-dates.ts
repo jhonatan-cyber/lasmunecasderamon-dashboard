@@ -29,6 +29,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         CONCAT(U.nombre, ' ', U.apellido) AS usuario,
         U.sueldo,
         U.aporte,
+        U.descuento,
         A.fecha_pago,
         (U.sueldo - U.aporte) AS sueldo_final
     FROM asistencias A
