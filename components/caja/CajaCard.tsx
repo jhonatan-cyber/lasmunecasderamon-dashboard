@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CajaWithUser } from "@/types/caja";
-import { Eye, Lock, DollarSign } from "lucide-react";
+import { Eye, Lock, DollarSign, ArrowDownCircle } from "lucide-react";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -23,6 +23,7 @@ interface CajaCardProps {
   caja: CajaWithUser;
   onViewDetails: (caja: CajaWithUser) => void;
   onCloseCaja: (caja: CajaWithUser) => void;
+  onRetirar?: (caja: CajaWithUser) => void;
 }
 
 const getEstadoInfo = (estado: number) => {
@@ -52,6 +53,7 @@ export const CajaCard = ({
   caja,
   onViewDetails,
   onCloseCaja,
+  onRetirar,
 }: CajaCardProps) => {
   const estadoInfo = getEstadoInfo(caja.estado);
   const Icon = estadoInfo.icon;
@@ -141,9 +143,8 @@ export const CajaCard = ({
           <div className="flex justify-between pt-2 border-t">
             <span className="font-medium text-sm sm:text-base">Balance actual:</span>
             <span
-              className={`font-bold text-base sm:text-lg ${
-                balanceActual >= 0 ? "text-green-600" : "text-red-600"
-              }`}
+              className={`font-bold text-base sm:text-lg ${balanceActual >= 0 ? "text-green-600" : "text-red-600"
+                }`}
             >
               ${Math.round(balanceActual).toLocaleString()}
             </span>
@@ -161,15 +162,26 @@ export const CajaCard = ({
             <span className="truncate">Ver Detalle</span>
           </Button>
           {caja.estado === 1 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 rounded-full px-2 sm:px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10 min-w-0"
-              onClick={() => onCloseCaja(caja)}
-            >
-              <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="truncate">Cerrar Caja</span>
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-full px-2 sm:px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs sm:text-sm h-10 min-w-0"
+                onClick={() => onRetirar?.(caja)}
+              >
+                <ArrowDownCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Retirar</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-full px-2 sm:px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10 min-w-0"
+                onClick={() => onCloseCaja(caja)}
+              >
+                <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Cerrar Caja</span>
+              </Button>
+            </>
           )}
         </div>
       </CardContent>

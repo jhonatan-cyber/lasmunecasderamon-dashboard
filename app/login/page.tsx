@@ -106,7 +106,7 @@ export default function LoginPage() {
         });
 
         if (res.ok) {
-          router.replace('/');
+          router.replace('/dashboard');
         }
       } catch (error) {
         // Si hay error de red, permite el acceso al login
@@ -337,8 +337,8 @@ export default function LoginPage() {
                       }
 
                       setLoading(false);
-                      // Redirección inmediata
-                      window.location.href = '/';
+                      // Redirección inmediata al dashboard
+                      window.location.href = '/dashboard';
                     } catch (err) {
                       console.error('❌ [LOGIN] Error de red o servidor:', err);
                       toast.error('Error de red o servidor');
@@ -527,7 +527,7 @@ export default function LoginPage() {
 
                       setLoading(false);
                       setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = '/dashboard';
                       }, 3000);
                     } catch (err) {
                       toast.error('Error de red o servidor');

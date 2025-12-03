@@ -49,8 +49,8 @@ export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* React Query Devtools solo en desarrollo */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* React Query Devtools deshabilitado */}
+      {false && process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
     </QueryClientProvider>
