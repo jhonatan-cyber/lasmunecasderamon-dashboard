@@ -16,9 +16,13 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   const isApiDocs = pathname === '/api-docs';
   const isConfirmarAnulacion = pathname === '/confirmar-anulacion';
   const isConfirmarAnulacionServicio = pathname === '/confirmar-anulacion-servicio';
+  const isLanding = pathname === '/landing';
+  const isRoot = pathname === '/';
+  const isTerminos = pathname === '/terminos-y-condiciones';
+  const isPolitica = pathname === '/politica-de-privacidad';
 
-  // Si es una página pública, no usar useCurrentUser
-  if (isLogin || isApiDocs || isConfirmarAnulacion || isConfirmarAnulacionServicio) {
+  // Si es una página pública, no usar useCurrentUser ni mostrar sidebar/header
+  if (isLogin || isApiDocs || isConfirmarAnulacion || isConfirmarAnulacionServicio || isLanding || isRoot || isTerminos || isPolitica) {
     return <>{children}</>;
   }
 

@@ -1,0 +1,1082 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API de Las Muñecas de Ramón",
+    "description": "API completa para el sistema de administración de Las Muñecas de Ramón",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Soporte Técnico",
+      "email": "soporte@lasmuñecasderamon.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API Base URL"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "token"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { 
+            "type": "integer",
+            "description": "ID único del usuario",
+            "example": 1
+          },
+          "name": { 
+            "type": "string",
+            "description": "Nombre del usuario",
+            "example": "Juan"
+          },
+          "lastName": { 
+            "type": "string",
+            "description": "Apellido del usuario",
+            "example": "Pérez"
+          },
+          "email": { 
+            "type": "string",
+            "description": "Email del usuario",
+            "format": "email",
+            "example": "juan.perez@lasmuñecasderamon.com"
+          },
+          "role": { 
+            "type": "string",
+            "description": "Rol del usuario en el sistema",
+            "enum": ["admin", "manager", "employee", "cashier"],
+            "example": "admin"
+          },
+          "status": { 
+            "type": "integer",
+            "description": "Estado del usuario (1: activo, 0: inactivo)",
+            "enum": [0, 1],
+            "example": 1
+          },
+          "foto": { 
+            "type": "string",
+            "description": "URL de la foto del usuario",
+            "example": "https://example.com/photos/user1.jpg"
+          },
+          "username": { 
+            "type": "string",
+            "description": "Nombre de usuario único",
+            "example": "juan.perez"
+          },
+          "phone": { 
+            "type": "string",
+            "description": "Número de teléfono",
+            "example": "+1234567890"
+          },
+          "address": { 
+            "type": "string",
+            "description": "Dirección del usuario",
+            "example": "Calle Principal 123, Ciudad"
+          },
+          "fecha_crea": { 
+            "type": "string",
+            "description": "Fecha de creación del usuario",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        },
+        "required": ["id", "name", "lastName", "email", "role", "status", "username"]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "type": "number" },
+          "category_id": { "type": "integer" },
+          "status": { "type": "integer" }
+        }
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id_cliente": { "type": "integer" },
+          "nombre": { "type": "string" },
+          "apellido": { "type": "string" },
+          "telefono": { "type": "string" },
+          "email": { "type": "string" },
+          "direccion": { "type": "string" }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "id_servicio": { "type": "integer" },
+          "codigo": { "type": "string" },
+          "cliente_id": { "type": "integer" },
+          "habitacion_id": { "type": "integer" },
+          "precio_habitacion": { "type": "number" },
+          "precio_servicio": { "type": "number" },
+          "total": { "type": "number" },
+          "estado": { "type": "integer" }
+        }
+      },
+      "Commission": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
+          "service_id": { "type": "integer" },
+          "amount": { "type": "number" },
+          "percentage": { "type": "number" },
+          "status": { "type": "string" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { 
+            "type": "boolean",
+            "description": "Indica si la operación fue exitosa",
+            "example": false
+          },
+          "message": { 
+            "type": "string",
+            "description": "Mensaje descriptivo del error",
+            "example": "Credenciales inválidas"
+          },
+          "code": { 
+            "type": "string",
+            "description": "Código de error para identificación",
+            "example": "INVALID_CREDENTIALS"
+          },
+          "details": {
+            "type": "object",
+            "description": "Detalles adicionales del error",
+            "additionalProperties": true
+          }
+        },
+        "required": ["success", "message"]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": [],
+      "cookieAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Iniciar sesión",
+        "description": "Autentica al usuario con credenciales y devuelve un token JWT para acceder a endpoints protegidos",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { 
+                    "type": "string",
+                    "description": "Nombre de usuario o email",
+                    "example": "admin@lasmuñecasderamon.com"
+                  },
+                  "password": { 
+                    "type": "string",
+                    "description": "Contraseña del usuario",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                },
+                "required": ["username", "password"]
+              },
+              "examples": {
+                "admin": {
+                  "summary": "Login de Administrador",
+                  "description": "Ejemplo de login para un usuario administrador",
+                  "value": {
+                    "username": "admin@lasmuñecasderamon.com",
+                    "password": "admin123"
+                  }
+                },
+                "user": {
+                  "summary": "Login de Usuario",
+                  "description": "Ejemplo de login para un usuario regular",
+                  "value": {
+                    "username": "usuario@lasmuñecasderamon.com",
+                    "password": "user123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { 
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "token": { 
+                      "type": "string",
+                      "description": "Token JWT para autenticación",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE2MzQ1Njc4OTAsImV4cCI6MTYzNDU3MTQ5MH0.example"
+                    },
+                    "user": { 
+                      "$ref": "#/components/schemas/User",
+                      "description": "Información del usuario autenticado"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Login exitoso"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Respuesta exitosa",
+                    "description": "Ejemplo de respuesta cuando el login es exitoso",
+                    "value": {
+                      "success": true,
+                      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE2MzQ1Njc4OTAsImV4cCI6MTYzNDU3MTQ5MH0.example",
+                      "user": {
+                        "id": 1,
+                        "name": "Administrador",
+                        "lastName": "Sistema",
+                        "email": "admin@lasmuñecasderamon.com",
+                        "role": "admin",
+                        "status": 1,
+                        "username": "admin",
+                        "phone": "+1234567890",
+                        "address": "Calle Principal 123"
+                      },
+                      "message": "Login exitoso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "validation_error": {
+                    "summary": "Error de validación",
+                    "description": "Cuando faltan campos requeridos",
+                    "value": {
+                      "success": false,
+                      "message": "Username y password son requeridos",
+                      "code": "VALIDATION_ERROR"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "invalid_credentials": {
+                    "summary": "Credenciales incorrectas",
+                    "description": "Cuando el username o password son incorrectos",
+                    "value": {
+                      "success": false,
+                      "message": "Credenciales inválidas",
+                      "code": "INVALID_CREDENTIALS"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Error del servidor",
+                    "description": "Error interno del servidor",
+                    "value": {
+                      "success": false,
+                      "message": "Error interno del servidor",
+                      "code": "INTERNAL_ERROR"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Autenticación"],
+        "summary": "Obtener usuario actual",
+        "description": "Devuelve la información del usuario autenticado",
+        "responses": {
+          "200": {
+            "description": "Usuario obtenido exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Cerrar sesión",
+        "description": "Invalida el token del usuario",
+        "responses": {
+          "200": {
+            "description": "Logout exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Obtener usuarios",
+        "description": "Lista todos los usuarios del sistema",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número de página",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Elementos por página",
+            "schema": { "type": "integer", "default": 10 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuarios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Usuarios"],
+        "summary": "Crear usuario",
+        "description": "Crea un nuevo usuario en el sistema",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "lastName": { "type": "string" },
+                  "email": { "type": "string" },
+                  "username": { "type": "string" },
+                  "password": { "type": "string" },
+                  "role": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "address": { "type": "string" }
+                },
+                "required": ["name", "lastName", "username", "password", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Productos"],
+        "summary": "Obtener productos",
+        "description": "Lista todos los productos disponibles",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número de página",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Elementos por página",
+            "schema": { "type": "integer", "default": 10 }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filtrar por categoría",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de productos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Product" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Productos"],
+        "summary": "Crear producto",
+        "description": "Crea un nuevo producto",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "price": { "type": "number" },
+                  "category_id": { "type": "integer" }
+                },
+                "required": ["name", "price", "category_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Producto creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients": {
+      "get": {
+        "tags": ["Clientes"],
+        "summary": "Obtener clientes",
+        "description": "Lista todos los clientes registrados",
+        "responses": {
+          "200": {
+            "description": "Lista de clientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Client" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Clientes"],
+        "summary": "Crear cliente",
+        "description": "Registra un nuevo cliente",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": { "type": "string" },
+                  "apellido": { "type": "string" },
+                  "telefono": { "type": "string" },
+                  "email": { "type": "string" },
+                  "direccion": { "type": "string" }
+                },
+                "required": ["nombre", "apellido", "telefono"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Client" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/servicios": {
+      "get": {
+        "tags": ["Servicios"],
+        "summary": "Obtener servicios",
+        "description": "Lista todos los servicios",
+        "parameters": [
+          {
+            "name": "all",
+            "in": "query",
+            "description": "Mostrar todos los servicios (true/false)",
+            "schema": { "type": "string", "enum": ["true", "false"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de servicios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Service" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Servicios"],
+        "summary": "Crear servicio",
+        "description": "Crea un nuevo servicio",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cliente_id": { "type": "integer" },
+                  "habitacion_id": { "type": "integer" },
+                  "precio_habitacion": { "type": "number" },
+                  "precio_servicio": { "type": "number" },
+                  "metodo_pago": { "type": "string" }
+                },
+                "required": ["cliente_id", "habitacion_id", "precio_habitacion"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Servicio creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Service" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/commissions": {
+      "get": {
+        "tags": ["Comisiones"],
+        "summary": "Obtener comisiones",
+        "description": "Lista todas las comisiones",
+        "responses": {
+          "200": {
+            "description": "Lista de comisiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Commission" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Comisiones"],
+        "summary": "Crear comisión",
+        "description": "Crea una nueva comisión",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "integer" },
+                  "service_id": { "type": "integer" },
+                  "amount": { "type": "number" },
+                  "percentage": { "type": "number" }
+                },
+                "required": ["user_id", "service_id", "amount"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comisión creada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Commission" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sales": {
+      "get": {
+        "tags": ["Ventas"],
+        "summary": "Obtener ventas",
+        "description": "Lista todas las ventas",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Fecha de inicio (YYYY-MM-DD)",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Fecha de fin (YYYY-MM-DD)",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ventas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "total": { "type": "number" },
+                          "fecha": { "type": "string", "format": "date-time" },
+                          "cliente": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["Categorías"],
+        "summary": "Obtener categorías",
+        "description": "Lista todas las categorías de productos",
+        "responses": {
+          "200": {
+            "description": "Lista de categorías",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms": {
+      "get": {
+        "tags": ["Habitaciones"],
+        "summary": "Obtener habitaciones",
+        "description": "Lista todas las habitaciones disponibles",
+        "responses": {
+          "200": {
+            "description": "Lista de habitaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id_habitacion": { "type": "integer" },
+                          "nombre": { "type": "string" },
+                          "estado": { "type": "integer" },
+                          "precio": { "type": "number" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tips": {
+      "get": {
+        "tags": ["Propinas"],
+        "summary": "Obtener propinas",
+        "description": "Lista todas las propinas registradas",
+        "responses": {
+          "200": {
+            "description": "Lista de propinas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "user_id": { "type": "integer" },
+                          "amount": { "type": "number" },
+                          "fecha": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/overtime": {
+      "get": {
+        "tags": ["Horas Extras"],
+        "summary": "Obtener horas extras",
+        "description": "Lista todas las horas extras registradas",
+        "responses": {
+          "200": {
+            "description": "Lista de horas extras",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "user_id": { "type": "integer" },
+                          "hours": { "type": "number" },
+                          "rate": { "type": "number" },
+                          "total": { "type": "number" },
+                          "fecha": { "type": "string", "format": "date" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["Pedidos"],
+        "summary": "Obtener pedidos",
+        "description": "Lista todos los pedidos",
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "client_id": { "type": "integer" },
+                          "total": { "type": "number" },
+                          "status": { "type": "string" },
+                          "fecha": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payroll": {
+      "get": {
+        "tags": ["Nómina"],
+        "summary": "Obtener nómina",
+        "description": "Lista la información de nómina",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "description": "Mes (YYYY-MM)",
+            "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información de nómina",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "user_id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "salary": { "type": "number" },
+                          "commissions": { "type": "number" },
+                          "tips": { "type": "number" },
+                          "overtime": { "type": "number" },
+                          "total": { "type": "number" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/pending": {
+      "get": {
+        "tags": ["Notificaciones"],
+        "summary": "Obtener notificaciones pendientes",
+        "description": "Lista las notificaciones pendientes del usuario",
+        "responses": {
+          "200": {
+            "description": "Lista de notificaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "title": { "type": "string" },
+                          "message": { "type": "string" },
+                          "type": { "type": "string" },
+                          "created_at": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

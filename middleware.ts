@@ -3,7 +3,11 @@ import type { NextRequest } from "next/server";
 
   // Rutas públicas que no requieren autenticación
   const PUBLIC_PATHS = [
+    "/",
+    "/landing",
     "/login",
+    "/terminos-y-condiciones",
+    "/politica-de-privacidad",
     // debug pages removidas
     "/confirmar-anulacion",
     "/confirmar-anulacion-servicio",
@@ -39,6 +43,8 @@ import type { NextRequest } from "next/server";
     "/api/servicios/procesar-anulacion",
     "/api/notifications/pending",
     "/api/notifications/sse",
+    "/api/swagger",
+    "/api/health",
     "/api-docs",
     "/api/docs",
     "/_next",
@@ -78,7 +84,7 @@ export function middleware(request: NextRequest) {
   // Si intenta acceder a /login y ya tiene sesión, redirigir a /dashboard
   if (pathname === "/login" && token) {
     const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/";
+    dashboardUrl.pathname = "/dashboard";
     dashboardUrl.search = "";
     return NextResponse.redirect(dashboardUrl);
   }
@@ -102,6 +108,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/auth/login|api/login|api/auth/me|api/logout|api/auth/check|api/auth/check-session|api/asistencias/user|api/anticipos/user|api/commissions/user|api/servicios/user|api/tips/user|api/overtime/user|api/orders/user|api/clients|api/users|api/anfitrionas|api/categories|api/products|api/orders|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api/notifications/sse|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio).*)",
+    "/((?!api/auth/login|api/login|api/auth/me|api/logout|api/auth/check|api/auth/check-session|api/asistencias/user|api/anticipos/user|api/commissions/user|api/servicios/user|api/tips/user|api/overtime/user|api/orders/user|api/clients|api/users|api/anfitrionas|api/categories|api/products|api/orders|api/ventas/confirmar-anulacion|api/ventas/procesar-anulacion|api/ventas/solicitud-anulacion|api/servicios/solicitud-anulacion|api/servicios/procesar-anulacion|api/notifications/pending|api/notifications/sse|api/swagger|api/health|api-docs|api/docs|_next|favicon.ico|img|fonts|manifest.json|robots.txt|sitemap.xml|confirmar-anulacion|confirmar-anulacion-servicio).*)",
   ],
 };

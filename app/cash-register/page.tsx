@@ -9,20 +9,22 @@ import { useCashRegister } from '@/hooks/useCashRegister';
 import { CajaCard } from '@/components/caja/CajaCard';
 import { CajaFormDialog } from '@/components/caja/CajaFormDialog';
 import { CerrarCajaDialog } from '@/components/caja/CerrarCajaDialog';
+import { RetiroDineroDialog } from '@/components/caja/RetiroDineroDialog';
 import { CajaDetails } from '@/components/caja/CajaDetails';
 import { CajaFilters } from '@/components/caja/CajaFilters';
 import { CashRegisterStatsCard, CashRegisterDetailedStats } from '@/components/cash-register';
-import { CajaWithUser, CajaCreate, CajaCierre } from '@/types/caja';
+import { CajaWithUser, CajaCreate, CajaCierre, CajaRetiro } from '@/types/caja';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 
 export default function CashRegister() {
-  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja } = useCashRegister();
+  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero } = useCashRegister();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedCaja, setSelectedCaja] = useState<CajaWithUser | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
+  const [showRetiroDialog, setShowRetiroDialog] = useState(false);
 
   // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
@@ -59,6 +61,20 @@ export default function CashRegister() {
   const handleCloseCaja = (caja: CajaWithUser) => {
     setSelectedCaja(caja);
     setShowCerrarDialog(true);
+  };
+
+  const handleRetirar = (caja: CajaWithUser) => {
+    setSelectedCaja(caja);
+    setShowRetiroDialog(true);
+  };
+
+  const handleRetirarDinero = async (data: CajaRetiro) => {
+    try {
+      return await retirarDinero(data);
+    } catch (error) {
+      console.error('Error al retirar dinero:', error);
+      return false;
+    }
   };
 
   const handleClearFilters = () => {
@@ -202,6 +218,7 @@ export default function CashRegister() {
                   caja={caja}
                   onViewDetails={handleViewDetails}
                   onCloseCaja={handleCloseCaja}
+                  onRetirar={handleRetirar}
                 />
               ))}
             </div>
@@ -219,6 +236,14 @@ export default function CashRegister() {
         open={showCerrarDialog}
         onOpenChange={setShowCerrarDialog}
         onCerrarCaja={handleCerrarCaja}
+        loading={loading}
+      />
+
+      <RetiroDineroDialog
+        caja={selectedCaja}
+        open={showRetiroDialog}
+        onOpenChange={setShowRetiroDialog}
+        onRetirar={handleRetirarDinero}
         loading={loading}
       />
 
