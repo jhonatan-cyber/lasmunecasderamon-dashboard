@@ -9,6 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Deshabilitar React Strict Mode para evitar warnings de Swagger UI
+  reactStrictMode: false,
   // Configuración para producción con proxy
   ...(process.env.NODE_ENV === 'production' && {
     // Configurar para manejar HTTPS detrás de proxy
