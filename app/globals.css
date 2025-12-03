@@ -25,11 +25,11 @@
 
 /* SweetAlert2 Small Outline Buttons */
 .swal2-confirm-sm-outline {
-  @apply rounded-full bg-black  text-white hover:scale-105 hover:scale-105 transition-all duration-200;
+  @apply rounded-full bg-black text-white hover:scale-105 hover:scale-105 transition-all duration-200;
 }
 
 .swal2-cancel-sm-outline {
-  @apply rounded-full hover:bg-black   hover:text-white hover:scale-105 hover:scale-105 transition-all duration-200;
+  @apply rounded-full hover:bg-black hover:text-white hover:scale-105 hover:scale-105 transition-all duration-200;
 }
 
 body {
@@ -78,6 +78,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -119,57 +120,75 @@ body {
 .dark .bg-white {
   background-color: hsl(var(--card)) !important;
 }
+
 .dark .bg-gray-50 {
   background-color: hsl(var(--background)) !important;
 }
+
 .dark .bg-gray-100 {
   background-color: hsl(var(--muted)) !important;
 }
+
 .dark .text-gray-900 {
   color: hsl(var(--foreground)) !important;
 }
+
 .dark .text-black {
   color: hsl(var(--foreground)) !important;
 }
+
 .dark .text-gray-800 {
   color: hsl(var(--foreground)) !important;
 }
+
 .dark .text-gray-700 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .text-gray-600 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .text-gray-500 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .text-zinc-900 {
   color: hsl(var(--foreground)) !important;
 }
+
 .dark .text-zinc-700 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .text-zinc-600 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .text-zinc-500 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .text-zinc-400 {
   color: hsl(var(--muted-foreground)) !important;
 }
+
 .dark .border-gray-200 {
   border-color: hsl(var(--border)) !important;
 }
+
 .dark .border-gray-300 {
   border-color: hsl(var(--border)) !important;
 }
+
 .dark .hover\:bg-gray-50:hover {
   background-color: hsl(var(--muted)) !important;
 }
+
 .dark .hover\:bg-gray-100:hover {
   background-color: hsl(var(--muted)) !important;
 }
+
 .dark .ring-gray-200 {
   --tw-ring-color: hsl(var(--ring)) !important;
 }
@@ -178,6 +197,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -195,10 +215,12 @@ body {
 
 /* Animación personalizada para el icono de campana */
 @keyframes bell-ring {
+
   0%,
   100% {
     transform: rotate(0deg);
   }
+
   10%,
   30%,
   50%,
@@ -206,6 +228,7 @@ body {
   90% {
     transform: rotate(5deg);
   }
+
   20%,
   40%,
   60%,
@@ -220,10 +243,12 @@ body {
 
 /* Animación de parpadeo para el contador */
 @keyframes blink {
+
   0%,
   50% {
     opacity: 1;
   }
+
   51%,
   100% {
     opacity: 0.3;
@@ -234,3 +259,19 @@ body {
   animation: blink 1.5s ease-in-out infinite;
 }
 
+/* 3D Gold Text Effect */
+.gold-text-3d {
+  background: linear-gradient(to bottom,
+      #FFFbeb 0%,
+      #FCD34D 20%,
+      #F59E0B 40%,
+      #D97706 50%,
+      #B45309 51%,
+      #78350f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter:
+    drop-shadow(0 1px 0 #854d0e) drop-shadow(0 2px 0 #854d0e) drop-shadow(0 3px 0 #854d0e) drop-shadow(0 4px 0 #854d0e) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.5));
+  transform: translateZ(0);
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Caja, CajaWithUser, CajaCreate, CajaUpdate, CajaCierre, CajaResumen } from '@/types/caja';
+import { Caja, CajaWithUser, CajaCreate, CajaUpdate, CajaCierre, CajaResumen, CajaRetiro } from '@/types/caja';
 import { toast } from 'sonner';
 
 interface UseCashRegisterReturn {
@@ -17,6 +17,7 @@ interface UseCashRegisterReturn {
   createCaja: (data: CajaCreate) => Promise<CajaWithUser | null>;
   updateCaja: (id: number, data: CajaUpdate) => Promise<CajaWithUser | null>;
   cerrarCaja: (data: CajaCierre) => Promise<CajaWithUser | null>;
+  retirarDinero: (data: CajaRetiro) => Promise<boolean>;
   deleteCaja: (id: number) => Promise<boolean>;
 }
 
@@ -30,7 +31,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const handleError = (error: any, message: string) => {
-  
+
     const errorMessage = error?.message || message;
     setError(errorMessage);
     toast.error(errorMessage);
@@ -104,7 +105,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
       setError(null);
       const response = await fetch("/api/cashregister?status=check");
       const data = await response.json();
-      
+
       if (data.success) {
         setHasOpenCaja(data.data.hasOpenCaja);
         setCajaInfo(data.data.cajaInfo);
@@ -114,7 +115,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         setError(data.message || "Error al verificar estado de caja");
       }
     } catch (err) {
-    
+
       setError(err instanceof Error ? err.message : "Error desconocido");
       setHasOpenCaja(false);
       setCajaInfo(null);
@@ -212,6 +213,36 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     }
   }, [getCajas, checkCajaStatus]);
 
+  const retirarDinero = useCallback(async (data: CajaRetiro): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/cashregister/retiro', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Error al retirar dinero');
+      }
+
+      toast.success('Retiro realizado exitosamente');
+      await getCajas(); // Actualizar lista
+      await getResumen(); // Actualizar resumen
+      return true;
+    } catch (error) {
+      handleError(error, 'Error al retirar dinero');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [getCajas, getResumen]);
+
   const deleteCaja = useCallback(async (id: number): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -259,6 +290,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     createCaja,
     updateCaja,
     cerrarCaja,
+    retirarDinero,
     deleteCaja,
   };
 }; 

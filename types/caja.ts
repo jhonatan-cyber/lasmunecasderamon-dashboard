@@ -53,6 +53,13 @@ export interface CajaCierre {
   monto_cierre: number;
 }
 
+export interface CajaRetiro {
+  id_caja: number;
+  monto: number;
+  motivo: string;
+  usuario_id: number;
+}
+
 export interface CajaResumen {
   total_ventas: number;
   total_efectivo: number;

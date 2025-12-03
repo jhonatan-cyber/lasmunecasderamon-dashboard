@@ -1,0 +1,6 @@
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2025-08-26","startDate":"2025-08-26","type":"ventas"},"timestamp":"2025-08-28 10:47:58"}
+{"endDate":"2025-08-26","level":"info","message":"Parámetros recibidos:","startDate":"2025-08-26","timestamp":"2025-08-28 10:47:58","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2025-08-26 - 2025-08-26","timestamp":"2025-08-28 10:47:58"}
+{"endDate":"2025-08-26","level":"info","message":"Ejecutando query de ventas:","startDate":"2025-08-26","timestamp":"2025-08-28 10:47:58"}
+{"level":"info","message":"Query SQL:","timestamp":"2025-08-28 10:47:58"}
+{"level":"info","message":"Se encontraron 12 ventas","timestamp":"2025-08-28 10:47:58"}

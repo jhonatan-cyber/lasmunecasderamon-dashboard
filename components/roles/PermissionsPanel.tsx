@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, XCircle, Save, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  Shield,
+  CheckCircle,
+  XCircle,
+  Save,
+  Loader2,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions, Permission } from '@/hooks/usePermissions';
@@ -34,11 +42,6 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       const assignedPermissionIds = rolePermissions
         .filter((p: Permission) => p.assigned === true)
         .map((p: Permission) => p.id.toString());
-      
-      console.log('🔄 Sincronizando permisos seleccionados:', assignedPermissionIds);
-      console.log('🔄 Role permissions total:', rolePermissions.length);
-      console.log('🔄 Role permissions assigned:', rolePermissions.filter(p => p.assigned === true).length);
-      console.log('🔄 Role permissions pedidos:', rolePermissions.filter(p => p.module === 'pedidos'));
 
       setSelectedPermissions(assignedPermissionIds);
     }
@@ -47,17 +50,12 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const loadRolePermissions = async (roleId: number) => {
     setIsLoading(true);
     try {
-      console.log('=== LOADING ROLE PERMISSIONS ===');
-      console.log('Loading permissions for role ID:', roleId);
-      
       const permissions = await getRolePermissions(roleId.toString());
-      console.log('Raw permissions from API:', permissions);
-      
+
       setRolePermissions(permissions);
-      console.log('=== LOADING COMPLETE ===');
     } catch (error) {
-      console.error('Error loading role permissions:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error al cargar los permisos del rol';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error al cargar los permisos del rol';
       showErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
@@ -79,33 +77,15 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
     setIsSaving(true);
     try {
-      console.log('=== SAVING PERMISSIONS ===');
-      console.log('Role ID:', selectedRole.id);
-      console.log('Selected permissions before save:', selectedPermissions);
-      console.log('Permissions count before save:', selectedPermissions.length);
-      
       // Guardar una copia del estado actual antes de enviar
       const permissionsToSave = [...selectedPermissions];
-      console.log('Permissions to save (copy):', permissionsToSave);
-      
+
       const result = await updateRolePermissions(selectedRole.id.toString(), permissionsToSave);
-      console.log('Save result:', result);
-      
+
       showSuccessToast('Permisos actualizados correctamente');
-      
-      // NO recargar inmediatamente, verificar el estado actual
-      console.log('Selected permissions after save (before reload):', selectedPermissions);
-      console.log('Selected permissions count after save (before reload):', selectedPermissions.length);
-      
-      // Comentar temporalmente la recarga para ver si el problema está ahí
-      // console.log('Reloading role permissions...');
-      // await loadRolePermissions(selectedRole.id);
-      
-      // Verificar que el estado se mantiene consistente
-      console.log('Final selected permissions count:', selectedPermissions.length);
     } catch (error) {
-      console.error('Error saving permissions:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar los permisos';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error al actualizar los permisos';
       showErrorToast(errorMessage);
     } finally {
       setIsSaving(false);
@@ -115,11 +95,9 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const handleSelectAllModule = (module: string) => {
     const modulePermissions = permissionsByModule[module] || [];
     const modulePermissionIds = modulePermissions.map(p => p.id.toString());
-    
+
     setSelectedPermissions(prev => {
-      const otherModules = prev.filter(id => 
-        !modulePermissionIds.includes(id)
-      );
+      const otherModules = prev.filter(id => !modulePermissionIds.includes(id));
       return [...otherModules, ...modulePermissionIds];
     });
   };
@@ -127,10 +105,8 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const handleDeselectAllModule = (module: string) => {
     const modulePermissions = permissionsByModule[module] || [];
     const modulePermissionIds = modulePermissions.map(p => p.id.toString());
-    
-    setSelectedPermissions(prev => 
-      prev.filter(id => !modulePermissionIds.includes(id))
-    );
+
+    setSelectedPermissions(prev => prev.filter(id => !modulePermissionIds.includes(id)));
   };
 
   const toggleModuleExpansion = (module: string) => {
@@ -146,8 +122,9 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   };
 
   const expandAllModules = () => {
-    const allModules = Object.keys(permissionsByModule)
-      .sort((a, b) => getModuleDisplayName(a).localeCompare(getModuleDisplayName(b)));
+    const allModules = Object.keys(permissionsByModule).sort((a, b) =>
+      getModuleDisplayName(a).localeCompare(getModuleDisplayName(b))
+    );
     setExpandedModules(new Set(allModules));
   };
 
@@ -157,36 +134,35 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
   const getModuleDisplayName = (module: string): string => {
     const moduleNames: { [key: string]: string } = {
-      'accounts': 'Cuentas',
-      'advances': 'Anticipos',
-      'attendance': 'Asistencias',
-      'cash_register': 'Caja',
-      'categories': 'Categorías',
-      'commissions': 'Comisiones',
-      'overtime': 'Horas Extras',
-      'orders': 'Pedidos',
-      'payroll': 'Pagos Trabajadores',
-      'products': 'Productos',
-      'reports': 'Reportes',
-      'returns': 'Devoluciones',
-      'roles': 'Roles',
-      'sales': 'Ventas',
-      'services': 'Servicios',
-                         'settings': 'Configuración',
-                   'tips': 'Propinas',
-                   'users': 'Usuarios',
-                   'caja': 'Caja',
-                   'pagos_trabajadores': 'Pagos a Trabajadores',
-                   'detalle_planillas': 'Detalle Planillas',
-                   'privados': 'Privados',
-                   'reportes': 'Reportes',
-                   'cash_box': 'Caja',
-                   'worker_payments': 'Pagos a Trabajadores',
-                   'payroll_details': 'Detalle Planillas',
-                   'private': 'Privados',
-                   'reports': 'Reportes'
+      accounts: 'Cuentas',
+      advances: 'Anticipos',
+      attendance: 'Asistencias',
+      cash_register: 'Caja',
+      categories: 'Categorías',
+      commissions: 'Comisiones',
+      overtime: 'Horas Extras',
+      orders: 'Pedidos',
+      payroll: 'Pagos Trabajadores',
+      products: 'Productos',
+      reports: 'Reportes',
+      returns: 'Devoluciones',
+      roles: 'Roles',
+      sales: 'Ventas',
+      services: 'Servicios',
+      settings: 'Configuración',
+      tips: 'Propinas',
+      users: 'Usuarios',
+      caja: 'Caja',
+      pagos_trabajadores: 'Pagos a Trabajadores',
+      detalle_planillas: 'Detalle Planillas',
+      privados: 'Privados',
+      reportes: 'Reportes',
+      cash_box: 'Caja',
+      worker_payments: 'Pagos a Trabajadores',
+      payroll_details: 'Detalle Planillas',
+      private: 'Privados'
     };
-    
+
     return moduleNames[module] || module.replace('_', ' ');
   };
 
@@ -222,9 +198,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
             <h3 className='text-lg font-semibold text-zinc-900 dark:text-neutral-100'>
               Permisos del Rol
             </h3>
-            <p className='text-sm text-zinc-600 dark:text-neutral-400'>
-              {selectedRole.name}
-            </p>
+            <p className='text-sm text-zinc-600 dark:text-neutral-400'>{selectedRole.name}</p>
           </div>
           <Button
             onClick={handleSavePermissions}
@@ -242,131 +216,120 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
         {/* Controles de expansión */}
         <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={expandAllModules}
-            className='text-xs'
-          >
+          <Button variant='outline' size='sm' onClick={expandAllModules} className='text-xs'>
             <ChevronDown className='h-3 w-3 mr-1' />
             Expandir Todo
           </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={collapseAllModules}
-            className='text-xs'
-          >
+          <Button variant='outline' size='sm' onClick={collapseAllModules} className='text-xs'>
             <ChevronRight className='h-3 w-3 mr-1' />
             Colapsar Todo
           </Button>
         </div>
       </div>
 
-             {/* Contenido scrolleable */}
-       <div className='flex-1 overflow-y-auto p-4 space-y-4'>
-         {Object.entries(permissionsByModule)
-           .sort(([a], [b]) => getModuleDisplayName(a).localeCompare(getModuleDisplayName(b)))
-           .map(([module, permissions]) => {
-          const isExpanded = expandedModules.has(module);
-          const moduleSelectedCount = permissions.filter(p => 
-            selectedPermissions.includes(p.id.toString())
-          ).length;
-          
+      {/* Contenido scrolleable */}
+      <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+        {Object.entries(permissionsByModule)
+          .sort(([a], [b]) => getModuleDisplayName(a).localeCompare(getModuleDisplayName(b)))
+          .map(([module, permissions]) => {
+            const isExpanded = expandedModules.has(module);
+            const moduleSelectedCount = permissions.filter(p =>
+              selectedPermissions.includes(p.id.toString())
+            ).length;
 
-          
-          return (
-            <div key={module} className='border border-gray-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
-              {/* Header del módulo */}
-              <div 
-                className='flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
-                onClick={() => toggleModuleExpansion(module)}
+            return (
+              <div
+                key={module}
+                className='border border-gray-200 dark:border-neutral-800 rounded-lg overflow-hidden'
               >
-                <div className='flex items-center gap-2'>
-                  {isExpanded ? (
-                    <ChevronDown className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
-                  ) : (
-                    <ChevronRight className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
-                  )}
-                                     <h4 className='font-medium text-zinc-800 dark:text-neutral-200 capitalize'>
-                     {getModuleDisplayName(module)}
-                   </h4>
-                  <Badge variant='outline' className='text-xs'>
-                    {moduleSelectedCount}/{permissions.length}
-                  </Badge>
-                </div>
-                <div className='flex gap-2'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectAllModule(module);
-                    }}
-                    className='text-xs'
-                  >
-                    <CheckCircle className='h-3 w-3 mr-1' />
-                    Todos
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeselectAllModule(module);
-                    }}
-                    className='text-xs'
-                  >
-                    <XCircle className='h-3 w-3 mr-1' />
-                    Ninguno
-                  </Button>
-                </div>
-              </div>
-
-              {/* Lista de permisos (colapsable) */}
-              {isExpanded && (
-                <div className='p-3 space-y-2 bg-white dark:bg-neutral-900'>
-                  {permissions.map(permission => (
-                    <div
-                      key={permission.id || `permission-${Math.random()}`}
-                      className='flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-neutral-700 transition-colors'
+                {/* Header del módulo */}
+                <div
+                  className='flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
+                  onClick={() => toggleModuleExpansion(module)}
+                >
+                  <div className='flex items-center gap-2'>
+                    {isExpanded ? (
+                      <ChevronDown className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
+                    ) : (
+                      <ChevronRight className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
+                    )}
+                    <h4 className='font-medium text-zinc-800 dark:text-neutral-200 capitalize'>
+                      {getModuleDisplayName(module)}
+                    </h4>
+                    <Badge variant='outline' className='text-xs'>
+                      {moduleSelectedCount}/{permissions.length}
+                    </Badge>
+                  </div>
+                  <div className='flex gap-2'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleSelectAllModule(module);
+                      }}
+                      className='text-xs'
                     >
-                      <div className='flex-1'>
-                        <div className='flex items-center gap-2'>
-                          <input
-                            type='checkbox'
-                            checked={selectedPermissions.includes(permission.id.toString())}
-                            onChange={() => handlePermissionToggle(permission.id.toString())}
-                            className='rounded border-zinc-300 dark:border-neutral-600 text-black focus:ring-black'
-                          />
-                                                     <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100'>
-                             {permission.name}
-                           </span>
-                          {selectedPermissions.includes(permission.id.toString()) && (
-                            <Badge variant='secondary' className='text-xs'>
-                              Asignado
-                            </Badge>
-                          )}
-                        </div>
-                        <p className='text-xs text-zinc-600 dark:text-neutral-400 ml-6 mt-1'>
-                          {permission.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                      <CheckCircle className='h-3 w-3 mr-1' />
+                      Todos
+                    </Button>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleDeselectAllModule(module);
+                      }}
+                      className='text-xs'
+                    >
+                      <XCircle className='h-3 w-3 mr-1' />
+                      Ninguno
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {/* Lista de permisos (colapsable) */}
+                {isExpanded && (
+                  <div className='p-3 space-y-2 bg-white dark:bg-neutral-900'>
+                    {permissions.map(permission => (
+                      <div
+                        key={permission.id || `permission-${Math.random()}`}
+                        className='flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-neutral-700 transition-colors'
+                      >
+                        <div className='flex-1'>
+                          <div className='flex items-center gap-2'>
+                            <input
+                              type='checkbox'
+                              checked={selectedPermissions.includes(permission.id.toString())}
+                              onChange={() => handlePermissionToggle(permission.id.toString())}
+                              className='rounded border-zinc-300 dark:border-neutral-600 text-black focus:ring-black'
+                            />
+                            <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100'>
+                              {permission.name}
+                            </span>
+                            {selectedPermissions.includes(permission.id.toString()) && (
+                              <Badge variant='secondary' className='text-xs'>
+                                Asignado
+                              </Badge>
+                            )}
+                          </div>
+                          <p className='text-xs text-zinc-600 dark:text-neutral-400 ml-6 mt-1'>
+                            {permission.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
       </div>
 
       {/* Footer fijo */}
       <div className='flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-4'>
         <div className='flex items-center justify-between text-sm'>
-          <span className='text-zinc-600 dark:text-neutral-400'>
-            Permisos seleccionados:
-          </span>
+          <span className='text-zinc-600 dark:text-neutral-400'>Permisos seleccionados:</span>
           <Badge variant='outline'>
             {selectedPermissions.length} de {Object.values(permissionsByModule).flat().length}
           </Badge>
@@ -374,4 +337,4 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       </div>
     </div>
   );
-} 
+}

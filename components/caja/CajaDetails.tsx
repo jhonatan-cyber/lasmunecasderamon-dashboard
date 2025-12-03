@@ -14,7 +14,10 @@ import {
   Calendar,
   TrendingDown,
   TrendingUp,
+  ArrowDownCircle,
+  Loader2,
 } from "lucide-react";
+import { useRetiros } from "@/hooks/useRetiros";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -61,6 +64,8 @@ const getEstadoInfo = (estado: number) => {
 };
 
 export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
+  const { retiros, loading: retirosLoading } = useRetiros(caja?.id_caja || null);
+
   if (!caja) return null;
 
   const estadoInfo = getEstadoInfo(caja.estado);
@@ -257,6 +262,66 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               </div>
             </div>
           </div>
+
+          {/* Historial de Retiros */}
+          <div className='bg-gray-50 p-4 rounded-lg'>
+            <h5 className='font-medium text-lg mb-4 flex items-center gap-2'>
+              <ArrowDownCircle className='w-5 h-5 text-orange-600' />
+              Historial de Retiros
+            </h5>
+
+            {retirosLoading ? (
+              <div className='flex justify-center items-center py-8'>
+                <Loader2 className='h-6 w-6 animate-spin text-gray-400' />
+              </div>
+            ) : retiros.length === 0 ? (
+              <div className='text-center py-8 text-gray-500 text-sm'>
+                No hay retiros registrados para esta caja
+              </div>
+            ) : (
+              <div className='space-y-3'>
+                {retiros.map((retiro) => (
+                  <div
+                    key={retiro.id_retiro}
+                    className='bg-white p-3 rounded-lg border border-gray-200'
+                  >
+                    <div className='flex justify-between items-start mb-2'>
+                      <div className='flex-1'>
+                        <div className='flex items-center gap-2 mb-1'>
+                          <span className='font-medium text-orange-600'>
+                            -${Math.round(retiro.monto).toLocaleString()}
+                          </span>
+                          <span className='text-xs text-gray-500'>
+                            por {retiro.usuario_nombre || 'Usuario desconocido'}
+                          </span>
+                        </div>
+                        <p className='text-sm text-gray-600'>{retiro.motivo}</p>
+                      </div>
+                      <span className='text-xs text-gray-400 whitespace-nowrap ml-2'>
+                        {new Date(retiro.fecha_retiro).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {retiros.length > 0 && (
+                  <div className='border-t pt-3 mt-3'>
+                    <div className='flex justify-between text-sm font-medium'>
+                      <span>Total Retirado:</span>
+                      <span className='text-orange-600'>
+                        -${Math.round(retiros.reduce((sum, r) => sum + r.monto, 0)).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="mt-6 flex justify-center">
             <Button
               variant="outline"
