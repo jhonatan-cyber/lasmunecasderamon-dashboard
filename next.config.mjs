@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -11,14 +8,8 @@ const nextConfig = {
   },
   // Deshabilitar React Strict Mode para evitar warnings de Swagger UI
   reactStrictMode: false,
-  // Configuración para producción con proxy
-  ...(process.env.NODE_ENV === 'production' && {
-    // Configurar para manejar HTTPS detrás de proxy
-    serverRuntimeConfig: {
-      // Permitir que Next.js confíe en headers del proxy
-      trustProxy: true,
-    },
-  }),
+  // Configuración mínima para Turbopack (compatible con proyectos que además tengan `webpack` custom)
+  turbopack: {},
   // Configuración de webpack
   webpack: (config) => {
     config.module.rules.push({
