@@ -63,19 +63,20 @@ Sistema integral de administración para nightclub, desarrollado con Next.js 15,
 - **Auth**: JWT + bcrypt
 - **File Upload**: Formidable
 
-### DevOps
+- ### DevOps
 - **Language**: TypeScript 5
-- **Package Manager**: npm
+- **Package Manager**: pnpm
 - **Linting**: ESLint
 - **Formatting**: Prettier
 - **Git Hooks**: Husky
 - **Testing**: Jest + Testing Library
 
+
 ## 📦 Requisitos
 
 - Node.js >= 18.0.0
 - MySQL >= 8.0
-- npm >= 9.0.0
+- pnpm >= 7.0.0
 
 ## 🚀 Instalación
 
@@ -89,7 +90,7 @@ cd lasmunecasderamon/admin-dashboard
 ### 2. Instalar dependencias
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Configurar variables de entorno
@@ -109,13 +110,13 @@ nano .env
 mysql -u root -p < database/schema.sql
 
 # Ejecutar migraciones (si existen)
-npm run migrate
+pnpm run migrate
 ```
 
 ### 5. Iniciar el servidor de desarrollo
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 La aplicación estará disponible en `http://localhost:3000`
@@ -317,16 +318,16 @@ DELETE /api/sales?id=:id          # Anular venta
 
 ```bash
 # Tests unitarios
-npm test
+pnpm test
 
 # Tests en modo watch
-npm run test:watch
+pnpm run test:watch
 
 # Coverage
-npm run test:coverage
+pnpm run test:coverage
 
 # Tests CI
-npm run test:ci
+pnpm run test:ci
 ```
 
 ### Estructura de Tests
@@ -340,54 +341,6 @@ __tests__/
 └── api/
     └── cashregister.test.ts
 ```
-
-## 🚢 Deployment
-
-### Producción
-
-```bash
-# Build
-npm run build
-
-# Start
-npm start
-```
-
-### Variables de Entorno en Producción
-
-Asegúrate de configurar todas las variables de entorno en tu plataforma de hosting:
-
-- Vercel: Settings > Environment Variables
-- Railway: Variables tab
-- Heroku: Config Vars
-
-### Recomendaciones
-
-1. **Base de Datos**: Usar PlanetScale o Supabase
-2. **Hosting**: Vercel o Railway
-3. **CDN**: Cloudflare
-4. **Monitoring**: Sentry + Vercel Analytics
-5. **Backups**: Automatizar backups diarios
-
-## 🤝 Contribución
-
-### Workflow
-
-1. Fork el proyecto
-2. Crear una rama (`git checkout -b feature/AmazingFeature`)
-3. Commit cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir un Pull Request
-
-### Estándares de Código
-
-- Usar TypeScript strict mode
-- Seguir convenciones de ESLint
-- Formatear con Prettier
-- Escribir tests para nuevas features
-- Documentar funciones complejas
-
-### Commits
 
 Seguir [Conventional Commits](https://www.conventionalcommits.org/):
 
