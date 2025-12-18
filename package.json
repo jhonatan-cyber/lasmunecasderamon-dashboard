@@ -129,6 +129,7 @@
     "lint-staged": "^16.1.4",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
+    "rimraf": "^4.4.1",
     "typescript": "^5"
   },
   "pnpm": {
@@ -137,6 +138,7 @@
       "jspdf": "3.0.2",
       "js-yaml": "4.1.1",
       "glob": "10.5.0",
+      "rimraf": "^4.4.0",
       "jws": "3.2.3",
       "prismjs": "1.30.0",
       "sweetalert2": "11.22.4",

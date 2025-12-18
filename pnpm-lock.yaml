@@ -9,6 +9,7 @@ overrides:
   jspdf: 3.0.2
   js-yaml: 4.1.1
   glob: 10.5.0
+  rimraf: ^4.4.0
   jws: 3.2.3
   prismjs: 1.30.0
   sweetalert2: 11.22.4
@@ -316,6 +317,9 @@ importers:
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
+      rimraf:
+        specifier: ^4.4.1
+        version: 4.4.1
       typescript:
         specifier: ^5
         version: 5.9.2
@@ -4659,9 +4663,9 @@ packages:
     resolution: {integrity: sha512-9aZLIrhRaD97sgVhtJOW6ckOEh6/GnvQtdVNfdZ6s67+3/XwLS9lBcQYzEEhYVeUowN7pRzMLsyGhK2i/xvWbw==}
     engines: {node: '>= 0.8.15'}
 
-  rimraf@2.7.1:
-    resolution: {integrity: sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w==}
-    deprecated: Rimraf versions prior to v4 are no longer supported
+  rimraf@4.4.1:
+    resolution: {integrity: sha512-Gk8NlF062+T9CqNGn6h4tls3k6T1+/nXdOcSZVikNVtlRdYpA7wRJJMoXmuvOnLW844rPjdQ7JgXCYM6PPC/og==}
+    engines: {node: '>=14'}
     hasBin: true
 
   router@2.2.0:
@@ -9075,7 +9079,7 @@ snapshots:
       graceful-fs: 4.2.11
       inherits: 2.0.4
       mkdirp: 0.5.6
-      rimraf: 2.7.1
+      rimraf: 4.4.1
 
   function-bind@1.1.2: {}
 
@@ -10578,7 +10582,7 @@ snapshots:
   rgbcolor@1.0.1:
     optional: true
 
-  rimraf@2.7.1:
+  rimraf@4.4.1:
     dependencies:
       glob: 10.5.0
 
