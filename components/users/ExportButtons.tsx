@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { FileText as FilePdf, FileSpreadsheet as FileXls } from "lucide-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useRef } from "react";
@@ -37,13 +37,55 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         : "Sin modificar",
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
-    XLSX.writeFile(
-      workbook,
-      `usuarios_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Usuarios");
+
+    // Definir columnas
+    worksheet.columns = [
+      { header: "#", key: "index", width: 6 },
+      { header: "RUN", key: "run", width: 20 },
+      { header: "Nombre", key: "name", width: 20 },
+      { header: "Apellido", key: "lastName", width: 20 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Teléfono", key: "phone", width: 18 },
+      { header: "Rol", key: "role", width: 16 },
+      { header: "Estado", key: "status", width: 12 },
+      { header: "Estado Civil", key: "maritalStatus", width: 16 },
+      { header: "AFP", key: "afp", width: 16 },
+      { header: "Sueldo", key: "salary", width: 16 },
+      { header: "Fecha Creación", key: "created_at", width: 16 },
+      { header: "Última Modificación", key: "updated_at", width: 16 },
+    ];
+
+    data.forEach((row) => {
+      worksheet.addRow({
+        index: row['#'],
+        run: row.RUN,
+        name: row.Nombre,
+        lastName: row.Apellido,
+        email: row.Email,
+        phone: row['Teléfono'],
+        role: row.Rol,
+        status: row.Estado,
+        maritalStatus: row['Estado Civil'],
+        afp: row.AFP,
+        salary: row.Sueldo,
+        created_at: row['Fecha Creación'],
+        updated_at: row['Última Modificación'],
+      });
+    });
+
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `usuarios_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
   };
 
   const exportToPDF = () => {
