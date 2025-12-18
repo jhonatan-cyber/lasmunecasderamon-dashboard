@@ -377,5 +377,5 @@ Para soporte técnico:
 
 ---
 
-**Última actualización**: Noviembre 2025
+**Última actualización**: 18 de diciembre de 2025
 **Versión**: 1.0.0
