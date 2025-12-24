@@ -37,7 +37,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home, module: 'dashboard', action: 'view' },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, module: 'dashboard', action: 'view' },
   { name: 'Usuarios', href: '/users', icon: Users, module: 'users', action: 'view' },
   { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clients', action: 'view' },
   { name: 'Productos', href: '/products', icon: Package, module: 'products', action: 'view' },

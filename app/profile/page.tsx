@@ -496,8 +496,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className='container mx-auto p-6 space-y-6'>
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
         <div>
           <h1 className='text-3xl font-bold'>Perfil de Usuario</h1>
           {currentUser && (
