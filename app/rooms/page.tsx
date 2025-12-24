@@ -111,8 +111,8 @@ const RoomsPage = () => {
   };
 
   return (
-    <div className='container mx-auto py-4 sm:py-6 lg:py-8 mt-4 sm:mt-6 lg:mt-10 px-4 sm:px-6'>
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6'>
+      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
         <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Habitaciones</h1>
         <div className='flex flex-col sm:flex-row gap-2 items-center'>
           <div className='flex gap-2 items-center'>
