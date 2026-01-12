@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import Cookies from "cookies";
 import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
+import { clearCookie } from '@/lib/middleware/cookieUtils';
 
 // Función simple para verificar token
 const verifyToken = (token: string) => {
@@ -50,14 +51,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Continuar con el logout aunque haya error en la base de datos
   }
   
-  // Limpiar cookie
-  cookies.set("token", "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  // Limpiar cookie de forma robusta
+  clearCookie(req, res, 'token');
+  // Adicionalmente, intentar limpiar cualquier variante remanente del cookie
+  try {
+    cookies.set('token', '', { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 0 });
+    cookies.set('token', '', { httpOnly: true, secure: false, sameSite: 'lax', path: '/', maxAge: 0 });
+  } catch {}
   
   return res.status(200).json({ success: true, message: "Sesión cerrada" });
 } 
