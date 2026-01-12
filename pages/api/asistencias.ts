@@ -17,7 +17,7 @@ export default async function handler(
 
   try {
     // Usamos agregaciones con LEFT JOIN para mayor compatibilidad y rendimiento.
-    // Evitamos YEARWEEK y contamos semanas con YEAR + WEEK (modo 1: semana inicia lunes).
+    // Contamos semanas usando CONCAT(YEAR, '-', WEEK) en modo 1 (semana inicia lunes).
     const sql = `
       SELECT 
         U.id_usuario,
@@ -26,11 +26,13 @@ export default async function handler(
         COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
         COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
         COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0) AS aporte_total,
-        0 AS descuento_total,
+        COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0) AS descuento_total,
         (
           COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0)
         ) - (
           COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0)
+        ) - (
+          COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0)
         ) AS total_final
       FROM usuarios U
       LEFT JOIN (
@@ -39,6 +41,13 @@ export default async function handler(
         WHERE estado = 1
         GROUP BY usuario_id
       ) AS ASIS ON ASIS.usuario_id = U.id_usuario
+      LEFT JOIN (
+        SELECT usuario_id,
+               COUNT(DISTINCT CONCAT(YEAR(fecha), '-', WEEK(fecha, 1))) AS semanas
+        FROM asistencias
+        WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)
+        GROUP BY usuario_id
+      ) AS SEM ON SEM.usuario_id = U.id_usuario
       ORDER BY nombre_completo
     `
 
