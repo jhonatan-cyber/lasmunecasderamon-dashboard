@@ -16,53 +16,41 @@ export default async function handler(
   }
 
   try {
+    // Usamos agregaciones con LEFT JOIN para mayor compatibilidad y rendimiento.
+    // Evitamos YEARWEEK y contamos semanas con YEAR + WEEK (modo 1: semana inicia lunes).
     const sql = `
       SELECT 
         U.id_usuario,
         U.nick,
         CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
-        COALESCE((
-          SELECT COUNT(*) FROM asistencias A 
-          WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
-        ), 0) AS total_asistencias,
-        COALESCE((
-          SELECT COUNT(*) FROM asistencias A 
-          WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
-        ), 0) * U.sueldo AS sueldo_total,
-        COALESCE((
-          SELECT COUNT(*) FROM asistencias A 
-          WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
-        ), 0) * U.aporte AS aporte_total,
-        COALESCE((
-          SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) 
-          FROM asistencias A 
-          WHERE A.estado = 1 
-            AND A.usuario_id = U.id_usuario 
-            AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)
-        ), 0) * U.descuento AS descuento_total,
+        COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
+        COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
+        COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0) AS aporte_total,
+        COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0) AS descuento_total,
         (
-          COALESCE((
-            SELECT COUNT(*) FROM asistencias A 
-            WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
-          ), 0) * U.sueldo
+          COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0)
         ) - (
-          COALESCE((
-            SELECT COUNT(*) FROM asistencias A 
-            WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
-          ), 0) * U.aporte
+          COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0)
         ) - (
-          COALESCE((
-            SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) 
-            FROM asistencias A 
-            WHERE A.estado = 1 
-              AND A.usuario_id = U.id_usuario 
-              AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)
-          ), 0) * U.descuento
+          COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0)
         ) AS total_final
       FROM usuarios U
+      LEFT JOIN (
+        SELECT usuario_id, COUNT(*) AS total_asistencias
+        FROM asistencias
+        WHERE estado = 1
+        GROUP BY usuario_id
+      ) AS ASIS ON ASIS.usuario_id = U.id_usuario
+      LEFT JOIN (
+        SELECT usuario_id,
+               COUNT(DISTINCT CONCAT(YEAR(fecha), '-', LPAD(WEEK(fecha, 1), 2, '0'))) AS semanas
+        FROM asistencias
+        WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)
+        GROUP BY usuario_id
+      ) AS SEM ON SEM.usuario_id = U.id_usuario
       ORDER BY nombre_completo
     `
-    
+
     const data = await rawQuery(sql) as AsistenciaResumen[];
     
     return res.status(200).json({
