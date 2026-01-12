@@ -64,26 +64,32 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Endpoint para verificar estado de caja (equivalente a caja-status.ts)
     if (status === 'check') {
-      const cajaResult = (await query(
-        'SELECT id_caja, usuario_id_apertura, fecha_apertura FROM cajas WHERE estado = 1 LIMIT 1'
-      )) as any[];
+      try {
+        const cajaResult = (await query(
+          'SELECT id_caja, usuario_id_apertura, fecha_apertura FROM cajas WHERE estado = 1 LIMIT 1'
+        )) as any[];
 
-      const hasOpenCaja = cajaResult.length > 0;
-      const cajaInfo = hasOpenCaja ? cajaResult[0] : null;
+        const hasOpenCaja = cajaResult.length > 0;
+        const cajaInfo = hasOpenCaja ? cajaResult[0] : null;
 
-      return res.status(200).json({
-        success: true,
-        data: {
-          hasOpenCaja,
-          cajaInfo: cajaInfo
-            ? {
-                id_caja: cajaInfo.id_caja,
-                usuario_id_apertura: cajaInfo.usuario_id_apertura,
-                fecha_apertura: cajaInfo.fecha_apertura
-              }
-            : null
-        }
-      });
+        return res.status(200).json({
+          success: true,
+          data: {
+            hasOpenCaja,
+            cajaInfo: cajaInfo
+              ? {
+                  id_caja: cajaInfo.id_caja,
+                  usuario_id_apertura: cajaInfo.usuario_id_apertura,
+                  fecha_apertura: cajaInfo.fecha_apertura
+                }
+              : null
+          }
+        });
+      } catch (statusCheckError) {
+        console.error('❌ Error en status=check:', statusCheckError);
+        console.error('Error details:', statusCheckError instanceof Error ? statusCheckError.message : String(statusCheckError));
+        throw statusCheckError;
+      }
     }
 
     if (resumen === '1') {
@@ -251,6 +257,8 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
   } catch (error) {
+    console.error('❌ Error en GET /api/cashregister:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({
       success: false,
       message: 'Error al obtener datos de cash register',
