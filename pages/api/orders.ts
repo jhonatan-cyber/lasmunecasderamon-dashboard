@@ -36,7 +36,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     const orders = Array.isArray((results as any)[0]) ? (results as any)[0] : results;
     return res.status(200).json({ success: true, data: orders });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error al obtener pedidos', error });
+    console.error('❌ Error en GET /api/orders:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ success: false, message: 'Error al obtener pedidos', error: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -78,8 +80,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     await rawQuery('COMMIT');
 
- 
-
     // Obtener información del cliente y mesero para la notificación
     const clienteResults = await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteId]) as any[];
     const clienteResult = clienteResults[0];
@@ -111,8 +111,14 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       id: pedidoId
     });
   } catch (error) {
-    await rawQuery('ROLLBACK');
-    return res.status(500).json({ success: false, message: 'Error al crear pedido', error });
+    console.error('❌ Error en POST /api/orders:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    try {
+      await rawQuery('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error al hacer rollback:', rollbackError);
+    }
+    return res.status(500).json({ success: false, message: 'Error al crear pedido', error: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -127,8 +133,14 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     await rawQuery('COMMIT');
     return res.status(200).json({ success: true, message: 'Pedido eliminado correctamente' });
   } catch (error) {
-    await rawQuery('ROLLBACK');
-    return res.status(500).json({ success: false, message: 'Error al eliminar pedido', error });
+    console.error('❌ Error en DELETE /api/orders:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    try {
+      await rawQuery('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error al hacer rollback:', rollbackError);
+    }
+    return res.status(500).json({ success: false, message: 'Error al eliminar pedido', error: error instanceof Error ? error.message : String(error) });
   }
 };
 
