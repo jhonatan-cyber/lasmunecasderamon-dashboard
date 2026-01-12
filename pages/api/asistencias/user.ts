@@ -52,62 +52,56 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    // Por defecto, devolver resumen de asistencias
+    // Por defecto, devolver resumen de asistencias (compatible con MySQL 5.7/MariaDB)
     const sql = `
-      WITH semanas_validas AS ( 
-        SELECT 
-            A.usuario_id, 
-            A.hora, 
-            A.fecha, 
-            YEARWEEK(A.fecha, 1) AS semana_iso 
-        FROM asistencias A 
-        WHERE (A.estado = 1) 
-          AND A.usuario_id = ?
-          AND DAYOFWEEK(A.fecha) IN (3, 4, 5, 6, 7, 1) 
-        GROUP BY A.usuario_id, YEARWEEK(A.fecha, 1) 
-      ), 
-      conteo_semanas AS ( 
-        SELECT 
-            U.id_usuario, 
-            U.nombre, 
-            U.nick, 
-            U.apellido, 
-            U.sueldo, 
-            U.aporte, 
-            U.descuento, 
-            COUNT(DISTINCT S.semana_iso) AS semanas_con_descuento 
-        FROM usuarios U 
-        LEFT JOIN semanas_validas S ON S.usuario_id = U.id_usuario 
-        WHERE U.id_usuario = ?
-        GROUP BY 
-            U.id_usuario, U.nombre, U.apellido, 
-            U.sueldo, U.aporte, U.descuento 
-      ), 
-      asistencias_totales AS ( 
-        SELECT 
-            A.usuario_id, 
-            COUNT(*) AS total_asistencias 
-        FROM asistencias A 
-        WHERE (A.estado = 1) AND A.usuario_id = ?
-        GROUP BY A.usuario_id 
-      ) 
       SELECT 
-        U.id_usuario, 
-        U.nick, 
-        CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo, 
-        COALESCE(A.total_asistencias, 0) AS total_asistencias, 
-        COALESCE(A.total_asistencias, 0) * U.sueldo AS sueldo_total, 
-        COALESCE(A.total_asistencias, 0) * U.aporte AS aporte_total, 
-        COALESCE(U.semanas_con_descuento, 0) * U.descuento AS descuento_total, 
-        (COALESCE(A.total_asistencias, 0) * U.sueldo) 
-        - (COALESCE(A.total_asistencias, 0) * U.aporte) 
-        - (COALESCE(U.semanas_con_descuento, 0) * U.descuento) AS total_final 
-      FROM conteo_semanas U 
-      LEFT JOIN asistencias_totales A ON A.usuario_id = U.id_usuario 
+        U.id_usuario,
+        U.nick,
+        CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+        COALESCE((
+          SELECT COUNT(*) FROM asistencias A 
+          WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
+        ), 0) AS total_asistencias,
+        COALESCE((
+          SELECT COUNT(*) FROM asistencias A 
+          WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
+        ), 0) * U.sueldo AS sueldo_total,
+        COALESCE((
+          SELECT COUNT(*) FROM asistencias A 
+          WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
+        ), 0) * U.aporte AS aporte_total,
+        COALESCE((
+          SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) 
+          FROM asistencias A 
+          WHERE A.estado = 1 
+            AND A.usuario_id = U.id_usuario 
+            AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)
+        ), 0) * U.descuento AS descuento_total,
+        (
+          COALESCE((
+            SELECT COUNT(*) FROM asistencias A 
+            WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
+          ), 0) * U.sueldo
+        ) - (
+          COALESCE((
+            SELECT COUNT(*) FROM asistencias A 
+            WHERE A.estado = 1 AND A.usuario_id = U.id_usuario
+          ), 0) * U.aporte
+        ) - (
+          COALESCE((
+            SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) 
+            FROM asistencias A 
+            WHERE A.estado = 1 
+              AND A.usuario_id = U.id_usuario 
+              AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)
+          ), 0) * U.descuento
+        ) AS total_final
+      FROM usuarios U
+      WHERE U.id_usuario = ?
       ORDER BY nombre_completo
     `;
     
-    const data = await query(sql, [userId, userId, userId]) as any[];
+    const data = await query(sql, [userId]) as any[];
 
     return res.status(200).json({
       success: true,
