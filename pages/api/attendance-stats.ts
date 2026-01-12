@@ -105,9 +105,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
+    console.error('❌ Error en /api/attendance-stats:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
+      details: error instanceof Error ? error.message : String(error)
     });
   }
 }
