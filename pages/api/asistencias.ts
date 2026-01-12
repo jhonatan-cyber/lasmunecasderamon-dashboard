@@ -48,6 +48,7 @@ export default async function handler(
         WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)
         GROUP BY usuario_id
       ) AS SEM ON SEM.usuario_id = U.id_usuario
+      HAVING COALESCE(ASIS.total_asistencias, 0) > 0
       ORDER BY nombre_completo
     `
 
