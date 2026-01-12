@@ -43,7 +43,7 @@ export default async function handler(
       ) AS ASIS ON ASIS.usuario_id = U.id_usuario
       LEFT JOIN (
         SELECT usuario_id,
-               COUNT(DISTINCT CONCAT(YEAR(fecha), '-', LPAD(WEEK(fecha, 1), 2, '0'))) AS semanas
+               COUNT(DISTINCT DATE_FORMAT(fecha, '%x-%v')) AS semanas
         FROM asistencias
         WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)
         GROUP BY usuario_id
