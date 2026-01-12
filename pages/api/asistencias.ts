@@ -50,7 +50,8 @@ export default async function handler(
     })
     
   } catch (error) {
-  
+    console.error('Error en /api/asistencias:', error);
+    
     return res.status(500).json({ 
       success: false,
       error: 'Error al obtener asistencias',
