@@ -5,7 +5,7 @@ const clients = new Set<NextApiResponse>();
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
-    // debug logs removidos
+    console.info('[SSE] client connected');
 
     // Configurar headers para SSE
     res.setHeader('Content-Type', 'text/event-stream');
@@ -17,6 +17,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Agregar cliente a la lista
     clients.add(res);
+    console.info(`[SSE] total clients after connect: ${clients.size}`);
 
     // Enviar mensaje inicial
     const initialMessage = JSON.stringify({
@@ -36,6 +37,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
           // silent
           clients.delete(res);
           clearInterval(keepAlive);
+          console.warn('[SSE] keep-alive failed, removed client');
         }
       } else {
         clearInterval(keepAlive);
@@ -44,13 +46,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Manejar desconexión del cliente
     req.on('close', () => {
-      // silent
+      console.info('[SSE] client disconnected');
       clients.delete(res);
       clearInterval(keepAlive);
     });
 
     req.on('error', error => {
-      // silent
+      console.error('[SSE] client error', error);
       clients.delete(res);
       clearInterval(keepAlive);
     });
@@ -62,6 +64,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 // Función para enviar notificaciones a todos los clientes
 export function sendNotificationToAll(type: string, data: any) {
   if (clients.size === 0) {
+    console.warn('[SSE] no clients connected, skipping send');
     return;
   }
 
@@ -73,6 +76,8 @@ export function sendNotificationToAll(type: string, data: any) {
 
   const deadClients: NextApiResponse[] = [];
 
+  console.info(`[SSE] broadcasting ${type} to ${clients.size} clients`);
+
   clients.forEach(client => {
     try {
       client.write(`data: ${message}\n\n`);
@@ -80,6 +85,8 @@ export function sendNotificationToAll(type: string, data: any) {
       deadClients.push(client);
     }
   });
+
+  console.info(`[SSE] sent ${type} to ${clients.size - deadClients.length} clients`);
 
   // Limpiar clientes muertos
   deadClients.forEach(client => {
