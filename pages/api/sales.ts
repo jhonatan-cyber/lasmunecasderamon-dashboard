@@ -112,15 +112,11 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         c.nombre as cliente_nombre, 
         c.apellido as cliente_apellido,
         v.habitacion_id,
-        h.nombre as habitacion_nombre,
-        GROUP_CONCAT(u.nick SEPARATOR ', ') as usuarios_nicks
+        h.nombre as habitacion_nombre
       FROM ventas v 
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
       LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
-      LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
-      LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
       ${whereClause}
-      GROUP BY v.id_venta
       ORDER BY v.fecha_crea DESC 
       LIMIT ? OFFSET ?
     `;
@@ -136,25 +132,30 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     // Procesar los datos para formatear usuarios como array y obtener detalles
     const processedSales = await Promise.all(
       salesResult.map(async venta => {
-        // Convertir usuarios_nicks de string a array
-        const usuariosNicks = venta.usuarios_nicks ? venta.usuarios_nicks.split(', ') : [];
-
-        // Crear array de usuarios
-        const usuarios = usuariosNicks.map((nick: string) => ({
-          nick,
-          usuario_nombre: nick
+        // Obtener usuarios de esta venta
+        const usuariosSql = `
+          SELECT u.id_usuario, u.nick 
+          FROM ventas_usuarios vu 
+          JOIN usuarios u ON vu.usuario_id = u.id_usuario 
+          WHERE vu.venta_id = ?
+        `;
+        const usuariosResult = (await query(usuariosSql, [venta.id_venta])) as any[];
+        const usuarios = usuariosResult.map(u => ({
+          id: u.id_usuario,
+          nick: u.nick,
+          usuario_nombre: u.nick
         }));
 
         // Obtener detalles de la venta
         const detallesSql = `
-        SELECT 
-          dv.*,
-          p.nombre as producto_nombre,
-          p.precio as producto_precio
-        FROM detalle_ventas dv
-        LEFT JOIN productos p ON dv.producto_id = p.id_producto
-        WHERE dv.venta_id = ?
-      `;
+          SELECT 
+            dv.*,
+            p.nombre as producto_nombre,
+            p.precio as producto_precio
+          FROM detalle_ventas dv
+          LEFT JOIN productos p ON dv.producto_id = p.id_producto
+          WHERE dv.venta_id = ?
+        `;
         const detalles = await query(detallesSql, [venta.id_venta]);
 
         return {
