@@ -113,8 +113,9 @@ async function testAPIResponse() {
             dv.producto_id,
             p.nombre as producto_nombre,
             dv.cantidad,
-            dv.precio_unitario,
-            dv.comision
+            dv.precio,
+            dv.comision,
+            dv.sub_total
           FROM detalle_ventas dv
           LEFT JOIN productos p ON dv.producto_id = p.id_producto
           WHERE dv.venta_id = ?
