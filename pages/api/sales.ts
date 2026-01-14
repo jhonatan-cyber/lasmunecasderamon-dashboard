@@ -149,9 +149,13 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         // Obtener detalles de la venta
         const detallesSql = `
           SELECT 
-            dv.*,
+            dv.id_detalle_venta,
+            dv.producto_id,
             p.nombre as producto_nombre,
-            p.precio as producto_precio
+            dv.cantidad,
+            dv.precio,
+            dv.comision,
+            dv.sub_total
           FROM detalle_ventas dv
           LEFT JOIN productos p ON dv.producto_id = p.id_producto
           WHERE dv.venta_id = ?
