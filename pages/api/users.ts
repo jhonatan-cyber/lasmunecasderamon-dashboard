@@ -425,29 +425,21 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
 const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { id } = req.query;
-
     if (!id) {
       return res.status(400).json({
         success: false,
         message: 'ID de usuario es requerido'
       });
     }
-
     // Verificar si el usuario existe
-    const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [
-      id
-    ])) as any[];
-
+    const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [id])) as any[];
     if (existingUser.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Usuario no encontrado'
       });
     }
-
-    // Eliminar usuario permanentemente
     await query('DELETE FROM usuarios WHERE id_usuario = ?', [id]);
-
     return res.status(200).json({
       success: true,
       message: 'Usuario eliminado exitosamente'
