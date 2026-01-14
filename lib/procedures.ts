@@ -21,7 +21,10 @@ export const addClient = async (
  * Reemplaza: CALL get_all_client()
  */
 export const getAllClients = async () => {
-  return await query('SELECT * FROM clientes');
+  console.log('[PROCEDURES] getAllClients called');
+  const result = await query('SELECT * FROM clientes WHERE estado = 1 ORDER BY nombre ASC');
+  console.log('[PROCEDURES] getAllClients result count:', Array.isArray(result) ? result.length : 1);
+  return result;
 };
 
 /**
