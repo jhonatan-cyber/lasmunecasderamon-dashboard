@@ -27,13 +27,26 @@ export const useSales = () => {
         });
       }
 
+      console.log('[useSales] Fetching sales with params:', params.toString());
       const response = await fetch(`/api/sales?${params.toString()}`);
+      console.log('[useSales] Response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[useSales] Response error:', errorText);
         throw new Error('Error al cargar ventas');
       }
+      
       const data = await response.json();
-      setVentas(data.data || data);
+      console.log('[useSales] Response data:', data);
+      console.log('[useSales] Data structure - data.data:', data.data, 'data:', data);
+      
+      // El API devuelve { success: true, data: [...], pagination: {...} }
+      const ventasArray = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      console.log('[useSales] Setting ventas with', ventasArray.length, 'items');
+      setVentas(ventasArray);
     } catch (err) {
+      console.error('[useSales] Error caught:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
