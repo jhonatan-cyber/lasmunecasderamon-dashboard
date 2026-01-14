@@ -20,6 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   try {
+    console.log('[SALES GET] Request query:', req.query);
+    
     const {
       tipo = 'lista',
       page = '1',
@@ -37,6 +39,34 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       return await handleGetLista(req, res);
     }
   } catch (error) {
+    console.error('[SALES GET] ❌ Error:', error);
+    
+    // Guardar error en base de datos
+    try {
+      await query(`
+        CREATE TABLE IF NOT EXISTS error_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          endpoint VARCHAR(255),
+          error_message TEXT,
+          stack_trace TEXT,
+          request_body TEXT,
+          fecha_crea DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      await query(
+        'INSERT INTO error_logs (endpoint, error_message, stack_trace, request_body) VALUES (?, ?, ?, ?)',
+        [
+          '/api/sales GET',
+          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.stack : 'No stack trace',
+          JSON.stringify(req.query)
+        ]
+      );
+    } catch (logError) {
+      console.error('[SALES GET] Error logging to DB:', logError);
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -47,6 +77,8 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
 async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
   try {
+    console.log('[SALES GET LISTA] Starting...');
+    
     const { page = '1', limit = '10', estado } = req.query;
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -60,10 +92,13 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       params.push(estado);
     }
 
+    console.log('[SALES GET LISTA] Getting count...');
     const countSql = `SELECT COUNT(*) as total FROM ventas v ${whereClause}`;
     const countResult = (await query(countSql, params)) as any[];
     const total = countResult[0]?.total || 0;
+    console.log('[SALES GET LISTA] Total ventas:', total);
 
+    console.log('[SALES GET LISTA] Getting sales list...');
     const salesSql = `
       SELECT 
         v.id_venta, 
@@ -90,8 +125,10 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     `;
 
     const salesResult = (await query(salesSql, [...params, limitNum, offset])) as any[];
+    console.log('[SALES GET LISTA] Sales retrieved:', salesResult.length);
     const totalPages = Math.ceil(total / limitNum);
 
+    console.log('[SALES GET LISTA] Processing sales...');
     // Procesar los datos para formatear usuarios como array y obtener detalles
     const processedSales = await Promise.all(
       salesResult.map(async venta => {
@@ -130,6 +167,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       })
     );
 
+    console.log('[SALES GET LISTA] ✅ Sales processed successfully');
     return res.status(200).json({
       success: true,
       data: processedSales,
@@ -141,6 +179,34 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
+    console.error('[SALES GET LISTA] ❌ Error:', error);
+    
+    // Guardar error en base de datos
+    try {
+      await query(`
+        CREATE TABLE IF NOT EXISTS error_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          endpoint VARCHAR(255),
+          error_message TEXT,
+          stack_trace TEXT,
+          request_body TEXT,
+          fecha_crea DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      await query(
+        'INSERT INTO error_logs (endpoint, error_message, stack_trace, request_body) VALUES (?, ?, ?, ?)',
+        [
+          '/api/sales GET LISTA',
+          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.stack : 'No stack trace',
+          JSON.stringify(req.query)
+        ]
+      );
+    } catch (logError) {
+      console.error('[SALES GET LISTA] Error logging to DB:', logError);
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Error al obtener ventas',
