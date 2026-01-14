@@ -99,6 +99,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     console.log('[SALES GET LISTA] Total ventas:', total);
 
     console.log('[SALES GET LISTA] Getting sales list...');
+    // Usar literales para LIMIT y OFFSET en lugar de placeholders
     const salesSql = `
       SELECT 
         v.id_venta, 
@@ -118,13 +119,13 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
       ${whereClause}
       ORDER BY v.fecha_crea DESC 
-      LIMIT ? OFFSET ?
+      LIMIT ${limitNum} OFFSET ${offset}
     `;
     
     console.log('[SALES GET LISTA] Query:', salesSql);
-    console.log('[SALES GET LISTA] Params:', [...params, limitNum, offset]);
+    console.log('[SALES GET LISTA] Params:', params);
 
-    const salesResult = (await query(salesSql, [...params, limitNum, offset])) as any[];
+    const salesResult = (await query(salesSql, params)) as any[];
     console.log('[SALES GET LISTA] Sales retrieved:', salesResult.length);
     const totalPages = Math.ceil(total / limitNum);
 
