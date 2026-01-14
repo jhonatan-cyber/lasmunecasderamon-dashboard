@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -57,6 +58,9 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogDescription className="sr-only">
+          Selecciona productos de la categoría para agregarlos al pedido.
+        </DialogDescription>
         <DialogHeader>
           <DialogTitle>
             {modalCategoria
