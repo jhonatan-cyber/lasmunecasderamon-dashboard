@@ -471,6 +471,33 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   } catch (error) {
     console.error('[SALES POST] ❌ Error creating sale:', error);
     console.error('[SALES POST] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Guardar error en base de datos para debugging
+    try {
+      await query(`
+        CREATE TABLE IF NOT EXISTS error_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          endpoint VARCHAR(255),
+          error_message TEXT,
+          stack_trace TEXT,
+          request_body TEXT,
+          fecha_crea DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      await query(
+        'INSERT INTO error_logs (endpoint, error_message, stack_trace, request_body) VALUES (?, ?, ?, ?)',
+        [
+          '/api/sales POST',
+          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.stack : 'No stack trace',
+          JSON.stringify(req.body)
+        ]
+      );
+    } catch (logError) {
+      console.error('[SALES POST] Error logging to DB:', logError);
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Error al crear venta',
