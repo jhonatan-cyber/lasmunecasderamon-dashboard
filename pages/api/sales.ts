@@ -112,7 +112,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         c.nombre as cliente_nombre, 
         c.apellido as cliente_apellido,
         v.habitacion_id,
-        COALESCE(h.nombre, 'Sin habitación') as habitacion_nombre,
+        h.nombre as habitacion_nombre,
         GROUP_CONCAT(u.nick SEPARATOR ', ') as usuarios_nicks
       FROM ventas v 
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
@@ -120,10 +120,13 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
       ${whereClause}
-      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, v.habitacion_id, c.nombre, c.apellido, h.nombre
+      GROUP BY v.id_venta
       ORDER BY v.fecha_crea DESC 
       LIMIT ? OFFSET ?
     `;
+    
+    console.log('[SALES GET LISTA] Query:', salesSql);
+    console.log('[SALES GET LISTA] Params:', [...params, limitNum, offset]);
 
     const salesResult = (await query(salesSql, [...params, limitNum, offset])) as any[];
     console.log('[SALES GET LISTA] Sales retrieved:', salesResult.length);
