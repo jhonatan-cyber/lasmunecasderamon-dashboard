@@ -168,7 +168,7 @@ export function AnulacionConfirmModal({
         <div className="flex justify-center items-center gap-4 pt-4">
           <Button
             onClick={handleAccept}
-            className="rounded-full bg-black text-white text-white  hover:scale-105 transition-all duration-200"
+            className="rounded-full bg-black text-white  hover:scale-105 transition-all duration-200"
           >
             Aceptar
           </Button>
