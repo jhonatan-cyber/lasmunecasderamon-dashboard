@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { 
+  addClient, 
+  getAllClients, 
+  getClientById, 
+  updateClient, 
+  deleteClient 
+} from '@/lib/procedures';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -8,8 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'GET': {
         if (queryParams.id) {
           const id = parseInt(queryParams.id as string);
-          const results = (await query('CALL get_client_by_id(?)', [id])) as any[];
-          const clients = Array.isArray(results[0]) ? results[0] : results;
+          const results = (await getClientById(id)) as any[];
+          const clients = Array.isArray(results) ? results : [results];
           if (clients.length === 0) {
             return res.status(404).json({ message: 'Cliente no encontrado' });
           }
@@ -25,8 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             status: client.estado
           });
         } else {
-          const results = (await query('CALL get_all_client()')) as any[];
-          const clients = Array.isArray(results[0]) ? results[0] : results;
+          const results = (await getAllClients()) as any[];
+          const clients = Array.isArray(results) ? results : [results];
           const formattedClients = clients.map(client => ({
             id: client.id_cliente,
             run: client.run,
@@ -46,10 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!name || !lastName) {
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
-        await query('CALL add_client(?, ?, ?, ?)', [run, name, lastName, phone]);
-        const dbResponse = await query('SELECT LAST_INSERT_ID() as id');
-
-        return res.status(201).json({ message: 'Cliente creado correctamente', dbResponse });
+        const result = await addClient(run, name, lastName, phone);
+        return res.status(201).json({ 
+          message: 'Cliente creado correctamente', 
+          id: (result as any).insertId 
+        });
       }
 
       case 'PUT': {
@@ -57,16 +64,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!id || !name || !lastName) {
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
-        await query('CALL update_client(?, ?, ?, ?, ?)', [run, name, lastName, phone, id]);
+        await updateClient(run, name, lastName, phone, id);
         return res.status(200).json({ message: 'Cliente actualizado correctamente' });
       }
+
       case 'DELETE': {
         const { id } = queryParams;
         if (!id || Array.isArray(id)) {
           return res.status(400).json({ message: 'ID de cliente no válido' });
         }
         try {
-          await query('CALL delete_client(?)', [id]);
+          await deleteClient(parseInt(id as string));
           return res.status(200).json({ message: 'Cliente eliminado correctamente' });
         } catch (error) {
           return res.status(500).json({ message: 'Error al eliminar el cliente' });

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery } from '@/lib/db';
+import { getAllOrders } from '@/lib/procedures';
 import { z } from 'zod';
 import { sendNotificationToAll } from './notifications/sse';
 
@@ -30,10 +31,9 @@ const orderSchema = z.object({
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    // Usar el procedimiento almacenado get_all_order
-    const results = await query('CALL get_all_order()', []);
-    // Forzar el tipado para acceder a results[0] (procedimientos almacenados)
-    const orders = Array.isArray((results as any)[0]) ? (results as any)[0] : results;
+    // Usar la función que reemplaza el procedimiento almacenado get_all_order
+    const results = await getAllOrders();
+    const orders = Array.isArray(results) ? results : [results];
     return res.status(200).json({ success: true, data: orders });
   } catch (error) {
     console.error('❌ Error en GET /api/orders:', error);
@@ -101,8 +101,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       timestamp: new Date().toISOString(),
       createdBy: meseroId // Añadir el ID del usuario que creó el pedido
     };
-    
-   
+    console.info('[ORDERS] sending new_order notification', notificationData);
     sendNotificationToAll('new_order', notificationData);
 
     return res.status(201).json({

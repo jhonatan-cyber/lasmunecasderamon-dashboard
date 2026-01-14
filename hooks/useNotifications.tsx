@@ -33,13 +33,7 @@ export function useNotifications() {
         window.dispatchEvent(event);
         return;
       }
-      const roleLower = (user?.role || '').toLowerCase();
-      const isAllowedRole = roleLower === 'administrador' || roleLower === 'cajero';
-      if (!isAllowedRole) {
-        const event = new CustomEvent('updatePendingOrders');
-        window.dispatchEvent(event);
-        return;
-      }
+      // Para asegurar que todos vean la notificación durante la depuración, no filtramos por rol
       playNotificationSound();
       toast.success(`¡NUEVO PEDIDO! #${data.codigo}`, {
         description: (
@@ -86,6 +80,7 @@ export function useNotifications() {
     eventSourceRef.current = es;
 
     es.onopen = () => {
+      console.info('[SSE] connected');
       setIsConnected(true);
       setConnectionAttempts(0);
       isConnectingRef.current = false;
@@ -95,12 +90,15 @@ export function useNotifications() {
       try {
         const payload = JSON.parse(event.data);
         if (payload?.type === 'new_order' && payload?.data) {
+          console.info('[SSE] new_order received', payload?.data);
           showNotification(payload.data as NotificationData);
         }
       } catch (err) {}
     };
 
     es.onerror = () => {
+      console.warn('[SSE] error, reconnecting...');
+      console.info('[SSE] readyState', es.readyState);
       cleanup();
       isConnectingRef.current = false;
       setConnectionAttempts((c) => c + 1);
