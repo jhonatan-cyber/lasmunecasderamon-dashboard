@@ -9,9 +9,11 @@ import {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    console.log('[CLIENTS API] Method:', req.method, 'Query:', req.query);
     const { method, query: queryParams, body } = req;
     switch (method) {
       case 'GET': {
+        console.log('[CLIENTS API] Getting clients...');
         if (queryParams.id) {
           const id = parseInt(queryParams.id as string);
           const results = (await getClientById(id)) as any[];
@@ -32,7 +34,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         } else {
           const results = (await getAllClients()) as any[];
+          console.log('[CLIENTS API] Raw results:', results);
           const clients = Array.isArray(results) ? results : [results];
+          console.log('[CLIENTS API] Clients array length:', clients.length);
           const formattedClients = clients.map(client => ({
             id: client.id_cliente,
             run: client.run,
@@ -43,6 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             updated_at: client.fecha_mod,
             status: client.estado
           }));
+          console.log('[CLIENTS API] Formatted clients:', formattedClients.length);
           return res.status(200).json(formattedClients);
         }
       }
@@ -82,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
   } catch (error) {
+    console.error('[CLIENTS API] Error:', error);
     return res.status(500).json({
       message: 'Error interno del servidor',
       error: error instanceof Error ? error.message : 'Error desconocido'
