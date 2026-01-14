@@ -240,6 +240,8 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
+    console.log('[SALES POST] Request body:', JSON.stringify(req.body, null, 2));
+    
     const {
       total,
       detalles,
@@ -253,11 +255,16 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     } = req.body;
 
     if (!total || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
+      console.error('[SALES POST] Validation failed: missing total or detalles');
       return res.status(400).json({
         success: false,
         message: 'Total y detalles son requeridos'
       });
     }
+    
+    console.log('[SALES POST] Validation passed, generating code...');
+
+    console.log('[SALES POST] Validation passed, generating code...');
 
     const generateCode = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -269,12 +276,16 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     };
 
     const codigoVenta = generateCode();
+    console.log('[SALES POST] Generated code:', codigoVenta);
 
     // Calcular el total de comisiones sumando las comisiones de todos los productos
     const totalComision = detalles.reduce((acc, detalle) => {
       const comision = detalle.comision || 0;
       return acc + comision; // La comisión ya viene calculada desde el frontend
     }, 0);
+    
+    console.log('[SALES POST] Total comision:', totalComision);
+    console.log('[SALES POST] Inserting venta into DB...');
 
     const insertVentaSql = `
       INSERT INTO ventas (
@@ -294,8 +305,10 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     ])) as any;
 
     const ventaId = ventaResult.insertId;
+    console.log('[SALES POST] Venta inserted with ID:', ventaId);
 
     // Insertar productos de la venta usando detalle_ventas
+    console.log('[SALES POST] Inserting', detalles.length, 'sale details...');
     for (const detalle of detalles) {
       const insertDetalleVentaSql = `
         INSERT INTO detalle_ventas (
@@ -316,8 +329,11 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         subTotalProducto
       ]);
     }
+    
+    console.log('[SALES POST] Sale details inserted successfully');
 
     // Insertar relaciones venta-usuario
+    console.log('[SALES POST] Inserting', usuarios.length, 'user relations...');
     if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
       for (const usuarioId of usuarios) {
         const insertVentaUsuarioSql = `
@@ -326,8 +342,11 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         await query(insertVentaUsuarioSql, [ventaId, usuarioId]);
       }
     }
+    
+    console.log('[SALES POST] User relations inserted');
 
     // Registrar comisiones para cada anfitriona
+    console.log('[SALES POST] Registering commissions...');
     if (usuarios && Array.isArray(usuarios) && usuarios.length > 0 && totalComision > 0) {
       // Calcular comisión por anfitriona (dividir el total de comisiones entre las anfitrionas)
       const comisionPorAnfitriona = Math.floor(totalComision / usuarios.length);
@@ -360,8 +379,11 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         );
       }
     }
+    
+    console.log('[SALES POST] Commissions registered');
 
     // Actualizar la caja activa con las ventas y comisiones
+    console.log('[SALES POST] Updating active cash register...');
     const cajaActiva = (await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1')) as any[];
 
     if (cajaActiva && cajaActiva.length > 0) {
@@ -406,9 +428,13 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           cajaId
         ]
       );
+      console.log('[SALES POST] Cash register updated');
+    } else {
+      console.warn('[SALES POST] No active cash register found');
     }
 
     // Obtener la venta completa con información relacionada
+    console.log('[SALES POST] Fetching complete sale info...');
     const ventaCompletaSql = `
       SELECT 
         v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, 
@@ -425,6 +451,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const ventaCompletaResult = (await query(ventaCompletaSql, [ventaId])) as any[];
     const ventaCompleta = ventaCompletaResult[0];
+    
+    console.log('[SALES POST] ✅ Sale created successfully with ID:', ventaId);
 
     return res.status(201).json({
       success: true,
@@ -441,6 +469,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
+    console.error('[SALES POST] ❌ Error creating sale:', error);
+    console.error('[SALES POST] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return res.status(500).json({
       success: false,
       message: 'Error al crear venta',

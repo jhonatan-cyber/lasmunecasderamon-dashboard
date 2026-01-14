@@ -273,6 +273,46 @@ export default function OrderDetailModal({
       // Calcular sub_total (suma de precios de productos)
       const sub_total = detail.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
 
+      // Extraer IDs de usuarios de manera más robusta
+      const usuariosIds = anfitrionasFinal
+        .map((anfitriona: any) => {
+          // Si es un objeto con usuario_id (nuevo formato del endpoint)
+          if (typeof anfitriona === 'object' && anfitriona.usuario_id) {
+            return anfitriona.usuario_id;
+          }
+          // Si es un objeto con ID
+          if (typeof anfitriona === 'object' && anfitriona.id) {
+            return anfitriona.id;
+          }
+          // Si es un número, usarlo directamente
+          if (typeof anfitriona === 'number') {
+            return anfitriona;
+          }
+          // Si es un string, intentar convertir a número
+          if (typeof anfitriona === 'string') {
+            // Formato "ID - Nombre"
+            const match = anfitriona.match(/^(\d+)\s*-\s*(.+)$/);
+            if (match) {
+              return parseInt(match[1]);
+            }
+            // Intentar parse directo
+            const parsedId = parseInt(anfitriona);
+            if (!isNaN(parsedId)) {
+              return parsedId;
+            }
+          }
+          return null;
+        })
+        .filter((id): id is number => id !== null && !isNaN(id));
+
+      console.log('[OrderDetailModal] anfitrionasFinal:', anfitrionasFinal);
+      console.log('[OrderDetailModal] usuariosIds extracted:', usuariosIds);
+
+      if (usuariosIds.length === 0 && hasChampagneProducts) {
+        toast.error('No se pudieron obtener los IDs de las anfitrionas');
+        return;
+      }
+
       // Preparar datos para la venta
       const ventaData = {
         cliente_id: 1, // Por ahora usar cliente default, se puede mejorar después
@@ -281,49 +321,17 @@ export default function OrderDetailModal({
         sub_total: sub_total, // Suma del precio de los productos
         total: (pedido.total || 0) + propina + recargoAnfitrionas, // Total final con propina y recargos
         detalles: detail.map((item: any) => ({
-          producto_id: item.producto_id || 1, // Por ahora usar ID default, se puede mejorar después
+          producto_id: item.producto_id || item.id_producto || 1,
           precio: item.precio || 0,
           cantidad: item.cantidad || 0,
           comision: item.comision || 0, // Agregar la comisión del producto
           sub_total: (item.precio || 0) * (item.cantidad || 0) // Calcular sub_total por producto
         })),
-        usuarios: anfitrionasFinal.map((anfitriona: any) => {
-          // Si es un objeto con usuario_id (nuevo formato del endpoint)
-          if (typeof anfitriona === 'object' && anfitriona.usuario_id) {
-            return anfitriona.usuario_id;
-          }
-          // Si es un string (nombre), necesitamos buscar el ID real
-          if (typeof anfitriona === 'string') {
-            // Buscar el ID real de la anfitriona por nombre
-            // Por ahora, vamos a extraer el ID si está en el formato "ID - Nombre"
-            const match = anfitriona.match(/^(\d+)\s*-\s*(.+)$/);
-            if (match) {
-              return parseInt(match[1]); // Retornar el ID numérico
-            }
-            // Si no está en formato "ID - Nombre", buscar por nombre en la lista de usuarios
-            // Por ahora, vamos a usar un ID por defecto pero con un log para debug
-
-            return 1; // ID por defecto temporal
-          }
-          // Si es un objeto con ID, usar el ID
-          if (typeof anfitriona === 'object' && anfitriona.id) {
-            return anfitriona.id;
-          }
-          // Si es un número, usarlo directamente
-          if (typeof anfitriona === 'number') {
-            return anfitriona;
-          }
-          // Si es un string que se puede convertir a número
-          const parsedId = parseInt(anfitriona);
-          if (!isNaN(parsedId)) {
-            return parsedId;
-          }
-          // Fallback: ID por defecto
-
-          return 1;
-        }),
+        usuarios: usuariosIds,
         habitacion_id: habitacionId ? parseInt(habitacionId) : undefined // Campo opcional de habitación
       };
+
+      console.log('[OrderDetailModal] ventaData to send:', JSON.stringify(ventaData, null, 2));
 
       const resultado = await createVenta(ventaData);
       if (resultado && resultado.success) {
