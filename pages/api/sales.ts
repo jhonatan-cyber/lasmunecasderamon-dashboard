@@ -112,13 +112,15 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         c.nombre as cliente_nombre, 
         c.apellido as cliente_apellido,
         v.habitacion_id,
+        COALESCE(h.nombre, 'Sin habitación') as habitacion_nombre,
         GROUP_CONCAT(u.nick SEPARATOR ', ') as usuarios_nicks
       FROM ventas v 
-      LEFT JOIN clientes c ON v.cliente_id = c.id_cliente 
+      LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
+      LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
       LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
       ${whereClause}
-      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, v.habitacion_id, c.nombre, c.apellido
+      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, v.habitacion_id, c.nombre, c.apellido, h.nombre
       ORDER BY v.fecha_crea DESC 
       LIMIT ? OFFSET ?
     `;
@@ -161,7 +163,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           cliente_nombre: venta.cliente_nombre
             ? `${venta.cliente_nombre} ${venta.cliente_apellido || ''}`.trim()
             : 'Sin cliente',
-          habitacion_nombre: venta.habitacion_id ? `Habitación ${venta.habitacion_id}` : 'Sin habitación'
+          habitacion_nombre: venta.habitacion_nombre || 'Sin habitación'
         };
       })
     );
