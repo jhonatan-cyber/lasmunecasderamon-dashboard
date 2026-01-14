@@ -1,15 +1,39 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env' });
 
 async function diagnose() {
   console.log('=== DIAGNÓSTICO DE PRODUCCIÓN ===\n');
   
+  // Mostrar variables de entorno (sin mostrar password)
+  console.log('Variables de entorno:');
+  console.log('DB_HOST:', process.env.DB_HOST || process.env.DATABASE_URL?.split('@')[1]?.split(':')[0] || 'NO DEFINIDA');
+  console.log('DB_USER:', process.env.DB_USER || 'NO DEFINIDA');
+  console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***' : 'NO DEFINIDA');
+  console.log('DB_NAME:', process.env.DB_NAME || 'NO DEFINIDA');
+  console.log('DB_PORT:', process.env.DB_PORT || '3306 (default)');
+  console.log();
+
+  // Si no hay credenciales, intentar con variables comunes
+  const host = process.env.DB_HOST || process.env.MYSQL_HOST || 'localhost';
+  const user = process.env.DB_USER || process.env.MYSQL_USER || 'root';
+  const password = process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || '';
+  const database = process.env.DB_NAME || process.env.MYSQL_DATABASE || 'lasmuñecasderamon';
+  const port = process.env.DB_PORT || process.env.MYSQL_PORT || 3306;
+
+  console.log('Intentando conectar con:');
+  console.log('Host:', host);
+  console.log('Usuario:', user);
+  console.log('Base de datos:', database);
+  console.log('Puerto:', port);
+  console.log();
+
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306
+    host,
+    user,
+    password,
+    database,
+    port
   });
 
   try {
