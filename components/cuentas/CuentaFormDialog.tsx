@@ -128,14 +128,16 @@ export default function CuentaFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-center text-2xl font-semibold">
             Nueva Cuenta
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-6">
           {/* Información básica */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -277,27 +279,32 @@ export default function CuentaFormDialog({
             </div>
           )}
 
+            </div>
+          </div>
+
           {/* Botones */}
-          <div className="flex justify-center gap-2 w-full">
-            <Button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              variant="outline"
-              size="sm"
-              className="rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || !codigo || !clienteId || detalles.length === 0}
-              variant="outline"
-              size="sm"
-              className="rounded-full px-6 hover:scale-105 transition-all duration-200 bg-black text-white"
-            >
-              {loading ? "Guardando..." : "Guardar"}
-            </Button>
+          <div className="flex-shrink-0 border-t px-6 py-4">
+            <div className="flex justify-center gap-2 w-full">
+              <Button
+                type="button"
+                onClick={handleClose}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className="rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading || !codigo || !clienteId || detalles.length === 0}
+                variant="outline"
+                size="sm"
+                className="rounded-full px-6 hover:scale-105 transition-all duration-200 bg-black text-white"
+              >
+                {loading ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

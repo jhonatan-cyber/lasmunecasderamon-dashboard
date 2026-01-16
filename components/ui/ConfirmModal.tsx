@@ -89,17 +89,19 @@ export function ConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${sizeClasses[size]} p-0`}>
-        <DialogHeader className='p-6 pb-4'>
+      <DialogContent className={`${sizeClasses[size]} max-h-[90vh] flex flex-col p-0`}>
+        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
           <div className='flex items-center gap-3'>
             <div className='text-2xl'>{getIcon()}</div>
             <DialogTitle className='text-lg font-semibold text-gray-900'>{title}</DialogTitle>
           </div>
         </DialogHeader>
 
-        <div className='px-6 pb-6'>
-          <p className='text-gray-600 mb-6 text-center'>{message}</p>
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <p className='text-gray-600 text-center'>{message}</p>
+        </div>
 
+        <div className='flex-shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center gap-3'>
             <Button
               variant='outline'

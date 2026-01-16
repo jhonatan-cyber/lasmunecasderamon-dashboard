@@ -1,6 +1,6 @@
 import { Client } from '@/types/client';
-import moment from 'moment';
-import 'moment/locale/es';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { Trash, Pencil, Eye, Phone, User, Calendar, MoreVertical } from 'lucide-react';
@@ -97,7 +97,7 @@ export function ClientTable({
         </Badge>
       );
     }
-    return moment(date).format('DD/MM/YYYY HH:mm');
+    return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es });
   };
 
   // Vista de tarjetas para móviles

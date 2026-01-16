@@ -8,7 +8,6 @@ import { NotificationProvider, NotificationStatus, ClientOnly } from '@/componen
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 
-import 'sweetalert2/dist/sweetalert2.min.css';
 import './globals.css';
 import '@/styles/sidebar.css';
 

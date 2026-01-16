@@ -136,12 +136,14 @@ export default function AttendanceDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
-        <DialogHeader>
+      <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <div className='flex items-center justify-between'>
             <DialogTitle className='text-xl font-bold'>Detalle de Asistencias</DialogTitle>
           </div>
         </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
 
         <div className='space-y-4'>
           {/* Información del usuario con resumen */}
@@ -380,6 +382,7 @@ export default function AttendanceDetailModal({
               </div>
             </div>
           )}
+        </div>
         </div>
       </DialogContent>
     </Dialog>

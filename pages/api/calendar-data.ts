@@ -134,7 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             V.total_comision, 
             V.estado, 
             H.precio,
-            CONCAT(CL.nombre, ' ', CL.apellido) AS cliente
+            COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente
           FROM ventas V
           LEFT JOIN clientes CL ON CL.id_cliente = V.cliente_id
           LEFT JOIN habitaciones H ON H.id_habitacion = V.habitacion_id 

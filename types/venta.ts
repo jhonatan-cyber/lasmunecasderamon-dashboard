@@ -2,6 +2,7 @@ export interface Venta {
   id: number;
   codigo: string;
   cliente_id: number;
+  pedido_id?: number | null;
   habitacion_id: number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   propina: number;
@@ -38,10 +39,13 @@ export interface VentaWithDetails extends Venta {
   cliente_nombre?: string;
   habitacion_numero?: string;
   usuarios_nombres?: string[];
+  garzon_nombre?: string | null;
+  garzon_nick?: string | null;
 }
 
 export interface VentaCreate {
   cliente_id: number;
+  pedido_id?: number | null;
   habitacion_id?: number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   propina: number;

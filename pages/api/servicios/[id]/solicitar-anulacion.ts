@@ -49,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const servicioSql = `
       SELECT 
         s.*,
-        CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre,
+        COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre,
         h.nombre as habitacion_numero,
         GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas_nombres
       FROM servicios s

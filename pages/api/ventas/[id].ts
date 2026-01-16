@@ -11,15 +11,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === "GET") {
     try {
-             // Obtener venta con detalles
+      // Obtener venta con detalles
        const ventaSql = `
          SELECT 
            v.*,
-           CONCAT(c.nombre, " ",c.apellido) as cliente_nombre,
-           h.nombre as habitacion_numero
+           COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre,
+           h.nombre as habitacion_numero,
+           CASE 
+             WHEN v.pedido_id IS NOT NULL THEN CONCAT(g.nombre, " ", g.apellido)
+             ELSE NULL
+           END as garzon_nombre,
+           CASE 
+             WHEN v.pedido_id IS NOT NULL THEN g.nick
+             ELSE NULL
+           END as garzon_nick
          FROM ventas v
          LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
          LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+         LEFT JOIN pedidos p ON v.pedido_id = p.id_pedido
+         LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
          WHERE v.id_venta = ?
        `;
 
@@ -106,15 +116,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await query(updateSql, updateParams);
 
-             // Obtener la venta actualizada
+      // Obtener la venta actualizada
        const ventaActualizada = await query(`
          SELECT 
            v.*,
-           CONCAT(c.nombre, " ",c.apellido) as cliente_nombre,
-           h.nombre as habitacion_numero
+           COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre,
+           h.nombre as habitacion_numero,
+           CASE 
+             WHEN v.pedido_id IS NOT NULL THEN CONCAT(g.nombre, " ", g.apellido)
+             ELSE NULL
+           END as garzon_nombre,
+           CASE 
+             WHEN v.pedido_id IS NOT NULL THEN g.nick
+             ELSE NULL
+           END as garzon_nick
          FROM ventas v
          LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
          LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+         LEFT JOIN pedidos p ON v.pedido_id = p.id_pedido
+         LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
          WHERE v.id_venta = ?
        `, [ventaId]) as any[];
 

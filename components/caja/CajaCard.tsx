@@ -151,17 +151,18 @@ export const CajaCard = ({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
+        <div className="flex flex-col gap-2 pt-2 w-full">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 rounded-full px-2 sm:px-4 py-2 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm h-10 min-w-0"
+            className="w-full rounded-full px-4 py-2 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm h-10"
             onClick={() => onViewDetails(caja)}
           >
             <Eye className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">Ver Detalle</span>
+            <span>Ver Detalle</span>
           </Button>
           {caja.estado === 1 && (
+<<<<<<< HEAD
             <>
               <Button
                 variant="outline"
@@ -182,6 +183,17 @@ export const CajaCard = ({
                 <span className="truncate">Cerrar Caja</span>
               </Button>
             </>
+=======
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full rounded-full px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10"
+              onClick={() => onCloseCaja(caja)}
+            >
+              <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span>Cerrar Caja</span>
+            </Button>
+>>>>>>> 1e378ec (oficina)
           )}
         </div>
       </CardContent>

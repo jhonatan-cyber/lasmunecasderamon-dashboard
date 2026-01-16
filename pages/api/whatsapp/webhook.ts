@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         v.id_venta,
         v.codigo,
         v.total,
-        CONCAT(c.nombre, " ", c.apellido) as cliente_nombre,
+        COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre,
         v.fecha_mod
       FROM ventas v
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         s.id_servicio,
         s.codigo,
         s.total,
-        c.nombre as cliente_nombre,
+        COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre,
         s.fecha_mod
       FROM servicios s
       LEFT JOIN clientes c ON s.cliente_id = c.id_cliente
@@ -182,15 +182,14 @@ ${listaSolicitudes}
 • Cliente: ${solicitud.cliente_nombre}
 • Total: $${solicitud.total?.toLocaleString() || 0}
 
-${
-  accion === 'confirmar'
-    ? solicitud.tipo === 'venta'
-      ? '_La venta ha sido anulada exitosamente._'
-      : '_El servicio ha sido devuelto exitosamente. Habitación liberada y caja actualizada._'
-    : solicitud.tipo === 'venta'
-      ? '_La venta ha sido mantenida activa._'
-      : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
-}`;
+${accion === 'confirmar'
+          ? solicitud.tipo === 'venta'
+            ? '_La venta ha sido anulada exitosamente._'
+            : '_El servicio ha sido devuelto exitosamente. Habitación liberada y caja actualizada._'
+          : solicitud.tipo === 'venta'
+            ? '_La venta ha sido mantenida activa._'
+            : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
+        }`;
     };
 
     // Verificar si es una respuesta específica (ej: "1 SI", "2 NO")
