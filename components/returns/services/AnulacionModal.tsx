@@ -59,67 +59,73 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[425px]'>
-        <DialogHeader>
+      <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle>Solicitar Anulación de Servicio</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          {servicio && (
-            <div className='space-y-2'>
-              <Label className='text-sm font-medium'>Servicio a anular:</Label>
-              <div className='p-3 bg-gray-50 rounded-lg'>
-                <div className='text-sm'>
-                  <p>
-                    <strong>Código:</strong> {servicio.codigo}
-                  </p>
-                  <p>
-                    <strong>Cliente:</strong> {servicio.cliente_nombre || 'N/A'}
-                  </p>
-                  <p>
-                    <strong>Habitación:</strong> {servicio.habitacion_numero || 'N/A'}
-                  </p>
-                  <p>
-                    <strong>Total:</strong> ${servicio.total?.toLocaleString() || 0}
-                  </p>
+        <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className='space-y-4'>
+              {servicio && (
+                <div className='space-y-2'>
+                  <Label className='text-sm font-medium'>Servicio a anular:</Label>
+                  <div className='p-3 bg-gray-50 rounded-lg'>
+                    <div className='text-sm'>
+                      <p>
+                        <strong>Código:</strong> {servicio.codigo}
+                      </p>
+                      <p>
+                        <strong>Cliente:</strong> {servicio.cliente_nombre || 'N/A'}
+                      </p>
+                      <p>
+                        <strong>Habitación:</strong> {servicio.habitacion_numero || 'N/A'}
+                      </p>
+                      <p>
+                        <strong>Total:</strong> ${servicio.total?.toLocaleString() || 0}
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              <div className='space-y-2'>
+                <Label htmlFor='motivo' className='text-sm font-medium'>
+                  Motivo de la anulación *
+                </Label>
+                <Textarea
+                  id='motivo'
+                  placeholder='Ingrese el motivo de la anulación...'
+                  value={motivo}
+                  onChange={e => setMotivo(e.target.value)}
+                  className='min-h-[100px]'
+                  required
+                />
               </div>
             </div>
-          )}
-
-          <div className='space-y-2'>
-            <Label htmlFor='motivo' className='text-sm font-medium'>
-              Motivo de la anulación *
-            </Label>
-            <Textarea
-              id='motivo'
-              placeholder='Ingrese el motivo de la anulación...'
-              value={motivo}
-              onChange={e => setMotivo(e.target.value)}
-              className='min-h-[100px]'
-              required
-            />
           </div>
 
-          <div className='flex justify-end space-x-2 pt-4'>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={handleCancel}
-              disabled={isLoading}
-              size='sm'
-              className='rounded-full  hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
-            >
-              Cancelar
-            </Button>
-            <Button
-              type='submit'
-              disabled={isLoading || !motivo.trim()}
-              size='sm'
-              variant='outline'
-              className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
-            >
-              {isLoading ? 'Enviando...' : 'Enviar Solicitud'}
-            </Button>
+          <div className="flex-shrink-0 border-t px-6 py-4">
+            <div className='flex justify-end space-x-2'>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={handleCancel}
+                disabled={isLoading}
+                size='sm'
+                className='rounded-full  hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
+              >
+                Cancelar
+              </Button>
+              <Button
+                type='submit'
+                disabled={isLoading || !motivo.trim()}
+                size='sm'
+                variant='outline'
+                className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
+              >
+                {isLoading ? 'Enviando...' : 'Enviar Solicitud'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

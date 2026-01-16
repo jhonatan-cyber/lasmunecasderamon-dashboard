@@ -130,7 +130,7 @@ export default function Categories() {
             size='sm'
           >
             <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-            Nuevo
+            Nueva Categoria
           </Button>
         </CategoryFormDialog>
       </div>

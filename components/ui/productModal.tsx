@@ -3,7 +3,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
@@ -56,14 +55,15 @@ export default function SaleProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle>
             {categoria
               ? `Productos de ${categoria.nombre || categoria.name}`
               : "Productos"}
           </DialogTitle>
         </DialogHeader>
+        <div className="flex-1 overflow-y-auto px-6 py-4">
         {loading ? (
           <div className="text-center text-gray-400 py-8 flex justify-center items-center">
             Cargando productos...
@@ -175,8 +175,8 @@ export default function SaleProductModal({
               </>
             )}
           </div>
-        )}
-        <DialogFooter>
+        </div>
+        <div className="flex-shrink-0 border-t px-6 py-4">
           <div className="w-full flex justify-center">
             <Button
               onClick={onClose}
@@ -187,7 +187,7 @@ export default function SaleProductModal({
               Aceptar
             </Button>
           </div>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

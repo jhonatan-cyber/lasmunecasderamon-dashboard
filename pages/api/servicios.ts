@@ -5,8 +5,9 @@ import { withTransaction } from '@/lib/transactionUtils';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      const { all } = req.query;
+      const { all, caja_id } = req.query;
       let whereClause = '';
+      const params: any[] = [];
 
       if (all === 'true') {
         // Mostrar servicios no activos (estado != 1)
@@ -15,6 +16,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Mostrar solo servicios activos (estado = 1)
         whereClause = 'WHERE s.estado = 1';
       }
+
+      // Filtrar directamente por caja_id si se proporciona
+      if (caja_id) {
+        whereClause += whereClause ? ' AND s.caja_id = ?' : 'WHERE s.caja_id = ?';
+        params.push(caja_id);
+      }
+
       // Si no se especifica 'all', mostrar todos los servicios sin filtro
 
       const servicios = await query(`
@@ -32,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           s.metodo_pago,
           s.fecha_crea,
           s.estado,
-          CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre,
+          COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre,
           h.nombre as habitacion_numero,
           COUNT(DISTINCT ds.usuario_id) as total_usuarios,
           GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres
@@ -44,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ${whereClause}
         GROUP BY s.id_servicio
         ORDER BY s.fecha_crea DESC
-      `);
+      `, params);
 
       return res.status(200).json({
         success: true,
@@ -85,6 +93,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Generar código único
       const codigo = generateUniqueCode();
 
+      // Obtener la caja abierta actual
+      const cajaAbiertaResult = (await query(
+        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+      )) as any[];
+      const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
+
       let cajaActualizada = false;
 
       // Crear servicio usando transacción
@@ -93,8 +107,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const servicioResult: any = await query(
           `INSERT INTO servicios (
              codigo, cliente_id, habitacion_id, precio_habitacion, 
-             precio_servicio, iva, sub_total, total, tiempo, metodo_pago
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             codigo,
             clienteIdFinal,
@@ -105,7 +119,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             sub_total,
             total,
             tiempo,
-            metodo_pago || null
+            metodo_pago || null,
+            cajaId
           ]
         );
 

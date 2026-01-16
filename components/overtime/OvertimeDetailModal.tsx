@@ -116,12 +116,14 @@ export default function OvertimeDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-xl font-bold">
             Detalle de Horas Extras
           </DialogTitle>
         </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
 
         <div className="space-y-6">
           {/* Card de resumen */}
@@ -286,6 +288,7 @@ export default function OvertimeDetailModal({
                )}
              </>
            )}
+        </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           s.metodo_pago,
           s.fecha_crea,
           s.estado,
-          c.nombre as cliente_nombre,
+          COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre,
           h.nombre as habitacion_numero
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id

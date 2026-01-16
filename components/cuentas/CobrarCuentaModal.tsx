@@ -278,14 +278,16 @@ export default function CobrarCuentaModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl p-6 bg-white rounded-xl shadow-md">
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl font-semibold mb-4 tracking-tight">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 bg-white rounded-xl shadow-md">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="text-center text-xl font-semibold tracking-tight">
             Cobrar Cuenta
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-8 p-6 rounded-xl">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+
+        <div className="space-y-8 rounded-xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b pb-6 rounded-xl">
             <div className="space-y-2 text-sm text-gray-700">
               <div>
@@ -518,7 +520,10 @@ export default function CobrarCuentaModal({
               </div>
             </div>
           </div>
-          <div className="flex justify-center gap-4 mt-8">
+        </div>
+
+        <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className="flex justify-center gap-4">
             <Button
               size="sm"
               variant="outline"

@@ -33,10 +33,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         DP.cantidad,
         C.nombre AS categoria,
-        CONCAT(CL.nombre, ' ', CL.apellido) AS cliente,
+        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Cliente no registrado') AS cliente,
         P.cliente_id,
         P.codigo,
         DP.comision,
+        DP.genera_comision,
         CONCAT(G.nombre, ' ', G.apellido) AS garzon,
         PR.nombre AS producto,
         PR.id_producto,

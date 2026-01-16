@@ -64,14 +64,33 @@ interface UserFormProps {
   onSubmit: (values: UserFormValues, file?: File) => void;
   onCancel: () => void;
   isEditMode?: boolean;
+  hideButtons?: boolean;
 }
 
-export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps) {
+export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = false }: UserFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { roles, isLoading: isLoadingRoles } = useRoles();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Estados para valores formateados
+  const [formattedSueldo, setFormattedSueldo] = useState<string>('');
+  const [formattedAporte, setFormattedAporte] = useState<string>('');
+  const [formattedDescuento, setFormattedDescuento] = useState<string>('');
+
+  // Funciones para formatear números con separadores de miles
+  const formatNumber = (value: string | number) => {
+    // Convertir a string y remover todo excepto números
+    const numericValue = String(value).replace(/\D/g, '');
+    // Formatear con separadores de miles
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Función para obtener el valor numérico sin formato
+  const getNumericValue = (formattedValue: string) => {
+    return formattedValue.replace(/\./g, '');
+  };
 
   // Debug: Log roles cuando cambien
   useEffect(() => {
@@ -126,6 +145,13 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
       // Si es una URL completa, usarla directamente; si no, construir la ruta
       const imageUrl = user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`;
       setPreviewUrl(imageUrl);
+    }
+    
+    // Inicializar valores formateados
+    if (user) {
+      setFormattedSueldo(user.salary ? formatNumber(user.salary) : '');
+      setFormattedAporte(user.contributions ? formatNumber(user.contributions) : '');
+      setFormattedDescuento(user.discount ? formatNumber(user.discount) : '');
     }
   }, [user]);
 
@@ -236,17 +262,11 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
         console.log('No hay imagen para enviar');
       }
 
-      // Asegurarse de que los campos numéricos sean números
+      // Asegurarse de que los campos numéricos sean números usando valores formateados
       const processedValues = { ...values };
-      if (typeof processedValues.sueldo === 'string') {
-        processedValues.sueldo = parseFloat(processedValues.sueldo) || 0;
-      }
-      if (typeof processedValues.aporte === 'string') {
-        processedValues.aporte = parseFloat(processedValues.aporte) || 0;
-      }
-      if (typeof processedValues.descuento === 'string') {
-        processedValues.descuento = parseFloat(processedValues.descuento) || 0;
-      }
+      processedValues.sueldo = Number(getNumericValue(formattedSueldo)) || 0;
+      processedValues.aporte = Number(getNumericValue(formattedAporte)) || 0;
+      processedValues.descuento = Number(getNumericValue(formattedDescuento)) || 0;
 
       // Mapear el estado civil del select al formato de la BD
       processedValues.estado_civil = mapSelectToEstadoCivil(processedValues.estado_civil);
@@ -271,7 +291,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-4 sm:space-y-6'>
+      <form id='user-form' onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-4 sm:space-y-6'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
           <div className='flex flex-col gap-4 sm:gap-6'>
             {/* RUN */}
@@ -590,7 +610,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
             name='sueldo'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sueldo </FormLabel>
+                <FormLabel>Monto en Sueldo</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <DollarSign />
@@ -598,13 +618,15 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                   <FormControl>
                     <Input
                       className='pl-12'
-                      type='number'
-                      min='0'
-                      step='0.01'
-                      value={field.value ?? ''}
-                      onChange={e => field.onChange(Number(e.target.value))}
-                      onFocus={() => field.onChange('')}
-                      placeholder='Sueldo'
+                      type='text'
+                      value={formattedSueldo}
+                      onChange={e => {
+                        const formatted = formatNumber(e.target.value);
+                        setFormattedSueldo(formatted);
+                        field.onChange(Number(getNumericValue(formatted)) || 0);
+                      }}
+                      placeholder='0'
+                      inputMode='numeric'
                     />
                   </FormControl>
                 </div>
@@ -619,7 +641,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
             name='aporte'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Aporte AFP</FormLabel>
+                <FormLabel>Monto en Aporte AFP</FormLabel>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <Coins />
@@ -627,13 +649,15 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                   <FormControl>
                     <Input
                       className='pl-12'
-                      type='number'
-                      min='0'
-                      step='0.01'
-                      value={field.value ?? ''}
-                      onChange={e => field.onChange(Number(e.target.value))}
-                      onFocus={() => field.onChange('')}
-                      placeholder='Aporte AFP'
+                      type='text'
+                      value={formattedAporte}
+                      onChange={e => {
+                        const formatted = formatNumber(e.target.value);
+                        setFormattedAporte(formatted);
+                        field.onChange(Number(getNumericValue(formatted)) || 0);
+                      }}
+                      placeholder='0'
+                      inputMode='numeric'
                     />
                   </FormControl>
                 </div>
@@ -669,7 +693,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                 name='descuento'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Monto del Descuento</FormLabel>
+                    <FormLabel>Monto en Descuento</FormLabel>
                     <div className='relative'>
                       <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                         <DollarSign />
@@ -677,13 +701,15 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
                       <FormControl>
                         <Input
                           className='pl-12'
-                          type='number'
-                          min='0'
-                          step='0.01'
-                          value={field.value ?? 0}
-                          onChange={e => field.onChange(Number(e.target.value))}
-                          onFocus={() => field.onChange('')}
-                          placeholder='Monto del descuento'
+                          type='text'
+                          value={formattedDescuento}
+                          onChange={e => {
+                            const formatted = formatNumber(e.target.value);
+                            setFormattedDescuento(formatted);
+                            field.onChange(Number(getNumericValue(formatted)) || 0);
+                          }}
+                          placeholder='0'
+                          inputMode='numeric'
                         />
                       </FormControl>
                     </div>
@@ -695,28 +721,30 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode }: UserFormProps
           </div>
         </div>
 
-        {/* Botones */}
-        <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full'>
-          <Button
-            type='button'
-            size='default'
-            className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
-            variant='outline'
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type='submit'
-            disabled={isSubmitting}
-            size='default'
-            className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
-            variant='outline'
-          >
-            {isSubmitting ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Guardar'}
-          </Button>
-        </div>
+        {/* Botones - solo mostrar si hideButtons es false */}
+        {!hideButtons && (
+          <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full'>
+            <Button
+              type='button'
+              size='default'
+              className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
+              variant='outline'
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type='submit'
+              disabled={isSubmitting}
+              size='default'
+              className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+              variant='outline'
+            >
+              {isSubmitting ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Guardar'}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

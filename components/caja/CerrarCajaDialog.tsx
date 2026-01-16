@@ -130,68 +130,71 @@ export const CerrarCajaDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle>
             Cerrar Caja {getDiaSemana(caja.fecha_apertura)}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Resumen de la caja */}
-          <div className="bg-gray-50 p-1 px-2  rounded-lg space-y-2">
-            <h4 className="font-medium text-sm">Resumen de la caja:</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-500">Apertura:</span>
-                <span className="ml-2 mr-2 font-medium">
-                  ${Math.round(caja.monto_apertura).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Ventas:</span>
-                <span className="ml-2 mr-2 font-medium text-green-600">
-                  ${Math.round(caja.ventas).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Efectivo:</span>
-                <span className="ml-2 mr-2 font-medium">
-                  ${Math.round(caja.efectivo).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Tarjeta:</span>
-                <span className="ml-2 mr-2 font-medium">
-                  ${Math.round(caja.tarjeta).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Transferencia:</span>
-                <span className="ml-2 mr-2 font-medium text-sm">
-                  ${Math.round(caja.transferencia).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Servicios:</span>
-                <span className="ml-2 mr-2 font-medium">
-                  ${Math.round(caja.servicios).toLocaleString()}
-                </span>
-              </div>
-              {caja.devoluciones > 0 && (
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-4">
+            {/* Resumen de la caja */}
+            <div className="bg-gray-50 p-1 px-2  rounded-lg space-y-2">
+              <h4 className="font-medium text-sm">Resumen de la caja:</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-gray-500">Devoluciones:</span>
-                  <span className="ml-2 mr-2 font-medium text-red-600">
-                    -${Math.round(caja.devoluciones).toLocaleString()}
+                  <span className="text-gray-500">Apertura:</span>
+                  <span className="ml-2 mr-2 font-medium">
+                    ${Math.round(caja.monto_apertura).toLocaleString()}
                   </span>
                 </div>
-              )}
+                <div>
+                  <span className="text-gray-500">Ventas:</span>
+                  <span className="ml-2 mr-2 font-medium text-green-600">
+                    ${Math.round(caja.ventas).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Efectivo:</span>
+                  <span className="ml-2 mr-2 font-medium">
+                    ${Math.round(caja.efectivo).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Tarjeta:</span>
+                  <span className="ml-2 mr-2 font-medium">
+                    ${Math.round(caja.tarjeta).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Transferencia:</span>
+                  <span className="ml-2 mr-2 font-medium text-sm">
+                    ${Math.round(caja.transferencia).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Servicios:</span>
+                  <span className="ml-2 mr-2 font-medium">
+                    ${Math.round(caja.servicios).toLocaleString()}
+                  </span>
+                </div>
+                {caja.devoluciones > 0 && (
+                  <div>
+                    <span className="text-gray-500">Devoluciones:</span>
+                    <span className="ml-2 mr-2 font-medium text-red-600">
+                      -${Math.round(caja.devoluciones).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            
           </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex justify-center gap-2 pt-4 text-center">
+        <div className="flex-shrink-0 border-t px-6 py-4">
+          <form onSubmit={handleSubmit}>
+            <div className="flex justify-center gap-2 text-center">
               <Button
                 type="button"
                 size="sm"

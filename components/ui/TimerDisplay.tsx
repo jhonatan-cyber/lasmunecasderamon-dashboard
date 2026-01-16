@@ -12,47 +12,12 @@ export const TimerDisplay: React.FC = () => {
 
 
   const handleStopTimer = async (timerId: string, roomName: string, servicioCode: string, clienteNombre: string) => {
-    try {
-      const Swal = (await import('sweetalert2')).default;
-      const result = await Swal.fire({
-        title: '¿Finalizar Servicio?',
-        html: `
-          <div class="text-left">
-            <p><strong>Servicio:</strong> ${servicioCode}</p>
-            <p><strong>Habitación:</strong> ${roomName}</p>
-            <p><strong>Cliente:</strong> ${clienteNombre}</p>
-            <p class="mt-3 text-orange-600"><strong>¿Estás seguro de que quieres finalizar este servicio?</strong></p>
-          </div>
-        `,
-        icon: 'question',
-        confirmButtonText: 'Sí, Finalizar',
-        confirmButtonColor: '#dc2626',
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#6b7280',
-        showCancelButton: true,
-        allowOutsideClick: false,
-        customClass: {
-          popup: 'swal2-custom-popup',
-          title: 'swal2-custom-title',
-          htmlContainer: 'swal2-custom-html',
-          confirmButton: 'swal2-confirm-sm-outline',
-          cancelButton: 'swal2-cancel-sm-outline'
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          stopTimer(timerId, true); // Indicar que es una parada manual
-        }
-      });
-      
-      if (result.isConfirmed) {
-        stopTimer(timerId, true); // Indicar que es una parada manual
-      }
-    } catch (error) {
-      console.error('Error al cargar SweetAlert2:', error);
-      // Fallback si SweetAlert2 no está disponible
-      if (confirm(`¿Estás seguro de que quieres finalizar el servicio ${servicioCode} de la habitación ${roomName}?`)) {
-        stopTimer(timerId, true); // Indicar que es una parada manual
-      }
+    const confirmed = confirm(
+      `¿Finalizar Servicio?\n\nServicio: ${servicioCode}\nHabitación: ${roomName}\nCliente: ${clienteNombre}\n\n¿Estás seguro de que quieres finalizar este servicio?`
+    );
+    
+    if (confirmed) {
+      stopTimer(timerId, true); // Indicar que es una parada manual
     }
   };
 

@@ -77,9 +77,13 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
 async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
   try {
+<<<<<<< HEAD
     console.log('[SALES GET LISTA] Starting...');
     
     const { page = '1', limit = '10', estado } = req.query;
+=======
+    const { page = '1', limit = '10', estado, caja_id } = req.query;
+>>>>>>> 1e378ec (oficina)
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const offset = (pageNum - 1) * limitNum;
@@ -92,7 +96,36 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       params.push(estado);
     }
 
+<<<<<<< HEAD
     console.log('[SALES GET LISTA] Getting count...');
+=======
+    // Si se proporciona caja_id específico, usarlo
+    // Si no, obtener la caja abierta actual y filtrar por ella
+    if (caja_id) {
+      whereClause += ' AND v.caja_id = ?';
+      params.push(caja_id);
+    } else {
+      // Obtener la caja abierta actual
+      const cajaAbiertaSql = `
+        SELECT id_caja 
+        FROM cajas 
+        WHERE estado = 1 
+        ORDER BY fecha_apertura DESC 
+        LIMIT 1
+      `;
+      const cajaAbiertaResult = (await query(cajaAbiertaSql)) as any[];
+      
+      if (cajaAbiertaResult && cajaAbiertaResult.length > 0) {
+        const cajaAbiertaId = cajaAbiertaResult[0].id_caja;
+        whereClause += ' AND v.caja_id = ?';
+        params.push(cajaAbiertaId);
+      } else {
+        // Si no hay caja abierta, no mostrar ninguna venta
+        whereClause += ' AND v.caja_id IS NULL';
+      }
+    }
+
+>>>>>>> 1e378ec (oficina)
     const countSql = `SELECT COUNT(*) as total FROM ventas v ${whereClause}`;
     const countResult = (await query(countSql, params)) as any[];
     const total = countResult[0]?.total || 0;
@@ -110,14 +143,37 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         v.metodo_pago, 
         v.propina, 
         v.cliente_id, 
-        c.nombre as cliente_nombre, 
+        COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre,
         c.apellido as cliente_apellido,
+<<<<<<< HEAD
         v.habitacion_id,
         h.nombre as habitacion_nombre
+=======
+        h.nombre as habitacion_nombre,
+        v.pedido_id,
+        CASE 
+          WHEN v.pedido_id IS NOT NULL THEN CONCAT(g.nombre, ' ', g.apellido)
+          ELSE NULL
+        END as garzon_nombre,
+        CASE 
+          WHEN v.pedido_id IS NOT NULL THEN g.nick
+          ELSE NULL
+        END as garzon_nick,
+        GROUP_CONCAT(u.nick SEPARATOR ', ') as usuarios_nicks
+>>>>>>> 1e378ec (oficina)
       FROM ventas v 
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
       LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+<<<<<<< HEAD
       ${whereClause}
+=======
+      LEFT JOIN pedidos p ON v.pedido_id = p.id_pedido
+      LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
+      LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
+      LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
+      ${whereClause}
+      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, c.nombre, c.apellido, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
+>>>>>>> 1e378ec (oficina)
       ORDER BY v.fecha_crea DESC 
       LIMIT ${limitNum} OFFSET ${offset}
     `;
@@ -322,6 +378,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       total,
       detalles,
       cliente_id,
+      pedido_id,
       metodo_pago = 'efectivo',
       propina = 0,
       usuarios = [],
@@ -354,6 +411,12 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const codigoVenta = generateCode();
     console.log('[SALES POST] Generated code:', codigoVenta);
 
+    // Obtener la caja abierta actual
+    const cajaAbiertaResult = (await query(
+      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+    )) as any[];
+    const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
+
     // Calcular el total de comisiones sumando las comisiones de todos los productos
     const totalComision = detalles.reduce((acc, detalle) => {
       const comision = detalle.comision || 0;
@@ -365,19 +428,21 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const insertVentaSql = `
       INSERT INTO ventas (
-        codigo, cliente_id,habitacion_id, metodo_pago, propina, sub_total,total,total_comision
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, caja_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const ventaResult = (await query(insertVentaSql, [
       codigoVenta,
       cliente_id || null,
+      pedido_id || null,
       habitacion_id || null,
       metodo_pago,
       propina,
       sub_total || 0,
       total,
-      totalComision
+      totalComision,
+      cajaId
     ])) as any;
 
     const ventaId = ventaResult.insertId;

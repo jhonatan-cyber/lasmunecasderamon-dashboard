@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -15,7 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar, Clock, Tag, User, DollarSign, CreditCard, Home, Beer } from "lucide-react";
 import { VentaWithDetails } from "@/types/venta";
 
 interface SalesDetailModalProps {
@@ -24,6 +23,37 @@ interface SalesDetailModalProps {
   selectedVenta: VentaWithDetails | null;
   anfitrionaColors: string[];
   metodoPagoLabels: Record<string, string>;
+}
+
+function formatFecha(fechaStr?: string) {
+  if (!fechaStr) return '-';
+  if (fechaStr.includes('T')) {
+    const date = new Date(fechaStr);
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}-${m}-${y}`;
+  }
+  const [fecha] = fechaStr.split(' ');
+  if (!fecha) return '-';
+  const [y, m, d] = fecha.split('-');
+  return `${d}-${m}-${y}`;
+}
+
+function formatHora(fechaStr?: string) {
+  if (!fechaStr) return '-';
+  if (fechaStr.includes('T')) {
+    const date = new Date(fechaStr);
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${h}:${min}`;
+  }
+  const parts = fechaStr.split(' ');
+  if (parts[1]) {
+    const [h, m] = parts[1].split(':');
+    return `${h}:${m}`;
+  }
+  return '-';
 }
 
 export function SalesDetailModal({
@@ -36,239 +66,210 @@ export function SalesDetailModal({
   if (!selectedVenta) return null;
 
   const hasAnfitrionas = Array.isArray(selectedVenta.usuarios) && selectedVenta.usuarios.length > 0;
+  const totalComision = Array.isArray(selectedVenta.detalles)
+    ? selectedVenta.detalles.reduce((sum, detalle) => sum + (detalle.comision || 0), 0)
+    : 0;
+  const subTotal = Array.isArray(selectedVenta.detalles)
+    ? selectedVenta.detalles.reduce((sum, detalle) => sum + (detalle.sub_total || 0), 0)
+    : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="text-center text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-5">
-            Información de la Venta
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-[56rem] sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0">
+          <DialogTitle className="text-lg sm:text-xl">
+            Detalles de la Venta - {selectedVenta.codigo || 'Sin código'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 sm:space-y-6">
-          {/* Información general */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">Fecha:</Label>
-                <span className="text-xs sm:text-sm">
-                  {selectedVenta.fecha_crea
-                    ? new Date(
-                        selectedVenta.fecha_crea
-                      ).toLocaleDateString("es-ES")
-                    : "Sin fecha"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">Hora:</Label>
-                <span className="text-xs sm:text-sm">
-                  {selectedVenta.fecha_crea
-                    ? new Date(
-                        selectedVenta.fecha_crea
-                      ).toLocaleTimeString("es-ES", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "Sin hora"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Tag className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">Código:</Label>
-                <span className="text-xs sm:text-sm font-mono">
-                  {selectedVenta.codigo || "Sin código"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">
-                  Anfitriona(s):
-                </Label>
-                <div className="flex flex-wrap gap-1">
-                  {hasAnfitrionas ? (
-                    selectedVenta.usuarios.map(
-                      (usuario: any, index: number) => (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+          <div className="space-y-6">
+            {/* Info general */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Columna izquierda - Información de la venta */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Fecha y Hora:</span>
+                  <span className="text-xs sm:text-sm font-medium">
+                    {formatFecha(selectedVenta.fecha_crea)} - {formatHora(selectedVenta.fecha_crea)}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Código:</span>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedVenta.codigo || 'Sin código'}
+                  </Badge>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Cliente:</span>
+                  <span className="text-xs sm:text-sm font-medium">
+                    {selectedVenta.cliente_nombre || 'Sin cliente'}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Anfitriona(s):</span>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {hasAnfitrionas ? (
+                      selectedVenta.usuarios.map((usuario: any, index: number) => (
                         <Badge
                           key={usuario.id || index}
-                          className={
-                            anfitrionaColors[
-                              index % anfitrionaColors.length
-                            ]
-                          }
+                          className={anfitrionaColors[index % anfitrionaColors.length]}
                         >
-                          {usuario.nick ||
-                            usuario.usuario_nombre ||
-                            "Sin nick"}
+                          {usuario.nick || usuario.usuario_nombre || 'Sin nick'}
                         </Badge>
-                      )
-                    )
-                  ) : (
-                    <Badge className="bg-gray-300 text-gray-900">
-                      <Beer className="mr-1 w-3 h-3 sm:w-4 sm:h-4" />
-                      Venta en barra
-                    </Badge>
-                  )}
+                      ))
+                    ) : (
+                      <Badge variant="secondary">Venta en barra</Badge>
+                    )}
+                  </div>
                 </div>
+                {selectedVenta.garzon_nombre && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Garzón:</span>
+                      <span className="text-xs sm:text-sm font-medium">
+                        {selectedVenta.garzon_nombre}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Columna derecha - Información de pago */}
+              <div className="space-y-3">
+                {hasAnfitrionas && selectedVenta.habitacion_numero && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Habitación:</span>
+                      <span className="text-xs sm:text-sm font-medium">
+                        {selectedVenta.habitacion_numero}
+                      </span>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Método de Pago:</span>
+                  <Badge variant="outline" className="text-xs">
+                    {metodoPagoLabels[selectedVenta.metodo_pago as keyof typeof metodoPagoLabels] || 'No especificado'}
+                  </Badge>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Propina:</span>
+                  <span className="text-xs sm:text-sm font-medium">
+                    ${(selectedVenta.propina || 0).toLocaleString('es-CL')}
+                  </span>
+                </div>
+                {hasAnfitrionas && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Total Comisión:</span>
+                      <span className="text-xs sm:text-sm font-semibold">
+                        ${totalComision.toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">Cliente:</Label>
-                <span className="text-xs sm:text-sm">
-                  {selectedVenta.cliente_nombre || "Sin cliente"}
-                </span>
-              </div>
-              {hasAnfitrionas && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Home className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                    <Label className="text-xs sm:text-sm font-medium">
-                      Habitación:
-                    </Label>
-                    <span className="text-xs sm:text-sm">
-                      {selectedVenta.habitacion_numero ||
-                        "Sin habitación"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                    <Label className="text-xs sm:text-sm font-medium">
-                      Comisión:
-                    </Label>
-                    <span className="text-xs sm:text-sm">
-                      $
-                      {(Array.isArray(selectedVenta.detalles)
-                        ? selectedVenta.detalles.reduce(
-                            (sum, detalle) =>
-                              sum + (detalle.comision || 0),
-                            0
-                          )
-                        : 0
-                      ).toLocaleString()}
-                    </span>
-                  </div>
-                </>
-              )}
-              <div className="flex items-center gap-2">
-                <DollarSign className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">Propina:</Label>
-                <span className="text-xs sm:text-sm">
-                  ${(selectedVenta.propina || 0).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CreditCard className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
-                <Label className="text-xs sm:text-sm font-medium">
-                  Método de pago:
-                </Label>
-                <span className="text-xs sm:text-sm">
-                  {metodoPagoLabels[
-                    selectedVenta.metodo_pago as keyof typeof metodoPagoLabels
-                  ] || "No especificado"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Detalle de productos */}
-          <div className="border-t pt-4">
-            <h3 className="text-base sm:text-lg font-semibold text-center mb-4">
-              Detalle de Productos
-            </h3>
-            <div className="overflow-x-auto">
+            {/* Tabla de productos */}
+            <div className="border rounded-lg p-4">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs sm:text-sm">PRODUCTO</TableHead>
-                    <TableHead className="text-center text-xs sm:text-sm">
-                      CANTIDAD
-                    </TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">PRECIO</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">
-                      SUB TOTAL
-                    </TableHead>
+                    <TableHead className="text-left">Producto</TableHead>
+                    <TableHead className="text-center">Tipo</TableHead>
+                    <TableHead className="text-center">Cantidad</TableHead>
+                    <TableHead className="text-center">Precio</TableHead>
+                    <TableHead className="text-center">Comisión</TableHead>
+                    <TableHead className="text-right">Sub Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array.isArray(selectedVenta.detalles) &&
-                  selectedVenta.detalles.length > 0 ? (
-                    selectedVenta.detalles.map(
-                      (detalle: any, index: number) => (
+                  {Array.isArray(selectedVenta.detalles) && selectedVenta.detalles.length > 0 ? (
+                    selectedVenta.detalles.map((detalle: any, index: number) => {
+                      const tieneComision = (detalle.comision || 0) > 0;
+                      return (
                         <TableRow key={index}>
-                          <TableCell className="text-xs sm:text-sm">
-                            <div className="font-medium">
-                              {detalle.producto_nombre ||
-                                `Producto ID: ${detalle.producto_id}` ||
-                                "Producto sin nombre"}
-                            </div>
+                          <TableCell className="font-medium">
+                            {detalle.producto_nombre || `Producto ID: ${detalle.producto_id}` || 'Sin nombre'}
                           </TableCell>
-                          <TableCell className="text-center text-xs sm:text-sm">
-                            {detalle.cantidad || 0}
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={tieneComision ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {tieneComision ? 'Anfitriona' : 'Cliente'}
+                            </Badge>
                           </TableCell>
-                          <TableCell className="text-right text-xs sm:text-sm">
-                            ${(detalle.precio || 0).toLocaleString()}
+                          <TableCell className="text-center">{detalle.cantidad || 0}</TableCell>
+                          <TableCell className="text-center">
+                            ${(detalle.precio || 0).toLocaleString('es-CL')}
                           </TableCell>
-                          <TableCell className="text-right text-xs sm:text-sm">
-                            ${(detalle.sub_total || 0).toLocaleString()}
+                          <TableCell className="text-center">
+                            <span className={tieneComision ? 'text-green-600 font-semibold' : ''}>
+                              ${(detalle.comision || 0).toLocaleString('es-CL')}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            ${(detalle.sub_total || 0).toLocaleString('es-CL')}
                           </TableCell>
                         </TableRow>
-                      )
-                    )
+                      );
+                    })
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="text-center text-gray-500 text-xs sm:text-sm"
-                      >
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         No hay detalles de productos disponibles
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-            </div>
-          </div>
 
-          {/* Totales */}
-          <div className="border-t pt-4">
-            <div className="flex justify-end">
-              <div className="text-right space-y-2">
-                <div className="text-xs sm:text-sm">
-                  <span>SUB TOTAL:</span>{" "}
-                  <span>
-                    $
-                    {(Array.isArray(selectedVenta.detalles)
-                      ? selectedVenta.detalles.reduce(
-                          (sum, detalle) =>
-                            sum + (detalle.sub_total || 0),
-                          0
-                        )
-                      : 0
-                    ).toLocaleString()}
-                  </span>
+              <Separator className="my-4" />
+
+              {/* Resumen de totales */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">SUBTOTAL:</span>
+                  <span className="font-semibold">${subTotal.toLocaleString('es-CL')}</span>
                 </div>
-                <div className="text-base sm:text-lg font-bold">
-                  <span>TOTAL:</span>{" "}
-                  <span>
-                    ${(selectedVenta.total || 0).toLocaleString()}
+                {selectedVenta.propina && selectedVenta.propina > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-blue-600">+ Propina:</span>
+                    <span className="text-blue-600 font-medium">
+                      ${selectedVenta.propina.toLocaleString('es-CL')}
+                    </span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between items-center text-base">
+                  <span className="font-bold">TOTAL:</span>
+                  <span className="font-bold text-lg">
+                    ${(selectedVenta.total || 0).toLocaleString('es-CL')}
                   </span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Botón cerrar */}
-          <div className="flex justify-center pt-4">
+        {/* Footer con botón - fijo en la parte inferior */}
+        <div className="flex-shrink-0 border-t px-4 sm:px-6 py-4 bg-white">
+          <div className="flex justify-center">
             <Button
               onClick={() => onOpenChange(false)}
               size="sm"
               variant="outline"
-              className="rounded-full px-4 sm:px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white"
             >
               Cerrar
             </Button>

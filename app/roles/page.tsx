@@ -1,5 +1,5 @@
 'use client';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 import {
   Search,
@@ -13,7 +13,6 @@ import {
   XCircle,
   Loader2
 } from 'lucide-react';
-import Swal from 'sweetalert2';
 
 import { StatsCard } from '@/components/ui/stats-card';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
@@ -168,34 +167,10 @@ export default function RolesPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: number) => {
-    return status === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  };
-
-  const getStatusText = (status: number) => {
-    return status === 1 ? 'Activo' : 'Inactivo';
-  };
 
 
 
   const handleActivateRole = async (roleId: number) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: '¿Deseas activar este rol?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, activar',
-      cancelButtonText: 'Cancelar',
-      customClass: {
-        confirmButton: 'swal2-confirm-sm-outline',
-        cancelButton: 'swal2-cancel-sm-outline'
-      }
-    });
-
-    if (!result.isConfirmed) return;
-
     try {
       await activateRole(roleId);
       showSuccessToast('Rol activado correctamente');
@@ -294,7 +269,7 @@ export default function RolesPage() {
                 <TooltipTrigger asChild>
                   <span className='flex items-center'>
                     <Plus className='h-4 w-4 mr-2' />
-                    Nuevo
+                    Nuevo Rol
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>Crear nuevo rol</TooltipContent>
