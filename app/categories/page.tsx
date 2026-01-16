@@ -50,17 +50,9 @@ export default function Categories() {
   }
 
   const handleCreate = async (form: { name: string; description: string }) => {
-    // Verificar si ya existe una categoría con el mismo nombre
-    const exists = filteredCategories.some(
-      cat => cat.name.trim().toLowerCase() === form.name.trim().toLowerCase()
-    );
-    if (exists) {
-      toast.error('Ya existe una categoría con ese nombre.');
-      return;
-    }
     const result = await createCategory({
-      name: toTitleCase(form.name),
-      description: toTitleCase(form.description)
+      name: form.name,
+      description: form.description
     });
     if (result.success) {
       toast.success(result.message);
@@ -86,19 +78,10 @@ export default function Categories() {
 
   const handleUpdate = async (form: { name: string; description: string }) => {
     if (!editCategory) return;
-    // Verificar si ya existe otra categoría con el mismo nombre
-    const exists = filteredCategories.some(
-      cat =>
-        cat.id !== editCategory.id &&
-        cat.name.trim().toLowerCase() === form.name.trim().toLowerCase()
-    );
-    if (exists) {
-      toast.error('Ya existe una categoría con ese nombre.');
-      return;
-    }
+    
     const result = await updateCategory(editCategory.id, {
-      name: toTitleCase(form.name),
-      description: toTitleCase(form.description)
+      name: form.name,
+      description: form.description
     });
     if (result.success) {
       toast.success(result.message);

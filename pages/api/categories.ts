@@ -76,13 +76,19 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { id } = req.query;
+    console.log('PUT - ID recibido:', id);
+    console.log('PUT - Body:', req.body);
+    
     if (!id) return res.status(400).json({ success: false, message: "Falta el id" });
     const parse = categorySchema.safeParse(req.body);
     if (!parse.success) {
       return res.status(400).json({ success: false, message: "Datos inválidos", errors: (parse as any).error?.issues });
     }
+    
     // Validar duplicado por nombre (excluyendo el actual)
     const dup = await query("SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?) AND id_categoria != ?", [parse.data.name, id]);
+    console.log('PUT - Duplicados encontrados:', dup);
+    
     if (Array.isArray(dup) && dup.length) {
       return res.status(400).json({ success: false, message: "Ya existe una categoría con ese nombre" });
     }
@@ -92,6 +98,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     );
     return res.status(200).json({ success: true, message: "Categoría actualizada correctamente" });
   } catch (error) {
+    console.error('PUT - Error:', error);
     return res.status(500).json({ success: false, message: "Error al actualizar categoría", error });
   }
 };
