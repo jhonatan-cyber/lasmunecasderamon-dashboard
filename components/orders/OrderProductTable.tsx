@@ -1,17 +1,25 @@
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus} from "lucide-react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface OrderProductTableProps {
   productos: any[];
   onRemoveProducto?: (index: number) => void;
   onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
+  onToggleComision?: (index: number) => void;
 }
 
 export default function OrderProductTable({
   productos,
   onRemoveProducto,
   onUpdateCantidad,
+  onToggleComision,
 }: OrderProductTableProps) {
   return (
     <div className="overflow-x-auto w-full mt-10">
@@ -28,6 +36,9 @@ export default function OrderProductTable({
               PRECIO
             </th>
             <th className="text-center font-medium text-gray-500 pb-2">
+              TIPO
+            </th>
+            <th className="text-center font-medium text-gray-500 pb-2">
               SUB TOTAL
             </th>
             <th className="text-center font-medium text-gray-500 pb-2">
@@ -38,7 +49,7 @@ export default function OrderProductTable({
         <tbody>
           {productos.length === 0 && (
             <tr>
-              <td colSpan={5} className="text-center text-gray-300 py-6">
+              <td colSpan={6} className="text-center text-gray-300 py-6">
                 No hay productos agregados
               </td>
             </tr>
@@ -79,6 +90,47 @@ export default function OrderProductTable({
                 </div>
               </td>
               <td className="text-center">{formatCurrencyNoDecimals(p.precio || p.price)}</td>
+              <td className="text-center">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onToggleComision?.(idx)}
+                        className={`rounded-full px-4 py-1 transition-all duration-200 ${p.generaComision === 0
+                            ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
+                            : 'bg-pink-100 text-pink-700 border-pink-300 hover:bg-pink-200'
+                          }`}
+                      >
+                        {p.generaComision === 0 ? (
+                          <>
+
+                            Cliente
+                          </>
+                        ) : (
+                          <>
+
+                            Anfitriona
+                          </>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-xs">
+                        {p.generaComision === 0
+                          ? 'Para el cliente (sin comisión)'
+                          : 'Para las Anfitriona (con comisión)'}
+                        {p.comision > 0 && (
+                          <div className="text-green-600 mt-1">
+                            💰 Comisión: {formatCurrencyNoDecimals(p.comision)}
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </td>
               <td className="text-center">{formatCurrencyNoDecimals(p.subtotal)}</td>
               <td className="text-center">
                 <Button

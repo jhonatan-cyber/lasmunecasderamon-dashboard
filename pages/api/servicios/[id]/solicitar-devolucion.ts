@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const servicioSql = `
       SELECT 
         s.*,
-        c.nombre as cliente_nombre,
+        COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre,
         h.nombre as habitacion_numero,
         GROUP_CONCAT(u.nombre SEPARATOR ', ') as anfitrionas_nombres
       FROM servicios s

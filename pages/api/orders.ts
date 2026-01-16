@@ -11,7 +11,8 @@ const orderDetailSchema = z.object({
   precio: z.number(),
   comision: z.number(),
   cantidad: z.number(),
-  subtotal: z.number()
+  subtotal: z.number(),
+  generaComision: z.number().optional().default(1) // 1 = genera comisión, 0 = no genera comisión
 });
 
 const orderUserSchema = z.object({
@@ -21,7 +22,7 @@ const orderUserSchema = z.object({
 const orderSchema = z.object({
   codigo: z.string().min(1),
   meseroId: z.number(),
-  clienteId: z.number().default(1), // Cliente por defecto = 1
+  clienteId: z.number().nullable().optional(), // Permitir NULL
   subtotal: z.number(),
   total: z.number(),
   totalComision: z.number(),
@@ -31,9 +32,32 @@ const orderSchema = z.object({
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+<<<<<<< HEAD
     // Usar la función que reemplaza el procedimiento almacenado get_all_order
     const results = await getAllOrders();
     const orders = Array.isArray(results) ? results : [results];
+=======
+    // Consulta directa para obtener todos los pedidos con detalles
+    const orders = await query(`
+      SELECT
+        P.id_pedido,
+        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
+        P.codigo,
+        CONCAT(U.nombre, ' ', U.apellido) AS garzon,
+        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ')
+         FROM pedidos_usuarios PU
+         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
+         WHERE PU.pedido_id = P.id_pedido) AS nicks,
+        P.subtotal,
+        P.total,
+        P.estado
+      FROM pedidos P
+      LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
+      LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
+      WHERE P.estado = 1
+    `, []);
+    
+>>>>>>> 1e378ec (oficina)
     return res.status(200).json({ success: true, data: orders });
   } catch (error) {
     console.error('❌ Error en GET /api/orders:', error);
@@ -60,15 +84,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Insertar pedido principal
     const result: any = await query(
       'INSERT INTO pedidos (codigo, mesero_id, cliente_id, subtotal, total, total_comision) VALUES (?, ?, ?, ?, ?, ?)',
-      [codigo, meseroId, clienteId, subtotal, total, totalComision]
+      [codigo, meseroId, clienteId || null, subtotal, total, totalComision]
     );
     const pedidoId = result.insertId;
 
     // Insertar detalles
     for (const d of detalles) {
       await query(
-        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, cantidad, subtotal) VALUES (?, ?, ?, ?, ?, ?)',
-        [pedidoId, d.productoId, d.precio, d.comision, d.cantidad, d.subtotal]
+        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [pedidoId, d.productoId, d.precio, d.comision, d.generaComision ?? 1, d.cantidad, d.subtotal]
       );
     }
     // Insertar usuarios
@@ -81,9 +105,14 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     await rawQuery('COMMIT');
 
     // Obtener información del cliente y mesero para la notificación
-    const clienteResults = await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteId]) as any[];
-    const clienteResult = clienteResults[0];
-    const clienteNombre = clienteResult?.nombre || 'Cliente';
+    let clienteNombre = 'Sin cliente registrado';
+    if (clienteId) {
+      const clienteResults = await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteId]) as any[];
+      const clienteResult = clienteResults[0];
+      if (clienteResult) {
+        clienteNombre = `${clienteResult.nombre} ${clienteResult.apellido}`;
+      }
+    }
     
     const meseroResults = await query('SELECT nombre FROM usuarios WHERE id_usuario = ?', [meseroId]) as any[];
     const meseroResult = meseroResults[0];

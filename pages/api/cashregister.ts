@@ -94,7 +94,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (resumen === '1') {
       // Identificar caja abierta más reciente
-      const [cajaAbiertaRow] = (await query(`
+      const cajaAbiertaResult = (await query(`
         SELECT 
           c.*, 
           CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
@@ -105,6 +105,10 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         LIMIT 1
       `)) as RowDataPacket[];
 
+      const cajaAbiertaRow = Array.isArray(cajaAbiertaResult) && cajaAbiertaResult.length > 0 
+        ? cajaAbiertaResult[0] 
+        : null;
+
       // Contadores de cajas
       const [cajasCount] = (await query(`
         SELECT 
@@ -114,39 +118,66 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         WHERE estado IN (0,1)
       `)) as RowDataPacket[];
 
-      let cantidadVentas = 0;
-      let promedioVenta = 0;
-      let cantidadServicios = 0;
-      let promedioServicio = 0;
+      // Si no hay caja abierta, devolver todo en 0
+      if (!cajaAbiertaRow) {
+        const resumenVacio: CajaResumen = {
+          total_ventas: 0,
+          total_efectivo: 0,
+          total_tarjeta: 0,
+          total_transferencia: 0,
+          total_servicios: 0,
+          total_devoluciones: 0,
+          total_iva: 0,
+          total_propina: 0,
+          total_anticipo: 0,
+          cajas_abiertas: Number((cajasCount as any)?.cajas_abiertas || 0),
+          cajas_cerradas: Number((cajasCount as any)?.cajas_cerradas || 0),
+          balance_total: 0,
+          cantidad_ventas: 0,
+          cantidad_servicios: 0,
+          promedio_venta: 0,
+          promedio_servicio: 0,
+          tiempo_abierta: undefined,
+          fecha_apertura: undefined,
+          usuario_apertura: undefined
+        };
 
-      if (cajaAbiertaRow && (cajaAbiertaRow as any).fecha_apertura) {
-        // Estadísticas de ventas desde la apertura de la caja
-        const [ventasStats] = (await query(
-          `SELECT 
-              COALESCE(COUNT(*), 0) AS cantidad,
-              COALESCE(AVG(total), 0) AS promedio
-           FROM ventas v
-           WHERE v.estado = 1 AND v.fecha_crea >= ?`,
-          [(cajaAbiertaRow as any).fecha_apertura]
-        )) as RowDataPacket[];
-
-        cantidadVentas = Number((ventasStats as any)?.cantidad || 0);
-        promedioVenta = Number((ventasStats as any)?.promedio || 0);
-
-        // Estadísticas de servicios desde la apertura de la caja
-        const [serviciosStats] = (await query(
-          `SELECT 
-              COALESCE(COUNT(*), 0) AS cantidad,
-              COALESCE(AVG(total), 0) AS promedio
-           FROM servicios s
-           WHERE s.estado = 1 AND s.fecha_crea >= ?`,
-          [(cajaAbiertaRow as any).fecha_apertura]
-        )) as RowDataPacket[];
-
-        cantidadServicios = Number((serviciosStats as any)?.cantidad || 0);
-        promedioServicio = Number((serviciosStats as any)?.promedio || 0);
+        return res.status(200).json({
+          success: true,
+          data: resumenVacio
+        });
       }
 
+      // Si hay caja abierta, obtener sus estadísticas
+      const fechaApertura = (cajaAbiertaRow as any).fecha_apertura;
+
+      // Estadísticas de ventas desde la apertura de la caja
+      const [ventasStats] = (await query(
+        `SELECT 
+            COALESCE(COUNT(*), 0) AS cantidad,
+            COALESCE(AVG(total), 0) AS promedio
+         FROM ventas v
+         WHERE v.estado = 1 AND v.fecha_crea >= ?`,
+        [fechaApertura]
+      )) as RowDataPacket[];
+
+      const cantidadVentas = Number((ventasStats as any)?.cantidad || 0);
+      const promedioVenta = Number((ventasStats as any)?.promedio || 0);
+
+      // Estadísticas de servicios desde la apertura de la caja
+      const [serviciosStats] = (await query(
+        `SELECT 
+            COALESCE(COUNT(*), 0) AS cantidad,
+            COALESCE(AVG(total), 0) AS promedio
+         FROM servicios s
+         WHERE s.estado = 1 AND s.fecha_crea >= ?`,
+        [fechaApertura]
+      )) as RowDataPacket[];
+
+      const cantidadServicios = Number((serviciosStats as any)?.cantidad || 0);
+      const promedioServicio = Number((serviciosStats as any)?.promedio || 0);
+
+      // Obtener totales de la caja abierta
       const totalVentas = Number((cajaAbiertaRow as any)?.venta || 0);
       const totalEfectivo = Number((cajaAbiertaRow as any)?.efectivo || 0);
       const totalTarjeta = Number((cajaAbiertaRow as any)?.tarjeta || 0);
@@ -176,7 +207,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         cantidad_servicios: cantidadServicios,
         promedio_venta: promedioVenta,
         promedio_servicio: promedioServicio,
-        tiempo_abierta: cajaAbiertaRow ? new Date().toISOString() : undefined,
+        tiempo_abierta: new Date().toISOString(),
         fecha_apertura: (cajaAbiertaRow as any)?.fecha_apertura,
         usuario_apertura: (cajaAbiertaRow as any)?.usuario_apertura
       };

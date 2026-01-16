@@ -73,7 +73,7 @@ export default function AdvancesPage() {
             ) : hasOpenCaja ? (
               <>
                 <Plus className='mr-2' />
-                Nuevo
+                Nuevo Anticipo
               </>
             ) : (
               <>

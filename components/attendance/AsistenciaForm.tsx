@@ -55,98 +55,104 @@ export default function AsistenciaForm({ onSubmit, isOpen, onOpenChange }: Asist
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] w-[95vw] max-w-[95vw] sm:w-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-lg sm:text-xl">Registrar Asistencia</DialogTitle>
           <DialogDescription className="text-sm sm:text-base">
             Complete el formulario para registrar una asistencia manual.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-            <FormField
-              control={form.control}
-              name="usuario_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">Empleado</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="text-sm sm:text-base">
-                        <SelectValue placeholder="Seleccione un empleado" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="1" className="text-sm sm:text-base">Empleado 1</SelectItem>
-                      <SelectItem value="2" className="text-sm sm:text-base">Empleado 2</SelectItem>
-                      <SelectItem value="3" className="text-sm sm:text-base">Empleado 3</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="fecha"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">Fecha</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} className="text-sm sm:text-base" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="hora"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">Hora</FormLabel>
-                  <FormControl>
-                    <Input type="time" {...field} className="text-sm sm:text-base" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="estado"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">Estado</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="text-sm sm:text-base">
-                        <SelectValue placeholder="Seleccione un estado" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="presente" className="text-sm sm:text-base">Presente</SelectItem>
-                      <SelectItem value="tardanza" className="text-sm sm:text-base">Tardanza</SelectItem>
-                      <SelectItem value="ausente" className="text-sm sm:text-base">Ausente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-              <Button 
-                type="submit" 
-                className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2"
-              >
-                Guardar
-              </Button>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="space-y-4 sm:space-y-6">
+                <FormField
+                  control={form.control}
+                  name="usuario_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm sm:text-base">Empleado</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="text-sm sm:text-base">
+                            <SelectValue placeholder="Seleccione un empleado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1" className="text-sm sm:text-base">Empleado 1</SelectItem>
+                          <SelectItem value="2" className="text-sm sm:text-base">Empleado 2</SelectItem>
+                          <SelectItem value="3" className="text-sm sm:text-base">Empleado 3</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="fecha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm sm:text-base">Fecha</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} className="text-sm sm:text-base" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="hora"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm sm:text-base">Hora</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} className="text-sm sm:text-base" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="estado"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm sm:text-base">Estado</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="text-sm sm:text-base">
+                            <SelectValue placeholder="Seleccione un estado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="presente" className="text-sm sm:text-base">Presente</SelectItem>
+                          <SelectItem value="tardanza" className="text-sm sm:text-base">Tardanza</SelectItem>
+                          <SelectItem value="ausente" className="text-sm sm:text-base">Ausente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <DialogFooter className="flex-shrink-0 border-t px-6 py-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
+                <Button 
+                  type="submit" 
+                  className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2"
+                >
+                  Guardar
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>

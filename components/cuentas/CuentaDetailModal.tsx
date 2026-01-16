@@ -147,14 +147,16 @@ export default function CuentaDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-neutral-900">
-        <DialogHeader>
-          <div className="flex items-center justify-center mt-4">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-neutral-900">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+          <div className="flex items-center justify-center">
             <DialogTitle className="text-xl font-semibold text-black dark:text-neutral-100">
               Detalles de Cuenta
             </DialogTitle>
           </div>
         </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
@@ -315,17 +317,6 @@ export default function CuentaDetailModal({
                 </div>
               )}
             </div>
-
-            <div className="flex justify-center gap-2 w-full">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClose}
-                className="bg-black text-white rounded-full px-6 hover:scale-105 transition-all duration-200"
-              >
-                Cerrar
-              </Button>
-            </div>
           </div>
         ) : (
           <div className="text-center py-8">
@@ -334,6 +325,20 @@ export default function CuentaDetailModal({
             </p>
           </div>
         )}
+        </div>
+
+        <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className="flex justify-center gap-2 w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClose}
+              className="bg-black text-white rounded-full px-6 hover:scale-105 transition-all duration-200"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
       </DialogContent>
 
       {/* Modal de Agregar Productos */}

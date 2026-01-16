@@ -70,8 +70,8 @@ export function AnulacionConfirmModal({
 
   return (
     <Dialog open={isVisible} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 mb-4">
             {isConfirmada ? (
               <CheckCircle className="text-green-500" />
@@ -84,6 +84,9 @@ export function AnulacionConfirmModal({
                 : `❌ Anulación de ${isServicio ? 'Servicio' : 'Venta'} Rechazada`}
             </span>
           </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="text-left">
             {isConfirmada ? (
               <div>
@@ -163,8 +166,9 @@ export function AnulacionConfirmModal({
               </div>
             )}
           </div>
-        </DialogHeader>
+        </div>
 
+<<<<<<< HEAD
         <div className="flex justify-center items-center gap-4 pt-4">
           <Button
             onClick={handleAccept}
@@ -172,6 +176,17 @@ export function AnulacionConfirmModal({
           >
             Aceptar
           </Button>
+=======
+        <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className="flex justify-center items-center">
+            <Button
+              onClick={handleAccept}
+              className="rounded-full bg-black text-white hover:scale-105 transition-all duration-200"
+            >
+              Aceptar
+            </Button>
+          </div>
+>>>>>>> 1e378ec (oficina)
         </div>
       </DialogContent>
     </Dialog>

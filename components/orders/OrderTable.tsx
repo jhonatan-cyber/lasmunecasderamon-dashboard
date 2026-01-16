@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { User, Users, UserCheck, DollarSign, Clock, CheckCircle, Barcode } from "lucide-react";
 
 const badgeColors = [

@@ -9,7 +9,6 @@ import { Client } from "@/types/client";
 import { ClientModal } from "@/components/clients/ClientModal";
 import { ClientDetails } from "@/components/clients/ClientDetails";
 import { toast } from "sonner";
-import "moment/locale/es";
 import { ClientTable } from "@/components/clients/ClientTable";
 import { ClientFilters } from "@/components/clients/ClientFilters";
 import { ExportButtons } from "@/components/clients/ExportButtons";
@@ -153,7 +152,7 @@ export default function Clients() {
                 className="whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Nuevo
+                Nuevo Cliente
               </Button>
             </DialogTrigger>
             <ClientModal

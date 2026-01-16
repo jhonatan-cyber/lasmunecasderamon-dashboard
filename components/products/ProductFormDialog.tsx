@@ -66,8 +66,8 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       setForm({
         code: initialValues.code || '',
         name: initialValues.name || '',
-        price: initialValues.price ? String(initialValues.price) : '',
-        commission: initialValues.commission ? String(initialValues.commission) : '',
+        price: initialValues.price ? formatNumber(String(initialValues.price)) : '',
+        commission: initialValues.commission ? formatNumber(String(initialValues.commission)) : '',
         description: initialValues.description || '',
         foto: null
       });
@@ -84,14 +84,34 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     setErrors({});
   }, [open, initialValues]);
 
+  // Función para formatear números con separadores de miles
+  const formatNumber = (value: string) => {
+    // Remover todo excepto números
+    const numericValue = value.replace(/\D/g, '');
+    // Formatear con separadores de miles
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Función para obtener el valor numérico sin formato
+  const getNumericValue = (formattedValue: string) => {
+    return formattedValue.replace(/\./g, '');
+  };
+
   const validate = () => {
     const newErrors: Partial<Record<keyof ProductForm, string>> = {};
     if (!form.code.trim()) newErrors.code = 'El código es requerido';
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!form.price.trim() || isNaN(Number(form.price)))
+    
+    // Validar precio usando valor numérico
+    const numericPrice = getNumericValue(form.price);
+    if (!numericPrice || isNaN(Number(numericPrice)))
       newErrors.price = 'Precio válido requerido';
-    if (!form.commission.trim() || isNaN(Number(form.commission)))
-      newErrors.commission = 'Comisión válida requerida';
+    
+    // Validar comisión usando valor numérico (opcional)
+    const numericCommission = getNumericValue(form.commission);
+    if (form.commission.trim() && isNaN(Number(numericCommission)))
+      newErrors.commission = 'Comisión debe ser un número válido';
+      
     if (!form.description.trim()) newErrors.description = 'La descripción es requerida';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -145,8 +165,9 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     data.append('code', form.code);
     data.append('name', form.name);
     data.append('category_id', String(categoryId));
-    data.append('price', form.price);
-    data.append('commission', form.commission);
+    data.append('price', getNumericValue(form.price));
+    // Si comisión está vacía, enviar 0
+    data.append('commission', getNumericValue(form.commission) || '0');
     data.append('description', form.description);
     data.append('status', '1'); // Estado activo por defecto
 
@@ -200,158 +221,155 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
         if (!v) onClose();
       }}
     >
-      <DialogContent className='p-0'>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader className='px-6 pt-6 pb-2'>
+      <DialogContent className='p-0 max-h-[90vh] flex flex-col'>
+        <form onSubmit={handleSubmit} className='flex flex-col h-full'>
+          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-xl font-bold'>
               {initialValues ? 'Editar producto' : 'Nuevo producto'}
             </DialogTitle>
           </DialogHeader>
-          <div className='space-y-4 px-6 pb-2 pt-2'>
-            <div>
-              <label className='block text-sm font-medium mb-1'>Código</label>
-              <div className='relative'>
-                <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                  <Barcode className='w-3 h-3 sm:w-4 sm:h-4' />
-                </span>
-                <Input
-                  name='code'
-                  value={form.code}
-                  readOnly
-                  className='bg-gray-100 cursor-not-allowed pl-10 sm:pl-12'
-                />
-              </div>
-              {errors['code'] && (
-                <span className='text-red-500 text-xs mt-1 block'>{errors['code']}</span>
-              )}
-            </div>
-            <div>
-              <label className='block text-sm font-medium mb-1'>Nombre</label>
-              <div className='relative'>
-                <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                  <Package className='w-3 h-3 sm:w-4 sm:h-4' />
-                </span>
-                <Input
-                  name='name'
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder='Nombre del producto'
-                  disabled={isLoading}
-                  autoFocus
-                  className='pl-10 sm:pl-12'
-                />
-              </div>
-              {errors['name'] && (
-                <span className='text-red-500 text-xs mt-1 block'>{errors['name']}</span>
-              )}
-            </div>
-            <div className='grid grid-cols-2 gap-4'>
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+            <div className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium mb-1'>Precio</label>
+                <label className='block text-sm font-medium mb-1'>Código</label>
                 <div className='relative'>
-                  <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm'>
-                    <DollarSign />
+                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                    <Barcode className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <Input
-                    name='price'
-                    value={form.price}
-                    type='number'
-                    min='0'
-                    step='100'
-                    onChange={e => {
-                      // Solo permitir números
-                      const value = e.target.value.replace(/\D/g, '');
-                      setForm({ ...form, price: value });
-                    }}
-                    placeholder='0'
-                    disabled={isLoading}
-                    inputMode='numeric'
-                    className='pl-8'
+                    name='code'
+                    value={form.code}
+                    readOnly
+                    className='bg-gray-100 cursor-not-allowed pl-10 sm:pl-12'
                   />
-                  {errors['price'] && (
-                    <span className='text-red-500 text-xs mt-1 block'>{errors['price']}</span>
+                </div>
+                {errors['code'] && (
+                  <span className='text-red-500 text-xs mt-1 block'>{errors['code']}</span>
+                )}
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Nombre</label>
+                <div className='relative'>
+                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                    <Package className='w-3 h-3 sm:w-4 sm:h-4' />
+                  </span>
+                  <Input
+                    name='name'
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder='Nombre del producto'
+                    disabled={isLoading}
+                    autoFocus
+                    className='pl-10 sm:pl-12'
+                  />
+                </div>
+                {errors['name'] && (
+                  <span className='text-red-500 text-xs mt-1 block'>{errors['name']}</span>
+                )}
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Precio</label>
+                  <div className='relative'>
+                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm'>
+                      <DollarSign />
+                    </span>
+                    <Input
+                      name='price'
+                      value={form.price}
+                      type='text'
+                      onChange={e => {
+                        const formattedValue = formatNumber(e.target.value);
+                        setForm({ ...form, price: formattedValue });
+                      }}
+                      placeholder='0'
+                      disabled={isLoading}
+                      inputMode='numeric'
+                      className='pl-8'
+                    />
+                    {errors['price'] && (
+                      <span className='text-red-500 text-xs mt-1 block'>{errors['price']}</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Comisión (opcional)</label>
+                  <div className='relative'>
+                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm'>
+                      <DollarSign />
+                    </span>
+                    <Input
+                      name='commission'
+                      type='text'
+                      value={form.commission}
+                      onChange={e => {
+                        const formattedValue = formatNumber(e.target.value);
+                        setForm({ ...form, commission: formattedValue });
+                      }}
+                      placeholder='0 (por defecto)'
+                      disabled={isLoading}
+                      inputMode='numeric'
+                      className='pl-8'
+                    />
+                  </div>
+                  {errors['commission'] && (
+                    <span className='text-red-500 text-xs mt-1 block'>{errors['commission']}</span>
                   )}
                 </div>
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Comisión</label>
+                <label className='block text-sm font-medium mb-1'>Descripción</label>
                 <div className='relative'>
-                  <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm'>
-                    <DollarSign />
+                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                    <FileText className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <Input
-                    name='commission'
-                    type='number'
-                    min='0'
-                    step='100'
-                    value={form.commission}
-                    onChange={e => {
-                      // Solo permitir números
-                      const value = e.target.value.replace(/\D/g, '');
-                      setForm({ ...form, commission: value });
-                    }}
-                    placeholder='0'
+                    name='description'
+                    value={form.description}
+                    onChange={handleChange}
+                    placeholder='Descripción del producto'
                     disabled={isLoading}
-                    className='pl-8'
+                    className='pl-10 sm:pl-12'
                   />
                 </div>
-                {errors['commission'] && (
-                  <span className='text-red-500 text-xs mt-1 block'>{errors['commission']}</span>
+                {errors['description'] && (
+                  <span className='text-red-500 text-xs mt-1 block'>{errors['description']}</span>
+                )}
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Imagen</label>
+                <div className='relative'>
+                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
+                    <Image className='w-3 h-3 sm:w-4 sm:h-4' />
+                  </span>
+                  <Input
+                    name='foto'
+                    type='file'
+                    accept='image/jpeg,image/jpg,image/png,image/gif'
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className='pl-10 sm:pl-12'
+                  />
+                </div>
+                {errors['foto'] && (
+                  <span className='text-red-500 text-xs mt-1 block'>{errors['foto']}</span>
+                )}
+                <div className='text-xs text-gray-500 mt-1'>
+                  Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
+                </div>
+                {imagePreview && (
+                  <div className='mt-2'>
+                    <img
+                      src={imagePreview}
+                      alt='Vista previa'
+                      className='max-h-32 max-w-32 rounded border object-cover'
+                    />
+                  </div>
                 )}
               </div>
             </div>
-            <div>
-              <label className='block text-sm font-medium mb-1'>Descripción</label>
-              <div className='relative'>
-                <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                  <FileText className='w-3 h-3 sm:w-4 sm:h-4' />
-                </span>
-                <Input
-                  name='description'
-                  value={form.description}
-                  onChange={handleChange}
-                  placeholder='Descripción del producto'
-                  disabled={isLoading}
-                  className='pl-10 sm:pl-12'
-                />
-              </div>
-              {errors['description'] && (
-                <span className='text-red-500 text-xs mt-1 block'>{errors['description']}</span>
-              )}
-            </div>
-            <div>
-              <label className='block text-sm font-medium mb-1'>Imagen</label>
-              <div className='relative'>
-                <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                  <Image className='w-3 h-3 sm:w-4 sm:h-4' />
-                </span>
-                <Input
-                  name='foto'
-                  type='file'
-                  accept='image/jpeg,image/jpg,image/png,image/gif'
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className='pl-10 sm:pl-12'
-                />
-              </div>
-              {errors['foto'] && (
-                <span className='text-red-500 text-xs mt-1 block'>{errors['foto']}</span>
-              )}
-              <div className='text-xs text-gray-500 mt-1'>
-                Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
-              </div>
-              {imagePreview && (
-                <div className='mt-2'>
-                  <img
-                    src={imagePreview}
-                    alt='Vista previa'
-                    className='max-h-32 max-w-32 rounded border object-cover'
-                  />
-                </div>
-              )}
-            </div>
           </div>
-          <DialogFooter className='px-6 pb-6 pt-2 w-full gap-4'>
+          <DialogFooter className='flex-shrink-0 border-t px-6 py-4'>
             <div className='flex flex-row justify-center gap-2 w-full'>
               <Button
                 type='button'

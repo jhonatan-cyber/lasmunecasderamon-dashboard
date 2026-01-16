@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,8 +58,8 @@ export function DevolucionDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-center text-lg font-bold mb-2">
             Devolución de Servicio
           </DialogTitle>
@@ -69,7 +68,8 @@ export function DevolucionDetailModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-6">
           {/* Alerta de devolución */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
@@ -291,18 +291,20 @@ export function DevolucionDetailModal({
           </div>
         </div>
 
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={onConfirmar}
-            className="bg-red-600 hover:bg-red-700"
-            disabled={!motivoDevolucion.trim()}
-          >
-            Confirmar Devolución
-          </Button>
-        </DialogFooter>
+        <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={onConfirmar}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={!motivoDevolucion.trim()}
+            >
+              Confirmar Devolución
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
