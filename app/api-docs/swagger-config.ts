@@ -1,10 +1,7 @@
 // Configuración para suprimir warnings de React Strict Mode en Swagger UI
 export const swaggerConfig = {
   // Configuración básica
-<<<<<<< HEAD
-=======
   url: '/api/swagger',
->>>>>>> 1e378ec (oficina)
   docExpansion: 'list' as const,
   defaultModelsExpandDepth: 2,
   defaultModelExpandDepth: 2,

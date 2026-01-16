@@ -1,11 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { 
-  addClient, 
-  getAllClients, 
-  getClientById, 
-  updateClient, 
-  deleteClient 
-} from '@/lib/procedures';
+import { query } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -16,16 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log('[CLIENTS API] Getting clients...');
         if (queryParams.id) {
           const id = parseInt(queryParams.id as string);
-<<<<<<< HEAD
-          const results = (await getClientById(id)) as any[];
-          const clients = Array.isArray(results) ? results : [results];
-=======
           const clients = (await query(
             'SELECT * FROM clientes WHERE id_cliente = ?',
             [id]
           )) as any[];
           
->>>>>>> 1e378ec (oficina)
           if (clients.length === 0) {
             return res.status(404).json({ message: 'Cliente no encontrado' });
           }
@@ -41,17 +30,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             status: client.estado
           });
         } else {
-<<<<<<< HEAD
-          const results = (await getAllClients()) as any[];
-          console.log('[CLIENTS API] Raw results:', results);
-          const clients = Array.isArray(results) ? results : [results];
-          console.log('[CLIENTS API] Clients array length:', clients.length);
-=======
           const clients = (await query(
             'SELECT * FROM clientes WHERE estado = 1 ORDER BY nombre ASC'
           )) as any[];
           
->>>>>>> 1e378ec (oficina)
           const formattedClients = clients.map(client => ({
             id: client.id_cliente,
             run: client.run,
@@ -72,12 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!name || !lastName) {
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
-<<<<<<< HEAD
-        const result = await addClient(run, name, lastName, phone);
-        return res.status(201).json({ 
-          message: 'Cliente creado correctamente', 
-          id: (result as any).insertId 
-=======
         const result: any = await query(
           'INSERT INTO clientes (run, nombre, apellido, telefono) VALUES (?, ?, ?, ?)',
           [run, name, lastName, phone]
@@ -86,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(201).json({ 
           message: 'Cliente creado correctamente', 
           id: result.insertId 
->>>>>>> 1e378ec (oficina)
         });
       }
 
@@ -95,14 +70,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!id || !name || !lastName) {
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
-<<<<<<< HEAD
-        await updateClient(run, name, lastName, phone, id);
-=======
         await query(
           'UPDATE clientes SET run = ?, nombre = ?, apellido = ?, telefono = ?, fecha_mod = NOW() WHERE id_cliente = ?',
           [run, name, lastName, phone, id]
         );
->>>>>>> 1e378ec (oficina)
         return res.status(200).json({ message: 'Cliente actualizado correctamente' });
       }
 
@@ -112,11 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(400).json({ message: 'ID de cliente no válido' });
         }
         try {
-<<<<<<< HEAD
-          await deleteClient(parseInt(id as string));
-=======
           await query('DELETE FROM clientes WHERE id_cliente = ?', [id]);
->>>>>>> 1e378ec (oficina)
           return res.status(200).json({ message: 'Cliente eliminado correctamente' });
         } catch (error) {
           return res.status(500).json({ message: 'Error al eliminar el cliente' });

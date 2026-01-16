@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { Button } from "@/components/ui/button";
+
 import {
   CheckCircle,
   XCircle,
@@ -168,15 +170,6 @@ export function AnulacionConfirmModal({
           </div>
         </div>
 
-<<<<<<< HEAD
-        <div className="flex justify-center items-center gap-4 pt-4">
-          <Button
-            onClick={handleAccept}
-            className="rounded-full bg-black text-white  hover:scale-105 transition-all duration-200"
-          >
-            Aceptar
-          </Button>
-=======
         <div className="flex-shrink-0 border-t px-6 py-4">
           <div className="flex justify-center items-center">
             <Button
@@ -186,13 +179,9 @@ export function AnulacionConfirmModal({
               Aceptar
             </Button>
           </div>
->>>>>>> 1e378ec (oficina)
         </div>
+
       </DialogContent>
     </Dialog>
   );
 }
-
-
-
-

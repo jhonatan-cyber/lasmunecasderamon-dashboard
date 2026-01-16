@@ -48,15 +48,8 @@ export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-<<<<<<< HEAD
-      {/* React Query Devtools deshabilitado */}
-      {false && process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
-=======
->>>>>>> 1e378ec (oficina)
     </QueryClientProvider>
   );
 }
 
-export default QueryProvider; 
+export default QueryProvider;

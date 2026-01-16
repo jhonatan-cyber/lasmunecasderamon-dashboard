@@ -57,16 +57,8 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-<<<<<<< HEAD
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogDescription className="sr-only">
-          Selecciona productos de la categoría para agregarlos al pedido.
-        </DialogDescription>
-        <DialogHeader>
-=======
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
->>>>>>> 1e378ec (oficina)
           <DialogTitle>
             {modalCategoria
               ? `Productos de ${modalCategoria.nombre || modalCategoria.name}`
