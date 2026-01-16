@@ -241,15 +241,15 @@ export default function OrderDetailModal({
       if (!hasChampagneProducts) {
         toast.error('Para productos sin champaña solo puede haber 1 anfitriona máximo');
       } else if (maxChampagnePrice >= 240000) {
-        toast.error('Para champaña de $240,000+ solo puede haber hasta 7 anfitrionas');
+        toast.error('Para champaña de $240,000+ solo puede haber hasta 5 anfitrionas');
       } else if (maxChampagnePrice >= 200000) {
-        toast.error('Para champaña de $200,000+ solo puede haber hasta 6 anfitrionas');
+        toast.error('Para champaña de $200,000+ solo puede haber hasta 4 anfitrionas');
       } else if (maxChampagnePrice >= 160000) {
-        toast.error('Para champaña de $160,000+ solo puede haber hasta 5 anfitrionas');
+        toast.error('Para champaña de $160,000+ solo puede haber hasta 3 anfitrionas');
       } else if (maxChampagnePrice >= 120000) {
-        toast.error('Para champaña de $120,000+ solo puede haber hasta 4 anfitrionas');
+        toast.error('Para champaña de $120,000+ solo puede haber hasta 2 anfitrionas');
       } else {
-        toast.error('Para productos de champaña solo puede haber hasta 5 anfitrionas');
+        toast.error('Para champaña menor a $120,000 solo puede haber hasta 1 anfitriona');
       }
       return;
     }
@@ -315,12 +315,8 @@ export default function OrderDetailModal({
         sub_total: sub_total, // Suma del precio de los productos
         total: (pedido.total || 0) + propina + recargoAnfitrionas, // Total final con propina y recargos
         detalles: detail.map((item: any) => ({
-<<<<<<< HEAD
-          producto_id: item.producto_id || item.id_producto || 1,
-=======
-          producto_id: item.id_producto || item.producto_id, // Usar el ID real del producto
->>>>>>> 1e378ec (oficina)
-          precio: item.precio || 0,
+            producto_id: item.id_producto || item.producto_id, // Usar el ID real del producto
+            precio: item.precio || 0,
           cantidad: item.cantidad || 0,
           comision: item.comision || 0, // Agregar la comisión del producto
           sub_total: (item.precio || 0) * (item.cantidad || 0) // Calcular sub_total por producto
