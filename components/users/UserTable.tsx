@@ -61,7 +61,6 @@ export function UserTable({
   onActivate,
   onDeactivate,
   onDelete,
-  formatCurrency,
   formatDate,
   getRoleBadgeColor,
   currentPage,
@@ -333,9 +332,7 @@ export function UserTable({
       <Table className='min-w-full text-base bg-white rounded-xl overflow-hidden text-center'>
         <TableHeader className='border-b last:border-b-0 bg-white group'>
           <TableRow>
-            <TableHead className='py-3 px-2 sm:px-4 text-center w-[8%] text-xs sm:text-sm text-gray-400 mr-10'>
-              #
-            </TableHead>
+     
             <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-400'>
               Usuario
             </TableHead>
@@ -374,11 +371,7 @@ export function UserTable({
                 idx === 0 ? 'first:rounded-t-xl' : ''
               } ${idx === users.length - 1 ? 'last:rounded-b-xl' : ''}`}
             >
-              <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600 font-medium w-[8%] mr-10'>
-                <Badge className='bg-purple-100 text-purple-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-                  {(currentPage - 1) * pageSize + idx + 1}
-                </Badge>
-              </TableCell>
+              
               <TableCell className='py-3 px-2 sm:px-4 text-start'>
                 <div className='flex items-center space-x-2 sm:space-x-3'>
                   <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
