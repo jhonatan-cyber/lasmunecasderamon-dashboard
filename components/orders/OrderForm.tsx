@@ -81,16 +81,17 @@ export default function OrderForm({
 
   const handleAgregarProducto = (producto: any) => {
     const cantidad = cantidades[producto.id_producto || producto.id] || 1;
-    const comision = producto.comision ?? producto.commission ?? 0;
+    const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
     
     // Lógica inteligente: Si el producto tiene comisión > 0, es para las chicas (1)
     // Si no tiene comisión (0), es para el cliente (0)
-    const generaComision = comision > 0 ? 1 : 0;
+    const generaComision = comisionUnitaria > 0 ? 1 : 0;
     
     if (onAddProducto) {
       onAddProducto({
         ...producto,
-        comision: comision,
+        comision: comisionUnitaria * cantidad, // Comisión total = comisión unitaria * cantidad
+        comisionUnitaria: comisionUnitaria, // Guardar también la comisión unitaria
         cantidad,
         subtotal: (producto.precio || producto.price) * cantidad,
         generaComision: generaComision,
@@ -140,7 +141,13 @@ export default function OrderForm({
       return;
     }
 
-    // Validar límites de anfitrionas según champaña
+    // Si no hay productos con comisión, no debe haber anfitrionas seleccionadas
+    if (!hayProductosParaChicas && selectedAnfitrionas.length > 0) {
+      setError("No puede seleccionar anfitrionas para productos sin comisión");
+      return;
+    }
+
+    // Validar límites de anfitrionas según champaña y productos con comisión
     const isChampagneProduct = (p: any) => {
       const cat = (p.categoria || p.category_name || '').toLowerCase();
       return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
@@ -152,17 +159,47 @@ export default function OrderForm({
       : 0;
 
     let maxAnfitrionas = 1;
+    
     if (hasChampagneProducts) {
+      // Reglas para champaña según precio
       if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
       else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
       else if (maxChampagnePrice >= 160000) maxAnfitrionas = 3;
       else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
       else maxAnfitrionas = 1;
+    } else {
+      // Para productos que no son champaña pero tienen comisión
+      // El número de anfitrionas puede ser igual a la cantidad total de productos con comisión
+      const productosConComision = productos.filter(p => 
+        !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
+      );
+      
+      if (productosConComision.length > 0) {
+        const cantidadTotalConComision = productosConComision.reduce(
+          (sum, p) => sum + (Number(p.cantidad) || 1), 
+          0
+        );
+        maxAnfitrionas = cantidadTotalConComision;
+      } else {
+        maxAnfitrionas = 1;
+      }
     }
 
     if (selectedAnfitrionas.length > maxAnfitrionas) {
       if (!hasChampagneProducts) {
-        setError('El pedido excede el límite de 1 anfitriona por productos sin champaña');
+        const productosConComision = productos.filter(p => 
+          !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
+        );
+        
+        if (productosConComision.length > 0) {
+          const cantidadTotal = productosConComision.reduce(
+            (sum, p) => sum + (Number(p.cantidad) || 1), 
+            0
+          );
+          setError(`El pedido excede el límite de ${cantidadTotal} anfitriona${cantidadTotal !== 1 ? 's' : ''} para ${cantidadTotal} producto${cantidadTotal !== 1 ? 's' : ''} con comisión`);
+        } else {
+          setError('No puede seleccionar anfitrionas para productos sin comisión');
+        }
       } else if (maxChampagnePrice >= 240000) {
         setError('El pedido excede el límite de 5 anfitrionas para champaña de $240,000+');
       } else if (maxChampagnePrice >= 200000) {
@@ -246,8 +283,59 @@ export default function OrderForm({
     }
   };
 
+  // Calcular el máximo de anfitrionas permitidas según las reglas
+  const calcularMaxAnfitrionas = () => {
+    const isChampagneProduct = (p: any) => {
+      const cat = (p.categoria || p.category_name || '').toLowerCase();
+      return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+    };
+
+    const hasChampagneProducts = productos.some(isChampagneProduct);
+    const maxChampagnePrice = hasChampagneProducts
+      ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio || p.price || 0)))
+      : 0;
+
+    let maxAnfitrionas = 0; // Por defecto 0 (sin comisión = sin anfitrionas)
+    
+    if (hasChampagneProducts) {
+      // Reglas para champaña según precio
+      if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
+      else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
+      else if (maxChampagnePrice >= 160000) maxAnfitrionas = 3;
+      else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
+      else maxAnfitrionas = 1;
+    } else {
+      // Para productos que no son champaña pero tienen comisión
+      const productosConComision = productos.filter(p => 
+        !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
+      );
+      
+      if (productosConComision.length > 0) {
+        const cantidadTotalConComision = productosConComision.reduce(
+          (sum, p) => sum + (Number(p.cantidad) || 1), 
+          0
+        );
+        maxAnfitrionas = cantidadTotalConComision;
+      } else {
+        // Si no hay productos con comisión ni champaña, no se permiten anfitrionas
+        maxAnfitrionas = 0;
+      }
+    }
+
+    return maxAnfitrionas;
+  };
+
+  const maxAnfitrionasPermitidas = calcularMaxAnfitrionas();
+
   return (
     <div className="space-y-8">
+      {/* Categorías activas */}
+      <CategoryCardList
+        categorias={categorias}
+        onSelect={handleOpenCategoria}
+        filter={(c: any) => c.status === 1 && (c.total_products || 0) > 0}
+      />
+      
       <div className="flex flex-col md:flex-row gap-6 mb-6">
         <div className="flex-1">
           <CustomerSelect
@@ -266,23 +354,44 @@ export default function OrderForm({
             value={selectedAnfitrionas}
             onChange={setSelectedAnfitrionas}
             label="Anfitrionas"
-            placeholder="Seleccionar anfitrionas"
-            required={true}
-            maxSelection={10}
+            placeholder={maxAnfitrionasPermitidas === 0 ? "No disponible para productos sin comisión" : "Seleccionar anfitrionas"}
+            required={maxAnfitrionasPermitidas > 0}
+            maxSelection={maxAnfitrionasPermitidas}
+            disabled={maxAnfitrionasPermitidas === 0}
             className="w-full"
           />
+          {productos.length > 0 && (
+            <div className="text-xs text-gray-500 mt-1">
+              {(() => {
+                const isChampagneProduct = (p: any) => {
+                  const cat = (p.categoria || p.category_name || '').toLowerCase();
+                  return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+                };
+                const hasChampagne = productos.some(isChampagneProduct);
+                const maxPrice = hasChampagne 
+                  ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio || p.price || 0)))
+                  : 0;
+                
+                if (hasChampagne) {
+                  return `💎 Champaña detectada: Máximo ${maxAnfitrionasPermitidas} anfitriona${maxAnfitrionasPermitidas !== 1 ? 's' : ''} permitida${maxAnfitrionasPermitidas !== 1 ? 's' : ''}`;
+                } else {
+                  const productosConComision = productos.filter(p => p.generaComision === 1);
+                  if (productosConComision.length > 0) {
+                    const cantidad = productosConComision.reduce((sum, p) => sum + (Number(p.cantidad) || 1), 0);
+                    return `🍹 ${cantidad} producto${cantidad !== 1 ? 's' : ''} con comisión: Máximo ${maxAnfitrionasPermitidas} anfitriona${maxAnfitrionasPermitidas !== 1 ? 's' : ''}`;
+                  } else {
+                    return `ℹ️ Productos sin comisión: No se permiten anfitrionas`;
+                  }
+                }
+              })()}
+            </div>
+          )}
         </div>
       </div>
       {error && (
         <div className="text-center text-red-500 text-sm mb-2">{error}</div>
       )}
       <OrderTotalHeader total={total} onSubmit={handleSubmit} />
-      {/* Categorías activas */}
-      <CategoryCardList
-        categorias={categorias}
-        onSelect={handleOpenCategoria}
-        filter={(c: any) => c.status === 1 && (c.total_products || 0) > 0}
-      />
       {/* Modal de productos por categoría */}
       <CategoryProductsModal
         open={modalOpen}

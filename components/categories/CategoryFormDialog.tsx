@@ -38,6 +38,24 @@ export default function CategoryFormDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Función para capitalizar la primera letra de cada palabra
+  const capitalizeWords = (text: string) => {
+    if (!text) return text;
+    return text
+      .split(' ')
+      .map(word => {
+        if (!word) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+  };
+
+  // Función para capitalizar solo la primera letra del texto completo
+  const capitalizeFirst = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   useEffect(() => {
     if (open && initialValues) {
       setForm(initialValues);
@@ -77,7 +95,7 @@ export default function CategoryFormDialog({
                 <Input
                   id="categoryName"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, name: capitalizeWords(e.target.value) }))}
                   className="text-sm sm:text-base pl-10 sm:pl-12"
                 />
               </div>
@@ -92,7 +110,7 @@ export default function CategoryFormDialog({
                   id="categoryDescription"
                   value={form.description}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
+                    setForm((f) => ({ ...f, description: capitalizeFirst(e.target.value) }))
                   }
                   placeholder="Ingresa una descripción para la categoría..."
                   rows={3}

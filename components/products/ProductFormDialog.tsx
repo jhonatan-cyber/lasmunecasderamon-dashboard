@@ -117,6 +117,20 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Función para capitalizar la primera letra de cada palabra
+  const capitalizeWords = (text: string) => {
+    return text
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Función para capitalizar solo la primera letra del texto completo
+  const capitalizeFirst = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
     if (name === 'foto' && files && files[0]) {
@@ -149,6 +163,12 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
         delete newErrors.foto;
         setErrors(newErrors);
       }
+    } else if (name === 'name') {
+      // Capitalizar primera letra de cada palabra en el nombre
+      setForm({ ...form, [name]: capitalizeWords(value) });
+    } else if (name === 'description') {
+      // Capitalizar solo la primera letra de la descripción
+      setForm({ ...form, [name]: capitalizeFirst(value) });
     } else {
       setForm({ ...form, [name]: value });
     }
@@ -221,8 +241,8 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
         if (!v) onClose();
       }}
     >
-      <DialogContent className='p-0 max-h-[90vh] flex flex-col'>
-        <form onSubmit={handleSubmit} className='flex flex-col h-full'>
+      <DialogContent className='p-0 max-h-[90vh] overflow-hidden flex flex-col'>
+        <form onSubmit={handleSubmit} className='flex flex-col h-full overflow-hidden'>
           <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-xl font-bold'>
               {initialValues ? 'Editar producto' : 'Nuevo producto'}

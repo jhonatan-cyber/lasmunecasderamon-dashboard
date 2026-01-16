@@ -153,66 +153,74 @@ export default function OrderDetailModal({
   const cantidadAnfitrionas = anfitrionasFinal.length;
 
   // Determinar el máximo de anfitrionas permitidas según las reglas
-  let maxAnfitrionas = 1; // Por defecto, máximo 1 anfitriona
-  let anfitrionasIncluidas = 0; // Anfitrionas sin recargo
-  let anfitrionasConRecargo = 0; // Anfitrionas con recargo de $40,000
+  let maxAnfitrionas = 0; // Por defecto 0 (sin comisión = sin anfitrionas)
 
   if (hasChampagneProducts) {
+    // Reglas para champaña según precio
     if (maxChampagnePrice >= 240000) {
-      // $240,000: 7 anfitrionas (5 incluidas + 2 con recargo)
-      maxAnfitrionas = 7;
-      anfitrionasIncluidas = 5;
-      anfitrionasConRecargo = 2;
+      maxAnfitrionas = 5;
     } else if (maxChampagnePrice >= 200000) {
-      // $200,000: 6 anfitrionas (4 incluidas + 2 con recargo)
-      maxAnfitrionas = 6;
-      anfitrionasIncluidas = 4;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 160000) {
-      // $160,000: 5 anfitrionas (3 incluidas + 2 con recargo)
-      maxAnfitrionas = 5;
-      anfitrionasIncluidas = 3;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 120000) {
-      // $120,000: 4 anfitrionas (2 incluidas + 2 con recargo)
       maxAnfitrionas = 4;
-      anfitrionasIncluidas = 2;
-      anfitrionasConRecargo = 2;
+    } else if (maxChampagnePrice >= 160000) {
+      maxAnfitrionas = 3;
+    } else if (maxChampagnePrice >= 120000) {
+      maxAnfitrionas = 2;
     } else {
-      // Champaña con precio menor a $120,000: máximo 5 anfitrionas (sin recargo)
-      maxAnfitrionas = 5;
-      anfitrionasIncluidas = 5;
-      anfitrionasConRecargo = 0;
+      maxAnfitrionas = 1;
+    }
+  } else {
+    // Para productos que no son champaña pero tienen comisión
+    // El número de anfitrionas puede ser igual a la cantidad total de productos con comisión
+    const productosConComision = detail.filter(p => 
+      !isChampagneProduct(p) && (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
+    );
+    
+    if (productosConComision.length > 0) {
+      const cantidadTotalConComision = productosConComision.reduce(
+        (sum, p) => sum + (Number(p.cantidad) || 1), 
+        0
+      );
+      maxAnfitrionas = cantidadTotalConComision;
+    } else {
+      // Si no hay productos con comisión ni champaña, no se permiten anfitrionas
+      maxAnfitrionas = 0;
     }
   }
 
-  // Calcular recargo por anfitrionas extra según el precio de champaña
-  let anfitrionasExtra = 0;
-  let recargoAnfitrionas = 0;
-  if (hasChampagneProducts && cantidadAnfitrionas > anfitrionasIncluidas) {
-    anfitrionasExtra = cantidadAnfitrionas - anfitrionasIncluidas;
-    recargoAnfitrionas = anfitrionasExtra * 40000;
-  }
+  // No hay recargos por anfitrionas adicionales en las nuevas reglas
+  const recargoAnfitrionas = 0;
 
   // Validar que las anfitrionas del pedido cumplan con las reglas
   useEffect(() => {
     if (cantidadAnfitrionas > maxAnfitrionas) {
       // Mostrar mensaje específico según la regla aplicada
       if (!hasChampagneProducts) {
-        toast.error('El pedido excede el límite de 1 anfitriona por productos sin champaña');
+        const productosConComision = detail.filter(p => 
+          !isChampagneProduct(p) && (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
+        );
+        
+        if (productosConComision.length > 0) {
+          const cantidadTotal = productosConComision.reduce(
+            (sum, p) => sum + (Number(p.cantidad) || 1), 
+            0
+          );
+          toast.error(`El pedido excede el límite de ${cantidadTotal} anfitriona${cantidadTotal !== 1 ? 's' : ''} para ${cantidadTotal} producto${cantidadTotal !== 1 ? 's' : ''} con comisión`);
+        } else {
+          toast.error('No se permiten anfitrionas para productos sin comisión');
+        }
       } else if (maxChampagnePrice >= 240000) {
-        toast.error('El pedido excede el límite de 7 anfitrionas para champaña de $240,000+');
+        toast.error('El pedido excede el límite de 5 anfitrionas para champaña de $240,000+');
       } else if (maxChampagnePrice >= 200000) {
-        toast.error('El pedido excede el límite de 6 anfitrionas para champaña de $200,000+');
+        toast.error('El pedido excede el límite de 4 anfitrionas para champaña de $200,000+');
       } else if (maxChampagnePrice >= 160000) {
-        toast.error('El pedido excede el límite de 5 anfitrionas para champaña de $160,000+');
+        toast.error('El pedido excede el límite de 3 anfitrionas para champaña de $160,000+');
       } else if (maxChampagnePrice >= 120000) {
-        toast.error('El pedido excede el límite de 4 anfitrionas para champaña de $120,000+');
+        toast.error('El pedido excede el límite de 2 anfitrionas para champaña de $120,000+');
       } else {
-        toast.error('El pedido excede el límite de 5 anfitrionas para champaña');
+        toast.error('El pedido excede el límite de 1 anfitriona para champaña menor a $120,000');
       }
     }
-  }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, cantidadAnfitrionas]);
+  }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, cantidadAnfitrionas, detail]);
 
   const handleRegistrarVenta = async () => {
     // Activar validación visual del método de pago
