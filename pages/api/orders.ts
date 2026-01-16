@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery } from '@/lib/db';
-import { getAllOrders } from '@/lib/procedures';
 import { z } from 'zod';
 import { sendNotificationToAll } from './notifications/sse';
 
@@ -32,11 +31,6 @@ const orderSchema = z.object({
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-<<<<<<< HEAD
-    // Usar la función que reemplaza el procedimiento almacenado get_all_order
-    const results = await getAllOrders();
-    const orders = Array.isArray(results) ? results : [results];
-=======
     // Consulta directa para obtener todos los pedidos con detalles
     const orders = await query(`
       SELECT
@@ -57,7 +51,6 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       WHERE P.estado = 1
     `, []);
     
->>>>>>> 1e378ec (oficina)
     return res.status(200).json({ success: true, data: orders });
   } catch (error) {
     console.error('❌ Error en GET /api/orders:', error);

@@ -4,7 +4,6 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
@@ -35,21 +34,6 @@ export function DeleteUserConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-<<<<<<< HEAD
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="text-red-500" />
-            <span className="text-gray-900">Confirmar Eliminación</span>
-          </DialogTitle>
-          <div className="text-left">
-            <div className="text-gray-700 mb-2 text-center">
-              ¿Estás seguro de que quieres eliminar al usuario{" "}
-              <span className="font-semibold text-gray-900">
-                "{userName}"
-              </span>
-              ?
-=======
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
         <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='flex items-center gap-2 mb-4'>
@@ -61,33 +45,12 @@ export function DeleteUserConfirmModal({
           <div className='text-left'>
             <div className='font-medium text-gray-900 mb-3 text-sm sm:text-base'>
               ¿Estás seguro de que quieres eliminar al usuario?
->>>>>>> 1e378ec (oficina)
             </div>
             <div className="mt-3 text-sm text-red-400 font-medium text-center">
               Esta acción no se puede revertir. El usuario será eliminado
               permanentemente.
             </div>
           </div>
-<<<<<<< HEAD
-        </DialogHeader>
-        <div className="flex justify-center items-center gap-4 pt-4">
-          <Button
-            size="sm"
-            className="flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white"
-            variant="outline"
-            onClick={handleCancel}
-          >
-            Cancelar
-          </Button>
-          <Button
-            size="sm"
-            className="flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200"
-            variant="outline"
-            onClick={handleConfirm}
-          >
-            Eliminar
-          </Button>
-=======
         </div>
         <div className='flex-shrink-0 border-t px-6 py-4'>
           <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4'>
@@ -108,7 +71,6 @@ export function DeleteUserConfirmModal({
               Eliminar
             </Button>
           </div>
->>>>>>> 1e378ec (oficina)
         </div>
       </DialogContent>
     </Dialog>

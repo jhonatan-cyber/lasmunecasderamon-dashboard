@@ -1,10 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
-<<<<<<< HEAD
-import fs from 'fs';
-import path from 'path';
-=======
->>>>>>> 1e378ec (oficina)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -21,19 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       environment: process.env.NODE_ENV || 'development',
-<<<<<<< HEAD
-      version: (() => {
-        try {
-          const pkgPath = path.resolve(process.cwd(), 'package.json');
-          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-          return pkg.version || '1.0.0';
-        } catch (_) {
-          return process.env.npm_package_version || '1.0.0';
-        }
-      })(),
-=======
       version: process.env.npm_package_version || '1.0.0',
->>>>>>> 1e378ec (oficina)
       database: {
         status: 'connected',
         response: dbCheck

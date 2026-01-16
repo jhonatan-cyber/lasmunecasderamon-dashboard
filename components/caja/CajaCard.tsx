@@ -162,7 +162,6 @@ export const CajaCard = ({
             <span>Ver Detalle</span>
           </Button>
           {caja.estado === 1 && (
-<<<<<<< HEAD
             <>
               <Button
                 variant="outline"
@@ -183,17 +182,6 @@ export const CajaCard = ({
                 <span className="truncate">Cerrar Caja</span>
               </Button>
             </>
-=======
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full rounded-full px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10"
-              onClick={() => onCloseCaja(caja)}
-            >
-              <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Cerrar Caja</span>
-            </Button>
->>>>>>> 1e378ec (oficina)
           )}
         </div>
       </CardContent>
