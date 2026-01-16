@@ -22,17 +22,13 @@ import {
   Calendar,
   TrendingDown,
   TrendingUp,
-<<<<<<< HEAD
   ArrowDownCircle,
   Loader2,
-} from "lucide-react";
-import { useRetiros } from "@/hooks/useRetiros";
-=======
   ShoppingCart,
   Home,
 } from "lucide-react";
+import { useRetiros } from "@/hooks/useRetiros";
 import { useEffect, useState } from "react";
->>>>>>> 1e378ec (oficina)
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -79,9 +75,7 @@ const getEstadoInfo = (estado: number) => {
 };
 
 export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
-<<<<<<< HEAD
   const { retiros, loading: retirosLoading } = useRetiros(caja?.id_caja || null);
-=======
   const [ventas, setVentas] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
   const [loadingVentas, setLoadingVentas] = useState(false);
@@ -114,7 +108,6 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
         .finally(() => setLoadingServicios(false));
     }
   }, [open, caja]);
->>>>>>> 1e378ec (oficina)
 
   if (!caja) return null;
 
@@ -309,7 +302,6 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
             </div>
           </div>
 
-<<<<<<< HEAD
           {/* Historial de Retiros */}
           <div className='bg-gray-50 p-4 rounded-lg'>
             <h5 className='font-medium text-lg mb-4 flex items-center gap-2'>
@@ -369,7 +361,6 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
             )}
           </div>
 
-=======
           {/* Listado de Ventas */}
           <div className="border-t pt-4">
             <h5 className="font-medium text-lg mb-4 flex items-center gap-2">
@@ -458,7 +449,6 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
 
         {/* Footer con botón - fijo en la parte inferior */}
         <div className="flex-shrink-0 border-t px-4 sm:px-6 py-4 bg-white">
->>>>>>> 1e378ec (oficina)
           <div className="mt-6 flex justify-center">
             <Button
               variant="outline"

@@ -140,6 +140,43 @@ export default function OrderForm({
       return;
     }
 
+    // Validar límites de anfitrionas según champaña
+    const isChampagneProduct = (p: any) => {
+      const cat = (p.categoria || p.category_name || '').toLowerCase();
+      return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+    };
+
+    const hasChampagneProducts = productos.some(isChampagneProduct);
+    const maxChampagnePrice = hasChampagneProducts
+      ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio || p.price || 0)))
+      : 0;
+
+    let maxAnfitrionas = 1;
+    if (hasChampagneProducts) {
+      if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
+      else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
+      else if (maxChampagnePrice >= 160000) maxAnfitrionas = 3;
+      else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
+      else maxAnfitrionas = 1;
+    }
+
+    if (selectedAnfitrionas.length > maxAnfitrionas) {
+      if (!hasChampagneProducts) {
+        setError('El pedido excede el límite de 1 anfitriona por productos sin champaña');
+      } else if (maxChampagnePrice >= 240000) {
+        setError('El pedido excede el límite de 5 anfitrionas para champaña de $240,000+');
+      } else if (maxChampagnePrice >= 200000) {
+        setError('El pedido excede el límite de 4 anfitrionas para champaña de $200,000+');
+      } else if (maxChampagnePrice >= 160000) {
+        setError('El pedido excede el límite de 3 anfitrionas para champaña de $160,000+');
+      } else if (maxChampagnePrice >= 120000) {
+        setError('El pedido excede el límite de 2 anfitrionas para champaña de $120,000+');
+      } else {
+        setError('El pedido excede el límite de 1 anfitriona para champaña menor a $120,000');
+      }
+      return;
+    }
+
     if (!user?.id) {
       setError("No se pudo identificar al usuario actual (mesero)");
       return;

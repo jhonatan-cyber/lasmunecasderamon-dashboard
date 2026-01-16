@@ -77,13 +77,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
 async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
   try {
-<<<<<<< HEAD
-    console.log('[SALES GET LISTA] Starting...');
-    
-    const { page = '1', limit = '10', estado } = req.query;
-=======
     const { page = '1', limit = '10', estado, caja_id } = req.query;
->>>>>>> 1e378ec (oficina)
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const offset = (pageNum - 1) * limitNum;
@@ -96,9 +90,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       params.push(estado);
     }
 
-<<<<<<< HEAD
-    console.log('[SALES GET LISTA] Getting count...');
-=======
     // Si se proporciona caja_id específico, usarlo
     // Si no, obtener la caja abierta actual y filtrar por ella
     if (caja_id) {
@@ -125,7 +116,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
->>>>>>> 1e378ec (oficina)
     const countSql = `SELECT COUNT(*) as total FROM ventas v ${whereClause}`;
     const countResult = (await query(countSql, params)) as any[];
     const total = countResult[0]?.total || 0;
@@ -145,10 +135,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         v.cliente_id, 
         COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre,
         c.apellido as cliente_apellido,
-<<<<<<< HEAD
         v.habitacion_id,
-        h.nombre as habitacion_nombre
-=======
         h.nombre as habitacion_nombre,
         v.pedido_id,
         CASE 
@@ -160,20 +147,15 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           ELSE NULL
         END as garzon_nick,
         GROUP_CONCAT(u.nick SEPARATOR ', ') as usuarios_nicks
->>>>>>> 1e378ec (oficina)
       FROM ventas v 
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
       LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
-<<<<<<< HEAD
-      ${whereClause}
-=======
       LEFT JOIN pedidos p ON v.pedido_id = p.id_pedido
       LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
       LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
       ${whereClause}
-      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, c.nombre, c.apellido, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
->>>>>>> 1e378ec (oficina)
+      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
       ORDER BY v.fecha_crea DESC 
       LIMIT ${limitNum} OFFSET ${offset}
     `;

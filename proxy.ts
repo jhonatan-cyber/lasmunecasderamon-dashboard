@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-<<<<<<< HEAD
 // Rutas públicas que no requieren autenticación
 const PUBLIC_PATHS = [
   "/",
@@ -49,58 +48,6 @@ const PUBLIC_PATHS = [
   "/robots.txt",
   "/sitemap.xml",
 ];
-=======
-  // Rutas públicas que no requieren autenticación
-  const PUBLIC_PATHS = [
-    "/login",
-    // debug pages removidas
-    "/confirmar-anulacion",
-    "/confirmar-anulacion-servicio",
-    "/api/auth/login",
-    "/api/login",
-    "/api/auth/me",
-    "/api/logout",
-    "/api/auth/check",
-    "/api/auth/check-session",
-    // endpoints de usuario para la app
-    "/api/asistencias/user",
-    "/api/anticipos/user",
-    "/api/commissions/user",
-    "/api/servicios/user",
-    "/api/tips/user",
-    "/api/overtime/user",
-    "/api/orders/user",
-    // endpoints para pedidos (clientes y anfitrionas)
-    "/api/clients",
-    "/api/users",
-    "/api/anfitrionas",
-    // endpoints para categorías
-    "/api/categories",
-    // endpoints para productos
-    "/api/products",
-    // endpoints para pedidos/órdenes
-    "/api/orders",
-    // endpoints de prueba removidos
-    "/api/ventas/confirmar-anulacion",
-    "/api/ventas/procesar-anulacion",
-    "/api/ventas/solicitud-anulacion",
-    "/api/servicios/solicitud-anulacion",
-    "/api/servicios/procesar-anulacion",
-    "/api/notifications/pending",
-    "/api/notifications/sse",
-    "/api/swagger",
-    "/api/health",
-    "/api-docs",
-    "/api/docs",
-    "/_next",
-    "/favicon.ico",
-    "/img",
-    "/fonts",
-    "/manifest.json",
-    "/robots.txt",
-    "/sitemap.xml",
-  ];
->>>>>>> 1e378ec (oficina)
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
