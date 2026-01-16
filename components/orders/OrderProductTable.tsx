@@ -39,6 +39,9 @@ export default function OrderProductTable({
               TIPO
             </th>
             <th className="text-center font-medium text-gray-500 pb-2">
+              COMISIÓN
+            </th>
+            <th className="text-center font-medium text-gray-500 pb-2">
               SUB TOTAL
             </th>
             <th className="text-center font-medium text-gray-500 pb-2">
@@ -49,7 +52,7 @@ export default function OrderProductTable({
         <tbody>
           {productos.length === 0 && (
             <tr>
-              <td colSpan={6} className="text-center text-gray-300 py-6">
+              <td colSpan={7} className="text-center text-gray-300 py-6">
                 No hay productos agregados
               </td>
             </tr>
@@ -98,22 +101,12 @@ export default function OrderProductTable({
                         size="sm"
                         variant="outline"
                         onClick={() => onToggleComision?.(idx)}
-                        className={`rounded-full px-4 py-1 transition-all duration-200 ${p.generaComision === 0
+                        className={`rounded-full px-1.5 py-0 text-[10px] h-5 transition-all duration-200 ${p.generaComision === 0
                             ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
                             : 'bg-pink-100 text-pink-700 border-pink-300 hover:bg-pink-200'
                           }`}
                       >
-                        {p.generaComision === 0 ? (
-                          <>
-
-                            Cliente
-                          </>
-                        ) : (
-                          <>
-
-                            Anfitriona
-                          </>
-                        )}
+                        {p.generaComision === 0 ? 'Cliente' : 'Anfitriona'}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -121,22 +114,25 @@ export default function OrderProductTable({
                         {p.generaComision === 0
                           ? 'Para el cliente (sin comisión)'
                           : 'Para las Anfitriona (con comisión)'}
-                        {p.comision > 0 && (
-                          <div className="text-green-600 mt-1">
-                            💰 Comisión: {formatCurrencyNoDecimals(p.comision)}
-                          </div>
-                        )}
                       </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </td>
+              <td className="text-center">
+                {p.generaComision === 1 && p.comision > 0 ? (
+                  <span className="text-green-600 font-medium">
+                    {formatCurrencyNoDecimals(p.comision)}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </td>
               <td className="text-center">{formatCurrencyNoDecimals(p.subtotal)}</td>
               <td className="text-center">
                 <Button
                   variant="outline"
-                  className="rounded-full px-6 bg-red-500 text-white hover:scale-110 transition-all duration-200"
-                  size="icon"
+                  className="rounded-full w-7 h-7 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200"
                   onClick={() => onRemoveProducto?.(idx)}
                 >
                   <Trash2 className="w-3 h-3" />

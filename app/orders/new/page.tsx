@@ -62,15 +62,22 @@ export default function NewOrder() {
   // Handler para actualizar cantidad de producto
   const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
     setProductos((prev: any[]) => 
-      prev.map((producto, i) => 
-        i === index 
-          ? {
-              ...producto,
-              cantidad: nuevaCantidad,
-              subtotal: (producto.precio || producto.price) * nuevaCantidad,
-            }
-          : producto
-      )
+      prev.map((producto, i) => {
+        if (i !== index) return producto;
+        
+        // Obtener la comisión unitaria
+        // Si ya existe comisionUnitaria, usarla; si no, calcularla desde la comisión actual
+        const comisionUnitaria = producto.comisionUnitaria ?? 
+          (producto.cantidad > 0 ? (producto.comision || 0) / producto.cantidad : 0);
+        
+        return {
+          ...producto,
+          cantidad: nuevaCantidad,
+          subtotal: (producto.precio || producto.price) * nuevaCantidad,
+          comision: comisionUnitaria * nuevaCantidad,
+          comisionUnitaria: comisionUnitaria, // Guardar para futuros cálculos
+        };
+      })
     );
   };
 
