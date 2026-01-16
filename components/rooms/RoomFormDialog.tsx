@@ -98,76 +98,78 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         if (!v) onClose();
       }}
     >
-      <DialogContent className='p-0 w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px]'>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader className='px-4 sm:px-6 pt-4 sm:pt-6 pb-2'>
+      <DialogContent className='p-0 w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] max-h-[90vh] flex flex-col'>
+        <form onSubmit={handleSubmit} className='flex flex-col h-full'>
+          <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
             <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
               {initialValues ? 'Editar habitación' : 'Nueva habitación'}
             </DialogTitle>
           </DialogHeader>
-          <div className='space-y-4 px-4 sm:px-6 pb-2 pt-2'>
-            <div>
-              <label className='block text-sm sm:text-base font-medium mb-2'>Nombre</label>
-              <div className='relative'>
-                <Bed className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
-                <Input
-                  name='name'
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder='Nombre de la habitación'
-                  disabled={isLoading}
-                  autoFocus
-                  className='text-sm sm:text-base pl-10'
-                />
+          <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+            <div className='space-y-4'>
+              <div>
+                <label className='block text-sm sm:text-base font-medium mb-2'>Nombre</label>
+                <div className='relative'>
+                  <Bed className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                  <Input
+                    name='name'
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder='Nombre de la habitación'
+                    disabled={isLoading}
+                    autoFocus
+                    className='text-sm sm:text-base pl-10'
+                  />
+                </div>
+                {errors.name && (
+                  <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.name}</span>
+                )}
               </div>
-              {errors.name && (
-                <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.name}</span>
-              )}
-            </div>
-            <div>
-              <label className='block text-sm sm:text-base font-medium mb-2'>Precio</label>
-              <div className='relative'>
-                <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
-                <Input
-                  name='price'
-                  value={form.price}
-                  onChange={handleChange}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  placeholder='Precio de la habitación'
-                  disabled={isLoading}
-                  inputMode='numeric'
-                  className='text-sm sm:text-base pl-10'
-                />
+              <div>
+                <label className='block text-sm sm:text-base font-medium mb-2'>Precio</label>
+                <div className='relative'>
+                  <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                  <Input
+                    name='price'
+                    value={form.price}
+                    onChange={handleChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    placeholder='Precio de la habitación'
+                    disabled={isLoading}
+                    inputMode='numeric'
+                    className='text-sm sm:text-base pl-10'
+                  />
+                </div>
+                {errors.price && (
+                  <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.price}</span>
+                )}
               </div>
-              {errors.price && (
-                <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.price}</span>
-              )}
-            </div>
-            <div>
-              <label className='block text-sm sm:text-base font-medium mb-2'>
-                Tiempo (minutos)
-              </label>
-              <div className='relative'>
-                <Clock className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
-                <Input
-                  name='time'
-                  value={form.time}
-                  onChange={handleChange}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  placeholder='Tiempo de la habitación'
-                  disabled={isLoading}
-                  inputMode='numeric'
-                  className='text-sm sm:text-base pl-10'
-                />
+              <div>
+                <label className='block text-sm sm:text-base font-medium mb-2'>
+                  Tiempo (minutos)
+                </label>
+                <div className='relative'>
+                  <Clock className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                  <Input
+                    name='time'
+                    value={form.time}
+                    onChange={handleChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    placeholder='Tiempo de la habitación'
+                    disabled={isLoading}
+                    inputMode='numeric'
+                    className='text-sm sm:text-base pl-10'
+                  />
+                </div>
+                {errors.time && (
+                  <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.time}</span>
+                )}
               </div>
-              {errors.time && (
-                <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.time}</span>
-              )}
             </div>
           </div>
-          <DialogFooter className='px-4 sm:px-6 pb-4 sm:pb-6 pt-2 w-full gap-4'>
+          <DialogFooter className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
             <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
               <Button
                 type='button'

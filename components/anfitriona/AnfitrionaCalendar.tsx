@@ -660,12 +660,14 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
 
       {/* Modal de fecha seleccionada */}
       <Dialog open={isModalOpen && selectedDates.length > 0} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[95vw] w-full h-[90vh] overflow-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
             <DialogTitle className="text-lg font-semibold">{formatDatesList()}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 text-center mt-4">
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+
+          <div className="space-y-4 text-center">
             {/* Botones de tipo de datos */}
             <div className="flex flex-wrap justify-center gap-3">
               {Object.entries(dataTypeConfig).map(([key, config]) => {
@@ -883,12 +885,13 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
               )}
             </div>
           </div>
+          </div>
 
-          <div className="pt-4 sm:pt-6">
-            <div className="flex flex-col sm:flex-row justify-center gap-2 w-full">
+          <div className="flex-shrink-0 border-t px-6 py-4">
+            <div className="flex justify-center">
               <Button
                 variant="outline"
-                className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3"
+                className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 sm:px-8 py-3"
                 onClick={() => setIsModalOpen(false)}
               >
                 Cerrar

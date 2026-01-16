@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
+import formidable from 'formidable';
 
 export const config = {
   api: {
@@ -51,10 +52,18 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 async function validateAndProcessImage(files: any): Promise<string | null> {
   try {
     if (!files?.foto) {
+      console.log('No se encontró archivo foto');
       return null;
     }
 
     const file = Array.isArray(files.foto) ? files.foto[0] : files.foto;
+    
+    console.log('Procesando imagen:', {
+      originalFilename: file.originalFilename,
+      mimetype: file.mimetype,
+      size: file.size,
+      filepath: file.filepath
+    });
 
     // Validar tipo de archivo
     if (file.mimetype && !ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
@@ -66,33 +75,14 @@ async function validateAndProcessImage(files: any): Promise<string | null> {
       throw new Error('La imagen no puede superar los 5MB');
     }
 
-    const extension = path.extname(file.originalFilename || '');
-    const newFileName = `product_${Date.now()}${extension}`;
-    const newPath = path.join(PRODUCT_UPLOAD_DIR, newFileName);
-
-    // Verificar que el directorio existe
-    try {
-      await fs.access(PRODUCT_UPLOAD_DIR);
-    } catch (error) {
-      await fs.mkdir(PRODUCT_UPLOAD_DIR, { recursive: true });
-    }
-
-    // Guardar el archivo usando el buffer
-    try {
-      await fs.writeFile(newPath, file.buffer);
-    } catch (writeError) {
-      throw new Error('Error al guardar la imagen en el servidor');
-    }
-
-    // Verificar que el archivo se guardó correctamente
-    try {
-      await fs.access(newPath);
-    } catch (error) {
-      throw new Error('No se pudo verificar el archivo en destino');
-    }
-
-    return newFileName;
+    // El archivo ya está guardado por formidable, solo necesitamos obtener el nombre
+    const fileName = path.basename(file.filepath);
+    
+    console.log('✅ Imagen procesada correctamente:', fileName);
+    
+    return fileName;
   } catch (error) {
+    console.error('❌ Error al procesar imagen:', error);
     throw new Error(
       `Error al procesar la imagen: ${error instanceof Error ? error.message : 'Error desconocido'}`
     );
@@ -103,71 +93,33 @@ async function parseFormData(
   req: NextApiRequest
 ): Promise<{ fields: Record<string, string>; files: any }> {
   return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
-      try {
-        const boundary = req.headers['content-type']?.split('boundary=')[1];
-        if (!boundary) {
-          return reject(new Error('No se encontró el boundary en Content-Type'));
-        }
-
-        const parts = body.split(`--${boundary}`);
-        const fields: Record<string, string> = {};
-        const files: any = {};
-
-        for (let i = 0; i < parts.length; i++) {
-          const part = parts[i];
-
-          if (part.includes('Content-Disposition: form-data')) {
-            // Buscar el nombre del campo
-            const nameMatch = part.match(/name="([^"]+)"/);
-            if (!nameMatch) continue;
-
-            const name = nameMatch[1];
-
-            // Buscar si es un archivo
-            const filenameMatch = part.match(/filename="([^"]+)"/);
-            const isFile = !!filenameMatch;
-            const filename = filenameMatch ? filenameMatch[1] : '';
-
-            // Extraer el contenido después de la línea vacía
-            const contentMatch = part.match(/\r?\n\r?\n([\s\S]*?)(?=\r?\n--|$)/);
-            if (contentMatch) {
-              const value = contentMatch[1].trim();
-
-              if (isFile && filename) {
-                files[name] = {
-                  originalFilename: filename,
-                  mimetype: 'application/octet-stream', // Por defecto
-                  size: value.length,
-                  filepath: `/tmp/${filename}`,
-                  buffer: Buffer.from(value, 'binary')
-                };
-                console.log('Archivo procesado:', filename, 'tamaño:', value.length);
-              } else {
-                fields[name] = value;
-                console.log('Campo procesado:', name, '=', value);
-              }
-            } else {
-              console.log('No se pudo extraer contenido para:', name);
-            }
-          } else {
-            console.log('Parte ignorada - no contiene Content-Disposition');
-          }
-        }
-
-        resolve({ fields, files });
-      } catch (error) {
-        reject(error);
+    const form = formidable({
+      uploadDir: PRODUCT_UPLOAD_DIR,
+      keepExtensions: true,
+      maxFileSize: MAX_FILE_SIZE,
+      filename: (name, ext, part) => {
+        return `product_${Date.now()}${ext}`;
       }
     });
 
-    req.on('error', error => {
-      reject(error);
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        console.error('Error al parsear form:', err);
+        return reject(err);
+      }
+
+      // Convertir fields a formato simple
+      const simpleFields: Record<string, string> = {};
+      for (const key in fields) {
+        const value = fields[key];
+        simpleFields[key] = Array.isArray(value) ? value[0] : value || '';
+      }
+
+      console.log('✅ Formulario parseado correctamente');
+      console.log('Campos:', Object.keys(simpleFields));
+      console.log('Archivos:', Object.keys(files));
+
+      resolve({ fields: simpleFields, files });
     });
   });
 }
@@ -299,6 +251,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       id: result.insertId
     });
   } catch (error) {
+    console.error('❌ Error al crear producto:', error);
+    
     // Limpiar archivo subido si hay error
     if (uploadedFile) {
       try {
@@ -311,7 +265,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     }
 
-    return res.status(500).json({ success: false, message: 'Error al crear producto', error });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al crear producto', 
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
   }
 };
 
@@ -429,6 +387,8 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json({ success: true, message: 'Producto actualizado correctamente' });
   } catch (error) {
+    console.error('❌ Error al actualizar producto:', error);
+    
     // Limpiar archivo subido si hay error
     if (uploadedFile) {
       try {
@@ -441,7 +401,11 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     }
 
-    return res.status(500).json({ success: false, message: 'Error al actualizar producto', error });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al actualizar producto', 
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
   }
 };
 

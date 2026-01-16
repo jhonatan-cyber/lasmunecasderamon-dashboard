@@ -21,6 +21,7 @@ interface OrderFormProps {
   onAddProducto?: (producto: any) => void;
   onRemoveProducto?: (index: number) => void;
   onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
+  onToggleComision?: (index: number) => void;
   onSubmit?: () => void;
   searchCliente?: string;
   setSearchCliente?: (v: string) => void;
@@ -40,6 +41,7 @@ export default function OrderForm({
   onAddProducto,
   onRemoveProducto,
   onUpdateCantidad,
+  onToggleComision,
   onSubmit,
 }: OrderFormProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -79,12 +81,19 @@ export default function OrderForm({
 
   const handleAgregarProducto = (producto: any) => {
     const cantidad = cantidades[producto.id_producto || producto.id] || 1;
+    const comision = producto.comision ?? producto.commission ?? 0;
+    
+    // Lógica inteligente: Si el producto tiene comisión > 0, es para las chicas (1)
+    // Si no tiene comisión (0), es para el cliente (0)
+    const generaComision = comision > 0 ? 1 : 0;
+    
     if (onAddProducto) {
       onAddProducto({
         ...producto,
-        comision: producto.comision ?? producto.commission ?? 0,
+        comision: comision,
         cantidad,
         subtotal: (producto.precio || producto.price) * cantidad,
+        generaComision: generaComision,
       });
     }
     setCantidades((prev) => ({
@@ -96,6 +105,13 @@ export default function OrderForm({
   const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
     if (onUpdateCantidad) {
       onUpdateCantidad(index, nuevaCantidad);
+    }
+  };
+
+  const handleToggleComision = (index: number) => {
+    // Usar la función pasada desde el padre si existe
+    if (onToggleComision) {
+      onToggleComision(index);
     }
   };
 
@@ -111,13 +127,16 @@ export default function OrderForm({
   const handleSubmit = async () => {
     // Cliente es opcional, no validamos que esté seleccionado
 
-    if (selectedAnfitrionas.length === 0) {
-      setError("Debe seleccionar al menos una anfitriona");
+    if (productos.length === 0) {
+      setError("Debe agregar al menos un producto");
       return;
     }
 
-    if (productos.length === 0) {
-      setError("Debe agregar al menos un producto");
+    // Verificar si hay productos para chicas (generaComision = 1)
+    const hayProductosParaChicas = productos.some(p => p.generaComision === 1);
+    
+    if (hayProductosParaChicas && selectedAnfitrionas.length === 0) {
+      setError("Debe seleccionar al menos una anfitriona porque hay bebidas para las chicas");
       return;
     }
 
@@ -145,13 +164,14 @@ export default function OrderForm({
         precio: Number(item.precio || item.price),
         subtotal: Number(item.subtotal),
         comision: Number(item.comision || 0),
+        generaComision: Number(item.generaComision ?? 1), // Por defecto 1 (genera comisión)
       }));
       const usuarios = selectedAnfitrionas.map((id) => ({ usuarioId: Number(id) }));
 
              const payload = {
          codigo,
          meseroId: Number(user.id),
-         clienteId: selectedCliente ? Number(selectedCliente) : 1, // Cliente por defecto = 1
+         clienteId: selectedCliente ? Number(selectedCliente) : null, // NULL si no hay cliente
          subtotal: Number(subtotal),
          total: Number(total),
          totalComision: Number(totalComision),
@@ -246,6 +266,7 @@ export default function OrderForm({
           productos={productos}
           onRemoveProducto={onRemoveProducto}
           onUpdateCantidad={handleUpdateCantidad}
+          onToggleComision={handleToggleComision}
         />
       </div>
     </div>

@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
 import { Table, Grid3X3, Plus } from 'lucide-react';
 
-const pageSizes = [8, 12, 24, 48];
 
 function toTitleCase(str: string) {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -145,7 +144,7 @@ const RoomsPage = () => {
             className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
           >
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Nueva
+            Nueva Habitacion
           </Button>
         </div>
       </div>

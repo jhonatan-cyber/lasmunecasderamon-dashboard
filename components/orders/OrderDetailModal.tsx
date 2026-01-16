@@ -2,18 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X, Receipt, CreditCard, Coins, DollarSign, Building2 } from 'lucide-react';
+import { Coins, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import SearchInput from '@/components/ui/SearchInput';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
 import RoomSelect from '@/components/ui/RoomSelect';
 import { useSales } from '@/hooks/useSales';
@@ -84,8 +79,7 @@ export default function OrderDetailModal({
   const [metodoPago, setMetodoPago] = useState('');
   const [propina, setPropina] = useState(0);
   const [habitacionId, setHabitacionId] = useState('');
-  const [isPropinaFocused, setIsPropinaFocused] = useState(false);
-  const [propinaInputValue, setPropinaInputValue] = useState('');
+  const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
 
   useEffect(() => {
@@ -103,8 +97,7 @@ export default function OrderDetailModal({
       setMetodoPago('');
       setPropina(0);
       setHabitacionId('');
-      setIsPropinaFocused(false);
-      setPropinaInputValue('');
+      setPropinaDisplayValue('');
       setShowMetodoPagoError(false);
       setIsRegistering(false);
     }
@@ -315,13 +308,18 @@ export default function OrderDetailModal({
 
       // Preparar datos para la venta
       const ventaData = {
-        cliente_id: 1, // Por ahora usar cliente default, se puede mejorar después
+        cliente_id: pedido.cliente_id || null, // Usar el cliente_id del pedido o NULL
+        pedido_id: orderId || null, // Guardar el ID del pedido
         metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
         propina: propina,
         sub_total: sub_total, // Suma del precio de los productos
         total: (pedido.total || 0) + propina + recargoAnfitrionas, // Total final con propina y recargos
         detalles: detail.map((item: any) => ({
+<<<<<<< HEAD
           producto_id: item.producto_id || item.id_producto || 1,
+=======
+          producto_id: item.id_producto || item.producto_id, // Usar el ID real del producto
+>>>>>>> 1e378ec (oficina)
           precio: item.precio || 0,
           cantidad: item.cantidad || 0,
           comision: item.comision || 0, // Agregar la comisión del producto
@@ -357,15 +355,23 @@ export default function OrderDetailModal({
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${
-                  dataPropina.data.usuarios_distribucion
+                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
-              toast.error('Error al registrar la propina: ' + dataPropina.message);
+              // Si no hay usuarios logueados, mostrar advertencia pero continuar
+              if (dataPropina.message?.includes('No hay usuarios logueados')) {
+                toast.warning(
+                  `Venta registrada con propina de $${propina.toLocaleString()}, pero no se distribuyó porque no hay cajeros/garzones logueados`
+                );
+              } else {
+                toast.error('Error al registrar la propina: ' + dataPropina.message);
+              }
             }
           } catch (error) {
-            toast.error('Error al registrar la propina');
+            toast.warning(
+              `Venta registrada con propina de $${propina.toLocaleString()}, pero hubo un error al distribuirla`
+            );
           }
         }
 
@@ -541,8 +547,8 @@ export default function OrderDetailModal({
   });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl'>
-        <DialogHeader>
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-[56rem] sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className='px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0'>
           <DialogTitle className='text-lg sm:text-xl'>
             Detalles del Pedido - {orderCode}
           </DialogTitle>
@@ -556,207 +562,218 @@ export default function OrderDetailModal({
             <div className='text-red-500 text-sm sm:text-base'>{error}</div>
           </div>
         ) : detail && detail.length > 0 ? (
-          <div className='space-y-6 sm:space-y-8 p-4 sm:p-6 rounded-xl'>
-            {/* Info general minimalista */}
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 border-b pb-4 sm:pb-6 rounded-xl'>
-              {/* Columna izquierda */}
-              <div className='space-y-2 text-xs sm:text-sm text-gray-700'>
-                <div>
-                  <span className='font-medium'>
-                    <b>Fecha:</b>
-                  </span>{' '}
-                  <span className='font-normal'>{formatFecha(detail[0]?.fecha_crea)}</span>
-                </div>
-                <div>
-                  <span className='font-medium'>
-                    <b>Hora:</b>
-                  </span>{' '}
-                  <span className='font-normal'>{formatHora(detail[0]?.fecha_crea)}</span>
-                </div>
-                <div>
-                  <span className='font-medium'>
-                    <b>Código:</b>
-                  </span>{' '}
-                  <span className='font-normal'>{detail[0]?.codigo}</span>
-                </div>
-                <div>
-                  <span className='font-medium'>
-                    <b>Anfitriona(s):</b>
-                  </span>{' '}
-                  <span className='font-normal'>{detail[0]?.anfitriona || '-'}</span>
-                </div>
-                <div>
-                  <span className='font-medium'>
-                    <b>Cliente:</b>
-                  </span>{' '}
-                  <span className='font-normal'>{detail[0]?.cliente}</span>
-                </div>
-                <div>
-                  <span className='font-medium'>
-                    <b>Garzón:</b>
-                  </span>{' '}
-                  <span className='font-normal'>{detail[0]?.garzon}</span>
+          <>
+            {/* Contenido con scroll */}
+            <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+              <div className='space-y-6'>
+                {/* Info general */}
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                  {/* Columna izquierda - Información del pedido */}
+                  <div className='space-y-3'>
+                    <div className='flex justify-between items-center'>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>Fecha y Hora:</span>
+                      <span className='text-xs sm:text-sm font-medium'>
+                        {formatFecha(detail[0]?.fecha_crea)} - {formatHora(detail[0]?.fecha_crea)}
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className='flex justify-between items-center'>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>Código:</span>
+                      <Badge variant='outline' className='text-xs'>{detail[0]?.codigo}</Badge>
+                    </div>
+                    <Separator />
+                    <div className='flex justify-between items-center'>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>Anfitriona(s):</span>
+                      <span className='text-xs sm:text-sm font-medium'>{detail[0]?.anfitriona || '-'}</span>
+                    </div>
+                    <Separator />
+                    <div className='flex justify-between items-center'>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>Cliente:</span>
+                      <span className='text-xs sm:text-sm font-medium'>{detail[0]?.cliente}</span>
+                    </div>
+                    <Separator />
+                    <div className='flex justify-between items-center'>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>Garzón:</span>
+                      <span className='text-xs sm:text-sm font-medium'>{detail[0]?.garzon}</span>
+                    </div>
+
+                    {hasChampagneProducts && cantidadAnfitrionas === 0 && (
+                      <>
+                        <Separator />
+                        <div className='text-xs text-red-500'>
+                          ⚠️ Se requiere al menos una anfitriona para productos de champaña
+                        </div>
+                      </>
+                    )}
+                    {cantidadAnfitrionas > maxAnfitrionas && (
+                      <>
+                        <Separator />
+                        <div className='text-xs text-red-500'>
+                          ⚠️ Excede el límite de {maxAnfitrionas} anfitriona(s) para este tipo de champaña
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Columna derecha - Formulario de pago */}
+                  <div className='space-y-4'>
+                    <div>
+                      <PaymentMethodSelect
+                        value={metodoPago}
+                        onChange={setMetodoPago}
+                        label='Método de pago'
+                        placeholder='Seleccione un método de pago'
+                        required={true}
+                        className={showMetodoPagoError && !metodoPago ? 'border-red-300' : ''}
+                      />
+                      {showMetodoPagoError && !metodoPago && (
+                        <div className='text-xs text-red-500 mt-1'>
+                          ⚠️ El método de pago es obligatorio
+                        </div>
+                      )}
+                    </div>
+                    {hasChampagne && (
+                      <RoomSelect
+                        habitaciones={habitacionesActivas}
+                        value={habitacionId}
+                        onChange={setHabitacionId}
+                        label='Habitación'
+                        placeholder='Seleccione una habitación'
+                        searchPlaceholder='Buscar habitación...'
+                        filterByStatus={1}
+                        showTime={true}
+                      />
+                    )}
+                    <div>
+                      <Label className='block text-xs font-medium text-muted-foreground mb-1'>Propina</Label>
+                      <div className='relative'>
+                        <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
+                        <Input
+                          className='pl-8'
+                          placeholder='Propina'
+                          type='text'
+                          value={propinaDisplayValue}
+                          onChange={e => {
+                            const value = e.target.value;
+                            const numericValue = value.replace(/\D/g, '');
+                            
+                            if (numericValue === '') {
+                              setPropina(0);
+                              setPropinaDisplayValue('');
+                            } else {
+                              const number = parseInt(numericValue);
+                              setPropina(number);
+                              setPropinaDisplayValue(number.toLocaleString('es-CL'));
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className='block text-xs font-medium text-muted-foreground mb-1'>
+                        Total Comisión
+                      </Label>
+                      <div className='relative'>
+                        <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
+                        <Input
+                          className='pl-8 font-semibold'
+                          value={(detail[0]?.total_comision || 0).toLocaleString('es-CL')}
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {hasChampagneProducts && cantidadAnfitrionas === 0 && (
-                  <div className='text-xs text-red-500 mt-1'>
-                    ⚠️ Se requiere al menos una anfitriona para productos de champaña
-                  </div>
-                )}
-                {cantidadAnfitrionas > maxAnfitrionas && (
-                  <div className='text-xs text-red-500 mt-1'>
-                    ⚠️ Excede el límite de {maxAnfitrionas} anfitriona(s) para este tipo de champaña
-                  </div>
-                )}
-              </div>
-              {/* Columna derecha minimalista */}
-              <div className='space-y-3 text-xs sm:text-sm text-gray-700'>
-                <div>
-                  <PaymentMethodSelect
-                    value={metodoPago}
-                    onChange={setMetodoPago}
-                    label='Método de pago'
-                    placeholder='Seleccione un método de pago'
-                    required={true}
-                    className={showMetodoPagoError && !metodoPago ? 'border-red-300' : ''}
-                  />
-                  {showMetodoPagoError && !metodoPago && (
-                    <div className='text-xs text-red-500 mt-1'>
-                      ⚠️ El método de pago es obligatorio
-                    </div>
-                  )}
-                </div>
-                {hasChampagne && (
-                  <RoomSelect
-                    habitaciones={habitacionesActivas}
-                    value={habitacionId}
-                    onChange={setHabitacionId}
-                    label='Habitación'
-                    placeholder='Seleccione una habitación'
-                    searchPlaceholder='Buscar habitación...'
-                    filterByStatus={1} // Solo habitaciones activas (status = 1)
-                    showTime={true} // Mostrar tiempo al lado del nombre
-                  />
-                )}
-                <div>
-                  <Label className='block text-xs font-medium text-gray-500 mb-1'>Propina</Label>
-                  <div className='relative'>
-                    <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4' />
-                    <Input
-                      className='w-full pl-6 sm:pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 text-xs sm:text-sm'
-                      placeholder='Propina'
-                      type='number'
-                      value={isPropinaFocused ? propinaInputValue : propina || ''}
-                      onChange={e => {
-                        const value = e.target.value;
-                        setPropinaInputValue(value);
-                        if (value === '') {
-                          setPropina(0);
-                        } else {
-                          setPropina(Number(value) || 0);
-                        }
-                      }}
-                      onFocus={() => {
-                        setIsPropinaFocused(true);
-                        setPropinaInputValue('');
-                      }}
-                      onBlur={() => {
-                        setIsPropinaFocused(false);
-                        setPropinaInputValue('');
-                      }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className='block text-xs font-medium text-gray-500 mb-1'>
-                    Total Comisión
-                  </Label>
-                  <div className='relative'>
-                    <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4' />
-                    <Input
-                      className='w-full pl-6 sm:pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 font-semibold text-black text-xs sm:text-sm'
-                      value={detail[0]?.total_comision || '0'}
-                      disabled
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Tabla de productos minimalista */}
-            <div className='overflow-x-auto'>
-              <table className='min-w-full text-xs sm:text-sm border-separate border-spacing-y-3'>
-                <thead>
-                  <tr>
-                    <th className='text-center font-medium text-gray-500 pb-3'>Bebida</th>
-                    <th className='text-center font-medium text-gray-500 pb-3'>Cantidad</th>
-                    <th className='text-center font-medium text-gray-500 pb-3'>Precio</th>
-                    <th className='text-center font-medium text-gray-500 pb-3'>Comisión</th>
-                    <th className='text-center font-medium text-gray-500 pb-3'>Sub Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.map((item: any, idx: number) => (
-                    <tr key={idx} className='bg-white'>
-                      <td className='py-2 pr-4 text-center'>{item.producto}</td>
-                      <td className='py-2 pr-4 text-center'>{item.cantidad}</td>
-                      <td className='py-2 pr-4 text-center'>${item.precio?.toLocaleString()}</td>
-                      <td className='py-2 pr-4 text-center'>${item.comision?.toLocaleString()}</td>
-                      <td className='py-2 pr-4 text-center'>${item.subtotal?.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className='mt-4 flex justify-end'>
-                <div className='text-xs sm:text-sm font-semibold text-gray-800'>
-                  SUBTOTAL : ${detail[0]?.total?.toLocaleString()}
-                  {propina > 0 && (
-                    <div className='text-xs sm:text-sm text-blue-600 font-normal'>
-                      + Propina: ${propina.toLocaleString()}
-                    </div>
-                  )}
-                  {recargoAnfitrionas > 0 && (
-                    <div className='text-xs sm:text-sm text-orange-600 font-normal'>
-                      + Recargo anfitrionas: ${recargoAnfitrionas.toLocaleString()}
-                    </div>
-                  )}
-                  <div className='text-sm sm:text-base font-bold text-black'>
-                    TOTAL : $
-                    {((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Botones minimalistas */}
-            <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-6 sm:mt-8'>
-              <Button
-                size='sm'
-                variant='outline'
-                className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-                onClick={handleRegistrarVenta}
-                disabled={isRegistering}
-              >
-                {isRegistering ? 'Registrando...' : 'Registrar Venta'}
-              </Button>
-              <Button
-                size='sm'
-                variant='outline'
-                className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-                onClick={handleRegistrarCuenta}
-                disabled={isRegistering}
-              >
-                {isRegistering ? 'Registrando...' : 'Registrar Cuenta'}
-              </Button>
+                {/* Tabla de productos */}
+                <div className='border rounded-lg p-4'>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className='text-left'>Bebida</TableHead>
+                        <TableHead className='text-center'>Cantidad</TableHead>
+                        <TableHead className='text-center'>Precio</TableHead>
+                        <TableHead className='text-center'>Comisión</TableHead>
+                        <TableHead className='text-right'>Sub Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detail.map((item: any, idx: number) => (
+                        <TableRow key={idx}>
+                          <TableCell className='font-medium'>{item.producto}</TableCell>
+                          <TableCell className='text-center'>{item.cantidad}</TableCell>
+                          <TableCell className='text-center'>${item.precio?.toLocaleString('es-CL')}</TableCell>
+                          <TableCell className='text-center'>${item.comision?.toLocaleString('es-CL')}</TableCell>
+                          <TableCell className='text-right font-medium'>${item.subtotal?.toLocaleString('es-CL')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
 
-              <Button
-                size='sm'
-                variant='outline'
-                className='rounded-full px-4 sm:px-6 bg-red-500 text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-                onClick={handleRechazarPedido}
-              >
-                Rechazar
-              </Button>
+                  <Separator className='my-4' />
+
+                  {/* Resumen de totales */}
+                  <div className='space-y-2'>
+                    <div className='flex justify-between items-center text-sm'>
+                      <span className='text-muted-foreground'>SUBTOTAL:</span>
+                      <span className='font-semibold'>${detail[0]?.total?.toLocaleString('es-CL')}</span>
+                    </div>
+                    {propina > 0 && (
+                      <div className='flex justify-between items-center text-sm'>
+                        <span className='text-blue-600'>+ Propina:</span>
+                        <span className='text-blue-600 font-medium'>${propina.toLocaleString('es-CL')}</span>
+                      </div>
+                    )}
+                    {recargoAnfitrionas > 0 && (
+                      <div className='flex justify-between items-center text-sm'>
+                        <span className='text-orange-600'>+ Recargo anfitrionas:</span>
+                        <span className='text-orange-600 font-medium'>${recargoAnfitrionas.toLocaleString('es-CL')}</span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className='flex justify-between items-center text-base'>
+                      <span className='font-bold'>TOTAL:</span>
+                      <span className='font-bold text-lg'>
+                        ${((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+            {/* Footer con botones - fijo en la parte inferior */}
+            <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4 bg-white'>
+              <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  onClick={handleRegistrarVenta}
+                  disabled={isRegistering}
+                >
+                  {isRegistering ? 'Registrando...' : 'Registrar Venta'}
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  onClick={handleRegistrarCuenta}
+                  disabled={isRegistering}
+                >
+                  {isRegistering ? 'Registrando...' : 'Registrar Cuenta'}
+                </Button>
+
+                <Button
+                  size='sm'
+                  variant='outline'
+                  className='rounded-full px-4 sm:px-6 bg-red-500 text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  onClick={handleRechazarPedido}
+                >
+                  Rechazar
+                </Button>
+              </div>
+            </div>
+          </>
         ) : (
           <div className='text-center py-8 sm:py-12'>
             <div className='text-sm sm:text-base text-gray-500'>No hay detalles disponibles</div>

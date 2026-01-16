@@ -53,15 +53,17 @@ export default function PropinasDetalleModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[700px] max-h-[80vh] overflow-y-auto p-0">
-        <DialogHeader>
-          <DialogTitle className="text-center text-base sm:text-lg font-semibold pt-4 sm:pt-6 pb-2">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[700px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b">
+          <DialogTitle className="text-center text-base sm:text-lg font-semibold">
             Información de los Propinas
           </DialogTitle>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+
         {/* Información del usuario */}
-        <div className="border-b pb-4 mb-4 flex flex-col items-center gap-1 px-4 sm:px-6">
+        <div className="border-b pb-4 mb-4 flex flex-col items-center gap-1">
           <div className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
             <User className="text-gray-500 w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-medium text-xs sm:text-sm">
@@ -82,7 +84,7 @@ export default function PropinasDetalleModal({
         </div>
 
         {/* Tabla de detalles */}
-        <div className="px-4 sm:px-6 pb-2">
+        <div>
           <h3 className="text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600">
             Detalle de las Propinas
           </h3>
@@ -165,17 +167,20 @@ export default function PropinasDetalleModal({
             </Table>
           </div>
         </div>
+        </div>
 
         {/* Botón cerrar */}
-        <div className="flex justify-center mt-4 sm:mt-6 pb-4 sm:pb-6">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onClose}
-            className="rounded-full text-white bg-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto"
-          >
-            Cerrar
-          </Button>
+        <div className="flex-shrink-0 border-t px-4 sm:px-6 py-4">
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-full text-white bg-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

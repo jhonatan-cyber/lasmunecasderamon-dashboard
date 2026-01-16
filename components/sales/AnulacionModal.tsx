@@ -48,8 +48,8 @@ export function AnulacionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[425px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-red-600 mb-4 sm:mb-6 text-lg sm:text-xl">
             <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
             Solicitud Anulación
@@ -60,56 +60,60 @@ export function AnulacionModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {ventaInfo && (
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-xs sm:text-sm text-gray-600">
-                <strong>Codigo de venta:</strong> {ventaInfo.codigo}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-4">
+            {ventaInfo && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xs sm:text-sm text-gray-600">
+                  <strong>Codigo de venta:</strong> {ventaInfo.codigo}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600">
+                  <strong>Cliente:</strong> {ventaInfo.cliente_nombre}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600">
+                  <strong>Total:</strong> $
+                  {ventaInfo.total?.toLocaleString() || 0}
+                </div>
               </div>
-              <div className="text-xs sm:text-sm text-gray-600">
-                <strong>Cliente:</strong> {ventaInfo.cliente_nombre}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600">
-                <strong>Total:</strong> $
-                {ventaInfo.total?.toLocaleString() || 0}
-              </div>
-            </div>
-          )}
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="motivo" className="text-sm sm:text-base font-medium">
-              Motivo de la anulación *
-            </Label>
-            <Textarea
-              id="motivo"
-              placeholder="Describe el motivo de la anulación..."
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              className="min-h-[100px] text-sm sm:text-base"
-              required
-            />
+            <div className="space-y-2">
+              <Label htmlFor="motivo" className="text-sm sm:text-base font-medium">
+                Motivo de la anulación *
+              </Label>
+              <Textarea
+                id="motivo"
+                placeholder="Describe el motivo de la anulación..."
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                className="min-h-[100px] text-sm sm:text-base"
+                required
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto"
-            onClick={handleCancel}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={loading || !motivo.trim()}
-            size="sm"
-            variant="outline"
-            className="rounded-full bg-black text-white hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
-          >
-            {loading ? "Enviando..." : "Solicitar Anulación"}
-          </Button>
+        <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto"
+              onClick={handleCancel}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={loading || !motivo.trim()}
+              size="sm"
+              variant="outline"
+              className="rounded-full bg-black text-white hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
+            >
+              {loading ? "Enviando..." : "Solicitar Anulación"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

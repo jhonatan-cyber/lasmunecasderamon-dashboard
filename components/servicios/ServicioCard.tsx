@@ -72,84 +72,34 @@ export default function ServicioCard({
   };
 
   const handleStopTimer = async () => {
-    try {
-      // Mostrar confirmación antes de finalizar
-      const Swal = (await import('sweetalert2')).default;
-      const result = await Swal.fire({
-        title: '¿Finalizar Servicio?',
-        html: `
-          <div class="text-left">
-            <p><strong>Servicio:</strong> ${servicio.codigo}</p>
-            <p><strong>Habitación:</strong> ${servicio.habitacion_numero || 'N/A'}</p>
-            <p><strong>Cliente:</strong> ${servicio.cliente_nombre || 'N/A'}</p>
-            <p class="mt-3 text-orange-600"><strong>¿Estás seguro de que quieres finalizar este servicio?</strong></p>
-          </div>
-        `,
-        icon: 'question',
-        confirmButtonText: 'Sí, Finalizar',
-        confirmButtonColor: '#dc2626',
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#6b7280',
-        showCancelButton: true,
-        allowOutsideClick: false,
-        customClass: {
-          popup: 'swal2-custom-popup',
-          title: 'swal2-custom-title',
-          htmlContainer: 'swal2-custom-html',
-          confirmButton: 'swal2-confirm-sm-outline',
-          cancelButton: 'swal2-cancel-sm-outline'
-        }
-      });
+    const confirmed = confirm(
+      `¿Finalizar Servicio?\n\nServicio: ${servicio.codigo}\nHabitación: ${servicio.habitacion_numero || 'N/A'}\nCliente: ${servicio.cliente_nombre || 'N/A'}\n\n¿Estás seguro de que quieres finalizar este servicio?`
+    );
 
-      if (result.isConfirmed) {
-        try {
-          // Finalizar el servicio en el backend
-          const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ estado: 0 })
-          });
+    if (confirmed) {
+      try {
+        // Finalizar el servicio en el backend
+        const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ estado: 0 })
+        });
 
-          if (response.ok) {
-            // Llamar al callback del padre para actualizar la lista
-            if (onStopTimer) {
-              onStopTimer(servicio.id_servicio!);
-            }
-            // Detener el timer global
-            stopTimerByServicioId(servicio.id_servicio!);
-            toast.success('Servicio finalizado exitosamente');
-          } else {
-            toast.error('Error al finalizar el servicio');
+        if (response.ok) {
+          // Llamar al callback del padre para actualizar la lista
+          if (onStopTimer) {
+            onStopTimer(servicio.id_servicio!);
           }
-        } catch (error) {
+          // Detener el timer global
+          stopTimerByServicioId(servicio.id_servicio!);
+          toast.success('Servicio finalizado exitosamente');
+        } else {
           toast.error('Error al finalizar el servicio');
         }
-      }
-    } catch (error) {
-      if (confirm('¿Estás seguro de que quieres finalizar este servicio?')) {
-        try {
-          const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ estado: 0 })
-          });
-
-          if (response.ok) {
-            if (onStopTimer) {
-              onStopTimer(servicio.id_servicio!);
-            }
-            stopTimerByServicioId(servicio.id_servicio!);
-            toast.success('Servicio finalizado exitosamente');
-          } else {
-            toast.error('Error al finalizar el servicio');
-          }
-        } catch (error) {
-          toast.error('Error al finalizar el servicio');
-        }
+      } catch (error) {
+        toast.error('Error al finalizar el servicio');
       }
     }
   };

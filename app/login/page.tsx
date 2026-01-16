@@ -239,7 +239,7 @@ export default function LoginPage() {
       e.preventDefault();
       // Validar que ambos campos estén completos
       if (loginData.email.trim() === '') {
-        toast.error('Por favor complete el campo de correo');
+        toast.error('Por favor complete el campo de usuario');
         emailInputRef.current?.focus();
         return;
       }
@@ -297,12 +297,21 @@ export default function LoginPage() {
                     e.preventDefault();
                     setLoading(true);
                     try {
+                      // Agregar dominio si no está presente
+                      let emailToSend = loginData.email.trim();
+                      if (!emailToSend.includes('@')) {
+                        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+                      }
+
                       const baseUrl = getBaseUrl();
                       const res = await fetch(`${baseUrl}/api/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify(loginData)
+                        body: JSON.stringify({
+                          ...loginData,
+                          email: emailToSend
+                        })
                       });
 
                       const data = await res.json();
@@ -348,20 +357,23 @@ export default function LoginPage() {
                 >
                   <div>
                     <Label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300'>
-                      Correo
+                      Usuario
                     </Label>
                     <div className='relative'>
                       <Mail className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none mr-2' />
                       <Input
                         ref={emailInputRef}
                         type='text'
-                        placeholder=' Correo electrónico'
-                        autoComplete='email'
+                        placeholder='admin, pepe, lizi...'
+                        autoComplete='username'
                         className='pl-10 bg-white dark:bg-gray-800  dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400  transition-all duration-300'
                         value={loginData.email}
                         onChange={e => setLoginData({ ...loginData, email: e.target.value })}
                         onKeyDown={e => handleKeyDown(e, passwordInputRef)}
                       />
+                      <span className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none'>
+                        @lasmuñecasderamon.com
+                      </span>
                     </div>
                   </div>
 
@@ -501,13 +513,19 @@ export default function LoginPage() {
                     }
                     setLoading(true);
                     try {
+                      // Agregar dominio si no está presente
+                      let emailToSend = loginData.email.trim();
+                      if (!emailToSend.includes('@')) {
+                        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+                      }
+
                       const baseUrl = getBaseUrl();
                       const res = await fetch(`${baseUrl}/api/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
                         body: JSON.stringify({
-                          email: loginData.email,
+                          email: emailToSend,
                           password: loginData.password,
                           codigo
                         })

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, User, ChevronDown, Menu, Settings } from 'lucide-react';
+import { Bell, User, ChevronDown, Menu, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -31,7 +31,7 @@ export function Header() {
   const { orders, refetch, orderDetail, fetchOrderDetail, isDetailLoading, detailError } =
     useOrders();
   const { user, loading: userLoading } = useCurrentUser();
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isCollapsed, toggleCollapse } = useSidebar();
   const { imageVersion } = useUserImage();
   const { hasPermission } = useUserPermissions();
   const { hasOpenCaja } = useCashRegisterStatus();
@@ -205,6 +205,21 @@ export function Header() {
           className='lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-neutral-800'
         >
           <Menu className='h-5 w-5' />
+        </Button>
+
+        {/* Botón de colapsar/expandir sidebar para desktop */}
+        <Button
+          variant='ghost'
+          size='icon'
+          onClick={toggleCollapse}
+          className='hidden lg:flex p-2 hover:bg-gray-100 dark:hover:bg-neutral-800'
+          title={isCollapsed ? 'Expandir sidebar' : 'Contraer sidebar'}
+        >
+          {isCollapsed ? (
+            <ChevronRight className='h-5 w-5 text-gray-500 dark:text-neutral-400' />
+          ) : (
+            <ChevronLeft className='h-5 w-5 text-gray-500 dark:text-neutral-400' />
+          )}
         </Button>
 
         {/* Espacio para el logo o título */}

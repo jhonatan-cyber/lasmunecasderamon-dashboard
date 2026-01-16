@@ -74,6 +74,20 @@ export default function NewOrder() {
     );
   };
 
+  // Handler para toggle de comisión
+  const handleToggleComision = (index: number) => {
+    setProductos((prev: any[]) => 
+      prev.map((producto, i) => 
+        i === index 
+          ? {
+              ...producto,
+              generaComision: producto.generaComision === 1 ? 0 : 1,
+            }
+          : producto
+      )
+    );
+  };
+
   // Handler para submit (mock)
   const handleSubmit = () => {
     // Si no hay cliente seleccionado, usar cliente ID 1 por defecto
@@ -125,6 +139,7 @@ export default function NewOrder() {
           onAddProducto={handleAddProducto}
           onRemoveProducto={handleRemoveProducto}
           onUpdateCantidad={handleUpdateCantidad}
+          onToggleComision={handleToggleComision}
           onSubmit={handleSubmit}
           searchCliente={searchCliente}
           setSearchCliente={setSearchCliente}

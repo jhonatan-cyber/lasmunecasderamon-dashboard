@@ -231,7 +231,7 @@ export default function Users() {
             className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
           >
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Nuevo
+            Nuevo Usuario
           </Button>
         </div>
       </div>
@@ -272,34 +272,61 @@ export default function Users() {
       )}
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl'>
-          <DialogHeader>
+        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl max-h-[90vh] flex flex-col p-0'>
+          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-lg sm:text-xl'>Detalles del Usuario</DialogTitle>
           </DialogHeader>
-          {selectedUser && (
-            <UserDetails
-              user={selectedUser}
-              onEdit={() => {
-                setIsDetailsOpen(false);
-                handleEditUser(selectedUser);
-              }}
-              onClose={() => setIsDetailsOpen(false)}
-            />
-          )}
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+            {selectedUser && (
+              <UserDetails
+                user={selectedUser}
+                onEdit={() => {
+                  setIsDetailsOpen(false);
+                  handleEditUser(selectedUser);
+                }}
+                onClose={() => setIsDetailsOpen(false)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-3xl'>
-          <DialogHeader>
+        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
+          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-lg sm:text-xl'>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
           </DialogHeader>
-          <UserForm
-            user={selectedUser || undefined}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-            isEditMode={isEditing}
-          />
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+            <UserForm
+              user={selectedUser || undefined}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              isEditMode={isEditing}
+              hideButtons={true}
+            />
+          </div>
+          <div className='flex-shrink-0 border-t px-6 py-4'>
+            <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full'>
+              <Button
+                type='button'
+                size='default'
+                className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
+                variant='outline'
+                onClick={handleFormCancel}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type='submit'
+                form='user-form'
+                size='default'
+                className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+                variant='outline'
+              >
+                {isEditing ? 'Actualizar' : 'Guardar'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

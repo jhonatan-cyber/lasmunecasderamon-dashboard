@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -501,16 +500,18 @@ export default function AgregarProductosModal({
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-center mb-5">
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+            <div className="flex items-center justify-center">
               <DialogTitle className="text-xl font-semibold">
                 Agregar Productos a la Cuenta
               </DialogTitle>
             </div>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+
+            <div className="space-y-6">
             {/* Tabla de búsqueda - Contenedor independiente */}
             <div className="w-full">
               <ProductSearch
@@ -641,6 +642,7 @@ export default function AgregarProductosModal({
               </Table>
             </div>
           </div>
+        </div>
         </DialogContent>
       </Dialog>
 
