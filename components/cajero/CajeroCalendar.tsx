@@ -165,7 +165,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       horasExtras: horasExtrasMatch
     };
 
-  
+
 
     return result;
   };
@@ -546,13 +546,11 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
             return (
               <div
                 key={index}
-                className={`min-h-[90px] p-2 border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors select-none ${
-                  isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                } ${
-                  isSelectedDay
+                className={`min-h-[90px] p-2 border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors select-none ${isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                  } ${isSelectedDay
                     ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600'
                     : ''
-                } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
+                  } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
                 onMouseDown={e => {
                   e.preventDefault();
                   handleMouseDown(day.date);
@@ -561,13 +559,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                 onClick={() => handleDateClick(day.date)}
               >
                 <div
-                  className={`text-sm font-medium mb-2 ${
-                    !day.isCurrentMonth
+                  className={`text-sm font-medium mb-2 ${!day.isCurrentMonth
                       ? 'text-gray-400 dark:text-gray-600'
                       : isCurrentDay
                         ? 'text-blue-600 dark:text-blue-400 font-bold'
                         : 'text-gray-900 dark:text-white'
-                  }`}
+                    }`}
                 >
                   {day.date.getDate()}
                 </div>
@@ -756,215 +753,211 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
           </DialogHeader>
 
           <div className='flex-1 overflow-y-auto px-6 py-4'>
+            <div className='space-y-4 text-center'>
+              {/* Botones de tipo de datos */}
+              <div className='flex justify-center gap-4 flex-wrap'>
+                {Object.entries(dataTypeConfig).map(([key, config]) => {
+                  const Icon = config.icon;
+                  const dateStrs = selectedDates.map(date => date.toISOString().split('T')[0]);
 
-          <div className='space-y-4 text-center'>
-            {/* Botones de tipo de datos */}
-            <div className='flex justify-center gap-4 flex-wrap'>
-              {Object.entries(dataTypeConfig).map(([key, config]) => {
-                const Icon = config.icon;
-                const dateStrs = selectedDates.map(date => date.toISOString().split('T')[0]);
+                  // Usar los conteos calculados previamente
+                  const count = modalCounts[key] || 0;
 
-                // Usar los conteos calculados previamente
-                const count = modalCounts[key] || 0;
-
-                return (
-                  <Button
-                    key={key}
-                    className={`flex-1 max-w-48 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3 ${
-                      selectedDataType === key
-                        ? 'bg-black text-white hover:bg-gray-800'
-                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
-                    variant={selectedDataType === key ? 'default' : 'outline'}
-                    onClick={() => setSelectedDataType(key as any)}
-                  >
-                    <Icon className={`w-5 h-5 mr-3 ${config.color}`} />
-                    {config.title} ({count})
-                  </Button>
-                );
-              })}
-            </div>
-
-            {/* Total */}
-            <div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4'>
-              <div className='flex items-center justify-center gap-2'>
-                <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
-                <span className='text-2xl font-bold text-blue-600'>
-                  ${modalTotal.toLocaleString('es-ES')}
-                </span>
+                  return (
+                    <Button
+                      key={key}
+                      className={`flex-1 max-w-48 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3 ${selectedDataType === key
+                          ? 'bg-black text-white hover:bg-gray-800'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                        }`}
+                      variant={selectedDataType === key ? 'default' : 'outline'}
+                      onClick={() => setSelectedDataType(key as any)}
+                    >
+                      <Icon className={`w-5 h-5 mr-3 ${config.color}`} />
+                      {config.title} ({count})
+                    </Button>
+                  );
+                })}
               </div>
-              <div className='text-sm text-gray-600 mt-1'>
-                (Asistencias + Propinas + Horas Extras - Anticipos)
+
+              {/* Total */}
+              <div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4'>
+                <div className='flex items-center justify-center gap-2'>
+                  <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
+                  <span className='text-2xl font-bold text-blue-600'>
+                    ${modalTotal.toLocaleString('es-ES')}
+                  </span>
+                </div>
+                <div className='text-sm text-gray-600 mt-1'>
+                  (Asistencias + Propinas + Horas Extras - Anticipos)
+                </div>
+              </div>
+
+              {/* Tabla de datos */}
+              <div className='mt-6 border rounded-lg overflow-x-auto'>
+                {isLoadingSelectedData ? (
+                  <div className='p-8 text-center'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
+                      Cargando datos...
+                    </div>
+                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
+                      Obteniendo {dataTypeConfig[selectedDataType].title.toLowerCase()} para las
+                      fechas seleccionadas
+                    </div>
+                  </div>
+                ) : getSelectedDateData().length === 0 ? (
+                  <div className='p-8 text-center'>
+                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
+                      No hay datos
+                    </div>
+                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
+                      No se encontraron {dataTypeConfig[selectedDataType].title.toLowerCase()} para
+                      las fechas seleccionadas
+                    </div>
+                  </div>
+                ) : (
+                  <div className='overflow-x-auto'>
+                    <table className='w-full'>
+                      <thead>
+                        <tr className='border-b border-gray-200'>
+                          <th className='text-center py-3 px-4 font-medium text-gray-900'>#</th>
+                          {selectedDataType === 'asistencias' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>HORA</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                SUELDO
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                APORTE
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                SUELDO FINAL
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                          {selectedDataType === 'anticipos' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                          {selectedDataType === 'propinas' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                          {selectedDataType === 'horasExtras' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>HORAS</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getSelectedDateData().map((item, index) => (
+                          <tr key={index} className='border-b border-gray-100 hover:bg-gray-50'>
+                            <td className='py-3 px-4 text-center'>
+                              <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm mx-auto'>
+                                {index + 1}
+                              </div>
+                            </td>
+                            {selectedDataType === 'asistencias' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha)}
+                                    </div>
+                                    <div className='text-sm text-gray-500'>{item.hora || 'N/A'}</div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 'N/A'}</td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {' '}
+                                  {formatCurrencyNoDecimals(item.sueldo || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {' '}
+                                  {formatCurrencyNoDecimals(item.aporte || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {' '}
+                                  {formatCurrencyNoDecimals(item.sueldo_final || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                              </>
+                            )}
+                            {selectedDataType === 'anticipos' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha_crea)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {formatCurrencyNoDecimals(item.monto || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                              </>
+                            )}
+                            {selectedDataType === 'propinas' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha_crea)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {formatCurrencyNoDecimals(item.monto || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                              </>
+                            )}
+                            {selectedDataType === 'horasExtras' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha_crea)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 0}</td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {formatCurrencyNoDecimals(item.monto || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                              </>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Tabla de datos */}
-            <div className='mt-6 border rounded-lg overflow-x-auto'>
-              {isLoadingSelectedData ? (
-                <div className='p-8 text-center'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
-                  <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                    Cargando datos...
-                  </div>
-                  <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                    Obteniendo {dataTypeConfig[selectedDataType].title.toLowerCase()} para las
-                    fechas seleccionadas
-                  </div>
-                </div>
-              ) : getSelectedDateData().length === 0 ? (
-                <div className='p-8 text-center'>
-                  <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                    No hay datos
-                  </div>
-                  <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                    No se encontraron {dataTypeConfig[selectedDataType].title.toLowerCase()} para
-                    las fechas seleccionadas
-                  </div>
-                </div>
-              ) : (
-                <div className='overflow-x-auto'>
-                  <table className='w-full'>
-                                         <thead>
-                       <tr className='border-b border-gray-200'>
-                         <th className='text-center py-3 px-4 font-medium text-gray-900'>#</th>
-                         {selectedDataType === 'asistencias' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>HORA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               SUELDO
-                             </th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               APORTE
-                             </th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               SUELDO FINAL
-                             </th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                         {selectedDataType === 'anticipos' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                         {selectedDataType === 'propinas' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                         {selectedDataType === 'horasExtras' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>HORAS</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                       </tr>
-                     </thead>
-                    <tbody>
-                                             {getSelectedDateData().map((item, index) => (
-                         <tr key={index} className='border-b border-gray-100 hover:bg-gray-50'>
-                           <td className='py-3 px-4 text-center'>
-                             <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm mx-auto'>
-                               {index + 1}
-                             </div>
-                           </td>
-                           {selectedDataType === 'asistencias' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha)}
-                                   </div>
-                                   <div className='text-sm text-gray-500'>{item.hora || 'N/A'}</div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 'N/A'}</td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                 {' '}
-                                 {formatCurrencyNoDecimals(item.sueldo || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                 {' '}
-                                 {formatCurrencyNoDecimals(item.aporte || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                 {' '}
-                                 {formatCurrencyNoDecimals(item.sueldo_final || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                           {selectedDataType === 'anticipos' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha_crea)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                  {formatCurrencyNoDecimals(item.monto || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                           {selectedDataType === 'propinas' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha_crea)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                  {formatCurrencyNoDecimals(item.monto || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                           {selectedDataType === 'horasExtras' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha_crea)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 0}</td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                  {formatCurrencyNoDecimals(item.monto || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                         </tr>
-                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          </div>
           </div>
 
           <div className="flex-shrink-0 border-t px-6 py-4">
