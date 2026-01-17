@@ -286,8 +286,7 @@ export default function CobrarCuentaModal({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
-
-        <div className="space-y-8 rounded-xl">
+          <div className="space-y-8 rounded-xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b pb-6 rounded-xl">
             <div className="space-y-2 text-sm text-gray-700">
               <div>
@@ -396,18 +395,18 @@ export default function CobrarCuentaModal({
                             className="w-full mb-2"
                           />
                         </div>
-                        {habitacionesFiltradas.length > 0 &&
+                        {habitacionesFiltradas.length > 0 ? (
                           habitacionesFiltradas.map((room) => (
                             <SelectItem key={room.id} value={String(room.id)}>
                               {room.name}
                             </SelectItem>
-                          ))}
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-400 px-2 py-2">
+                            No hay habitaciones activas
+                          </div>
+                        )}
                       </SelectContent>
-                      {habitacionesFiltradas.length === 0 && (
-                        <div className="text-xs text-gray-400 mt-2">
-                          No hay habitaciones activas
-                        </div>
-                      )}
                     </Select>
                   </div>
                 </div>
@@ -519,6 +518,7 @@ export default function CobrarCuentaModal({
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
 

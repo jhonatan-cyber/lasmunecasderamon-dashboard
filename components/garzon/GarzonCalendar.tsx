@@ -757,7 +757,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-4 text-center'>
-            {/* Botones de tipo de datos */}
+              {/* Botones de tipo de datos */}
             <div className='flex justify-center gap-4 flex-wrap'>
               {Object.entries(dataTypeConfig).map(([key, config]) => {
                 const Icon = config.icon;
@@ -961,8 +961,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                 </div>
               )}
             </div>
-          </div>
-
             </div>
           </div>
 
