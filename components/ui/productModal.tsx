@@ -64,19 +64,19 @@ export default function SaleProductModal({
           </DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 py-4">
-        {loading ? (
-          <div className="text-center text-gray-400 py-8 flex justify-center items-center">
-            Cargando productos...
-          </div>
-        ) : (
-          <div className="w-full">
-            {!Array.isArray(productos) || productos.length === 0 ? (
-              <div className="text-center text-gray-400 py-8 w-full">
-                No hay productos en esta categoría.
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
+          {loading ? (
+            <div className="text-center text-gray-400 py-8 flex justify-center items-center">
+              Cargando productos...
+            </div>
+          ) : (
+            <div className="w-full">
+              {!Array.isArray(productos) || productos.length === 0 ? (
+                <div className="text-center text-gray-400 py-8 w-full">
+                  No hay productos en esta categoría.
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -172,9 +172,10 @@ export default function SaleProductModal({
                     />
                   </div>
                 )}
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex-shrink-0 border-t px-6 py-4">
           <div className="w-full flex justify-center">
