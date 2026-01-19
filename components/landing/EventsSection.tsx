@@ -101,8 +101,8 @@ export default function EventsSection() {
                                         }`}
                                 >
                                     <div
-                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-[10000ms] ease-linear transform scale-105 hover:scale-110"
-                                        style={{ backgroundImage: `url('${img.url}')` }}
+                                        className="absolute inset-0 bg-cover bg-center transition-transform ease-linear transform scale-105 hover:scale-110"
+                                        style={{ backgroundImage: `url('${img.url}')`, transitionDuration: '10000ms' }}
                                     ></div>
                                     <div className='absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60'></div>
                                 </div>
