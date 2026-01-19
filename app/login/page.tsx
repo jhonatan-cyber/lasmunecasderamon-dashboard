@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Moon, Sun, Monitor, Mail, Lock } from 'lucide-react';
+import { Moon, Sun, Monitor, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { toast } from 'sonner';
 
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<'login' | 'codigo'>('login');
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [registerData, setRegisterData] = useState({
     nombre: '',
     apellido: '',
@@ -360,20 +361,27 @@ export default function LoginPage() {
                       Usuario
                     </Label>
                     <div className='relative'>
-                      <Mail className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none mr-2' />
+                      <Mail className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none' />
                       <Input
                         ref={emailInputRef}
                         type='text'
                         placeholder='admin, pepe, lizi...'
                         autoComplete='username'
-                        className='pl-10 bg-white dark:bg-gray-800  dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400  transition-all duration-300'
+                        className='pl-12 pr-4 bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 transition-all duration-300'
                         value={loginData.email}
                         onChange={e => setLoginData({ ...loginData, email: e.target.value })}
                         onKeyDown={e => handleKeyDown(e, passwordInputRef)}
                       />
-                      <span className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none'>
-                        @lasmuñecasderamon.com
-                      </span>
+                      {loginData.email && (
+                        <span 
+                          className='absolute top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none transition-all duration-200'
+                          style={{
+                            left: `${48 + (loginData.email.length * 8.5)}px`
+                          }}
+                        >
+                          @lasmuñecasderamon.com
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -382,12 +390,12 @@ export default function LoginPage() {
                       Contraseña
                     </Label>
                     <div className='relative'>
-                      <Lock className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none mr-2' />
+                      <Lock className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none' />
                       <Input
                         ref={passwordInputRef}
-                        type='password'
-                        placeholder=' Contraseña'
-                        className='pl-10 bg-white dark:bg-gray-800  dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400  transition-all duration-300'
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder='Contraseña'
+                        className='pl-12 pr-12 bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 transition-all duration-300'
                         value={loginData.password}
                         onChange={e =>
                           setLoginData({
@@ -397,6 +405,18 @@ export default function LoginPage() {
                         }
                         onKeyDown={handlePasswordKeyDown}
                       />
+                      <button
+                        type='button'
+                        onClick={() => setShowPassword(!showPassword)}
+                        className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200'
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        {showPassword ? (
+                          <EyeOff className='w-5 h-5' />
+                        ) : (
+                          <Eye className='w-5 h-5' />
+                        )}
+                      </button>
                     </div>
                   </div>
 
