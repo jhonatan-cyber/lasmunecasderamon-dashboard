@@ -51,11 +51,20 @@ export default function NuevoServicioPage() {
     tiempo: 0,
   });
 
+  // Modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [servicioDataToSubmit, setServicioDataToSubmit] = useState<any>(null);
+
   // Calculated values
   const [precioHabitacion, setPrecioHabitacion] = useState(0);
   const [tiempoHabitacion, setTiempoHabitacion] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
   const [total, setTotal] = useState(0);
+
+  // Format number with thousand separators
+  const formatNumberWithSeparators = (value: number): string => {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
 
   // Generate random code function
   const generateCode = () => {
@@ -70,10 +79,25 @@ export default function NuevoServicioPage() {
   // Calculate totals when form data changes
   useEffect(() => {
     const nuevoSubTotal = formData.precio_servicio; // Subtotal es igual al precio de servicio
-    const nuevoTotal = nuevoSubTotal + precioHabitacion + formData.iva; // Total = subtotal + precio_habitacion + iva
+    // Precio de habitación multiplicado por cantidad de chicas seleccionadas
+    const precioHabitacionTotal = precioHabitacion * (formData.usuarios.length || 1);
+    let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + formData.iva; // Total = subtotal + (precio_habitacion * cantidad_chicas) + iva
+    
+    // Redondear total y sumar excedente al IVA solo si el método de pago es tarjeta
+    let totalFinal = nuevoTotal;
+    let nuevoIVA = formData.iva;
+    
+    if (formData.metodo_pago === "tarjeta") {
+      const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
+      const excedente = totalRedondeado - nuevoTotal;
+      totalFinal = totalRedondeado;
+      nuevoIVA = formData.iva + excedente;
+    }
+    
     setSubTotal(nuevoSubTotal);
-    setTotal(nuevoTotal);
-  }, [formData.precio_servicio, precioHabitacion, formData.iva]);
+    setTotal(totalFinal);
+    setFormData((prev) => ({ ...prev, iva: nuevoIVA }));
+  }, [formData.precio_servicio, precioHabitacion, formData.iva, formData.usuarios.length, formData.metodo_pago]);
 
   // Update habitacion data when selected
   useEffect(() => {
@@ -99,12 +123,16 @@ export default function NuevoServicioPage() {
     }
   }, [formData.habitacion_id, habitaciones]);
 
-  // Reset IVA to 0 when payment method is not "tarjeta"
+  // Calculate IVA (20%) when payment method is "tarjeta"
   useEffect(() => {
-    if (formData.metodo_pago !== "tarjeta") {
+    if (formData.metodo_pago === "tarjeta") {
+      // Calcular IVA como 20% del precio de servicio
+      const ivaCalculado = Math.floor(formData.precio_servicio * 0.20);
+      setFormData((prev) => ({ ...prev, iva: ivaCalculado }));
+    } else {
       setFormData((prev) => ({ ...prev, iva: 0 }));
     }
-  }, [formData.metodo_pago]);
+  }, [formData.metodo_pago, formData.precio_servicio]);
 
   const handleSubmit = async () => {
     if (formData.usuarios.length === 0) {
@@ -115,8 +143,8 @@ export default function NuevoServicioPage() {
       toast.error("Selecciona una habitación");
       return;
     }
-    if (formData.precio_servicio <= 0) {
-      toast.error("El precio de servicio debe ser mayor a 0");
+    if (formData.precio_servicio < 0) {
+      toast.error("El precio de servicio no puede ser negativo");
       return;
     }
     if (!formData.metodo_pago) {
@@ -124,33 +152,44 @@ export default function NuevoServicioPage() {
       return;
     }
 
+    // Preparar datos del servicio pero no enviar aún
+    const servicioData = {
+      codigo: generateCode(),
+      cliente_id: formData.cliente_id || null,
+      habitacion_id: formData.habitacion_id,
+      precio_habitacion: precioHabitacion,
+      precio_servicio: formData.precio_servicio,
+      iva: formData.iva,
+      sub_total: subTotal, // Es igual al precio de servicio
+      total: total, // Subtotal + precio_habitacion + iva
+      tiempo: formData.tiempo,
+      metodo_pago: formData.metodo_pago,
+      usuarios: formData.usuarios, // Para la tabla detalle_servicios
+    };
+
+    // Log solo en desarrollo para debug
+    if (process.env.NODE_ENV === "development") {
+      console.log("Datos del servicio a enviar:", servicioData);
+    }
+
+    // Guardar datos y mostrar modal de confirmación
+    setServicioDataToSubmit(servicioData);
+    setShowConfirmModal(true);
+  };
+
+  // Función para enviar el servicio después de confirmar
+  const confirmAndSubmit = async () => {
+    if (!servicioDataToSubmit) return;
+
     setLoading(true);
+    setShowConfirmModal(false);
     try {
-      const servicioData = {
-        codigo: generateCode(),
-        cliente_id: formData.cliente_id || 1,
-        habitacion_id: formData.habitacion_id,
-        precio_habitacion: precioHabitacion,
-        precio_servicio: formData.precio_servicio,
-        iva: formData.iva,
-        sub_total: subTotal, // Es igual al precio de servicio
-        total: total, // Subtotal + precio_habitacion + iva
-        tiempo: formData.tiempo,
-        metodo_pago: formData.metodo_pago,
-        usuarios: formData.usuarios, // Para la tabla detalle_servicios
-      };
-
-      // Log solo en desarrollo para debug
-      if (process.env.NODE_ENV === "development") {
-        console.log("Datos del servicio a enviar:", servicioData);
-      }
-
       const response = await fetch("/api/servicios", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(servicioData),
+        body: JSON.stringify(servicioDataToSubmit),
       });
 
       const data = await response.json();
@@ -158,17 +197,17 @@ export default function NuevoServicioPage() {
       if (data.success) {
         // Iniciar el timer para el nuevo servicio
         const habitacion = habitaciones.find(
-          (h) => (h.id_habitacion || h.id) === formData.habitacion_id
+          (h) => (h.id_habitacion || h.id) === servicioDataToSubmit.habitacion_id
         );
 
         if (habitacion) {
           startTimer(
             data.data.id_servicio, // El backend devuelve el ID en data.id_servicio
-            formData.habitacion_id!,
+            servicioDataToSubmit.habitacion_id,
             habitacion.nombre || habitacion.name || habitacion.numero || "N/A",
-            formData.tiempo,
-            servicioData.codigo, // Usar el código que generamos
-            clientes.find((c) => c.id_cliente === formData.cliente_id)
+            servicioDataToSubmit.tiempo,
+            servicioDataToSubmit.codigo, // Usar el código que generamos
+            clientes.find((c) => c.id_cliente === servicioDataToSubmit.cliente_id)
               ?.nombre || ""
           );
         } else {
@@ -286,18 +325,27 @@ export default function NuevoServicioPage() {
               <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                 <DollarSign className="w-4 h-4" />
               </span>
-              <Input
-                type="number"
+              <input
+                type="text"
                 value={
-                  formData.precio_servicio === 0 ? "" : formData.precio_servicio
+                  formData.precio_servicio === 0 ? "" : formatNumberWithSeparators(formData.precio_servicio)
                 }
-                onChange={(e) =>
+                onBlur={(e) => {
+                  if (e.target.value === "") {
+                    setFormData({
+                      ...formData,
+                      precio_servicio: 0,
+                    });
+                  }
+                }}
+                onChange={(e) => {
+                  const numericValue = e.target.value.replace(/\./g, "");
                   setFormData({
                     ...formData,
-                    precio_servicio: parseInt(e.target.value) || 0,
-                  })
-                }
-                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base"
+                    precio_servicio: numericValue === "" ? 0 : Math.max(0, parseInt(numericValue) || 0),
+                  });
+                }}
+                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base rounded-full"
                 placeholder="0"
               />
             </div>
@@ -318,18 +366,21 @@ export default function NuevoServicioPage() {
           {/* IVA */}
           <div>
             <Label className="block text-xs font-medium text-gray-500 mb-1">
-              Impuesto IVA
+              Impuesto IVA (20%)
             </Label>
             <div className="relative">
               <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                 <Coins className="w-4 h-4" />
               </span>
-              <Input
-                type="number"
-                value={formData.iva === 0 ? "" : formData.iva}
-                onChange={(e) =>
-                  setFormData({ ...formData, iva: parseInt(e.target.value) || 0 })
-                }
+              <input
+                type="text"
+                value={formData.iva === 0 ? "" : formatNumberWithSeparators(formData.iva)}
+                onChange={(e) => {
+                  if (formData.metodo_pago === "tarjeta") {
+                    const numericValue = e.target.value.replace(/\./g, "");
+                    setFormData({ ...formData, iva: numericValue === "" ? 0 : Math.max(0, parseInt(numericValue) || 0) });
+                  }
+                }}
                 className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base"
                 placeholder="0"
                 disabled={formData.metodo_pago !== "tarjeta"}
@@ -358,6 +409,42 @@ export default function NuevoServicioPage() {
           </Button>
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 sm:p-8 shadow-lg max-w-md mx-4">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+              Confirmar creación de servicio
+            </h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
+              ¿Deseas crear el servicio y comenzar el tiempo?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConfirmModal(false)}
+                disabled={loading}
+                className="px-4 sm:px-6 py-2 text-sm sm:text-base"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={confirmAndSubmit}
+                disabled={loading}
+                className="gap-2 bg-black text-white hover:bg-gray-800 px-4 sm:px-6 py-2 text-sm sm:text-base"
+              >
+                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
