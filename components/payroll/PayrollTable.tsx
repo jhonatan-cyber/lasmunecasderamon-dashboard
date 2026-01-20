@@ -154,6 +154,7 @@ export default function PayrollTable({
         message={modalState.message}
         confirmText={modalState.confirmText}
         cancelText={modalState.cancelText}
+        hideCancel={modalState.hideCancel}
         type={modalState.type}
         onConfirm={modalState.onConfirm || (() => {})}
         onCancel={modalState.onCancel}
