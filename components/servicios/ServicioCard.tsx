@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ export default function ServicioCard({
 }: ServicioCardProps) {
   const { getTimerByServicioId, stopTimerByServicioId, formatTime } = useTimer();
   const timer = getTimerByServicioId(servicio.id_servicio!);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [stopping, setStopping] = useState(false);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -71,36 +74,33 @@ export default function ServicioCard({
     }
   };
 
-  const handleStopTimer = async () => {
-    const confirmed = confirm(
-      `¿Finalizar Servicio?\n\nServicio: ${servicio.codigo}\nHabitación: ${servicio.habitacion_numero || 'N/A'}\nCliente: ${servicio.cliente_nombre || 'N/A'}\n\n¿Estás seguro de que quieres finalizar este servicio?`
-    );
+  const handleStopTimer = () => {
+    setShowConfirm(true);
+  };
 
-    if (confirmed) {
-      try {
-        // Finalizar el servicio en el backend
-        const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ estado: 0 })
-        });
+  const confirmStopTimer = async () => {
+    setStopping(true);
+    try {
+      const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ estado: 0 })
+      });
 
-        if (response.ok) {
-          // Llamar al callback del padre para actualizar la lista
-          if (onStopTimer) {
-            onStopTimer(servicio.id_servicio!);
-          }
-          // Detener el timer global
-          stopTimerByServicioId(servicio.id_servicio!);
-          toast.success('Servicio finalizado exitosamente');
-        } else {
-          toast.error('Error al finalizar el servicio');
-        }
-      } catch (error) {
+      if (response.ok) {
+        if (onStopTimer) onStopTimer(servicio.id_servicio!);
+        stopTimerByServicioId(servicio.id_servicio!);
+        toast.success('Servicio finalizado exitosamente');
+        setShowConfirm(false);
+      } else {
         toast.error('Error al finalizar el servicio');
       }
+    } catch (error) {
+      toast.error('Error al finalizar el servicio');
+    } finally {
+      setStopping(false);
     }
   };
 
@@ -110,6 +110,42 @@ export default function ServicioCard({
         <div className='flex justify-between items-start'>
           <div>
             <CardTitle className='text-base sm:text-lg font-bold text-gray-900 dark:text-neutral-100'>
+
+        {showConfirm && (
+          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+            <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full mx-4'>
+              <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2'>
+                Confirmar finalización
+              </h3>
+              <p className='text-sm sm:text-base text-gray-700 dark:text-neutral-300 mb-4'>
+                Código: {servicio.codigo}
+              </p>
+              <p className='text-sm sm:text-base text-gray-700 dark:text-neutral-300 mb-6'>
+                ¿Deseas finalizar este servicio y detener el tiempo?
+              </p>
+              <div className='flex justify-end gap-3'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setShowConfirm(false)}
+                  disabled={stopping}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='button'
+                  size='sm'
+                  onClick={confirmStopTimer}
+                  disabled={stopping}
+                  className='bg-black text-white hover:bg-gray-800'
+                >
+                  {stopping ? 'Finalizando...' : 'Confirmar'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
               {servicio.codigo}
             </CardTitle>
             <div className='flex items-center gap-2 mt-1'>

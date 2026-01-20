@@ -261,8 +261,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             title: '⏰ Tiempo Terminado',
             message: `El tiempo de la habitación ${timer.roomName} ha terminado`,
             type: 'info',
-            confirmText: 'Entendido',
-            cancelText: 'Cerrar',
+            confirmText: 'Aceptar',
+            hideCancel: true,
             size: 'md'
           });
 
@@ -466,6 +466,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         message={modalState.message}
         confirmText={modalState.confirmText}
         cancelText={modalState.cancelText}
+        hideCancel={modalState.hideCancel}
         type={modalState.type}
         onConfirm={modalState.onConfirm || (() => {})}
         onCancel={modalState.onCancel}

@@ -9,6 +9,7 @@ interface ConfirmModalOptions {
   confirmVariant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   cancelVariant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'sm' | 'md' | 'lg';
+  hideCancel?: boolean;
 }
 
 interface ConfirmModalState extends ConfirmModalOptions {
@@ -25,7 +26,8 @@ export function useConfirmModal() {
     type: 'question',
     confirmText: 'Confirmar',
     cancelText: 'Cancelar',
-    size: 'md'
+    size: 'md',
+    hideCancel: false
   });
 
   const showConfirm = useCallback((options: ConfirmModalOptions): Promise<boolean> => {

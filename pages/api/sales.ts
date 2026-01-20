@@ -393,6 +393,22 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const codigoVenta = generateCode();
     console.log('[SALES POST] Generated code:', codigoVenta);
 
+    // Validar si el cliente existe antes de insertar
+    let clienteIdFinal = null;
+    if (cliente_id) {
+      const clienteExistsSql = 'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
+      const clienteExistsResult = (await query(clienteExistsSql, [cliente_id])) as any[];
+      
+      if (clienteExistsResult && clienteExistsResult.length > 0) {
+        clienteIdFinal = cliente_id;
+        console.log('[SALES POST] Cliente validado:', clienteIdFinal);
+      } else {
+        console.warn('[SALES POST] Cliente no existe o está inactivo, se creará venta sin cliente');
+      }
+    } else {
+      console.log('[SALES POST] No se proporcionó cliente_id, se creará venta sin cliente');
+    }
+
     // Obtener la caja abierta actual
     const cajaAbiertaResult = (await query(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
@@ -416,7 +432,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const ventaResult = (await query(insertVentaSql, [
       codigoVenta,
-      cliente_id || null,
+      clienteIdFinal, // Usar el cliente validado o null
       pedido_id || null,
       habitacion_id || null,
       metodo_pago,

@@ -94,6 +94,7 @@ export function TimerDisplay() {
           message={modalState.message}
           confirmText={modalState.confirmText}
           cancelText={modalState.cancelText}
+          hideCancel={modalState.hideCancel}
           type={modalState.type}
           onConfirm={modalState.onConfirm || (() => {})}
           onCancel={modalState.onCancel}
@@ -224,6 +225,7 @@ export function TimerDisplay() {
         message={modalState.message}
         confirmText={modalState.confirmText}
         cancelText={modalState.cancelText}
+        hideCancel={modalState.hideCancel}
         type={modalState.type}
         onConfirm={modalState.onConfirm || (() => {})}
         onCancel={modalState.onCancel}

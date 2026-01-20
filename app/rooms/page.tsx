@@ -60,7 +60,7 @@ const RoomsPage = () => {
   const handleCreate = async (form: RoomForm) => {
     await createRoom({
       name: toTitleCase(form.name),
-      price: Number(form.price),
+      price: Number(form.price.replace(/\./g, '')),
       time: Number(form.time)
     });
     setOpenDialog(false);
@@ -75,7 +75,7 @@ const RoomsPage = () => {
     if (!editRoom) return;
     await updateRoom(editRoom.id, {
       name: toTitleCase(form.name),
-      price: Number(form.price),
+      price: Number(form.price.replace(/\./g, '')),
       time: Number(form.time)
     });
     setEditRoom(null);
