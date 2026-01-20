@@ -23,6 +23,7 @@ interface ConfirmModalProps {
   confirmVariant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   cancelVariant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'sm' | 'md' | 'lg';
+  hideCancel?: boolean;
 }
 
 export function ConfirmModal({
@@ -37,7 +38,8 @@ export function ConfirmModal({
   onCancel,
   confirmVariant = 'default',
   cancelVariant = 'outline',
-  size = 'md'
+  size = 'md',
+  hideCancel = false
 }: ConfirmModalProps) {
   const getIcon = () => {
     switch (type) {
@@ -68,6 +70,8 @@ export function ConfirmModal({
         return 'bg-blue-600 hover:bg-blue-700 text-white';
     }
   };
+
+  const showCancelButton = !hideCancel;
 
   const handleConfirm = () => {
     onConfirm();
@@ -103,14 +107,16 @@ export function ConfirmModal({
 
         <div className='flex-shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center gap-3'>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleCancel}
-              className='whitespace-nowrap inline-flex items-center  hover:bg-black hover:text-white rounded-full  hover:scale-105 transition-all duration-200'
-            >
-              {cancelText}
-            </Button>
+            {showCancelButton && (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={handleCancel}
+                className='whitespace-nowrap inline-flex items-center  hover:bg-black hover:text-white rounded-full  hover:scale-105 transition-all duration-200'
+              >
+                {cancelText}
+              </Button>
+            )}
             <Button
               variant='outline'
               size='sm'

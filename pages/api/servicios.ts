@@ -80,18 +80,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } = req.body;
 
       // Validaciones
-      if (!precio_servicio || !tiempo) {
+      if (precio_servicio === undefined || precio_servicio === null || !tiempo) {
         return res.status(400).json({
           success: false,
           message: 'Precio de servicio y tiempo son requeridos'
         });
       }
 
-      // Si no se proporciona cliente_id, usar cliente por defecto (ID = 1)
-      const clienteIdFinal = cliente_id || 1;
+      // Usar 0 si precio_servicio no se proporciona o es vacío
+      const precioServicioFinal = precio_servicio === '' ? 0 : precio_servicio;
+
+      // Validar si el cliente existe antes de insertar, permitir NULL si no existe
+      let clienteIdFinal = null;
+      if (cliente_id) {
+        const clienteExistsSql = 'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
+        const clienteExistsResult = (await query(clienteExistsSql, [cliente_id])) as any[];
+        
+        if (clienteExistsResult && clienteExistsResult.length > 0) {
+          clienteIdFinal = cliente_id;
+          console.log('[SERVICIOS POST] Cliente validado:', clienteIdFinal);
+        } else {
+          console.warn('[SERVICIOS POST] Cliente no existe o está inactivo, se creará servicio sin cliente');
+          clienteIdFinal = null;
+        }
+      } else {
+        console.log('[SERVICIOS POST] No se proporcionó cliente_id, se creará servicio sin cliente');
+        clienteIdFinal = null;
+      }
 
       // Generar código único
       const codigo = generateUniqueCode();
+
+      // Redondear el total a múltiplos de 5000 y sumar excedente al IVA solo si es tarjeta
+      let totalFinal = total;
+      let ivaFinal = iva || 0;
+      
+      if (metodo_pago === "tarjeta") {
+        const totalRedondeado = Math.ceil(total / 5000) * 5000;
+        const excedente = totalRedondeado - total;
+        totalFinal = totalRedondeado;
+        ivaFinal = (iva || 0) + excedente;
+      }
 
       // Obtener la caja abierta actual
       const cajaAbiertaResult = (await query(
@@ -114,10 +143,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             clienteIdFinal,
             habitacion_id,
             precio_habitacion || 0,
-            precio_servicio,
-            iva || 0,
+            precioServicioFinal,
+            ivaFinal,
             sub_total,
-            total,
+            totalFinal,
             tiempo,
             metodo_pago || null,
             cajaId
@@ -142,7 +171,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Registrar comisiones para cada anfitriona
         if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
           // Calcular comisión por anfitriona (dividir el precio del servicio entre las anfitrionas)
-          const comisionPorAnfitriona = Math.floor(precio_servicio / usuarios.length);
+          const comisionPorAnfitriona = Math.floor(precioServicioFinal / usuarios.length);
 
           for (const usuarioId of usuarios) {
             // Crear comisión para cada anfitriona
@@ -188,16 +217,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           switch (metodo_pago) {
             case 'efectivo':
-              montoEfectivo = total;
+              montoEfectivo = totalFinal;
               break;
             case 'tarjeta':
-              montoTarjeta = total;
+              montoTarjeta = totalFinal;
               break;
             case 'transferencia':
-              montoTransferencia = total;
+              montoTransferencia = totalFinal;
               break;
             default:
-              montoEfectivo = total; // Por defecto efectivo
+              montoEfectivo = totalFinal; // Por defecto efectivo
           }
 
           // Actualizar la caja con los montos correspondientes, incluyendo IVA del servicio
@@ -211,11 +240,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     comision = comision + ?
                   WHERE id_caja = ?`,
             [
-              total, // servicios
+              totalFinal, // servicios
               montoEfectivo,
               montoTarjeta,
               montoTransferencia,
-              iva || 0,
+              ivaFinal,
               usuarios ? Math.floor(precio_servicio / usuarios.length) * usuarios.length : 0, // comisión total
               cajaId
             ]

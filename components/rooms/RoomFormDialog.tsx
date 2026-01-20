@@ -31,6 +31,14 @@ const initialFormState: RoomForm = {
   time: ''
 };
 
+const formatNumberWithSeparators = (value: string) => {
+  if (!value) return '';
+  // Mantener solo dígitos y agregar puntos de miles
+  const numeric = value.replace(/\D/g, '');
+  if (!numeric) return '';
+  return numeric.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
 const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   open,
   onClose,
@@ -65,7 +73,14 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'price') {
+      setForm({ ...form, price: formatNumberWithSeparators(value) });
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
