@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import {
-  CommissionsStatsCard,
   CommissionsFilters,
   CommissionsList,
 } from "@/components/commissions"
@@ -57,8 +56,7 @@ export default function CommissionsPage() {
         </div>
       </div>
 
-      {/* Estadísticas */}
-      <CommissionsStatsCard />
+
 
       {/* Filtros y búsqueda */}
       <CommissionsFilters

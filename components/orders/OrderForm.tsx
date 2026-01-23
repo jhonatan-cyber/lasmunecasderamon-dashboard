@@ -22,6 +22,7 @@ interface OrderFormProps {
   onRemoveProducto?: (index: number) => void;
   onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
   onToggleComision?: (index: number) => void;
+  onAssignHostess?: (index: number, hostessId: string) => void;
   onSubmit?: () => void;
   searchCliente?: string;
   setSearchCliente?: (v: string) => void;
@@ -42,6 +43,7 @@ export default function OrderForm({
   onRemoveProducto,
   onUpdateCantidad,
   onToggleComision,
+  onAssignHostess,
   onSubmit,
 }: OrderFormProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,6 +54,64 @@ export default function OrderForm({
   const [error, setError] = useState("");
   const router = useRouter();
   const { user } = useCurrentUser();
+
+  const selectedHostessPool = anfitrionas.filter((a) =>
+    selectedAnfitrionas.includes(String(a.id_usuario || a.id))
+  );
+
+  const hostessOptions = (selectedHostessPool.length > 0 ? selectedHostessPool : anfitrionas).map((a) => ({
+    id: String(a.id_usuario || a.id),
+    name: a.nick || `${a.nombre || a.name || ""} ${a.apellido || a.lastName || ""}`.trim(),
+  }));
+
+  // Calcula el límite de anfitrionas permitido según productos con comisión y champaña
+  const computeHostessLimit = (productosLista: any[]) => {
+    const isChampagneProduct = (p: any) => {
+      const cat = (p.categoria || p.category_name || "").toLowerCase();
+      return (
+        cat.includes("champaña") ||
+        cat.includes("shampaña") ||
+        cat.includes("champagne")
+      );
+    };
+
+    const champagneProducts = productosLista.filter(isChampagneProduct);
+    const otherCommissionProducts = productosLista.filter(
+      (p) => !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
+    );
+
+    const otherCommissionQuantity = otherCommissionProducts.reduce(
+      (sum, p) => sum + (Number(p.cantidad) || 1),
+      0
+    );
+
+    let champagneLimit = 0;
+    let maxChampagnePrice = 0;
+
+    if (champagneProducts.length > 0) {
+      maxChampagnePrice = Math.max(
+        ...champagneProducts.map((p) => Number(p.precio || p.price || 0))
+      );
+
+      if (maxChampagnePrice >= 240000) champagneLimit = 5;
+      else if (maxChampagnePrice >= 200000) champagneLimit = 4;
+      else if (maxChampagnePrice >= 160000) champagneLimit = 3;
+      else if (maxChampagnePrice >= 120000) champagneLimit = 2;
+      else champagneLimit = 1;
+    }
+
+    const maxAnfitrionas = champagneProducts.length > 0
+      ? champagneLimit + otherCommissionQuantity
+      : otherCommissionQuantity;
+
+    return {
+      maxAnfitrionas,
+      champagneLimit,
+      otherCommissionQuantity,
+      hasChampagne: champagneProducts.length > 0,
+      maxChampagnePrice,
+    };
+  };
 
   // Calcular el total sumando los subtotales de los productos agregados
   const total = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
@@ -95,6 +155,7 @@ export default function OrderForm({
         cantidad,
         subtotal: (producto.precio || producto.price) * cantidad,
         generaComision: generaComision,
+        hostessId: "", // anfitriona asignada para la comisión
       });
     }
     setCantidades((prev) => ({
@@ -107,6 +168,10 @@ export default function OrderForm({
     if (onUpdateCantidad) {
       onUpdateCantidad(index, nuevaCantidad);
     }
+  };
+
+  const handleAssignHostess = (index: number, hostessId: string) => {
+    onAssignHostess?.(index, hostessId);
   };
 
   const handleToggleComision = (index: number) => {
@@ -147,69 +212,75 @@ export default function OrderForm({
       return;
     }
 
-    // Validar límites de anfitrionas según champaña y productos con comisión
     const isChampagneProduct = (p: any) => {
-      const cat = (p.categoria || p.category_name || '').toLowerCase();
-      return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+      const cat = (p.categoria || p.category_name || "").toLowerCase();
+      return cat.includes("champaña") || cat.includes("shampaña") || cat.includes("champagne");
     };
 
-    const hasChampagneProducts = productos.some(isChampagneProduct);
-    const maxChampagnePrice = hasChampagneProducts
-      ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio || p.price || 0)))
-      : 0;
+    const hasChampagne = productos.some(isChampagneProduct);
 
-    let maxAnfitrionas = 1;
-    
-    if (hasChampagneProducts) {
-      // Reglas para champaña según precio
-      if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
-      else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
-      else if (maxChampagnePrice >= 160000) maxAnfitrionas = 3;
-      else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
-      else maxAnfitrionas = 1;
-    } else {
-      // Para productos que no son champaña pero tienen comisión
-      // El número de anfitrionas puede ser igual a la cantidad total de productos con comisión
-      const productosConComision = productos.filter(p => 
-        !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
-      );
-      
-      if (productosConComision.length > 0) {
-        const cantidadTotalConComision = productosConComision.reduce(
-          (sum, p) => sum + (Number(p.cantidad) || 1), 
-          0
-        );
-        maxAnfitrionas = cantidadTotalConComision;
-      } else {
-        maxAnfitrionas = 1;
+    // Solo validar asignación individual si HAY champaña en el pedido
+    if (hasChampagne) {
+      // Validar que las anfitrionas asignadas estén en la lista seleccionada
+      const productosConComision = productos.filter((p) => p.generaComision === 1 && !isChampagneProduct(p));
+      const hostessAssignments = productosConComision.map((p) => p.hostessId).filter(Boolean) as string[];
+      const uniqueAssignments = Array.from(new Set(hostessAssignments));
+
+      // Solo validar unicidad si hay asignaciones
+      if (uniqueAssignments.length > 0) {
+        if (uniqueAssignments.length !== hostessAssignments.length) {
+          setError("Cada producto con comisión debe tener una anfitriona distinta si se asigna");
+          return;
+        }
+
+        if (uniqueAssignments.some((id) => !selectedAnfitrionas.includes(id))) {
+          setError("Las anfitrionas asignadas deben estar seleccionadas en la lista de anfitrionas");
+          return;
+        }
+      }
+    }
+    // Si NO hay champaña o no hay asignaciones, la comisión se reparte entre todas
+
+    // Validar límites de anfitrionas combinando champaña y productos con comisión
+    const hostessLimits = computeHostessLimit(productos);
+    const {
+      maxAnfitrionas,
+      champagneLimit,
+      otherCommissionQuantity,
+      maxChampagnePrice,
+    } = hostessLimits;
+
+    if (hasChampagne) {
+      const uniqueAssignments = Array.from(new Set(
+        productos
+          .filter((p) => p.generaComision === 1 && !isChampagneProduct(p))
+          .map((p) => p.hostessId)
+          .filter(Boolean)
+      )) as string[];
+
+      if (uniqueAssignments.length > maxAnfitrionas) {
+        setError(`El pedido excede el límite de anfitrionas permitidas (${maxAnfitrionas}) para los productos con comisión`);
+        return;
+      }
+
+      // Asegurar que quede cupo suficiente para repartir la champaña entre las anfitrionas no asignadas a tragos con comisión
+      const remainingForChampagne = selectedAnfitrionas.length - uniqueAssignments.length;
+      if (remainingForChampagne > champagneLimit) {
+        setError(`Se requieren máximo ${champagneLimit} anfitriona${champagneLimit !== 1 ? 's' : ''} libres para la champaña; ajuste asignaciones o reduzca anfitrionas`);
+        return;
       }
     }
 
     if (selectedAnfitrionas.length > maxAnfitrionas) {
-      if (!hasChampagneProducts) {
-        const productosConComision = productos.filter(p => 
-          !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
-        );
-        
-        if (productosConComision.length > 0) {
-          const cantidadTotal = productosConComision.reduce(
-            (sum, p) => sum + (Number(p.cantidad) || 1), 
-            0
-          );
-          setError(`El pedido excede el límite de ${cantidadTotal} anfitriona${cantidadTotal !== 1 ? 's' : ''} para ${cantidadTotal} producto${cantidadTotal !== 1 ? 's' : ''} con comisión`);
-        } else {
-          setError('No puede seleccionar anfitrionas para productos sin comisión');
-        }
-      } else if (maxChampagnePrice >= 240000) {
-        setError('El pedido excede el límite de 5 anfitrionas para champaña de $240,000+');
-      } else if (maxChampagnePrice >= 200000) {
-        setError('El pedido excede el límite de 4 anfitrionas para champaña de $200,000+');
-      } else if (maxChampagnePrice >= 160000) {
-        setError('El pedido excede el límite de 3 anfitrionas para champaña de $160,000+');
-      } else if (maxChampagnePrice >= 120000) {
-        setError('El pedido excede el límite de 2 anfitrionas para champaña de $120,000+');
-      } else {
-        setError('El pedido excede el límite de 1 anfitriona para champaña menor a $120,000');
+      if (hasChampagne) {
+        const extraText = otherCommissionQuantity > 0
+          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+          : '';
+        setError(`El pedido excede el límite de ${champagneLimit} anfitriona${champagneLimit !== 1 ? 's' : ''} por champaña${extraText ? extraText : ''} (máximo ${maxAnfitrionas})`);
+      } else if (otherCommissionQuantity > 0) {
+        setError(`El pedido excede el límite de ${otherCommissionQuantity} anfitriona${otherCommissionQuantity !== 1 ? 's' : ''} para ${otherCommissionQuantity} producto${otherCommissionQuantity !== 1 ? 's' : ''} con comisión`);
+      } else if (maxChampagnePrice > 0) {
+        setError('No puede seleccionar anfitrionas para productos sin comisión');
       }
       return;
     }
@@ -239,6 +310,7 @@ export default function OrderForm({
         subtotal: Number(item.subtotal),
         comision: Number(item.comision || 0),
         generaComision: Number(item.generaComision ?? 1), // Por defecto 1 (genera comisión)
+        hostessId: item.hostessId ? Number(item.hostessId) : null,
       }));
       const usuarios = selectedAnfitrionas.map((id) => ({ usuarioId: Number(id) }));
 
@@ -285,47 +357,11 @@ export default function OrderForm({
 
   // Calcular el máximo de anfitrionas permitidas según las reglas
   const calcularMaxAnfitrionas = () => {
-    const isChampagneProduct = (p: any) => {
-      const cat = (p.categoria || p.category_name || '').toLowerCase();
-      return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-    };
-
-    const hasChampagneProducts = productos.some(isChampagneProduct);
-    const maxChampagnePrice = hasChampagneProducts
-      ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio || p.price || 0)))
-      : 0;
-
-    let maxAnfitrionas = 0; // Por defecto 0 (sin comisión = sin anfitrionas)
-    
-    if (hasChampagneProducts) {
-      // Reglas para champaña según precio
-      if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
-      else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
-      else if (maxChampagnePrice >= 160000) maxAnfitrionas = 3;
-      else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
-      else maxAnfitrionas = 1;
-    } else {
-      // Para productos que no son champaña pero tienen comisión
-      const productosConComision = productos.filter(p => 
-        !isChampagneProduct(p) && (p.generaComision === 1 || p.genera_comision === 1)
-      );
-      
-      if (productosConComision.length > 0) {
-        const cantidadTotalConComision = productosConComision.reduce(
-          (sum, p) => sum + (Number(p.cantidad) || 1), 
-          0
-        );
-        maxAnfitrionas = cantidadTotalConComision;
-      } else {
-        // Si no hay productos con comisión ni champaña, no se permiten anfitrionas
-        maxAnfitrionas = 0;
-      }
-    }
-
-    return maxAnfitrionas;
+    return computeHostessLimit(productos).maxAnfitrionas;
   };
 
-  const maxAnfitrionasPermitidas = calcularMaxAnfitrionas();
+  const hostessLimits = computeHostessLimit(productos);
+  const maxAnfitrionasPermitidas = hostessLimits.maxAnfitrionas;
 
   return (
     <div className="space-y-8">
@@ -342,8 +378,8 @@ export default function OrderForm({
             clientes={clientes}
             value={selectedCliente}
             onChange={setSelectedCliente}
-            label="Cliente"
-            placeholder="Seleccionar cliente"
+            label="Cliente (Opcional)"
+            placeholder="Sin cliente seleccionado"
             required={false}
             className="w-full"
           />
@@ -363,26 +399,18 @@ export default function OrderForm({
           {productos.length > 0 && (
             <div className="text-xs text-gray-500 mt-1">
               {(() => {
-                const isChampagneProduct = (p: any) => {
-                  const cat = (p.categoria || p.category_name || '').toLowerCase();
-                  return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-                };
-                const hasChampagne = productos.some(isChampagneProduct);
-                const maxPrice = hasChampagne 
-                  ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio || p.price || 0)))
-                  : 0;
-                
-                if (hasChampagne) {
-                  return `💎 Champaña detectada: Máximo ${maxAnfitrionasPermitidas} anfitriona${maxAnfitrionasPermitidas !== 1 ? 's' : ''} permitida${maxAnfitrionasPermitidas !== 1 ? 's' : ''}`;
-                } else {
-                  const productosConComision = productos.filter(p => p.generaComision === 1);
-                  if (productosConComision.length > 0) {
-                    const cantidad = productosConComision.reduce((sum, p) => sum + (Number(p.cantidad) || 1), 0);
-                    return `🍹 ${cantidad} producto${cantidad !== 1 ? 's' : ''} con comisión: Máximo ${maxAnfitrionasPermitidas} anfitriona${maxAnfitrionasPermitidas !== 1 ? 's' : ''}`;
-                  } else {
-                    return `ℹ️ Productos sin comisión: No se permiten anfitrionas`;
+                if (hostessLimits.hasChampagne) {
+                  if (hostessLimits.otherCommissionQuantity > 0) {
+                    return `💎 Champaña (tope ${hostessLimits.champagneLimit}) + ${hostessLimits.otherCommissionQuantity} trago${hostessLimits.otherCommissionQuantity !== 1 ? 's' : ''} con comisión: asigna anfitriona individual o deja vacío para repartir. Límite total ${maxAnfitrionasPermitidas}.`;
                   }
+                  return `💎 Champaña detectada: Máximo ${maxAnfitrionasPermitidas} anfitriona${maxAnfitrionasPermitidas !== 1 ? 's' : ''} (comisión repartida entre todas)`;
                 }
+
+                if (hostessLimits.otherCommissionQuantity > 0) {
+                  return `🍹 ${hostessLimits.otherCommissionQuantity} producto${hostessLimits.otherCommissionQuantity !== 1 ? 's' : ''} con comisión: Máximo ${maxAnfitrionasPermitidas} anfitriona${maxAnfitrionasPermitidas !== 1 ? 's' : ''} (comisión repartida entre todas)`;
+                }
+
+                return `ℹ️ Productos sin comisión: No se permiten anfitrionas`;
               })()}
             </div>
           )}
@@ -409,10 +437,14 @@ export default function OrderForm({
           Detalles Producto
         </div>
         <OrderProductTable
+          hasChampagne={hostessLimits.hasChampagne}
           productos={productos}
           onRemoveProducto={onRemoveProducto}
           onUpdateCantidad={handleUpdateCantidad}
           onToggleComision={handleToggleComision}
+          hostessOptions={hostessOptions}
+          onAssignHostess={handleAssignHostess}
+          selectedHostesses={hostessOptions.filter(h => selectedAnfitrionas.includes(h.id))}
         />
       </div>
     </div>
