@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Moon, Sun, Monitor, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Moon, Sun, Monitor, Mail, Lock, Eye } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { toast } from 'sonner';
 
@@ -404,6 +404,7 @@ export default function LoginPage() {
                           })
                         }
                         onKeyDown={handlePasswordKeyDown}
+                        autoComplete='current-password'
                       />
                       <button
                         type='button'
@@ -411,11 +412,7 @@ export default function LoginPage() {
                         className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200'
                         aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       >
-                        {showPassword ? (
-                          <EyeOff className='w-5 h-5' />
-                        ) : (
-                          <Eye className='w-5 h-5' />
-                        )}
+                        <Eye className='w-5 h-5' />
                       </button>
                     </div>
                   </div>
