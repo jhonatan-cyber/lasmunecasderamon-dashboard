@@ -11,7 +11,8 @@ const orderDetailSchema = z.object({
   comision: z.number(),
   cantidad: z.number(),
   subtotal: z.number(),
-  generaComision: z.number().optional().default(1) // 1 = genera comisión, 0 = no genera comisión
+  generaComision: z.number().optional().default(1), // 1 = genera comisión, 0 = no genera comisión
+  hostessId: z.number().nullable().optional() // Anfitriona asignada a este producto
 });
 
 const orderUserSchema = z.object({
@@ -84,8 +85,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Insertar detalles
     for (const d of detalles) {
       await query(
-        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [pedidoId, d.productoId, d.precio, d.comision, d.generaComision ?? 1, d.cantidad, d.subtotal]
+        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [pedidoId, d.productoId, d.precio, d.comision, d.generaComision ?? 1, d.cantidad, d.subtotal, d.hostessId || null]
       );
     }
     // Insertar usuarios

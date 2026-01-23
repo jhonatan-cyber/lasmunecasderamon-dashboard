@@ -81,6 +81,12 @@ export default function NewOrder() {
     );
   };
 
+  const handleAssignHostess = (index: number, hostessId: string) => {
+    setProductos((prev: any[]) =>
+      prev.map((p, i) => (i === index ? { ...p, hostessId } : p))
+    );
+  };
+
   // Handler para toggle de comisión
   const handleToggleComision = (index: number) => {
     setProductos((prev: any[]) => 
@@ -89,6 +95,7 @@ export default function NewOrder() {
           ? {
               ...producto,
               generaComision: producto.generaComision === 1 ? 0 : 1,
+              hostessId: producto.generaComision === 1 ? "" : producto.hostessId,
             }
           : producto
       )
@@ -147,6 +154,7 @@ export default function NewOrder() {
           onRemoveProducto={handleRemoveProducto}
           onUpdateCantidad={handleUpdateCantidad}
           onToggleComision={handleToggleComision}
+          onAssignHostess={handleAssignHostess}
           onSubmit={handleSubmit}
           searchCliente={searchCliente}
           setSearchCliente={setSearchCliente}

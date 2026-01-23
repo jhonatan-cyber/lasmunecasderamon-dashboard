@@ -451,8 +451,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     for (const detalle of detalles) {
       const insertDetalleVentaSql = `
         INSERT INTO detalle_ventas (
-          venta_id, producto_id, precio, comision, cantidad, sub_total
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
       // Usar los datos del detalle directamente
@@ -465,7 +465,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         detalle.precio,
         comisionPorUnidad, // Guardar comisión por unidad en detalle_ventas
         detalle.cantidad,
-        subTotalProducto
+        subTotalProducto,
+        detalle.hostess_id || null // Anfitriona asignada a este producto
       ]);
     }
     
@@ -484,38 +485,79 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     
     console.log('[SALES POST] User relations inserted');
 
-    // Registrar comisiones para cada anfitriona
+    // Registrar comisiones para cada anfitriona según asignaciones por producto
     console.log('[SALES POST] Registering commissions...');
-    if (usuarios && Array.isArray(usuarios) && usuarios.length > 0 && totalComision > 0) {
-      // Calcular comisión por anfitriona (dividir el total de comisiones entre las anfitrionas)
-      const comisionPorAnfitriona = Math.floor(totalComision / usuarios.length);
+    if (totalComision > 0) {
+      // Agrupar comisiones por anfitriona
+      const comisionesPorAnfitriona = new Map<number, number>();
 
-      for (const usuarioId of usuarios) {
-        // Crear comisión para cada anfitriona
-        const comisionResult: any = await query(
-          `INSERT INTO comisiones (
-            venta_id,
-            servicio_id,
-            monto
-          ) VALUES (?, ?, ?)`,
-          [
-            ventaId, // venta_id para ventas
-            null, // servicio_id es null para ventas
-            comisionPorAnfitriona
-          ]
-        );
+      // Identificar anfitrionas ya asignadas a productos específicos
+      const anfitrionasAsignadas = new Set<number>();
+      for (const detalle of detalles) {
+        if (detalle.hostess_id) {
+          anfitrionasAsignadas.add(detalle.hostess_id);
+        }
+      }
 
-        const comisionId = comisionResult.insertId;
+      // Anfitrionas disponibles para repartir comisiones sin asignación (champaña)
+      const anfitrionasDisponibles = usuarios && Array.isArray(usuarios)
+        ? usuarios.filter((id: number) => !anfitrionasAsignadas.has(id))
+        : [];
 
-        // Insertar detalle de comisión
-        await query(
-          `INSERT INTO detalle_comisiones (
-            comision_id,
-            usuario_id,
-            comision
-          ) VALUES (?, ?, ?)`,
-          [comisionId, usuarioId, comisionPorAnfitriona]
-        );
+      for (const detalle of detalles) {
+        const comision = detalle.comision || 0;
+        const hostessId = detalle.hostess_id;
+
+        if (comision > 0 && hostessId) {
+          // Comisión asignada a anfitriona específica
+          const actual = comisionesPorAnfitriona.get(hostessId) || 0;
+          comisionesPorAnfitriona.set(hostessId, actual + comision);
+        } else if (comision > 0 && !hostessId) {
+          // Comisión sin asignación específica (champaña): repartir solo entre anfitrionas NO asignadas
+          if (anfitrionasDisponibles.length > 0) {
+            const comisionPorAnfitriona = comision / anfitrionasDisponibles.length;
+            for (const usuarioId of anfitrionasDisponibles) {
+              const actual = comisionesPorAnfitriona.get(usuarioId) || 0;
+              comisionesPorAnfitriona.set(usuarioId, actual + comisionPorAnfitriona);
+            }
+          } else if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
+            // Fallback: si todas están asignadas, repartir entre todas
+            const comisionPorAnfitriona = comision / usuarios.length;
+            for (const usuarioId of usuarios) {
+              const actual = comisionesPorAnfitriona.get(usuarioId) || 0;
+              comisionesPorAnfitriona.set(usuarioId, actual + comisionPorAnfitriona);
+            }
+          }
+        }
+      }
+
+      // Insertar comisiones calculadas
+      for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
+        if (monto > 0) {
+          const comisionResult: any = await query(
+            `INSERT INTO comisiones (
+              venta_id,
+              servicio_id,
+              monto
+            ) VALUES (?, ?, ?)`,
+            [
+              ventaId,
+              null,
+              Math.floor(monto)
+            ]
+          );
+
+          const comisionId = comisionResult.insertId;
+
+          await query(
+            `INSERT INTO detalle_comisiones (
+              comision_id,
+              usuario_id,
+              comision
+            ) VALUES (?, ?, ?)`,
+            [comisionId, usuarioId, Math.floor(monto)]
+          );
+        }
       }
     }
     
