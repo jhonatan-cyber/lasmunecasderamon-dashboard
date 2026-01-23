@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         P.codigo,
         DP.comision,
         DP.genera_comision,
+        DP.hostess_id,
         CONCAT(G.nombre, ' ', G.apellido) AS garzon,
         PR.nombre AS producto,
         PR.id_producto,

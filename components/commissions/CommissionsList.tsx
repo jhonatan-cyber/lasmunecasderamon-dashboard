@@ -145,7 +145,7 @@ export function CommissionsList({
           <Table className="w-full justify-center text-center">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center text-sm sm:text-base">Empleado</TableHead>
+                <TableHead className="text-start text-sm sm:text-base">Empleado</TableHead>
                 <TableHead className="text-center text-sm sm:text-base">Nick</TableHead>
                 <TableHead className="text-center text-sm sm:text-base">Venta</TableHead>
                 <TableHead className="text-center text-sm sm:text-base">Servicio</TableHead>
@@ -157,7 +157,7 @@ export function CommissionsList({
               {paginatedCommissions.map((commission) => (
                 <TableRow key={commission.id}>
                   <TableCell>
-                    <div className="font-medium text-sm sm:text-base">{commission.employeeName}</div>
+                    <div className="font-medium text-sm sm:text-base text-start">{commission.employeeName}</div>
                   </TableCell>
                   <TableCell className="text-xs sm:text-sm">{commission.nick}</TableCell>
                   <TableCell className="font-semibold text-sm sm:text-base">
@@ -187,7 +187,7 @@ export function CommissionsList({
     <>
       <MobileCardView />
       <DesktopTableView />
-      
+
       {/* Paginador */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-4 sm:mt-6">

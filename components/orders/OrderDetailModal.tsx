@@ -120,13 +120,55 @@ export default function OrderDetailModal({
     );
   };
 
-  // Buscar si hay algún producto de champaña
-  const hasChampagneProducts = detail.some(isChampagneProduct);
+  const computeHostessLimit = (items: any[]) => {
+    const champagneProducts = items.filter(isChampagneProduct);
+    const otherCommissionProducts = items.filter(
+      p =>
+        !isChampagneProduct(p) &&
+        (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
+    );
 
-  // Obtener el precio más alto de productos de champaña
-  const maxChampagnePrice = Math.max(
-    ...detail.filter(isChampagneProduct).map(p => Number(p.precio || 0))
-  );
+    const otherCommissionQuantity = otherCommissionProducts.reduce(
+      (sum, p) => sum + (Number(p.cantidad) || 1),
+      0
+    );
+
+    let champagneLimit = 0;
+    let maxChampagnePrice = 0;
+
+    if (champagneProducts.length > 0) {
+      maxChampagnePrice = Math.max(
+        ...champagneProducts.map(p => Number(p.precio || p.price || 0))
+      );
+
+      if (maxChampagnePrice >= 240000) champagneLimit = 5;
+      else if (maxChampagnePrice >= 200000) champagneLimit = 4;
+      else if (maxChampagnePrice >= 160000) champagneLimit = 3;
+      else if (maxChampagnePrice >= 120000) champagneLimit = 2;
+      else champagneLimit = 1;
+    }
+
+    const maxAnfitrionas = champagneProducts.length > 0
+      ? champagneLimit + otherCommissionQuantity
+      : otherCommissionQuantity;
+
+    return {
+      maxAnfitrionas,
+      champagneLimit,
+      otherCommissionQuantity,
+      hasChampagneProducts: champagneProducts.length > 0,
+      maxChampagnePrice,
+    };
+  };
+
+  const hostessLimits = computeHostessLimit(detail);
+  const {
+    maxAnfitrionas,
+    champagneLimit,
+    otherCommissionQuantity,
+    hasChampagneProducts,
+    maxChampagnePrice,
+  } = hostessLimits;
 
   // Obtener las anfitrionas del pedido
   // Buscar en diferentes campos posibles donde pueden venir las anfitrionas
@@ -152,72 +194,19 @@ export default function OrderDetailModal({
 
   const cantidadAnfitrionas = anfitrionasFinal.length;
 
-  // Determinar el máximo de anfitrionas permitidas según las reglas
-  let maxAnfitrionas = 0; // Por defecto 0 (sin comisión = sin anfitrionas)
-
-  if (hasChampagneProducts) {
-    // Reglas para champaña según precio
-    if (maxChampagnePrice >= 240000) {
-      maxAnfitrionas = 5;
-    } else if (maxChampagnePrice >= 200000) {
-      maxAnfitrionas = 4;
-    } else if (maxChampagnePrice >= 160000) {
-      maxAnfitrionas = 3;
-    } else if (maxChampagnePrice >= 120000) {
-      maxAnfitrionas = 2;
-    } else {
-      maxAnfitrionas = 1;
-    }
-  } else {
-    // Para productos que no son champaña pero tienen comisión
-    // El número de anfitrionas puede ser igual a la cantidad total de productos con comisión
-    const productosConComision = detail.filter(p => 
-      !isChampagneProduct(p) && (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
-    );
-    
-    if (productosConComision.length > 0) {
-      const cantidadTotalConComision = productosConComision.reduce(
-        (sum, p) => sum + (Number(p.cantidad) || 1), 
-        0
-      );
-      maxAnfitrionas = cantidadTotalConComision;
-    } else {
-      // Si no hay productos con comisión ni champaña, no se permiten anfitrionas
-      maxAnfitrionas = 0;
-    }
-  }
-
   // No hay recargos por anfitrionas adicionales en las nuevas reglas
   const recargoAnfitrionas = 0;
 
   // Validar que las anfitrionas del pedido cumplan con las reglas
   useEffect(() => {
     if (cantidadAnfitrionas > maxAnfitrionas) {
-      // Mostrar mensaje específico según la regla aplicada
-      if (!hasChampagneProducts) {
-        const productosConComision = detail.filter(p => 
-          !isChampagneProduct(p) && (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
-        );
-        
-        if (productosConComision.length > 0) {
-          const cantidadTotal = productosConComision.reduce(
-            (sum, p) => sum + (Number(p.cantidad) || 1), 
-            0
-          );
-          toast.error(`El pedido excede el límite de ${cantidadTotal} anfitriona${cantidadTotal !== 1 ? 's' : ''} para ${cantidadTotal} producto${cantidadTotal !== 1 ? 's' : ''} con comisión`);
-        } else {
-          toast.error('No se permiten anfitrionas para productos sin comisión');
-        }
-      } else if (maxChampagnePrice >= 240000) {
-        toast.error('El pedido excede el límite de 5 anfitrionas para champaña de $240,000+');
-      } else if (maxChampagnePrice >= 200000) {
-        toast.error('El pedido excede el límite de 4 anfitrionas para champaña de $200,000+');
-      } else if (maxChampagnePrice >= 160000) {
-        toast.error('El pedido excede el límite de 3 anfitrionas para champaña de $160,000+');
-      } else if (maxChampagnePrice >= 120000) {
-        toast.error('El pedido excede el límite de 2 anfitrionas para champaña de $120,000+');
+      if (hasChampagneProducts) {
+        const extraText = otherCommissionQuantity > 0
+          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+          : '';
+        toast.error(`El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`);
       } else {
-        toast.error('El pedido excede el límite de 1 anfitriona para champaña menor a $120,000');
+        toast.error(`El pedido excede el límite de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} para productos con comisión`);
       }
     }
   }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, cantidadAnfitrionas, detail]);
@@ -244,21 +233,12 @@ export default function OrderDetailModal({
       return;
     }
 
-    // Validar regla de anfitrionas
+    // Validar regla de anfitrionas con el esquema combinado
     if (cantidadAnfitrionas > maxAnfitrionas) {
-      if (!hasChampagneProducts) {
-        toast.error('Para productos sin champaña solo puede haber 1 anfitriona máximo');
-      } else if (maxChampagnePrice >= 240000) {
-        toast.error('Para champaña de $240,000+ solo puede haber hasta 5 anfitrionas');
-      } else if (maxChampagnePrice >= 200000) {
-        toast.error('Para champaña de $200,000+ solo puede haber hasta 4 anfitrionas');
-      } else if (maxChampagnePrice >= 160000) {
-        toast.error('Para champaña de $160,000+ solo puede haber hasta 3 anfitrionas');
-      } else if (maxChampagnePrice >= 120000) {
-        toast.error('Para champaña de $120,000+ solo puede haber hasta 2 anfitrionas');
-      } else {
-        toast.error('Para champaña menor a $120,000 solo puede haber hasta 1 anfitriona');
-      }
+      const extraText = hasChampagneProducts && otherCommissionQuantity > 0
+        ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+        : '';
+      toast.error(`El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`);
       return;
     }
 
@@ -327,7 +307,8 @@ export default function OrderDetailModal({
             precio: item.precio || 0,
           cantidad: item.cantidad || 0,
           comision: item.comision || 0, // Agregar la comisión del producto
-          sub_total: (item.precio || 0) * (item.cantidad || 0) // Calcular sub_total por producto
+          sub_total: (item.precio || 0) * (item.cantidad || 0), // Calcular sub_total por producto
+          hostess_id: item.hostess_id || null, // Anfitriona asignada a este producto específico
         })),
         usuarios: usuariosIds,
         habitacion_id: habitacionId ? parseInt(habitacionId) : undefined // Campo opcional de habitación
@@ -613,7 +594,7 @@ export default function OrderDetailModal({
                       <>
                         <Separator />
                         <div className='text-xs text-red-500'>
-                          ⚠️ Excede el límite de {maxAnfitrionas} anfitriona(s) para este tipo de champaña
+                          ⚠️ Excede el límite combinado de {maxAnfitrionas} anfitriona(s)
                         </div>
                       </>
                     )}
