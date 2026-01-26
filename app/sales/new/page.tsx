@@ -8,8 +8,6 @@ import { Label } from '@/components/ui/label';
 import {
   ArrowLeft,
   Search,
-  Wine,
-  Users,
   Coins,
   ShoppingCart,
   Trash,
@@ -17,6 +15,8 @@ import {
   Minus,
   X
 } from 'lucide-react';
+import HostessMultiSelect from "@/components/orders/HostessMultiSelect";
+import IndividualHostessSelect from "@/components/ui/IndividualHostessSelect";
 
 import { useSales } from '@/hooks/useSales';
 import { toast } from 'sonner';
@@ -24,11 +24,11 @@ import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import SaleProductModal from '@/components/sales/SaleProductModal';
 import { useRef } from 'react';
 import CustomerSelect from '@/components/ui/CustomerSelect';
-import HostessSelect from '@/components/ui/HostessSelect';
 import CategoryCardList from '@/components/ui/CategoryCardList';
 import RoomSelect from '@/components/ui/RoomSelect';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
 import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useTimer } from '@/contexts/TimerContext';
 
 export default function NewSale() {
@@ -43,13 +43,6 @@ export default function NewSale() {
     }
     return '';
   });
-  const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('selectedAnfitrionas');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
   const [selectedHabitacion, setSelectedHabitacion] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('selectedHabitacion') || '';
@@ -62,11 +55,11 @@ export default function NewSale() {
     }
     return '';
   });
-  const [propina, setPropina] = useState(() => {
+  const [enableTip, setEnableTip] = useState(() => {
     if (typeof window !== 'undefined') {
-      return Number(localStorage.getItem('propina')) || 0;
+      return localStorage.getItem('enableTip') === 'true';
     }
-    return 0;
+    return false;
   });
   const [productos, setProductos] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
@@ -83,23 +76,21 @@ export default function NewSale() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedCliente', selectedCliente);
-      localStorage.setItem('selectedAnfitrionas', JSON.stringify(selectedAnfitrionas));
       localStorage.setItem('selectedHabitacion', selectedHabitacion);
       localStorage.setItem('metodoPago', metodoPago);
-      localStorage.setItem('propina', propina.toString());
+      localStorage.setItem('enableTip', enableTip.toString());
       localStorage.setItem('productos', JSON.stringify(productos));
     }
-  }, [selectedCliente, selectedAnfitrionas, selectedHabitacion, metodoPago, propina, productos]);
+  }, [selectedCliente, selectedHabitacion, metodoPago, enableTip, productos]);
 
   // Efecto para limpiar localStorage al montar el componente
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('selectedCliente');
-        localStorage.removeItem('selectedAnfitrionas');
         localStorage.removeItem('selectedHabitacion');
         localStorage.removeItem('metodoPago');
-        localStorage.removeItem('propina');
+        localStorage.removeItem('enableTip');
         localStorage.removeItem('productos');
       }
     };
@@ -152,6 +143,11 @@ export default function NewSale() {
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
 
+  // Estados para selección de anfitrionas por producto (NUEVO)
+  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{ [key: string]: string[] }>({});
+  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{ [key: string]: string[] }>({});
+  const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
+
   // Estados de búsqueda en tiempo real
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -176,79 +172,6 @@ export default function NewSale() {
   const maxChampagnePrice = Array.isArray(productos)
     ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio ?? p.price ?? 0)))
     : 0;
-
-  // Determinar el máximo de anfitrionas permitidas según las reglas
-  let maxAnfitrionas = 1; // Por defecto, máximo 1 anfitriona
-  let anfitrionasIncluidas = 0; // Anfitrionas sin recargo
-  let anfitrionasConRecargo = 0; // Anfitrionas con recargo de $40,000
-
-  if (hasChampagneProducts) {
-    if (maxChampagnePrice >= 240000) {
-      // $240,000: 7 anfitrionas (5 incluidas + 2 con recargo)
-      maxAnfitrionas = 7;
-      anfitrionasIncluidas = 5;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 200000) {
-      // $200,000: 6 anfitrionas (4 incluidas + 2 con recargo)
-      maxAnfitrionas = 6;
-      anfitrionasIncluidas = 4;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 160000) {
-      // $160,000: 5 anfitrionas (3 incluidas + 2 con recargo)
-      maxAnfitrionas = 5;
-      anfitrionasIncluidas = 3;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 120000) {
-      // $120,000: 4 anfitrionas (2 incluidas + 2 con recargo)
-      maxAnfitrionas = 4;
-      anfitrionasIncluidas = 2;
-      anfitrionasConRecargo = 2;
-    } else {
-      // Champaña con precio menor a $120,000: máximo 5 anfitrionas (sin recargo)
-      maxAnfitrionas = 5;
-      anfitrionasIncluidas = 5;
-      anfitrionasConRecargo = 0;
-    }
-  }
-  // Si no hay productos de champaña, se mantiene en 1
-
-  // Calcular recargo por anfitrionas extra según el precio de champaña
-  let anfitrionasExtra = 0;
-  let recargoAnfitrionas = 0;
-  if (hasChampagneProducts && selectedAnfitrionas.length > anfitrionasIncluidas) {
-    anfitrionasExtra = selectedAnfitrionas.length - anfitrionasIncluidas;
-    recargoAnfitrionas = anfitrionasExtra * 40000;
-  }
-
-  // Limpiar anfitrionas cuando se cambia la regla de champaña
-  useEffect(() => {
-    // Validar y ajustar la selección de anfitrionas según las reglas
-    if (selectedAnfitrionas.length > maxAnfitrionas) {
-      setSelectedAnfitrionas(selectedAnfitrionas.slice(0, maxAnfitrionas));
-
-      // Mostrar mensaje específico según la regla aplicada
-      if (!hasChampagneProducts) {
-        toast.info('Se ha limitado la selección a 1 anfitriona por productos sin champaña');
-      } else if (maxChampagnePrice >= 240000) {
-        toast.info('Se ha limitado la selección a 7 anfitrionas para champaña de $240,000+');
-      } else if (maxChampagnePrice >= 200000) {
-        toast.info('Se ha limitado la selección a 6 anfitrionas para champaña de $200,000+');
-      } else if (maxChampagnePrice >= 160000) {
-        toast.info('Se ha limitado la selección a 5 anfitrionas para champaña de $160,000+');
-      } else if (maxChampagnePrice >= 120000) {
-        toast.info('Se ha limitado la selección a 4 anfitrionas para champaña de $120,000+');
-      } else {
-        toast.info('Se ha limitado la selección a 5 anfitrionas para productos de champaña');
-      }
-    }
-  }, [hasChampagneProducts, maxChampagnePrice, selectedAnfitrionas.length, maxAnfitrionas]);
-
-  // Limpiar habitación si deja de haber productos de champaña
-  useEffect(() => {
-    if (!hasChampagneProducts && selectedHabitacion) {
-      setSelectedHabitacion('');
-    }
-  }, [hasChampagneProducts]);
 
   // Función para limpiar el filtro de búsqueda
   const handleClearSearch = () => {
@@ -376,6 +299,21 @@ export default function NewSale() {
     setCantidades(prev => ({ ...prev, [id]: isNaN(num) ? 1 : num }));
   };
 
+  // Funciones para manejar selecciones de anfitrionas (NUEVO)
+  const handleChampagneHostessChange = (productId: string, hostessIds: string[]) => {
+    setChampagneHostessSelections(prev => ({
+      ...prev,
+      [productId]: hostessIds
+    }));
+  };
+
+  const handleOtherProductHostessChange = (productId: string, hostessIds: string[]) => {
+    setOtherProductHostessSelections(prev => ({
+      ...prev,
+      [productId]: hostessIds
+    }));
+  };
+
   const handleAddProducto = (producto: any) => {
     const cantidad = cantidades[producto?.id || producto?.id_producto] || 1;
     const nombre = producto.nombre || producto.name || 'Sin nombre';
@@ -401,7 +339,9 @@ export default function NewSale() {
       categoria,
       comision: producto.comision ?? producto.commission ?? 0, // Normaliza la comisión
       cantidad,
-      subtotal
+      subtotal,
+      selectedHostesses: producto.selectedHostesses || [], // NUEVO: Anfitrionas seleccionadas
+      isChampagne: producto.isChampagne || false, // NUEVO: Si es champaña
     };
 
     const productoExistente = Array.isArray(productos)
@@ -431,18 +371,30 @@ export default function NewSale() {
       ...prev,
       [productoNormalizado.id]: 1
     }));
+
+    // Limpiar selecciones del modal después de agregar (NUEVO)
+    const productId = String(producto.id_producto || producto.id);
+    setChampagneHostessSelections(prev => {
+      const newState = { ...prev };
+      delete newState[productId];
+      return newState;
+    });
+    setOtherProductHostessSelections(prev => {
+      const newState = { ...prev };
+      delete newState[productId];
+      return newState;
+    });
   };
 
   const handleRemoveProducto = (index: number) => {
     setProductos(prev => {
       const newProductos = Array.isArray(prev) ? prev.filter((_, i) => i !== index) : [];
 
-      // Si no quedan productos, limpiar selectores y propina
+      // Si no quedan productos, limpiar selectores
       if (newProductos.length === 0) {
         setSelectedCliente('');
-        setSelectedAnfitrionas([]);
         setMetodoPago('');
-        setPropina(0);
+        setEnableTip(false);
       }
 
       return newProductos;
@@ -468,12 +420,11 @@ export default function NewSale() {
           )
         : [];
 
-      // Si no quedan productos, limpiar selectores y propina
+      // Si no quedan productos, limpiar selectores
       if (newProductos.length === 0) {
         setSelectedCliente('');
-        setSelectedAnfitrionas([]);
         setMetodoPago('');
-        setPropina(0);
+        setEnableTip(false);
       }
 
       return newProductos;
@@ -484,7 +435,11 @@ export default function NewSale() {
   const subtotal = Array.isArray(productos)
     ? productos.reduce((acc, p) => acc + (p?.subtotal || 0), 0)
     : 0;
-  const total = subtotal + propina + recargoAnfitrionas;
+  
+  // Calcular propina (10% del subtotal si está habilitada)
+  const propina = enableTip ? Math.round(subtotal * 0.1) : 0;
+  
+  const total = subtotal + propina;
 
   // Generar venta
   const handleSubmit = async () => {
@@ -493,38 +448,25 @@ export default function NewSale() {
       return;
     }
 
-    // Validar que si hay productos de champaña, las anfitrionas sean obligatorias
-    if (hasChampagneProducts && (!selectedAnfitrionas || selectedAnfitrionas.length === 0)) {
-      toast.info('Para productos de champaña es obligatorio seleccionar al menos una anfitriona');
-      return;
-    }
-
-    // Validar regla de anfitrionas
-    if (selectedAnfitrionas.length > maxAnfitrionas) {
-      if (!hasChampagneProducts) {
-        toast.info('Para productos sin champaña solo puedes seleccionar 1 anfitriona máximo');
-      } else if (maxChampagnePrice >= 240000) {
-        toast.info('Para champaña de $240,000+ solo puedes seleccionar hasta 7 anfitrionas');
-      } else if (maxChampagnePrice >= 200000) {
-        toast.info('Para champaña de $200,000+ solo puedes seleccionar hasta 6 anfitrionas');
-      } else if (maxChampagnePrice >= 160000) {
-        toast.info('Para champaña de $160,000+ solo puedes seleccionar hasta 5 anfitrionas');
-      } else if (maxChampagnePrice >= 120000) {
-        toast.info('Para champaña de $120,000+ solo puedes seleccionar hasta 4 anfitrionas');
-      } else {
-        toast.info('Para productos de champaña solo puedes seleccionar hasta 5 anfitrionas');
+    // Verificar que todas las bebidas con comisión tengan anfitrionas asignadas
+    const bebidasConComision = productos.filter(p => (p.comision || p.commission || 0) > 0);
+    
+    for (const bebida of bebidasConComision) {
+      if (!bebida.selectedHostesses || bebida.selectedHostesses.length === 0) {
+        toast.error(`La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`);
+        return;
       }
-      return;
     }
 
     setLoading(true);
     try {
-      // Calcular el total de comisiones solo si hay anfitrionas seleccionadas
-      const total_comision = (Array.isArray(selectedAnfitrionas) && selectedAnfitrionas.length > 0) && Array.isArray(productos)
-        ? productos.reduce(
-            (acc, p) => acc + ((p?.comision || 0) * (p?.cantidad || 1) + anfitrionasExtra * 20000),
-            0
-          )
+      // Obtener todas las anfitrionas únicas de todos los productos
+      const todasLasAnfitrionas = productos.flatMap(p => p.selectedHostesses || []);
+      const anfitrionasUnicas = Array.from(new Set(todasLasAnfitrionas));
+
+      // Calcular el total de comisiones
+      const total_comision = Array.isArray(productos)
+        ? productos.reduce((acc, p) => acc + ((p?.comision || 0) * (p?.cantidad || 1)), 0)
         : 0;
 
       const ventaData = {
@@ -541,16 +483,12 @@ export default function NewSale() {
           ? productos.map(p => ({
               producto_id: p?.id,
               precio: p?.precio || 0,
-              comision: (Array.isArray(selectedAnfitrionas) && selectedAnfitrionas.length > 0) 
-                ? (p?.comision || 0) * (p?.cantidad || 1) + anfitrionasExtra * 20000
-                : 0,
+              comision: (p?.comision || 0) * (p?.cantidad || 1),
               cantidad: p?.cantidad || 0,
               sub_total: p?.subtotal || 0
             }))
           : [],
-        usuarios: Array.isArray(selectedAnfitrionas)
-          ? selectedAnfitrionas.map(id => parseInt(id))
-          : []
+        usuarios: anfitrionasUnicas.map(id => parseInt(id))
       };
 
       const resultado = await createVenta(ventaData);
@@ -713,46 +651,159 @@ export default function NewSale() {
                     <th className='px-2 sm:px-4 py-2 text-left'>PRECIO</th>
                     <th className='px-2 sm:px-4 py-2 text-left'>COMISIÓN</th>
                     <th className='px-2 sm:px-4 py-2 text-left'>CATEGORÍA</th>
+                    <th className='px-2 sm:px-4 py-2 text-center'>ANFITRIONA</th>
                     <th className='px-2 sm:px-4 py-2 text-center'>AGREGAR</th>
                   </tr>
                 </thead>
                 <tbody>
                   {searchLoading ? (
                     <tr>
-                      <td colSpan={5} className='text-center py-4'>
+                      <td colSpan={6} className='text-center py-4'>
                         Buscando...
                       </td>
                     </tr>
                   ) : searchResults.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className='text-center py-4 text-gray-400'>
+                      <td colSpan={6} className='text-center py-4 text-gray-400'>
                         No hay resultados
                       </td>
                     </tr>
                   ) : (
-                    searchResults.map((producto, idx) => (
-                      <tr
-                        key={producto.id_producto || `search-prod-${idx}`}
-                        className='border-t hover:bg-gray-50'
-                      >
-                        <td className='px-4 py-2'>{producto.nombre}</td>
-                        <td className='px-4 py-2'>{formatCurrencyNoDecimals(producto.precio)}</td>
-                        <td className='px-4 py-2'>
-                          {formatCurrencyNoDecimals(producto.comision || 0)}
-                        </td>
-                        <td className='px-4 py-2'>{producto.categoria}</td>
-                        <td className='px-4 py-2 text-center'>
-                          <Button
-                            size='icon'
-                            variant='ghost'
-                            className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
-                            onClick={() => handleAddProducto(producto)}
-                          >
-                            <Plus />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
+                    searchResults.map((producto, idx) => {
+                      const id = String(producto.id_producto || producto.id);
+                      const isChampagne = isChampagneProduct(producto);
+                      const hasComm = (producto.comision || producto.commission || 0) > 0;
+
+                      return (
+                        <tr
+                          key={producto.id_producto || `search-prod-${idx}`}
+                          className='border-t hover:bg-gray-50'
+                        >
+                          <td className='px-4 py-2'>{producto.nombre}</td>
+                          <td className='px-4 py-2'>{formatCurrencyNoDecimals(producto.precio)}</td>
+                          <td className='px-4 py-2'>
+                            {formatCurrencyNoDecimals(producto.comision || 0)}
+                          </td>
+                          <td className='px-4 py-2'>{producto.categoria}</td>
+                          <td className='px-4 py-2 text-center'>
+                            {hasComm ? (
+                              isChampagne ? (
+                                // Para champañas: usar HostessMultiSelect de shadcn/ui
+                                <div className="space-y-1">
+            
+                                  <div className="w-full">
+                                    <HostessMultiSelect
+                                      anfitrionas={anfitrionas.filter(h => {
+                                        const hostessId = String(h.id || h.id_usuario);
+                                        const currentSelection = champagneHostessSelections[id] || [];
+                                        
+                                        // Incluir si está en la selección actual
+                                        if (currentSelection.includes(hostessId)) {
+                                          return true;
+                                        }
+                                        
+                                        // Excluir si está asignada a cualquier otro producto en el buscador
+                                        const allSearchAssigned = [
+                                          ...Object.values(champagneHostessSelections).flat(),
+                                          ...Object.values(otherProductHostessSelections).flat()
+                                        ];
+                                        
+                                        // Excluir si está asignada a productos ya en el carrito
+                                        const cartAssigned = productos.flatMap(p => p.selectedHostesses || []);
+                                        
+                                        return !allSearchAssigned.includes(hostessId) && !cartAssigned.includes(hostessId);
+                                      })}
+                                      value={champagneHostessSelections[id] || []}
+                                      onChange={(selectedIds) => {
+                                        // El componente ya maneja el límite internamente
+                                        handleChampagneHostessChange(id, selectedIds);
+                                      }}
+                                      searchValue={hostessSearchValues[id] || ''}
+                                      onSearchChange={(searchValue) => {
+                                        setHostessSearchValues(prev => ({
+                                          ...prev,
+                                          [id]: searchValue
+                                        }));
+                                      }}
+                                      maxSelection={(() => {
+                                        const precio = Number(producto.precio || producto.price || 0);
+                                        if (precio >= 240000) return 5;
+                                        else if (precio >= 200000) return 4;
+                                        else if (precio >= 140000) return 3;
+                                        else if (precio >= 120000) return 2;
+                                        return 1;
+                                      })()}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                // Para otras bebidas con comisión: usar IndividualHostessSelect
+                                <div className="space-y-1">
+                                  <IndividualHostessSelect
+                                    anfitrionas={anfitrionas.filter(h => {
+                                      const hostessId = String(h.id || h.id_usuario);
+                                      const currentSelection = otherProductHostessSelections[id] || [];
+                                      
+                                      // Incluir si está en la selección actual
+                                      if (currentSelection.includes(hostessId)) {
+                                        return true;
+                                      }
+                                      
+                                      // Excluir si está asignada a cualquier otro producto en el buscador
+                                      const allSearchAssigned = [
+                                        ...Object.values(champagneHostessSelections).flat(),
+                                        ...Object.values(otherProductHostessSelections).flat()
+                                      ];
+                                      
+                                      // Excluir si está asignada a productos ya en el carrito
+                                      const cartAssigned = productos.flatMap(p => p.selectedHostesses || []);
+                                      
+                                      return !allSearchAssigned.includes(hostessId) && !cartAssigned.includes(hostessId);
+                                    })}
+                                    value={otherProductHostessSelections[id]?.[0] || ''}
+                                    onChange={(selectedValue) => {
+                                      handleOtherProductHostessChange(id, selectedValue ? [selectedValue] : []);
+                                    }}
+                                    placeholder={
+                                      anfitrionas.length === 0
+                                        ? "No hay anfitrionas disponibles"
+                                        : "Seleccionar"
+                                    }
+                                    className="w-full"
+                                  />
+                                </div>
+                              )
+                            ) : (
+                              <div className="text-xs text-gray-400">Sin comisión</div>
+                            )}
+                          </td>
+                          <td className='px-4 py-2 text-center'>
+                            <Button
+                              size='icon'
+                              variant='ghost'
+                              className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
+                              onClick={() => {
+                                // Agregar información de anfitriona seleccionada al producto
+                                const productWithHostess = {
+                                  ...producto,
+                                  selectedHostesses: isChampagne
+                                    ? champagneHostessSelections[id] || []
+                                    : otherProductHostessSelections[id] || [],
+                                  isChampagne: isChampagne
+                                };
+                                handleAddProducto(productWithHostess);
+                              }}
+                              disabled={hasComm && (
+                                (isChampagne && (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
+                                (!isChampagne && (!otherProductHostessSelections[id] || otherProductHostessSelections[id].length === 0))
+                              )}
+                            >
+                              <Plus />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -776,15 +827,6 @@ export default function NewSale() {
             value={selectedCliente}
             onChange={setSelectedCliente}
             required
-            disabled={!Array.isArray(productos) || productos.length === 0}
-          />
-
-          {/* Anfitriona */}
-          <HostessSelect
-            anfitrionas={anfitrionas}
-            value={selectedAnfitrionas}
-            onChange={setSelectedAnfitrionas}
-            maxSelection={maxAnfitrionas}
             disabled={!Array.isArray(productos) || productos.length === 0}
           />
 
@@ -814,32 +856,40 @@ export default function NewSale() {
 
           {/* Propina */}
           <div>
-            <Label className='block text-xs font-medium text-gray-500 mb-1'>Propina</Label>
-            <div className='relative'>
-              <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4' />
-              <Input
-                type='number'
-                placeholder='Propina'
-                value={propina === 0 ? '' : propina}
-                onChange={e => {
-                  const val = e.target.value;
-                  setPropina(val === '' ? 0 : parseFloat(val) || 0);
-                }}
-                min='0'
-                step='0.01'
-                disabled={!Array.isArray(productos) || productos.length === 0}
-                onFocus={e => setPropina(0)}
-                onBlur={e => {
-                  if (e.target.value === '') setPropina(0);
-                }}
-                className='w-full pl-8'
-              />
+            <Label className='block text-xs font-medium text-gray-500 mb-1'>
+              <div className='flex items-center gap-2'>
+                <Coins className='w-4 h-4' />
+                Propina (10%)
+              </div>
+            </Label>
+            <div className='flex items-center gap-2'>
+              <div className='relative flex-1'>
+                <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4 text-gray-400' />
+                <Input
+                  type='text'
+                  value={formatCurrencyNoDecimals(propina)}
+                  readOnly
+                  disabled
+                  className='w-full pl-8 bg-gray-50'
+                />
+              </div>
+              <div className='flex items-center space-x-2'>
+                <Checkbox
+                  id="enable-tip"
+                  checked={enableTip}
+                  onCheckedChange={(checked) => setEnableTip(checked === true)}
+                  disabled={!Array.isArray(productos) || productos.length === 0}
+                />
+                <label htmlFor="enable-tip" className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'>
+                  Habilitar
+                </label>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Mensaje informativo sobre la regla de anfitrionas */}
-        {Array.isArray(productos) && productos.length > 0 && (
+
+        {false && Array.isArray(productos) && productos.length > 0 && (
           <div className='w-full flex justify-center mt-2 mb-2'>
             <div
               className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${
@@ -854,7 +904,7 @@ export default function NewSale() {
                 ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`
                 : hasChampagneProducts && maxChampagnePrice >= 200000
                   ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 6 anfitrionas. Las primeras 4 incluidas, la 5ta y 6ta suman $40,000 cada una.`
-                  : hasChampagneProducts && maxChampagnePrice >= 160000
+                  : hasChampagneProducts && maxChampagnePrice >= 140000
                     ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 5 anfitrionas. Las primeras 3 incluidas, la 4ta y 5ta suman $40,000 cada una.`
                     : hasChampagneProducts && maxChampagnePrice >= 120000
                       ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 4 anfitrionas. Las primeras 2 incluidas, la 3ra y 4ta suman $40,000 cada una.`
@@ -870,12 +920,6 @@ export default function NewSale() {
           <div className='text-xs text-gray-400 font-semibold mb-1'>TOTAL</div>
           <div className='text-2xl font-bold text-gray-900 mb-2 text-center justify-center items-center'>
             {formatCurrencyNoDecimals(total)}
-            {recargoAnfitrionas > 0 && (
-              <span className='block text-xs text-blue-600 font-normal mt-1'>
-                Incluye recargo por anfitrionas extra:{' '}
-                {formatCurrencyNoDecimals(recargoAnfitrionas)}
-              </span>
-            )}
           </div>
           <Button
             onClick={handleSubmit}
@@ -884,8 +928,6 @@ export default function NewSale() {
               !Array.isArray(productos) ||
               productos.length === 0 ||
               !metodoPago ||
-              (hasChampagneProducts &&
-                (!selectedAnfitrionas || selectedAnfitrionas.length === 0)) ||
               hasOpenCaja === false
             }
             className='rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
@@ -913,6 +955,9 @@ export default function NewSale() {
                   </th>
                   <th className='px-4 py-2 text-center text-sm font-medium text-gray-700'>
                     COMISIÓN
+                  </th>
+                  <th className='px-4 py-2 text-center text-sm font-medium text-gray-700'>
+                    ANFITRIONAS
                   </th>
                   <th className='px-4 py-2 text-center text-sm font-medium text-gray-700'>
                     SUB TOTAL
@@ -963,7 +1008,23 @@ export default function NewSale() {
                       </td>
                       <td className='px-4 py-2 text-center'>
                         {formatCurrencyNoDecimals(
-                          (producto.comision || producto.commission || 0) + anfitrionasExtra * 20000
+                          (producto.comision || producto.commission || 0)
+                        )}
+                      </td>
+                      <td className='px-4 py-2 text-center'>
+                        {producto.selectedHostesses && producto.selectedHostesses.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {producto.selectedHostesses.map((hostessId: string, idx: number) => {
+                              const hostess = anfitrionas.find(h => String(h.id || h.id_usuario) === hostessId);
+                              return (
+                                <span key={idx} className="bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs">
+                                  {hostess?.nick || hostess?.nombre || hostess?.name || hostessId}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Sin anfitrionas</span>
                         )}
                       </td>
                       <td className='px-4 py-2 text-center'>
@@ -983,7 +1044,7 @@ export default function NewSale() {
                   ))}
                 {(!Array.isArray(productos) || productos.length === 0) && (
                   <tr>
-                    <td colSpan={6} className='px-4 py-8 text-center text-gray-500'>
+                    <td colSpan={7} className='px-4 py-8 text-center text-gray-500'>
                       No hay productos agregados
                     </td>
                   </tr>
@@ -1004,6 +1065,12 @@ export default function NewSale() {
         handleCantidadChange={handleCantidadChange}
         handleAgregarProducto={handleAddProducto}
         categoria={modalCategoria}
+        anfitrionas={anfitrionas}
+        champagneHostessSelections={champagneHostessSelections}
+        onChampagneHostessChange={handleChampagneHostessChange}
+        otherProductHostessSelections={otherProductHostessSelections}
+        onOtherProductHostessChange={handleOtherProductHostessChange}
+        productosEnCarrito={productos}
       />
     </>
   );

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus} from "lucide-react";
+import { Trash2, Plus, Minus } from "lucide-react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import {
   Tooltip,
@@ -13,10 +13,8 @@ interface OrderProductTableProps {
   onRemoveProducto?: (index: number) => void;
   onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
   onToggleComision?: (index: number) => void;
-  hostessOptions?: { id: string; name: string }[];
   onAssignHostess?: (index: number, hostessId: string) => void;
-  hasChampagne?: boolean;
-  selectedHostesses?: { id: string; name: string }[];
+  anfitrionas: any[]; // Lista de anfitrionas para mostrar nombres
 }
 
 export default function OrderProductTable({
@@ -24,10 +22,8 @@ export default function OrderProductTable({
   onRemoveProducto,
   onUpdateCantidad,
   onToggleComision,
-  hostessOptions = [],
   onAssignHostess,
-  hasChampagne = false,
-  selectedHostesses = [],
+  anfitrionas,
 }: OrderProductTableProps) {
   return (
     <div className="overflow-x-auto w-full mt-10">
@@ -63,7 +59,7 @@ export default function OrderProductTable({
         <tbody>
           {productos.length === 0 && (
             <tr>
-              <td colSpan={7} className="text-center text-gray-300 py-6">
+              <td colSpan={8} className="text-center text-gray-300 py-6">
                 No hay productos agregados
               </td>
             </tr>
@@ -113,8 +109,8 @@ export default function OrderProductTable({
                         variant="outline"
                         onClick={() => onToggleComision?.(idx)}
                         className={`rounded-full px-1.5 py-0 text-[10px] h-5 transition-all duration-200 ${p.generaComision === 0
-                            ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
-                            : 'bg-pink-100 text-pink-700 border-pink-300 hover:bg-pink-200'
+                          ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
+                          : 'bg-pink-100 text-pink-700 border-pink-300 hover:bg-pink-200'
                           }`}
                       >
                         {p.generaComision === 0 ? 'Cliente' : 'Anfitriona'}
@@ -152,86 +148,38 @@ export default function OrderProductTable({
                       "bg-indigo-100 text-indigo-700",
                       "bg-cyan-100 text-cyan-700",
                     ];
-                    
+
                     const isChampagne = (p.categoria || p.category_name || "").toLowerCase().includes("champ");
-                    
-                    // Si no hay champaña en el pedido, no mostrar selector (comisión se reparte)
-                    if (!hasChampagne) {
+
+                    // Si el producto tiene anfitrionas específicamente asignadas
+                    if (p.selectedHostesses && p.selectedHostesses.length > 0) {
                       return (
                         <div className="flex flex-row flex-wrap gap-1 items-center justify-center">
-                          {selectedHostesses.length > 0 ? (
-                            selectedHostesses.map((h, idx) => (
-                              <span 
-                                key={h.id}
+
+                          {p.selectedHostesses.map((hostessId: string, idx: number) => {
+                            // Buscar el nombre de la anfitriona por ID
+                            const anfitriona = anfitrionas.find(a =>
+                              String(a.id || a.id_usuario) === hostessId
+                            );
+                            const hostessName = anfitriona ?
+                              (anfitriona.nick || anfitriona.name || anfitriona.nombre || `ID: ${hostessId}`) :
+                              `ID: ${hostessId}`;
+
+                            return (
+                              <span
+                                key={hostessId}
                                 className={`${badgeColors[idx % badgeColors.length]} px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap`}
                               >
-                                {h.name}
+                                {hostessName}
                               </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-400 text-xs">Comisión repartida</span>
-                          )}
+                            );
+                          })}
                         </div>
                       );
                     }
-                    
-                    // Si este producto es champaña, mostrar solo anfitrionas no asignadas a otros tragos
-                    if (isChampagne) {
-                      const assignedHostessIds = productos
-                        .filter((_, i) => i !== idx)
-                        .map((item) => item.hostessId)
-                        .filter(Boolean);
-                      
-                      const availableHostesses = selectedHostesses.filter(
-                        (h) => !assignedHostessIds.includes(h.id)
-                      );
-                      
-                      return (
-                        <div className="flex flex-row flex-wrap gap-1 items-center justify-center">
-                          {availableHostesses.length > 0 ? (
-                            availableHostesses.map((h, idx) => (
-                              <span 
-                                key={h.id}
-                                className={`${badgeColors[idx % badgeColors.length]} px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap`}
-                              >
-                                {h.name}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-400 text-xs">Sin anfitrionas disponibles</span>
-                          )}
-                        </div>
-                      );
-                    }
-                    
-                    // Producto con comisión cuando hay champaña: asignación opcional
-                    const usedHostessIds = productos
-                      .filter((_, i) => i !== idx)
-                      .map((item) => item.hostessId)
-                      .filter(Boolean);
-                    
+
                     return (
-                      <div className="flex flex-col items-center gap-1">
-                        <select
-                          className="border rounded-full px-3 py-1 text-sm bg-white"
-                          value={p.hostessId || ""}
-                          onChange={(e) => onAssignHostess?.(idx, e.target.value)}
-                        >
-                          <option value="">Repartir entre todas</option>
-                          {hostessOptions.map((h) => (
-                            <option
-                              key={h.id}
-                              value={h.id}
-                              disabled={h.id !== p.hostessId && usedHostessIds.includes(h.id)}
-                            >
-                              {h.name}
-                            </option>
-                          ))}
-                        </select>
-                        {!p.hostessId && (
-                          <span className="text-xs text-gray-400">Se reparte</span>
-                        )}
-                      </div>
+                      <span className="text-gray-400 text-xs">Sin anfitrionas asignadas</span>
                     );
                   })()
                 ) : (
