@@ -90,9 +90,10 @@ export function SalesDetailModal({
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs sm:text-sm text-muted-foreground">Fecha y Hora:</span>
-                  <span className="text-xs sm:text-sm font-medium">
-                    {formatFecha(selectedVenta.fecha_crea)} - {formatHora(selectedVenta.fecha_crea)}
-                  </span>
+                  <div className="text-xs sm:text-sm font-medium">
+                    <div>{formatFecha(selectedVenta.fecha_crea)}</div>
+                    <div>{formatHora(selectedVenta.fecha_crea)}</div>
+                  </div>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">

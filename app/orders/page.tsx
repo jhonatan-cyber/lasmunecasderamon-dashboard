@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Plus, Search, ArrowLeft, AlertCircle, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import OrderDetailModal from '@/components/orders/OrderDetailModal';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -41,6 +42,11 @@ export default function OrdersPage() {
   const [orderDetail, setOrderDetail] = useState<any[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+
+  // Estados para el modal de eliminación
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -168,6 +174,44 @@ export default function OrdersPage() {
 
   const handleOrderStatusChange = () => {
     fetchOrders(); // Recargar la lista de pedidos
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, order: Order) => {
+    e.stopPropagation(); // Evitar que se abra el modal de detalles
+    setOrderToDelete(order);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!orderToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/orders/${orderToDelete.id_pedido}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Pedido eliminado exitosamente');
+        fetchOrders(); // Recargar la lista
+        setDeleteModalOpen(false);
+        setOrderToDelete(null);
+      } else {
+        toast.error(data.message || 'Error al eliminar el pedido');
+      }
+    } catch (error) {
+      console.error('Error al eliminar pedido:', error);
+      toast.error('Error inesperado al eliminar el pedido');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setOrderToDelete(null);
   };
 
   const handleCreateOrder = () => {
@@ -395,6 +439,19 @@ export default function OrdersPage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Botón de eliminar */}
+                      <div className='ml-4'>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200"
+                          onClick={(e) => handleDeleteClick(e, order)}
+                          title="Eliminar pedido"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -418,6 +475,49 @@ export default function OrdersPage() {
           onOrderStatusChange={handleOrderStatusChange}
         />
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar eliminación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar el pedido <strong>{orderToDelete?.codigo}</strong>?
+              <br />
+              <br />
+              <span className="text-red-600 font-medium">Esta acción no se puede deshacer.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+              className="rounded-full"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="rounded-full"
+            >
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PermissionGuard>
   );
 }

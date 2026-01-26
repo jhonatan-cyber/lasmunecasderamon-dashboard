@@ -102,6 +102,55 @@ export function formatFechaLarga(fecha: string | Date) {
 // Ejemplo: 25/julio/2025
 
 /**
+ * Formatea una fecha con hora en formato legible
+ * @param fecha - Fecha en formato string o Date
+ * @returns Fecha y hora formateada
+ */
+export function formatFechaConHora(fecha: string | Date) {
+  try {
+    return format(new Date(fecha), "dd/MMMM/yyyy HH:mm", { locale: es })
+      .replace(/\b([a-z])/g, l => l.toLowerCase())
+      .replace("/", "/");
+  } catch {
+    return "Fecha no válida";
+  }
+}
+
+// Ejemplo: 25/julio/2025 14:30
+
+/**
+ * Formatea solo la fecha en formato legible
+ * @param fecha - Fecha en formato string o Date
+ * @returns Solo la fecha formateada
+ */
+export function formatSoloFecha(fecha: string | Date) {
+  try {
+    return format(new Date(fecha), "dd/MMMM/yyyy", { locale: es })
+      .replace(/\b([a-z])/g, l => l.toLowerCase())
+      .replace("/", "/");
+  } catch {
+    return "Fecha no válida";
+  }
+}
+
+// Ejemplo: 25/julio/2025
+
+/**
+ * Formatea solo la hora en formato legible
+ * @param fecha - Fecha en formato string o Date
+ * @returns Solo la hora formateada
+ */
+export function formatSoloHora(fecha: string | Date) {
+  try {
+    return format(new Date(fecha), "HH:mm", { locale: es });
+  } catch {
+    return "Hora no válida";
+  }
+}
+
+// Ejemplo: 14:30
+
+/**
  * Formatea un valor numérico como moneda con formato abreviado para números grandes
  * @param value - Valor a formatear (número o string)
  * @returns String formateado con formato abreviado

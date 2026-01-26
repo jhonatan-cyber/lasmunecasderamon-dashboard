@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Coins, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
 import RoomSelect from '@/components/ui/RoomSelect';
 import { useSales } from '@/hooks/useSales';
@@ -81,6 +82,10 @@ export default function OrderDetailModal({
   const [habitacionId, setHabitacionId] = useState('');
   const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
+  const [agregarPropina, setAgregarPropina] = useState(false);
+
+  // Estados para el modal de confirmación de venta
+  const [confirmVentaModalOpen, setConfirmVentaModalOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -100,8 +105,23 @@ export default function OrderDetailModal({
       setPropinaDisplayValue('');
       setShowMetodoPagoError(false);
       setIsRegistering(false);
+      setAgregarPropina(false);
+      setConfirmVentaModalOpen(false);
     }
   }, [open]);
+
+  // Calcular propina automáticamente cuando se marca/desmarca el checkbox
+  useEffect(() => {
+    if (agregarPropina && detail && detail.length > 0) {
+      const totalPedido = detail[0]?.total || 0;
+      const propinaCalculada = Math.round(totalPedido * 0.1);
+      setPropina(propinaCalculada);
+      setPropinaDisplayValue(propinaCalculada.toLocaleString('es-CL'));
+    } else {
+      setPropina(0);
+      setPropinaDisplayValue('');
+    }
+  }, [agregarPropina, detail]);
 
   // Ocultar error de método de pago cuando se selecciona uno
   useEffect(() => {
@@ -143,7 +163,7 @@ export default function OrderDetailModal({
 
       if (maxChampagnePrice >= 240000) champagneLimit = 5;
       else if (maxChampagnePrice >= 200000) champagneLimit = 4;
-      else if (maxChampagnePrice >= 160000) champagneLimit = 3;
+      else if (maxChampagnePrice >= 140000) champagneLimit = 3;
       else if (maxChampagnePrice >= 120000) champagneLimit = 2;
       else champagneLimit = 1;
     }
@@ -242,6 +262,12 @@ export default function OrderDetailModal({
       return;
     }
 
+    // Si todas las validaciones pasan, abrir modal de confirmación
+    setConfirmVentaModalOpen(true);
+  };
+
+  const handleConfirmRegistrarVenta = async () => {
+
     setIsRegistering(true);
     try {
       // Obtener información del pedido
@@ -286,8 +312,7 @@ export default function OrderDetailModal({
         })
         .filter((id): id is number => id !== null && !isNaN(id));
 
-      console.log('[OrderDetailModal] anfitrionasFinal:', anfitrionasFinal);
-      console.log('[OrderDetailModal] usuariosIds extracted:', usuariosIds);
+    
 
       if (usuariosIds.length === 0 && hasChampagneProducts) {
         toast.error('No se pudieron obtener los IDs de las anfitrionas');
@@ -314,7 +339,7 @@ export default function OrderDetailModal({
         habitacion_id: habitacionId ? parseInt(habitacionId) : undefined // Campo opcional de habitación
       };
 
-      console.log('[OrderDetailModal] ventaData to send:', JSON.stringify(ventaData, null, 2));
+  
 
       const resultado = await createVenta(ventaData);
       if (resultado && resultado.success) {
@@ -408,7 +433,12 @@ export default function OrderDetailModal({
       toast.error('Error al registrar la venta');
     } finally {
       setIsRegistering(false);
+      setConfirmVentaModalOpen(false);
     }
+  };
+
+  const handleCancelRegistrarVenta = () => {
+    setConfirmVentaModalOpen(false);
   };
 
   const handleRechazarPedido = async () => {
@@ -492,7 +522,7 @@ export default function OrderDetailModal({
         throw new Error(result.message || 'Error al crear la cuenta');
       }
     } catch (error) {
-      console.error('Error al registrar cuenta:', error);
+   
       toast.error('Error al registrar la cuenta');
     } finally {
       setIsRegistering(false);
@@ -530,6 +560,16 @@ export default function OrderDetailModal({
     const cat = (item.categoria || '').toLowerCase();
     return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
   });
+
+  // Verificar si el cliente está registrado
+  const isClienteRegistrado = () => {
+    const cliente = detail[0]?.cliente;
+    return cliente && 
+           cliente.toLowerCase() !== 'cliente no registrado' && 
+           cliente.toLowerCase() !== 'sin cliente' &&
+           cliente.trim() !== '' &&
+           cliente !== '-';
+  };
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-[56rem] sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
@@ -557,9 +597,10 @@ export default function OrderDetailModal({
                   <div className='space-y-3'>
                     <div className='flex justify-between items-center'>
                       <span className='text-xs sm:text-sm text-muted-foreground'>Fecha y Hora:</span>
-                      <span className='text-xs sm:text-sm font-medium'>
-                        {formatFecha(detail[0]?.fecha_crea)} - {formatHora(detail[0]?.fecha_crea)}
-                      </span>
+                      <div className='text-xs sm:text-sm font-medium'>
+                        <div>{formatFecha(detail[0]?.fecha_crea)}</div>
+                        <div>{formatHora(detail[0]?.fecha_crea)}</div>
+                      </div>
                     </div>
                     <Separator />
                     <div className='flex justify-between items-center'>
@@ -630,29 +671,34 @@ export default function OrderDetailModal({
                       />
                     )}
                     <div>
-                      <Label className='block text-xs font-medium text-muted-foreground mb-1'>Propina</Label>
-                      <div className='relative'>
-                        <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
-                        <Input
-                          className='pl-8'
-                          placeholder='Propina'
-                          type='text'
-                          value={propinaDisplayValue}
-                          onChange={e => {
-                            const value = e.target.value;
-                            const numericValue = value.replace(/\D/g, '');
-                            
-                            if (numericValue === '') {
-                              setPropina(0);
-                              setPropinaDisplayValue('');
-                            } else {
-                              const number = parseInt(numericValue);
-                              setPropina(number);
-                              setPropinaDisplayValue(number.toLocaleString('es-CL'));
-                            }
-                          }}
-                        />
+                      <Label className='block text-xs font-medium text-muted-foreground mb-2'>Propina</Label>
+                      <div className='flex items-center space-x-2'>
+                        <div className='relative flex-1'>
+                          <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
+                          <Input
+                            className='pl-8 bg-gray-50'
+                            placeholder='Sin propina'
+                            type='text'
+                            value={propinaDisplayValue}
+                            readOnly
+                          />
+                        </div>
+                        <div className='flex items-center space-x-2'>
+                          <Checkbox
+                            id="agregar-propina"
+                            checked={agregarPropina}
+                            onCheckedChange={(checked) => setAgregarPropina(checked === true)}
+                          />
+                          <label htmlFor="agregar-propina" className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'>
+                            10%
+                          </label>
+                        </div>
                       </div>
+                      {agregarPropina && (
+                        <div className='text-xs text-green-600 mt-1'>
+                          ✓ Propina del 10%: ${propina.toLocaleString('es-CL')}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <Label className='block text-xs font-medium text-muted-foreground mb-1'>
@@ -738,23 +784,25 @@ export default function OrderDetailModal({
                 >
                   {isRegistering ? 'Registrando...' : 'Registrar Venta'}
                 </Button>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-                  onClick={handleRegistrarCuenta}
-                  disabled={isRegistering}
-                >
-                  {isRegistering ? 'Registrando...' : 'Registrar Cuenta'}
-                </Button>
+                {isClienteRegistrado() && (
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                    onClick={handleRegistrarCuenta}
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? 'Registrando...' : 'Registrar Cuenta'}
+                  </Button>
+                )}
 
                 <Button
                   size='sm'
                   variant='outline'
-                  className='rounded-full px-4 sm:px-6 bg-red-500 text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-                  onClick={handleRechazarPedido}
+                  className='rounded-full px-4 sm:px-6 bg-gray-500 text-white hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  onClick={onClose}
                 >
-                  Rechazar
+                  Cerrar
                 </Button>
               </div>
             </div>
@@ -765,6 +813,55 @@ export default function OrderDetailModal({
           </div>
         )}
       </DialogContent>
+
+      {/* Modal de confirmación de registro de venta */}
+      <Dialog open={confirmVentaModalOpen} onOpenChange={setConfirmVentaModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar registro de venta</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas registrar esta venta?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-6 py-4">
+            <div className="space-y-2 text-sm">
+              <div><strong>Pedido:</strong> {orderCode}</div>
+              <div><strong>Total:</strong> ${((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString('es-CL')}</div>
+              <div><strong>Método de pago:</strong> {metodoPago}</div>
+              {propina > 0 && (
+                <div><strong>Propina:</strong> ${propina.toLocaleString('es-CL')}</div>
+              )}
+              {habitacionId && (
+                <div><strong>Habitación:</strong> {rooms.find(r => r.id === parseInt(habitacionId))?.name || habitacionId}</div>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleCancelRegistrarVenta}
+              disabled={isRegistering}
+              className="rounded-full"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmRegistrarVenta}
+              disabled={isRegistering}
+              className="rounded-full bg-green-600 hover:bg-green-700"
+            >
+              {isRegistering ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Registrando...
+                </>
+              ) : (
+                'Confirmar Venta'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
