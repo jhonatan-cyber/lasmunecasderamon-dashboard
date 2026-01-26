@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, DollarSign, X } from "lucide-react";
-import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/formatters";
+import { formatCurrencyNoDecimals, formatFechaLarga, formatSoloFecha, formatSoloHora } from "@/lib/formatters";
 import { useTipsDetalle } from "@/hooks/useTips";
 import { PropinaResumen } from "@/types/propina";
 
@@ -142,7 +142,8 @@ export default function PropinasDetalleModal({
                   detalles.map((detalle, index) => (
                     <TableRow key={index}>
                       <TableCell className="text-xs sm:text-sm">
-                        {formatFechaLarga(detalle.fecha_hora)}
+                        <div>{formatSoloFecha(detalle.fecha_hora)}</div>
+                        <div>{formatSoloHora(detalle.fecha_hora)}</div>
                       </TableCell>
                       <TableCell className="font-mono text-xs sm:text-sm">
                         {detalle.codigo_venta}

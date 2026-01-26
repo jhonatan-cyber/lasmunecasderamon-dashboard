@@ -255,13 +255,16 @@ export function Header() {
                     onClick={() => handleOrderClick(order.id_pedido)}
                   >
                     <div className='flex justify-between w-full'>
-                      <span className='font-semibold text-sm'>{order.codigo}</span>
+                      <span className='font-semibold text-sm'>{order.garzon}</span>
                       <span className='text-xs text-gray-500'>
                         {order.fecha_crea ? order.fecha_crea.slice(11, 16) : ''}
                       </span>
                     </div>
-                    <div className='text-xs text-gray-700'>{order.cliente}</div>
-                    <div className='text-xs text-gray-500'>Total: ${order.total}</div>
+                    <div className='text-xs text-gray-700'>Cliente: {order.cliente}</div>
+                    {order.nicks && (
+                      <div className='text-xs text-gray-600'>Anfitrionas: {order.nicks}</div>
+                    )}
+                    <div className='text-xs text-gray-500'>Total: ${order.total?.toLocaleString('es-CL')}</div>
                   </DropdownMenuItem>
                 ))
               )}
