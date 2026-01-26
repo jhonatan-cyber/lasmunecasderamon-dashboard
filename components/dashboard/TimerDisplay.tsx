@@ -206,7 +206,7 @@ export function TimerDisplay() {
                           onClick={() => handleStopTimer(timer.id, timer.roomName)}
                           className='h-5 w-5 p-0'
                         >
-                          <Stop className='text-xs' />
+                          <Square className='text-xs' />
                         </Button>
                       )}
                     </div>

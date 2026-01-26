@@ -1,7 +1,6 @@
 import { Users } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import SearchInput from "@/components/ui/SearchInput";
 import React, { useRef, useState } from "react";
 
@@ -11,14 +10,25 @@ interface HostessMultiSelectProps {
   onChange: (v: string[]) => void;
   searchValue: string;
   onSearchChange: (v: string) => void;
+  maxSelection?: number; // NUEVO: Límite máximo de selecciones
 }
 
-const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ anfitrionas, value, onChange, searchValue, onSearchChange }) => {
+const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ 
+  anfitrionas, 
+  value, 
+  onChange, 
+  searchValue, 
+  onSearchChange, 
+  maxSelection 
+}) => {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  
+  // Verificar si se ha alcanzado el límite máximo
+  const hasReachedLimit = maxSelection ? value.length >= maxSelection : false;
   return (
     <div className="flex-1 min-w-[200px]">
-      <Label className="block text-xs font-medium text-gray-500 mb-1">Anfitriona(s)</Label>
+   
       <div className="relative">
         <Users className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 h-4 w-4" />
         <Popover open={open} onOpenChange={setOpen}>
@@ -26,11 +36,13 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ anfitrionas, va
             <button
               ref={triggerRef}
               type="button"
-              className="w-full pl-8 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-1 rounded-md flex items-center min-h-[38px] text-left"
+              className="w-full pl-8 pr-2 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-1 rounded-full flex items-center min-h-[35px] text-center"
               onClick={() => setOpen((v) => !v)}
             >
               {value.length === 0 ? (
-                <span className="text-gray-400">Seleccione anfitriona(s)</span>
+                <span className="text-gray-400">
+                  {maxSelection ? `Seleccione anfitriona(s) (máx. ${maxSelection})` : 'Seleccione anfitriona(s)'}
+                </span>
               ) : (
                 <span className="flex flex-wrap gap-1">
                   {anfitrionas
@@ -38,6 +50,11 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ anfitrionas, va
                     .map((a) => (
                       <span key={a.id_usuario || a.id} className="bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs">{a.nick || a.nombre}</span>
                     ))}
+                  {maxSelection && (
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({value.length}/{maxSelection})
+                    </span>
+                  )}
                 </span>
               )}
               <span className="ml-auto pl-2 text-gray-400">▼</span>
@@ -51,16 +68,27 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ anfitrionas, va
               {anfitrionas.length === 0 && (
                 <div className="text-xs text-gray-400 px-2 py-2">No hay anfitrionas</div>
               )}
+              {hasReachedLimit && (
+                <div className="text-xs text-orange-600 px-2 py-2 bg-orange-50 border-b">
+                  Límite alcanzado: {value.length} de {maxSelection} seleccionadas
+                </div>
+              )}
               {anfitrionas.map((a) => {
                 const id = String(a.id_usuario || a.id);
+                const isSelected = value.includes(id);
+                const canSelect = isSelected || !hasReachedLimit;
+                
                 return (
-                  <label key={id} className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-50 rounded">
+                  <label key={id} className={`flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-50 rounded ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <Checkbox
-                      checked={value.includes(id)}
+                      checked={isSelected}
+                      disabled={!canSelect}
                       onCheckedChange={() => {
-                        if (value.includes(id)) {
+                        if (isSelected) {
+                          // Siempre permitir deseleccionar
                           onChange(value.filter((x) => x !== id));
-                        } else {
+                        } else if (!hasReachedLimit) {
+                          // Solo permitir seleccionar si no se ha alcanzado el límite
                           onChange([...value, id]);
                         }
                       }}

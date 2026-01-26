@@ -80,7 +80,7 @@ export function useNotifications() {
     eventSourceRef.current = es;
 
     es.onopen = () => {
-      console.info('[SSE] connected');
+    
       setIsConnected(true);
       setConnectionAttempts(0);
       isConnectingRef.current = false;
@@ -90,15 +90,14 @@ export function useNotifications() {
       try {
         const payload = JSON.parse(event.data);
         if (payload?.type === 'new_order' && payload?.data) {
-          console.info('[SSE] new_order received', payload?.data);
+ 
           showNotification(payload.data as NotificationData);
         }
       } catch (err) {}
     };
 
     es.onerror = () => {
-      console.warn('[SSE] error, reconnecting...');
-      console.info('[SSE] readyState', es.readyState);
+    
       cleanup();
       isConnectingRef.current = false;
       setConnectionAttempts((c) => c + 1);

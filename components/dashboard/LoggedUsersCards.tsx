@@ -229,7 +229,7 @@ export default function LoggedUsersCards() {
                   <div className='space-y-1 max-h-24 overflow-y-auto'>
                     {card.usuarios.map((user: any, userIndex: number) => (
                       <div
-                        key={user.id_usuario}
+                        key={`${index}-${user.id_usuario}-${userIndex}`}
                         className={`
                           text-xs bg-gray-50 dark:bg-gray-700 
                           border border-gray-200 dark:border-gray-600 

@@ -12,7 +12,8 @@ const orderDetailSchema = z.object({
   cantidad: z.number(),
   subtotal: z.number(),
   generaComision: z.number().optional().default(1), // 1 = genera comisión, 0 = no genera comisión
-  hostessId: z.number().nullable().optional() // Anfitriona asignada a este producto
+  hostessId: z.number().nullable().optional(), // Anfitriona asignada a este producto (para bebidas individuales)
+  selectedHostesses: z.array(z.string()).optional().default([]), // Para champañas con múltiples anfitrionas
 });
 
 const orderUserSchema = z.object({
@@ -84,10 +85,44 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Insertar detalles
     for (const d of detalles) {
-      await query(
+      const detalleResult: any = await query(
         'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [pedidoId, d.productoId, d.precio, d.comision, d.generaComision ?? 1, d.cantidad, d.subtotal, d.hostessId || null]
       );
+      
+      // Si el producto tiene anfitrionas específicamente asignadas (champañas), crear registros individuales
+      if (d.selectedHostesses && d.selectedHostesses.length > 0) {
+        try {
+          for (const hostessId of d.selectedHostesses) {
+            await query(
+              'INSERT INTO detalle_pedidos_anfitrionas (detalle_pedido_id, anfitriona_id) VALUES (?, ?)',
+              [detalleResult.insertId, Number(hostessId)]
+            );
+          }
+        } catch (tableError) {
+          // Si la tabla no existe, crear la tabla y reintentar
+          console.log('Tabla detalle_pedidos_anfitrionas no existe, creándola...');
+          await query(`
+            CREATE TABLE IF NOT EXISTS detalle_pedidos_anfitrionas (
+              id_detalle_anfitriona INT AUTO_INCREMENT PRIMARY KEY,
+              detalle_pedido_id INT NOT NULL,
+              anfitriona_id INT NOT NULL,
+              fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (detalle_pedido_id) REFERENCES detalle_pedidos(id_detalle_pedido) ON DELETE CASCADE,
+              FOREIGN KEY (anfitriona_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+              UNIQUE KEY unique_detalle_anfitriona (detalle_pedido_id, anfitriona_id)
+            )
+          `);
+          
+          // Reintentar inserción
+          for (const hostessId of d.selectedHostesses) {
+            await query(
+              'INSERT INTO detalle_pedidos_anfitrionas (detalle_pedido_id, anfitriona_id) VALUES (?, ?)',
+              [detalleResult.insertId, Number(hostessId)]
+            );
+          }
+        }
+      }
     }
     // Insertar usuarios
     for (const u of usuarios) {
@@ -108,9 +143,9 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     }
     
-    const meseroResults = await query('SELECT nombre FROM usuarios WHERE id_usuario = ?', [meseroId]) as any[];
+    const meseroResults = await query('SELECT nombre, apellido FROM usuarios WHERE id_usuario = ?', [meseroId]) as any[];
     const meseroResult = meseroResults[0];
-    const meseroNombre = meseroResult?.nombre || 'Mesero';
+    const meseroNombre = meseroResult ? `${meseroResult.nombre} ${meseroResult.apellido || ''}`.trim() : 'Mesero';
     
   
     
