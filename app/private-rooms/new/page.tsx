@@ -100,24 +100,50 @@ export default function NuevoServicioPage() {
 
   // Calculate totals when form data changes
   useEffect(() => {
-    const nuevoSubTotal = formData.precio_servicio;
-    const precioHabitacionTotal = precioHabitacion * (formData.usuarios.length || 1);
-    let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + formData.iva;
+    // Lógica: Si el número de clientes es mayor al de anfitrionas y la habitación NO tiene comisión,
+    // el precio de la habitación y el servicio se multiplican por el número de clientes seleccionados.
+    // En otros casos, se multiplica por el número de anfitrionas.
+    const cantidadAnfitrionas = formData.usuarios.length || 1;
+    const cantidadClientes = formData.clientes.length || 1;
+    let multiplicadorServicio = cantidadAnfitrionas;
+    let multiplicadorHabitacion = cantidadAnfitrionas;
 
+    if (
+      cantidadClientes > cantidadAnfitrionas &&
+      selectedRoom && (selectedRoom.comision_anfitriona ?? 0) === 0
+    ) {
+      multiplicadorServicio = cantidadClientes;
+      multiplicadorHabitacion = cantidadClientes;
+    }
+
+    // Si la habitación tiene comisión mayor a cero, NO multiplicar el precio de la habitación
+    if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
+      multiplicadorHabitacion = 1;
+    }
+
+    const nuevoSubTotal = formData.precio_servicio * multiplicadorServicio;
+    const precioHabitacionTotal = precioHabitacion * multiplicadorHabitacion;
+
+    // Calcular IVA sobre el precio de servicio ya multiplicado
+    let nuevoIVA = 0;
+    if (formData.metodo_pago === "tarjeta") {
+      nuevoIVA = Math.floor(nuevoSubTotal * 0.20);
+    }
+
+    let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
     let totalFinal = nuevoTotal;
-    let nuevoIVA = formData.iva;
 
     if (formData.metodo_pago === "tarjeta") {
       const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
       const excedente = totalRedondeado - nuevoTotal;
       totalFinal = totalRedondeado;
-      nuevoIVA = formData.iva + excedente;
+      nuevoIVA = nuevoIVA + excedente;
     }
 
     setSubTotal(nuevoSubTotal);
     setTotal(totalFinal);
     setFormData((prev) => ({ ...prev, iva: nuevoIVA }));
-  }, [formData.precio_servicio, precioHabitacion, formData.iva, formData.usuarios.length, formData.metodo_pago]);
+  }, [formData.precio_servicio, precioHabitacion, formData.iva, formData.usuarios.length, formData.clientes.length, formData.metodo_pago, selectedRoom]);
 
   // Update habitacion data when selected
   useEffect(() => {

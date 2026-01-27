@@ -199,6 +199,9 @@ importers:
       react-resizable-panels:
         specifier: ^3.0.4
         version: 3.0.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-timer-hook:
+        specifier: ^4.0.5
+        version: 4.0.5(react@19.2.3)
       react-to-print:
         specifier: ^3.1.1
         version: 3.2.0(react@19.2.3)
@@ -4551,6 +4554,11 @@ packages:
     engines: {node: '>= 16.20.2'}
     peerDependencies:
       react: '>= 0.14.0'
+
+  react-timer-hook@4.0.5:
+    resolution: {integrity: sha512-elDxx4OIxBTbm4rXSK5cjBHkq06prO2qY9JzoYxOa11AkL3ij69jp0VuDUOqcehEK38CV0uu7FzUKtPVISRLKA==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   react-to-print@3.2.0:
     resolution: {integrity: sha512-IX2D0mebKMgYTBD6s5tf9B7YRL3RFWjRoevYK8JKgRwn94Rep7PFZyeOTGjCmXofKB1SKzvPSzDrAMG4I2PIwg==}
@@ -10492,6 +10500,10 @@ snapshots:
       prismjs: 1.30.0
       react: 19.2.3
       refractor: 5.0.0
+
+  react-timer-hook@4.0.5(react@19.2.3):
+    dependencies:
+      react: 19.2.3
 
   react-to-print@3.2.0(react@19.2.3):
     dependencies:

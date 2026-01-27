@@ -20,6 +20,8 @@ export interface ServicioWithDetails extends Servicio {
   habitacion_numero?: string;
   anfitrionas_nombres?: string;
   total_usuarios?: number;
+  created_by?: number;
+  creator_name?: string;
 }
 
 // Tipos para estadísticas
