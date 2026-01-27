@@ -35,17 +35,16 @@ export default function ServiciosPage() {
     handleShowActiveServices,
     handleShowAllServices,
     handleStopTimer,
+    handleServiceAutoFinished,
     getServicios
   } = useServiceLogic();
 
   // Configurar callback de actualización para cuando termine un timer
   useEffect(() => {
     setRefreshCallback(() => {
-      // Actualizar solo los datos de servicios sin recargar la página
-      // Esto evita el parpadeo y mejora la experiencia del usuario
-      // Los datos se actualizarán automáticamente cuando el timer termine
+      handleServiceAutoFinished();
     });
-  }, [setRefreshCallback]);
+  }, [setRefreshCallback, handleServiceAutoFinished]);
 
   const handleCreateServicioWithCheck = () => {
     if (!hasOpenCaja) {
@@ -141,7 +140,7 @@ export default function ServiciosPage() {
               </div>
             )}
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
               {currentServicios.map(servicio => (
                 <ServicioCard
                   key={servicio.id_servicio}
