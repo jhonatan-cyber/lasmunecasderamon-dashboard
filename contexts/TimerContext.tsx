@@ -38,6 +38,7 @@ interface TimerContextType {
   getTimerByServicioId: (servicioId: number) => Timer | undefined;
   formatTime: (seconds: number) => string;
   setRefreshCallback: (callback: () => void) => void;
+  updateTimerByServicioId: (servicioId: number, newDuration: number) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -442,6 +443,32 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => clearInterval(interval);
   }, [isInitialized, updateRoomStatus, expiredTimers, stopTimer]);
 
+  // Función para actualizar un temporizador existente
+  const updateTimerByServicioId = useCallback(
+    (servicioId: number, newDuration: number) => {
+      setTimers(prev => {
+        return prev.map(timer => {
+          if (timer.servicioId === servicioId) {
+            // Recalcular tiempo restante basado en la nueva duración
+            const now = new Date();
+            const elapsedSeconds = Math.floor((now.getTime() - timer.startTime.getTime()) / 1000);
+            const remaining = newDuration * 60 - elapsedSeconds;
+
+            return {
+              ...timer,
+              duration: newDuration,
+              remainingTime: Math.max(0, remaining)
+            };
+          }
+          return timer;
+        });
+      });
+
+      toast.info(`Tiempo del servicio actualizado a ${newDuration} minutos`);
+    },
+    []
+  );
+
   const value: TimerContextType = {
     timers,
     startTimer,
@@ -453,7 +480,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     getTimerByRoomId,
     getTimerByServicioId,
     formatTime,
-    setRefreshCallback
+    setRefreshCallback,
+    updateTimerByServicioId
   };
 
   return (
@@ -468,7 +496,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cancelText={modalState.cancelText}
         hideCancel={modalState.hideCancel}
         type={modalState.type}
-        onConfirm={modalState.onConfirm || (() => {})}
+        onConfirm={modalState.onConfirm || (() => { })}
         onCancel={modalState.onCancel}
         confirmVariant={modalState.confirmVariant}
         cancelVariant={modalState.cancelVariant}

@@ -40,12 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           s.metodo_pago,
           s.fecha_crea,
           s.estado,
-          COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre,
+          COALESCE(GROUP_CONCAT(DISTINCT CONCAT(c_multi.nombre, ' ', c_multi.apellido) SEPARATOR ', '), COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado')) as cliente_nombre,
           h.nombre as habitacion_numero,
           COUNT(DISTINCT ds.usuario_id) as total_usuarios,
           GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
+        LEFT JOIN detalle_servicios_clientes dsc ON dsc.servicio_id = s.id_servicio
+        LEFT JOIN clientes c_multi ON c_multi.id_cliente = dsc.cliente_id
         LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
         LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
@@ -76,7 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         total,
         tiempo,
         metodo_pago,
-        usuarios
+        usuarios,
+        clientes: clientesArray
       } = req.body;
 
       // Validaciones
@@ -95,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (cliente_id) {
         const clienteExistsSql = 'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
         const clienteExistsResult = (await query(clienteExistsSql, [cliente_id])) as any[];
-        
+
         if (clienteExistsResult && clienteExistsResult.length > 0) {
           clienteIdFinal = cliente_id;
           console.log('[SERVICIOS POST] Cliente validado:', clienteIdFinal);
@@ -114,7 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Redondear el total a múltiplos de 5000 y sumar excedente al IVA solo si es tarjeta
       let totalFinal = total;
       let ivaFinal = iva || 0;
-      
+
       if (metodo_pago === "tarjeta") {
         const totalRedondeado = Math.ceil(total / 5000) * 5000;
         const excedente = totalRedondeado - total;
@@ -132,6 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Crear servicio usando transacción
       const result = await withTransaction(async connection => {
+        let comisionTotalPorAnfitriona = 0;
         // Insertar servicio
         const servicioResult: any = await query(
           `INSERT INTO servicios (
@@ -158,6 +162,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Actualizar estado de la habitación a ocupada (estado = 2)
         await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [habitacion_id]);
 
+        // Insertar detalles de clientes (si hay múltiples)
+        if (clientesArray && Array.isArray(clientesArray) && clientesArray.length > 0) {
+          for (const cId of clientesArray) {
+            await query('INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)', [
+              servicioId,
+              cId
+            ]);
+          }
+        } else if (clienteIdFinal) {
+          // Si no hay array pero hay uno principal, insertarlo también en detalle para consistencia
+          await query('INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)', [
+            servicioId,
+            clienteIdFinal
+          ]);
+        }
+
         // Insertar detalles de servicio (usuarios)
         if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
           for (const usuarioId of usuarios) {
@@ -170,11 +190,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Registrar comisiones para cada anfitriona
         if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
-          // Calcular comisión por anfitriona (dividir el precio del servicio entre las anfitrionas)
-          const comisionPorAnfitriona = Math.floor(precioServicioFinal / usuarios.length);
+          // Obtener la comisión de la habitación (comision_anfitriona)
+          let comisionHabitacion = 0;
+          if (habitacion_id) {
+            const habitacionResult = (await query(
+              'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+              [habitacion_id]
+            )) as any[];
+
+            if (habitacionResult && habitacionResult.length > 0 && habitacionResult[0].comision_anfitriona) {
+              comisionHabitacion = habitacionResult[0].comision_anfitriona;
+              console.log('[SERVICIOS POST] Comisión de habitación encontrada:', comisionHabitacion);
+            }
+          }
+
+          // Calcular comisión por anfitriona:
+          // - Base: precio_servicio dividido entre anfitrionas
+          // - Plus: comision_anfitriona de la habitación dividida entre anfitrionas
+          const comisionServicioPorAnfitriona = Math.floor(precioServicioFinal / usuarios.length);
+          const comisionHabitacionPorAnfitriona = Math.floor(comisionHabitacion / usuarios.length);
+          comisionTotalPorAnfitriona = comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
+
+          console.log('[SERVICIOS POST] Comisiones calculadas:', {
+            precioServicio: precioServicioFinal,
+            comisionHabitacion,
+            cantidadAnfitrionas: usuarios.length,
+            comisionServicioPorAnfitriona,
+            comisionHabitacionPorAnfitriona,
+            comisionTotalPorAnfitriona
+          });
 
           for (const usuarioId of usuarios) {
-            // Crear comisión para cada anfitriona
+            // Crear comisión para cada anfitriona (incluye comisión de habitación)
             const comisionResult: any = await query(
               `INSERT INTO comisiones (
                       venta_id,
@@ -184,7 +231,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               [
                 null, // venta_id es null para servicios
                 servicioId,
-                comisionPorAnfitriona
+                comisionTotalPorAnfitriona
               ]
             );
 
@@ -197,7 +244,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                       usuario_id,
                       comision
                     ) VALUES (?, ?, ?)`,
-              [comisionId, usuarioId, comisionPorAnfitriona]
+              [comisionId, usuarioId, comisionTotalPorAnfitriona]
             );
           }
         }
@@ -245,7 +292,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               montoTarjeta,
               montoTransferencia,
               ivaFinal,
-              usuarios ? Math.floor(precio_servicio / usuarios.length) * usuarios.length : 0, // comisión total
+              usuarios ? comisionTotalPorAnfitriona * usuarios.length : 0, // comisión total (incluye habitación)
               cajaId
             ]
           );
@@ -253,17 +300,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           cajaActualizada = true;
         }
 
-        return servicioId;
+        return {
+          servicioId,
+          comisionTotalPorAnfitriona
+        };
       });
 
       return res.status(201).json({
         success: true,
         message: 'Servicio creado exitosamente',
         data: {
-          id_servicio: result,
+          id_servicio: result.servicioId,
           comisiones_creadas: usuarios ? usuarios.length : 0,
-          comision_por_anfitriona:
-            usuarios && usuarios.length > 0 ? Math.floor(precio_servicio / usuarios.length) : 0,
+          comision_por_anfitriona: result.comisionTotalPorAnfitriona,
           caja_actualizada: cajaActualizada
         }
       });
