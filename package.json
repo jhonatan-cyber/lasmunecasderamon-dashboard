@@ -15,7 +15,7 @@
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "migrate": "node scripts/run-migrations.js",
+    "migrate": "node scripts/run-migration.js",
     "check-db": "node scripts/check-database.js",
     "db:setup": "node database/setup.js",
     "db:import": "node database/import-production.js",

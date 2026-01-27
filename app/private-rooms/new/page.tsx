@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
-import CustomerSelect from "@/components/ui/CustomerSelect";
+import CustomersSelect from "@/components/ui/CustomersSelect";
 import HostessSelect from "@/components/ui/HostessSelect";
 import RoomSelect from "@/components/ui/RoomSelect";
 import PaymentMethodSelect from "@/components/ui/PaymentMethodSelect";
@@ -34,13 +34,14 @@ export default function NuevoServicioPage() {
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       console.log("Habitaciones cargadas:", habitaciones);
+      console.log("Clientes cargados:", clientes?.length, "Loading:", loadingClientes);
     }
-  }, [habitaciones]);
+  }, [habitaciones, clientes, loadingClientes]);
   const { startTimer } = useTimer();
 
   // Form data
   const [formData, setFormData] = useState({
-    cliente_id: null as number | null,
+    clientes: [] as number[], // Cambiado a array para soportar múltiples clientes
     usuarios: [] as number[],
     habitacion_id: null as number | null,
     precio_habitacion: 0,
@@ -61,6 +62,27 @@ export default function NuevoServicioPage() {
   const [subTotal, setSubTotal] = useState(0);
   const [total, setTotal] = useState(0);
 
+  // Dynamic limits calculation
+  const selectedRoom = useMemo(() => {
+    return habitaciones.find(h => (h.id_habitacion || h.id) === formData.habitacion_id);
+  }, [formData.habitacion_id, habitaciones]);
+
+  const hasComision = useMemo(() => {
+    return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
+  }, [selectedRoom]);
+
+  const maxHostesses = useMemo(() => {
+    if (!hasComision) return 10; // Default limit if no special room
+    // Rule: Max 3 girls AND (Girls + Clients) <= 4
+    return Math.min(3, 4 - formData.clientes.length);
+  }, [hasComision, formData.clientes.length]);
+
+  const maxClients = useMemo(() => {
+    if (!hasComision) return 4;
+    // Rule: (Girls + Clients) <= 4
+    return 4 - formData.usuarios.length;
+  }, [hasComision, formData.usuarios.length]);
+
   // Format number with thousand separators
   const formatNumberWithSeparators = (value: number): string => {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -78,22 +100,20 @@ export default function NuevoServicioPage() {
 
   // Calculate totals when form data changes
   useEffect(() => {
-    const nuevoSubTotal = formData.precio_servicio; // Subtotal es igual al precio de servicio
-    // Precio de habitación multiplicado por cantidad de chicas seleccionadas
+    const nuevoSubTotal = formData.precio_servicio;
     const precioHabitacionTotal = precioHabitacion * (formData.usuarios.length || 1);
-    let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + formData.iva; // Total = subtotal + (precio_habitacion * cantidad_chicas) + iva
-    
-    // Redondear total y sumar excedente al IVA solo si el método de pago es tarjeta
+    let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + formData.iva;
+
     let totalFinal = nuevoTotal;
     let nuevoIVA = formData.iva;
-    
+
     if (formData.metodo_pago === "tarjeta") {
       const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
       const excedente = totalRedondeado - nuevoTotal;
       totalFinal = totalRedondeado;
       nuevoIVA = formData.iva + excedente;
     }
-    
+
     setSubTotal(nuevoSubTotal);
     setTotal(totalFinal);
     setFormData((prev) => ({ ...prev, iva: nuevoIVA }));
@@ -102,17 +122,9 @@ export default function NuevoServicioPage() {
   // Update habitacion data when selected
   useEffect(() => {
     if (formData.habitacion_id) {
-      const habitacion = habitaciones.find(
-        (h) => (h.id_habitacion || h.id) === formData.habitacion_id
-      );
-      if (habitacion) {
-        const precio = habitacion.precio || habitacion.price || 0;
-        const tiempo = habitacion.tiempo || habitacion.time || 0;
-        // Log solo en desarrollo para debug
-        if (process.env.NODE_ENV === "development") {
-          console.log("Habitación seleccionada:", habitacion);
-          console.log("Tiempo de habitación:", tiempo);
-        }
+      if (selectedRoom) {
+        const precio = selectedRoom.precio || selectedRoom.price || 0;
+        const tiempo = selectedRoom.tiempo || selectedRoom.time || 0;
         setPrecioHabitacion(precio);
         setTiempoHabitacion(tiempo);
         setFormData((prev) => ({ ...prev, tiempo: tiempo }));
@@ -121,12 +133,11 @@ export default function NuevoServicioPage() {
       setPrecioHabitacion(0);
       setTiempoHabitacion(0);
     }
-  }, [formData.habitacion_id, habitaciones]);
+  }, [formData.habitacion_id, selectedRoom]);
 
   // Calculate IVA (20%) when payment method is "tarjeta"
   useEffect(() => {
     if (formData.metodo_pago === "tarjeta") {
-      // Calcular IVA como 20% del precio de servicio
       const ivaCalculado = Math.floor(formData.precio_servicio * 0.20);
       setFormData((prev) => ({ ...prev, iva: ivaCalculado }));
     } else {
@@ -152,27 +163,22 @@ export default function NuevoServicioPage() {
       return;
     }
 
-    // Preparar datos del servicio pero no enviar aún
+    // Preparar datos del servicio
     const servicioData = {
       codigo: generateCode(),
-      cliente_id: formData.cliente_id || null,
+      cliente_id: formData.clientes.length > 0 ? formData.clientes[0] : null, // Enviamos el primero como principal
+      clientes: formData.clientes, // Enviamos todos los clientes
       habitacion_id: formData.habitacion_id,
       precio_habitacion: precioHabitacion,
       precio_servicio: formData.precio_servicio,
       iva: formData.iva,
-      sub_total: subTotal, // Es igual al precio de servicio
-      total: total, // Subtotal + precio_habitacion + iva
+      sub_total: subTotal,
+      total: total,
       tiempo: formData.tiempo,
       metodo_pago: formData.metodo_pago,
-      usuarios: formData.usuarios, // Para la tabla detalle_servicios
+      usuarios: formData.usuarios,
     };
 
-    // Log solo en desarrollo para debug
-    if (process.env.NODE_ENV === "development") {
-      console.log("Datos del servicio a enviar:", servicioData);
-    }
-
-    // Guardar datos y mostrar modal de confirmación
     setServicioDataToSubmit(servicioData);
     setShowConfirmModal(true);
   };
@@ -195,41 +201,19 @@ export default function NuevoServicioPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Iniciar el timer para el nuevo servicio
-        const habitacion = habitaciones.find(
-          (h) => (h.id_habitacion || h.id) === servicioDataToSubmit.habitacion_id
-        );
-
-        if (habitacion) {
+        if (selectedRoom) {
           startTimer(
-            data.data.id_servicio, // El backend devuelve el ID en data.id_servicio
+            data.data.id_servicio,
             servicioDataToSubmit.habitacion_id,
-            habitacion.nombre || habitacion.name || habitacion.numero || "N/A",
+            selectedRoom.nombre || selectedRoom.name || selectedRoom.numero || "N/A",
             servicioDataToSubmit.tiempo,
-            servicioDataToSubmit.codigo, // Usar el código que generamos
+            servicioDataToSubmit.codigo,
             clientes.find((c) => c.id_cliente === servicioDataToSubmit.cliente_id)
               ?.nombre || ""
           );
-        } else {
-          console.error(
-            "No se encontró la habitación:",
-            formData.habitacion_id
-          );
         }
 
-        // Mostrar información de comisiones creadas y caja
-        const comisionesInfo =
-          data.data.comisiones_creadas > 0
-            ? ` y ${data.data.comisiones_creadas} comisión(es) registrada(s)`
-            : "";
-
-        const cajaInfo = data.data.caja_actualizada
-          ? " - Caja actualizada"
-          : "";
-
-        toast.success(
-          `Servicio creado exitosamente${comisionesInfo}${cajaInfo}`
-        );
+        toast.success(`Servicio creado exitosamente`);
         router.push("/private-rooms");
       } else {
         toast.error(data.message || "Error al crear servicio");
@@ -256,7 +240,7 @@ export default function NuevoServicioPage() {
           variant="outline"
           size="sm"
           className="rounded-full px-4 sm:px-6 bg-black text-white hover:scale-110 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto"
-          onClick={() => router.back()}
+          onClick={() => router.push("/private-rooms")}
           type="button"
         >
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
@@ -266,20 +250,19 @@ export default function NuevoServicioPage() {
 
       <div className="p-4 sm:p-6 lg:p-8 bg-white mx-4 sm:mx-6 lg:mx-8 space-y-4 sm:space-y-6 shadow-md rounded-xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {/* Cliente */}
-          <CustomerSelect
-            clientes={clientes}
-            value={
-              formData.cliente_id === null ? "" : formData.cliente_id.toString()
-            }
+          {/* Habitación - AHORA PRIMERO */}
+          <RoomSelect
+            habitaciones={habitaciones}
+            value={formData.habitacion_id ? formData.habitacion_id.toString() : ""}
             onChange={(value) =>
-              setFormData({
-                ...formData,
-                cliente_id: value ? parseInt(value) : null,
-              })
+              setFormData({ ...formData, habitacion_id: parseInt(value) })
             }
-            label="Cliente"
-            placeholder="Seleccionar cliente"
+            label="Habitación"
+            placeholder="Seleccionar habitación"
+            required={true}
+            showPrice={true}
+            showTime={true}
+            filterByStatus={1} // Solo habitaciones disponibles
             className="w-full"
           />
 
@@ -296,23 +279,23 @@ export default function NuevoServicioPage() {
             label="Anfitrionas"
             placeholder="Seleccionar anfitrionas"
             required={true}
-            maxSelection={10}
+            maxSelection={maxHostesses}
             className="w-full"
           />
 
-          {/* Habitación */}
-          <RoomSelect
-            habitaciones={habitaciones}
-            value={formData.habitacion_id ? formData.habitacion_id.toString() : ""}
+          {/* Cliente - AHORA OPCIONAL Y MÚLTIPLE */}
+          <CustomersSelect
+            clientes={clientes}
+            value={formData.clientes.map(id => id.toString())}
             onChange={(value) =>
-              setFormData({ ...formData, habitacion_id: parseInt(value) })
+              setFormData({
+                ...formData,
+                clientes: value.map(id => parseInt(id)),
+              })
             }
-            label="Habitación"
-            placeholder="Seleccionar habitación"
-            required={true}
-            showPrice={true}
-            showTime={true}
-            filterByStatus={1} // Solo habitaciones disponibles
+            label="Clientes (Opcional)"
+            placeholder="Seleccionar cliente(s)"
+            maxSelection={maxClients}
             className="w-full"
           />
 
@@ -345,7 +328,7 @@ export default function NuevoServicioPage() {
                     precio_servicio: numericValue === "" ? 0 : Math.max(0, parseInt(numericValue) || 0),
                   });
                 }}
-                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base rounded-full"
+                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base border border-gray-300 rounded-full h-[40px] focus:outline-none focus:border-black"
                 placeholder="0"
               />
             </div>
@@ -381,7 +364,7 @@ export default function NuevoServicioPage() {
                     setFormData({ ...formData, iva: numericValue === "" ? 0 : Math.max(0, parseInt(numericValue) || 0) });
                   }
                 }}
-                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base"
+                className="w-full bg-transparent py-1 pl-9 text-sm sm:text-base border border-gray-300 rounded-full h-[40px] focus:outline-none focus:border-black"
                 placeholder="0"
                 disabled={formData.metodo_pago !== "tarjeta"}
               />
@@ -409,6 +392,7 @@ export default function NuevoServicioPage() {
           </Button>
         </div>
       </div>
+
 
       {/* Modal de confirmación */}
       {showConfirmModal && (

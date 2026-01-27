@@ -78,21 +78,37 @@ export default function LoginPage() {
     async function checkUsers() {
       try {
         const baseUrl = getBaseUrl();
+        console.log('🔍 [LOGIN] Verificando usuarios en:', `${baseUrl}/api/auth/check-users`);
 
         const res = await fetch(`${baseUrl}/api/auth/check-users`, {
           credentials: 'include'
         });
 
+        console.log('🔍 [LOGIN] Respuesta recibida. Status:', res.status);
+
         const data = await res.json();
+        console.log('🔍 [LOGIN] Datos recibidos:', data);
 
         if (res.ok && data.success) {
+          console.log('✅ [LOGIN] Verificación exitosa. hasUsers:', data.hasUsers);
           setHasUsers(data.hasUsers);
         } else {
-          console.error('❌ [LOGIN] Error al verificar usuarios:', data);
+          const errorMsg = data?.message || 'No se pudo verificar usuarios. Intenta más tarde.';
+          console.error('❌ [LOGIN] Error al verificar usuarios:', {
+            status: res.status,
+            message: errorMsg,
+            error: data?.error,
+            errorCode: data?.errorCode,
+            fullResponse: data
+          });
           setHasUsers(true); // Por defecto, asumir que hay usuarios
         }
       } catch (error) {
-        console.error('❌ [LOGIN] Error al verificar usuarios:', error);
+        console.error('❌ [LOGIN] Error de red/excepción al verificar usuarios:', {
+          error,
+          message: error instanceof Error ? error.message : 'Error desconocido',
+          stack: error instanceof Error ? error.stack : undefined
+        });
         setHasUsers(true); // Por defecto, asumir que hay usuarios
       }
     }
@@ -373,7 +389,7 @@ export default function LoginPage() {
                         onKeyDown={e => handleKeyDown(e, passwordInputRef)}
                       />
                       {loginData.email && (
-                        <span 
+                        <span
                           className='absolute top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none transition-all duration-200'
                           style={{
                             left: `${48 + (loginData.email.length * 8.5)}px`
@@ -487,11 +503,10 @@ export default function LoginPage() {
                           {themeOptions.map(opt => (
                             <button
                               key={opt.value}
-                              className={`flex items-center w-full px-4 py-2 gap-2 text-sm transition-all duration-200 ${
-                                theme === opt.value
+                              className={`flex items-center w-full px-4 py-2 gap-2 text-sm transition-all duration-200 ${theme === opt.value
                                   ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-semibold'
                                   : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                              }`}
+                                }`}
                               onClick={() => {
                                 setTheme(opt.value);
                                 if (typeof window !== 'undefined')
@@ -500,15 +515,14 @@ export default function LoginPage() {
                               }}
                             >
                               <opt.icon
-                                className={`w-4 h-4 ${
-                                  theme === opt.value
+                                className={`w-4 h-4 ${theme === opt.value
                                     ? 'text-blue-600 dark:text-blue-400'
                                     : opt.value === 'light'
                                       ? 'text-yellow-500'
                                       : opt.value === 'dark'
                                         ? 'text-blue-600'
                                         : 'text-gray-600 dark:text-gray-400'
-                                }`}
+                                  }`}
                               />
                               {opt.label}
                             </button>
@@ -611,11 +625,10 @@ export default function LoginPage() {
                         {[0, 1, 2, 3].map(index => (
                           <div
                             key={index}
-                            className={`w-3 h-3 rounded-full ${
-                              index < codigo.length
+                            className={`w-3 h-3 rounded-full ${index < codigo.length
                                 ? 'bg-blue-500 dark:bg-blue-400'
                                 : 'bg-gray-300 dark:bg-gray-600'
-                            }`}
+                              }`}
                           />
                         ))}
                       </div>
