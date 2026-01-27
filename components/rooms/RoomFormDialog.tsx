@@ -80,6 +80,13 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       return;
     }
 
+    if (name === 'name') {
+      // Capitaliza cada palabra en el nombre
+      const capitalized = value.replace(/\b\w/g, l => l.toUpperCase());
+      setForm({ ...form, name: capitalized });
+      return;
+    }
+
     setForm({ ...form, [name]: value });
   };
 

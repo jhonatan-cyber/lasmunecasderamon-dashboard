@@ -18,6 +18,7 @@ const mapRoomFromDB = (row: any) => ({
   fecha_crea: row.fecha_crea,
   fecha_mod: row.fecha_mod,
   fecha_elim: row.fecha_elim,
+  comision_anfitriona: row.comision_anfitriona ?? null,
 });
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -68,7 +69,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         });
     }
     const result: any = await query(
-      "INSERT INTO habitaciones (nombre, precio, tiempo) VALUES (?, ?, ?)",
+      "INSERT INTO habitaciones (nombre, precio, tiempo, comision_anfitriona) VALUES (?, ?, ?, NULL)",
       [parse.data.name, parse.data.price, parse.data.time]
     );
     return res

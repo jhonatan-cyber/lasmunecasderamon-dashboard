@@ -34,7 +34,8 @@ export default function ServiciosPage() {
     handleCreateServicio,
     handleShowActiveServices,
     handleShowAllServices,
-    handleStopTimer
+    handleStopTimer,
+    getServicios
   } = useServiceLogic();
 
   // Configurar callback de actualización para cuando termine un timer
@@ -66,11 +67,10 @@ export default function ServiciosPage() {
           onClick={handleCreateServicioWithCheck}
           disabled={cajaLoading || !hasOpenCaja}
           variant='outline'
-          className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
-            hasOpenCaja 
-              ? 'bg-black text-white hover:scale-105' 
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+          className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${hasOpenCaja
+            ? 'bg-black text-white hover:scale-105'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           size='sm'
         >
           {cajaLoading ? (
@@ -147,6 +147,7 @@ export default function ServiciosPage() {
                   key={servicio.id_servicio}
                   servicio={servicio}
                   onStopTimer={handleStopTimer}
+                  onUpdate={getServicios}
                   showAllServices={showAllServices}
                 />
               ))}

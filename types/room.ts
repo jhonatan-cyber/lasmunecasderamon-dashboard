@@ -3,6 +3,7 @@ export interface Room {
   name: string;
   price: number;
   time: number;
+  comision_anfitriona?: number;
   status: number;
   fecha_crea?: string;
   fecha_mod?: string;
