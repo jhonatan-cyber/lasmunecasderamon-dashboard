@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Clock, Users, DollarSign, Home, User, Square, CreditCard, Edit2, Save, X } from 'lucide-react';
+import { Clock, Users, Home, User, CreditCard, Edit2, Save, X, Square } from 'lucide-react';
 import { ServicioWithDetails } from '@/types/servicio';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { useTimer } from '@/contexts/TimerContext';
+import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
+import { useServiceTimer } from '@/hooks/useServiceTimer';
 import { toast } from 'sonner';
+import EditServiceModal from './EditServiceModal';
 
 interface ServicioCardProps {
   servicio: ServicioWithDetails;
@@ -24,8 +25,29 @@ export default function ServicioCard({
   onUpdate,
   showAllServices = false
 }: ServicioCardProps) {
-  const { getTimerByServicioId, stopTimerByServicioId, formatTime, updateTimerByServicioId } = useTimer();
-  const timer = getTimerByServicioId(servicio.id_servicio!);
+  // Usar el nuevo hook de timer
+  const {
+    mainTimer,
+    temporaryTimer,
+    isTemporaryActive,
+    displayTimer,
+    pauseMainTimer,
+    resumeMainTimer,
+    startTemporaryTimer,
+    formatTime,
+    isPaused
+  } = useServiceTimer({
+    servicioId: servicio.id_servicio!,
+    initialTime: (servicio.tiempo || 0) * 60, // convertir minutos a segundos
+    onExpire: () => {
+      // Cuando expire el timer principal
+      if (onStopTimer) {
+        onStopTimer(servicio.id_servicio!);
+      }
+    },
+    autoStart: !showAllServices && servicio.estado === 1 // Solo iniciar si es servicio activo
+  });
+
   const [showConfirm, setShowConfirm] = useState(false);
   const [stopping, setStopping] = useState(false);
 
@@ -34,6 +56,7 @@ export default function ServicioCard({
   const [editPrecio, setEditPrecio] = useState(servicio.precio_servicio || 0);
   const [editTiempo, setEditTiempo] = useState(servicio.tiempo || 0);
   const [isSaving, setIsSaving] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Sincronizar estados locales si el prop servicio cambia
   useEffect(() => {
@@ -52,9 +75,9 @@ export default function ServicioCard({
       let totalDurationToSave = editTiempo;
 
       // Si hay un timer activo, calculamos la nueva duración total relativa al inicio
-      if (timer && timer.isActive) {
+      if (displayTimer && displayTimer.isActive) {
         const now = new Date();
-        const startTime = new Date(timer.startTime);
+        const startTime = new Date(displayTimer.startTime || new Date());
         const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
         // El nuevo tiempo total es lo que ya pasó más lo que el usuario quiere que falte
         totalDurationToSave = elapsedMinutes + editTiempo;
@@ -77,11 +100,6 @@ export default function ServicioCard({
         toast.success('Servicio actualizado correctamente');
         setIsEditing(false);
 
-        // Si el tiempo cambió y hay un timer activo, actualizarlo con el nuevo tiempo TOTAL
-        if (totalDurationToSave !== servicio.tiempo) {
-          updateTimerByServicioId(servicio.id_servicio!, totalDurationToSave);
-        }
-
         if (onUpdate) onUpdate();
       } else {
         toast.error(result.message || 'Error al actualizar servicio');
@@ -96,59 +114,27 @@ export default function ServicioCard({
 
   const handleStartEdit = () => {
     // Cuando empezamos a editar, si hay un timer, mostramos los minutos restantes redondeados
-    if (timer && timer.isActive) {
-      setEditTiempo(Math.ceil(timer.remainingTime / 60));
+    if (displayTimer && displayTimer.isActive) {
+      setEditTiempo(Math.ceil(displayTimer.totalSeconds / 60));
     } else {
       setEditTiempo(servicio.tiempo || 0);
     }
     setIsEditing(true);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleDateString('es-ES', { month: 'long' });
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
-
   const getEstadoBadge = (estado: number) => {
-    // Asegurar que estado sea un número
     const estadoNum = Number(estado);
-
     switch (estadoNum) {
       case 0:
-        return (
-          <Badge className='bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 text-xs sm:text-sm'>
-            Terminado
-          </Badge>
-        );
+        return <Badge variant="secondary" className="text-xs">Terminado</Badge>;
       case 1:
-        return (
-          <Badge className='bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs sm:text-sm'>
-            En Proceso
-          </Badge>
-        );
+        return <Badge className="bg-green-100 text-green-800 text-xs">En Proceso</Badge>;
       case 2:
-        return (
-          <Badge className='bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 text-xs sm:text-sm'>
-            Pendiente Anulación
-          </Badge>
-        );
+        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">Pendiente</Badge>;
       case 3:
-        return (
-          <Badge className='bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs sm:text-sm'>
-            Anulado
-          </Badge>
-        );
+        return <Badge variant="destructive" className="text-xs">Anulado</Badge>;
       default:
-        return (
-          <Badge className='bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 text-xs sm:text-sm'>
-            Desconocido
-          </Badge>
-        );
+        return <Badge variant="secondary" className="text-xs">Desconocido</Badge>;
     }
   };
 
@@ -169,7 +155,6 @@ export default function ServicioCard({
 
       if (response.ok) {
         if (onStopTimer) onStopTimer(servicio.id_servicio!);
-        stopTimerByServicioId(servicio.id_servicio!);
         toast.success('Servicio finalizado exitosamente');
         setShowConfirm(false);
       } else {
@@ -182,175 +167,266 @@ export default function ServicioCard({
     }
   };
 
+  const handlePauseMainTimer = useCallback(() => {
+    if (servicio.id_servicio) {
+      console.log('ServicioCard: Pausando timer principal para servicio:', servicio.id_servicio);
+      pauseMainTimer();
+    }
+  }, [servicio.id_servicio, pauseMainTimer]);
+
+  const handleResumeMainTimer = useCallback(() => {
+    if (servicio.id_servicio) {
+      console.log('ServicioCard: Reanudando timer principal para servicio:', servicio.id_servicio);
+      resumeMainTimer();
+    }
+  }, [servicio.id_servicio, resumeMainTimer]);
+
+  const isLowTime = displayTimer && displayTimer.isActive && displayTimer.totalSeconds <= 300;
+
   return (
-    <Card className='group w-full bg-white dark:bg-neutral-900 border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[1.5rem] overflow-hidden'>
-      {/* Indicador de estado lateral */}
-      <div className="flex flex-col md:flex-row h-full">
-        {/* Lado Izquierdo: Habitación y Tiempo */}
-        <div className={`w-full md:w-[40%] p-5 sm:p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-neutral-100 dark:border-neutral-800 transition-colors duration-500 ${timer && timer.isActive && timer.remainingTime <= 300
-            ? 'bg-red-50/50 dark:bg-red-900/10'
-            : 'bg-neutral-50/30'
-          }`}>
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-black dark:bg-white p-2 rounded-xl">
-                  <Home className="w-4 h-4 text-white dark:text-black" />
-                </div>
-                <span className="text-xl font-black tracking-tighter dark:text-white">
-                  HAB. {servicio.habitacion_numero}
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-neutral-400 font-mono tracking-widest px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                #{servicio.codigo}
-              </span>
+    <Card className={`w-full transition-all duration-200 hover:shadow-md ${isLowTime ? 'border-red-200 bg-red-50/30' : ''}`}>
+      <div className="p-4 space-y-4">
+        {/* Header Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Home className="w-4 h-4 text-gray-600" />
+              <span className="font-semibold text-md">Habitacion. {servicio.habitacion_numero}</span>
             </div>
-
-            <div className="flex flex-col items-center justify-center py-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className={`w-3.5 h-3.5 ${timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-500 animate-pulse' : 'text-neutral-400'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
-                  {isEditing ? 'EDITANDO' : 'TIEMPO RESTANTE'}
-                </span>
-              </div>
-
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={editTiempo}
-                    onChange={(e) => setEditTiempo(Number(e.target.value))}
-                    className="h-10 w-20 text-center font-mono text-xl font-bold bg-white dark:bg-black rounded-xl"
-                    min={1}
-                    disabled={isSaving}
-                  />
-                  <span className="text-xs font-bold text-neutral-500">MIN</span>
-                </div>
-              ) : (
-                <div className={`text-4xl sm:text-5xl font-mono font-black tracking-tighter tabular-nums ${timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-600' : 'text-neutral-800 dark:text-white'
-                  }`}>
-                  {showAllServices ? `${servicio.tiempo}:00` : timer ? formatTime(timer.remainingTime) : '00:00'}
-                </div>
-              )}
-            </div>
+            {getEstadoBadge(servicio.estado ?? 1)}
           </div>
-
-          <div className="mt-2 text-center">
-            {timer && timer.isActive && !showAllServices && !isEditing && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleStopTimer}
-                className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all"
-              >
-                DETENER SESIÓN
-              </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-mono">#{servicio.codigo}</span>
+            {servicio.precio_servicio === 0 && !isEditing && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEditModal(true)}
+                  className="h-8 w-8 p-0"
+                  title="Editar servicio"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </Button>
+              </>
             )}
-            {isEditing && (
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 rounded-xl" onClick={handleSaveEdit} disabled={isSaving}>
-                  <Save className="w-3.5 h-3.5 mr-1" /> Guardar
-                </Button>
-                <Button size="sm" variant="ghost" className="flex-1 rounded-xl text-neutral-400" onClick={() => setIsEditing(false)} disabled={isSaving}>
-                  <X className="w-3.5 h-3.5" />
-                </Button>
+          </div>
+        </div>
+
+        {/* Timer Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className={`w-4 h-4 ${isLowTime ? 'text-red-500' : displayTimer?.isPaused ? 'text-orange-500' : isTemporaryActive ? 'text-blue-500' : 'text-gray-500'}`} />
+            <span className="text-sm text-gray-600">
+              {isEditing ? 'Editando tiempo' :
+                isTemporaryActive ? 'Timer temporal' :
+                  displayTimer?.isPaused ? 'Pausado (editando)' :
+                    'Tiempo restante'}
+            </span>
+          </div>
+          <div className="text-right">
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={editTiempo}
+                  onChange={(e) => setEditTiempo(Number(e.target.value))}
+                  className="h-8 w-16 text-center text-sm"
+                  min={1}
+                  disabled={isSaving}
+                />
+                <span className="text-xs text-gray-500">min</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className={`font-mono text-lg font-semibold ${isLowTime ? 'text-red-600' : displayTimer?.isPaused ? 'text-orange-600' : isTemporaryActive ? 'text-blue-600' : 'text-gray-900'}`}>
+                  {showAllServices ? `${servicio.tiempo}:00` : displayTimer ? formatTime(displayTimer.totalSeconds) : '00:00'}
+                </span>
+                {isTemporaryActive && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                    TEMPORAL
+                  </span>
+                )}
+                {displayTimer?.isPaused && !isTemporaryActive && (
+                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                    PAUSADO
+                  </span>
+                )}
+                {mainTimer?.isPaused && isTemporaryActive && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                    PRINCIPAL PAUSADO
+                  </span>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* Lado Derecho: Detalles y Precios */}
-        <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <div className="space-y-3 flex-1">
+        {/* Información adicional cuando hay timer temporal */}
+        {isTemporaryActive && mainTimer && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-blue-700 font-medium">Timer Principal:</span>
               <div className="flex items-center gap-2">
-                {getEstadoBadge(servicio.estado ?? 1)}
-                {servicio.precio_servicio === 0 && !isEditing && (
-                  <button onClick={handleStartEdit} className="p-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-400 hover:text-black transition-colors">
-                    <Edit2 className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-blue-500" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[9px] font-bold text-neutral-400 uppercase leading-none">Cliente</span>
-                    <span className="text-xs font-bold truncate dark:text-neutral-200">{servicio.cliente_nombre || 'S/R'}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
-                    <Users className="w-3.5 h-3.5 text-purple-500" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[9px] font-bold text-neutral-400 uppercase leading-none">Anfitrionas</span>
-                    <span className="text-xs font-bold truncate dark:text-neutral-200">{servicio.anfitrionas_nombres || 'S/A'}</span>
-                  </div>
-                </div>
+                <span className="text-blue-600 font-mono">{formatTime(mainTimer.totalSeconds)}</span>
+                <span className={`px-2 py-1 rounded-full text-xs ${mainTimer.isPaused ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'
+                  }`}>
+                  {mainTimer.isPaused ? '⏸️ PAUSADO' : '▶️ ACTIVO'}
+                </span>
               </div>
             </div>
-
-            <div className="flex flex-col items-end pl-4">
-              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1">Total a cobrar</span>
-              <div className="text-2xl font-black tracking-tighter text-black dark:text-white">
-                {formatCurrencyNoDecimals(servicio.total)}
-              </div>
-              <div className="flex items-center gap-1.5 mt-1 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
-                <CreditCard className="w-3 h-3 text-neutral-500" />
-                <span className="text-[10px] font-bold text-neutral-500 capitalize">{servicio.metodo_pago || 'efectivo'}</span>
-              </div>
+            <div className="text-blue-600 space-y-1">
+              <p>• Se reanudará cuando termine el timer temporal</p>
+              <p>• Los precios actuales son temporales</p>
+              <p>• Al finalizar, volverán a los valores originales</p>
             </div>
           </div>
+        )}
 
-          <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-            <div className="flex gap-4">
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-neutral-400 uppercase">Servicio</span>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={editPrecio}
-                    onChange={(e) => setEditPrecio(Number(e.target.value))}
-                    className="w-16 h-5 text-[10px] font-bold bg-neutral-50 dark:bg-neutral-800 border-none p-0 outline-none"
-                    disabled={isSaving}
-                  />
-                ) : (
-                  <span className="text-[11px] font-bold dark:text-neutral-300">{formatCurrencyNoDecimals(servicio.precio_servicio)}</span>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-neutral-400 uppercase">Habitación</span>
-                <span className="text-[11px] font-bold dark:text-neutral-300">{formatCurrencyNoDecimals(servicio.precio_habitacion)}</span>
-              </div>
-              {servicio.iva > 0 && (
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-neutral-400 uppercase">IVA</span>
-                  <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400">{formatCurrencyNoDecimals(servicio.iva)}</span>
-                </div>
+        {/* Client and Hostesses */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="text-xs text-gray-500 block">Cliente</span>
+              <span className="font-medium truncate block">{servicio.cliente_nombre || 'Sin registrar'}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-purple-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="text-xs text-gray-500 block">Anfitrionas</span>
+              <span className="font-medium truncate block">{servicio.anfitrionas_nombres || 'Sin asignar'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Creator Information */}
+        {servicio.creator_name && (
+          <div className="flex items-center gap-2 text-sm">
+            <User className="w-4 h-4 text-green-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="text-xs text-gray-500 block">Creado por</span>
+              <span className="font-medium truncate block">{servicio.creator_name}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Pricing Section */}
+        <div className="flex items-center justify-between pt-3 border-t">
+          <div className="flex items-center gap-4 text-xs">
+            <div>
+              <span className="text-gray-500">Servicio: </span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  value={editPrecio}
+                  onChange={(e) => setEditPrecio(Number(e.target.value))}
+                  className="h-6 w-20 text-xs inline-block ml-1"
+                  disabled={isSaving}
+                />
+              ) : (
+                <span className={`font-medium ${isTemporaryActive ? 'text-blue-600' : ''}`}>
+                  {formatCurrencyNoDecimals(servicio.precio_servicio)}
+                  {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
+                </span>
               )}
             </div>
-            <span className="text-[9px] text-neutral-400 italic font-medium">
-              {formatDate(servicio.fecha_crea || '')}
-            </span>
+            <div>
+              <span className="text-gray-500">Habitacion: </span>
+              <span className={`font-medium ${isTemporaryActive ? 'text-blue-600' : ''}`}>
+                {formatCurrencyNoDecimals(servicio.precio_habitacion)}
+                {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
+              </span>
+            </div>
+            {servicio.iva > 0 && (
+              <div>
+                <span className="text-gray-500">IVA: </span>
+                <span className={`font-medium text-purple-600 ${isTemporaryActive ? 'text-blue-600' : ''}`}>
+                  {formatCurrencyNoDecimals(servicio.iva)}
+                  {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="text-right">
+            <div className={`text-lg font-bold ${isTemporaryActive ? 'text-blue-600' : ''}`}>
+              {formatCurrencyNoDecimals(servicio.total)}
+              {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <CreditCard className="w-3 h-3" />
+              <span className="capitalize">{servicio.metodo_pago || 'efectivo'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Nota sobre valores temporales */}
+        {isTemporaryActive && (
+          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border-t">
+            <span className="font-medium">* Valores temporales</span> - Se restaurarán a los originales cuando termine el timer temporal
+          </div>
+        )}
+
+        {/* Date and Actions */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="text-xs text-gray-500">
+            <div>{formatSoloFecha(servicio.fecha_crea || '')}</div>
+            <div>{formatSoloHora(servicio.fecha_crea || '')}</div>
+          </div>
+          <div className="flex gap-2">
+            {isEditing && (
+              <>
+                <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                  <X className="w-3 h-3" />
+                </Button>
+                <Button size="sm" onClick={handleSaveEdit} disabled={isSaving}>
+                  <Save className="w-3 h-3 mr-1" />
+                  Guardar
+                </Button>
+              </>
+            )}
+            {displayTimer && displayTimer.isActive && !showAllServices && !isEditing && (
+              <Button size="sm" variant="outline" onClick={handleStopTimer} className="text-red-600 border-red-200 hover:bg-red-50">
+                <Square className="w-3 h-3 mr-1" />
+                Finalizar
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Edit Service Modal */}
+      <EditServiceModal
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        servicio={servicio}
+        onUpdate={onUpdate}
+        onPauseMainTimer={handlePauseMainTimer}
+        onResumeMainTimer={handleResumeMainTimer}
+        onStartTemporaryTimer={(duration, onComplete) => {
+          startTemporaryTimer({
+            duration,
+            onComplete
+          });
+        }}
+      />
+
       {showConfirm && (
-        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200'>
-          <div className='bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl p-6 max-w-xs w-full text-center'>
-            <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="text-red-600 w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-lg mb-2 dark:text-white">¿Finalizar sesión?</h3>
-            <p className="text-sm text-neutral-500 mb-6 italic">Se liberará la habitación y se guardará el registro.</p>
-            <div className="flex gap-2">
-              <Button variant="ghost" className="flex-1 rounded-xl" onClick={() => setShowConfirm(false)}>No</Button>
-              <Button className="flex-1 bg-red-600 hover:bg-red-700 rounded-xl" onClick={confirmStopTimer}>Sí, ahora</Button>
+        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4'>
+          <div className='bg-white rounded-lg shadow-xl p-6 max-w-sm w-full'>
+            <div className="text-center">
+              <Clock className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">¿Finalizar sesión?</h3>
+              <p className="text-sm text-gray-600 mb-6">Se liberará la habitación y se guardará el registro.</p>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>
+                  Cancelar
+                </Button>
+                <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={confirmStopTimer} disabled={stopping}>
+                  {stopping ? 'Finalizando...' : 'Finalizar'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
