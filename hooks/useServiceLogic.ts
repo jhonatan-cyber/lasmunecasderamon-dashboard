@@ -56,6 +56,24 @@ export function useServiceLogic() {
     [removeServicioFromState]
   );
 
+  // Función para manejar cuando un servicio se finaliza automáticamente por tiempo
+  const handleServiceAutoFinished = useCallback(() => {
+    // Usar setTimeout para evitar actualizaciones durante el render
+    setTimeout(() => {
+      // Recargar los datos para obtener el estado actualizado
+      getServicios();
+      
+      // Si estamos mostrando servicios terminados, cambiar a mostrar activos
+      if (showAllServices) {
+        setShowAllServices(false);
+        setCurrentPage(1);
+        toast.info('🔄 Servicio finalizado automáticamente. Mostrando servicios activos.');
+      } else {
+        toast.success('✅ Lista de servicios actualizada.');
+      }
+    }, 200); // Aumentar el delay para evitar conflictos
+  }, [getServicios, showAllServices]);
+
   // Filtrar servicios por estado (activos vs terminados)
   const serviciosByStatus = useMemo(() => {
     if (showAllServices) {
@@ -111,6 +129,7 @@ export function useServiceLogic() {
     handleShowActiveServices,
     handleShowAllServices,
     handleStopTimer,
+    handleServiceAutoFinished,
 
     // Acciones de datos
     getServicios

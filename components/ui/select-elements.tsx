@@ -1,11 +1,4 @@
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import React from "react";
 
 interface SelectElementsProps {
@@ -40,33 +33,27 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
   };
   
   return (
-  <div>
-    <Label htmlFor="rowsPerPage" className="mb-1">
-      {label}
-    </Label>
-    <Select
-      value={String(effectiveValue)}
-      onValueChange={(v) => effectiveOnChange(Number(v))}
-    >
-      <SelectTrigger
+    <div>
+      <Label htmlFor="rowsPerPage" className="mb-1">
+        {label}
+      </Label>
+      <select
         id="rowsPerPage"
-        className="w-[180px] text-center rounded-full"
+        value={String(effectiveValue)}
+        onChange={(e) => effectiveOnChange(Number(e.target.value))}
+        className="flex h-10 w-[180px] rounded-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-center"
       >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
         {options.map((option, index) => {
           const optionValue = typeof option === 'object' ? option.value : option;
           const optionLabel = typeof option === 'object' ? option.label : `Listar ${option} elementos`;
           return (
-            <SelectItem key={String(optionValue)} className="text-center" value={String(optionValue)}>
+            <option key={String(optionValue)} value={String(optionValue)}>
               {optionLabel}
-            </SelectItem>
+            </option>
           );
         })}
-      </SelectContent>
-    </Select>
-  </div>
+      </select>
+    </div>
   );
 };
 

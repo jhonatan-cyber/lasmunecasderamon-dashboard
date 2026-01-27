@@ -1,8 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
+import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
       const { all, caja_id } = req.query;
@@ -40,10 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           s.metodo_pago,
           s.fecha_crea,
           s.estado,
+          s.created_by,
           COALESCE(GROUP_CONCAT(DISTINCT CONCAT(c_multi.nombre, ' ', c_multi.apellido) SEPARATOR ', '), COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado')) as cliente_nombre,
           h.nombre as habitacion_numero,
           COUNT(DISTINCT ds.usuario_id) as total_usuarios,
-          GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres
+          GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres,
+          CONCAT(creator.nombre, ' ', creator.apellido) as creator_name
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN detalle_servicios_clientes dsc ON dsc.servicio_id = s.id_servicio
@@ -51,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
         LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
+        LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
         ${whereClause}
         GROUP BY s.id_servicio
         ORDER BY s.fecha_crea DESC
@@ -68,6 +72,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'POST') {
     try {
+      // Get current user
+      const currentUser = getCurrentUser(req);
+      const createdBy = currentUser?.id || null;
+
       const {
         cliente_id,
         habitacion_id,
@@ -140,8 +148,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const servicioResult: any = await query(
           `INSERT INTO servicios (
              codigo, cliente_id, habitacion_id, precio_habitacion, 
-             precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             codigo,
             clienteIdFinal,
@@ -153,7 +161,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             totalFinal,
             tiempo,
             metodo_pago || null,
-            cajaId
+            cajaId,
+            createdBy
           ]
         );
 
@@ -192,60 +201,90 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
           // Obtener la comisión de la habitación (comision_anfitriona)
           let comisionHabitacion = 0;
+          let tieneComision = false;
           if (habitacion_id) {
             const habitacionResult = (await query(
               'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
               [habitacion_id]
             )) as any[];
-
             if (habitacionResult && habitacionResult.length > 0 && habitacionResult[0].comision_anfitriona) {
               comisionHabitacion = habitacionResult[0].comision_anfitriona;
+              tieneComision = comisionHabitacion > 0;
               console.log('[SERVICIOS POST] Comisión de habitación encontrada:', comisionHabitacion);
             }
           }
 
-          // Calcular comisión por anfitriona:
-          // - Base: precio_servicio dividido entre anfitrionas
-          // - Plus: comision_anfitriona de la habitación dividida entre anfitrionas
-          const comisionServicioPorAnfitriona = Math.floor(precioServicioFinal / usuarios.length);
-          const comisionHabitacionPorAnfitriona = Math.floor(comisionHabitacion / usuarios.length);
-          comisionTotalPorAnfitriona = comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
+          // El precio de servicio siempre se multiplica por el número de anfitrionas
+          const nuevoPrecioServicio = (precioServicioFinal || 0) * usuarios.length;
+          await query('UPDATE servicios SET precio_servicio = ? WHERE id_servicio = ?', [
+            nuevoPrecioServicio,
+            servicioId
+          ]);
 
-          console.log('[SERVICIOS POST] Comisiones calculadas:', {
-            precioServicio: precioServicioFinal,
-            comisionHabitacion,
-            cantidadAnfitrionas: usuarios.length,
-            comisionServicioPorAnfitriona,
-            comisionHabitacionPorAnfitriona,
-            comisionTotalPorAnfitriona
-          });
+          if (tieneComision) {
+            // Si la habitación tiene comisión:
+            // - La comisión se divide entre el número de chicas
+            // - El valor de la habitación NO se multiplica por el número de chicas
+            // - El total debe reflejar el precio de servicio multiplicado
+            const comisionServicioPorAnfitriona = Math.floor(nuevoPrecioServicio / usuarios.length);
+            const comisionHabitacionPorAnfitriona = Math.floor(comisionHabitacion / usuarios.length);
+            comisionTotalPorAnfitriona = comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
 
-          for (const usuarioId of usuarios) {
-            // Crear comisión para cada anfitriona (incluye comisión de habitación)
-            const comisionResult: any = await query(
-              `INSERT INTO comisiones (
-                      venta_id,
-                      servicio_id,
-                      monto
-                    ) VALUES (?, ?, ?)`,
-              [
-                null, // venta_id es null para servicios
-                servicioId,
-                comisionTotalPorAnfitriona
-              ]
-            );
+            // Actualizar el total correctamente
+            const totalConComision = (precio_habitacion || 0) + nuevoPrecioServicio + (ivaFinal || 0);
+            await query('UPDATE servicios SET total = ? WHERE id_servicio = ?', [
+              totalConComision,
+              servicioId
+            ]);
 
-            const comisionId = comisionResult.insertId;
+            console.log('[SERVICIOS POST] Comisiones calculadas (con comisión):', {
+              precioServicio: nuevoPrecioServicio,
+              comisionHabitacion,
+              cantidadAnfitrionas: usuarios.length,
+              comisionServicioPorAnfitriona,
+              comisionHabitacionPorAnfitriona,
+              comisionTotalPorAnfitriona,
+              totalConComision
+            });
 
-            // Insertar detalle de comisión
-            await query(
-              `INSERT INTO detalle_comisiones (
-                      comision_id,
-                      usuario_id,
-                      comision
-                    ) VALUES (?, ?, ?)`,
-              [comisionId, usuarioId, comisionTotalPorAnfitriona]
-            );
+            for (const usuarioId of usuarios) {
+              // Crear comisión para cada anfitriona (incluye comisión de habitación)
+              const comisionResult: any = await query(
+                `INSERT INTO comisiones (
+                        venta_id,
+                        servicio_id,
+                        monto
+                      ) VALUES (?, ?, ?)`,
+                [
+                  null, // venta_id es null para servicios
+                  servicioId,
+                  comisionTotalPorAnfitriona
+                ]
+              );
+
+              const comisionId = comisionResult.insertId;
+
+              // Insertar detalle de comisión
+              await query(
+                `INSERT INTO detalle_comisiones (
+                        comision_id,
+                        usuario_id,
+                        comision
+                      ) VALUES (?, ?, ?)`,
+                [comisionId, usuarioId, comisionTotalPorAnfitriona]
+              );
+            }
+          } else {
+            // Si la habitación NO tiene comisión:
+            // - El valor de la habitación se multiplica por el número de chicas
+            // - No se reparte comisión
+            const nuevoPrecioHabitacion = (precio_habitacion || 0) * usuarios.length;
+            await query('UPDATE servicios SET precio_habitacion = ?, total = ? WHERE id_servicio = ?', [
+              nuevoPrecioHabitacion,
+              (nuevoPrecioHabitacion + nuevoPrecioServicio + (ivaFinal || 0)),
+              servicioId
+            ]);
+            console.log('[SERVICIOS POST] Habitación sin comisión, precio_habitacion multiplicado:', nuevoPrecioHabitacion);
           }
         }
 
@@ -329,6 +368,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+
+// Export with authentication
+export default withAuth(handler);
 
 function generateUniqueCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
