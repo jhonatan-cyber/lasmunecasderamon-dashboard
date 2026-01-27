@@ -440,6 +440,7 @@ CREATE TABLE `habitaciones` (
   `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `precio` int NOT NULL,
   `tiempo` int NOT NULL,
+  `comision_anfitriona` int DEFAULT NULL,
   `estado` int NOT NULL DEFAULT '1',
   `fecha_crea` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `fecha_mod` datetime DEFAULT NULL,

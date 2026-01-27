@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { withTransaction } from '@/lib/transactionUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -195,36 +196,143 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'PATCH') {
     try {
-      const { estado } = req.body;
+      const { estado, precio_servicio, tiempo } = req.body;
 
-      // Validar estado
-      if (estado === undefined || ![0, 1, 2, 3].includes(estado)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Estado debe ser 0 (finalizado), 1 (activo), 2 (pendiente) o 3 (devuelto)'
+      if (estado !== undefined) {
+        // Validar estado
+        if (![0, 1, 2, 3].includes(estado)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Estado debe ser 0 (finalizado), 1 (activo), 2 (pendiente) o 3 (devuelto)'
+          });
+        }
+
+        // Actualizar estado del servicio
+        await query('UPDATE servicios SET estado = ? WHERE id_servicio = ?', [estado, servicioId]);
+
+        // Si se está finalizando el servicio (estado = 0), liberar la habitación
+        if (estado === 0) {
+          await query(
+            'UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?',
+            [servicioId]
+          );
+        }
+
+        return res.status(200).json({
+          success: true,
+          message:
+            estado === 0 ? 'Servicio finalizado exitosamente' : 'Servicio activado exitosamente'
         });
       }
 
-      // Actualizar estado del servicio
-      await query('UPDATE servicios SET estado = ? WHERE id_servicio = ?', [estado, servicioId]);
-
-      // Si se está finalizando el servicio (estado = 0), liberar la habitación
-      if (estado === 0) {
-        await query(
-          'UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?',
+      // Lógica para actualizar precio y tiempo
+      if (precio_servicio !== undefined || tiempo !== undefined) {
+        // Obtener datos actuales del servicio para cálculos
+        const [curr] = (await query(
+          'SELECT precio_servicio, precio_habitacion, iva, total, habitacion_id, caja_id FROM servicios WHERE id_servicio = ?',
           [servicioId]
-        );
+        )) as any[];
+
+        if (!curr) {
+          return res.status(404).json({ success: false, message: 'Servicio no encontrado' });
+        }
+
+        const newPrice = precio_servicio !== undefined ? Number(precio_servicio) : Number(curr.precio_servicio);
+        const newTime = tiempo !== undefined ? Number(tiempo) : Number(curr.tiempo);
+
+        // Recalcular sub_total (es el precio de servicio) y total
+        const sub_total = newPrice;
+        // El total en el front se calcula como: nuevoSubTotal + precioHabitacionTotal + formData.iva
+        // Recuperamos el precio_habitacion (que ya es el total por chicas en la tabla servicios)
+        const total = sub_total + Number(curr.precio_habitacion) + Number(curr.iva);
+
+        // Diferencias para actualizar caja
+        const priceDiff = newPrice - Number(curr.precio_servicio);
+        const totalDiff = total - Number(curr.total);
+
+        await withTransaction(async (connection) => {
+          // 1. Actualizar servicio
+          await query(
+            'UPDATE servicios SET precio_servicio = ?, sub_total = ?, total = ?, tiempo = ? WHERE id_servicio = ?',
+            [newPrice, sub_total, total, newTime, servicioId]
+          );
+
+          // 2. Si el precio cambió, actualizar comisiones
+          if (priceDiff !== 0) {
+            // Obtener anfitrionas del servicio
+            const anfitrionas = (await query(
+              'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
+              [servicioId]
+            )) as any[];
+
+            if (anfitrionas.length > 0) {
+              // Obtener comision de habitacion
+              const [habitacion] = (await query('SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [curr.habitacion_id])) as any[];
+              const comisionHab = Number(habitacion?.comision_anfitriona || 0);
+
+              const comisionServicioBase = Math.floor(newPrice / anfitrionas.length);
+              const comisionTotalIndiv = comisionServicioBase + Math.floor(comisionHab / anfitrionas.length);
+
+              // Actualizar tabla comisiones y detalle_comisiones
+              // Nota: esto asume que ya existen registros de comisiones para este servicio
+              // Buscamos las comisiones existentes ligadas a este servicio
+              const comisionesExistentes = (await query('SELECT id_comision FROM comisiones WHERE servicio_id = ?', [servicioId])) as any[];
+
+              for (let i = 0; i < anfitrionas.length; i++) {
+                const userId = anfitrionas[i].usuario_id;
+                // Intentar encontrar la comision para este usuario
+                const [detalleExistente] = (await query(
+                  'SELECT comision_id FROM detalle_comisiones WHERE usuario_id = ? AND comision_id IN (SELECT id_comision FROM comisiones WHERE servicio_id = ?)',
+                  [userId, servicioId]
+                )) as any[];
+
+                if (detalleExistente) {
+                  const comId = detalleExistente.comision_id;
+                  await query('UPDATE comisiones SET monto = ? WHERE id_comision = ?', [comisionTotalIndiv, comId]);
+                  await query('UPDATE detalle_comisiones SET comision = ? WHERE comision_id = ? AND usuario_id = ?', [comisionTotalIndiv, comId, userId]);
+                }
+              }
+
+              // 3. Actualizar caja si hay diferencia
+              if (curr.caja_id) {
+                const comisionTotalDiff = priceDiff; // La parte de habitacion no cambia, solo la de servicio
+
+                // Determinar que columna de caja incrementar basado en el metodo de pago (asumimos el actual)
+                const [serv] = (await query('SELECT metodo_pago FROM servicios WHERE id_servicio = ?', [servicioId])) as any[];
+                const metodo = serv?.metodo_pago || 'efectivo';
+
+                let payCol = 'efectivo';
+                if (metodo === 'tarjeta') payCol = 'tarjeta';
+                else if (metodo === 'transferencia') payCol = 'transferencia';
+
+                await query(
+                  `UPDATE cajas SET 
+                    servicio = servicio + ?, 
+                    ${payCol} = ${payCol} + ?, 
+                    comision = comision + ? 
+                  WHERE id_caja = ?`,
+                  [totalDiff, totalDiff, comisionTotalDiff, curr.caja_id]
+                );
+              }
+            }
+          }
+
+          return true;
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: 'Servicio actualizado correctamente',
+          data: { precio_servicio: newPrice, tiempo: newTime, total }
+        });
       }
 
-      return res.status(200).json({
-        success: true,
-        message:
-          estado === 0 ? 'Servicio finalizado exitosamente' : 'Servicio activado exitosamente'
-      });
+      return res.status(400).json({ success: false, message: 'No hay campos para actualizar' });
     } catch (error) {
+      console.error('Error in PATCH service:', error);
       return res.status(500).json({
         success: false,
-        message: 'Error al actualizar estado del servicio'
+        message: 'Error al actualizar servicio'
       });
     }
   } else if (req.method === 'DELETE') {

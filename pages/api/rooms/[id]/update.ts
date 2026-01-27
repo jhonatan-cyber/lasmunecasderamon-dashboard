@@ -5,8 +5,9 @@ import { z } from "zod";
 const updateRoomSchema = z.object({
   price: z.preprocess((v) => Number(v), z.number().min(0, "El precio debe ser mayor o igual a 0")).optional(),
   time: z.preprocess((v) => Number(v), z.number().min(1, "El tiempo debe ser mayor a 0")).optional(),
-}).refine((data) => data.price !== undefined || data.time !== undefined, {
-  message: "Debe proporcionar al menos precio o tiempo para actualizar",
+  comision_anfitriona: z.preprocess((v) => v === undefined || v === null || v === '' ? undefined : Number(v), z.number().min(0, "La comisión debe ser mayor o igual a 0").optional()).optional(),
+}).refine((data) => data.price !== undefined || data.time !== undefined || data.comision_anfitriona !== undefined, {
+  message: "Debe proporcionar al menos precio, tiempo o comisión para actualizar",
 });
 
 export default async function handler(
@@ -39,11 +40,12 @@ export default async function handler(
       });
     }
 
-    const { price, time } = parse.data;
 
-    // Verificar que la habitación existe
+    const { price, time, comision_anfitriona } = parse.data;
+
+    // Verificar que la habitación existe y obtener su nombre
     const existingRoom: any = await query(
-      "SELECT id_habitacion, precio, tiempo FROM habitaciones WHERE id_habitacion = ?",
+      "SELECT id_habitacion, precio, tiempo, nombre, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?",
       [id]
     );
 
@@ -54,21 +56,32 @@ export default async function handler(
       });
     }
 
-    // Usar valores existentes si no se proporcionan nuevos
     const currentRoom = existingRoom[0];
     const newPrice = price !== undefined ? price : currentRoom.precio;
     const newTime = time !== undefined ? time : currentRoom.tiempo;
+    let newComision = currentRoom.comision_anfitriona;
 
-    // Actualizar solo los campos proporcionados
+
+    // Permitir actualizar comisión para cualquier habitación
+    let updateFields = ["precio = ?", "tiempo = ?"];
+    let updateValues = [newPrice, newTime];
+    if (typeof comision_anfitriona !== "undefined") {
+      updateFields.push("comision_anfitriona = ?");
+      updateValues.push(comision_anfitriona);
+      newComision = comision_anfitriona;
+    }
+    updateFields.push("fecha_mod = NOW()");
+    updateValues.push(id);
+
     await query(
-      "UPDATE habitaciones SET precio = ?, tiempo = ?, fecha_mod = NOW() WHERE id_habitacion = ?",
-      [newPrice, newTime, id]
+      `UPDATE habitaciones SET ${updateFields.join(", ")} WHERE id_habitacion = ?`,
+      updateValues
     );
 
     return res.status(200).json({
       success: true,
       message: "Habitación actualizada correctamente",
-      data: { id, price: newPrice, time: newTime }
+      data: { id, price: newPrice, time: newTime, comision_anfitriona: newComision }
     });
 
   } catch (error) {

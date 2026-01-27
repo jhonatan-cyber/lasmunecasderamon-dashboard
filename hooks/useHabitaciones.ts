@@ -10,6 +10,7 @@ interface Habitacion {
   price?: number;
   tiempo?: number;
   time?: number;
+  comision_anfitriona?: number;
   estado?: number;
   status?: number;
 }

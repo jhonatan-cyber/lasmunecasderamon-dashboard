@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, DollarSign, Home, User, Square, CreditCard } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Clock, Users, DollarSign, Home, User, Square, CreditCard, Edit2, Save, X } from 'lucide-react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { useTimer } from '@/contexts/TimerContext';
@@ -13,18 +14,95 @@ import { toast } from 'sonner';
 interface ServicioCardProps {
   servicio: ServicioWithDetails;
   onStopTimer?: (servicioId: number) => void;
+  onUpdate?: () => void;
   showAllServices?: boolean;
 }
 
 export default function ServicioCard({
   servicio,
   onStopTimer,
+  onUpdate,
   showAllServices = false
 }: ServicioCardProps) {
-  const { getTimerByServicioId, stopTimerByServicioId, formatTime } = useTimer();
+  const { getTimerByServicioId, stopTimerByServicioId, formatTime, updateTimerByServicioId } = useTimer();
   const timer = getTimerByServicioId(servicio.id_servicio!);
   const [showConfirm, setShowConfirm] = useState(false);
   const [stopping, setStopping] = useState(false);
+
+  // Estados para edición
+  const [isEditing, setIsEditing] = useState(false);
+  const [editPrecio, setEditPrecio] = useState(servicio.precio_servicio || 0);
+  const [editTiempo, setEditTiempo] = useState(servicio.tiempo || 0);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Sincronizar estados locales si el prop servicio cambia
+  useEffect(() => {
+    setEditPrecio(servicio.precio_servicio || 0);
+    setEditTiempo(servicio.tiempo || 0);
+  }, [servicio]);
+
+  const handleSaveEdit = async () => {
+    if (editPrecio < 0 || editTiempo <= 0) {
+      toast.error('Precio y tiempo deben ser valores positivos');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      let totalDurationToSave = editTiempo;
+
+      // Si hay un timer activo, calculamos la nueva duración total relativa al inicio
+      if (timer && timer.isActive) {
+        const now = new Date();
+        const startTime = new Date(timer.startTime);
+        const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
+        // El nuevo tiempo total es lo que ya pasó más lo que el usuario quiere que falte
+        totalDurationToSave = elapsedMinutes + editTiempo;
+      }
+
+      const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          precio_servicio: editPrecio,
+          tiempo: totalDurationToSave
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Servicio actualizado correctamente');
+        setIsEditing(false);
+
+        // Si el tiempo cambió y hay un timer activo, actualizarlo con el nuevo tiempo TOTAL
+        if (totalDurationToSave !== servicio.tiempo) {
+          updateTimerByServicioId(servicio.id_servicio!, totalDurationToSave);
+        }
+
+        if (onUpdate) onUpdate();
+      } else {
+        toast.error(result.message || 'Error al actualizar servicio');
+      }
+    } catch (error) {
+      console.error('Error saving service edit:', error);
+      toast.error('Error de conexión al actualizar');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStartEdit = () => {
+    // Cuando empezamos a editar, si hay un timer, mostramos los minutos restantes redondeados
+    if (timer && timer.isActive) {
+      setEditTiempo(Math.ceil(timer.remainingTime / 60));
+    } else {
+      setEditTiempo(servicio.tiempo || 0);
+    }
+    setIsEditing(true);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -105,188 +183,178 @@ export default function ServicioCard({
   };
 
   return (
-    <Card className='w-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-md hover:shadow-lg transition-shadow duration-200'>
-      <CardHeader className='pb-3 p-4 sm:p-6'>
-        <div className='flex justify-between items-start'>
+    <Card className='group w-full bg-white dark:bg-neutral-900 border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[1.5rem] overflow-hidden'>
+      {/* Indicador de estado lateral */}
+      <div className="flex flex-col md:flex-row h-full">
+        {/* Lado Izquierdo: Habitación y Tiempo */}
+        <div className={`w-full md:w-[40%] p-5 sm:p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-neutral-100 dark:border-neutral-800 transition-colors duration-500 ${timer && timer.isActive && timer.remainingTime <= 300
+            ? 'bg-red-50/50 dark:bg-red-900/10'
+            : 'bg-neutral-50/30'
+          }`}>
           <div>
-            <CardTitle className='text-base sm:text-lg font-bold text-gray-900 dark:text-neutral-100'>
-
-        {showConfirm && (
-          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-            <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full mx-4'>
-              <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2'>
-                Confirmar finalización
-              </h3>
-              <p className='text-sm sm:text-base text-gray-700 dark:text-neutral-300 mb-4'>
-                Código: {servicio.codigo}
-              </p>
-              <p className='text-sm sm:text-base text-gray-700 dark:text-neutral-300 mb-6'>
-                ¿Deseas finalizar este servicio y detener el tiempo?
-              </p>
-              <div className='flex justify-end gap-3'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  onClick={() => setShowConfirm(false)}
-                  disabled={stopping}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type='button'
-                  size='sm'
-                  onClick={confirmStopTimer}
-                  disabled={stopping}
-                  className='bg-black text-white hover:bg-gray-800'
-                >
-                  {stopping ? 'Finalizando...' : 'Confirmar'}
-                </Button>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="bg-black dark:bg-white p-2 rounded-xl">
+                  <Home className="w-4 h-4 text-white dark:text-black" />
+                </div>
+                <span className="text-xl font-black tracking-tighter dark:text-white">
+                  HAB. {servicio.habitacion_numero}
+                </span>
               </div>
-            </div>
-          </div>
-        )}
-              {servicio.codigo}
-            </CardTitle>
-            <div className='flex items-center gap-2 mt-1'>
-              <User className='text-gray-400 text-xs sm:text-sm' />
-              <span className='text-xs sm:text-sm text-gray-600 dark:text-neutral-300'>
-                {servicio.cliente_nombre || `Cliente ${servicio.cliente_id}`}
+              <span className="text-[10px] font-bold text-neutral-400 font-mono tracking-widest px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                #{servicio.codigo}
               </span>
             </div>
-          </div>
-          {getEstadoBadge(servicio.estado ?? 1)}
-        </div>
-      </CardHeader>
 
-      <CardContent className='space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0'>
-        {/* Habitación */}
-        <div className='flex items-center gap-2'>
-          <Home className='text-blue-500 text-xs sm:text-sm' />
-          <span className='text-xs sm:text-sm font-medium text-gray-900 dark:text-neutral-100'>
-            Habitación {servicio.habitacion_numero || 'N/A'}
-          </span>
-        </div>
+            <div className="flex flex-col items-center justify-center py-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className={`w-3.5 h-3.5 ${timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-500 animate-pulse' : 'text-neutral-400'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                  {isEditing ? 'EDITANDO' : 'TIEMPO RESTANTE'}
+                </span>
+              </div>
 
-        {/* Temporizador */}
-        <div
-          className={`p-3 sm:p-4 rounded-lg border ${
-            timer && timer.isActive && timer.remainingTime <= 300
-              ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
-              : 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
-          }`}
-        >
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              <Clock
-                className={`text-xs sm:text-sm ${timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-500' : 'text-orange-500'}`}
-              />
-              <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-neutral-300'>
-                {showAllServices ? `${servicio.tiempo} minutos` : 'Tiempo restante'}
-              </span>
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={editTiempo}
+                    onChange={(e) => setEditTiempo(Number(e.target.value))}
+                    className="h-10 w-20 text-center font-mono text-xl font-bold bg-white dark:bg-black rounded-xl"
+                    min={1}
+                    disabled={isSaving}
+                  />
+                  <span className="text-xs font-bold text-neutral-500">MIN</span>
+                </div>
+              ) : (
+                <div className={`text-4xl sm:text-5xl font-mono font-black tracking-tighter tabular-nums ${timer && timer.isActive && timer.remainingTime <= 300 ? 'text-red-600' : 'text-neutral-800 dark:text-white'
+                  }`}>
+                  {showAllServices ? `${servicio.tiempo}:00` : timer ? formatTime(timer.remainingTime) : '00:00'}
+                </div>
+              )}
             </div>
-            {timer && timer.isActive && !showAllServices && (
+          </div>
+
+          <div className="mt-2 text-center">
+            {timer && timer.isActive && !showAllServices && !isEditing && (
               <Button
-                variant='outline'
-                size='sm'
+                variant="outline"
+                size="sm"
                 onClick={handleStopTimer}
-                className='h-6 px-2 text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-900/20'
+                className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all"
               >
-                <Square className='text-xs mr-1' />
-                Finalizar
+                DETENER SESIÓN
               </Button>
             )}
-          </div>
-          <div className='text-center mt-2'>
-            <div
-              className={`text-xl sm:text-2xl lg:text-3xl font-mono font-bold ${
-                timer && timer.isActive && timer.remainingTime <= 300
-                  ? 'text-red-600'
-                  : 'text-orange-600'
-              }`}
-            >
-              {showAllServices
-                ? `${servicio.tiempo}:00`
-                : timer
-                  ? formatTime(timer.remainingTime)
-                  : '00:00'}
-            </div>
-            {timer && timer.isActive && timer.remainingTime <= 300 && !showAllServices && (
-              <div className='text-xs text-red-600 mt-1'>¡Tiempo por agotarse!</div>
+            {isEditing && (
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 rounded-xl" onClick={handleSaveEdit} disabled={isSaving}>
+                  <Save className="w-3.5 h-3.5 mr-1" /> Guardar
+                </Button>
+                <Button size="sm" variant="ghost" className="flex-1 rounded-xl text-neutral-400" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Precios */}
-        <div
-          className={`grid gap-2 sm:gap-4 ${servicio.metodo_pago === 'tarjeta' && servicio.iva && servicio.iva > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}
-        >
-          <div className='text-center p-2 sm:p-3 bg-gray-50 dark:bg-neutral-800 rounded'>
-            <div className='flex items-center justify-center gap-1 mb-1'>
-              <DollarSign className='text-green-500 text-xs' />
-              <span className='text-xs text-gray-600 dark:text-neutral-300'>Servicio</span>
-            </div>
-            <div className='font-bold text-green-600 text-sm sm:text-base'>
-              {formatCurrencyNoDecimals(servicio.precio_servicio)}
-            </div>
-          </div>
-          <div className='text-center p-2 sm:p-3 bg-gray-50 dark:bg-neutral-800 rounded'>
-            <div className='flex items-center justify-center gap-1 mb-1'>
-              <Home className='text-blue-500 text-xs' />
-              <span className='text-xs text-gray-600 dark:text-neutral-300'>Habitación</span>
-            </div>
-            <div className='font-bold text-blue-600 text-sm sm:text-base'>
-              {formatCurrencyNoDecimals(servicio.precio_habitacion)}
-            </div>
-          </div>
-          {servicio.metodo_pago === 'tarjeta' && servicio.iva && servicio.iva > 0 && (
-            <div className='text-center p-2 sm:p-3 bg-gray-50 dark:bg-neutral-800 rounded'>
-              <div className='flex items-center justify-center gap-1 mb-1'>
-                <CreditCard className='text-purple-500 text-xs' />
-                <span className='text-xs text-gray-600 dark:text-neutral-300'>IVA</span>
+        {/* Lado Derecho: Detalles y Precios */}
+        <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex justify-between items-start">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-2">
+                {getEstadoBadge(servicio.estado ?? 1)}
+                {servicio.precio_servicio === 0 && !isEditing && (
+                  <button onClick={handleStartEdit} className="p-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-400 hover:text-black transition-colors">
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                )}
               </div>
-              <div className='font-bold text-purple-600 text-sm sm:text-base'>
-                {formatCurrencyNoDecimals(servicio.iva)}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-blue-500" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase leading-none">Cliente</span>
+                    <span className="text-xs font-bold truncate dark:text-neutral-200">{servicio.cliente_nombre || 'S/R'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
+                    <Users className="w-3.5 h-3.5 text-purple-500" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase leading-none">Anfitrionas</span>
+                    <span className="text-xs font-bold truncate dark:text-neutral-200">{servicio.anfitrionas_nombres || 'S/A'}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Total */}
-        <div className='text-center p-3 sm:p-4 bg-black text-white rounded-lg dark:bg-white dark:text-black'>
-          <div className='text-xs mb-1'>TOTAL</div>
-          <div className='text-lg sm:text-xl font-bold'>
-            {formatCurrencyNoDecimals(servicio.total)}
+            <div className="flex flex-col items-end pl-4">
+              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1">Total a cobrar</span>
+              <div className="text-2xl font-black tracking-tighter text-black dark:text-white">
+                {formatCurrencyNoDecimals(servicio.total)}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
+                <CreditCard className="w-3 h-3 text-neutral-500" />
+                <span className="text-[10px] font-bold text-neutral-500 capitalize">{servicio.metodo_pago || 'efectivo'}</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Método de pago */}
-        {servicio.metodo_pago && (
-          <div className='flex items-center gap-2'>
-            <CreditCard className='text-blue-500 text-xs sm:text-sm' />
-            <span className='text-xs sm:text-sm text-gray-600 dark:text-neutral-300'>
-              {servicio.metodo_pago}
+          <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-neutral-400 uppercase">Servicio</span>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    value={editPrecio}
+                    onChange={(e) => setEditPrecio(Number(e.target.value))}
+                    className="w-16 h-5 text-[10px] font-bold bg-neutral-50 dark:bg-neutral-800 border-none p-0 outline-none"
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <span className="text-[11px] font-bold dark:text-neutral-300">{formatCurrencyNoDecimals(servicio.precio_servicio)}</span>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-neutral-400 uppercase">Habitación</span>
+                <span className="text-[11px] font-bold dark:text-neutral-300">{formatCurrencyNoDecimals(servicio.precio_habitacion)}</span>
+              </div>
+              {servicio.iva > 0 && (
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-neutral-400 uppercase">IVA</span>
+                  <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400">{formatCurrencyNoDecimals(servicio.iva)}</span>
+                </div>
+              )}
+            </div>
+            <span className="text-[9px] text-neutral-400 italic font-medium">
+              {formatDate(servicio.fecha_crea || '')}
             </span>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Anfitrionas */}
-        {servicio.anfitrionas_nombres && (
-          <div className='flex items-center gap-2'>
-            <Users className='text-purple-500 text-xs sm:text-sm' />
-            <span className='text-xs sm:text-sm text-gray-600 dark:text-neutral-300'>
-              {servicio.anfitrionas_nombres}
-            </span>
+      {showConfirm && (
+        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200'>
+          <div className='bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl p-6 max-w-xs w-full text-center'>
+            <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="text-red-600 w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-2 dark:text-white">¿Finalizar sesión?</h3>
+            <p className="text-sm text-neutral-500 mb-6 italic">Se liberará la habitación y se guardará el registro.</p>
+            <div className="flex gap-2">
+              <Button variant="ghost" className="flex-1 rounded-xl" onClick={() => setShowConfirm(false)}>No</Button>
+              <Button className="flex-1 bg-red-600 hover:bg-red-700 rounded-xl" onClick={confirmStopTimer}>Sí, ahora</Button>
+            </div>
           </div>
-        )}
-
-        {/* Fecha de creación */}
-        {servicio.fecha_crea && (
-          <div className='text-xs text-gray-400 dark:text-neutral-400 mt-2'>
-            Creado: {formatDate(servicio.fecha_crea)}
-          </div>
-        )}
-      </CardContent>
+        </div>
+      )}
     </Card>
   );
-}
+};

@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             'SELECT * FROM clientes WHERE id_cliente = ?',
             [id]
           )) as any[];
-          
+
           if (clients.length === 0) {
             return res.status(404).json({ message: 'Cliente no encontrado' });
           }
@@ -31,9 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         } else {
           const clients = (await query(
-            'SELECT * FROM clientes WHERE estado = 1 ORDER BY nombre ASC'
+            'SELECT * FROM clientes ORDER BY nombre ASC'
           )) as any[];
-          
+
           const formattedClients = clients.map(client => ({
             id: client.id_cliente,
             run: client.run,
@@ -59,9 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [run, name, lastName, phone]
         );
 
-        return res.status(201).json({ 
-          message: 'Cliente creado correctamente', 
-          id: result.insertId 
+        return res.status(201).json({
+          message: 'Cliente creado correctamente',
+          id: result.insertId
         });
       }
 
