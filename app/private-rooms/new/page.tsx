@@ -19,7 +19,7 @@ import HostessSelect from "@/components/ui/HostessSelect";
 import RoomSelect from "@/components/ui/RoomSelect";
 import PaymentMethodSelect from "@/components/ui/PaymentMethodSelect";
 import { useClientes } from "@/hooks/useClientes";
-import { useAnfitrionas } from "@/hooks/useAnfitrionas";
+import { useAnfitrionasDisponibles } from "@/hooks/useAnfitrionasDisponibles";
 import { useHabitaciones } from "@/hooks/useHabitaciones";
 import { useTimer } from "@/contexts/TimerContext";
 
@@ -27,7 +27,7 @@ export default function NuevoServicioPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { clientes, loading: loadingClientes } = useClientes();
-  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas();
+  const { anfitrionas, loading: loadingAnfitrionas, refetch: refetchAnfitrionas } = useAnfitrionasDisponibles();
   const { habitaciones, loading: loadingHabitaciones } = useHabitaciones();
 
   // Log temporal para debug
@@ -239,6 +239,9 @@ export default function NuevoServicioPage() {
           );
         }
 
+        // Refrescar lista de anfitrionas disponibles
+        refetchAnfitrionas();
+
         toast.success(`Servicio creado exitosamente`);
         router.push("/private-rooms");
       } else {
@@ -430,14 +433,14 @@ export default function NuevoServicioPage() {
             <p className="text-sm sm:text-base text-gray-600 mb-6">
               ¿Deseas crear el servicio y comenzar el tiempo?
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-center">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setShowConfirmModal(false)}
                 disabled={loading}
-                className="px-4 sm:px-6 py-2 text-sm sm:text-base"
+                className="px-4 sm:px-6 py-2 text-sm sm:text-base rounded-full"
               >
                 Cancelar
               </Button>
@@ -446,7 +449,7 @@ export default function NuevoServicioPage() {
                 size="sm"
                 onClick={confirmAndSubmit}
                 disabled={loading}
-                className="gap-2 bg-black text-white hover:bg-gray-800 px-4 sm:px-6 py-2 text-sm sm:text-base"
+                className="gap-2 bg-black text-white hover:bg-gray-800 px-4 sm:px-6 py-2 text-sm sm:text-base rounded-full"
               >
                 <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
                 Confirmar

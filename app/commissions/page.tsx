@@ -5,8 +5,10 @@ import {
   CommissionsFilters,
   CommissionsList,
 } from "@/components/commissions"
+import CommissionsDetalleModal from "@/components/commissions/CommissionsDetalleModal"
 
 import { useCommissions } from "@/hooks/useCommissions"
+import { Commission } from "@/types/commission"
 
 export default function CommissionsPage() {
   const {
@@ -18,6 +20,8 @@ export default function CommissionsPage() {
 
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
+  const [selectedCommission, setSelectedCommission] = useState<Commission | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const handleClearFilters = () => {
     setSearchTerm("")
@@ -25,16 +29,35 @@ export default function CommissionsPage() {
     setPage(1)
   }
 
+  const handleViewDetails = (commission: Commission) => {
+    // Convert Commission to the format expected by the modal
+    const usuario = {
+      id_usuario: parseInt(commission.employeeId),
+      nombre_completo: commission.employeeName,
+      nick: commission.nick,
+      total_comisiones: commission.total,
+      total_ventas: commission.venta,
+      total_servicios: commission.servicio
+    };
+    setSelectedCommission(commission);
+    setShowDetailModal(true);
+  }
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedCommission(null);
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "por_pagar":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-800"
       case "pagado":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800"
       case "anulado":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800"
     }
   }
 
@@ -77,8 +100,23 @@ export default function CommissionsPage() {
           page={page}
           setPage={setPage}
           totalPages={totalPages}
+          onViewDetails={handleViewDetails}
         />
       </div>
+
+      {/* Modal de detalles */}
+      <CommissionsDetalleModal
+        open={showDetailModal}
+        onClose={handleCloseDetailModal}
+        usuario={selectedCommission ? {
+          id_usuario: parseInt(selectedCommission.employeeId),
+          nombre_completo: selectedCommission.employeeName,
+          nick: selectedCommission.nick,
+          total_comisiones: selectedCommission.total,
+          total_ventas: selectedCommission.venta,
+          total_servicios: selectedCommission.servicio
+        } : null}
+      />
     </div>
   )
 }

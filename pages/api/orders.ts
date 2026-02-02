@@ -14,6 +14,7 @@ const orderDetailSchema = z.object({
   generaComision: z.number().optional().default(1), // 1 = genera comisión, 0 = no genera comisión
   hostessId: z.number().nullable().optional(), // Anfitriona asignada a este producto (para bebidas individuales)
   selectedHostesses: z.array(z.string()).optional().default([]), // Para champañas con múltiples anfitrionas
+  roomId: z.number().nullable().optional(), // Habitación asignada para bebidas > $30,000 con comisión
 });
 
 const orderUserSchema = z.object({

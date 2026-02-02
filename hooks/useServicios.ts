@@ -6,16 +6,18 @@ export function useServicios() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getServicios = useCallback(async () => {
+  const getServicios = useCallback(async (includeAll: boolean = true) => {
     try {
       setLoading(true);
-      // Cargar todos los servicios sin filtro de estado
-      const url = '/api/servicios';
+      console.log('📡 Obteniendo servicios, includeAll:', includeAll);
+      // Cargar todos los servicios o solo activos según el parámetro
+      const url = includeAll ? '/api/servicios' : '/api/servicios?all=false';
 
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
+        console.log('✅ Servicios obtenidos:', data.data.length);
         setServicios(data.data);
       } else {
         setError(data.message || 'Error al cargar servicios');
@@ -41,7 +43,7 @@ export function useServicios() {
         const data = await response.json();
 
         if (data.success) {
-          await getServicios(); // Recargar la lista
+          await getServicios(true); // Recargar todos los servicios
           return { success: true, data: data.data };
         } else {
           return { success: false, message: data.message };
@@ -82,7 +84,7 @@ export function useServicios() {
         const data = await response.json();
 
         if (data.success) {
-          await getServicios(); // Recargar la lista
+          await getServicios(true); // Recargar todos los servicios
           return { success: true, data: data.data };
         } else {
           return { success: false, message: data.message };
@@ -104,7 +106,7 @@ export function useServicios() {
         const data = await response.json();
 
         if (data.success) {
-          await getServicios(); // Recargar la lista
+          await getServicios(true); // Recargar todos los servicios
           return { success: true };
         } else {
           return { success: false, message: data.message };
@@ -121,8 +123,8 @@ export function useServicios() {
   }, []);
 
   useEffect(() => {
-    // Cargar todos los servicios al inicio
-    getServicios();
+    // Cargar todos los servicios al inicio (incluyendo terminados)
+    getServicios(true);
   }, [getServicios]);
 
   return {

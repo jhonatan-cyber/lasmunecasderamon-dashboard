@@ -2,7 +2,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import SearchInput from "@/components/ui/SearchInput";
-import { Sparkles } from "lucide-react";
 import SelectElements from "@/components/ui/select-elements";
 
 interface CommissionsFiltersProps {
@@ -27,17 +26,15 @@ export function CommissionsFilters({
     setPage(1);
   };
 
+  const hasActiveFilters = searchTerm.trim() !== "" || rowsPerPage !== 5;
+
   return (
     <Card className="shadow-sm">
       <CardContent className="mt-3 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-4 items-end">
           {/* Búsqueda */}
           <div className="flex-1">
-            <Label htmlFor="search" className="mb-2 text-sm sm:text-base block">
-              Buscar
-            </Label>
             <SearchInput
-              id="search"
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder="Buscar por empleado o nick..."
@@ -51,20 +48,20 @@ export function CommissionsFilters({
               value={rowsPerPage}
               onChange={handleRowsPerPageChange}
               options={[5, 10, 20, 40]}
-              label="Datos por página"
             />
           </div>
 
-          {/* Botón limpiar filtros */}
-          <Button
-            onClick={onClearFilters}
-            size="sm"
-            variant="outline"
-            className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
-          >
-            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Limpiar 
-          </Button>
+          {/* Botón limpiar filtros - solo aparece cuando hay filtros activos */}
+          {hasActiveFilters && (
+            <Button
+              onClick={onClearFilters}
+              size="sm"
+              variant="outline"
+              className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
+            >
+              Limpiar 
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

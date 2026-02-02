@@ -561,6 +561,15 @@ export default function OrderDetailModal({
     return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
   });
 
+  // Verificar si hay bebidas de $30,000 o más
+  const hasExpensiveDrinks = detail.some((item: any) => {
+    const precio = Number(item.precio || 0);
+    return precio >= 30000;
+  });
+
+  // Mostrar selector de habitación si hay champaña O bebidas caras
+  const shouldShowRoomSelector = hasChampagne || hasExpensiveDrinks;
+
   // Verificar si el cliente está registrado
   const isClienteRegistrado = () => {
     const cliente = detail[0]?.cliente;
@@ -658,12 +667,12 @@ export default function OrderDetailModal({
                         </div>
                       )}
                     </div>
-                    {hasChampagne && (
+                    {shouldShowRoomSelector && (
                       <RoomSelect
                         habitaciones={habitacionesActivas}
                         value={habitacionId}
                         onChange={setHabitacionId}
-                        label='Habitación'
+                        label='Habitación (opcional)'
                         placeholder='Seleccione una habitación'
                         searchPlaceholder='Buscar habitación...'
                         filterByStatus={1}

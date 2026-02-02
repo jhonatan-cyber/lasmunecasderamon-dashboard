@@ -492,14 +492,14 @@ export default function EditServiceModal({
           <div className="flex gap-3">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 rounded-full"
               onClick={handleClose}
               disabled={isSaving}
             >
               Cancelar
             </Button>
             <Button
-              className="flex-1"
+              className="flex-1 rounded-full"
               onClick={handleSave}
               disabled={isSaving}
             >

@@ -3,7 +3,11 @@ import { StatsCard, StatCard } from "@/components/ui/StatsCard";
 import { useCashRegister } from "@/hooks/useCashRegister";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 
-export function CashRegisterStatsCard() {
+interface CashRegisterStatsCardProps {
+  isCajero?: boolean;
+}
+
+export function CashRegisterStatsCard({ isCajero = false }: CashRegisterStatsCardProps) {
   const { resumen: stats, loading: isLoading, error } = useCashRegister();
 
   const statsCards: StatCard[] = [
@@ -24,21 +28,21 @@ export function CashRegisterStatsCard() {
     {
       title: "Total Efectivo",
       value: formatCurrencyNoDecimals(stats?.total_efectivo || 0),
-      subtitle: "Ingresos en efectivo",
+      subtitle: isCajero ? "Efectivo en tu caja" : "Ingresos en efectivo",
       icon: DollarSign,
       formatAsCurrency: false, // No usar el formateo automático
     },
     {
       title: "Total Tarjeta",
       value: formatCurrencyNoDecimals(stats?.total_tarjeta || 0),
-      subtitle: "Pagos con tarjeta",
+      subtitle: isCajero ? "Pagos con tarjeta en tu caja" : "Pagos con tarjeta",
       icon: CreditCard,
       formatAsCurrency: false, // No usar el formateo automático
     },
     {
       title: "Total Transferencias",
       value: formatCurrencyNoDecimals(stats?.total_transferencia || 0),
-      subtitle: "Transferencias bancarias",
+      subtitle: isCajero ? "Transferencias en tu caja" : "Transferencias bancarias",
       icon: ArrowUpDown,
       formatAsCurrency: false, // No usar el formateo automático
     },

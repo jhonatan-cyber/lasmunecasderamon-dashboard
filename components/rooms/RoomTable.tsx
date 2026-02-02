@@ -55,6 +55,9 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   Tiempo
                 </th>
                 <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+                  Comisión
+                </th>
+                <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
                   Estado
                 </th>
                 <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
@@ -65,7 +68,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
             <tbody>
               {rooms.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className='py-8 text-center text-gray-500 text-sm sm:text-base'>
+                  <td colSpan={7} className='py-8 text-center text-gray-500 text-sm sm:text-base'>
                     No hay habitaciones disponibles
                   </td>
                 </tr>
@@ -76,10 +79,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                       {index + 1}
                     </td>
                     <td className='py-3 px-2 sm:px-4 text-center'>
-                      <div className='flex items-center justify-center gap-2'>
-                        <Bed className='text-blue-500 text-xs sm:text-sm' />
-                        <span className='font-medium text-gray-900 text-xs sm:text-sm'>{room.name}</span>
-                      </div>
+                      <span className='font-medium text-gray-900 text-xs sm:text-sm'>{room.name}</span>
                     </td>
                     <td className='py-3 px-2 sm:px-4 text-center'>
                       <span className='font-medium text-gray-900 text-xs sm:text-sm'>
@@ -88,6 +88,11 @@ const RoomTable: React.FC<RoomTableProps> = ({
                     </td>
                     <td className='py-3 px-2 sm:px-4 text-center'>
                       <span className='text-gray-600 text-xs sm:text-sm'>{room.time} min</span>
+                    </td>
+                    <td className='py-3 px-2 sm:px-4 text-center'>
+                      <span className='text-gray-600 text-xs sm:text-sm'>
+                        {room.comision_anfitriona ? `$${room.comision_anfitriona.toLocaleString('es-CL')}` : 'N/A'}
+                      </span>
                     </td>
                     <td className='py-3 px-2 sm:px-4 text-center'>
                       <Badge
