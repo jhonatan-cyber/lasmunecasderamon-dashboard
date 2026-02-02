@@ -83,10 +83,10 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const { codigo, cliente_id, total_comision, sub_total, total, habitacion_id, detalles, usuarios } = req.body;
 
     // Validaciones
-    if (!codigo || !cliente_id || total_comision === undefined || sub_total === undefined || total === undefined || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
+    if (!codigo || total_comision === undefined || sub_total === undefined || total === undefined || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Código, cliente_id, total_comision, sub_total, total y detalles son requeridos"
+        message: "Código, total_comision, sub_total, total y detalles son requeridos"
       });
     }
 

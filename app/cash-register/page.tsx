@@ -106,7 +106,13 @@ export default function CashRegister() {
 
   const handleRetirarDinero = async (data: CajaRetiro) => {
     try {
-      return await retirarDinero(data);
+      const success = await retirarDinero(data);
+      if (success) {
+        // Actualizar los datos después del retiro exitoso
+        getCajas();
+        getResumen();
+      }
+      return success;
     } catch (error) {
       console.error('Error al retirar dinero:', error);
       return false;
