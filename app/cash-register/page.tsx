@@ -54,6 +54,15 @@ export default function CashRegister() {
                      hasPermission('caja', 'retirar') || 
                      hasPermission('caja', 'actualizar');
 
+  // Nuevos permisos agregados
+  const canViewDetails = hasPermission('caja', 'detalles') || 
+                         hasPermission('caja', 'ver_detalles') ||
+                         hasPermission('cajas', 'detalles');
+
+  const canWithdrawMoney = hasPermission('caja', 'retirar') || 
+                           hasPermission('caja', 'retirar_dinero') ||
+                           hasPermission('cajas', 'retirar');
+
   // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
     const matchesSearch =
@@ -274,8 +283,8 @@ export default function CashRegister() {
                     onCloseCaja={handleCloseCaja}
                     onRetirar={handleRetirar}
                     canCloseCaja={canCloseCaja}
-                    canRetirar={canRetirar}
-                    canViewDetails={!isCajero}
+                    canRetirar={canWithdrawMoney}
+                    canViewDetails={canViewDetails}
                   />
                 ))}
               </div>
@@ -338,8 +347,8 @@ export default function CashRegister() {
                       onCloseCaja={handleCloseCaja}
                       onRetirar={handleRetirar}
                       canCloseCaja={canCloseCaja}
-                      canRetirar={canRetirar}
-                      canViewDetails={!isCajero}
+                      canRetirar={canWithdrawMoney}
+                      canViewDetails={canViewDetails}
                     />
                   ))}
                 </div>
