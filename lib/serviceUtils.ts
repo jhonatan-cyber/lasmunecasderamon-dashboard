@@ -104,18 +104,26 @@ export function validateServiceData(data: {
 export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   const totalServicios = servicios.length;
   const serviciosActivos = servicios.filter((s) => s.estado === 1).length;
-  const ingresosTotales = servicios.reduce((sum, s) => sum + (s.total || 0), 0);
-  const promedioTiempo =
-    servicios.length > 0
-      ? Math.round(
-          servicios.reduce((sum, s) => sum + (s.tiempo || 0), 0) /
-            servicios.length
-        )
-      : 0;
+  const serviciosTerminados = servicios.filter((s) => s.estado === 0).length;
+  
+  // Ingresos totales de servicios terminados (estado 0) - los que ya generaron ingresos reales
+  const ingresosTotales = servicios
+    .filter((s) => s.estado === 0) // Solo servicios terminados
+    .reduce((sum, s) => sum + (s.total || 0), 0);
+  
+  // Promedio de tiempo de servicios activos
+  const serviciosActivosArray = servicios.filter((s) => s.estado === 1);
+  const promedioTiempo = serviciosActivosArray.length > 0
+    ? Math.round(
+        serviciosActivosArray.reduce((sum, s) => sum + (s.tiempo || 0), 0) /
+        serviciosActivosArray.length
+      )
+    : 0;
 
   return {
     totalServicios,
     serviciosActivos,
+    serviciosTerminados,
     ingresosTotales,
     promedioTiempo,
   };
@@ -124,10 +132,10 @@ export function calculateServiceStats(servicios: ServicioWithDetails[]) {
 // Calcular estadísticas de habitaciones
 export function calculateRoomStats(habitaciones: any[]) {
   const habitacionesDisponibles = habitaciones.filter(
-    (h) => h.estado === 1
+    (h) => h.estado === 1 || h.status === 1
   ).length;
   const habitacionesOcupadas = habitaciones.filter(
-    (h) => h.estado === 2
+    (h) => h.estado === 2 || h.status === 2
   ).length;
 
   return {

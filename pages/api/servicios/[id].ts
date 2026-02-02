@@ -215,10 +215,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Si se está finalizando el servicio (estado = 0), liberar la habitación
         if (estado === 0) {
-          await query(
-            'UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?',
-            [servicioId]
-          );
+          // Obtener el habitacion_id primero para asegurar que tenemos el ID correcto
+          const [servicio] = await query('SELECT habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
+          if (servicio && servicio.habitacion_id) {
+            await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [servicio.habitacion_id]);
+            console.log(`✅ Habitación ${servicio.habitacion_id} liberada por finalización de servicio ${servicioId}`);
+          } else {
+            // Intento alternativo por si el join directo fallaba antes
+            await query(
+              'UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?',
+              [servicioId]
+            );
+          }
         }
 
         return res.status(200).json({
@@ -337,10 +345,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json({
           success: true,
           message: 'Servicio actualizado correctamente',
-          data: { 
-            precio_servicio: newPrice, 
+          data: {
+            precio_servicio: newPrice,
             precio_habitacion: newHabPrice,
-            tiempo: newTime, 
+            tiempo: newTime,
             total: newTotal,
             metodo_pago: metodo_pago
           }

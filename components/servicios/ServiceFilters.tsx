@@ -32,12 +32,15 @@ export default function ServiceFilters({
     setCurrentPage(1);
   };
 
+  // Verificar si hay filtros activos
+  const hasActiveFilters = searchTerm.trim() !== "";
+
   return (
     <Card className="mb-4 sm:mb-6 shadow-sm">
       <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col gap-4 sm:gap-6">
-          {/* Búsqueda - Ocupa todo el ancho en móviles */}
-          <div className="w-full">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-center">
+          {/* Búsqueda */}
+          <div className="flex-1">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
@@ -46,29 +49,40 @@ export default function ServiceFilters({
             />
           </div>
 
-          {/* Controles - Responsive layout */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end">
-            {/* Botón de filtro */}
-            <div className="flex-1 sm:flex-none">
+          {/* Botón de filtro */}
+          <div className="flex-shrink-0">
+            <Button
+              onClick={showAllServices ? onShowActiveServices : onShowAllServices}
+              variant='outline'
+              className='w-full sm:w-auto whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
+            >
+              {showAllServices ? 'Mostrar Activos' : 'Mostrar Terminados'}
+            </Button>
+          </div>
+
+          {/* Elementos por página */}
+          <div className="flex-shrink-0">
+            <SelectElements
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              options={[8, 16, 24, 48]}
+              label=""
+            />
+          </div>
+
+          {/* Botón limpiar filtros - Solo aparece cuando hay filtros activos */}
+          {hasActiveFilters && (
+            <div className="flex-shrink-0">
               <Button
-                onClick={showAllServices ? onShowActiveServices : onShowAllServices}
-                variant='outline'
-                className='w-full sm:w-auto whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
+                onClick={() => setSearchTerm("")}
+                size="sm"
+                variant="outline"
+                className="w-full sm:w-auto rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
               >
-                {showAllServices ? 'Mostrar Activos' : 'Mostrar Terminados'}
+                Limpiar
               </Button>
             </div>
-
-            {/* Elementos por página */}
-            <div className="flex-1 sm:flex-none">
-              <SelectElements
-                value={itemsPerPage}
-                onChange={handleItemsPerPageChange}
-                options={[8, 16, 24, 48]}
-                label='Elementos por página'
-              />
-            </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>

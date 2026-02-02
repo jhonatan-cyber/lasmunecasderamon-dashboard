@@ -44,7 +44,10 @@ export function useServiceLogic() {
         });
 
         if (response.ok) {
+          // Actualizar el estado local inmediatamente
           removeServicioFromState(servicioId);
+          // También recargar todos los datos para asegurar consistencia
+          await getServicios(true);
           toast.success('Servicio finalizado exitosamente');
         } else {
           toast.error('Error al finalizar el servicio');
@@ -53,26 +56,29 @@ export function useServiceLogic() {
         toast.error('Error al finalizar el servicio');
       }
     },
-    [removeServicioFromState]
+    [removeServicioFromState, getServicios]
   );
 
-  // Función para manejar cuando un servicio se finaliza automáticamente por tiempo
-  const handleServiceAutoFinished = useCallback(() => {
-    // Usar setTimeout para evitar actualizaciones durante el render
-    setTimeout(() => {
-      // Recargar los datos para obtener el estado actualizado
-      getServicios();
+  // Función para remover un servicio finalizado del estado local
+  const handleServiceFinalized = useCallback((servicioId: number) => {
+    console.log('🗑️ Removiendo servicio finalizado del estado local:', servicioId);
+    removeServicioFromState(servicioId);
+  }, [removeServicioFromState]);
+  const handleServiceAutoFinished = useCallback(async () => {
+    console.log('🔄 handleServiceAutoFinished ejecutado');
+    
+    // Recargar inmediatamente sin setTimeout para evitar delays
+    try {
+      console.log('🔄 Recargando servicios después de finalización automática');
+      await getServicios(true);
+      console.log('✅ Servicios recargados exitosamente');
       
-      // Si estamos mostrando servicios terminados, cambiar a mostrar activos
-      if (showAllServices) {
-        setShowAllServices(false);
-        setCurrentPage(1);
-        toast.info('🔄 Servicio finalizado automáticamente. Mostrando servicios activos.');
-      } else {
-        toast.success('✅ Lista de servicios actualizada.');
-      }
-    }, 200); // Aumentar el delay para evitar conflictos
-  }, [getServicios, showAllServices]);
+      // Forzar re-render actualizando el estado
+      setCurrentPage(prev => prev);
+    } catch (error) {
+      console.error('❌ Error al recargar servicios:', error);
+    }
+  }, [getServicios, setCurrentPage]);
 
   // Filtrar servicios por estado (activos vs terminados)
   const serviciosByStatus = useMemo(() => {
@@ -130,8 +136,9 @@ export function useServiceLogic() {
     handleShowAllServices,
     handleStopTimer,
     handleServiceAutoFinished,
+    handleServiceFinalized,
 
     // Acciones de datos
-    getServicios
+    getServicios: () => getServicios(true)
   };
 }

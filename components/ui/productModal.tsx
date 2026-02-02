@@ -568,7 +568,7 @@ export default function SaleProductModal({
                   onClick={() => setSelectedProducts({})}
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full"
                   title="Ctrl+D para limpiar"
                 >
                   Limpiar Selección
@@ -578,7 +578,7 @@ export default function SaleProductModal({
                 onClick={onClose}
                 variant="outline"
                 size="sm"
-                className="px-6"
+                className="px-6 rounded-full"
                 title="Escape para cerrar"
               >
                 Cerrar

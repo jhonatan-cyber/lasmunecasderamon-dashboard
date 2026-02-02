@@ -8,13 +8,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Bed, DollarSign, Clock } from 'lucide-react';
+import { Check, X, Bed, DollarSign, Clock, Percent } from 'lucide-react';
 import { Room } from '@/types/room';
 
 export interface RoomForm {
   name: string;
   price: string;
   time: string;
+  comision_anfitriona: string;
 }
 
 interface RoomFormDialogProps {
@@ -28,7 +29,8 @@ interface RoomFormDialogProps {
 const initialFormState: RoomForm = {
   name: '',
   price: '',
-  time: ''
+  time: '',
+  comision_anfitriona: ''
 };
 
 const formatNumberWithSeparators = (value: string) => {
@@ -54,7 +56,8 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       setForm({
         name: initialValues.name || '',
         price: initialValues.price ? String(initialValues.price) : '',
-        time: initialValues.time ? String(initialValues.time) : ''
+        time: initialValues.time ? String(initialValues.time) : '',
+        comision_anfitriona: initialValues.comision_anfitriona ? String(initialValues.comision_anfitriona) : ''
       });
     } else if (open) {
       setForm(initialFormState);
@@ -68,6 +71,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
     if (!form.price.trim() || isNaN(Number(form.price)))
       newErrors.price = 'Precio válido requerido';
     if (!form.time.trim() || isNaN(Number(form.time))) newErrors.time = 'Tiempo válido requerido';
+    if (form.comision_anfitriona && (isNaN(Number(form.comision_anfitriona)) || Number(form.comision_anfitriona) < 0 || Number(form.comision_anfitriona) > 100)) {
+      newErrors.comision_anfitriona = 'La comisión debe ser un número entre 0 y 100';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -187,6 +193,26 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                 </div>
                 {errors.time && (
                   <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.time}</span>
+                )}
+              </div>
+              <div>
+                <label className='block text-sm sm:text-base font-medium mb-2'>
+                  Comisión Anfitriona (%)
+                </label>
+                <div className='relative'>
+                  <Percent className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                  <Input
+                    name='comision_anfitriona'
+                    value={form.comision_anfitriona}
+                    onChange={handleChange}
+                    placeholder='Porcentaje de comisión'
+                    disabled={isLoading}
+                    inputMode='numeric'
+                    className='text-sm sm:text-base pl-10'
+                  />
+                </div>
+                {errors.comision_anfitriona && (
+                  <span className='text-red-500 text-xs sm:text-sm mt-1 block'>{errors.comision_anfitriona}</span>
                 )}
               </div>
             </div>

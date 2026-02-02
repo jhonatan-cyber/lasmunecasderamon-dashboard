@@ -15,6 +15,7 @@ interface OrderProductTableProps {
   onToggleComision?: (index: number) => void;
   onAssignHostess?: (index: number, hostessId: string) => void;
   anfitrionas: any[]; // Lista de anfitrionas para mostrar nombres
+  habitaciones?: any[]; // Lista de habitaciones para mostrar nombres
 }
 
 export default function OrderProductTable({
@@ -24,6 +25,7 @@ export default function OrderProductTable({
   onToggleComision,
   onAssignHostess,
   anfitrionas,
+  habitaciones = [],
 }: OrderProductTableProps) {
   return (
     <div className="overflow-x-auto w-full mt-10">
@@ -49,6 +51,9 @@ export default function OrderProductTable({
               ANFITRIONA ASIGNADA
             </th>
             <th className="text-center font-medium text-gray-500 pb-2">
+              HABITACIÓN
+            </th>
+            <th className="text-center font-medium text-gray-500 pb-2">
               SUB TOTAL
             </th>
             <th className="text-center font-medium text-gray-500 pb-2">
@@ -59,7 +64,7 @@ export default function OrderProductTable({
         <tbody>
           {productos.length === 0 && (
             <tr>
-              <td colSpan={8} className="text-center text-gray-300 py-6">
+              <td colSpan={9} className="text-center text-gray-300 py-6">
                 No hay productos agregados
               </td>
             </tr>
@@ -182,6 +187,29 @@ export default function OrderProductTable({
                       <span className="text-gray-400 text-xs">Sin anfitrionas asignadas</span>
                     );
                   })()
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </td>
+              <td className="text-center">
+                {p.selectedRoom ? (
+                  (() => {
+                    // Buscar el nombre de la habitación por ID
+                    const habitacion = habitaciones.find(h =>
+                      String(h.id_habitacion || h.id) === String(p.selectedRoom)
+                    );
+                    const roomName = habitacion ?
+                      (habitacion.nombre || habitacion.name || `Habitación ${p.selectedRoom}`) :
+                      `ID: ${p.selectedRoom}`;
+
+                    return (
+                      <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                        {roomName}
+                      </span>
+                    );
+                  })()
+                ) : p.requiresRoom ? (
+                  <span className="text-red-500 text-xs">Requerida</span>
                 ) : (
                   <span className="text-gray-400">-</span>
                 )}

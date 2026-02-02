@@ -8,7 +8,7 @@ import { RoomFilters } from '@/components/rooms/RoomFilters';
 import Paginate from '@/components/ui/paginate';
 import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
-import { Table, Grid3X3, Plus } from 'lucide-react';
+import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
 
 
 function toTitleCase(str: string) {
@@ -61,7 +61,8 @@ const RoomsPage = () => {
     await createRoom({
       name: toTitleCase(form.name),
       price: Number(form.price.replace(/\./g, '')),
-      time: Number(form.time)
+      time: Number(form.time),
+      comision_anfitriona: form.comision_anfitriona ? Number(form.comision_anfitriona) : undefined
     });
     setOpenDialog(false);
   };
@@ -76,7 +77,8 @@ const RoomsPage = () => {
     await updateRoom(editRoom.id, {
       name: toTitleCase(form.name),
       price: Number(form.price.replace(/\./g, '')),
-      time: Number(form.time)
+      time: Number(form.time),
+      comision_anfitriona: form.comision_anfitriona ? Number(form.comision_anfitriona) : undefined
     });
     setEditRoom(null);
     setOpenDialog(false);
@@ -181,20 +183,49 @@ const RoomsPage = () => {
         </div>
       ) : (
         <>
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:mt-6'>
-            {paginatedRooms.map(room => (
-              <RoomCard
-                key={room.id}
-                room={room}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onDeactivate={handleDeactivate}
-                onOccupy={handleOccupy}
-              />
-            ))}
-          </div>
-          {totalPages > 1 && (
+          {paginatedRooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                <Bed className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {filteredByStatus.length === 0 ? 'No hay habitaciones' : 'Sin resultados'}
+              </h3>
+              <p className="text-gray-500 text-center mb-6 max-w-sm">
+                {filteredByStatus.length === 0 
+                  ? "Crea tu primera habitación para comenzar"
+                  : "Ajusta los filtros para ver más resultados"
+                }
+              </p>
+              {filteredByStatus.length === 0 && (
+                <Button
+                  onClick={() => {
+                    setEditRoom(null);
+                    setOpenDialog(true);
+                  }}
+                  className="bg-black text-white hover:bg-gray-800 rounded-xl px-6 py-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva habitación
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mt-4 sm:mt-6'>
+              {paginatedRooms.map(room => (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onActivate={handleActivate}
+                  onDeactivate={handleDeactivate}
+                  onOccupy={handleOccupy}
+                />
+              ))}
+            </div>
+          )}
+          {totalPages > 1 && paginatedRooms.length > 0 && (
             <div className='flex justify-center mt-4 sm:mt-6'>
               <Paginate page={page} totalPages={totalPages} setPage={setPage} />
             </div>
