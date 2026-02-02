@@ -36,15 +36,25 @@ export default function ServiciosPage() {
     handleShowAllServices,
     handleStopTimer,
     handleServiceAutoFinished,
+    handleServiceFinalized,
     getServicios
   } = useServiceLogic();
 
   // Configurar callback de actualización para cuando termine un timer
   useEffect(() => {
-    setRefreshCallback(() => {
+    console.log('🔧 Configurando refreshCallback');
+    setRefreshCallback(() => (servicioId?: number) => {
+      console.log('🔄 RefreshCallback llamado desde TimerContext, servicioId:', servicioId);
+
+      // Si tenemos el ID del servicio, removerlo del estado local inmediatamente
+      if (servicioId) {
+        handleServiceFinalized(servicioId);
+      }
+
+      // Luego recargar todos los datos
       handleServiceAutoFinished();
     });
-  }, [setRefreshCallback, handleServiceAutoFinished]);
+  }, [setRefreshCallback, handleServiceAutoFinished, handleServiceFinalized]);
 
   const handleCreateServicioWithCheck = () => {
     if (!hasOpenCaja) {

@@ -9,6 +9,7 @@ import { showSuccessToast, showErrorToast } from "@/lib/toastUtils";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import useRooms from "@/hooks/useRooms";
 
 interface OrderFormProps {
   clientes: any[];
@@ -54,9 +55,11 @@ export default function OrderForm({
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
   const [champagneHostessSelections, setChampagneHostessSelections] = useState<{ [key: string]: string[] }>({});
   const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{ [key: string]: string[] }>({});
+  const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
   const [error, setError] = useState("");
   const router = useRouter();
   const { user } = useCurrentUser();
+  const { rooms } = useRooms();
 
   // Calcular el total sumando los subtotales de los productos agregados
   const total = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
@@ -98,6 +101,13 @@ export default function OrderForm({
     }));
   };
 
+  const handleRoomChange = (productId: string, roomId: string) => {
+    setRoomSelections(prev => ({
+      ...prev,
+      [productId]: roomId
+    }));
+  };
+
   const handleAgregarProducto = (producto: any) => {
     const cantidad = cantidades[producto.id_producto || producto.id] || 1;
     const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
@@ -117,6 +127,8 @@ export default function OrderForm({
         hostessId: "", // anfitriona asignada para la comisión
         selectedHostesses: producto.selectedHostesses || [], // Anfitrionas seleccionadas en el modal
         isChampagne: producto.isChampagne || false, // Si es champaña
+        selectedRoom: producto.selectedRoom || null, // Habitación seleccionada
+        requiresRoom: producto.requiresRoom || false, // Si requiere habitación
       });
     }
     setCantidades((prev) => ({
@@ -132,6 +144,11 @@ export default function OrderForm({
       return newState;
     });
     setOtherProductHostessSelections(prev => {
+      const newState = { ...prev };
+      delete newState[productId];
+      return newState;
+    });
+    setRoomSelections(prev => {
       const newState = { ...prev };
       delete newState[productId];
       return newState;
@@ -178,6 +195,16 @@ export default function OrderForm({
     for (const bebida of bebidasConComision) {
       if (!bebida.selectedHostesses || bebida.selectedHostesses.length === 0) {
         setError(`La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`);
+        return;
+      }
+    }
+
+    // Verificar que las bebidas que requieren habitación la tengan asignada
+    const bebidasQueRequierenHabitacion = productos.filter(p => p.requiresRoom);
+    
+    for (const bebida of bebidasQueRequierenHabitacion) {
+      if (!bebida.selectedRoom) {
+        setError(`La bebida "${bebida.nombre || bebida.name}" requiere seleccionar una habitación (precio > $30,000 + comisión)`);
         return;
       }
     }
@@ -275,6 +302,7 @@ export default function OrderForm({
           ? Number(item.selectedHostesses[0]) 
           : null, // Solo para bebidas con comisión individual
         selectedHostesses: item.selectedHostesses || [], // Para champañas con múltiples anfitrionas
+        roomId: item.selectedRoom ? Number(item.selectedRoom) : null, // Habitación seleccionada
       }));
       const usuarios = Array.from(new Set(
         bebidasConComision.flatMap(p => p.selectedHostesses || [])
@@ -305,6 +333,7 @@ export default function OrderForm({
         // Limpiar selecciones del modal
         setChampagneHostessSelections({});
         setOtherProductHostessSelections({});
+        setRoomSelections({});
         // Redirigir a la lista de pedidos después de un pequeño delay
         setTimeout(() => {
           router.push("/orders");
@@ -373,6 +402,9 @@ export default function OrderForm({
         otherProductHostessSelections={otherProductHostessSelections}
         onOtherProductHostessChange={handleOtherProductHostessChange}
         productosEnCarrito={productos}
+        habitaciones={rooms}
+        roomSelections={roomSelections}
+        onRoomChange={handleRoomChange}
       />
       {/* Tabla de productos */}
       <div className="mt-8">
@@ -386,6 +418,7 @@ export default function OrderForm({
           onToggleComision={handleToggleComision}
           onAssignHostess={handleAssignHostess}
           anfitrionas={anfitrionas}
+          habitaciones={rooms}
         />
       </div>
     </div>
