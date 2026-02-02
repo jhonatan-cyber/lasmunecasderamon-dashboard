@@ -62,7 +62,7 @@ const RoomsPage = () => {
       name: toTitleCase(form.name),
       price: Number(form.price.replace(/\./g, '')),
       time: Number(form.time),
-      comision_anfitriona: form.comision_anfitriona ? Number(form.comision_anfitriona) : undefined
+      comision_anfitriona: form.comision_anfitriona ? Number(form.comision_anfitriona.replace(/\./g, '')) : undefined
     });
     setOpenDialog(false);
   };
@@ -78,7 +78,7 @@ const RoomsPage = () => {
       name: toTitleCase(form.name),
       price: Number(form.price.replace(/\./g, '')),
       time: Number(form.time),
-      comision_anfitriona: form.comision_anfitriona ? Number(form.comision_anfitriona) : undefined
+      comision_anfitriona: form.comision_anfitriona ? Number(form.comision_anfitriona.replace(/\./g, '')) : undefined
     });
     setEditRoom(null);
     setOpenDialog(false);

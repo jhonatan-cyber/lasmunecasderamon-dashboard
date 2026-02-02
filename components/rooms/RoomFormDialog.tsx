@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Bed, DollarSign, Clock, Percent } from 'lucide-react';
+import { Check, X, Bed, DollarSign, Clock } from 'lucide-react';
 import { Room } from '@/types/room';
 
 export interface RoomForm {
@@ -55,9 +55,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
     if (open && initialValues) {
       setForm({
         name: initialValues.name || '',
-        price: initialValues.price ? String(initialValues.price) : '',
+        price: initialValues.price ? formatNumberWithSeparators(String(initialValues.price)) : '',
         time: initialValues.time ? String(initialValues.time) : '',
-        comision_anfitriona: initialValues.comision_anfitriona ? String(initialValues.comision_anfitriona) : ''
+        comision_anfitriona: initialValues.comision_anfitriona ? formatNumberWithSeparators(String(initialValues.comision_anfitriona)) : ''
       });
     } else if (open) {
       setForm(initialFormState);
@@ -68,11 +68,11 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!form.price.trim() || isNaN(Number(form.price)))
+    if (!form.price.trim() || isNaN(Number(form.price.replace(/\./g, ''))))
       newErrors.price = 'Precio válido requerido';
     if (!form.time.trim() || isNaN(Number(form.time))) newErrors.time = 'Tiempo válido requerido';
-    if (form.comision_anfitriona && (isNaN(Number(form.comision_anfitriona)) || Number(form.comision_anfitriona) < 0 || Number(form.comision_anfitriona) > 100)) {
-      newErrors.comision_anfitriona = 'La comisión debe ser un número entre 0 y 100';
+    if (form.comision_anfitriona && (isNaN(Number(form.comision_anfitriona.replace(/\./g, ''))) || Number(form.comision_anfitriona.replace(/\./g, '')) < 0)) {
+      newErrors.comision_anfitriona = 'La comisión debe ser un monto válido mayor o igual a 0';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -81,8 +81,8 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    if (name === 'price') {
-      setForm({ ...form, price: formatNumberWithSeparators(value) });
+    if (name === 'price' || name === 'comision_anfitriona') {
+      setForm({ ...form, [name]: formatNumberWithSeparators(value) });
       return;
     }
 
@@ -97,17 +97,25 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.target.name === 'price' || e.target.name === 'time') {
+    if (e.target.name === 'price' || e.target.name === 'time' || e.target.name === 'comision_anfitriona') {
       setForm({ ...form, [e.target.name]: '' });
     }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if ((e.target.name === 'price' || e.target.name === 'time') && !form[e.target.name]) {
-      setForm({
-        ...form,
-        [e.target.name]: initialValues ? String((initialValues as any)[e.target.name]) : ''
-      });
+    if ((e.target.name === 'price' || e.target.name === 'time' || e.target.name === 'comision_anfitriona') && !form[e.target.name]) {
+      const initialValue = initialValues ? (initialValues as any)[e.target.name] : '';
+      if (e.target.name === 'price' || e.target.name === 'comision_anfitriona') {
+        setForm({
+          ...form,
+          [e.target.name]: initialValue ? formatNumberWithSeparators(String(initialValue)) : ''
+        });
+      } else {
+        setForm({
+          ...form,
+          [e.target.name]: initialValue ? String(initialValue) : ''
+        });
+      }
     }
   };
 
@@ -197,15 +205,17 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
               </div>
               <div>
                 <label className='block text-sm sm:text-base font-medium mb-2'>
-                  Comisión Anfitriona (%)
+                  Comisión Anfitriona (Monto)
                 </label>
                 <div className='relative'>
-                  <Percent className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                  <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
                   <Input
                     name='comision_anfitriona'
                     value={form.comision_anfitriona}
                     onChange={handleChange}
-                    placeholder='Porcentaje de comisión'
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    placeholder='Monto de comisión'
                     disabled={isLoading}
                     inputMode='numeric'
                     className='text-sm sm:text-base pl-10'

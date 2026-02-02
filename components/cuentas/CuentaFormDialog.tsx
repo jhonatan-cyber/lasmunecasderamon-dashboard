@@ -40,8 +40,8 @@ export default function CuentaFormDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!codigo || !clienteId || detalles.length === 0) {
-      toast.error("Código, cliente y al menos un detalle son requeridos");
+    if (!codigo || detalles.length === 0) {
+      toast.error("Código y al menos un detalle son requeridos");
       return;
     }
 
@@ -57,7 +57,7 @@ export default function CuentaFormDialog({
     try {
       const cuentaData: CreateCuentaRequest = {
         codigo,
-        cliente_id: parseInt(clienteId),
+        cliente_id: clienteId ? parseInt(clienteId) : undefined,
         habitacion_id: habitacionId ? parseInt(habitacionId) : undefined,
         detalles,
       };
