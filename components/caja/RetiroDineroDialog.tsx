@@ -45,6 +45,44 @@ export function RetiroDineroDialog({
     const [motivo, setMotivo] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Función para formatear el monto con puntos de miles
+    const formatMonto = (value: string) => {
+        // Remover todo excepto números
+        const numericValue = value.replace(/[^\d]/g, '');
+        
+        if (numericValue === '') return '';
+        
+        // Formatear con puntos de miles manualmente
+        const number = parseInt(numericValue);
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
+
+    // Función para obtener el valor numérico sin formato
+    const getNumericValue = (formattedValue: string) => {
+        return parseInt(formattedValue.replace(/[^\d]/g, '') || '0');
+    };
+
+    const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const inputValue = e.target.value;
+        const formatted = formatMonto(inputValue);
+        const numericValue = getNumericValue(formatted);
+        
+        // Validar que no exceda el monto disponible
+        if (caja && numericValue > 0) {
+            const disponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
+            if (numericValue > disponible) {
+                // No actualizar si excede el disponible
+                return;
+            }
+        }
+        
+        setMonto(formatted);
+        // Limpiar error si existe
+        if (errors.monto) {
+            setErrors(prev => ({ ...prev, monto: '' }));
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrors({});
@@ -54,7 +92,7 @@ export function RetiroDineroDialog({
             return;
         }
 
-        const montoNum = parseFloat(monto);
+        const montoNum = getNumericValue(monto);
         if (isNaN(montoNum) || montoNum <= 0) {
             setErrors({ monto: 'El monto debe ser un número mayor a 0' });
             return;
@@ -65,9 +103,9 @@ export function RetiroDineroDialog({
             return;
         }
 
-        const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - caja.anticipo;
+        const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
         if (montoNum > montoDisponible) {
-            setErrors({ monto: `El monto no puede ser mayor al disponible ($${montoDisponible.toLocaleString()})` });
+            setErrors({ monto: `El monto no puede ser mayor al disponible ($${Math.round(montoDisponible).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')})` });
             return;
         }
 
@@ -94,7 +132,7 @@ export function RetiroDineroDialog({
 
     if (!caja) return null;
 
-    const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - caja.anticipo;
+    const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,16 +177,13 @@ export function RetiroDineroDialog({
                         {/* Monto a retirar */}
                         <div>
                             <Label htmlFor='monto' className='text-sm'>
-                                Monto a Retirar
+                                Monto a Retirar ($)
                             </Label>
                             <Input
                                 id='monto'
-                                type='number'
-                                step='1'
-                                min='0'
-                                max={montoDisponible}
+                                type='text'
                                 value={monto}
-                                onChange={(e) => setMonto(e.target.value)}
+                                onChange={handleMontoChange}
                                 placeholder='0'
                                 className='text-sm'
                                 disabled={loading}

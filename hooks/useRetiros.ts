@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface Retiro {
     id_retiro: number;
@@ -15,34 +15,34 @@ export function useRetiros(idCaja: number | null) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
+    const fetchRetiros = useCallback(async () => {
         if (!idCaja) {
             setRetiros([]);
             return;
         }
 
-        const fetchRetiros = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await fetch(`/api/cashregister/retiros?id_caja=${idCaja}`);
-                const result = await response.json();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`/api/cashregister/retiros?id_caja=${idCaja}`);
+            const result = await response.json();
 
-                if (result.success) {
-                    setRetiros(result.data || []);
-                } else {
-                    setError(result.message || 'Error al obtener retiros');
-                }
-            } catch (err) {
-                setError('Error al cargar retiros');
-                console.error('Error fetching retiros:', err);
-            } finally {
-                setLoading(false);
+            if (result.success) {
+                setRetiros(result.data || []);
+            } else {
+                setError(result.message || 'Error al obtener retiros');
             }
-        };
-
-        fetchRetiros();
+        } catch (err) {
+            setError('Error al cargar retiros');
+            console.error('Error fetching retiros:', err);
+        } finally {
+            setLoading(false);
+        }
     }, [idCaja]);
 
-    return { retiros, loading, error };
+    useEffect(() => {
+        fetchRetiros();
+    }, [fetchRetiros]);
+
+    return { retiros, loading, error, refetch: fetchRetiros };
 }
