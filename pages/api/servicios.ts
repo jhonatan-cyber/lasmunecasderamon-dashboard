@@ -45,8 +45,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           COALESCE(GROUP_CONCAT(DISTINCT CONCAT(c_multi.nombre, ' ', c_multi.apellido) SEPARATOR ', '), COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado')) as cliente_nombre,
           h.nombre as habitacion_numero,
           COUNT(DISTINCT ds.usuario_id) as total_usuarios,
-          GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres,
-          CONCAT(creator.nombre, ' ', creator.apellido) as creator_name
+          GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nicks,
+          CONCAT(creator.nombre, ' ', creator.apellido) as creator_name,
+          creator.nick as usuario_nick
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN detalle_servicios_clientes dsc ON dsc.servicio_id = s.id_servicio

@@ -482,7 +482,7 @@ export default function OrderDetailModal({
       // Preparar datos para la cuenta
       const cuentaData = {
         codigo: generateCode(),
-        cliente_id: pedido.cliente_id || 1,
+        cliente_id: pedido.cliente_id || null,
         total_comision: total_comision,
         sub_total: sub_total,
         total: (pedido.total || 0) + recargoAnfitrionas, // Sin propina para cuentas
