@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useCashRegister } from '@/hooks/useCashRegister';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CajaCard } from '@/components/caja/CajaCard';
 import { CajaFormDialog } from '@/components/caja/CajaFormDialog';
 import { CerrarCajaDialog } from '@/components/caja/CerrarCajaDialog';
@@ -18,6 +20,8 @@ import { AlertTriangle, RotateCcw } from 'lucide-react';
 
 export default function CashRegister() {
   const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero } = useCashRegister();
+  const { user } = useCurrentUser();
+  const { hasPermission } = useUserPermissions();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -25,6 +29,30 @@ export default function CashRegister() {
   const [showDetails, setShowDetails] = useState(false);
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
   const [showRetiroDialog, setShowRetiroDialog] = useState(false);
+
+  // Verificar si el usuario es cajero
+  const isCajero = user?.role === 'cajero';
+  
+  // Verificar permisos específicos
+  const canOpenCaja = hasPermission('cajas', 'crear') || 
+                      hasPermission('cajas', 'abrir') || 
+                      hasPermission('caja', 'crear') || 
+                      hasPermission('caja', 'abrir');
+                      
+  const canCloseCaja = hasPermission('cajas', 'cerrar') || 
+                       hasPermission('cajas', 'actualizar') || 
+                       hasPermission('caja', 'cerrar') || 
+                       hasPermission('caja', 'actualizar');
+                       
+  const canViewCajas = hasPermission('cajas', 'ver') || 
+                       hasPermission('cajas', 'listar') || 
+                       hasPermission('caja', 'ver') || 
+                       hasPermission('caja', 'listar');
+                       
+  const canRetirar = hasPermission('cajas', 'retirar') || 
+                     hasPermission('cajas', 'actualizar') || 
+                     hasPermission('caja', 'retirar') || 
+                     hasPermission('caja', 'actualizar');
 
   // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
@@ -38,6 +66,10 @@ export default function CashRegister() {
   });
 
   const handleCreateCaja = async (data: CajaCreate) => {
+    // Verificar si puede abrir cajas
+    if (!canOpenCaja) {
+      return;
+    }
     try {
       await createCaja(data);
     } catch (error) {
@@ -59,6 +91,10 @@ export default function CashRegister() {
   };
 
   const handleCloseCaja = (caja: CajaWithUser) => {
+    // Verificar si puede cerrar cajas
+    if (!canCloseCaja) {
+      return;
+    }
     setSelectedCaja(caja);
     setShowCerrarDialog(true);
   };
@@ -116,9 +152,17 @@ export default function CashRegister() {
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
         <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Control de Cajas</h1>
-          <p className='text-sm sm:text-base text-gray-600'>Gestiona las cajas registradoras y transacciones</p>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
+            {isCajero ? 'Mi Caja Registradora' : 'Control de Cajas'}
+          </h1>
+          <p className='text-sm sm:text-base text-gray-600'>
+            {isCajero 
+              ? 'Gestiona tu caja registradora actual' 
+              : 'Gestiona las cajas registradoras y transacciones'
+            }
+          </p>
         </div>
+        
         <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto'>
           {cajas.filter(c => c.estado === 1).length > 0 ? (
             <div className='flex items-center gap-2 px-3 sm:px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-md'>
@@ -131,7 +175,8 @@ export default function CashRegister() {
               </span>
             </div>
           ) : (
-            <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
+            // Mostrar botón de crear caja si tiene permisos
+            canOpenCaja && <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
           )}
           <Button
             onClick={handleRefresh}
@@ -149,85 +194,157 @@ export default function CashRegister() {
       </div>
 
       {/* Tarjetas de estadísticas */}
-      <CashRegisterStatsCard />
+      <CashRegisterStatsCard isCajero={isCajero} />
 
       {/* Contenido principal */}
       <Tabs defaultValue='cajas' className='space-y-4 sm:space-y-6'>
-        <TabsList className='grid w-full grid-cols-2'>
-          <TabsTrigger
-            value='cajas'
-            className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base'
-          >
-            Cajas Registradoras
-          </TabsTrigger>
-          <TabsTrigger
-            value='resumen'
-            className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base'
-          >
-            Resumen
-          </TabsTrigger>
-        </TabsList>
+        {!isCajero && (
+          <TabsList className='grid w-full grid-cols-2'>
+            <TabsTrigger
+              value='cajas'
+              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base'
+            >
+              Cajas Registradoras
+            </TabsTrigger>
+            <TabsTrigger
+              value='resumen'
+              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base'
+            >
+              Resumen
+            </TabsTrigger>
+          </TabsList>
+        )}
 
-        <TabsContent value='cajas' className='space-y-4 sm:space-y-6'>
-          <CajaFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            filterStatus={filterStatus}
-            onStatusChange={setFilterStatus}
-            onClearFilters={handleClearFilters}
-          />
-
-          {loading ? (
-            <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className='shadow-sm'>
-                  <CardHeader className='pb-4'>
-                    <Skeleton className='h-6 w-32' />
-                    <Skeleton className='h-4 w-24' />
-                  </CardHeader>
-                  <CardContent className='space-y-4'>
-                    <Skeleton className='h-4 w-full' />
-                    <Skeleton className='h-4 w-3/4' />
-                    <Skeleton className='h-4 w-1/2' />
-                    <Skeleton className='h-8 w-full' />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredCajas.length === 0 ? (
-            <div className='text-center py-8 sm:py-12'>
-              <AlertTriangle
-                className='h-8 sm:h-12 w-8 sm:w-12 text-gray-400 mx-auto mb-4'
+        {/* Para cajeros, solo mostrar el contenido de cajas sin pestañas */}
+        {isCajero ? (
+          <div className='space-y-4 sm:space-y-6'>
+            {/* Solo mostrar filtros si no es cajero */}
+            {!isCajero && (
+              <CajaFilters
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                filterStatus={filterStatus}
+                onStatusChange={setFilterStatus}
+                onClearFilters={handleClearFilters}
               />
-              <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>
-                {searchTerm || filterStatus !== 'all'
-                  ? 'No se encontraron cajas'
-                  : 'No hay cajas registradas'}
-              </h3>
-              <p className='text-sm sm:text-base text-gray-600'>
-                {searchTerm || filterStatus !== 'all'
-                  ? 'Intenta ajustar los filtros de búsqueda'
-                  : 'Comienza creando una nueva caja'}
-              </p>
-            </div>
-          ) : (
-            <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-              {filteredCajas.map(caja => (
-                <CajaCard
-                  key={caja.id_caja}
-                  caja={caja}
-                  onViewDetails={handleViewDetails}
-                  onCloseCaja={handleCloseCaja}
-                  onRetirar={handleRetirar}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
+            )}
 
-        <TabsContent value='resumen' className='space-y-4 sm:space-y-6'>
-          <CashRegisterDetailedStats />
-        </TabsContent>
+            {loading ? (
+              <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className='shadow-sm'>
+                    <CardHeader className='pb-4'>
+                      <Skeleton className='h-6 w-32' />
+                      <Skeleton className='h-4 w-24' />
+                    </CardHeader>
+                    <CardContent className='space-y-4'>
+                      <Skeleton className='h-4 w-full' />
+                      <Skeleton className='h-4 w-3/4' />
+                      <Skeleton className='h-4 w-1/2' />
+                      <Skeleton className='h-8 w-full' />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredCajas.length === 0 ? (
+              <div className='text-center py-8 sm:py-12'>
+                <AlertTriangle
+                  className='h-8 sm:h-12 w-8 sm:w-12 text-gray-400 mx-auto mb-4'
+                />
+                <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>
+                  No tienes una caja abierta
+                </h3>
+                <p className='text-sm sm:text-base text-gray-600'>
+                  Solicita al administrador que abra una caja para ti
+                </p>
+              </div>
+            ) : (
+              <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+                {filteredCajas.map(caja => (
+                  <CajaCard
+                    key={caja.id_caja}
+                    caja={caja}
+                    onViewDetails={handleViewDetails}
+                    onCloseCaja={handleCloseCaja}
+                    onRetirar={handleRetirar}
+                    canCloseCaja={canCloseCaja}
+                    canRetirar={canRetirar}
+                    canViewDetails={!isCajero}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <TabsContent value='cajas' className='space-y-4 sm:space-y-6'>
+              {/* Solo mostrar filtros si no es cajero */}
+              {!isCajero && (
+                <CajaFilters
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  filterStatus={filterStatus}
+                  onStatusChange={setFilterStatus}
+                  onClearFilters={handleClearFilters}
+                />
+              )}
+
+              {loading ? (
+                <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+                  {[...Array(6)].map((_, i) => (
+                    <Card key={i} className='shadow-sm'>
+                      <CardHeader className='pb-4'>
+                        <Skeleton className='h-6 w-32' />
+                        <Skeleton className='h-4 w-24' />
+                      </CardHeader>
+                      <CardContent className='space-y-4'>
+                        <Skeleton className='h-4 w-full' />
+                        <Skeleton className='h-4 w-3/4' />
+                        <Skeleton className='h-4 w-1/2' />
+                        <Skeleton className='h-8 w-full' />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredCajas.length === 0 ? (
+                <div className='text-center py-8 sm:py-12'>
+                  <AlertTriangle
+                    className='h-8 sm:h-12 w-8 sm:w-12 text-gray-400 mx-auto mb-4'
+                  />
+                  <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>
+                    {searchTerm || filterStatus !== 'all'
+                      ? 'No se encontraron cajas'
+                      : 'No hay cajas registradas'}
+                  </h3>
+                  <p className='text-sm sm:text-base text-gray-600'>
+                    {searchTerm || filterStatus !== 'all'
+                      ? 'Intenta ajustar los filtros de búsqueda'
+                      : 'Comienza creando una nueva caja'}
+                  </p>
+                </div>
+              ) : (
+                <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+                  {filteredCajas.map(caja => (
+                    <CajaCard
+                      key={caja.id_caja}
+                      caja={caja}
+                      onViewDetails={handleViewDetails}
+                      onCloseCaja={handleCloseCaja}
+                      onRetirar={handleRetirar}
+                      canCloseCaja={canCloseCaja}
+                      canRetirar={canRetirar}
+                      canViewDetails={!isCajero}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value='resumen' className='space-y-4 sm:space-y-6'>
+              <CashRegisterDetailedStats />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
 
       {/* Diálogos */}

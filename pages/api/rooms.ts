@@ -7,6 +7,7 @@ const roomSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
   price: z.preprocess((v) => Number(v), z.number()),
   time: z.preprocess((v) => Number(v), z.number()),
+  comision_anfitriona: z.preprocess((v) => v === '' || v === null || v === undefined ? null : Number(v), z.number().nullable().optional()),
 });
 
 const mapRoomFromDB = (row: any) => ({
@@ -69,8 +70,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         });
     }
     const result: any = await query(
-      "INSERT INTO habitaciones (nombre, precio, tiempo, comision_anfitriona) VALUES (?, ?, ?, NULL)",
-      [parse.data.name, parse.data.price, parse.data.time]
+      "INSERT INTO habitaciones (nombre, precio, tiempo, comision_anfitriona) VALUES (?, ?, ?, ?)",
+      [parse.data.name, parse.data.price, parse.data.time, parse.data.comision_anfitriona]
     );
     return res
       .status(201)
@@ -115,8 +116,8 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         });
     }
     await query(
-      "UPDATE habitaciones SET nombre = ?, precio = ?, tiempo = ? WHERE id_habitacion = ?",
-      [parse.data.name, parse.data.price, parse.data.time, id]
+      "UPDATE habitaciones SET nombre = ?, precio = ?, tiempo = ?, comision_anfitriona = ? WHERE id_habitacion = ?",
+      [parse.data.name, parse.data.price, parse.data.time, parse.data.comision_anfitriona, id]
     );
     return res
       .status(200)

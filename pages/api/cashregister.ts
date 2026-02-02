@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { Caja, CajaWithUser, CajaResumen } from '@/types/caja';
 import { RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
+import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
 const createCajaSchema = z.object({
   usuario_id_apertura: z.number().min(1, 'ID de usuario es requerido'),
@@ -62,6 +63,34 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { id, estado, resumen, status } = req.query;
 
+    // Obtener información del usuario actual
+    const currentUser = getCurrentUser(req);
+    if (!currentUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'No autorizado'
+      });
+    }
+
+    // Obtener información completa del usuario incluyendo rol
+    const userInfo = await query(
+      `SELECT u.*, r.nombre as rol_nombre 
+       FROM usuarios u 
+       LEFT JOIN roles r ON u.rol_id = r.id_rol 
+       WHERE u.id_usuario = ? AND u.estado = 1`,
+      [currentUser.id]
+    ) as any[];
+
+    if (userInfo.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    const user = userInfo[0];
+    const isCajero = user.rol_nombre === 'cajero';
+
     // Endpoint para verificar estado de caja (equivalente a caja-status.ts)
     if (status === 'check') {
       try {
@@ -93,30 +122,48 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     if (resumen === '1') {
-      // Identificar caja abierta más reciente
-      const cajaAbiertaResult = (await query(`
+      // Si es cajero, solo obtener datos de su caja abierta
+      let cajaAbiertaQuery = `
         SELECT 
           c.*, 
           CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
         FROM cajas c
         LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
         WHERE c.estado = 1
-        ORDER BY c.fecha_apertura DESC
-        LIMIT 1
-      `)) as RowDataPacket[];
+      `;
+      
+      const cajaAbiertaParams: any[] = [];
+      
+      if (isCajero) {
+        cajaAbiertaQuery += ' AND c.usuario_id_apertura = ?';
+        cajaAbiertaParams.push(currentUser.id);
+      }
+      
+      cajaAbiertaQuery += ' ORDER BY c.fecha_apertura DESC LIMIT 1';
+
+      const cajaAbiertaResult = (await query(cajaAbiertaQuery, cajaAbiertaParams)) as RowDataPacket[];
 
       const cajaAbiertaRow = Array.isArray(cajaAbiertaResult) && cajaAbiertaResult.length > 0 
         ? cajaAbiertaResult[0] 
         : null;
 
-      // Contadores de cajas
-      const [cajasCount] = (await query(`
+      // Contadores de cajas (para cajeros solo contar su caja)
+      let cajasCountQuery = `
         SELECT 
           COUNT(CASE WHEN estado = 1 THEN 1 END) AS cajas_abiertas,
           COUNT(CASE WHEN estado = 0 THEN 1 END) AS cajas_cerradas
         FROM cajas
         WHERE estado IN (0,1)
-      `)) as RowDataPacket[];
+      `;
+      
+      const cajasCountParams: any[] = [];
+      
+      if (isCajero) {
+        cajasCountQuery += ' AND usuario_id_apertura = ?';
+        cajasCountParams.push(currentUser.id);
+      }
+
+      const [cajasCount] = (await query(cajasCountQuery, cajasCountParams)) as RowDataPacket[];
 
       // Si no hay caja abierta, devolver todo en 0
       if (!cajaAbiertaRow) {
@@ -260,9 +307,16 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       let whereClause = 'WHERE c.estado IN (0, 1)';
       const params: any[] = [];
 
-      if (estado !== undefined) {
-        whereClause += ' AND c.estado = ?';
-        params.push(parseInt(estado as string));
+      // Si es cajero, solo mostrar su caja abierta
+      if (isCajero) {
+        whereClause += ' AND c.usuario_id_apertura = ? AND c.estado = 1';
+        params.push(currentUser.id);
+      } else {
+        // Para otros roles, aplicar filtros normales
+        if (estado !== undefined) {
+          whereClause += ' AND c.estado = ?';
+          params.push(parseInt(estado as string));
+        }
       }
 
       const results = (await query(
@@ -692,7 +746,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { method } = req;
 
@@ -722,3 +776,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+
+export default withAuth(handler);

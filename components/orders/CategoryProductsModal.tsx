@@ -162,7 +162,6 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
             <strong>Reglas de asignación:</strong>
             <br />• <span className="text-purple-600">Champañas</span>: Selecciona múltiples anfitrionas (límite según precio)
             <br />• <span className="text-green-600">Bebidas</span>: Una anfitriona por bebida
-
           </div>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 py-4 pb-8">
@@ -336,20 +335,23 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                   variant="outline"
                                   className="rounded-full bg-black text-white hover:scale-110 transition-all duration-200"
                                   onClick={() => {
-                                    // Agregar información de anfitriona seleccionada al producto
-                                    const productWithHostess = {
+                                    // Agregar información de anfitriona al producto
+                                    const productWithExtras = {
                                       ...p,
                                       selectedHostesses: isChampagne
                                         ? champagneHostessSelections[id] || []
                                         : otherProductHostessSelections[id] || [],
                                       isChampagne: isChampagne
                                     };
-                                    handleAgregarProducto(productWithHostess);
+                                    handleAgregarProducto(productWithExtras);
                                   }}
-                                  disabled={hasComm && (
-                                    (isChampagne && (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
-                                    (!isChampagne && (!otherProductHostessSelections[id] || otherProductHostessSelections[id].length === 0))
-                                  )}
+                                  disabled={
+                                    // Validar anfitrionas si tiene comisión
+                                    (hasComm && (
+                                      (isChampagne && (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
+                                      (!isChampagne && (!otherProductHostessSelections[id] || otherProductHostessSelections[id].length === 0))
+                                    ))
+                                  }
                                 >
                                   <Plus className="h-4 w-4" />
                                 </Button>

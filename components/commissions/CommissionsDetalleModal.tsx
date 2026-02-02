@@ -1,0 +1,268 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell
+} from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { User, DollarSign, Calendar, Clock } from 'lucide-react';
+import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
+
+interface CommissionDetalle {
+  id: number;
+  fecha_hora: string;
+  codigo_venta?: string;
+  codigo_servicio?: string;
+  tipo: 'venta' | 'servicio';
+  monto: number;
+  estado: string;
+  fecha_pago?: string;
+  descripcion?: string;
+}
+
+interface CommissionResumen {
+  id_usuario: number;
+  nombre_completo: string;
+  nick: string;
+  total_comisiones: number;
+  total_ventas: number;
+  total_servicios: number;
+}
+
+interface CommissionsDetalleModalProps {
+  open: boolean;
+  onClose: () => void;
+  usuario: CommissionResumen | null;
+}
+
+export default function CommissionsDetalleModal({
+  open,
+  onClose,
+  usuario
+}: CommissionsDetalleModalProps) {
+  const [detalles, setDetalles] = useState<CommissionDetalle[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDetalles = async (usuarioId: number) => {
+    if (!usuarioId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/commissions/detalle/${usuarioId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setDetalles(data.data || []);
+      } else {
+        setError(data.message || 'Error al cargar detalles');
+      }
+    } catch (err) {
+      setError('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open && usuario) {
+      fetchDetalles(usuario.id_usuario);
+    }
+  }, [open, usuario]);
+
+  const getEstadoColor = (estado: string) => {
+    return estado === 'Por pagar'
+      ? 'bg-purple-100 text-purple-800 hover:bg-purple-100 hover:text-purple-800'
+      : 'bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800';
+  };
+
+  if (!usuario) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className='w-[98vw] max-w-[900px] max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b'>
+          <DialogTitle className='text-center text-base sm:text-lg font-semibold'>
+            Detalle de Comisiones
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+          {/* Información del usuario */}
+          <div className='border-b pb-4 mb-4 flex flex-col items-center gap-2'>
+            <div className='flex items-center gap-2 text-gray-700 text-sm sm:text-base'>
+              <User className='text-gray-500 w-4 h-4' />
+              <span className='font-medium'>{usuario.nombre_completo}</span>
+            </div>
+            <div className='flex items-center gap-2 text-gray-700 text-sm'>
+              <span className='text-gray-500'>@{usuario.nick}</span>
+            </div>
+
+            {/* Resumen de totales */}
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 w-full'>
+              <div className='bg-blue-50 rounded-lg p-3 text-center'>
+                <div className='flex items-center justify-center gap-2 mb-1'>
+                  <span className='text-sm font-medium text-blue-800'>Ventas</span>
+                </div>
+                <p className='text-lg font-bold text-blue-900'>
+                  {formatCurrencyNoDecimals(usuario.total_ventas)}
+                </p>
+              </div>
+
+              <div className='bg-green-50 rounded-lg p-3 text-center'>
+                <div className='flex items-center justify-center gap-2 mb-1'>
+                  <span className='text-sm font-medium text-green-800'>Servicios</span>
+                </div>
+                <p className='text-lg font-bold text-green-900'>
+                  {formatCurrencyNoDecimals(usuario.total_servicios)}
+                </p>
+              </div>
+
+              <div className='bg-purple-50 rounded-lg p-3 text-center'>
+                <div className='flex items-center justify-center gap-2 mb-1'>
+                  <DollarSign className='w-4 h-4 text-purple-600' />
+                  <span className='text-sm font-medium text-purple-800'>Total</span>
+                </div>
+                <p className='text-lg font-bold text-purple-900'>
+                  {formatCurrencyNoDecimals(usuario.total_comisiones)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabla de detalles */}
+          <div>
+            <h3 className='text-sm font-semibold mb-4 text-center text-gray-600'>
+              Detalle de Comisiones
+            </h3>
+            <div className='overflow-x-auto'>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className='text-xs sm:text-sm'>FECHA</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>TIPO</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>CÓDIGO</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>MONTO</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>ESTADO</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>FECHA PAGO</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className='h-6 w-24' />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className='h-6 w-16' />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className='h-6 w-20' />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className='h-6 w-20' />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className='h-6 w-16' />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className='h-6 w-24' />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : error ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className='text-center text-red-600 text-xs sm:text-sm'
+                      >
+                        {error}
+                        <Button
+                          onClick={() => fetchDetalles(usuario.id_usuario)}
+                          className='mt-2 ml-4 text-xs sm:text-sm'
+                          size='sm'
+                        >
+                          Reintentar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ) : detalles.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className='text-center text-gray-600 text-xs sm:text-sm py-8'
+                      >
+                        No hay detalles de comisiones para mostrar
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    detalles.map((detalle, index) => (
+                      <TableRow key={index}>
+                        <TableCell className='text-xs sm:text-sm'>
+                          <div className='flex items-center gap-2'>
+                            <Calendar className='w-3 h-3 text-gray-400' />
+                            <div>
+                              <div>{formatSoloFecha(detalle.fecha_hora)}</div>
+                              <div className='text-gray-500 flex items-center gap-1'>
+                                <Clock className='w-3 h-3' />
+                                {formatSoloHora(detalle.fecha_hora)}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-xs sm:text-sm'>
+                          <div className='flex items-center gap-2'>
+                            <span className='capitalize'>{detalle.tipo}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className='font-mono text-xs sm:text-sm'>
+                          {detalle.codigo_venta || detalle.codigo_servicio || '-'}
+                        </TableCell>
+                        <TableCell className='font-semibold text-xs sm:text-sm'>
+                          {formatCurrencyNoDecimals(detalle.monto)}
+                        </TableCell>
+                        <TableCell className='text-xs sm:text-sm'>
+                          <Badge className={`${getEstadoColor(detalle.estado)} text-xs`}>
+                            {detalle.estado}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className='text-xs sm:text-sm'>
+                          {detalle.fecha_pago ? formatSoloFecha(detalle.fecha_pago) : 'Por pagar'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+
+        {/* Botón cerrar */}
+        <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
+          <div className='flex justify-center'>
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={onClose}
+              className='rounded-full text-white bg-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

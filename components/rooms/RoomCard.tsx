@@ -1,24 +1,10 @@
 import React, { useState } from "react";
 import { Room } from "@/types/room";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bed, Ruler, MoreVertical, Edit, Trash2, Check, Power } from "lucide-react";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { CardContainer, CardBody } from '@/components/ui/3d-card';
+import { Bed, Clock, DollarSign, Percent, MoreVertical, Edit, Trash2, Check, Power, Users } from "lucide-react";
 import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
-
-const statusColors: Record<number, string> = {
-  1: "bg-green-100 text-green-800", // Disponible
-  2: "bg-yellow-100 text-yellow-800", // Ocupada
-  0: "bg-gray-200 text-gray-600", // Inactiva
-};
-const statusLabels: Record<number, string> = {
-  1: "Disponible",
-  2: "Ocupada",
-  0: "Inactiva",
-};
 
 const RoomCard: React.FC<{
   room: Room;
@@ -29,153 +15,158 @@ const RoomCard: React.FC<{
   onOccupy: (room: Room) => void;
 }> = ({ room, onEdit, onDelete, onActivate, onDeactivate, onOccupy }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  
+  const getStatusColor = () => {
+    switch (room.status) {
+      case 1: return 'bg-emerald-500';
+      case 2: return 'bg-amber-500';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const getStatusText = () => {
+    switch (room.status) {
+      case 1: return 'Disponible';
+      case 2: return 'Ocupada';
+      default: return 'Inactiva';
+    }
+  };
+
   return (
-    <CardContainer className='inter-var'>
-      <CardBody className='bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border'>
+    <div className="group">
+      <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+        {/* Status indicator */}
+        <div className={`absolute top-0 left-0 right-0 h-1 ${getStatusColor()}`} />
+        
         {/* Header */}
-        <div className='flex items-start justify-between pb-3'>
-          <div>
-            <div className='text-sm sm:text-lg font-semibold text-neutral-600 dark:text-white flex items-center gap-2'>
-              <Bed className="text-blue-500 text-xs sm:text-sm" />
-              {room.name}
+        <div className="flex items-start justify-between mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Bed className="w-4 h-4 text-gray-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{room.name}</h3>
+              <Badge 
+                variant="secondary" 
+                className={`mt-1 text-xs font-medium ${
+                  room.status === 1 ? 'bg-emerald-100 text-emerald-700' :
+                  room.status === 2 ? 'bg-amber-100 text-amber-700' :
+                  'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {getStatusText()}
+              </Badge>
             </div>
           </div>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200"
+                className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 rounded-lg flex-shrink-0"
               >
-                <MoreVertical className="h-3 w-3 sm:h-4 sm:w-4" />
+                <MoreVertical className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem onClick={() => onEdit(room)} className="text-xs">
+                <Edit className="mr-2 h-3 w-3" />
+                Editar
+              </DropdownMenuItem>
+              
               {room.status === 1 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem onClick={() => onEdit(room)} className="cursor-pointer group">
-                        <Edit className="mr-2 text-blue-600" />
-                        <span className="group-hover:text-blue-600 transition-colors">Editar</span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Editar habitación</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <DropdownMenuItem onClick={() => onOccupy(room)} className="text-xs">
+                  <Users className="mr-2 h-3 w-3" />
+                  Ocupar
+                </DropdownMenuItem>
               )}
-              {room.status === 1 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem onClick={() => onOccupy(room)} className="cursor-pointer group">
-                        <Bed className="mr-2 text-yellow-600" />
-                        <span className="group-hover:text-yellow-600 transition-colors">Ocupar</span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Ocupar habitación</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+              
+              {room.status === 1 ? (
+                <DropdownMenuItem onClick={() => onDeactivate(room)} className="text-xs">
+                  <Power className="mr-2 h-3 w-3" />
+                  Desactivar
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => onActivate(room)} className="text-xs">
+                  <Check className="mr-2 h-3 w-3" />
+                  {room.status === 2 ? 'Liberar' : 'Activar'}
+                </DropdownMenuItem>
               )}
-              {room.status === 1 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem onClick={() => onDeactivate(room)} className="cursor-pointer group">
-                        <Power className="mr-2 text-orange-600" />
-                        <span className="group-hover:text-orange-600 transition-colors">Desactivar</span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Desactivar habitación</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {room.status === 0 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem onClick={() => onActivate(room)} className="cursor-pointer group">
-                        <Check className="mr-2 text-green-600" />
-                        <span className="group-hover:text-green-600 transition-colors">Activar</span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Activar habitación</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {room.status === 2 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem onClick={() => onActivate(room)} className="cursor-pointer group">
-                        <Check className="mr-2 text-green-600" />
-                        <span className="group-hover:text-green-600 transition-colors">Liberar</span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Liberar habitación ocupada</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                      <DropdownMenuItem onClick={() => setConfirmOpen(true)} className="cursor-pointer group">
-                      <Trash2 className="mr-2 text-red-600" />
-                      <span className="group-hover:text-red-600 transition-colors">Eliminar</span>
-                    </DropdownMenuItem>
-                  </TooltipTrigger>
-                  <TooltipContent>Eliminar habitación</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              
+              <DropdownMenuItem 
+                onClick={() => setConfirmOpen(true)} 
+                className="text-red-600 focus:text-red-600 text-xs"
+              >
+                <Trash2 className="mr-2 h-3 w-3" />
+                Eliminar
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        {/* Content */}
-        <div className='space-y-3 sm:space-y-4'>
-          {/* Status badges */}
-          <div className="flex items-center justify-between">
-            <Badge variant="outline" className="bg-blue-100 text-blue-800 text-xs sm:text-sm">Habitación</Badge>
-            <Badge variant="secondary" className={`${statusColors[room.status] || "bg-gray-100 text-gray-600"} text-xs sm:text-sm`}>
-              {statusLabels[room.status] || "-"}
-            </Badge>
-          </div>
-
-          {/* Room details grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-            <div className="text-center">
-              <div className="font-medium flex items-center justify-center gap-1">
-                <Bed className="text-xs sm:text-sm" />
-                {room.time} min
-              </div>
-              <div className="text-xs text-gray-500 dark:text-neutral-300">Tiempo</div>
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0">
+            <div className="flex items-center gap-1 text-gray-600 mb-1">
+              <DollarSign className="w-3 h-3 flex-shrink-0" />
+              <span className="text-xs font-medium truncate">Precio</span>
             </div>
-            <div className="text-center">
-              <div className="font-medium flex items-center justify-center gap-1">
-                <Ruler className="text-xs sm:text-sm" />
-                ${room.price.toLocaleString('es-CL')}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-neutral-300">Precio</div>
-            </div>
+            <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
+              ${room.price.toLocaleString('es-CL')}
+            </p>
           </div>
-
-          {/* Footer info */}
-          <div className="flex justify-end pt-3 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-xs text-gray-500 dark:text-neutral-400">
-              {room.fecha_crea
-                ? `Creada: ${new Date(room.fecha_crea).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
-                : ''}
-            </span>
+          
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0">
+            <div className="flex items-center gap-1 text-gray-600 mb-1">
+              <Percent className="w-3 h-3 flex-shrink-0" />
+              <span className="text-xs font-medium truncate">Comisión</span>
+            </div>
+            <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
+              {room.comision_anfitriona ? `$${room.comision_anfitriona.toLocaleString('es-CL')}` : '—'}
+            </p>
           </div>
         </div>
-      </CardBody>
+
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0">
+            <div className="flex items-center gap-1 text-gray-600 mb-1">
+              <Clock className="w-3 h-3 flex-shrink-0" />
+              <span className="text-xs font-medium truncate">Duración</span>
+            </div>
+            <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{room.time} min</p>
+          </div>
+          
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0">
+            <div className="flex items-center gap-1 text-gray-600 mb-1">
+              <Bed className="w-3 h-3 flex-shrink-0" />
+              <span className="text-xs font-medium truncate">ID</span>
+            </div>
+            <p className="text-sm sm:text-base font-bold text-gray-900 truncate">#{room.id}</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        {room.fecha_crea && (
+          <div className="pt-2 sm:pt-3 border-t border-gray-100">
+            <p className="text-xs text-gray-500 text-center truncate">
+              {new Date(room.fecha_crea).toLocaleDateString('es-ES', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric' 
+              })}
+            </p>
+          </div>
+        )}
+      </div>
+      
       <ConfirmDeleteRoomDialog
         open={confirmOpen}
         room={room}
         onOpenChange={setConfirmOpen}
         onConfirm={(r) => onDelete(r)}
       />
-    </CardContainer>
+    </div>
   );
 };
 
