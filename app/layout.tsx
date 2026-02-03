@@ -6,10 +6,12 @@ import { TimerProvider } from '@/contexts/TimerContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { NotificationProvider, NotificationStatus, ClientOnly } from '@/components/notifications';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ServicioAnfitrionasProvider } from '@/contexts/ServicioAnfitrionasContext';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 
 import './globals.css';
 import '@/styles/sidebar.css';
+import '@/styles/notifications.css';
 
 
 
@@ -32,8 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             <AnulacionProvider>
               <TimerProvider>
-                <NotificationProvider>
-                  <LayoutContent>{children}</LayoutContent>
+                <ServicioAnfitrionasProvider>
+                  <NotificationProvider>
+                    <LayoutContent>{children}</LayoutContent>
                   {/* Notification Status oculto */}
                   {/* <div className='fixed bottom-4 left-4 z-50'>
                     <ClientOnly>
@@ -49,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                   <AnulacionNotificationModal />
                 </NotificationProvider>
+                </ServicioAnfitrionasProvider>
               </TimerProvider>
             </AnulacionProvider>
           </QueryProvider>

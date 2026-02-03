@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   try {
     console.log('[SALES GET] Request query:', req.query);
-    
+
     const {
       tipo = 'lista',
       page = '1',
@@ -40,7 +40,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
     }
   } catch (error) {
     console.error('[SALES GET] ❌ Error:', error);
-    
+
     // Guardar error en base de datos
     try {
       await query(`
@@ -53,7 +53,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
           fecha_crea DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
-      
+
       await query(
         'INSERT INTO error_logs (endpoint, error_message, stack_trace, request_body) VALUES (?, ?, ?, ?)',
         [
@@ -66,7 +66,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
     } catch (logError) {
       console.error('[SALES GET] Error logging to DB:', logError);
     }
-    
+
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -105,7 +105,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         LIMIT 1
       `;
       const cajaAbiertaResult = (await query(cajaAbiertaSql)) as any[];
-      
+
       if (cajaAbiertaResult && cajaAbiertaResult.length > 0) {
         const cajaAbiertaId = cajaAbiertaResult[0].id_caja;
         whereClause += ' AND v.caja_id = ?';
@@ -132,6 +132,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         v.estado, 
         v.metodo_pago, 
         v.propina, 
+        v.tiempo,
         v.cliente_id, 
         CASE 
           WHEN v.cliente_id IS NULL THEN 'Sin cliente registrado'
@@ -171,11 +172,11 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       LEFT JOIN comisiones com ON com.venta_id = v.id_venta
       LEFT JOIN detalle_comisiones dc ON dc.comision_id = com.id_comision
       ${whereClause}
-      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
+      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.tiempo, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
       ORDER BY v.fecha_crea DESC 
       LIMIT ${limitNum} OFFSET ${offset}
     `;
-    
+
     console.log('[SALES GET LISTA] Query:', salesSql);
     console.log('[SALES GET LISTA] Params:', params);
 
@@ -189,7 +190,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       salesResult.map(async venta => {
         // Obtener usuarios de esta venta
         const usuariosSql = `
-          SELECT u.id_usuario, u.nick 
+          SELECT DISTINCT u.id_usuario, u.nick 
           FROM ventas_usuarios vu 
           JOIN usuarios u ON vu.usuario_id = u.id_usuario 
           WHERE vu.venta_id = ?
@@ -242,7 +243,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     });
   } catch (error) {
     console.error('[SALES GET LISTA] ❌ Error:', error);
-    
+
     // Guardar error en base de datos
     try {
       await query(`
@@ -255,7 +256,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           fecha_crea DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
-      
+
       await query(
         'INSERT INTO error_logs (endpoint, error_message, stack_trace, request_body) VALUES (?, ?, ?, ?)',
         [
@@ -268,7 +269,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     } catch (logError) {
       console.error('[SALES GET LISTA] Error logging to DB:', logError);
     }
-    
+
     return res.status(500).json({
       success: false,
       message: 'Error al obtener ventas',
@@ -369,7 +370,7 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
     console.log('[SALES POST] Request body:', JSON.stringify(req.body, null, 2));
-    
+
     const {
       total,
       detalles,
@@ -380,7 +381,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       usuarios = [],
       habitacion_id,
       sub_total,
-      total_comision
+      total_comision,
+      tiempo
     } = req.body;
 
     if (!total || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
@@ -390,7 +392,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         message: 'Total y detalles son requeridos'
       });
     }
-    
+
     console.log('[SALES POST] Validation passed, generating code...');
 
     console.log('[SALES POST] Validation passed, generating code...');
@@ -410,9 +412,10 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     // Validar si el cliente existe antes de insertar
     let clienteIdFinal = null;
     if (cliente_id) {
-      const clienteExistsSql = 'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
+      const clienteExistsSql =
+        'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
       const clienteExistsResult = (await query(clienteExistsSql, [cliente_id])) as any[];
-      
+
       if (clienteExistsResult && clienteExistsResult.length > 0) {
         clienteIdFinal = cliente_id;
         console.log('[SALES POST] Cliente validado:', clienteIdFinal);
@@ -427,21 +430,22 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const cajaAbiertaResult = (await query(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     )) as any[];
-    const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
+    const cajaId =
+      cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
 
     // Calcular el total de comisiones sumando las comisiones de todos los productos
     const totalComision = detalles.reduce((acc, detalle) => {
       const comision = detalle.comision || 0;
       return acc + comision; // La comisión ya viene calculada desde el frontend
     }, 0);
-    
+
     console.log('[SALES POST] Total comision:', totalComision);
     console.log('[SALES POST] Inserting venta into DB...');
 
     const insertVentaSql = `
       INSERT INTO ventas (
-        codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, caja_id, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const ventaResult = (await query(insertVentaSql, [
@@ -454,6 +458,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       sub_total || 0,
       total,
       totalComision,
+      tiempo || 0,
       cajaId,
       1 // Por ahora usar ID 1 como created_by, después se puede obtener del token de autenticación
     ])) as any;
@@ -481,10 +486,12 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         comisionPorUnidad, // Guardar comisión por unidad en detalle_ventas
         detalle.cantidad,
         subTotalProducto,
-        detalle.hostess_id || null // Anfitriona asignada a este producto
+        detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 1
+          ? null
+          : detalle.hostess_id || null
       ]);
     }
-    
+
     console.log('[SALES POST] Sale details inserted successfully');
 
     // Insertar relaciones venta-usuario
@@ -497,7 +504,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         await query(insertVentaUsuarioSql, [ventaId, usuarioId]);
       }
     }
-    
+
     console.log('[SALES POST] User relations inserted');
 
     // Registrar comisiones para cada anfitriona según asignaciones por producto
@@ -506,42 +513,26 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       // Agrupar comisiones por anfitriona
       const comisionesPorAnfitriona = new Map<number, number>();
 
-      // Identificar anfitrionas ya asignadas a productos específicos
-      const anfitrionasAsignadas = new Set<number>();
-      for (const detalle of detalles) {
-        if (detalle.hostess_id) {
-          anfitrionasAsignadas.add(detalle.hostess_id);
-        }
-      }
-
-      // Anfitrionas disponibles para repartir comisiones sin asignación (champaña)
-      const anfitrionasDisponibles = usuarios && Array.isArray(usuarios)
-        ? usuarios.filter((id: number) => !anfitrionasAsignadas.has(id))
-        : [];
-
       for (const detalle of detalles) {
         const comision = detalle.comision || 0;
-        const hostessId = detalle.hostess_id;
+        if (comision <= 0) continue;
 
-        if (comision > 0 && hostessId) {
-          // Comisión asignada a anfitriona específica
-          const actual = comisionesPorAnfitriona.get(hostessId) || 0;
-          comisionesPorAnfitriona.set(hostessId, actual + comision);
-        } else if (comision > 0 && !hostessId) {
-          // Comisión sin asignación específica (champaña): repartir solo entre anfitrionas NO asignadas
-          if (anfitrionasDisponibles.length > 0) {
-            const comisionPorAnfitriona = comision / anfitrionasDisponibles.length;
-            for (const usuarioId of anfitrionasDisponibles) {
-              const actual = comisionesPorAnfitriona.get(usuarioId) || 0;
-              comisionesPorAnfitriona.set(usuarioId, actual + comisionPorAnfitriona);
-            }
-          } else if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
-            // Fallback: si todas están asignadas, repartir entre todas
-            const comisionPorAnfitriona = comision / usuarios.length;
-            for (const usuarioId of usuarios) {
-              const actual = comisionesPorAnfitriona.get(usuarioId) || 0;
-              comisionesPorAnfitriona.set(usuarioId, actual + comisionPorAnfitriona);
-            }
+        // Obtener anfitrionas para este producto (priorizar array 'hostesses')
+        let hostessesParaEsteProducto: number[] = [];
+
+        if (detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 0) {
+          hostessesParaEsteProducto = detalle.hostesses.map((id: any) => parseInt(id));
+        } else if (detalle.hostess_id) {
+          hostessesParaEsteProducto = [parseInt(detalle.hostess_id)];
+        }
+
+        if (hostessesParaEsteProducto.length > 0) {
+          // Dividir la comisión del producto entre sus anfitrionas seleccionadas
+          const montoPorAnfitriona = comision / hostessesParaEsteProducto.length;
+
+          for (const hId of hostessesParaEsteProducto) {
+            const actual = comisionesPorAnfitriona.get(hId) || 0;
+            comisionesPorAnfitriona.set(hId, actual + montoPorAnfitriona);
           }
         }
       }
@@ -555,11 +546,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
               servicio_id,
               monto
             ) VALUES (?, ?, ?)`,
-            [
-              ventaId,
-              null,
-              Math.floor(monto)
-            ]
+            [ventaId, null, Math.floor(monto)]
           );
 
           const comisionId = comisionResult.insertId;
@@ -575,7 +562,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
       }
     }
-    
+
     console.log('[SALES POST] Commissions registered');
 
     // Actualizar la caja activa con las ventas y comisiones
@@ -647,7 +634,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const ventaCompletaResult = (await query(ventaCompletaSql, [ventaId])) as any[];
     const ventaCompleta = ventaCompletaResult[0];
-    
+
     console.log('[SALES POST] ✅ Sale created successfully with ID:', ventaId);
 
     return res.status(201).json({
@@ -666,8 +653,11 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     });
   } catch (error) {
     console.error('[SALES POST] ❌ Error creating sale:', error);
-    console.error('[SALES POST] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
+    console.error(
+      '[SALES POST] Error stack:',
+      error instanceof Error ? error.stack : 'No stack trace'
+    );
+
     // Guardar error en base de datos para debugging
     try {
       await query(`
@@ -680,7 +670,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           fecha_crea DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
-      
+
       await query(
         'INSERT INTO error_logs (endpoint, error_message, stack_trace, request_body) VALUES (?, ?, ?, ?)',
         [
@@ -693,7 +683,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     } catch (logError) {
       console.error('[SALES POST] Error logging to DB:', logError);
     }
-    
+
     return res.status(500).json({
       success: false,
       message: 'Error al crear venta',

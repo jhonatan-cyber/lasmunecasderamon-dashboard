@@ -26,6 +26,8 @@ import {
   metodoPagoLabels,
   anfitrionaColors
 } from '@/lib/salesUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 
 export default function Sales() {
   const { ventas, loading, error, getVentas, getResumen } = useSales();
@@ -39,39 +41,39 @@ export default function Sales() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
 
-  // Memoizar la función de actualización
+
   const handleRefresh = useCallback(async () => {
     await getVentas();
     await getResumen();
   }, [getVentas, getResumen]);
 
-  // Cargar datos iniciales
+ 
   useEffect(() => {
     handleRefresh();
-  }, []); // Solo se ejecuta una vez al montar el componente
+  }, []); 
 
-  // Configurar el callback de actualización para el contexto de anulación
+ 
   useEffect(() => {
     setRefreshCallback(() => handleRefresh);
-  }, [setRefreshCallback]); // Solo dependemos de setRefreshCallback
+  }, [setRefreshCallback]); 
 
-  // Filtrar ventas
+  
   const filteredVentas = filterVentas(ventas, searchTerm, statusFilter, paymentFilter);
 
-  // Paginación
+  
   const totalPages = Math.ceil(filteredVentas.length / rowsPerPage);
   const paginatedVentas = filteredVentas.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  // Limpiar filtros
+  
   const handleClearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setPaymentFilter('all');
-    setRowsPerPage(5); // Resetear a 5 elementos por página
+    setRowsPerPage(5); 
     setPage(1);
   };
 
-  // Ver detalles de venta
+  
   const handleViewDetails = async (ventaId: number) => {
     try {
       const ventaDetails = await getVentaDetails(ventaId, ventas);
@@ -141,31 +143,58 @@ export default function Sales() {
         setPage={setPage}
       />
 
-      <div className='overflow-x-auto'>
-        <SalesList
-          loading={loading}
-          paginatedVentas={paginatedVentas}
-          searchTerm={searchTerm}
-          filterStatus={statusFilter}
-          filterMetodoPago={paymentFilter}
-          statusColors={statusColors}
-          statusLabels={statusLabels}
-          metodoPagoLabels={metodoPagoLabels}
-          anfitrionaColors={anfitrionaColors}
-          formatCurrency={formatCurrency}
-          onVerDetalles={handleViewDetails}
-          onAnularVenta={handleAnularVenta}
-          page={page}
-          setPage={setPage}
-          totalPages={totalPages}
-        />
-      </div>
+      <Tabs defaultValue='all' className='w-full'>
+        <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-sm'>
+          <TabsTrigger
+            value='all'
+            className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
+          >
+            Todas las ventas
+          </TabsTrigger>
+          <TabsTrigger
+            value='with-room'
+            className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
+          >
+            Ventas con habitación
+          </TabsTrigger>
+        </TabsList>
 
-      {totalPages > 1 && (
-        <div className='flex justify-center'>
-          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-        </div>
-      )}
+        <TabsContent value='all' className='space-y-4'>
+          <div className='overflow-x-auto'>
+            <SalesList
+              loading={loading}
+              paginatedVentas={paginatedVentas}
+              searchTerm={searchTerm}
+              filterStatus={statusFilter}
+              filterMetodoPago={paymentFilter}
+              statusColors={statusColors}
+              statusLabels={statusLabels}
+              metodoPagoLabels={metodoPagoLabels}
+              anfitrionaColors={anfitrionaColors}
+              formatCurrency={formatCurrency}
+              onVerDetalles={handleViewDetails}
+              onAnularVenta={handleAnularVenta}
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <div className='flex justify-center'>
+              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value='with-room'>
+          <SalesWithRoomTab
+            ventas={filteredVentas as VentaWithDetails[]}
+            loading={loading}
+            onRefresh={handleRefresh}
+          />
+        </TabsContent>
+      </Tabs>
 
       <SalesDetailModal
         open={isModalOpen}

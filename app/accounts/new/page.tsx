@@ -447,7 +447,9 @@ export default function NewCuentaPage() {
             habitacionSeleccionada.name, // roomName
             habitacionSeleccionada.time || 60, // duration
             `CUENTA_${result.data?.cuenta_id || Date.now()}`, // servicioCode (ID de cuenta único)
-            'Cliente Cuenta' // clienteNombre (placeholder para cuentas)
+            'Cliente Cuenta', // clienteNombre (placeholder para cuentas)
+            "" // anfitrionas (vacío para cuentas)
+          );
           );
         }
       }

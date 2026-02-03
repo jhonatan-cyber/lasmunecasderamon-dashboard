@@ -34,14 +34,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           s.fecha_crea,
           s.estado,
           s.created_by,
-          COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre,
+          COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre,
           h.nombre as habitacion_numero,
-          CONCAT(creator.nombre, ' ', creator.apellido) as creator_name
+          h.comision_anfitriona as habitacion_comision,
+          CONCAT(creator.nombre, ' ', creator.apellido) as creator_name,
+          GROUP_CONCAT(DISTINCT 
+            CASE 
+              WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
+              ELSE CONCAT(u.nombre, ' ', u.apellido)
+            END 
+            SEPARATOR ', '
+          ) as anfitrionas_nombres
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
+        LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
+        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id AND u.estado = 1
         WHERE s.id_servicio = ?
+        GROUP BY s.id_servicio
       `,
         [servicioId]
       )) as any[];

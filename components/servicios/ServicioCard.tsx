@@ -10,6 +10,7 @@ import { ServicioWithDetails } from '@/types/servicio';
 import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
+import { useServicioAnfitrionas } from '@/contexts/ServicioAnfitrionasContext';
 import EditServiceModal from './EditServiceModal';
 
 interface ServicioCardProps {
@@ -31,19 +32,51 @@ export default function ServicioCard({
     formatTime,
     pauseTimerByServicioId,
     resumeTimerByServicioId,
-    startTemporaryTimer,
     getTemporaryTimerByServicioId,
     stopTimerByServicioId
   } = useTimer();
 
 
+  const { actualizarAnfitrionas, obtenerAnfitrionas } = useServicioAnfitrionas();
+
   const globalTimer = getTimerByServicioId(servicio.id_servicio!);
   const temporaryTimer = getTemporaryTimerByServicioId(servicio.id_servicio!);
 
-
   const displayTimer = temporaryTimer || globalTimer;
   const isTemporaryActive = !!temporaryTimer;
-  const isPaused = globalTimer?.isPaused || false;
+
+
+  const anfitrionasDelContexto = obtenerAnfitrionas(servicio.id_servicio!);
+
+  const displayData = isTemporaryActive && temporaryTimer?.datosTemporales ? {
+    ...servicio,
+    ...temporaryTimer.datosTemporales
+  } : {
+    ...servicio,
+    // Priorizar anfitrionas del contexto global (persistentes) sobre las originales del servicio
+    anfitrionas_nombres: anfitrionasDelContexto || servicio.anfitrionas_nombres
+  };
+
+  // Usar anfitrionas actuales si existen, sino usar las del displayData
+  const finalDisplayData = {
+    ...displayData
+  };
+
+  const handleTemporaryTimerComplete = useCallback((nuevasAnfitrionas: string) => {
+    console.log('🔄 Timer temporal terminado, actualizando anfitrionas en contexto global:', nuevasAnfitrionas);
+
+    if (servicio?.id_servicio) {
+      // Usar el contexto global para mantener las anfitrionas actualizadas
+      actualizarAnfitrionas(servicio.id_servicio, nuevasAnfitrionas);
+
+      // Forzar actualización del componente padre
+      if (onUpdate) {
+        setTimeout(() => {
+          onUpdate();
+        }, 100);
+      }
+    }
+  }, [servicio?.id_servicio, actualizarAnfitrionas, onUpdate]);
 
 
   const mainTimer = globalTimer ? {
@@ -114,16 +147,6 @@ export default function ServicioCard({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleStartEdit = () => {
-
-    if (displayTimer && displayTimer.isActive) {
-      setEditTiempo(Math.ceil(displayTimer.remainingTime / 60));
-    } else {
-      setEditTiempo(servicio.tiempo || 0);
-    }
-    setIsEditing(true);
   };
 
   const getEstadoBadge = (estado: number) => {
@@ -261,11 +284,7 @@ export default function ServicioCard({
                     PAUSADO
                   </span>
                 )}
-                {mainTimer?.isPaused && isTemporaryActive && (
-                  <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full">
-                    PRINCIPAL PAUSADO
-                  </span>
-                )}
+
               </div>
             )}
           </div>
@@ -280,7 +299,7 @@ export default function ServicioCard({
                 <span className="text-blue-600 dark:text-blue-400 font-mono">{formatTime(mainTimer.totalSeconds)}</span>
                 <span className={`px-2 py-1 rounded-full text-xs ${mainTimer.isPaused ? 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
                   }`}>
-                  {mainTimer.isPaused ? '⏸️ PAUSADO' : '▶️ ACTIVO'}
+                  {mainTimer.isPaused ? 'PAUSADO' : 'ACTIVO'}
                 </span>
               </div>
             </div>
@@ -296,11 +315,24 @@ export default function ServicioCard({
               <span className="font-medium truncate block text-gray-900 dark:text-gray-100">{servicio.cliente_nombre || 'Sin registrar'}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-purple-500 flex-shrink-0" />
-            <div className="min-w-0">
+          <div className="flex items-start gap-2">
+            <Users className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
               <span className="text-xs text-gray-500 dark:text-gray-400 block">Anfitrionas</span>
-              <span className="font-medium truncate block text-gray-900 dark:text-gray-100">{servicio.anfitrionas_nombres || 'Sin asignar'}</span>
+              {finalDisplayData.anfitrionas_nombres ? (
+                <div className="space-y-1">
+                  {finalDisplayData.anfitrionas_nombres.split(', ').map((nick: string, index: number) => (
+                    <div key={index} className={`text-xs px-2 py-1 rounded-full inline-block mr-1 mb-1 ${isTemporaryActive
+                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                      : 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                      }`}>
+                      {nick.trim()}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-gray-500 dark:text-gray-400 italic">Sin asignar</span>
+              )}
             </div>
           </div>
         </div>
@@ -331,7 +363,7 @@ export default function ServicioCard({
                 />
               ) : (
                 <span className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
-                  {formatCurrencyNoDecimals(servicio.precio_servicio)}
+                  {formatCurrencyNoDecimals(finalDisplayData.precio_servicio)}
                   {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
                 </span>
               )}
@@ -339,15 +371,20 @@ export default function ServicioCard({
             <div>
               <span className="text-gray-500 dark:text-gray-400">Habitacion: </span>
               <span className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
-                {formatCurrencyNoDecimals(servicio.precio_habitacion)}
+                {formatCurrencyNoDecimals(finalDisplayData.precio_habitacion)}
                 {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
               </span>
+              {finalDisplayData.habitacion_comision && finalDisplayData.habitacion_comision > 0 && !isTemporaryActive && (
+                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium ml-2">
+                  Comisión: <span className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>{formatCurrencyNoDecimals(finalDisplayData.habitacion_comision)}</span>
+                </span>
+              )}
             </div>
-            {servicio.iva > 0 && (
+            {finalDisplayData.iva > 0 && (
               <div>
                 <span className="text-gray-500 dark:text-gray-400">IVA: </span>
                 <span className={`font-medium text-purple-600 dark:text-purple-400 ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : ''}`}>
-                  {formatCurrencyNoDecimals(servicio.iva)}
+                  {formatCurrencyNoDecimals(finalDisplayData.iva)}
                   {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
                 </span>
               </div>
@@ -355,12 +392,12 @@ export default function ServicioCard({
           </div>
           <div className="text-right">
             <div className={`text-lg font-bold ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
-              {formatCurrencyNoDecimals(servicio.total)}
+              {formatCurrencyNoDecimals(finalDisplayData.total)}
               {isTemporaryActive && <span className="text-blue-500 ml-1">*</span>}
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
               <CreditCard className="w-3 h-3" />
-              <span className="capitalize">{servicio.metodo_pago || 'efectivo'}</span>
+              <span className="capitalize">{finalDisplayData.metodo_pago || 'efectivo'}</span>
             </div>
           </div>
         </div>
@@ -368,7 +405,7 @@ export default function ServicioCard({
         {/* Nota sobre valores temporales */}
         {isTemporaryActive && (
           <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border-t border-blue-200 dark:border-blue-800">
-            <span className="font-medium">* Valores temporales</span> - Se restaurarán a los originales cuando termine el timer temporal
+            <span className="font-medium">* Valores temporales</span> - Precios se restaurarán, anfitrionas se mantendrán cuando termine el timer temporal
           </div>
         )}
 
@@ -408,17 +445,7 @@ export default function ServicioCard({
         onUpdate={onUpdate}
         onPauseMainTimer={handlePauseMainTimer}
         onResumeMainTimer={handleResumeMainTimer}
-        onStartTemporaryTimer={(duration, onComplete) => {
-          startTemporaryTimer(
-            servicio.id_servicio!,
-            servicio.habitacion_id!,
-            `Habitación ${servicio.habitacion_numero}`,
-            duration,
-            servicio.codigo!,
-            servicio.cliente_nombre || 'Cliente',
-            onComplete
-          );
-        }}
+        onTemporaryTimerComplete={handleTemporaryTimerComplete}
       />
 
       {showConfirm && (

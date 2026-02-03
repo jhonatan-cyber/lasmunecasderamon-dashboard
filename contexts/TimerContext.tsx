@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useConfirmModal } from '@/hooks/useConfirmModal';
+import { TimerExpiredModal } from '@/components/notifications';
 
 interface Timer {
   id: string;
@@ -19,6 +20,22 @@ interface Timer {
   clienteNombre: string;
   isTemporary?: boolean; // nuevo campo para identificar timers temporales
   onComplete?: () => void; // callback para cuando termine el timer temporal
+  datosTemporales?: any; // datos temporales para mostrar en el card
+  tipoTransaccion?: 'servicio' | 'venta'; // tipo de transacción
+  anfitrionas?: string; // nombres de anfitrionas
+  waiterName?: string; // nombre del garzón/mesero que lo pidió
+}
+
+interface TimerExpiredNotification {
+  id: string;
+  roomName: string;
+  servicioCode: string;
+  clienteNombre: string;
+  tiempoTotal: number;
+  isTemporary: boolean;
+  tipoTransaccion: 'servicio' | 'venta';
+  anfitrionas: string;
+  waiterName?: string;
 }
 
 interface TimerContextType {
@@ -29,7 +46,10 @@ interface TimerContextType {
     roomName: string,
     duration: number,
     servicioCode: string,
-    clienteNombre: string
+    clienteNombre: string,
+    anfitrionas?: string,
+    tipoTransaccion?: 'servicio' | 'venta',
+    waiterName?: string
   ) => void;
   stopTimer: (timerId: string, isManualStop?: boolean) => void;
   stopTimerByRoomId: (roomId: number) => void;
@@ -49,8 +69,11 @@ interface TimerContextType {
     duration: number,
     servicioCode: string,
     clienteNombre: string,
-    onComplete: () => void
+    onComplete: () => void,
+    datosTemporales?: any,
+    anfitrionas?: string
   ) => void;
+  stopTemporaryTimer: (servicioId: number) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -105,8 +128,50 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [timers, setTimers] = useState<Timer[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [expiredTimers, setExpiredTimers] = useState<Set<string>>(new Set());
-  const [refreshCallback, setRefreshCallback] = useState<((servicioId?: number) => void) | null>(null);
+  const [refreshCallback, setRefreshCallback] = useState<((servicioId?: number) => void) | null>(
+    null
+  );
   const { modalState, showConfirm, closeModal } = useConfirmModal();
+
+  // Estados para notificaciones de timer expirado
+  const [timerExpiredNotification, setTimerExpiredNotification] =
+    useState<TimerExpiredNotification | null>(null);
+  const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
+
+  // Función para mostrar notificación de timer expirado
+  const showTimerExpiredNotification = useCallback((timer: Timer) => {
+    console.log('🔔 Mostrando notificación de timer expirado:', timer.roomName);
+
+    const notification: TimerExpiredNotification = {
+      id: timer.id,
+      roomName: timer.roomName,
+      servicioCode: timer.servicioCode,
+      clienteNombre: timer.clienteNombre,
+      tiempoTotal: timer.duration,
+      isTemporary: timer.isTemporary || false,
+      tipoTransaccion: timer.tipoTransaccion || 'servicio',
+      anfitrionas: timer.anfitrionas || '',
+      waiterName: timer.waiterName
+    };
+
+    setTimerExpiredNotification(notification);
+    setShowTimerExpiredModal(true);
+
+    // También reproducir sonido de notificación si está disponible
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log('No se pudo reproducir sonido de notificación:', e));
+    } catch (error) {
+      console.log('Audio de notificación no disponible');
+    }
+  }, []);
+
+  // Función para cerrar la notificación
+  const closeTimerExpiredNotification = useCallback(() => {
+    setShowTimerExpiredModal(false);
+    setTimerExpiredNotification(null);
+  }, []);
 
   // Refs para evitar clausuras obsoletas en el intervalo y callbacks
   const timersRef = React.useRef<Timer[]>([]);
@@ -135,7 +200,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const remainingTime = calculateRemainingTime(timer);
         const isStillActive = remainingTime > 0;
 
-        console.log(`⏱️ Timer ${timer.servicioCode}: ${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, '0')} restante`);
+        console.log(
+          `⏱️ Timer ${timer.servicioCode}: ${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, '0')} restante`
+        );
 
         return {
           ...timer,
@@ -166,15 +233,35 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const data = await response.json();
 
         if (data.success) {
-          const activeServices = new Set(data.data.map((s: any) => s.id_servicio));
+          const activeServicesMap = new Map(data.data.map((s: any) => [s.id_servicio, s]));
 
-          // Filtrar timers que corresponden a servicios que aún están activos
-          const validTimers = uniqueTimers.filter(timer =>
-            activeServices.has(timer.servicioId)
-          );
+          // Filtrar y enriquecer timers:
+          // 1. Si es servicio, verificar que aún esté activo en la DB y enriquecer con datos frescos
+          // 2. Si es venta, mantenerlo (por ahora no filtramos ventas por DB en el inicio)
+          const validTimers = uniqueTimers
+            .filter(timer => {
+              if (timer.tipoTransaccion === 'venta') return true;
+              return activeServicesMap.has(timer.servicioId);
+            })
+            .map(timer => {
+              if (timer.tipoTransaccion === 'venta') return timer;
+              const dbService = activeServicesMap.get(timer.servicioId);
+              if (!dbService) return timer;
+
+              // Enriquecer con datos de la DB si faltan en el timer local
+              const service = dbService as any;
+              return {
+                ...timer,
+                anfitrionas: timer.anfitrionas || service.anfitrionas_nombres || '',
+                clienteNombre: timer.clienteNombre || service.cliente_nombre || '',
+                roomName: timer.roomName || service.habitacion_numero || 'S/H'
+              };
+            });
 
           if (validTimers.length !== uniqueTimers.length) {
-            console.log(`🧹 Limpiando ${uniqueTimers.length - validTimers.length} temporizadores de servicios finalizados`);
+            console.log(
+              `🧹 Limpiando ${uniqueTimers.length - validTimers.length} temporizadores de servicios finalizados`
+            );
             saveTimersToStorage(validTimers);
           }
 
@@ -265,7 +352,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       roomName: string,
       duration: number,
       servicioCode: string,
-      clienteNombre: string
+      clienteNombre: string,
+      anfitrionas?: string,
+      tipoTransaccion: 'servicio' | 'venta' = 'servicio',
+      waiterName?: string
     ) => {
       // Verificar si ya existe un timer para esta habitación y servicio específico
       const existingTimer = timers.find(
@@ -273,7 +363,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       );
       if (existingTimer) {
         // Si ya existe, no crear uno nuevo
-
         return;
       }
 
@@ -301,7 +390,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isPaused: false,
         startTime: new Date(),
         servicioCode,
-        clienteNombre
+        clienteNombre,
+        tipoTransaccion,
+        anfitrionas: anfitrionas || '',
+        waiterName
       };
 
       setTimers(prev => {
@@ -332,21 +424,46 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const timer = timerObject || timersRef.current.find(t => t.id === timerId);
 
       if (timer) {
-        console.log(`🛑 Deteniendo timer: ${timer.id} (${timer.roomName}), manual: ${isManualStop}`);
+        console.log(
+          `🛑 Deteniendo timer: ${timer.id} (${timer.roomName}), manual: ${isManualStop}`
+        );
 
-        // Ejecutar ambas actualizaciones en paralelo para mayor confiabilidad
-        await Promise.all([
-          updateServiceStatus(timer.servicioId, 0),
-          updateRoomStatus(timer.roomId, 1)
-        ]);
+        // Determinar qué actualizaciones realizar
+        const otherTimersInSameRoom = timersRef.current.filter(
+          t => t.roomId === timer.roomId && t.id !== timerId && t.isActive
+        );
+
+        const updates = [];
+
+        // Solo actualizar estado del servicio si es un servicio (no una venta)
+        if (timer.tipoTransaccion !== 'venta') {
+          updates.push(updateServiceStatus(timer.servicioId, 0));
+        }
+
+        // Solo liberar la habitación si no hay más temporizadores activos para ella
+        // Y si NO es una venta (las ventas no deben tocar el estado de la habitación al finalizar según requerimiento)
+        if (otherTimersInSameRoom.length === 0 && timer.tipoTransaccion !== 'venta') {
+          console.log(`🧹 Liberando habitación ${timer.roomId} - no quedan otros timers activos`);
+          updates.push(updateRoomStatus(timer.roomId, 1));
+        } else if (timer.tipoTransaccion === 'venta') {
+          console.log(
+            `ℹ️ Timer de venta finalizado - no se toca el estado de la habitación ${timer.roomId}`
+          );
+        } else {
+          console.log(
+            `⏳ Habitación ${timer.roomId} sigue ocupada - quedan ${otherTimersInSameRoom.length} timers activos`
+          );
+        }
+
+        if (updates.length > 0) {
+          await Promise.all(updates);
+        }
 
         // Ejecutar callback de actualización después de que se actualice la DB
         setTimeout(() => {
           if (refreshCallbackRef.current) {
-            console.log('🔄 Ejecutando refreshCallback para servicio:', timer.servicioId);
+            console.log('🔄 Ejecutando refreshCallback para id:', timer.servicioId);
             refreshCallbackRef.current(timer.servicioId);
-          } else {
-            console.log('⚠️ No hay refreshCallback configurado en el ref');
           }
         }, 1000); // Dar tiempo para que la DB se actualice
 
@@ -392,31 +509,28 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   // Función para pausar el temporizador por ID de servicio (solo timers principales)
-  const pauseTimerByServicioId = useCallback(
-    (servicioId: number) => {
-      setTimers(prev => {
-        const updatedTimers = prev.map(timer => {
-          // Solo pausar timers principales (no temporales) del servicio especificado
-          if (timer.servicioId === servicioId && !timer.isTemporary) {
-            return { ...timer, isPaused: true };
-          }
-          return timer;
-        });
-
-        return updatedTimers;
+  const pauseTimerByServicioId = useCallback((servicioId: number) => {
+    setTimers(prev => {
+      const updatedTimers = prev.map(timer => {
+        // Solo pausar timers principales (no temporales) del servicio especificado
+        if (timer.servicioId === servicioId && !timer.isTemporary) {
+          return { ...timer, isPaused: true };
+        }
+        return timer;
       });
-    },
-    []
-  );
+
+      return updatedTimers;
+    });
+  }, []);
 
   // Función para reanudar el temporizador por ID de servicio (solo timers principales)
   const resumeTimerByServicioId = useCallback((servicioId: number) => {
     setTimers(prev =>
       prev.map(timer =>
         // Solo reanudar timers principales (no temporales) del servicio especificado
-        (timer.servicioId === servicioId && !timer.isTemporary) ?
-          { ...timer, isPaused: false } :
-          timer
+        timer.servicioId === servicioId && !timer.isTemporary
+          ? { ...timer, isPaused: false }
+          : timer
       )
     );
   }, []);
@@ -473,8 +587,36 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const expiredTimerIds: string[] = [];
 
         const updatedTimers = uniqueTimers.map(timer => {
-          // Skip processing if timer is already stopped, expired, or paused
-          if (!timer.isActive || timer.remainingTime <= 0 || timer.isPaused) {
+          // Skip processing if timer is already stopped or expired
+          if (!timer.isActive || timer.remainingTime <= 0) {
+            return timer;
+          }
+
+          // Si es un timer principal (no temporal), verificar si hay un timer temporal activo para el mismo servicio
+          if (!timer.isTemporary) {
+            const hasActiveTemporaryTimer = uniqueTimers.some(
+              t =>
+                t.servicioId === timer.servicioId &&
+                t.isTemporary &&
+                t.isActive &&
+                t.remainingTime > 0
+            );
+
+            // Si hay un timer temporal activo, pausar el timer principal automáticamente
+            if (hasActiveTemporaryTimer && !timer.isPaused) {
+              console.log(`⏸️ Auto-pausando timer principal ${timer.id} - timer temporal activo`);
+              return { ...timer, isPaused: true };
+            }
+
+            // Si no hay timer temporal y estaba pausado por uno, reanudar automáticamente
+            if (!hasActiveTemporaryTimer && timer.isPaused) {
+              console.log(`▶️ Auto-reanudando timer principal ${timer.id} - no hay timer temporal`);
+              return { ...timer, isPaused: false };
+            }
+          }
+
+          // Skip processing if timer is paused
+          if (timer.isPaused) {
             return timer;
           }
 
@@ -512,18 +654,30 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             expiredTimerIds.forEach(timerId => {
               const timer = updatedTimers.find(t => t.id === timerId);
               if (timer) {
+                // Mostrar notificación modal para cualquier timer que expire
+                showTimerExpiredNotification(timer);
+
                 if (timer.isTemporary) {
                   // Si es un timer temporal, ejecutar su callback y reanudar el timer principal
+                  console.log(
+                    `⏱️ Timer temporal ${timer.id} completado para servicio ${timer.servicioId}`
+                  );
                   if (timer.onComplete) {
                     timer.onComplete();
                   }
-                  // Reanudar el timer principal
+                  // Reanudar el timer principal después de un pequeño delay
                   setTimeout(() => {
                     resumeTimerByServicioId(timer.servicioId);
-                    // Quitar el toast para no interrumpir al usuario
+                    console.log(
+                      `▶️ Timer principal reanudado automáticamente para servicio ${timer.servicioId}`
+                    );
+                    toast.success('Timer principal reanudado automáticamente');
                   }, 200);
                 } else {
                   // Timer normal, procesar como antes
+                  console.log(
+                    `⏱️ Timer principal ${timer.id} completado para servicio ${timer.servicioId}`
+                  );
                   // Pasamos el objeto timer para evitar problemas de búsqueda en el ref si ya se filtró
                   stopTimer(timerId, false, timer); // false = terminación automática
                 }
@@ -549,32 +703,60 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isInitialized, expiredTimers, resumeTimerByServicioId, stopTimer]);
+  }, [
+    isInitialized,
+    expiredTimers,
+    resumeTimerByServicioId,
+    stopTimer,
+    showTimerExpiredNotification
+  ]);
 
   // Función para actualizar un temporizador existente
-  const updateTimerByServicioId = useCallback(
-    (servicioId: number, newDuration: number) => {
-      setTimers(prev => {
-        return prev.map(timer => {
-          if (timer.servicioId === servicioId) {
-            // Recalcular tiempo restante basado en la nueva duración
-            const now = new Date();
-            const elapsedSeconds = Math.floor((now.getTime() - timer.startTime.getTime()) / 1000);
-            const remaining = newDuration * 60 - elapsedSeconds;
+  const updateTimerByServicioId = useCallback((servicioId: number, newDuration: number) => {
+    setTimers(prev => {
+      return prev.map(timer => {
+        if (timer.servicioId === servicioId) {
+          // Recalcular tiempo restante basado en la nueva duración
+          const now = new Date();
+          const elapsedSeconds = Math.floor((now.getTime() - timer.startTime.getTime()) / 1000);
+          const remaining = newDuration * 60 - elapsedSeconds;
 
-            return {
-              ...timer,
-              duration: newDuration,
-              remainingTime: Math.max(0, remaining)
-            };
-          }
-          return timer;
-        });
+          return {
+            ...timer,
+            duration: newDuration,
+            remainingTime: Math.max(0, remaining)
+          };
+        }
+        return timer;
       });
+    });
 
-      toast.info(`Tiempo del servicio actualizado a ${newDuration} minutos`);
+    toast.info(`Tiempo del servicio actualizado a ${newDuration} minutos`);
+  }, []);
+
+  // Función para detener un timer temporal manualmente y reanudar el principal
+  const stopTemporaryTimer = useCallback(
+    (servicioId: number) => {
+      const tempTimer = timers.find(t => t.servicioId === servicioId && t.isTemporary);
+      if (tempTimer) {
+        console.log(`🛑 Deteniendo timer temporal manualmente para servicio ${servicioId}`);
+
+        // Remover el timer temporal
+        setTimers(prev => prev.filter(t => t.id !== tempTimer.id));
+
+        // Reanudar el timer principal
+        setTimeout(() => {
+          resumeTimerByServicioId(servicioId);
+          console.log(
+            `▶️ Timer principal reanudado tras detener timer temporal para servicio ${servicioId}`
+          );
+          toast.success('Timer temporal detenido - Timer principal reanudado');
+        }, 200);
+      } else {
+        toast.error('No se encontró un timer temporal activo para este servicio');
+      }
     },
-    []
+    [timers, resumeTimerByServicioId]
   );
 
   // Función para iniciar un temporizador temporal que pausa el principal
@@ -586,30 +768,27 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       duration: number,
       servicioCode: string,
       clienteNombre: string,
-      onComplete: () => void
+      onComplete: () => void,
+      datosTemporales?: any, // Nuevo parámetro opcional
+      anfitrionas?: string // Nuevo parámetro para anfitrionas
     ) => {
-      // Primero pausar el timer principal
-      pauseTimerByServicioId(servicioId);
+      // Verificar si ya existe un timer temporal para este servicio
+      const existingTempTimer = timers.find(t => t.servicioId === servicioId && t.isTemporary);
+      if (existingTempTimer) {
+        toast.warning('Ya existe un timer temporal activo para este servicio');
+        return;
+      }
 
-      // Debug: verificar que el timer principal se pausó
-      setTimeout(() => {
-        setTimers(prev => {
-          const mainTimer = prev.find(t => t.servicioId === servicioId && !t.isTemporary);
-          if (mainTimer) {
-            console.log('Timer principal después de pausar:', {
-              id: mainTimer.id,
-              isPaused: mainTimer.isPaused,
-              remainingTime: mainTimer.remainingTime
-            });
-            if (!mainTimer.isPaused) {
-              toast.warning('⚠️ El timer principal no se pausó correctamente');
-            } else {
-              toast.info('⏸️ Timer principal pausado correctamente');
-            }
-          }
-          return prev;
-        });
-      }, 100);
+      // Verificar que existe un timer principal para pausar
+      const mainTimer = timers.find(t => t.servicioId === servicioId && !t.isTemporary);
+      if (!mainTimer) {
+        toast.error('No se encontró un timer principal para pausar');
+        return;
+      }
+
+      console.log(
+        `⏸️ Iniciando timer temporal para servicio ${servicioId} - pausando timer principal`
+      );
 
       // Crear un timer temporal con un ID único
       const temporaryTimerId = `temp_timer_${servicioId}_${Date.now()}`;
@@ -626,46 +805,75 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         servicioCode: `${servicioCode}-TEMP`,
         clienteNombre,
         isTemporary: true,
-        onComplete
+        datosTemporales: datosTemporales, // Agregar los datos temporales
+        tipoTransaccion: 'servicio', // Los timers temporales son siempre servicios
+        anfitrionas: anfitrionas || '', // Agregar anfitrionas
+        onComplete: () => {
+          console.log(`⏱️ Timer temporal completado para servicio ${servicioId}`);
+          // Ejecutar el callback original
+          onComplete();
+          // El timer principal se reanudará automáticamente en el próximo ciclo del interval
+          // ya que no habrá más timers temporales activos para este servicio
+        }
       };
 
-      setTimers(prev => [...prev, temporaryTimer]);
-      toast.info(`⏱️ Timer temporal iniciado: ${duration} minutos`);
+      // Agregar el timer temporal y pausar el principal explícitamente
+      setTimers(prev => {
+        return prev
+          .map(timer => {
+            // Pausar el timer principal del mismo servicio
+            if (timer.servicioId === servicioId && !timer.isTemporary) {
+              console.log(`⏸️ Pausando timer principal ${timer.id} por timer temporal`);
+              return { ...timer, isPaused: true };
+            }
+            return timer;
+          })
+          .concat(temporaryTimer);
+      });
+
+      toast.info(
+        `⏱️ Timer temporal iniciado: ${duration} minutos (Timer principal pausado automáticamente)`
+      );
     },
-    [pauseTimerByServicioId]
+    [timers]
   );
 
-  const value: TimerContextType = useMemo(() => ({
-    timers,
-    startTimer,
-    stopTimer,
-    stopTimerByRoomId,
-    stopTimerByServicioId,
-    pauseTimerByServicioId,
-    resumeTimerByServicioId,
-    getTimerByRoomId,
-    getTimerByServicioId,
-    getTemporaryTimerByServicioId,
-    formatTime,
-    setRefreshCallback,
-    updateTimerByServicioId,
-    startTemporaryTimer
-  }), [
-    timers,
-    startTimer,
-    stopTimer,
-    stopTimerByRoomId,
-    stopTimerByServicioId,
-    pauseTimerByServicioId,
-    resumeTimerByServicioId,
-    getTimerByRoomId,
-    getTimerByServicioId,
-    getTemporaryTimerByServicioId,
-    formatTime,
-    setRefreshCallback,
-    updateTimerByServicioId,
-    startTemporaryTimer
-  ]);
+  const value: TimerContextType = useMemo(
+    () => ({
+      timers,
+      startTimer,
+      stopTimer,
+      stopTimerByRoomId,
+      stopTimerByServicioId,
+      pauseTimerByServicioId,
+      resumeTimerByServicioId,
+      getTimerByRoomId,
+      getTimerByServicioId,
+      getTemporaryTimerByServicioId,
+      formatTime,
+      setRefreshCallback,
+      updateTimerByServicioId,
+      startTemporaryTimer,
+      stopTemporaryTimer
+    }),
+    [
+      timers,
+      startTimer,
+      stopTimer,
+      stopTimerByRoomId,
+      stopTimerByServicioId,
+      pauseTimerByServicioId,
+      resumeTimerByServicioId,
+      getTimerByRoomId,
+      getTimerByServicioId,
+      getTemporaryTimerByServicioId,
+      formatTime,
+      setRefreshCallback,
+      updateTimerByServicioId,
+      startTemporaryTimer,
+      stopTemporaryTimer
+    ]
+  );
 
   return (
     <TimerContext.Provider value={value}>
@@ -679,12 +887,27 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cancelText={modalState.cancelText}
         hideCancel={modalState.hideCancel}
         type={modalState.type}
-        onConfirm={modalState.onConfirm || (() => { })}
+        onConfirm={modalState.onConfirm || (() => {})}
         onCancel={modalState.onCancel}
         confirmVariant={modalState.confirmVariant}
         cancelVariant={modalState.cancelVariant}
         size={modalState.size}
       />
+
+      {/* Modal de notificación de timer expirado */}
+      {timerExpiredNotification && (
+        <TimerExpiredModal
+          open={showTimerExpiredModal}
+          onOpenChange={closeTimerExpiredNotification}
+          roomName={timerExpiredNotification.roomName}
+          servicioCode={timerExpiredNotification.servicioCode}
+          clienteNombre={timerExpiredNotification.clienteNombre}
+          tiempoTotal={timerExpiredNotification.tiempoTotal}
+          isTemporary={timerExpiredNotification.isTemporary}
+          tipoTransaccion={timerExpiredNotification.tipoTransaccion}
+          anfitrionas={timerExpiredNotification.anfitrionas}
+        />
+      )}
     </TimerContext.Provider>
   );
 };

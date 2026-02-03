@@ -88,8 +88,8 @@ export function CommissionsList({
             {/* Header con empleado y estado */}
             <div className='flex justify-between items-start'>
               <div className='flex items-center gap-2'>
-                <User className='h-4 w-4 text-gray-400' />
-                <span className='font-medium text-sm sm:text-base'>{commission.employeeName}</span>
+                <User className='h-4 w-4 text-blue-500' />
+                <span className='font-bold text-sm sm:text-base'>{commission.nick}</span>
               </div>
               <Badge className={`${getStatusColor(commission.status)} text-xs sm:text-sm`}>
                 {commission.status === 'por_pagar'
@@ -104,7 +104,9 @@ export function CommissionsList({
             <div className='space-y-2'>
               <div className='flex items-center gap-2'>
                 <Tag className='h-3 w-3 text-gray-400' />
-                <span className='text-xs sm:text-sm text-gray-600'>Nick: {commission.nick}</span>
+                <span className='text-xs sm:text-sm text-gray-600'>
+                  Anfitriona: {commission.employeeName}
+                </span>
               </div>
 
               <div className='flex items-center gap-2'>
@@ -157,8 +159,7 @@ export function CommissionsList({
           <Table className='w-full justify-center text-center'>
             <TableHeader>
               <TableRow>
-                <TableHead className='text-start text-sm sm:text-base'>Empleado</TableHead>
-                <TableHead className='text-center text-sm sm:text-base'>Nick</TableHead>
+                <TableHead className='text-start text-sm sm:text-base'>Nick / Anfitriona</TableHead>
                 <TableHead className='text-center text-sm sm:text-base'>Venta</TableHead>
                 <TableHead className='text-center text-sm sm:text-base'>Servicio</TableHead>
                 <TableHead className='text-center text-sm sm:text-base'>Total</TableHead>
@@ -170,11 +171,13 @@ export function CommissionsList({
               {paginatedCommissions.map(commission => (
                 <TableRow key={commission.id}>
                   <TableCell>
-                    <div className='font-medium text-sm sm:text-base text-start'>
-                      {commission.employeeName}
+                    <div className='text-start'>
+                      <div className='font-bold text-sm sm:text-base text-blue-600'>
+                        {commission.nick}
+                      </div>
+                      <div className='text-[10px] text-gray-400'>{commission.employeeName}</div>
                     </div>
                   </TableCell>
-                  <TableCell className='text-xs sm:text-sm'>{commission.nick}</TableCell>
                   <TableCell className='font-semibold text-sm sm:text-base'>
                     {formatCurrencyNoDecimals(commission.venta)}
                   </TableCell>
@@ -201,7 +204,6 @@ export function CommissionsList({
                       className='rounded-full text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-200 group'
                     >
                       <Eye className='h-3 w-3 mr-1 group-hover:text-blue-600' />
-               
                     </Button>
                   </TableCell>
                 </TableRow>
