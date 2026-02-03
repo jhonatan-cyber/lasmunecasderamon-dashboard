@@ -195,7 +195,7 @@ export function Header() {
   };
 
   return (
-    <header className='h-16 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between px-4 sm:px-6'>
+    <header className='h-16 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between px-4 sm:px-6 floating-header'>
       <div className='flex items-center gap-4 flex-1'>
         {/* Botón hamburguesa para móviles */}
         <Button
