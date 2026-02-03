@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   ArrowLeft,
   Search,
@@ -14,27 +14,27 @@ import {
   Trash,
   Plus,
   X,
-  MoreVertical,
-} from "lucide-react";
-import { useCuentas } from "@/hooks/useCuentas";
-import { useClients } from "@/hooks/useClients";
-import { useUsers } from "@/hooks/useUsers";
-import useRooms from "@/hooks/useRooms";
-import { useTimer } from "@/contexts/TimerContext";
-import { toast } from "sonner";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
-import { CreateCuentaRequest, CreateDetalleCuentaRequest } from "@/types/cuenta";
-import CustomerSelect from "@/components/ui/CustomerSelect";
-import HostessSelect from "@/components/ui/HostessSelect";
-import RoomSelect from "@/components/ui/RoomSelect";
-import CategoryCardList from "@/components/ui/CategoryCardList";
-import ProductModal from "@/components/ui/productModal";
+  MoreVertical
+} from 'lucide-react';
+import { useCuentas } from '@/hooks/useCuentas';
+import { useClients } from '@/hooks/useClients';
+import { useUsers } from '@/hooks/useUsers';
+import useRooms from '@/hooks/useRooms';
+import { useTimer } from '@/contexts/TimerContext';
+import { toast } from 'sonner';
+import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { CreateCuentaRequest, CreateDetalleCuentaRequest } from '@/types/cuenta';
+import CustomerSelect from '@/components/ui/CustomerSelect';
+import HostessSelect from '@/components/ui/HostessSelect';
+import RoomSelect from '@/components/ui/RoomSelect';
+import CategoryCardList from '@/components/ui/CategoryCardList';
+import ProductModal from '@/components/ui/productModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 export default function NewCuentaPage() {
   const router = useRouter();
@@ -44,13 +44,13 @@ export default function NewCuentaPage() {
   const { rooms } = useRooms();
   const { startTimer } = useTimer();
   const [loading, setLoading] = useState(false);
-  
+
   // Estados del formulario
-  const [selectedCliente, setSelectedCliente] = useState("");
+  const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
-  const [selectedHabitacion, setSelectedHabitacion] = useState("");
+  const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [productos, setProductos] = useState<any[]>([]);
-  const [searchProducto, setSearchProducto] = useState("");
+  const [searchProducto, setSearchProducto] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [categoriasConProductos, setCategoriasConProductos] = useState<any[]>([]);
@@ -72,8 +72,8 @@ export default function NewCuentaPage() {
   };
 
   // Filtrar anfitrionas (usuarios con rol de anfitriona)
-  const anfitrionas = users.filter(user => 
-    user.role?.toLowerCase().includes('anfitriona') && user.status === 1
+  const anfitrionas = users.filter(
+    user => user.role?.toLowerCase().includes('anfitriona') && user.status === 1
   );
 
   // Cargar clientes
@@ -88,21 +88,21 @@ export default function NewCuentaPage() {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch('/api/categories');
         const data = await res.json();
         if (data.success) {
           setCategorias(data.data);
           await loadCategoriasConProductos(data.data);
         }
       } catch (error) {
-        console.error("Error al cargar categorías:", error);
+        console.error('Error al cargar categorías:', error);
       }
     };
     fetchCategorias();
   }, []);
 
   const loadCategoriasConProductos = async (categoriasData: any[]) => {
-    const categoriasConConteo = categoriasData.map((cat) => {
+    const categoriasConConteo = categoriasData.map(cat => {
       // Usar total_products del endpoint o 0 si no existe
       const productCount = cat.total_products || 0;
       return {
@@ -111,7 +111,7 @@ export default function NewCuentaPage() {
         // Asegurar que tenga los campos esperados por el componente
         id_categoria: cat.id,
         nombre: cat.name || cat.nombre,
-        estado: cat.status,
+        estado: cat.status
       };
     });
     setCategoriasConProductos(categoriasConConteo);
@@ -119,9 +119,7 @@ export default function NewCuentaPage() {
 
   // Filtrar categorías como en ventas
   const categoriasFiltradas = Array.isArray(categoriasConProductos)
-    ? categoriasConProductos.filter(
-        (cat) => cat?.estado === 1 && cat?.productCount > 0
-      )
+    ? categoriasConProductos.filter(cat => cat?.estado === 1 && cat?.productCount > 0)
     : [];
 
   const getProductCountByCategory = async (categoryId: number) => {
@@ -130,7 +128,7 @@ export default function NewCuentaPage() {
       const data = await res.json();
       return data.length || 0;
     } catch (error) {
-      console.error("Error al obtener productos por categoría:", error);
+      console.error('Error al obtener productos por categoría:', error);
       return 0;
     }
   };
@@ -140,9 +138,7 @@ export default function NewCuentaPage() {
     setModalOpen(true);
     setLoadingProductos(true);
     try {
-      const res = await fetch(
-        `/api/products?category_id=${cat.id_categoria || cat.id}`
-      );
+      const res = await fetch(`/api/products?category_id=${cat.id_categoria || cat.id}`);
       const data = await res.json();
       if (data.success) setProductosCategoria(data.data);
       else setProductosCategoria([]);
@@ -161,11 +157,10 @@ export default function NewCuentaPage() {
   };
 
   const handleAddProducto = (producto: any) => {
-    
     const cantidad = cantidades[producto.id_producto] || 1;
     const precio = producto.precio || producto.price || 0;
     const comision = producto.commission || producto.comision || 0; // La API devuelve 'commission'
-    
+
     const nuevoProducto = {
       ...producto,
       cantidad,
@@ -173,16 +168,16 @@ export default function NewCuentaPage() {
       comision: comision, // Comisión por unidad
       subtotal: precio * cantidad
     };
-    
+
     setProductos(prev => [...prev, nuevoProducto]);
     setCantidades(prev => {
       const newCantidades = { ...prev };
       delete newCantidades[producto.id_producto];
       return newCantidades;
     });
-    
+
     // Obtener el nombre del producto de diferentes campos posibles
-    const nombreProducto = producto.nombre || producto.name || producto.product_name || "Producto";
+    const nombreProducto = producto.nombre || producto.name || producto.product_name || 'Producto';
     toast.success(`${nombreProducto} agregado`);
   };
 
@@ -192,13 +187,13 @@ export default function NewCuentaPage() {
 
   const handleCantidadChangeTable = (index: number, nuevaCantidad: number) => {
     if (nuevaCantidad <= 0) return;
-    
+
     setProductos(prev => {
       const nuevosProductos = [...prev];
       const producto = nuevosProductos[index];
       const precio = producto.precio || producto.price || 0;
       const comisionPorUnidad = producto.comision || 0; // Comisión por unidad
-      
+
       nuevosProductos[index] = {
         ...producto,
         cantidad: nuevaCantidad,
@@ -210,7 +205,7 @@ export default function NewCuentaPage() {
   };
 
   const handleClearSearch = () => {
-    setSearchProducto("");
+    setSearchProducto('');
     setSearchResults([]);
     setSearchLoading(false);
   };
@@ -229,7 +224,7 @@ export default function NewCuentaPage() {
         const data = await res.json();
         setSearchResults(data);
       } catch (error) {
-        console.error("Error en búsqueda:", error);
+        console.error('Error en búsqueda:', error);
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -246,7 +241,7 @@ export default function NewCuentaPage() {
     const total = calculateTotal();
     const subTotal = calculateSubTotal();
     const totalComision = calculateTotalComision();
-    
+
     // Los valores se actualizarán automáticamente en la UI
   }, [productos]);
 
@@ -266,21 +261,17 @@ export default function NewCuentaPage() {
     return productos.reduce((sum, producto) => {
       const comisionPorUnidad = producto.comision || 0;
       const cantidad = producto.cantidad || 1;
-      return sum + (comisionPorUnidad * cantidad);
+      return sum + comisionPorUnidad * cantidad;
     }, 0);
   };
 
   // Función para verificar si un producto es de champaña
   const isChampagneProduct = (producto: any) => {
-    const categoria = (
-      producto?.categoria ||
-      producto?.category ||
-      ""
-    ).toLowerCase();
+    const categoria = (producto?.categoria || producto?.category || '').toLowerCase();
     return (
-      categoria.includes("champaña") ||
-      categoria.includes("shampaña") ||
-      categoria.includes("champagne")
+      categoria.includes('champaña') ||
+      categoria.includes('shampaña') ||
+      categoria.includes('champagne')
     );
   };
 
@@ -291,11 +282,7 @@ export default function NewCuentaPage() {
 
   // Obtener el precio más alto de productos de champaña
   const maxChampagnePrice = Array.isArray(productos)
-    ? Math.max(
-        ...productos
-          .filter(isChampagneProduct)
-          .map((p) => Number(p.precio ?? p.price ?? 0))
-      )
+    ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio ?? p.price ?? 0)))
     : 0;
 
   // Determinar el máximo de anfitrionas permitidas según las reglas
@@ -336,10 +323,7 @@ export default function NewCuentaPage() {
   // Calcular recargo por anfitrionas extra según el precio de champaña
   let anfitrionasExtra = 0;
   let recargoAnfitrionas = 0;
-  if (
-    hasChampagneProducts &&
-    selectedAnfitrionas.length > anfitrionasIncluidas
-  ) {
+  if (hasChampagneProducts && selectedAnfitrionas.length > anfitrionasIncluidas) {
     anfitrionasExtra = selectedAnfitrionas.length - anfitrionasIncluidas;
     recargoAnfitrionas = anfitrionasExtra * 40000;
   }
@@ -352,28 +336,18 @@ export default function NewCuentaPage() {
 
       // Mostrar mensaje específico según la regla aplicada
       if (!hasChampagneProducts) {
-        toast.info(
-          "Se ha limitado la selección a 1 anfitriona por productos sin champaña"
-        );
+        toast.info('Se ha limitado la selección a 1 anfitriona por productos sin champaña');
       } else if (maxChampagnePrice >= 240000) {
-        toast.info(
-          "Se ha limitado la selección a 7 anfitrionas para champaña de $240,000+"
-        );
+        toast.info('Se ha limitado la selección a 7 anfitrionas para champaña de $240,000+');
       } else if (maxChampagnePrice >= 200000) {
-        toast.info(
-          "Se ha limitado la selección a 6 anfitrionas para champaña de $200,000+"
-        );
+        toast.info('Se ha limitado la selección a 6 anfitrionas para champaña de $200,000+');
       } else if (maxChampagnePrice >= 160000) {
-        toast.info(
-          "Se ha limitado la selección a 5 anfitrionas para champaña de $160,000+"
-        );
+        toast.info('Se ha limitado la selección a 5 anfitrionas para champaña de $160,000+');
       } else if (maxChampagnePrice >= 120000) {
-        toast.info(
-          "Se ha limitado la selección a 4 anfitrionas para champaña de $120,000+"
-        );
+        toast.info('Se ha limitado la selección a 4 anfitrionas para champaña de $120,000+');
       } else {
         toast.info(
-          "Se ha limitado la selección a 5 anfitrionas para champaña con precio menor a $120,000"
+          'Se ha limitado la selección a 5 anfitrionas para champaña con precio menor a $120,000'
         );
       }
     }
@@ -381,21 +355,23 @@ export default function NewCuentaPage() {
 
   const handleSubmit = async () => {
     if (!selectedCliente || productos.length === 0) {
-      toast.error("Cliente y al menos un producto son requeridos");
+      toast.error('Cliente y al menos un producto son requeridos');
       return;
     }
 
     // Validar que el cliente no sea genérico
     const clienteSeleccionado = clientes.find(c => c.id_cliente?.toString() === selectedCliente);
-    if (clienteSeleccionado?.nombre?.toLowerCase().includes('genérico') || 
-        clienteSeleccionado?.nombre?.toLowerCase().includes('generico')) {
-      toast.error("No se puede seleccionar un cliente genérico");
+    if (
+      clienteSeleccionado?.nombre?.toLowerCase().includes('genérico') ||
+      clienteSeleccionado?.nombre?.toLowerCase().includes('generico')
+    ) {
+      toast.error('No se puede seleccionar un cliente genérico');
       return;
     }
 
     // Validar anfitrionas cuando hay productos de champaña
     if (hasChampagneProducts && (!selectedAnfitrionas || selectedAnfitrionas.length === 0)) {
-      toast.error("Debes seleccionar al menos una anfitriona cuando hay productos de champaña");
+      toast.error('Debes seleccionar al menos una anfitriona cuando hay productos de champaña');
       return;
     }
 
@@ -404,11 +380,11 @@ export default function NewCuentaPage() {
       // Calcular totales usando las funciones
       const subTotal = calculateSubTotal();
       const totalComision = calculateTotalComision();
-      
+
       // Calcular comisión adicional por anfitrionas de recargo
       const comisionAnfitrionasRecargo = anfitrionasExtra * 20000; // $20,000 por anfitriona de recargo
       const totalComisionFinal = totalComision + comisionAnfitrionasRecargo;
-      
+
       const total = calculateTotal() + recargoAnfitrionas; // Incluir recargo por anfitrionas
 
       // Preparar detalles de cuenta
@@ -420,8 +396,6 @@ export default function NewCuentaPage() {
         comision: producto.comision || 0
       }));
 
-
-
       // Datos obligatorios
       const cuentaData: CreateCuentaRequest = {
         codigo: generateCodigo(), // Código automático de 8 dígitos
@@ -432,14 +406,16 @@ export default function NewCuentaPage() {
         // Datos opcionales - solo incluir si tienen valor
         ...(selectedHabitacion && { habitacion_id: parseInt(selectedHabitacion) }),
         detalles,
-        usuarios: selectedAnfitrionas.map(id => parseInt(id)),
+        usuarios: selectedAnfitrionas.map(id => parseInt(id))
       };
 
       const result = await createCuenta(cuentaData);
 
       // Activar temporizador si se seleccionó una habitación
       if (selectedHabitacion) {
-        const habitacionSeleccionada = rooms.find(room => room.id.toString() === selectedHabitacion);
+        const habitacionSeleccionada = rooms.find(
+          room => room.id.toString() === selectedHabitacion
+        );
         if (habitacionSeleccionada) {
           startTimer(
             result.data?.cuenta_id || 0, // servicioId (usar cuenta_id para cuentas)
@@ -448,19 +424,16 @@ export default function NewCuentaPage() {
             habitacionSeleccionada.time || 60, // duration
             `CUENTA_${result.data?.cuenta_id || Date.now()}`, // servicioCode (ID de cuenta único)
             'Cliente Cuenta', // clienteNombre (placeholder para cuentas)
-            "" // anfitrionas (vacío para cuentas)
-          );
+            '' // anfitrionas (vacío para cuentas)
           );
         }
       }
 
-      toast.success("Cuenta creada exitosamente");
-      router.push("/accounts");
+      toast.success('Cuenta creada exitosamente');
+      router.push('/accounts');
     } catch (error) {
-      console.error("Error al crear cuenta:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Error al crear la cuenta"
-      );
+      console.error('Error al crear cuenta:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear la cuenta');
     } finally {
       setLoading(false);
     }
@@ -468,19 +441,17 @@ export default function NewCuentaPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between p-10 space-y-6 mt-10">
+      <div className='flex items-center justify-between p-10 space-y-6 mt-10'>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Datos Ticket Cuenta
-          </h2>
-          <div className="uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1">
+          <h2 className='text-2xl font-bold text-gray-900'>Datos Ticket Cuenta</h2>
+          <div className='uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1'>
             Las muñecas de Ramón
           </div>
         </div>
 
         <Button
-          variant="outline"
-          className="rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200"
+          variant='outline'
+          className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200'
           onClick={() => router.back()}
         >
           <ArrowLeft />
@@ -488,23 +459,21 @@ export default function NewCuentaPage() {
         </Button>
       </div>
 
-      <div className="p-8 bg-white ml-8 mr-8 space-y-6 shadow-md rounded-xl">
+      <div className='p-8 bg-white ml-8 mr-8 space-y-6 shadow-md rounded-xl'>
         {/* Búsqueda de productos */}
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="relative w-full max-w-xs">
-                            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            />
+        <div className='flex items-center justify-center gap-2 mb-4'>
+          <div className='relative w-full max-w-xs'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400' />
             <Input
-              placeholder="Buscar Producto"
+              placeholder='Buscar Producto'
               value={searchProducto}
-              onChange={(e) => setSearchProducto(e.target.value)}
-              className="pl-10 pr-20 py-2 text-sm rounded-full"
+              onChange={e => setSearchProducto(e.target.value)}
+              className='pl-10 pr-20 py-2 text-sm rounded-full'
               style={{ minWidth: 0 }}
             />
             <Button
-              variant="outline"
-              className="absolute bg-black text-white right-0 top-1/2 -translate-y-1/2 text-sm rounded-full"
+              variant='outline'
+              className='absolute bg-black text-white right-0 top-1/2 -translate-y-1/2 text-sm rounded-full'
               style={{ zIndex: 2 }}
             >
               Buscar
@@ -512,9 +481,9 @@ export default function NewCuentaPage() {
           </div>
           {searchProducto && (
             <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full px-4 bg-black text-white hover:scale-105 transition-all duration-200"
+              variant='outline'
+              size='sm'
+              className='rounded-full px-4 bg-black text-white hover:scale-105 transition-all duration-200'
               onClick={handleClearSearch}
             >
               <X />
@@ -525,27 +494,27 @@ export default function NewCuentaPage() {
 
         {/* Tabla de resultados de búsqueda en tiempo real */}
         {searchProducto && (
-          <div className="mb-6">
-            <table className="w-full border rounded-lg overflow-hidden text-sm">
-              <thead className="bg-gray-50">
+          <div className='mb-6'>
+            <table className='w-full border rounded-lg overflow-hidden text-sm'>
+              <thead className='bg-gray-50'>
                 <tr>
-                  <th className="px-4 py-2 text-left">PRODUCTO</th>
-                  <th className="px-4 py-2 text-left">PRECIO</th>
-                  <th className="px-4 py-2 text-left">COMISIÓN</th>
-                  <th className="px-4 py-2 text-left">CATEGORÍA</th>
-                  <th className="px-4 py-2 text-center">ACCIONES</th>
+                  <th className='px-4 py-2 text-left'>PRODUCTO</th>
+                  <th className='px-4 py-2 text-left'>PRECIO</th>
+                  <th className='px-4 py-2 text-left'>COMISIÓN</th>
+                  <th className='px-4 py-2 text-left'>CATEGORÍA</th>
+                  <th className='px-4 py-2 text-center'>ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
                 {searchLoading ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-4">
+                    <td colSpan={5} className='text-center py-4'>
                       Buscando...
                     </td>
                   </tr>
                 ) : searchResults.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-4 text-gray-400">
+                    <td colSpan={5} className='text-center py-4 text-gray-400'>
                       No hay resultados
                     </td>
                   </tr>
@@ -553,39 +522,39 @@ export default function NewCuentaPage() {
                   searchResults.map((producto, idx) => (
                     <tr
                       key={producto.id_producto || `search-prod-${idx}`}
-                      className="border-t hover:bg-gray-50"
+                      className='border-t hover:bg-gray-50'
                     >
-                      <td className="px-4 py-2">{producto.nombre || producto.name || producto.product_name || "Sin nombre"}</td>
-                      <td className="px-4 py-2">
-                        {formatCurrencyNoDecimals(producto.precio)}
+                      <td className='px-4 py-2'>
+                        {producto.nombre || producto.name || producto.product_name || 'Sin nombre'}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className='px-4 py-2'>{formatCurrencyNoDecimals(producto.precio)}</td>
+                      <td className='px-4 py-2'>
                         {formatCurrencyNoDecimals(producto.commission || producto.comision || 0)}
                       </td>
-                      <td className="px-4 py-2">{producto.categoria}</td>
-                                             <td className="px-4 py-2 text-center">
-                         <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                             <Button 
-                               variant="ghost" 
-                               size="sm"
-                               className="h-8 w-8 p-0 hover:bg-gray-100"
-                             >
-                               <span className="sr-only">Abrir menú</span>
-                               <MoreVertical className="h-4 w-4 text-gray-600" />
-                             </Button>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end" className="w-32">
-                             <DropdownMenuItem 
-                               onClick={() => handleAddProducto(producto)}
-                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                             >
-                               <Plus className="mr-2 h-4 w-4" />
-                               Agregar
-                             </DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
-                       </td>
+                      <td className='px-4 py-2'>{producto.categoria}</td>
+                      <td className='px-4 py-2 text-center'>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-8 w-8 p-0 hover:bg-gray-100'
+                            >
+                              <span className='sr-only'>Abrir menú</span>
+                              <MoreVertical className='h-4 w-4 text-gray-600' />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end' className='w-32'>
+                            <DropdownMenuItem
+                              onClick={() => handleAddProducto(producto)}
+                              className='text-green-600 hover:text-green-700 hover:bg-green-50'
+                            >
+                              <Plus className='mr-2 h-4 w-4' />
+                              Agregar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -599,11 +568,11 @@ export default function NewCuentaPage() {
           categorias={categoriasFiltradas}
           onSelect={handleOpenCategoria}
           center={true}
-          filter={(cat) => cat?.estado === 1 && (cat?.productCount ?? 0) > 0}
+          filter={cat => cat?.estado === 1 && (cat?.productCount ?? 0) > 0}
         />
 
         {/* Formulario de datos */}
-        <div className="grid grid-cols-3 gap-6">
+        <div className='grid grid-cols-3 gap-6'>
           {/* Cliente */}
           <CustomerSelect
             clientes={clientes}
@@ -627,52 +596,48 @@ export default function NewCuentaPage() {
             value={selectedHabitacion}
             onChange={setSelectedHabitacion}
             disabled={loading}
-            placeholder="Seleccione una habitación"
-            label="Habitación"
+            placeholder='Seleccione una habitación'
+            label='Habitación'
             showPrice={true}
           />
         </div>
 
         {/* Mensaje informativo sobre la regla de anfitrionas */}
         {Array.isArray(productos) && productos.length > 0 && (
-          <div className="w-full flex justify-center mt-2 mb-2">
+          <div className='w-full flex justify-center mt-2 mb-2'>
             <div
               className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${
                 hasChampagneProducts && maxChampagnePrice >= 120000
-                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : hasChampagneProducts
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-orange-50 text-orange-700 border border-orange-200"
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-orange-50 text-orange-700 border border-orange-200'
               }`}
             >
-              {hasChampagneProducts ? (
-                <Wine className="mr-1" />
-              ) : (
-                <Users className="mr-1" />
-              )}
+              {hasChampagneProducts ? <Wine className='mr-1' /> : <Users className='mr-1' />}
               {hasChampagneProducts && maxChampagnePrice >= 240000
                 ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`
                 : hasChampagneProducts && maxChampagnePrice >= 200000
-                ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 6 anfitrionas. Las primeras 4 incluidas, la 5ta y 6ta suman $40,000 cada una.`
-                : hasChampagneProducts && maxChampagnePrice >= 160000
-                ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 5 anfitrionas. Las primeras 3 incluidas, la 4ta y 5ta suman $40,000 cada una.`
-                : hasChampagneProducts && maxChampagnePrice >= 120000
-                ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 4 anfitrionas. Las primeras 2 incluidas, la 3ra y 4ta suman $40,000 cada una.`
-                : hasChampagneProducts
-                ? "Productos de champaña detectados: Puedes seleccionar hasta 5 anfitrionas"
-                : "Productos sin champaña: Solo puedes seleccionar 1 anfitriona máximo"}
+                  ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 6 anfitrionas. Las primeras 4 incluidas, la 5ta y 6ta suman $40,000 cada una.`
+                  : hasChampagneProducts && maxChampagnePrice >= 160000
+                    ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 5 anfitrionas. Las primeras 3 incluidas, la 4ta y 5ta suman $40,000 cada una.`
+                    : hasChampagneProducts && maxChampagnePrice >= 120000
+                      ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 4 anfitrionas. Las primeras 2 incluidas, la 3ra y 4ta suman $40,000 cada una.`
+                      : hasChampagneProducts
+                        ? 'Productos de champaña detectados: Puedes seleccionar hasta 5 anfitrionas'
+                        : 'Productos sin champaña: Solo puedes seleccionar 1 anfitriona máximo'}
             </div>
           </div>
         )}
 
         {/* Total y botón generar */}
-        <div className="flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-400 font-semibold mb-1">TOTAL</div>
-          <div className="text-2xl font-bold text-gray-900 mb-2 text-center justify-center items-center">
+        <div className='flex flex-col items-center justify-center'>
+          <div className='text-xs text-gray-400 font-semibold mb-1'>TOTAL</div>
+          <div className='text-2xl font-bold text-gray-900 mb-2 text-center justify-center items-center'>
             {formatCurrencyNoDecimals(calculateTotal() + recargoAnfitrionas)}
             {recargoAnfitrionas > 0 && (
-              <span className="block text-xs text-blue-600 font-normal mt-1">
-                Incluye recargo por anfitrionas extra:{" "}
+              <span className='block text-xs text-blue-600 font-normal mt-1'>
+                Incluye recargo por anfitrionas extra:{' '}
                 {formatCurrencyNoDecimals(recargoAnfitrionas)}
               </span>
             )}
@@ -684,41 +649,36 @@ export default function NewCuentaPage() {
               !Array.isArray(productos) ||
               productos.length === 0 ||
               !selectedCliente ||
-              (hasChampagneProducts &&
-                (!selectedAnfitrionas || selectedAnfitrionas.length === 0))
+              (hasChampagneProducts && (!selectedAnfitrionas || selectedAnfitrionas.length === 0))
             }
-            className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className='rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
           >
-            <ShoppingCart className="mr-2" />
-            {loading ? "Generando..." : "Generar Cuenta"}
+            <ShoppingCart className='mr-2' />
+            {loading ? 'Generando...' : 'Generar Cuenta'}
           </Button>
         </div>
 
         {/* Tabla de productos */}
-        <div className="mt-8">
-          <div className="text-center text-gray-400 text-sm mb-2">
-            Detalles Producto
-          </div>
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+        <div className='mt-8'>
+          <div className='text-center text-gray-400 text-sm mb-2'>Detalles Producto</div>
+          <div className='border rounded-lg overflow-hidden'>
+            <table className='w-full'>
+              <thead className='bg-gray-50'>
                 <tr>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className='px-4 py-2 text-left text-sm font-medium text-gray-700'>
                     PRODUCTO
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className='px-4 py-2 text-left text-sm font-medium text-gray-700'>
                     CANTIDAD
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    PRECIO
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className='px-4 py-2 text-left text-sm font-medium text-gray-700'>PRECIO</th>
+                  <th className='px-4 py-2 text-left text-sm font-medium text-gray-700'>
                     COMISIÓN
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className='px-4 py-2 text-left text-sm font-medium text-gray-700'>
                     SUB TOTAL
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className='px-4 py-2 text-left text-sm font-medium text-gray-700'>
                     ACCIONES
                   </th>
                 </tr>
@@ -726,67 +686,59 @@ export default function NewCuentaPage() {
               <tbody>
                 {Array.isArray(productos) &&
                   productos.map((producto, index) => (
-                    <tr key={index} className="border-t">
-                      <td className="px-4 py-2">
-                        {producto.nombre || producto.name || producto.product_name || "Sin nombre"}{" "}
-                        <span className="text-xs text-gray-400 ml-2">
-                          [{producto.categoria}]
-                        </span>
+                    <tr key={index} className='border-t'>
+                      <td className='px-4 py-2'>
+                        {producto.nombre || producto.name || producto.product_name || 'Sin nombre'}{' '}
+                        <span className='text-xs text-gray-400 ml-2'>[{producto.categoria}]</span>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className='px-4 py-2'>
                         <Input
-                          type="number"
+                          type='number'
                           value={producto.cantidad}
-                          onChange={(e) =>
-                            handleCantidadChangeTable(
-                              index,
-                              parseInt(e.target.value) || 0
-                            )
+                          onChange={e =>
+                            handleCantidadChangeTable(index, parseInt(e.target.value) || 0)
                           }
-                          min="1"
-                          className="w-20"
+                          min='1'
+                          className='w-20'
                         />
                       </td>
-                      <td className="px-4 py-2">
+                      <td className='px-4 py-2'>
                         {formatCurrencyNoDecimals(producto.precio || producto.price || 0)}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className='px-4 py-2'>
                         {formatCurrencyNoDecimals(producto.commission || producto.comision || 0)}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className='px-4 py-2'>
                         {formatCurrencyNoDecimals(producto.subtotal || 0)}
                       </td>
-                                             <td className="px-4 py-2">
-                         <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                             <Button 
-                               variant="ghost" 
-                               size="sm"
-                               className="h-8 w-8 p-0 hover:bg-gray-100"
-                             >
-                               <span className="sr-only">Abrir menú</span>
-                               <MoreVertical className="h-4 w-4 text-gray-600" />
-                             </Button>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end" className="w-32">
-                             <DropdownMenuItem 
-                               onClick={() => handleRemoveProducto(index)}
-                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                             >
-                               <Trash className="mr-2 h-4 w-4" />
-                               Eliminar
-                             </DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
-                       </td>
+                      <td className='px-4 py-2'>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-8 w-8 p-0 hover:bg-gray-100'
+                            >
+                              <span className='sr-only'>Abrir menú</span>
+                              <MoreVertical className='h-4 w-4 text-gray-600' />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end' className='w-32'>
+                            <DropdownMenuItem
+                              onClick={() => handleRemoveProducto(index)}
+                              className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                            >
+                              <Trash className='mr-2 h-4 w-4' />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
                     </tr>
                   ))}
                 {(!Array.isArray(productos) || productos.length === 0) && (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-8 text-center text-gray-500"
-                    >
+                    <td colSpan={6} className='px-4 py-8 text-center text-gray-500'>
                       No hay productos agregados
                     </td>
                   </tr>
