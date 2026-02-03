@@ -1,0 +1,76 @@
+/* Animaciones para notificaciones de timer */
+@keyframes timerExpiredPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes timerExpiredSlideIn {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes timerExpiredShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+.timer-expired-modal {
+  animation: timerExpiredSlideIn 0.3s ease-out;
+}
+
+.timer-expired-header {
+  animation: timerExpiredPulse 2s infinite;
+}
+
+.timer-expired-urgent {
+  animation: timerExpiredShake 0.5s ease-in-out;
+}
+
+/* Estilos para el countdown */
+.countdown-text {
+  transition: color 0.3s ease;
+}
+
+.countdown-urgent {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+/* Efectos de sonido visual */
+.sound-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.sound-wave::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.1), transparent);
+  animation: soundWave 2s infinite;
+}
+
+@keyframes soundWave {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}

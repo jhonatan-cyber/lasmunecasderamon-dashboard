@@ -44,8 +44,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           s.created_by,
           COALESCE(GROUP_CONCAT(DISTINCT CONCAT(c_multi.nombre, ' ', c_multi.apellido) SEPARATOR ', '), COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado')) as cliente_nombre,
           h.nombre as habitacion_numero,
+          h.comision_anfitriona as habitacion_comision,
           COUNT(DISTINCT ds.usuario_id) as total_usuarios,
-          GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nicks,
+          GROUP_CONCAT(DISTINCT 
+            CASE 
+              WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
+              ELSE CONCAT(u.nombre, ' ', u.apellido)
+            END 
+            SEPARATOR ', '
+          ) as anfitrionas_nombres,
           CONCAT(creator.nombre, ' ', creator.apellido) as creator_name,
           creator.nick as usuario_nick
         FROM servicios s
@@ -54,7 +61,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         LEFT JOIN clientes c_multi ON c_multi.id_cliente = dsc.cliente_id
         LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
-        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
+        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id AND u.estado = 1
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
         ${whereClause}
         GROUP BY s.id_servicio

@@ -24,6 +24,7 @@ interface CommissionDetalle {
   tipo: 'venta' | 'servicio';
   monto: number;
   estado: string;
+  producto?: string;
   fecha_pago?: string;
   descripcion?: string;
 }
@@ -98,21 +99,19 @@ export default function CommissionsDetalleModal({
         </DialogHeader>
 
         <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
-          {/* Información del usuario */}
           <div className='border-b pb-4 mb-4 flex flex-col items-center gap-2'>
-            <div className='flex items-center gap-2 text-gray-700 text-sm sm:text-base'>
-              <User className='text-gray-500 w-4 h-4' />
-              <span className='font-medium'>{usuario.nombre_completo}</span>
+            <div className='flex items-center gap-2 text-gray-700 text-base sm:text-lg'>
+              <span className='font-bold text-blue-600'>@{usuario.nick}</span>
             </div>
-            <div className='flex items-center gap-2 text-gray-700 text-sm'>
-              <span className='text-gray-500'>@{usuario.nick}</span>
+            <div className='flex items-center gap-2 text-gray-500 text-xs italic'>
+              <span>{usuario.nombre_completo}</span>
             </div>
 
             {/* Resumen de totales */}
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 w-full'>
               <div className='bg-blue-50 rounded-lg p-3 text-center'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
-                  <span className='text-sm font-medium text-blue-800'>Ventas</span>
+                  <span className='text-sm font-medium text-blue-800'>Comisiones</span>
                 </div>
                 <p className='text-lg font-bold text-blue-900'>
                   {formatCurrencyNoDecimals(usuario.total_ventas)}
@@ -149,11 +148,12 @@ export default function CommissionsDetalleModal({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className='text-xs sm:text-sm'>CÓDIGO</TableHead>
                     <TableHead className='text-xs sm:text-sm'>FECHA</TableHead>
                     <TableHead className='text-xs sm:text-sm'>TIPO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>CÓDIGO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>MONTO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>ESTADO</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>PRODUCTO</TableHead>
+                    <TableHead className='text-xs sm:text-sm'>COMISIÓN</TableHead>
+                    <TableHead className='text-xs sm:text-sm text-center'>ESTADO</TableHead>
                     <TableHead className='text-xs sm:text-sm'>FECHA PAGO</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -162,13 +162,16 @@ export default function CommissionsDetalleModal({
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
                         <TableCell>
+                          <Skeleton className='h-6 w-20' />
+                        </TableCell>
+                        <TableCell>
                           <Skeleton className='h-6 w-24' />
                         </TableCell>
                         <TableCell>
                           <Skeleton className='h-6 w-16' />
                         </TableCell>
                         <TableCell>
-                          <Skeleton className='h-6 w-20' />
+                          <Skeleton className='h-6 w-32' />
                         </TableCell>
                         <TableCell>
                           <Skeleton className='h-6 w-20' />
@@ -209,36 +212,47 @@ export default function CommissionsDetalleModal({
                   ) : (
                     detalles.map((detalle, index) => (
                       <TableRow key={index}>
+                        <TableCell className='font-mono text-xs sm:text-sm font-bold'>
+                          {detalle.codigo_venta || detalle.codigo_servicio || '-'}
+                        </TableCell>
                         <TableCell className='text-xs sm:text-sm'>
                           <div className='flex items-center gap-2'>
                             <Calendar className='w-3 h-3 text-gray-400' />
                             <div>
                               <div>{formatSoloFecha(detalle.fecha_hora)}</div>
-                              <div className='text-gray-500 flex items-center gap-1'>
-                                <Clock className='w-3 h-3' />
+                              <div className='text-gray-500 flex items-center gap-1 text-[10px]'>
+                                <Clock className='w-2.5 h-2.5' />
                                 {formatSoloHora(detalle.fecha_hora)}
                               </div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className='text-xs sm:text-sm'>
-                          <div className='flex items-center gap-2'>
-                            <span className='capitalize'>{detalle.tipo}</span>
+                          <Badge variant='outline' className='capitalize text-[10px] px-1.5 py-0'>
+                            {detalle.tipo}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className='text-xs sm:text-sm max-w-[150px]'>
+                          <div className='truncate font-medium' title={detalle.producto}>
+                            {detalle.producto || '-'}
                           </div>
                         </TableCell>
-                        <TableCell className='font-mono text-xs sm:text-sm'>
-                          {detalle.codigo_venta || detalle.codigo_servicio || '-'}
-                        </TableCell>
-                        <TableCell className='font-semibold text-xs sm:text-sm'>
+                        <TableCell className='font-bold text-xs sm:text-sm text-green-600'>
                           {formatCurrencyNoDecimals(detalle.monto)}
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm'>
-                          <Badge className={`${getEstadoColor(detalle.estado)} text-xs`}>
+                        <TableCell className='text-xs sm:text-sm text-center'>
+                          <Badge
+                            className={`${getEstadoColor(detalle.estado)} text-[10px] px-1.5 py-0`}
+                          >
                             {detalle.estado}
                           </Badge>
                         </TableCell>
                         <TableCell className='text-xs sm:text-sm'>
-                          {detalle.fecha_pago ? formatSoloFecha(detalle.fecha_pago) : 'Por pagar'}
+                          {detalle.fecha_pago ? (
+                            formatSoloFecha(detalle.fecha_pago)
+                          ) : (
+                            <span className='text-gray-400'>Pendiente</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))

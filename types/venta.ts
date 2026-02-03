@@ -1,7 +1,7 @@
 export interface Venta {
   id: number;
   codigo: string;
-  cliente_id: number;
+  cliente_id: number | null;
   pedido_id?: number | null;
   habitacion_id: number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
@@ -11,6 +11,7 @@ export interface Venta {
   fecha_crea: string;
   fecha_mod?: string;
   estado: number; // 0 = Anulada, 1 = Activa, 2 = Pendiente de aprobación
+  tiempo?: number; // Tiempo de habitación en minutos
 }
 
 export interface VentaDetalle {
@@ -31,20 +32,21 @@ export interface VentaUsuario {
   venta_id: number;
   nick?: string;
   usuario_nombre?: string;
-} 
+}
 
 export interface VentaWithDetails extends Venta {
   detalles: VentaDetalle[];
   usuarios: VentaUsuario[];
   cliente_nombre?: string;
   habitacion_numero?: string;
+  habitacion_nombre?: string;
   usuarios_nombres?: string[];
   garzon_nombre?: string | null;
   garzon_nick?: string | null;
 }
 
 export interface VentaCreate {
-  cliente_id: number;
+  cliente_id?: number | null;
   pedido_id?: number | null;
   habitacion_id?: number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
@@ -53,6 +55,7 @@ export interface VentaCreate {
   total: number;
   detalles: VentaDetalleCreate[];
   usuarios?: number[]; // Array de IDs de usuarios
+  tiempo?: number; // Tiempo de habitación en minutos
 }
 
 export interface VentaDetalleCreate {
@@ -88,4 +91,4 @@ export interface VentaFiltros {
   metodo_pago?: string;
   usuario_id?: number;
   cliente_id?: number;
-} 
+}

@@ -25,20 +25,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         S.fecha_crea, 
         S.precio_servicio, 
         H.nombre AS habitacion, 
-        GROUP_CONCAT(U.nick SEPARATOR ', ') AS anfitriona,
+        GROUP_CONCAT(DISTINCT 
+          CASE 
+            WHEN U.nick IS NOT NULL AND U.nick != '' THEN U.nick
+            ELSE CONCAT(U.nombre, ' ', U.apellido)
+          END 
+          SEPARATOR ', '
+        ) AS anfitriona,
         CONCAT(CL.nombre, ' ', CL.apellido) AS cliente, 
-        GROUP_CONCAT(U.id_usuario SEPARATOR ', ') AS anfitrionaId,
+        GROUP_CONCAT(DISTINCT U.id_usuario SEPARATOR ', ') AS anfitrionaId,
         S.estado
     FROM servicios S
     INNER JOIN habitaciones H ON H.id_habitacion = S.habitacion_id
-    INNER JOIN clientes CL ON CL.id_cliente = S.cliente_id
+    LEFT JOIN clientes CL ON CL.id_cliente = S.cliente_id
     INNER JOIN detalle_servicios DS ON DS.servicio_id = S.id_servicio
-    INNER JOIN usuarios U ON U.id_usuario = DS.usuario_id
+    INNER JOIN usuarios U ON U.id_usuario = DS.usuario_id AND U.estado = 1
     WHERE S.id_servicio IN (
         SELECT servicio_id FROM detalle_servicios WHERE usuario_id = ?
     )
     GROUP BY S.id_servicio
-    ORDER BY S.fecha_crea ASC
+    ORDER BY S.fecha_crea DESC
       `,
       [userId]
     )) as any[];

@@ -139,6 +139,6 @@ export function useServiceLogic() {
     handleServiceFinalized,
 
     // Acciones de datos
-    getServicios: () => getServicios(true)
+    getServicios: (p0: boolean) => getServicios(true)
   };
 }

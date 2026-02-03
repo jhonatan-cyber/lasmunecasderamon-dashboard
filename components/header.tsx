@@ -119,7 +119,7 @@ export function Header() {
     }
 
     // Verificar si hay caja abierta para procesar pedidos
-    if (!hasOpenCaja) {
+    if (hasOpenCaja === false) {
       toast.error(
         'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
       );
@@ -145,7 +145,7 @@ export function Header() {
       }
 
       // Verificar si hay caja abierta para procesar pedidos
-      if (!hasOpenCaja) {
+      if (hasOpenCaja === false) {
         toast.error(
           'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
         );
@@ -264,7 +264,9 @@ export function Header() {
                     {order.nicks && (
                       <div className='text-xs text-gray-600'>Anfitrionas: {order.nicks}</div>
                     )}
-                    <div className='text-xs text-gray-500'>Total: ${order.total?.toLocaleString('es-CL')}</div>
+                    <div className='text-xs text-gray-500'>
+                      Total: ${order.total?.toLocaleString('es-CL')}
+                    </div>
                   </DropdownMenuItem>
                 ))
               )}

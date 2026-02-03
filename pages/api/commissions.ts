@@ -141,8 +141,8 @@ const mapCommissionFromDB = (row: any): Commission => {
   const total = parseFloat(row.total || 0);
 
   return {
-    id: row.id_usuario ? row.id_usuario.toString() : "",
-    employeeId: row.id_usuario ? row.id_usuario.toString() : "",
+    id: row.id_usuario ? row.id_usuario.toString() : '',
+    employeeId: row.id_usuario ? row.id_usuario.toString() : '',
     employeeName: row.anfitriona, // empleado = anfitriona
     nick: row.nick, // nick = nick
     venta: venta, // venta = venta (campo calculado)
@@ -166,8 +166,6 @@ const mapCommissionFromDB = (row: any): Commission => {
 // Handlers por método HTTP
 export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   try {
-
-
     const { id, stats } = req.query;
     const commissionId = Array.isArray(id) ? id[0] : id;
 
@@ -206,7 +204,6 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
           porcentaje_servicios: parseInt(statsData.porcentaje_servicios || 0)
         });
       } catch (error) {
-       
         return res.json({
           total_comisiones: 0,
           comision_ventas: 0,
@@ -221,7 +218,56 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
+    // Obtener parámetros de paginación y filtros
+    const { page, limit } = paginationSchema.parse(req.query);
+    const { status, employeeId, search } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Construir WHERE clause dinámica
+    let whereClauses = [];
+    let queryParams: any[] = [];
+
+    if (status && status !== 'all') {
+      const statusMap: Record<string, number> = {
+        por_pagar: 1,
+        pagado: 0,
+        anulado: 2
+      };
+      const statusValue = statusMap[status as string];
+      if (statusValue !== undefined) {
+        whereClauses.push('C.estado = ?');
+        queryParams.push(statusValue);
+      }
+    } else {
+      // Por defecto, no mostrar las anuladas (estado 2) a menos que se pida expresamente
+      whereClauses.push('C.estado IN (0, 1)');
+    }
+
+    if (employeeId && employeeId !== 'all') {
+      whereClauses.push('U.id_usuario = ?');
+      queryParams.push(employeeId);
+    }
+
+    if (search && typeof search === 'string' && search.trim() !== '') {
+      const searchTerm = `%${search.trim()}%`;
+      whereClauses.push('(U.nick LIKE ? OR U.nombre LIKE ? OR U.apellido LIKE ?)');
+      queryParams.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
     // Consulta que distingue entre comisiones de ventas y servicios
+    // Primero obtener el total para paginación
+    const countQuery = `
+      SELECT COUNT(DISTINCT U.id_usuario) as total
+      FROM comisiones C
+      INNER JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision
+      INNER JOIN usuarios U ON U.id_usuario = DC.usuario_id
+      ${whereClause}
+    `;
+    const countResult = (await query(countQuery, queryParams)) as RowDataPacket[];
+    const totalRecords = countResult[0].total;
+
     const simpleQuery = `
       SELECT 
         U.id_usuario,
@@ -234,29 +280,30 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       FROM comisiones C
       INNER JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision
       INNER JOIN usuarios U ON U.id_usuario = DC.usuario_id
-      WHERE C.estado = 1
+      ${whereClause}
       GROUP BY U.id_usuario, U.nick, U.nombre, U.apellido, C.estado
       ORDER BY anfitriona ASC
-      LIMIT 5
+      LIMIT ? OFFSET ?
     `;
 
-    const results = (await query(simpleQuery)) as RowDataPacket[];
+    const results = (await query(simpleQuery, [...queryParams, limit, offset])) as RowDataPacket[];
+    const totalPages = Math.ceil(totalRecords / limit);
 
     // Mapeo que distingue entre ventas y servicios
     const mappedResults = results.map((row: any) => {
       const venta = parseFloat(row.venta || 0);
       const servicio = parseFloat(row.servicio || 0);
       const total = parseFloat(row.total || 0);
-      
+
       return {
-        id: row.id_usuario ? row.id_usuario.toString() : "",
-        employeeId: row.id_usuario ? row.id_usuario.toString() : "",
+        id: row.id_usuario ? row.id_usuario.toString() : '',
+        employeeId: row.id_usuario ? row.id_usuario.toString() : '',
         employeeName: row.anfitriona,
         nick: row.nick,
         venta: venta,
         servicio: servicio,
         total: total,
-        status: row.estado === 1 ? 'por_pagar' : 'pagado',
+        status: row.estado === 1 ? 'por_pagar' : row.estado === 0 ? 'pagado' : 'anulado',
         saleAmount: total,
         commissionRate: 0,
         commissionAmount: total,
@@ -272,16 +319,15 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       success: true,
       data: mappedResults,
       pagination: {
-        page: 1,
-        limit: 5,
-        total: results.length,
-        totalPages: 1,
-        hasNextPage: false,
-        hasPrevPage: false
+        page: page,
+        limit: limit,
+        total: totalRecords,
+        totalPages: totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
       }
     });
   } catch (error) {
-   
     return res.status(500).json({
       success: false,
       message: 'Error al obtener las comisiones',
@@ -353,8 +399,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-
-
       return res.status(201).json({
         success: true,
         message: 'Comisión creada exitosamente',
@@ -368,8 +412,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       throw error; // Propagar otros errores al siguiente catch
     }
   } catch (error) {
- 
-
     // Manejar errores de validación de Zod
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -515,8 +557,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-
-
       return res.status(200).json({
         success: true,
         message: 'Comisión actualizada exitosamente',
@@ -530,8 +570,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       throw error;
     }
   } catch (error) {
-
-
     // Manejar errores de validación de Zod
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -638,8 +676,6 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-
-
       return res.status(200).json({
         success: true,
         message: 'Comisión eliminada exitosamente'
@@ -652,7 +688,6 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       throw error;
     }
   } catch (error) {
- 
     const response = formatErrorResponse(error);
     return res.status(response.error?.code === 'DATABASE_ERROR' ? 500 : 400).json(response);
   }
@@ -668,8 +703,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
       throw new CommissionError(`Método ${method} no permitido`, 'METHOD_NOT_ALLOWED', 405);
     }
-
-
 
     try {
       // Ejecutar el handler correspondiente

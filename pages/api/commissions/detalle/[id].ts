@@ -39,6 +39,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         END as estado,
         DC.fecha_mod as fecha_pago,
         CASE 
+          WHEN C.venta_id IS NOT NULL THEN (
+            SELECT GROUP_CONCAT(p.nombre SEPARATOR ', ')
+            FROM detalle_ventas dv
+            JOIN productos p ON dv.producto_id = p.id_producto
+            WHERE dv.venta_id = C.venta_id AND (dv.hostess_id = DC.usuario_id OR (dv.hostess_id IS NULL AND dv.comision > 0))
+          )
+          WHEN C.servicio_id IS NOT NULL THEN 'Servicio de Habitación'
+          ELSE 'Comisión'
+        END as producto,
+        CASE 
           WHEN C.venta_id IS NOT NULL THEN CONCAT('Venta - ', V.codigo)
           WHEN C.servicio_id IS NOT NULL THEN CONCAT('Servicio - ', S.codigo)
           ELSE 'Comisión'
@@ -59,7 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: detalles,
       message: 'Detalles de comisiones obtenidos correctamente'
     });
-
   } catch (error) {
     console.error('Error al obtener detalles de comisiones:', error);
     res.status(500).json({
