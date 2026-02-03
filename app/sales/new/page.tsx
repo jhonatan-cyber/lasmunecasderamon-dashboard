@@ -5,18 +5,16 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ArrowLeft, Search, Coins, ShoppingCart, Trash, Plus, Minus, X } from 'lucide-react';
 import {
-  ArrowLeft,
-  Search,
-  Coins,
-  ShoppingCart,
-  Trash,
-  Plus,
-  Minus,
-  X
-} from 'lucide-react';
-import HostessMultiSelect from "@/components/orders/HostessMultiSelect";
-import IndividualHostessSelect from "@/components/ui/IndividualHostessSelect";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
+import IndividualHostessSelect from '@/components/ui/IndividualHostessSelect';
 
 import { useSales } from '@/hooks/useSales';
 import { toast } from 'sonner';
@@ -39,9 +37,9 @@ export default function NewSale() {
   // Estados del formulario
   const [selectedCliente, setSelectedCliente] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedCliente') || '';
+      return localStorage.getItem('selectedCliente') || 'none';
     }
-    return '';
+    return 'none';
   });
   const [selectedHabitacion, setSelectedHabitacion] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -144,8 +142,12 @@ export default function NewSale() {
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
 
   // Estados para selección de anfitrionas por producto (NUEVO)
-  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{ [key: string]: string[] }>({});
-  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{ [key: string]: string[] }>({});
+  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
 
   // Estados de búsqueda en tiempo real
@@ -172,6 +174,23 @@ export default function NewSale() {
   const maxChampagnePrice = Array.isArray(productos)
     ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio ?? p.price ?? 0)))
     : 0;
+
+  // Función para verificar si un producto es "Tragos arriba" con precio >= 30,000
+  const isTragosArribaProduct = (producto: any) => {
+    const categoria = (producto?.categoria || producto?.category || '').toLowerCase();
+    const precio = Number(producto.precio ?? producto.price ?? 0);
+    // El usuario dijo "tagos arriba" (Tragos arriba) y precio >= 30,000
+    return categoria.includes('trago') && precio >= 30000;
+  };
+
+  // Buscar si hay algún producto de "Tragos arriba" >= 30,000
+  const hasTragosArriba = Array.isArray(productos) ? productos.some(isTragosArribaProduct) : false;
+
+  // Determinar si se requiere o permite selección de habitación
+  const requiresRoom = hasChampagneProducts || hasTragosArriba;
+
+  // Estado para tiempo manual
+  const [manualTime, setManualTime] = useState<string>('30');
 
   // Función para limpiar el filtro de búsqueda
   const handleClearSearch = () => {
@@ -341,18 +360,31 @@ export default function NewSale() {
       cantidad,
       subtotal,
       selectedHostesses: producto.selectedHostesses || [], // NUEVO: Anfitrionas seleccionadas
-      isChampagne: producto.isChampagne || false, // NUEVO: Si es champaña
+      isChampagne: producto.isChampagne || false // NUEVO: Si es champaña
+    };
+
+    // Función para comparar arrays de anfitrionas
+    const areHostessesSame = (h1: string[], h2: string[]) => {
+      if (h1.length !== h2.length) return false;
+      const sorted1 = [...h1].sort();
+      const sorted2 = [...h2].sort();
+      return sorted1.every((val, index) => val === sorted2[index]);
     };
 
     const productoExistente = Array.isArray(productos)
-      ? productos.find(p => p?.id === productoNormalizado.id)
+      ? productos.find(
+          p =>
+            p?.id === productoNormalizado.id &&
+            areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
+        )
       : null;
 
     if (productoExistente) {
       setProductos(prev =>
         Array.isArray(prev)
           ? prev.map(p =>
-              p?.id === productoNormalizado.id
+              p?.id === productoNormalizado.id &&
+              areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
                 ? {
                     ...p,
                     cantidad: (p?.cantidad || 0) + cantidad,
@@ -392,7 +424,7 @@ export default function NewSale() {
 
       // Si no quedan productos, limpiar selectores
       if (newProductos.length === 0) {
-        setSelectedCliente('');
+        setSelectedCliente('none');
         setMetodoPago('');
         setEnableTip(false);
       }
@@ -422,7 +454,7 @@ export default function NewSale() {
 
       // Si no quedan productos, limpiar selectores
       if (newProductos.length === 0) {
-        setSelectedCliente('');
+        setSelectedCliente('none');
         setMetodoPago('');
         setEnableTip(false);
       }
@@ -435,10 +467,10 @@ export default function NewSale() {
   const subtotal = Array.isArray(productos)
     ? productos.reduce((acc, p) => acc + (p?.subtotal || 0), 0)
     : 0;
-  
+
   // Calcular propina (10% del subtotal si está habilitada)
   const propina = enableTip ? Math.round(subtotal * 0.1) : 0;
-  
+
   const total = subtotal + propina;
 
   // Generar venta
@@ -450,10 +482,12 @@ export default function NewSale() {
 
     // Verificar que todas las bebidas con comisión tengan anfitrionas asignadas
     const bebidasConComision = productos.filter(p => (p.comision || p.commission || 0) > 0);
-    
+
     for (const bebida of bebidasConComision) {
       if (!bebida.selectedHostesses || bebida.selectedHostesses.length === 0) {
-        toast.error(`La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`);
+        toast.error(
+          `La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`
+        );
         return;
       }
     }
@@ -466,11 +500,12 @@ export default function NewSale() {
 
       // Calcular el total de comisiones
       const total_comision = Array.isArray(productos)
-        ? productos.reduce((acc, p) => acc + ((p?.comision || 0) * (p?.cantidad || 1)), 0)
+        ? productos.reduce((acc, p) => acc + (p?.comision || 0) * (p?.cantidad || 1), 0)
         : 0;
 
       const ventaData = {
-        cliente_id: selectedCliente ? parseInt(selectedCliente) : 1,
+        cliente_id:
+          selectedCliente && selectedCliente !== 'none' ? parseInt(selectedCliente) : null,
         ...(selectedHabitacion && {
           habitacion_id: parseInt(selectedHabitacion)
         }),
@@ -485,20 +520,29 @@ export default function NewSale() {
               precio: p?.precio || 0,
               comision: (p?.comision || 0) * (p?.cantidad || 1),
               cantidad: p?.cantidad || 0,
-              sub_total: p?.subtotal || 0
+              sub_total: p?.subtotal || 0,
+              hostesses: p?.selectedHostesses || [],
+              hostess_id:
+                p?.selectedHostesses && p.selectedHostesses.length > 0
+                  ? parseInt(p.selectedHostesses[0])
+                  : null
             }))
           : [],
-        usuarios: anfitrionasUnicas.map(id => parseInt(id))
+        usuarios: anfitrionasUnicas.map(id => parseInt(id)),
+        tiempo:
+          selectedHabitacion && selectedRoomInfo
+            ? requiresRoom
+              ? parseInt(manualTime)
+              : selectedRoomInfo.time || 60
+            : 0
       };
 
       const resultado = await createVenta(ventaData);
-
 
       if (resultado && resultado.data) {
         // Registrar propina si hay un monto
         if (propina > 0) {
           if (!resultado.data.id_venta) {
-            console.error('No se pudo obtener el ID de la venta');
             toast.error('Error: No se pudo obtener el ID de la venta para registrar la propina');
             return;
           }
@@ -532,7 +576,6 @@ export default function NewSale() {
           }
         }
 
-        // Cambiar estado de la habitación a ocupada (estado 2) si hay una habitación seleccionada
         if (selectedHabitacion && selectedRoomInfo) {
           try {
             const updateRes = await fetch(`/api/rooms/${selectedHabitacion}`, {
@@ -553,22 +596,41 @@ export default function NewSale() {
 
         // Iniciar temporizador si hay una habitación seleccionada
         if (selectedHabitacion && selectedRoomInfo) {
-          // Verificar si ya existe un temporizador para esta habitación
-          const existingTimer = getTimerByRoomId(Number(selectedHabitacion));
-          if (existingTimer) {
-            toast.info(`Ya existe un temporizador activo para ${selectedRoomInfo.name}`);
-          } else {
-            // Iniciar temporizador con la duración de la habitación
-            startTimer(
-              resultado.data?.id_venta || 0, // servicioId (usar id_venta para ventas)
-              Number(selectedHabitacion), // roomId
-              selectedRoomInfo.name, // roomName
-              selectedRoomInfo.time || 60, // duration
-              `VENTA_${resultado.data?.id_venta || Date.now()}`, // servicioCode (ID de venta único)
-              'Cliente Venta' // clienteNombre (placeholder para ventas)
-            );
-            toast.success(`Temporizador iniciado para ${selectedRoomInfo.name}`);
-          }
+          // Usar tiempo manual si está definido para ventas especiales, sino el de la habitación
+          const duration = requiresRoom ? parseInt(manualTime) : selectedRoomInfo.time || 60;
+
+          // Obtener nombres de anfitrionas para el temporizador
+          const nombresAnfitrionas = productos
+            .flatMap(p => p.selectedHostesses || [])
+            .map(hostessId => {
+              const h = anfitrionas.find(a => String(a.id || a.id_usuario) === String(hostessId));
+              return h?.nick || h?.nombre || h?.name || 'Anfitriona';
+            })
+            .filter((v, i, a) => a.indexOf(v) === i) // Únicas
+            .join(', ');
+
+          // Obtener nombre del cliente
+          const clienteObj = clientes.find(
+            c => String(c.id || c.id_cliente) === String(selectedCliente)
+          );
+          const clienteNombre = clienteObj
+            ? clienteObj.nombre || clienteObj.name
+            : 'cliente sin registrar';
+
+          // Iniciar temporizador con la duración seleccionada
+          startTimer(
+            resultado.data?.id_venta || 0, // id_venta
+            Number(selectedHabitacion), // roomId
+            selectedRoomInfo.name, // roomName
+            duration, // duration
+            resultado.data?.codigo || `VENTA_${resultado.data?.id_venta || Date.now()}`, // servicioCode
+            clienteNombre,
+            nombresAnfitrionas,
+            'venta' // tipoTransaccion
+          );
+          toast.success(
+            `Temporizador iniciado para ${selectedRoomInfo.name} por ${duration} minutos`
+          );
         }
 
         toast.success('Venta generada exitosamente');
@@ -689,44 +751,51 @@ export default function NewSale() {
                             {hasComm ? (
                               isChampagne ? (
                                 // Para champañas: usar HostessMultiSelect de shadcn/ui
-                                <div className="space-y-1">
-            
-                                  <div className="w-full">
+                                <div className='space-y-1'>
+                                  <div className='w-full'>
                                     <HostessMultiSelect
                                       anfitrionas={anfitrionas.filter(h => {
                                         const hostessId = String(h.id || h.id_usuario);
-                                        const currentSelection = champagneHostessSelections[id] || [];
-                                        
+                                        const currentSelection =
+                                          champagneHostessSelections[id] || [];
+
                                         // Incluir si está en la selección actual
                                         if (currentSelection.includes(hostessId)) {
                                           return true;
                                         }
-                                        
+
                                         // Excluir si está asignada a cualquier otro producto en el buscador
                                         const allSearchAssigned = [
                                           ...Object.values(champagneHostessSelections).flat(),
                                           ...Object.values(otherProductHostessSelections).flat()
                                         ];
-                                        
+
                                         // Excluir si está asignada a productos ya en el carrito
-                                        const cartAssigned = productos.flatMap(p => p.selectedHostesses || []);
-                                        
-                                        return !allSearchAssigned.includes(hostessId) && !cartAssigned.includes(hostessId);
+                                        const cartAssigned = productos.flatMap(
+                                          p => p.selectedHostesses || []
+                                        );
+
+                                        return (
+                                          !allSearchAssigned.includes(hostessId) &&
+                                          !cartAssigned.includes(hostessId)
+                                        );
                                       })}
                                       value={champagneHostessSelections[id] || []}
-                                      onChange={(selectedIds) => {
+                                      onChange={selectedIds => {
                                         // El componente ya maneja el límite internamente
                                         handleChampagneHostessChange(id, selectedIds);
                                       }}
                                       searchValue={hostessSearchValues[id] || ''}
-                                      onSearchChange={(searchValue) => {
+                                      onSearchChange={searchValue => {
                                         setHostessSearchValues(prev => ({
                                           ...prev,
                                           [id]: searchValue
                                         }));
                                       }}
                                       maxSelection={(() => {
-                                        const precio = Number(producto.precio || producto.price || 0);
+                                        const precio = Number(
+                                          producto.precio || producto.price || 0
+                                        );
                                         if (precio >= 240000) return 5;
                                         else if (precio >= 200000) return 4;
                                         else if (precio >= 140000) return 3;
@@ -738,43 +807,52 @@ export default function NewSale() {
                                 </div>
                               ) : (
                                 // Para otras bebidas con comisión: usar IndividualHostessSelect
-                                <div className="space-y-1">
+                                <div className='space-y-1'>
                                   <IndividualHostessSelect
                                     anfitrionas={anfitrionas.filter(h => {
                                       const hostessId = String(h.id || h.id_usuario);
-                                      const currentSelection = otherProductHostessSelections[id] || [];
-                                      
+                                      const currentSelection =
+                                        otherProductHostessSelections[id] || [];
+
                                       // Incluir si está en la selección actual
                                       if (currentSelection.includes(hostessId)) {
                                         return true;
                                       }
-                                      
+
                                       // Excluir si está asignada a cualquier otro producto en el buscador
                                       const allSearchAssigned = [
                                         ...Object.values(champagneHostessSelections).flat(),
                                         ...Object.values(otherProductHostessSelections).flat()
                                       ];
-                                      
+
                                       // Excluir si está asignada a productos ya en el carrito
-                                      const cartAssigned = productos.flatMap(p => p.selectedHostesses || []);
-                                      
-                                      return !allSearchAssigned.includes(hostessId) && !cartAssigned.includes(hostessId);
+                                      const cartAssigned = productos.flatMap(
+                                        p => p.selectedHostesses || []
+                                      );
+
+                                      return (
+                                        !allSearchAssigned.includes(hostessId) &&
+                                        !cartAssigned.includes(hostessId)
+                                      );
                                     })}
                                     value={otherProductHostessSelections[id]?.[0] || ''}
-                                    onChange={(selectedValue) => {
-                                      handleOtherProductHostessChange(id, selectedValue ? [selectedValue] : []);
+                                    onChange={selectedValue => {
+                                      handleOtherProductHostessChange(
+                                        id,
+                                        selectedValue ? [selectedValue] : []
+                                      );
                                     }}
                                     placeholder={
                                       anfitrionas.length === 0
-                                        ? "No hay anfitrionas disponibles"
-                                        : "Seleccionar"
+                                        ? 'No hay anfitrionas disponibles'
+                                        : 'Seleccionar'
                                     }
-                                    className="w-full"
+                                    className='w-full'
                                   />
                                 </div>
                               )
                             ) : (
-                              <div className="text-xs text-gray-400">Sin comisión</div>
+                              <div className='text-xs text-gray-400'>Sin comisión</div>
                             )}
                           </td>
                           <td className='px-4 py-2 text-center'>
@@ -793,10 +871,15 @@ export default function NewSale() {
                                 };
                                 handleAddProducto(productWithHostess);
                               }}
-                              disabled={hasComm && (
-                                (isChampagne && (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
-                                (!isChampagne && (!otherProductHostessSelections[id] || otherProductHostessSelections[id].length === 0))
-                              )}
+                              disabled={
+                                hasComm &&
+                                ((isChampagne &&
+                                  (!champagneHostessSelections[id] ||
+                                    champagneHostessSelections[id].length === 0)) ||
+                                  (!isChampagne &&
+                                    (!otherProductHostessSelections[id] ||
+                                      otherProductHostessSelections[id].length === 0)))
+                              }
                             >
                               <Plus />
                             </Button>
@@ -826,22 +909,45 @@ export default function NewSale() {
             clientes={clientes}
             value={selectedCliente}
             onChange={setSelectedCliente}
-            required
+            required={false}
             disabled={!Array.isArray(productos) || productos.length === 0}
           />
 
-          {/* Mostrar selector de habitaciones solo si hay champaña */}
-          {hasChampagneProducts && (
-            <RoomSelect
-              habitaciones={habitaciones}
-              value={selectedHabitacion}
-              onChange={handleHabitacionChange}
-              disabled={loading}
-              placeholder='Seleccione una habitación'
-              label='Habitación'
-              showPrice={false}
-              showTime={true}
-            />
+          {/* Mostrar selector de habitaciones solo si hay champaña o tragos arriba >= 30k */}
+          {requiresRoom && (
+            <>
+              <RoomSelect
+                habitaciones={habitaciones}
+                value={selectedHabitacion}
+                onChange={handleHabitacionChange}
+                disabled={loading}
+                placeholder='Seleccione una habitación'
+                label='Habitación'
+                showPrice={false}
+                showTime={true}
+              />
+
+              {/* Selector de tiempo manual */}
+              <div>
+                <Label className='block text-xs font-medium text-gray-500 mb-1'>Tiempo (min)</Label>
+                <Select
+                  value={manualTime}
+                  onValueChange={setManualTime}
+                  disabled={loading || !selectedHabitacion}
+                >
+                  <SelectTrigger className='w-full rounded-full h-10'>
+                    <SelectValue placeholder='Tiempo' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 11 }, (_, i) => 10 + i * 5).map(t => (
+                      <SelectItem key={t} value={t.toString()}>
+                        {t} minutos
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           {/* Método de pago */}
@@ -875,19 +981,21 @@ export default function NewSale() {
               </div>
               <div className='flex items-center space-x-2'>
                 <Checkbox
-                  id="enable-tip"
+                  id='enable-tip'
                   checked={enableTip}
-                  onCheckedChange={(checked) => setEnableTip(checked === true)}
+                  onCheckedChange={checked => setEnableTip(checked === true)}
                   disabled={!Array.isArray(productos) || productos.length === 0}
                 />
-                <label htmlFor="enable-tip" className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'>
+                <label
+                  htmlFor='enable-tip'
+                  className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'
+                >
                   Habilitar
                 </label>
               </div>
             </div>
           </div>
         </div>
-
 
         {false && Array.isArray(productos) && productos.length > 0 && (
           <div className='w-full flex justify-center mt-2 mb-2'>
@@ -1007,24 +1115,27 @@ export default function NewSale() {
                         {formatCurrencyNoDecimals(producto.precio)}
                       </td>
                       <td className='px-4 py-2 text-center'>
-                        {formatCurrencyNoDecimals(
-                          (producto.comision || producto.commission || 0)
-                        )}
+                        {formatCurrencyNoDecimals(producto.comision || producto.commission || 0)}
                       </td>
                       <td className='px-4 py-2 text-center'>
                         {producto.selectedHostesses && producto.selectedHostesses.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 justify-center">
+                          <div className='flex flex-wrap gap-1 justify-center'>
                             {producto.selectedHostesses.map((hostessId: string, idx: number) => {
-                              const hostess = anfitrionas.find(h => String(h.id || h.id_usuario) === hostessId);
+                              const hostess = anfitrionas.find(
+                                h => String(h.id || h.id_usuario) === hostessId
+                              );
                               return (
-                                <span key={idx} className="bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs">
+                                <span
+                                  key={idx}
+                                  className='bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs'
+                                >
                                   {hostess?.nick || hostess?.nombre || hostess?.name || hostessId}
                                 </span>
                               );
                             })}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-xs">Sin anfitrionas</span>
+                          <span className='text-gray-400 text-xs'>Sin anfitrionas</span>
                         )}
                       </td>
                       <td className='px-4 py-2 text-center'>

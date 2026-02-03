@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 interface CashRegisterStatus {
-  hasOpenCaja: boolean;
+  hasOpenCaja: boolean | null;
   cajaInfo: {
     id_caja: number;
     usuario_id_apertura: number;
@@ -15,7 +15,7 @@ interface CashRegisterStatus {
 
 export function useCashRegisterStatus() {
   const [status, setStatus] = useState<CashRegisterStatus>({
-    hasOpenCaja: false,
+    hasOpenCaja: null,
     cajaInfo: null,
     loading: true,
     error: null
@@ -24,10 +24,10 @@ export function useCashRegisterStatus() {
   const checkCashRegisterStatus = async () => {
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }));
-      
+
       const response = await fetch('/api/cashregister?status=check');
       const data = await response.json();
-      
+
       if (data.success) {
         setStatus({
           hasOpenCaja: data.data.hasOpenCaja,

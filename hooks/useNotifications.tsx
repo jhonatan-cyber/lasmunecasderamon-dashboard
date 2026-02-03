@@ -7,6 +7,7 @@ interface NotificationData {
   codigo: string;
   cliente: string;
   mesero?: string;
+  anfitriona?: string;
   total: number;
   timestamp?: string;
   createdBy?: number;
@@ -46,6 +47,12 @@ export function useNotifications() {
               <div className='flex items-center gap-2'>
                 <span className='font-medium'>Mesero:</span>
                 <span>{data.mesero}</span>
+              </div>
+            )}
+            {data.anfitriona && (
+              <div className='flex items-center gap-2'>
+                <span className='font-medium'>Anfitriona:</span>
+                <span>{data.anfitriona}</span>
               </div>
             )}
             <div className='flex items-center gap-2'>

@@ -228,6 +228,15 @@ export default function NuevoServicioPage() {
 
       if (data.success) {
         if (selectedRoom) {
+          // Obtener nombres de anfitrionas seleccionadas
+          const anfitrionasSeleccionadas = servicioDataToSubmit.usuarios
+            .map(userId => {
+              const anfitriona = anfitrionas.find(a => a.id_usuario.toString() === userId);
+              return anfitriona ? (anfitriona.nick || anfitriona.nombre) : null;
+            })
+            .filter(Boolean)
+            .join(', ');
+
           startTimer(
             data.data.id_servicio,
             servicioDataToSubmit.habitacion_id,
@@ -235,7 +244,8 @@ export default function NuevoServicioPage() {
             servicioDataToSubmit.tiempo,
             servicioDataToSubmit.codigo,
             clientes.find((c) => c.id_cliente === servicioDataToSubmit.cliente_id)
-              ?.nombre || ""
+              ?.nombre || "",
+            anfitrionasSeleccionadas // Pasar las anfitrionas
           );
         }
 

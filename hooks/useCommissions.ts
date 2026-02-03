@@ -1,9 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { showSuccessToast, showErrorToast } from "@/lib/toastUtils";
-import {
-  Commission,
-  ApiResponse
-} from "@/types/commission";
+import { useState, useEffect, useCallback } from 'react';
+import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { Commission, ApiResponse } from '@/types/commission';
 
 interface UseCommissionsReturn {
   commissions: Commission[];
@@ -40,10 +37,10 @@ export function useCommissions(): UseCommissionsReturn {
   const [filteredCommissions, setFilteredCommissions] = useState<Commission[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [employeeFilter, setEmployeeFilter] = useState<string>('all');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
 
   // Debounce para el término de búsqueda
   useEffect(() => {
@@ -60,28 +57,26 @@ export function useCommissions(): UseCommissionsReturn {
     // Filtro por término de búsqueda
     if (debouncedSearchTerm.trim()) {
       const lowercased = debouncedSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter((commission) => {
+      filtered = filtered.filter(commission => {
         const searchableFields = [
           commission.employeeName,
           commission.nick,
           commission.description,
-          commission.clientName,
+          commission.clientName
         ];
 
-        return searchableFields.some((field) =>
-          field?.toLowerCase().includes(lowercased)
-        );
+        return searchableFields.some(field => field?.toLowerCase().includes(lowercased));
       });
     }
 
     // Filtro por estado
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((commission) => commission.status === statusFilter);
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(commission => commission.status === statusFilter);
     }
 
     // Filtro por empleado
-    if (employeeFilter !== "all") {
-      filtered = filtered.filter((commission) => commission.employeeId === employeeFilter);
+    if (employeeFilter !== 'all') {
+      filtered = filtered.filter(commission => commission.employeeId === employeeFilter);
     }
 
     setFilteredCommissions(filtered);
@@ -92,40 +87,44 @@ export function useCommissions(): UseCommissionsReturn {
     setError(null);
   }, []);
 
-  // Obtener todas las comisiones
+  // Obtener todas las comisiones con filtros
   const fetchCommissions = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const res = await fetch("/api/commissions", {
-        method: "GET",
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (employeeFilter !== 'all') params.append('employeeId', employeeFilter);
+      if (debouncedSearchTerm.trim()) params.append('search', debouncedSearchTerm.trim());
+      // Aumentar el límite por defecto para traer más datos si no hay paginación en el servidor aún manejada por el hook
+      params.append('limit', '100');
+
+      const res = await fetch(`/api/commissions?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       const data: ApiResponse<Commission[]> = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Error al obtener las comisiones");
+        throw new Error(data.message || 'Error al obtener las comisiones');
       }
 
       const commissionsData = data.data || [];
       setCommissions(commissionsData);
       setFilteredCommissions(commissionsData);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Error desconocido al cargar comisiones";
+      const message = err instanceof Error ? err.message : 'Error desconocido al cargar comisiones';
       setError(message);
- 
+
       showErrorToast(message);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [statusFilter, employeeFilter, debouncedSearchTerm]);
 
   // Obtener comisión por ID
   const getCommissionById = useCallback(async (id: string): Promise<Commission | null> => {
@@ -133,26 +132,23 @@ export function useCommissions(): UseCommissionsReturn {
       setError(null);
 
       const res = await fetch(`/api/commissions?id=${id}`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       const data: ApiResponse<Commission> = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Error al obtener la comisión");
+        throw new Error(data.message || 'Error al obtener la comisión');
       }
 
       return data.data || null;
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Error desconocido al obtener comisión";
+      const message = err instanceof Error ? err.message : 'Error desconocido al obtener comisión';
       setError(message);
-      
+
       showErrorToast(message);
       return null;
     }
@@ -165,60 +161,53 @@ export function useCommissions(): UseCommissionsReturn {
         setError(null);
 
         // Validar campos requeridos
-        const requiredFields = ["employeeId", "venta", "servicio", "total"];
+        const requiredFields = ['employeeId', 'venta', 'servicio', 'total'];
         const missingFields = requiredFields.filter(
-          (field) => !commissionData[field as keyof Commission]
+          field => !commissionData[field as keyof Commission]
         );
 
         if (missingFields.length > 0) {
           return {
             success: false,
-            message: `Faltan campos obligatorios: ${missingFields.join(", ")}`,
-            errors: missingFields.map(
-              (field) => `${field}: Este campo es obligatorio`
-            ),
+            message: `Faltan campos obligatorios: ${missingFields.join(', ')}`,
+            errors: missingFields.map(field => `${field}: Este campo es obligatorio`)
           };
         }
 
-        const res = await fetch("/api/commissions", {
-          method: "POST",
+        const res = await fetch('/api/commissions', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(commissionData),
+          body: JSON.stringify(commissionData)
         });
 
         const data: ApiResponse<null> = await res.json();
 
         if (!res.ok || !data.success) {
-          const errors =
-            data.errors?.map((err) => `${err.field}: ${err.message}`) || [];
+          const errors = data.errors?.map(err => `${err.field}: ${err.message}`) || [];
           return {
             success: false,
-            message: data.message || "Error al crear la comisión",
-            errors: errors.length > 0 ? errors : undefined,
+            message: data.message || 'Error al crear la comisión',
+            errors: errors.length > 0 ? errors : undefined
           };
         }
 
         // Recargar la lista de comisiones después de crear una nueva
         await fetchCommissions();
-        showSuccessToast(data.message || "Comisión creada exitosamente");
+        showSuccessToast(data.message || 'Comisión creada exitosamente');
 
         return {
           success: true,
-          message: data.message || "Comisión creada exitosamente",
+          message: data.message || 'Comisión creada exitosamente'
         };
       } catch (err) {
-
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Error de conexión al crear comisión";
+        const message = err instanceof Error ? err.message : 'Error de conexión al crear comisión';
 
         showErrorToast(message);
         return {
           success: false,
-          message,
+          message
         };
       }
     },
@@ -234,49 +223,45 @@ export function useCommissions(): UseCommissionsReturn {
         if (!id) {
           return {
             success: false,
-            message: "ID de comisión es requerido para actualización",
+            message: 'ID de comisión es requerido para actualización'
           };
         }
 
         const res = await fetch(`/api/commissions?id=${id}`, {
-          method: "PUT",
+          method: 'PUT',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(commissionData),
+          body: JSON.stringify(commissionData)
         });
 
         const data: ApiResponse<null> = await res.json();
 
         if (!res.ok || !data.success) {
-          const errors =
-            data.errors?.map((err) => `${err.field}: ${err.message}`) || [];
+          const errors = data.errors?.map(err => `${err.field}: ${err.message}`) || [];
           return {
             success: false,
-            message: data.message || "Error al actualizar la comisión",
-            errors: errors.length > 0 ? errors : undefined,
+            message: data.message || 'Error al actualizar la comisión',
+            errors: errors.length > 0 ? errors : undefined
           };
         }
 
         // Recargar la lista de comisiones después de actualizar
         await fetchCommissions();
-        showSuccessToast(data.message || "Comisión actualizada exitosamente");
+        showSuccessToast(data.message || 'Comisión actualizada exitosamente');
 
         return {
           success: true,
-          message: data.message || "Comisión actualizada exitosamente",
+          message: data.message || 'Comisión actualizada exitosamente'
         };
       } catch (err) {
-      
         const message =
-          err instanceof Error
-            ? err.message
-            : "Error de conexión al actualizar comisión";
+          err instanceof Error ? err.message : 'Error de conexión al actualizar comisión';
 
         showErrorToast(message);
         return {
           success: false,
-          message,
+          message
         };
       }
     },
@@ -292,15 +277,15 @@ export function useCommissions(): UseCommissionsReturn {
         if (!id) {
           return {
             success: false,
-            message: "ID de comisión es requerido",
+            message: 'ID de comisión es requerido'
           };
         }
 
         const res = await fetch(`/api/commissions?id=${id}`, {
-          method: "DELETE",
+          method: 'DELETE',
           headers: {
-            "Content-Type": "application/json",
-          },
+            'Content-Type': 'application/json'
+          }
         });
 
         const data: ApiResponse<null> = await res.json();
@@ -308,29 +293,26 @@ export function useCommissions(): UseCommissionsReturn {
         if (!res.ok || !data.success) {
           return {
             success: false,
-            message: data.message || "Error al eliminar la comisión",
+            message: data.message || 'Error al eliminar la comisión'
           };
         }
 
         // Recargar la lista de comisiones después de eliminar
         await fetchCommissions();
-        showSuccessToast(data.message || "Comisión eliminada exitosamente");
+        showSuccessToast(data.message || 'Comisión eliminada exitosamente');
 
         return {
           success: true,
-          message: data.message || "Comisión eliminada exitosamente",
+          message: data.message || 'Comisión eliminada exitosamente'
         };
       } catch (err) {
-     
         const message =
-          err instanceof Error
-            ? err.message
-            : "Error de conexión al eliminar comisión";
+          err instanceof Error ? err.message : 'Error de conexión al eliminar comisión';
 
         showErrorToast(message);
         return {
           success: false,
-          message,
+          message
         };
       }
     },
@@ -344,15 +326,21 @@ export function useCommissions(): UseCommissionsReturn {
 
   // Calcular estadísticas
   const totalCommissions = commissions.reduce((sum, commission) => sum + commission.total, 0);
-  const totalSales = commissions.reduce((sum, commission) => sum + commission.venta + commission.servicio, 0);
-  const pendingCommissions = commissions.filter((commission) => commission.status === "por_pagar").length;
-  const paidCommissions = commissions.filter((commission) => commission.status === "pagado").length;
-  const avgCommissionRate = commissions.length > 0
-    ? commissions.reduce((sum, commission) => {
-        const saleAmount = commission.venta + commission.servicio;
-        return sum + (saleAmount > 0 ? (commission.total / saleAmount) * 100 : 0);
-      }, 0) / commissions.length
-    : 0;
+  const totalSales = commissions.reduce(
+    (sum, commission) => sum + commission.venta + commission.servicio,
+    0
+  );
+  const pendingCommissions = commissions.filter(
+    commission => commission.status === 'por_pagar'
+  ).length;
+  const paidCommissions = commissions.filter(commission => commission.status === 'pagado').length;
+  const avgCommissionRate =
+    commissions.length > 0
+      ? commissions.reduce((sum, commission) => {
+          const saleAmount = commission.venta + commission.servicio;
+          return sum + (saleAmount > 0 ? (commission.total / saleAmount) * 100 : 0);
+        }, 0) / commissions.length
+      : 0;
 
   return {
     commissions,
@@ -376,6 +364,6 @@ export function useCommissions(): UseCommissionsReturn {
     totalSales,
     pendingCommissions,
     paidCommissions,
-    avgCommissionRate,
+    avgCommissionRate
   };
 }
