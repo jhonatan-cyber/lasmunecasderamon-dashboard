@@ -66,31 +66,25 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
   }
 
   return (
-    <div className='bg-white border-b border-gray-200 px-4 sm:px-6 py-3'>
-      <div className='max-w-7xl mx-auto flex items-center justify-center gap-2 sm:gap-4'>
-        <div className='flex items-center gap-2'>
-          <span className='text-sm font-medium text-gray-700 hidden sm:inline'>Código :</span>
-        </div>
-
-        <div className='flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2'>
-          <span className='text-lg sm:text-xl font-mono font-bold tracking-wider'>
-            {codigo || '****'}
-          </span>
-        </div>
-
-        <div className='flex gap-2'>
-          <Button
-            onClick={handleManualUpdate}
-            variant='outline'
-            size='sm'
-            disabled={loading}
-            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3'
-          >
-            <RotateCcw className={`${loading ? 'animate-spin' : ''} w-3 h-3 sm:w-4 sm:h-4`} />
-            <span className='hidden sm:inline ml-1'>Actualizar</span>
-          </Button>
-        </div>
+    <div className='flex items-center gap-2'>
+      <div className='flex items-center gap-2 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-full px-3 py-1'>
+        <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-widest mr-1'>
+          Código:
+        </span>
+        <span className='text-sm font-mono font-bold tracking-wider text-gray-900 dark:text-gray-100'>
+          {codigo || '****'}
+        </span>
       </div>
+      <Button
+        onClick={handleManualUpdate}
+        variant='ghost'
+        size='icon'
+        disabled={loading}
+        className='h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800'
+        title='Actualizar código'
+      >
+        <RotateCcw className={`${loading ? 'animate-spin' : ''} w-4 h-4 text-gray-500`} />
+      </Button>
     </div>
   );
 }

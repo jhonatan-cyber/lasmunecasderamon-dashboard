@@ -160,25 +160,28 @@ export function Sidebar() {
 
   if (!mounted) {
     return (
-      <div className={cn(
-        'hidden lg:flex h-full flex-col bg-white border-r border-gray-200 transition-all duration-300',
-        isCollapsed ? 'w-16' : 'w-64'
-      )}>
-        <div className={cn(
-          'flex h-16 items-center border-b border-gray-200 transition-all duration-300',
-          isCollapsed ? 'px-2 justify-center' : 'px-6'
-        )}>
-          <div className={cn(
-            'flex items-center gap-2 transition-all duration-300',
-            isCollapsed ? 'justify-center' : 'flex-1 justify-center'
-          )}>
-            <img 
-              src='/img/system/logo1.png' 
-              alt='Las Muñecas de Ramón' 
-              className={cn(
-                'w-auto transition-all duration-300',
-                isCollapsed ? 'h-8' : 'h-10'
-              )}
+      <div
+        className={cn(
+          'hidden lg:flex h-full flex-col bg-white border-r border-gray-200 transition-all duration-300 floating-sidebar',
+          isCollapsed ? 'w-16' : 'w-64'
+        )}
+      >
+        <div
+          className={cn(
+            'flex h-16 items-center border-b border-gray-200 transition-all duration-300',
+            isCollapsed ? 'px-2 justify-center' : 'px-6'
+          )}
+        >
+          <div
+            className={cn(
+              'flex items-center gap-2 transition-all duration-300',
+              isCollapsed ? 'justify-center' : 'flex-1 justify-center'
+            )}
+          >
+            <img
+              src='/img/system/logo1.png'
+              alt='Las Muñecas de Ramón'
+              className={cn('w-auto transition-all duration-300', isCollapsed ? 'h-8' : 'h-10')}
             />
             {!isCollapsed && (
               <span className='text-sm font-bold text-gray-900'>Panel Administrativo</span>
@@ -200,32 +203,41 @@ export function Sidebar() {
   });
 
   const allowedHR = hrNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedFinance = financeNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedService = serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedSecondary = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
+  const allowedFinance = financeNavigation.filter(item =>
+    hasModulePermission(item.module, item.action)
+  );
+  const allowedService = serviceNavigation.filter(item =>
+    hasModulePermission(item.module, item.action)
+  );
+  const allowedSecondary = secondaryNavigation.filter(item =>
+    hasModulePermission(item.module, item.action)
+  );
 
   const SidebarContent = () => (
-    <div className={cn(
-      'flex h-full flex-col bg-white dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 mobile-sidebar transition-all duration-300',
-      isCollapsed ? 'w-16' : 'w-64'
-    )}>
-      <div className={cn(
-        'flex h-16 items-center border-b border-gray-200 dark:border-neutral-800 transition-all duration-300',
-        isCollapsed ? 'px-2 justify-center' : 'px-6'
-      )}>
-        <div className={cn(
-          'flex items-center gap-2 transition-all duration-300',
-          isCollapsed ? 'justify-center' : 'flex-1 justify-center'
-        )}>
+    <div
+      className={cn(
+        'flex h-full flex-col bg-white dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 mobile-sidebar transition-all duration-300 floating-sidebar',
+        isCollapsed ? 'w-16' : 'w-64'
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-16 items-center border-b border-gray-200 dark:border-neutral-800 transition-all duration-300',
+          isCollapsed ? 'px-2 justify-center' : 'px-6'
+        )}
+      >
+        <div
+          className={cn(
+            'flex items-center gap-2 transition-all duration-300',
+            isCollapsed ? 'justify-center' : 'flex-1 justify-center'
+          )}
+        >
           <Image
             src='/img/system/logo1.png'
             alt='Las Muñecas de Ramón'
             width={isCollapsed ? 32 : 180}
             height={isCollapsed ? 32 : 44}
-            className={cn(
-              'w-auto transition-all duration-300',
-              isCollapsed ? 'h-8' : 'h-11'
-            )}
+            className={cn('w-auto transition-all duration-300', isCollapsed ? 'h-8' : 'h-11')}
             priority
           />
           {!isCollapsed && (
@@ -261,12 +273,8 @@ export function Sidebar() {
                       href={item.href}
                       onClick={closeSidebar}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
-                        isActive
-                          ? isCollapsed 
-                            ? 'text-blue-700 dark:text-blue-300' // Solo color del icono cuando está colapsado
-                            : 'bg-blue-50 text-blue-700 border-r-2 border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500' // Fondo completo cuando está expandido
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
@@ -296,16 +304,12 @@ export function Sidebar() {
                       href={item.href}
                       onClick={closeSidebar}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                        isActive
-                          ? isCollapsed 
-                            ? 'text-blue-700 dark:text-blue-300' // Solo color del icono cuando está colapsado
-                            : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' // Fondo completo cuando está expandido
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
-                      <item.icon className='h-5 w-5 flex-shrink-0' />
+                      <item.icon className='h-5 w-5 flex-shrink-0 nav-icon' />
                       {!isCollapsed && <span className='truncate'>{item.name}</span>}
                     </Link>
                   </li>
@@ -331,16 +335,12 @@ export function Sidebar() {
                       href={item.href}
                       onClick={closeSidebar}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                        isActive
-                          ? isCollapsed 
-                            ? 'text-blue-700 dark:text-blue-300' // Solo color del icono cuando está colapsado
-                            : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' // Fondo completo cuando está expandido
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
-                      <item.icon className='h-5 w-5 flex-shrink-0' />
+                      <item.icon className='h-5 w-5 flex-shrink-0 nav-icon' />
                       {!isCollapsed && <span className='truncate'>{item.name}</span>}
                     </Link>
                   </li>
@@ -366,16 +366,12 @@ export function Sidebar() {
                       href={item.href}
                       onClick={closeSidebar}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                        isActive
-                          ? isCollapsed 
-                            ? 'text-blue-700 dark:text-blue-300' // Solo color del icono cuando está colapsado
-                            : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' // Fondo completo cuando está expandido
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
-                      <item.icon className='h-5 w-5 flex-shrink-0' />
+                      <item.icon className='h-5 w-5 flex-shrink-0 nav-icon' />
                       {!isCollapsed && <span className='truncate'>{item.name}</span>}
                     </Link>
                   </li>
@@ -401,16 +397,12 @@ export function Sidebar() {
                       href={item.href}
                       onClick={closeSidebar}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                        isActive
-                          ? isCollapsed 
-                            ? 'text-blue-700 dark:text-blue-300' // Solo color del icono cuando está colapsado
-                            : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' // Fondo completo cuando está expandido
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
-                      <item.icon className='h-5 w-5 flex-shrink-0' />
+                      <item.icon className='h-5 w-5 flex-shrink-0 nav-icon' />
                       {!isCollapsed && <span className='truncate'>{item.name}</span>}
                     </Link>
                   </li>
