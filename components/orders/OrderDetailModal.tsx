@@ -1,12 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Coins, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,7 +32,7 @@ import { useTimer } from '@/contexts/TimerContext';
 
 function formatFecha(fechaStr?: string) {
   if (!fechaStr) return '-';
-  // Si es formato ISO (contiene 'T')
+
   if (fechaStr.includes('T')) {
     const date = new Date(fechaStr);
     const d = String(date.getDate()).padStart(2, '0');
@@ -26,7 +40,7 @@ function formatFecha(fechaStr?: string) {
     const y = date.getFullYear();
     return `${d}-${m}-${y}`;
   }
-  // Si es formato SQL (YYYY-MM-DD HH:mm:ss)
+
   const [fecha] = fechaStr.split(' ');
   if (!fecha) return '-';
   const [y, m, d] = fecha.split('-');
@@ -34,14 +48,14 @@ function formatFecha(fechaStr?: string) {
 }
 function formatHora(fechaStr?: string) {
   if (!fechaStr) return '-';
-  // Si es formato ISO (contiene 'T')
+
   if (fechaStr.includes('T')) {
     const date = new Date(fechaStr);
     const h = String(date.getHours()).padStart(2, '0');
     const min = String(date.getMinutes()).padStart(2, '0');
     return `${h}:${min}`;
   }
-  // Si es formato SQL (YYYY-MM-DD HH:mm:ss)
+
   const parts = fechaStr.split(' ');
   if (parts[1]) {
     const [h, m] = parts[1].split(':');
@@ -57,9 +71,9 @@ interface OrderDetailModalProps {
   isLoading: boolean;
   error: string | null;
   orderId?: number | null;
-  orderCode?: string; // Código del pedido
+  orderCode?: string;
   onVentaRegistrada?: () => void;
-  onOrderStatusChange?: () => void; // Nueva prop para actualizar el header
+  onOrderStatusChange?: () => void;
 }
 
 export default function OrderDetailModal({
@@ -84,7 +98,6 @@ export default function OrderDetailModal({
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
   const [agregarPropina, setAgregarPropina] = useState(false);
 
-  // Estados para el modal de confirmación de venta
   const [confirmVentaModalOpen, setConfirmVentaModalOpen] = useState(false);
 
   useEffect(() => {
@@ -96,7 +109,6 @@ export default function OrderDetailModal({
       });
   }, [open]);
 
-  // Limpiar estados cuando se cierre el modal
   useEffect(() => {
     if (!open) {
       setMetodoPago('');
@@ -110,7 +122,6 @@ export default function OrderDetailModal({
     }
   }, [open]);
 
-  // Calcular propina automáticamente cuando se marca/desmarca el checkbox
   useEffect(() => {
     if (agregarPropina && detail && detail.length > 0) {
       const totalPedido = detail[0]?.total || 0;
@@ -123,14 +134,12 @@ export default function OrderDetailModal({
     }
   }, [agregarPropina, detail]);
 
-  // Ocultar error de método de pago cuando se selecciona uno
   useEffect(() => {
     if (metodoPago && showMetodoPagoError) {
       setShowMetodoPagoError(false);
     }
   }, [metodoPago, showMetodoPagoError]);
 
-  // Lógica de champaña y anfitrionas
   const isChampagneProduct = (producto: any) => {
     const categoria = (producto?.categoria || '').toLowerCase();
     return (
@@ -157,9 +166,7 @@ export default function OrderDetailModal({
     let maxChampagnePrice = 0;
 
     if (champagneProducts.length > 0) {
-      maxChampagnePrice = Math.max(
-        ...champagneProducts.map(p => Number(p.precio || p.price || 0))
-      );
+      maxChampagnePrice = Math.max(...champagneProducts.map(p => Number(p.precio || p.price || 0)));
 
       if (maxChampagnePrice >= 240000) champagneLimit = 5;
       else if (maxChampagnePrice >= 200000) champagneLimit = 4;
@@ -168,16 +175,17 @@ export default function OrderDetailModal({
       else champagneLimit = 1;
     }
 
-    const maxAnfitrionas = champagneProducts.length > 0
-      ? champagneLimit + otherCommissionQuantity
-      : otherCommissionQuantity;
+    const maxAnfitrionas =
+      champagneProducts.length > 0
+        ? champagneLimit + otherCommissionQuantity
+        : otherCommissionQuantity;
 
     return {
       maxAnfitrionas,
       champagneLimit,
       otherCommissionQuantity,
       hasChampagneProducts: champagneProducts.length > 0,
-      maxChampagnePrice,
+      maxChampagnePrice
     };
   };
 
@@ -187,11 +195,9 @@ export default function OrderDetailModal({
     champagneLimit,
     otherCommissionQuantity,
     hasChampagneProducts,
-    maxChampagnePrice,
+    maxChampagnePrice
   } = hostessLimits;
 
-  // Obtener las anfitrionas del pedido
-  // Buscar en diferentes campos posibles donde pueden venir las anfitrionas
   const anfitrionasDelPedido =
     detail[0]?.anfitrionas_con_ids ||
     detail[0]?.anfitrionas ||
@@ -200,39 +206,39 @@ export default function OrderDetailModal({
     detail[0]?.hostesses ||
     [];
 
-  // Si viene como string, convertirlo a array
   const anfitrionasArray = Array.isArray(anfitrionasDelPedido)
     ? anfitrionasDelPedido
     : anfitrionasDelPedido
       ? [anfitrionasDelPedido]
       : [];
 
-  // Si no hay anfitrionas en los arrays, buscar en el campo anfitriona como string
   const anfitrionaString = detail[0]?.anfitriona;
   const anfitrionasFinal =
     anfitrionasArray.length > 0 ? anfitrionasArray : anfitrionaString ? [anfitrionaString] : [];
 
   const cantidadAnfitrionas = anfitrionasFinal.length;
 
-  // No hay recargos por anfitrionas adicionales en las nuevas reglas
   const recargoAnfitrionas = 0;
 
-  // Validar que las anfitrionas del pedido cumplan con las reglas
   useEffect(() => {
     if (cantidadAnfitrionas > maxAnfitrionas) {
       if (hasChampagneProducts) {
-        const extraText = otherCommissionQuantity > 0
-          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
-          : '';
-        toast.error(`El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`);
+        const extraText =
+          otherCommissionQuantity > 0
+            ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+            : '';
+        toast.error(
+          `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
+        );
       } else {
-        toast.error(`El pedido excede el límite de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} para productos con comisión`);
+        toast.error(
+          `El pedido excede el límite de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} para productos con comisión`
+        );
       }
     }
   }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, cantidadAnfitrionas, detail]);
 
   const handleRegistrarVenta = async () => {
-    // Activar validación visual del método de pago
     setShowMetodoPagoError(true);
 
     if (!metodoPago) {
@@ -245,7 +251,6 @@ export default function OrderDetailModal({
       return;
     }
 
-    // Validar que si hay productos de champaña, las anfitrionas sean obligatorias
     if (hasChampagneProducts && cantidadAnfitrionas === 0) {
       toast.error(
         'Para productos de champaña es obligatorio tener al menos una anfitriona en el pedido'
@@ -253,56 +258,46 @@ export default function OrderDetailModal({
       return;
     }
 
-    // Validar regla de anfitrionas con el esquema combinado
     if (cantidadAnfitrionas > maxAnfitrionas) {
-      const extraText = hasChampagneProducts && otherCommissionQuantity > 0
-        ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
-        : '';
-      toast.error(`El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`);
+      const extraText =
+        hasChampagneProducts && otherCommissionQuantity > 0
+          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+          : '';
+      toast.error(
+        `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
+      );
       return;
     }
 
-    // Si todas las validaciones pasan, abrir modal de confirmación
     setConfirmVentaModalOpen(true);
   };
 
   const handleConfirmRegistrarVenta = async () => {
-
     setIsRegistering(true);
     try {
-      // Obtener información del pedido
       const pedido = detail[0];
 
-      // Calcular el total de comisiones
       const total_comision =
         detail.reduce((acc, item) => acc + (item.comision || 0), 0) + recargoAnfitrionas;
 
-      // Calcular sub_total (suma de precios de productos)
       const sub_total = detail.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
 
-      // Extraer IDs de usuarios de manera más robusta
       const usuariosIds = anfitrionasFinal
         .map((anfitriona: any) => {
-          // Si es un objeto con usuario_id (nuevo formato del endpoint)
           if (typeof anfitriona === 'object' && anfitriona.usuario_id) {
             return anfitriona.usuario_id;
           }
-          // Si es un objeto con ID
           if (typeof anfitriona === 'object' && anfitriona.id) {
             return anfitriona.id;
           }
-          // Si es un número, usarlo directamente
           if (typeof anfitriona === 'number') {
             return anfitriona;
           }
-          // Si es un string, intentar convertir a número
           if (typeof anfitriona === 'string') {
-            // Formato "ID - Nombre"
             const match = anfitriona.match(/^(\d+)\s*-\s*(.+)$/);
             if (match) {
               return parseInt(match[1]);
             }
-            // Intentar parse directo
             const parsedId = parseInt(anfitriona);
             if (!isNaN(parsedId)) {
               return parsedId;
@@ -312,38 +307,37 @@ export default function OrderDetailModal({
         })
         .filter((id): id is number => id !== null && !isNaN(id));
 
-    
-
       if (usuariosIds.length === 0 && hasChampagneProducts) {
         toast.error('No se pudieron obtener los IDs de las anfitrionas');
         return;
       }
 
-      // Preparar datos para la venta
+      const selectedRoom = habitacionId
+        ? rooms.find(room => room.id === parseInt(habitacionId))
+        : null;
+
       const ventaData = {
-        cliente_id: pedido.cliente_id || null, // Usar el cliente_id del pedido o NULL
-        pedido_id: orderId || null, // Guardar el ID del pedido
+        cliente_id: pedido.cliente_id || null,
+        pedido_id: orderId || null,
         metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
         propina: propina,
-        sub_total: sub_total, // Suma del precio de los productos
-        total: (pedido.total || 0) + propina + recargoAnfitrionas, // Total final con propina y recargos
+        sub_total: sub_total,
+        total: (pedido.total || 0) + propina + recargoAnfitrionas,
         detalles: detail.map((item: any) => ({
-            producto_id: item.id_producto || item.producto_id, // Usar el ID real del producto
-            precio: item.precio || 0,
+          producto_id: item.id_producto || item.producto_id,
+          precio: item.precio || 0,
           cantidad: item.cantidad || 0,
-          comision: item.comision || 0, // Agregar la comisión del producto
-          sub_total: (item.precio || 0) * (item.cantidad || 0), // Calcular sub_total por producto
-          hostess_id: item.hostess_id || null, // Anfitriona asignada a este producto específico
+          comision: item.comision || 0,
+          sub_total: (item.precio || 0) * (item.cantidad || 0),
+          hostess_id: item.hostess_id || null
         })),
         usuarios: usuariosIds,
-        habitacion_id: habitacionId ? parseInt(habitacionId) : undefined // Campo opcional de habitación
+        habitacion_id: habitacionId ? parseInt(habitacionId) : undefined,
+        tiempo: selectedRoom ? selectedRoom.time || 60 : 0
       };
-
-  
 
       const resultado = await createVenta(ventaData);
       if (resultado && resultado.success) {
-        // Registrar propina si hay un monto
         if (propina > 0) {
           if (!resultado.data?.id_venta) {
             return;
@@ -365,11 +359,11 @@ export default function OrderDetailModal({
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
+                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${
+                  dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
-              // Si no hay usuarios logueados, mostrar advertencia pero continuar
               if (dataPropina.message?.includes('No hay usuarios logueados')) {
                 toast.warning(
                   `Venta registrada con propina de $${propina.toLocaleString()}, pero no se distribuyó porque no hay cajeros/garzones logueados`
@@ -385,18 +379,14 @@ export default function OrderDetailModal({
           }
         }
 
-        // Cambiar estado del pedido a 0 (procesado)
         await actualizarEstadoPedido(0);
 
-        // Actualizar el contador de la campanita en el header
         onOrderStatusChange?.();
 
-        // Si se seleccionó una habitación, actualizar estado e iniciar temporizador
         if (habitacionId) {
           const selectedRoom = rooms.find(room => room.id === parseInt(habitacionId));
           if (selectedRoom) {
             try {
-              // Actualizar estado de la habitación a ocupada (2)
               const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
                 method: 'PATCH',
                 headers: {
@@ -409,12 +399,15 @@ export default function OrderDetailModal({
 
               if (roomUpdateResponse.ok) {
                 startTimer(
-                  orderId || 0, // servicioId (usar orderId para ventas)
-                  selectedRoom.id, // roomId
-                  selectedRoom.name, // roomName
-                  selectedRoom.time || 60, // duration
-                  `VENTA_${orderId}`, // servicioCode (ID de venta único)
-                  'Cliente Venta' // clienteNombre (placeholder para ventas)
+                  resultado.data?.id_venta || orderId || 0,
+                  selectedRoom.id,
+                  selectedRoom.name,
+                  selectedRoom.time || 60,
+                  resultado.data?.codigo || `VENTA_${orderId}`,
+                  detail[0]?.cliente || 'cliente sin registrar',
+                  detail[0]?.anfitriona || '',
+                  'venta',
+                  detail[0]?.garzon || undefined
                 );
               } else {
                 toast.error('Error al actualizar estado de habitación');
@@ -427,7 +420,7 @@ export default function OrderDetailModal({
 
         toast.success('Venta registrada exitosamente');
         onClose();
-        onVentaRegistrada?.(); // Llamar al callback cuando se registra la venta
+        onVentaRegistrada?.();
       }
     } catch (error) {
       toast.error('Error al registrar la venta');
@@ -443,11 +436,10 @@ export default function OrderDetailModal({
 
   const handleRechazarPedido = async () => {
     try {
-      // Cambiar estado del pedido a 2 (rechazado)
       await actualizarEstadoPedido(2);
       toast.success('Pedido rechazado exitosamente');
       onClose();
-      onVentaRegistrada?.(); // Llamar al callback para refrescar la lista
+      onVentaRegistrada?.();
     } catch (error) {
       toast.error('Error al rechazar el pedido');
     }
@@ -456,17 +448,12 @@ export default function OrderDetailModal({
   const handleRegistrarCuenta = async () => {
     setIsRegistering(true);
     try {
-      // Obtener información del pedido
       const pedido = detail[0];
 
-      // Calcular el total de comisiones
       const total_comision =
         detail.reduce((acc, item) => acc + (item.comision || 0), 0) + recargoAnfitrionas;
-
-      // Calcular sub_total (suma de precios de productos)
       const sub_total = detail.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
 
-      // Generar código único para la cuenta
       const generateCode = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
@@ -476,10 +463,9 @@ export default function OrderDetailModal({
         return result;
       };
 
-      // Obtener IDs de anfitrionas del pedido
-      const anfitrionasIds = detail[0]?.anfitrionas_con_ids?.map((anfitriona: any) => anfitriona.usuario_id) || [];
+      const anfitrionasIds =
+        detail[0]?.anfitrionas_con_ids?.map((anfitriona: any) => anfitriona.usuario_id) || [];
 
-      // Preparar datos para la cuenta
       const cuentaData = {
         codigo: generateCode(),
         cliente_id: pedido.cliente_id || null,
@@ -516,13 +502,12 @@ export default function OrderDetailModal({
       if (result.success) {
         toast.success('Cuenta registrada exitosamente');
         onClose();
-        onVentaRegistrada?.(); // Llamar al callback cuando se registra la cuenta
-        onOrderStatusChange?.(); // Actualizar el contador de pedidos pendientes
+        onVentaRegistrada?.();
+        onOrderStatusChange?.();
       } else {
         throw new Error(result.message || 'Error al crear la cuenta');
       }
     } catch (error) {
-   
       toast.error('Error al registrar la cuenta');
     } finally {
       setIsRegistering(false);
@@ -561,23 +546,22 @@ export default function OrderDetailModal({
     return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
   });
 
-  // Verificar si hay bebidas de $30,000 o más
   const hasExpensiveDrinks = detail.some((item: any) => {
     const precio = Number(item.precio || 0);
     return precio >= 30000;
   });
 
-  // Mostrar selector de habitación si hay champaña O bebidas caras
   const shouldShowRoomSelector = hasChampagne || hasExpensiveDrinks;
 
-  // Verificar si el cliente está registrado
   const isClienteRegistrado = () => {
     const cliente = detail[0]?.cliente;
-    return cliente && 
-           cliente.toLowerCase() !== 'cliente no registrado' && 
-           cliente.toLowerCase() !== 'sin cliente' &&
-           cliente.trim() !== '' &&
-           cliente !== '-';
+    return (
+      cliente &&
+      cliente.toLowerCase() !== 'cliente no registrado' &&
+      cliente.toLowerCase() !== 'sin cliente' &&
+      cliente.trim() !== '' &&
+      cliente !== '-'
+    );
   };
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -605,7 +589,9 @@ export default function OrderDetailModal({
                   {/* Columna izquierda - Información del pedido */}
                   <div className='space-y-3'>
                     <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>Fecha y Hora:</span>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>
+                        Fecha y Hora:
+                      </span>
                       <div className='text-xs sm:text-sm font-medium'>
                         <div>{formatFecha(detail[0]?.fecha_crea)}</div>
                         <div>{formatHora(detail[0]?.fecha_crea)}</div>
@@ -614,12 +600,18 @@ export default function OrderDetailModal({
                     <Separator />
                     <div className='flex justify-between items-center'>
                       <span className='text-xs sm:text-sm text-muted-foreground'>Código:</span>
-                      <Badge variant='outline' className='text-xs'>{detail[0]?.codigo}</Badge>
+                      <Badge variant='outline' className='text-xs'>
+                        {detail[0]?.codigo}
+                      </Badge>
                     </div>
                     <Separator />
                     <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>Anfitriona(s):</span>
-                      <span className='text-xs sm:text-sm font-medium'>{detail[0]?.anfitriona || '-'}</span>
+                      <span className='text-xs sm:text-sm text-muted-foreground'>
+                        Anfitriona(s):
+                      </span>
+                      <span className='text-xs sm:text-sm font-medium'>
+                        {detail[0]?.anfitriona || '-'}
+                      </span>
                     </div>
                     <Separator />
                     <div className='flex justify-between items-center'>
@@ -680,7 +672,9 @@ export default function OrderDetailModal({
                       />
                     )}
                     <div>
-                      <Label className='block text-xs font-medium text-muted-foreground mb-2'>Propina</Label>
+                      <Label className='block text-xs font-medium text-muted-foreground mb-2'>
+                        Propina
+                      </Label>
                       <div className='flex items-center space-x-2'>
                         <div className='relative flex-1'>
                           <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
@@ -694,11 +688,14 @@ export default function OrderDetailModal({
                         </div>
                         <div className='flex items-center space-x-2'>
                           <Checkbox
-                            id="agregar-propina"
+                            id='agregar-propina'
                             checked={agregarPropina}
-                            onCheckedChange={(checked) => setAgregarPropina(checked === true)}
+                            onCheckedChange={checked => setAgregarPropina(checked === true)}
                           />
-                          <label htmlFor="agregar-propina" className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'>
+                          <label
+                            htmlFor='agregar-propina'
+                            className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'
+                          >
                             10%
                           </label>
                         </div>
@@ -742,9 +739,15 @@ export default function OrderDetailModal({
                         <TableRow key={idx}>
                           <TableCell className='font-medium'>{item.producto}</TableCell>
                           <TableCell className='text-center'>{item.cantidad}</TableCell>
-                          <TableCell className='text-center'>${item.precio?.toLocaleString('es-CL')}</TableCell>
-                          <TableCell className='text-center'>${item.comision?.toLocaleString('es-CL')}</TableCell>
-                          <TableCell className='text-right font-medium'>${item.subtotal?.toLocaleString('es-CL')}</TableCell>
+                          <TableCell className='text-center'>
+                            ${item.precio?.toLocaleString('es-CL')}
+                          </TableCell>
+                          <TableCell className='text-center'>
+                            ${item.comision?.toLocaleString('es-CL')}
+                          </TableCell>
+                          <TableCell className='text-right font-medium'>
+                            ${item.subtotal?.toLocaleString('es-CL')}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -756,25 +759,34 @@ export default function OrderDetailModal({
                   <div className='space-y-2'>
                     <div className='flex justify-between items-center text-sm'>
                       <span className='text-muted-foreground'>SUBTOTAL:</span>
-                      <span className='font-semibold'>${detail[0]?.total?.toLocaleString('es-CL')}</span>
+                      <span className='font-semibold'>
+                        ${detail[0]?.total?.toLocaleString('es-CL')}
+                      </span>
                     </div>
                     {propina > 0 && (
                       <div className='flex justify-between items-center text-sm'>
                         <span className='text-blue-600'>+ Propina:</span>
-                        <span className='text-blue-600 font-medium'>${propina.toLocaleString('es-CL')}</span>
+                        <span className='text-blue-600 font-medium'>
+                          ${propina.toLocaleString('es-CL')}
+                        </span>
                       </div>
                     )}
                     {recargoAnfitrionas > 0 && (
                       <div className='flex justify-between items-center text-sm'>
                         <span className='text-orange-600'>+ Recargo anfitrionas:</span>
-                        <span className='text-orange-600 font-medium'>${recargoAnfitrionas.toLocaleString('es-CL')}</span>
+                        <span className='text-orange-600 font-medium'>
+                          ${recargoAnfitrionas.toLocaleString('es-CL')}
+                        </span>
                       </div>
                     )}
                     <Separator />
                     <div className='flex justify-between items-center text-base'>
                       <span className='font-bold'>TOTAL:</span>
                       <span className='font-bold text-lg'>
-                        ${((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString('es-CL')}
+                        $
+                        {((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString(
+                          'es-CL'
+                        )}
                       </span>
                     </div>
                   </div>
@@ -825,43 +837,53 @@ export default function OrderDetailModal({
 
       {/* Modal de confirmación de registro de venta */}
       <Dialog open={confirmVentaModalOpen} onOpenChange={setConfirmVentaModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Confirmar registro de venta</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro de que deseas registrar esta venta?
-            </DialogDescription>
+            <DialogDescription>¿Estás seguro de que deseas registrar esta venta?</DialogDescription>
           </DialogHeader>
-          <div className="px-6 py-4">
-            <div className="space-y-2 text-sm">
-              <div><strong>Pedido:</strong> {orderCode}</div>
-              <div><strong>Total:</strong> ${((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString('es-CL')}</div>
-              <div><strong>Método de pago:</strong> {metodoPago}</div>
+          <div className='px-6 py-4'>
+            <div className='space-y-2 text-sm'>
+              <div>
+                <strong>Pedido:</strong> {orderCode}
+              </div>
+              <div>
+                <strong>Total:</strong> $
+                {((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString('es-CL')}
+              </div>
+              <div>
+                <strong>Método de pago:</strong> {metodoPago}
+              </div>
               {propina > 0 && (
-                <div><strong>Propina:</strong> ${propina.toLocaleString('es-CL')}</div>
+                <div>
+                  <strong>Propina:</strong> ${propina.toLocaleString('es-CL')}
+                </div>
               )}
               {habitacionId && (
-                <div><strong>Habitación:</strong> {rooms.find(r => r.id === parseInt(habitacionId))?.name || habitacionId}</div>
+                <div>
+                  <strong>Habitación:</strong>{' '}
+                  {rooms.find(r => r.id === parseInt(habitacionId))?.name || habitacionId}
+                </div>
               )}
             </div>
           </div>
-          <DialogFooter className="flex gap-2 sm:gap-0">
+          <DialogFooter className='flex gap-2 sm:gap-0'>
             <Button
-              variant="outline"
+              variant='outline'
               onClick={handleCancelRegistrarVenta}
               disabled={isRegistering}
-              className="rounded-full"
+              className='rounded-full'
             >
               Cancelar
             </Button>
             <Button
               onClick={handleConfirmRegistrarVenta}
               disabled={isRegistering}
-              className="rounded-full bg-green-600 hover:bg-green-700"
+              className='rounded-full bg-green-600 hover:bg-green-700'
             >
               {isRegistering ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
                   Registrando...
                 </>
               ) : (

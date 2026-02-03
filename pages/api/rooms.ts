@@ -12,10 +12,15 @@ const roomSchema = z.object({
 
 const mapRoomFromDB = (row: any) => ({
   id: row.id_habitacion,
+  id_habitacion: row.id_habitacion, // Agregar también este campo
   name: row.nombre,
+  nombre: row.nombre, // Agregar también este campo
   price: row.precio,
+  precio: row.precio, // Agregar también este campo
   time: row.tiempo,
+  tiempo: row.tiempo, // Agregar también este campo
   status: row.estado,
+  estado: row.estado, // Agregar también este campo
   fecha_crea: row.fecha_crea,
   fecha_mod: row.fecha_mod,
   fecha_elim: row.fecha_elim,

@@ -32,7 +32,7 @@ export function TimerDisplay() {
     }
   };
 
-    if (timers.length === 0) {
+  if (timers.length === 0) {
     return null; // No mostrar nada si no hay temporizadores activos
   }
 
@@ -57,20 +57,32 @@ export function TimerDisplay() {
             <CardContent className='pt-0'>
               <div className='flex items-center justify-between p-1 bg-gray-50 rounded border'>
                 <div className='flex-1 min-w-0'>
-                  <span className={`font-medium text-xs truncate ${
-                    timer.isPaused ? 'text-yellow-600' : ''
-                  }`}>
-                    {timer.roomName}
-                  </span>
+                  <div className='flex flex-col'>
+                    <span
+                      className={`font-semibold text-sm truncate ${
+                        timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
+                      }`}
+                    >
+                      {timer.roomName}
+                    </span>
+                    <span className='text-[11px] text-blue-700 font-bold font-mono'>
+                      {timer.servicioCode}
+                    </span>
+                    {timer.waiterName && (
+                      <span className='text-[9px] text-purple-600 font-medium truncate'>
+                        Garzón: {timer.waiterName}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className='flex items-center gap-1 ml-1'>
-                  <span className={`font-mono text-xs font-bold ${
-                    timer.isPaused ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
+                  <span
+                    className={`font-mono text-xs font-bold ${
+                      timer.isPaused ? 'text-yellow-600' : 'text-red-600'
+                    }`}
+                  >
                     {formatTime(timer.remainingTime)}
-                    {timer.isPaused && (
-                      <span className='ml-1 text-xs text-yellow-600'>⏸️</span>
-                    )}
+                    {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
                   </span>
                   {!timer.isPaused && (
                     <Button
@@ -123,7 +135,8 @@ export function TimerDisplay() {
               </Badge>
               {timers.some(t => t.isPaused) && (
                 <Badge variant='outline' className='text-yellow-600 border-yellow-600 text-xs'>
-                  {timers.filter(t => t.isPaused).length} Pausado{timers.filter(t => t.isPaused).length !== 1 ? 's' : ''}
+                  {timers.filter(t => t.isPaused).length} Pausado
+                  {timers.filter(t => t.isPaused).length !== 1 ? 's' : ''}
                 </Badge>
               )}
             </CardTitle>
@@ -132,20 +145,32 @@ export function TimerDisplay() {
             {/* Timer principal (siempre visible) */}
             <div className='flex items-center justify-between p-1 bg-gray-50 rounded border'>
               <div className='flex-1 min-w-0'>
-                <span className={`font-medium text-xs truncate ${
-                  firstTimer.isPaused ? 'text-yellow-600' : ''
-                }`}>
-                  {firstTimer.roomName}
-                </span>
+                <div className='flex flex-col'>
+                  <span
+                    className={`font-semibold text-sm truncate ${
+                      firstTimer.isPaused ? 'text-yellow-600' : 'text-gray-900'
+                    }`}
+                  >
+                    {firstTimer.roomName}
+                  </span>
+                  <span className='text-[11px] text-blue-700 font-bold font-mono'>
+                    {firstTimer.servicioCode}
+                  </span>
+                  {firstTimer.waiterName && (
+                    <span className='text-[9px] text-purple-600 font-medium truncate'>
+                      Garzón: {firstTimer.waiterName}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className='flex items-center gap-1 ml-1'>
-                <span className={`font-mono text-xs font-bold ${
-                  firstTimer.isPaused ? 'text-yellow-600' : 'text-red-600'
-                }`}>
+                <span
+                  className={`font-mono text-xs font-bold ${
+                    firstTimer.isPaused ? 'text-yellow-600' : 'text-red-600'
+                  }`}
+                >
                   {formatTime(firstTimer.remainingTime)}
-                  {firstTimer.isPaused && (
-                    <span className='ml-1 text-xs text-yellow-600'>⏸️</span>
-                  )}
+                  {firstTimer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
                 </span>
                 {!firstTimer.isPaused && (
                   <Button
@@ -184,20 +209,32 @@ export function TimerDisplay() {
                     className='flex items-center justify-between p-1 bg-gray-50 rounded border'
                   >
                     <div className='flex-1 min-w-0'>
-                      <span className={`font-medium text-xs truncate ${
-                        timer.isPaused ? 'text-yellow-600' : ''
-                      }`}>
-                        {timer.roomName}
-                      </span>
+                      <div className='flex flex-col'>
+                        <span
+                          className={`font-semibold text-sm truncate ${
+                            timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
+                          }`}
+                        >
+                          {timer.roomName}
+                        </span>
+                        <span className='text-[11px] text-blue-700 font-bold font-mono'>
+                          {timer.servicioCode}
+                        </span>
+                        {timer.waiterName && (
+                          <span className='text-[9px] text-purple-600 font-medium truncate'>
+                            Garzón: {timer.waiterName}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className='flex items-center gap-1 ml-1'>
-                      <span className={`font-mono text-xs font-bold ${
-                        timer.isPaused ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
+                      <span
+                        className={`font-mono text-xs font-bold ${
+                          timer.isPaused ? 'text-yellow-600' : 'text-red-600'
+                        }`}
+                      >
                         {formatTime(timer.remainingTime)}
-                        {timer.isPaused && (
-                          <span className='ml-1 text-xs text-yellow-600'>⏸️</span>
-                        )}
+                        {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
                       </span>
                       {!timer.isPaused && (
                         <Button

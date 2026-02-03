@@ -134,7 +134,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     await rawQuery('COMMIT');
 
-    // Obtener información del cliente y mesero para la notificación
+    // Obtener información del cliente, mesero y anfitrionas para la notificación
     let clienteNombre = 'Sin cliente registrado';
     if (clienteId) {
       const clienteResults = await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteId]) as any[];
@@ -148,6 +148,16 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const meseroResult = meseroResults[0];
     const meseroNombre = meseroResult ? `${meseroResult.nombre} ${meseroResult.apellido || ''}`.trim() : 'Mesero';
     
+    // Obtener las anfitrionas asignadas al pedido
+    const anfitrionasResults = await query(`
+      SELECT GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas
+      FROM pedidos_usuarios pu
+      INNER JOIN usuarios u ON pu.usuario_id = u.id_usuario
+      WHERE pu.pedido_id = ?
+    `, [pedidoId]) as any[];
+    
+    const anfitrionasNombre = anfitrionasResults[0]?.anfitrionas || null;
+    
   
     
     // Enviar notificación en tiempo real
@@ -156,6 +166,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       codigo,
       cliente: clienteNombre,
       mesero: meseroNombre,
+      anfitriona: anfitrionasNombre,
       total: total,
       timestamp: new Date().toISOString(),
       createdBy: meseroId // Añadir el ID del usuario que creó el pedido
