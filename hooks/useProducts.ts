@@ -172,6 +172,46 @@ export default function useProducts(categoryId?: number) {
     }
   };
 
+  const reorderProducts = async (reorderedProducts: Product[]) => {
+    if (!categoryId) {
+      toast.error("No se puede reordenar sin una categoría");
+      return;
+    }
+
+    try {
+      const product_orders = reorderedProducts.map((product, index) => ({
+        id: product.id,
+        display_order: index + 1
+      }));
+
+      const res = await fetch("/api/products/reorder", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category_id: categoryId,
+          product_orders
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Orden actualizado correctamente");
+        // Actualizar el estado local inmediatamente
+        setProducts(reorderedProducts);
+      } else {
+        toast.error(data.message || "Error al actualizar el orden");
+        // Revertir al orden original
+        await fetchProducts();
+      }
+    } catch (err) {
+      toast.error("Error de red al actualizar el orden");
+      // Revertir al orden original
+      await fetchProducts();
+    }
+  };
+
   return {
     products,
     isLoading,
@@ -186,5 +226,6 @@ export default function useProducts(categoryId?: number) {
     deleteProduct,
     activateProduct,
     deactivateProduct,
+    reorderProducts,
   };
 } 

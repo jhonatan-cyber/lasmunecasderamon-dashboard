@@ -27,6 +27,7 @@ const mapProductFromDB = (row: any) => ({
   code: row.codigo,
   name: row.nombre,
   category_id: row.categoria_id,
+  display_order: row.display_order,
   price: row.precio,
   commission: row.comision,
   description: row.descripcion,
@@ -137,6 +138,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         FROM productos P
         INNER JOIN categorias C ON C.id_categoria = P.categoria_id
         WHERE P.categoria_id = ?
+        ORDER BY P.display_order ASC, P.id_producto ASC
       `,
         [category_id]
       );
@@ -148,6 +150,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
           C.nombre AS categoria
         FROM productos P
         INNER JOIN categorias C ON C.id_categoria = P.categoria_id
+        ORDER BY P.categoria_id ASC, P.display_order ASC, P.id_producto ASC
       `,
         []
       );

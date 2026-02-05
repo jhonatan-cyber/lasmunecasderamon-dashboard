@@ -328,6 +328,8 @@ export default function OrderForm({
 
       if (res.status === 201 && data.success) {
         showSuccessToast("¡Pedido generado exitosamente!");
+        window.dispatchEvent(new CustomEvent('updatePendingOrders'));
+        window.dispatchEvent(new CustomEvent('refreshNotifications'));
         // Limpiar formularios
         setSelectedCliente("");
         // Limpiar selecciones del modal

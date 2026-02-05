@@ -9,6 +9,21 @@ import Paginate from '@/components/ui/paginate';
 import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
 import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy
+} from '@dnd-kit/sortable';
 
 
 function toTitleCase(str: string) {
@@ -26,7 +41,8 @@ const RoomsPage = () => {
     deleteRoom,
     activateRoom,
     deactivateRoom,
-    occupyRoom
+    occupyRoom,
+    reorderRooms
   } = useRooms();
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -35,6 +51,18 @@ const RoomsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8); // Valor inicial para modo cards
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
+  const [localRooms, setLocalRooms] = useState<Room[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Ajustar pageSize cuando cambia el modo de visualización
   React.useEffect(() => {
@@ -51,11 +79,31 @@ const RoomsPage = () => {
     return filteredRooms.filter(room => room.status === filterStatus);
   }, [filteredRooms, filterStatus]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredByStatus.length / pageSize));
+  // Actualizar localRooms cuando filteredByStatus cambia
+  React.useEffect(() => {
+    setLocalRooms(filteredByStatus);
+  }, [filteredByStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(localRooms.length / pageSize));
   const paginatedRooms = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredByStatus.slice(start, start + pageSize);
-  }, [filteredByStatus, page, pageSize]);
+    return localRooms.slice(start, start + pageSize);
+  }, [localRooms, page, pageSize]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localRooms.findIndex((r) => r.id === active.id);
+      const newIndex = localRooms.findIndex((r) => r.id === over.id);
+
+      const newRooms = arrayMove(localRooms, oldIndex, newIndex);
+      setLocalRooms(newRooms);
+
+      // Llamar al callback de reordenamiento
+      reorderRooms(newRooms);
+    }
+  };
 
   const handleCreate = async (form: RoomForm) => {
     await createRoom({
@@ -173,6 +221,7 @@ const RoomsPage = () => {
               onActivate={handleActivate}
               onDeactivate={handleDeactivate}
               onOccupy={handleOccupy}
+              onReorder={reorderRooms}
             />
           </div>
           {totalPages > 1 && (
@@ -189,15 +238,15 @@ const RoomsPage = () => {
                 <Bed className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {filteredByStatus.length === 0 ? 'No hay habitaciones' : 'Sin resultados'}
+                {localRooms.length === 0 ? 'No hay habitaciones' : 'Sin resultados'}
               </h3>
               <p className="text-gray-500 text-center mb-6 max-w-sm">
-                {filteredByStatus.length === 0 
+                {localRooms.length === 0 
                   ? "Crea tu primera habitación para comenzar"
                   : "Ajusta los filtros para ver más resultados"
                 }
               </p>
-              {filteredByStatus.length === 0 && (
+              {localRooms.length === 0 && (
                 <Button
                   onClick={() => {
                     setEditRoom(null);
@@ -211,19 +260,31 @@ const RoomsPage = () => {
               )}
             </div>
           ) : (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mt-4 sm:mt-6'>
-              {paginatedRooms.map(room => (
-                <RoomCard
-                  key={room.id}
-                  room={room}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onActivate={handleActivate}
-                  onDeactivate={handleDeactivate}
-                  onOccupy={handleOccupy}
-                />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={paginatedRooms.map(r => r.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mt-4 sm:mt-6'>
+                  {paginatedRooms.map(room => (
+                    <RoomCard
+                      key={room.id}
+                      room={room}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onActivate={handleActivate}
+                      onDeactivate={handleDeactivate}
+                      onOccupy={handleOccupy}
+                      isDraggable={true}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
           {totalPages > 1 && paginatedRooms.length > 0 && (
             <div className='flex justify-center mt-4 sm:mt-6'>

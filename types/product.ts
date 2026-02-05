@@ -3,6 +3,7 @@ export interface Product {
   code: string;
   name: string;
   category_id: number;
+  display_order?: number;
   price: number;
   commission: number;
   description: string;

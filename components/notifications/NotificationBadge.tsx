@@ -1,43 +1,49 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationsContext } from '@/contexts/NotificationsContext';
 
 interface NotificationBadgeProps {
   className?: string;
 }
 
 export function NotificationBadge({ className = '' }: NotificationBadgeProps) {
-  const [notificationCount, setNotificationCount] = useState(0);
-  const { lastNotification } = useNotifications();
+  console.log('[NotificationBadge] Inicializando...');
+  
+  try {
+    const context = useNotificationsContext();
+    console.log('[NotificationBadge] Context completo:', context);
+    
+    const pendingOrdersCount = context?.pendingOrdersCount || 0;
+    const pendingServiceRequestsCount = context?.pendingServiceRequestsCount || 0;
+    
+    // Sumar ambos contadores
+    const totalNotifications = pendingOrdersCount + pendingServiceRequestsCount;
 
-  // Efecto para incrementar el contador cuando llega una nueva notificación
-  useEffect(() => {
-    if (lastNotification) {
-      setNotificationCount(prev => prev + 1);
-      
-      // Resetear contador después de 30 segundos
-      setTimeout(() => {
-        setNotificationCount(prev => Math.max(0, prev - 1));
-      }, 30000);
+    console.log('[NotificationBadge] Valores calculados:', {
+      pendingOrdersCount,
+      pendingServiceRequestsCount,
+      totalNotifications
+    });
+
+    if (totalNotifications === 0) {
+      return null;
     }
-  }, [lastNotification]);
 
-  if (notificationCount === 0) {
+    return (
+      <div className={`relative ${className}`}>
+        <Bell className="text-gray-600" size={20} />
+        <Badge 
+          variant="destructive" 
+          className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+        >
+          {totalNotifications > 99 ? '99+' : totalNotifications}
+        </Badge>
+      </div>
+    );
+  } catch (error) {
+    console.error('[NotificationBadge] Error:', error);
     return null;
   }
-
-  return (
-    <div className={`relative ${className}`}>
-      <Bell className="text-gray-600" size={20} />
-      <Badge 
-        variant="destructive" 
-        className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-      >
-        {notificationCount > 99 ? '99+' : notificationCount}
-      </Badge>
-    </div>
-  );
 }
