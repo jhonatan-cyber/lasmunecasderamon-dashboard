@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { query, rawQuery } from "@/lib/db";
+import { sendNotificationToAll } from "../notifications/sse";
 
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -25,6 +26,12 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         "UPDATE pedidos SET estado = ? WHERE id_pedido = ?",
         [req.body.estado, id]
       );
+
+      // Notificar a todos los clientes para actualizar contador en tiempo real
+      sendNotificationToAll('order_updated', {
+        id: Number(id),
+        estado: req.body.estado
+      });
       
       return res
         .status(200)

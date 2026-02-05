@@ -102,7 +102,7 @@ export default function OrderDetailModal({
 
   useEffect(() => {
     if (!open) return;
-    fetch('/api/rooms')
+    fetch('/api/rooms?status=1')
       .then(res => res.json())
       .then(data => {
         if (data.success) setRooms(data.data);
@@ -382,6 +382,7 @@ export default function OrderDetailModal({
         await actualizarEstadoPedido(0);
 
         onOrderStatusChange?.();
+        window.dispatchEvent(new CustomEvent('updatePendingOrders'));
 
         if (habitacionId) {
           const selectedRoom = rooms.find(room => room.id === parseInt(habitacionId));
@@ -437,6 +438,7 @@ export default function OrderDetailModal({
   const handleRechazarPedido = async () => {
     try {
       await actualizarEstadoPedido(2);
+      window.dispatchEvent(new CustomEvent('updatePendingOrders'));
       toast.success('Pedido rechazado exitosamente');
       onClose();
       onVentaRegistrada?.();

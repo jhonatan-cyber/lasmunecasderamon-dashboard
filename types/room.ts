@@ -1,6 +1,7 @@
 export interface Room {
   id: number;
   name: string;
+  display_order?: number;
   price: number;
   time: number;
   comision_anfitriona?: number;

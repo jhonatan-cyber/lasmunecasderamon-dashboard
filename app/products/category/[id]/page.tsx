@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import useProducts from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
@@ -18,6 +18,21 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Paginate from "@/components/ui/paginate";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy
+} from '@dnd-kit/sortable';
 
 const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
@@ -36,6 +51,7 @@ const ProductCategoryPage = () => {
     deleteProduct,
     activateProduct,
     deactivateProduct,
+    reorderProducts,
     searchTerm,
     setSearchTerm,
     filterStatus,
@@ -51,6 +67,18 @@ const ProductCategoryPage = () => {
   const [pageSize, setPageSize] = useState(tablePageSizes[0]);
   const [pageCards, setPageCards] = useState(1);
   const [pageSizeCards, setPageSizeCards] = useState(cardPageSizes[0]);
+  const [localProductsCards, setLocalProductsCards] = useState<Product[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // TODOS los useMemo también deben ir ANTES de cualquier return condicional
   const filteredProducts = useMemo(() => {
@@ -69,8 +97,13 @@ const ProductCategoryPage = () => {
     return result;
   }, [products, searchTerm, filterStatus, isLoading]);
 
+  // Actualizar localProductsCards cuando filteredProducts cambia
+  React.useEffect(() => {
+    setLocalProductsCards(filteredProducts);
+  }, [filteredProducts]);
+
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
-  const totalPagesCards = Math.ceil(filteredProducts.length / pageSizeCards);
+  const totalPagesCards = Math.ceil(localProductsCards.length / pageSizeCards);
 
   const paginatedProducts = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -79,8 +112,23 @@ const ProductCategoryPage = () => {
 
   const paginatedProductsCards = useMemo(() => {
     const start = (pageCards - 1) * pageSizeCards;
-    return filteredProducts.slice(start, start + pageSizeCards);
-  }, [filteredProducts, pageCards, pageSizeCards]);
+    return localProductsCards.slice(start, start + pageSizeCards);
+  }, [localProductsCards, pageCards, pageSizeCards]);
+
+  const handleDragEndCards = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localProductsCards.findIndex((p) => p.id === active.id);
+      const newIndex = localProductsCards.findIndex((p) => p.id === over.id);
+
+      const newProducts = arrayMove(localProductsCards, oldIndex, newIndex);
+      setLocalProductsCards(newProducts);
+
+      // Llamar al callback de reordenamiento
+      reorderProducts(newProducts);
+    }
+  };
 
 
 
@@ -235,6 +283,7 @@ const ProductCategoryPage = () => {
                 onDelete={handleDelete}
                 onActivate={handleActivate}
                 onDeactivate={handleDeactivate}
+                onReorder={reorderProducts}
                 isLoading={isLoading}
                 currentPage={page}
                 pageSize={pageSize}
@@ -248,18 +297,30 @@ const ProductCategoryPage = () => {
           </>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {paginatedProductsCards.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onActivate={handleActivate}
-                  onDeactivate={handleDeactivate}
-                />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEndCards}
+            >
+              <SortableContext
+                items={paginatedProductsCards.map(p => p.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                  {paginatedProductsCards.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onActivate={handleActivate}
+                      onDeactivate={handleDeactivate}
+                      isDraggable={true}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
             {totalPagesCards > 1 && (
               <div className="flex justify-center mt-4 sm:mt-6">
                 <Paginate
@@ -275,18 +336,30 @@ const ProductCategoryPage = () => {
 
       {/* Vista de cards siempre en móvil */}
       <div className="lg:hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {paginatedProductsCards.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onActivate={handleActivate}
-              onDeactivate={handleDeactivate}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEndCards}
+        >
+          <SortableContext
+            items={paginatedProductsCards.map(p => p.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {paginatedProductsCards.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onActivate={handleActivate}
+                  onDeactivate={handleDeactivate}
+                  isDraggable={true}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
         {totalPagesCards > 1 && (
           <div className="flex justify-center mt-4 sm:mt-6">
             <Paginate

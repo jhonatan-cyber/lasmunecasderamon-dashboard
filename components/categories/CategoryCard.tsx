@@ -7,7 +7,8 @@ import {
   Package,
   EyeOff,
   MoreVertical,
-  Power
+  Power,
+  GripVertical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,8 @@ interface CategoryCardProps {
   onDelete: (id: number) => void;
   onActivate: (id: number) => void;
   onDeactivate: (id: number) => void;
+  isDragging?: boolean;
+  dragHandleProps?: any;
 }
 
 const statusColors = {
@@ -137,7 +140,9 @@ export default function CategoryCard({
   onEdit,
   onDelete,
   onActivate,
-  onDeactivate
+  onDeactivate,
+  isDragging = false,
+  dragHandleProps
 }: CategoryCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -172,10 +177,14 @@ export default function CategoryCard({
 
   return (
     <CardContainer className='inter-var'>
-      <CardBody className='bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border'>
+      <CardBody className={`bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border ${isDragging ? 'opacity-50' : ''}`}>
         {/* Header */}
         <div className='flex items-start justify-between pb-3'>
           <div className='flex items-center gap-2 sm:gap-3'>
+            {/* Drag Handle */}
+            <div {...dragHandleProps} className='cursor-grab active:cursor-grabbing touch-none'>
+              <GripVertical className='h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600' />
+            </div>
             <div
               className='w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center'
               style={{ backgroundColor: categoryColor + '15' }}

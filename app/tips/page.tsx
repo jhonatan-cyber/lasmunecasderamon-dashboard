@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -22,11 +22,33 @@ export default function TipsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
+  const [tipsCajaActiva, setTipsCajaActiva] = useState<PropinaResumen[]>([]);
+
+  const toNumber = (value: unknown) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const fetchTipsCajaActiva = async () => {
+    try {
+      const response = await fetch('/api/tips?tipo=resumen&caja_activa=1');
+      const result = await response.json();
+
+      if (result?.success) {
+        setTipsCajaActiva(result.data || []);
+      } else {
+        setTipsCajaActiva([]);
+      }
+    } catch {
+      setTipsCajaActiva([]);
+    }
+  };
+
 
   // Filtrar datos por término de búsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
-    
+
     return tips.filter((tip: any) => {
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -36,26 +58,49 @@ export default function TipsPage() {
     });
   }, [tips, searchTerm]);
 
+  const filteredTipsCajaActiva = useMemo(() => {
+    if (!tipsCajaActiva) return [];
+
+    return tipsCajaActiva.filter((tip: any) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        tip.nombre_completo?.toLowerCase().includes(searchLower) ||
+        tip.nick?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [tipsCajaActiva, searchTerm]);
+
   // Calcular estadísticas
   const stats = useMemo(() => {
     if (!filteredTips) {
       return {
         totalTips: 0,
         totalUsuarios: 0,
-        maxTip: 0
+        tipsPorUsuario: 0
       };
     }
 
-    const totalTips = filteredTips.reduce((sum: number, tip: any) => sum + (tip.total_propinas || 0), 0);
+    const totalTips = filteredTips.reduce(
+      (sum: number, tip: any) => sum + toNumber(tip.total_propinas),
+      0
+    );
     const totalUsuarios = filteredTips.length;
-    const maxTip = Math.max(...filteredTips.map((tip: any) => tip.total_propinas || 0), 0);
+    const totalTipsCajaActiva = filteredTipsCajaActiva.reduce(
+      (sum: number, tip: any) => sum + toNumber(tip.total_propinas),
+      0
+    );
+    const totalUsuariosCajaActiva = filteredTipsCajaActiva.length;
+    const tipsPorUsuario =
+      totalUsuariosCajaActiva > 0
+        ? Math.round(totalTipsCajaActiva / totalUsuariosCajaActiva)
+        : 0;
 
     return {
       totalTips,
       totalUsuarios,
-      maxTip
+      tipsPorUsuario
     };
-  }, [filteredTips]);
+  }, [filteredTips, filteredTipsCajaActiva]);
 
   // Función para formatear moneda
   const formatCurrency = (n: number) => {
@@ -84,22 +129,29 @@ export default function TipsPage() {
 
   const handleRefresh = () => {
     fetchTipsResumen();
+    fetchTipsCajaActiva();
   };
+
+  useEffect(() => {
+    fetchTipsCajaActiva();
+  }, []);
 
   return (
     <TooltipProvider>
-    <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
+      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
           <div>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Propinas</h1>
-            <p className='text-sm sm:text-base text-gray-600'>Gestiona todas las propinas de los empleados.</p>
+            <p className='text-sm sm:text-base text-gray-600'>
+              Gestiona todas las propinas de los empleados.
+            </p>
           </div>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={() => router.back()}
-            className="rounded-full bg-black text-white hover:scale-105 transition-all duration-200"
+            className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className='w-4 h-4 mr-2' />
             Atrás
           </Button>
         </div>
@@ -108,7 +160,7 @@ export default function TipsPage() {
         <TipsStatsCards
           totalTips={stats.totalTips}
           totalUsuarios={stats.totalUsuarios}
-          maxTip={stats.maxTip}
+          tipsPorUsuario={stats.tipsPorUsuario}
           formatCurrency={formatCurrency}
         />
 

@@ -7,6 +7,7 @@ export interface Category {
   status: number;
   total_products?: number;
   created_at?: string;
+  display_order?: number;
 }
 
 interface UseCategoriesReturn {
@@ -20,6 +21,7 @@ interface UseCategoriesReturn {
   deleteCategory: (id: number) => Promise<{ success: boolean; message: string }>;
   activateCategory: (id: number) => Promise<{ success: boolean; message: string }>;
   deactivateCategory: (id: number) => Promise<{ success: boolean; message: string }>;
+  reorderCategories: (categories: Category[]) => Promise<{ success: boolean; message: string }>;
 }
 
 export function useCategories(): UseCategoriesReturn {
@@ -131,6 +133,22 @@ export function useCategories(): UseCategoriesReturn {
     }
   }, [fetchCategories]);
 
+  const reorderCategories = useCallback(async (categories: Category[]) => {
+    try {
+      const res = await fetch(`/api/categories?action=reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categories }),
+      });
+      const data = await res.json();
+      if (!data.success) return { success: false, message: data.message };
+      await fetchCategories();
+      return { success: true, message: data.message };
+    } catch (e) {
+      return { success: false, message: e instanceof Error ? e.message : "Error desconocido" };
+    }
+  }, [fetchCategories]);
+
   return {
     filteredCategories,
     searchTerm,
@@ -142,5 +160,6 @@ export function useCategories(): UseCategoriesReturn {
     deleteCategory,
     activateCategory,
     deactivateCategory,
+    reorderCategories,
   };
 } 

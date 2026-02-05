@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
+import { sendNotificationToAll } from '../notifications/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -231,6 +232,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (servicio && servicio.habitacion_id) {
             await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [servicio.habitacion_id]);
             console.log(`✅ Habitación ${servicio.habitacion_id} liberada por finalización de servicio ${servicioId}`);
+            
+            // Enviar notificación SSE para sincronizar detención de timer
+            sendNotificationToAll('timer_stopped', {
+              servicioId: servicioId,
+              roomId: servicio.habitacion_id
+            });
+            console.log(`📢 Notificación timer_stopped enviada para servicio ${servicioId}`);
           } else {
             // Intento alternativo por si el join directo fallaba antes
             await query(

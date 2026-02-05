@@ -96,6 +96,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (tipo === 'resumen') {
         // OBTENER RESUMEN DE PROPINAS
+        const { caja_activa } = queryParams;
+        let whereClause = '';
+        const params: any[] = [];
+
+        if (caja_activa === '1') {
+          const cajaAbiertaResult = await query(
+            `SELECT fecha_apertura FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
+          );
+          const cajaAbierta = Array.isArray(cajaAbiertaResult) ? cajaAbiertaResult[0] : cajaAbiertaResult as any;
+
+          if (cajaAbierta?.fecha_apertura) {
+            whereClause = 'WHERE P.fecha_crea >= ?';
+            params.push(cajaAbierta.fecha_apertura);
+          } else {
+            return res.status(200).json({
+              success: true,
+              data: []
+            });
+          }
+        }
+
         const propinasResumen = (await query(`
           SELECT 
             U.id_usuario, 
@@ -109,13 +130,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           FROM propinas P 
           INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
           INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
+          ${whereClause}
           GROUP BY 
             U.id_usuario, 
             U.nick,
             U.nombre, 
             U.apellido
           ORDER BY total_propinas DESC
-        `)) as any[];
+        `, params)) as any[];
 
         return res.status(200).json({
           success: true,

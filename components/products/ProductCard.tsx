@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
-import { Pencil, Trash2, CheckCircle, Power, MoreVertical } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, Power, MoreVertical, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { DeleteProductConfirmModal } from './DeleteProductConfirmModal';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ProductCardProps {
   product: Product;
@@ -19,6 +21,7 @@ interface ProductCardProps {
   onDelete: (product: Product) => void;
   onActivate: (product: Product) => void;
   onDeactivate: (product: Product) => void;
+  isDraggable?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -26,9 +29,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onEdit,
   onDelete,
   onActivate,
-  onDeactivate
+  onDeactivate,
+  isDraggable = false
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ 
+    id: product.id,
+    disabled: !isDraggable
+  });
+
+  const style = isDraggable ? {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  } : {};
 
   const handleDeleteClick = () => {
     setDeleteModalOpen(true);
@@ -41,7 +63,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <>
-      <Card className='hover:shadow-md transition-shadow'>
+      <Card className='hover:shadow-md transition-shadow relative group' ref={isDraggable ? setNodeRef : undefined} style={style}>
+        {/* Drag handle - solo visible si es draggable */}
+        {isDraggable && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="absolute top-2 right-2 z-10 cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <GripVertical className="w-4 h-4 text-gray-400" />
+          </div>
+        )}
         <CardHeader className='pb-3 p-4 sm:p-6'>
           <div className='flex items-start justify-between'>
             <CardTitle className='text-sm sm:text-lg font-bold flex-1 truncate'>{product.name}</CardTitle>

@@ -15,6 +15,7 @@ const mapCategoryFromDB = (row: any) => ({
   status: row.estado,
   total_products: row.total_productos || 0,
   created_at: row.fecha_crea,
+  display_order: row.display_order || 0,
 });
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -28,13 +29,14 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         C.descripcion,
         C.estado,
         C.fecha_crea,
+        C.display_order,
         COUNT(P.id_producto) AS total_productos
       FROM 
         categorias C
       LEFT JOIN 
         productos P ON P.categoria_id = C.id_categoria AND P.estado = 1
-      GROUP BY C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea
-      ORDER BY C.nombre ASC
+      GROUP BY C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order
+      ORDER BY C.display_order ASC, C.nombre ASC
     `, []);
     
     
@@ -105,6 +107,32 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
   const { id, action } = req.query;
+  
+  // Manejo de reordenamiento
+  if (action === "reorder") {
+    try {
+      const { categories } = req.body;
+      if (!Array.isArray(categories)) {
+        return res.status(400).json({ success: false, message: "Se requiere un array de categorías" });
+      }
+      
+      // Actualizar el display_order de cada categoría
+      await rawQuery('START TRANSACTION');
+      for (let i = 0; i < categories.length; i++) {
+        const category = categories[i];
+        await query(
+          "UPDATE categorias SET display_order = ? WHERE id_categoria = ?",
+          [i, category.id]
+        );
+      }
+      await rawQuery('COMMIT');
+      return res.status(200).json({ success: true, message: "Orden actualizado correctamente" });
+    } catch (error) {
+      await rawQuery('ROLLBACK');
+      return res.status(500).json({ success: false, message: "Error al actualizar el orden", error });
+    }
+  }
+  
   if (!id || !action) {
     return res.status(400).json({ success: false, message: "Faltan parámetros id o action" });
   }
