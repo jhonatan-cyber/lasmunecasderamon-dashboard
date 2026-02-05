@@ -15,6 +15,7 @@ const mapRoomFromDB = (row: any) => ({
   id_habitacion: row.id_habitacion, // Agregar también este campo
   name: row.nombre,
   nombre: row.nombre, // Agregar también este campo
+  display_order: row.display_order,
   price: row.precio,
   precio: row.precio, // Agregar también este campo
   time: row.tiempo,
@@ -32,9 +33,24 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     const { status } = req.query;
     let results;
     if (status !== undefined) {
-      results = await query("SELECT * FROM habitaciones WHERE estado = ?", [status]);
+      // Si se solicita status=1 (habitaciones disponibles), excluir las que tienen servicios activos
+      if (status === '1') {
+        results = await query(
+          `SELECT h.* FROM habitaciones h 
+           WHERE h.estado = ? 
+           AND NOT EXISTS (
+             SELECT 1 FROM servicios s 
+             WHERE s.habitacion_id = h.id_habitacion 
+             AND s.estado = 1
+           )
+           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
+          [status]
+        );
+      } else {
+        results = await query("SELECT * FROM habitaciones WHERE estado = ? ORDER BY display_order ASC, id_habitacion ASC", [status]);
+      }
     } else {
-      results = await query("SELECT * FROM habitaciones", []);
+      results = await query("SELECT * FROM habitaciones ORDER BY display_order ASC, id_habitacion ASC", []);
     }
     const rooms = Array.isArray(results) ? results.map(mapRoomFromDB) : [];
     return res.status(200).json({ success: true, data: rooms });

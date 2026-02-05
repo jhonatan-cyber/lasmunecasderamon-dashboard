@@ -201,6 +201,40 @@ export default function useRooms(): UseRooms {
     }
   };
 
+  const reorderRooms = async (reorderedRooms: Room[]) => {
+    try {
+      const room_orders = reorderedRooms.map((room, index) => ({
+        id: room.id,
+        display_order: index + 1
+      }));
+
+      const res = await fetch("/api/rooms/reorder", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          room_orders
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showSuccessToast("Orden actualizado correctamente");
+        // Actualizar el estado local inmediatamente
+        setRooms(reorderedRooms);
+      } else {
+        showErrorToast(data.message || "Error al actualizar el orden");
+        // Revertir al orden original
+        await fetchRooms();
+      }
+    } catch (err) {
+      showErrorToast("Error de red al actualizar el orden");
+      // Revertir al orden original
+      await fetchRooms();
+    }
+  };
+
   return {
     rooms,
     filteredRooms,
@@ -215,5 +249,6 @@ export default function useRooms(): UseRooms {
     activateRoom,
     deactivateRoom,
     occupyRoom,
+    reorderRooms,
   };
 } 

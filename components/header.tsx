@@ -10,6 +10,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
 import { useRouter } from 'next/navigation';
@@ -20,6 +36,9 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+import { useNotificationsContext } from '@/contexts/NotificationsContext';
+import { useAnfitrionas } from '@/hooks/useAnfitrionas';
+import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 
 import OrderDetailModal from '@/components/orders/OrderDetailModal';
@@ -35,13 +54,26 @@ export function Header() {
   const { imageVersion } = useUserImage();
   const { hasPermission } = useUserPermissions();
   const { hasOpenCaja } = useCashRegisterStatus();
-  const [pendingCount, setPendingCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState<string>('');
   const [modalOpen, setModalOpen] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [pendingServiceRequests, setPendingServiceRequests] = useState<any[]>([]);
+  const [selectedServiceRequest, setSelectedServiceRequest] = useState<any | null>(null);
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [serviceProcessing, setServiceProcessing] = useState(false);
+  const { anfitrionas } = useAnfitrionas();
+  const { startTimer } = useTimer();
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [isRoomAvailable, setIsRoomAvailable] = useState(true);
+  const [selectedRoomId, setSelectedRoomId] = useState<number | ''>('');
+
+  // Obtener notificaciones totales (pedidos + solicitudes de servicio)
+  const { pendingOrdersCount = 0, pendingServiceRequestsCount = 0 } = useNotificationsContext();
+  const totalNotifications = pendingOrdersCount + pendingServiceRequestsCount;
 
   // Verificar si el usuario es anfitriona, garzón o cajero
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
@@ -88,10 +120,6 @@ export function Header() {
     };
   }, [audioEnabled]);
 
-  useEffect(() => {
-    setPendingCount(orders.filter((o: any) => String(o.estado) === '1').length);
-  }, [orders]);
-
   async function handleLogout() {
     try {
       const res = await fetch('/api/logout', { method: 'POST' });
@@ -112,7 +140,7 @@ export function Header() {
 
   const handleOrderClick = (orderId: number) => {
     // Verificar si tiene permiso para procesar pedidos
-    if (!hasPermission('pedidos', 'procesar')) {
+    if (!hasPermission('orders', 'process')) {
       toast.error('No tienes permisos para procesar pedidos');
       setShowDropdown(false);
       return;
@@ -167,6 +195,32 @@ export function Header() {
     };
   }, [fetchOrderDetail, orders, hasOpenCaja, hasPermission]);
 
+  // Escuchar evento para abrir modal de solicitudes de servicio desde la lista
+  useEffect(() => {
+    const handleOpenServiceRequestModal = async (event: CustomEvent) => {
+      const solicitud = (event.detail && event.detail.solicitud) || event.detail;
+      if (!solicitud) return;
+
+      setSelectedServiceRequest(solicitud);
+      setRejectReason('');
+      setServiceModalOpen(true);
+      setShowDropdown(false);
+      await loadRoomAvailability(solicitud);
+    };
+
+    window.addEventListener(
+      'openServiceRequestModal',
+      handleOpenServiceRequestModal as unknown as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        'openServiceRequestModal',
+        handleOpenServiceRequestModal as unknown as EventListener
+      );
+    };
+  }, []);
+
   // Escuchar evento para actualizar contador de pedidos pendientes
   useEffect(() => {
     const handleUpdatePendingOrders = () => {
@@ -192,6 +246,214 @@ export function Header() {
     setModalOpen(false);
     setSelectedOrderId(null);
     setSelectedOrderCode('');
+  };
+
+  const fetchPendingServiceRequests = async () => {
+    try {
+      const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
+      const data = await response.json();
+      if (data.success) {
+        setPendingServiceRequests(data.data || []);
+      } else {
+        setPendingServiceRequests([]);
+      }
+    } catch {
+      setPendingServiceRequests([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingServiceRequests();
+  }, []);
+
+  useEffect(() => {
+    const handleUpdateServiceRequests = () => {
+      fetchPendingServiceRequests();
+    };
+
+    window.addEventListener('updateServiceRequests', handleUpdateServiceRequests);
+
+    return () => {
+      window.removeEventListener('updateServiceRequests', handleUpdateServiceRequests);
+    };
+  }, []);
+
+  const getAnfitrionasNicks = (ids: number[] = []) => {
+    const nickMap = new Map<number, string>();
+    anfitrionas.forEach((a: any) => {
+      const id = a.id_usuario || a.id;
+      if (id) {
+        nickMap.set(id, a.nick || a.nombre || a.name || `#${id}`);
+      }
+    });
+    return ids.map((id: number) => nickMap.get(id) || `#${id}`).join(', ');
+  };
+
+  const calculateIVA = (solicitud: any) => {
+    const metodoPago = (solicitud?.metodo_pago || '').toString().toLowerCase();
+    if (metodoPago !== 'tarjeta') return 0;
+    const numAnfitrionas = Array.isArray(solicitud.anfitrionas_ids)
+      ? solicitud.anfitrionas_ids.length
+      : 0;
+    const tiempo = Number(solicitud.tiempo || 0);
+    const multiplicador = tiempo === 60 ? 2 : 1;
+    const precioServicio = (solicitud.precio_servicio || 0) * multiplicador;
+    const precioHabitacion = (solicitud.precio_habitacion || 0) * multiplicador;
+
+    const nuevoSubTotal = precioServicio * numAnfitrionas;
+    const precioHabitacionTotal = precioHabitacion * numAnfitrionas;
+    let nuevoIVA = Math.floor(nuevoSubTotal * 0.2);
+    const nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
+    const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
+    const excedente = totalRedondeado - nuevoTotal;
+    nuevoIVA = nuevoIVA + excedente;
+    return nuevoIVA;
+  };
+
+  const loadRoomAvailability = async (solicitud: any) => {
+    try {
+      const response = await fetch('/api/rooms?status=1');
+      const data = await response.json();
+      if (data.success) {
+        const rooms = data.data || [];
+        setAvailableRooms(rooms);
+        const currentRoomId = solicitud?.habitacion_id;
+        const currentIsAvailable = rooms.some(
+          (r: any) => (r.id_habitacion || r.id) === currentRoomId
+        );
+        setIsRoomAvailable(currentIsAvailable);
+        setSelectedRoomId(currentIsAvailable ? currentRoomId : '');
+      } else {
+        setAvailableRooms([]);
+        setIsRoomAvailable(true);
+        setSelectedRoomId(solicitud?.habitacion_id || '');
+      }
+    } catch {
+      setAvailableRooms([]);
+      setIsRoomAvailable(true);
+      setSelectedRoomId(solicitud?.habitacion_id || '');
+    }
+  };
+
+  const handleServiceClick = async (solicitud: any) => {
+    setSelectedServiceRequest(solicitud);
+    setRejectReason('');
+    setServiceModalOpen(true);
+    setShowDropdown(false);
+    await loadRoomAvailability(solicitud);
+  };
+
+  const handleApproveServiceRequest = async () => {
+    if (!selectedServiceRequest) return;
+    if (!isRoomAvailable && !selectedRoomId) {
+      showErrorToast('Selecciona una habitación disponible');
+      return;
+    }
+    setServiceProcessing(true);
+    try {
+      const habitacionIdFinal =
+        (isRoomAvailable ? selectedServiceRequest.habitacion_id : selectedRoomId) ||
+        selectedServiceRequest.habitacion_id;
+      const response = await fetch(
+        `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/aprobar`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ habitacion_id: habitacionIdFinal })
+        }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        showSuccessToast('Solicitud aprobada exitosamente');
+        setServiceModalOpen(false);
+        setSelectedServiceRequest(null);
+        fetchPendingServiceRequests();
+        const updateEvent = new CustomEvent('updateServiceRequests');
+        window.dispatchEvent(updateEvent);
+
+        const servicioId = data?.data?.servicio_id;
+        if (servicioId && selectedServiceRequest) {
+          const habitacionId = habitacionIdFinal || selectedServiceRequest.habitacion_id;
+          const roomMatch = availableRooms.find(
+            (r: any) => (r.id_habitacion || r.id) === habitacionId
+          );
+          const habitacionNombre =
+            roomMatch?.nombre ||
+            roomMatch?.name ||
+            selectedServiceRequest.habitacion_nombre ||
+            habitacionId ||
+            'N/A';
+          const tiempo = Number(selectedServiceRequest.tiempo || 0);
+          const codigo = data?.data?.codigo || `SERVICIO_${servicioId}`;
+          const clienteNombre = selectedServiceRequest.cliente_nombre || 'Sin cliente registrado';
+          const anfitrionasNicks = getAnfitrionasNicks(
+            selectedServiceRequest.anfitrionas_ids || []
+          );
+          const solicitante =
+            selectedServiceRequest.solicitado_por_nombre ||
+            selectedServiceRequest.solicitado_por_nick ||
+            undefined;
+
+          if (habitacionId && tiempo > 0) {
+            startTimer(
+              servicioId,
+              habitacionId,
+              habitacionNombre,
+              tiempo,
+              codigo,
+              clienteNombre,
+              anfitrionasNicks,
+              'servicio',
+              solicitante
+            );
+          }
+        }
+      } else {
+        showErrorToast(data.message || 'Error al aprobar solicitud');
+      }
+    } catch {
+      showErrorToast('Error al aprobar solicitud');
+    } finally {
+      setServiceProcessing(false);
+    }
+  };
+
+  const handleRejectServiceRequest = async () => {
+    if (!selectedServiceRequest) return;
+    if (!rejectReason.trim()) {
+      showErrorToast('El motivo de rechazo es requerido');
+      return;
+    }
+
+    setServiceProcessing(true);
+    try {
+      const response = await fetch(
+        `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/rechazar`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivo_rechazo: rejectReason })
+        }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        showSuccessToast('Solicitud rechazada exitosamente');
+        setServiceModalOpen(false);
+        setSelectedServiceRequest(null);
+        setRejectReason('');
+        fetchPendingServiceRequests();
+        const updateEvent = new CustomEvent('updateServiceRequests');
+        window.dispatchEvent(updateEvent);
+      } else {
+        showErrorToast(data.message || 'Error al rechazar solicitud');
+      }
+    } catch {
+      showErrorToast('Error al rechazar solicitud');
+    } finally {
+      setServiceProcessing(false);
+    }
   };
 
   return (
@@ -234,23 +496,30 @@ export function Header() {
           <DropdownMenu open={showDropdown} onOpenChange={setShowDropdown}>
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' size='icon' className='relative'>
-                <Bell className={`h-5 w-5 bell-icon ${pendingCount > 0 ? 'bell-ring' : ''}`} />
-                {pendingCount > 0 && (
+                <Bell
+                  className={`h-5 w-5 bell-icon ${totalNotifications > 0 ? 'bell-ring' : ''}`}
+                />
+                {totalNotifications > 0 && (
                   <span className='absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center badge-blink'>
-                    {pendingCount}
+                    {totalNotifications}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-80 max-h-96 overflow-y-auto'>
-              <DropdownMenuLabel>Pedidos Pendientes</DropdownMenuLabel>
+              <DropdownMenuLabel>Notificaciones Pendientes</DropdownMenuLabel>
               <DropdownMenuSeparator />
+
+              {/* Pedidos de productos */}
+              <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
+                Pedidos de Productos
+              </div>
               {pendingOrders.length === 0 ? (
                 <div className='text-xs text-gray-400 px-4 py-2'>No hay pedidos pendientes</div>
               ) : (
                 pendingOrders.map((order: any) => (
                   <DropdownMenuItem
-                    key={order.id_pedido}
+                    key={`pedido-${order.id_pedido}`}
                     className='flex flex-col items-start gap-1 cursor-pointer hover:bg-gray-100'
                     onClick={() => handleOrderClick(order.id_pedido)}
                   >
@@ -266,6 +535,43 @@ export function Header() {
                     )}
                     <div className='text-xs text-gray-500'>
                       Total: ${order.total?.toLocaleString('es-CL')}
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+
+              <DropdownMenuSeparator />
+
+              {/* Solicitudes de servicio */}
+              <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
+                Solicitudes de Servicio
+              </div>
+              {pendingServiceRequests.length === 0 ? (
+                <div className='text-xs text-gray-400 px-4 py-2'>No hay solicitudes pendientes</div>
+              ) : (
+                pendingServiceRequests.map((solicitud: any) => (
+                  <DropdownMenuItem
+                    key={`solicitud-${solicitud.id_solicitud}`}
+                    className='flex flex-col items-start gap-1 cursor-pointer hover:bg-gray-100'
+                    onClick={() => handleServiceClick(solicitud)}
+                  >
+                    <div className='flex justify-between w-full'>
+                      <span className='font-semibold text-sm'>
+                        Habitación: {solicitud.habitacion_nombre || solicitud.habitacion_id}
+                      </span>
+                      <span className='text-xs text-gray-500'>
+                        {solicitud.fecha_solicitud ? solicitud.fecha_solicitud.slice(11, 16) : ''}
+                      </span>
+                    </div>
+                    <div className='text-xs text-gray-700'>
+                      Cliente: {solicitud.cliente_nombre || 'Sin cliente registrado'}
+                    </div>
+                    <div className='text-xs text-gray-600'>
+                      Solicitado por:{' '}
+                      {solicitud.solicitado_por_nombre || solicitud.solicitado_por_nick || 'N/A'}
+                    </div>
+                    <div className='text-xs text-gray-500'>
+                      Total: ${solicitud.total?.toLocaleString('es-CL')}
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -287,6 +593,104 @@ export function Header() {
             onOrderStatusChange={refetch}
           />
         )}
+
+        <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
+          <DialogContent className='max-w-xl'>
+            <DialogHeader>
+              <DialogTitle>
+                Solicitud de Servicio #{selectedServiceRequest?.id_solicitud}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedServiceRequest && (
+              <div className='space-y-3 text-sm'>
+                <div>
+                  <span className='font-medium'>Anfitrionas:</span>{' '}
+                  {getAnfitrionasNicks(selectedServiceRequest.anfitrionas_ids)}
+                </div>
+                <div>
+                  <span className='font-medium'>Habitación:</span>{' '}
+                  {selectedServiceRequest.habitacion_nombre || selectedServiceRequest.habitacion_id}
+                </div>
+                {!isRoomAvailable && (
+                  <div className='space-y-2'>
+                    <div className='text-sm text-red-600'>
+                      La habitación está ocupada. Selecciona una disponible:
+                    </div>
+                    <Select
+                      value={selectedRoomId ? String(selectedRoomId) : ''}
+                      onValueChange={value => setSelectedRoomId(value ? Number(value) : '')}
+                    >
+                      <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
+                        <SelectValue placeholder='Seleccionar habitación' />
+                      </SelectTrigger>
+                      <SelectContent className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700'>
+                        {availableRooms.map((room: any) => (
+                          <SelectItem
+                            key={room.id_habitacion || room.id}
+                            value={String(room.id_habitacion || room.id)}
+                            className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                          >
+                            {room.nombre || room.name} - $
+                            {Number(room.precio || room.price || 0).toLocaleString('es-CL')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div>
+                  <span className='font-medium'>Tiempo:</span> {selectedServiceRequest.tiempo} min
+                </div>
+                <div>
+                  <span className='font-medium'>Total:</span> $
+                  {Math.round(selectedServiceRequest.total).toLocaleString('es-CL')}
+                </div>
+                <div>
+                  <span className='font-medium'>Garzón:</span>{' '}
+                  {selectedServiceRequest.solicitado_por_nombre ||
+                    selectedServiceRequest.solicitado_por_nick ||
+                    'N/A'}
+                </div>
+                <div>
+                  <span className='font-medium'>Método de pago:</span>{' '}
+                  {selectedServiceRequest.metodo_pago}
+                </div>
+                <div>
+                  <span className='font-medium'>IVA:</span> $
+                  {Math.round(calculateIVA(selectedServiceRequest)).toLocaleString('es-CL')}
+                </div>
+              </div>
+            )}
+
+            <div className='mt-4 space-y-2'>
+              <Label>Motivo de rechazo</Label>
+              <Textarea
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder='Escribe el motivo si vas a rechazar'
+                rows={3}
+              />
+            </div>
+
+            <div className='mt-4 flex justify-center gap-2'>
+              <Button
+                className='bg-red-600 hover:bg-red-700 rounded-full'
+                onClick={handleRejectServiceRequest}
+                disabled={serviceProcessing}
+              >
+                Rechazar
+              </Button>
+              <Button
+                className='bg-green-600 hover:bg-green-700 rounded-full'
+                onClick={handleApproveServiceRequest}
+                disabled={serviceProcessing}
+              >
+                Aprobar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {!userLoading && (
           <DropdownMenu>

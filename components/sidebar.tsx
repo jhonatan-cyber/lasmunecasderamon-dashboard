@@ -93,7 +93,7 @@ const financeNavigation = [
 
 const serviceNavigation = [
   { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'rooms', action: 'view' },
-  { name: 'Vender Privado', href: '/private-rooms', icon: Lock, module: 'rooms', action: 'view' }
+  { name: 'Vender Privado', href: '/private-rooms', icon: Lock, module: 'rooms', action: 'view' },
 ];
 
 const secondaryNavigation = [

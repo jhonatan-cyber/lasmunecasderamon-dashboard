@@ -286,6 +286,82 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     syncWithDatabase();
   }, []);
 
+  // Cargar timers activos del servidor periódicamente (sincronización multi-dispositivo)
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const syncActiveTimers = async () => {
+      try {
+        const response = await fetch('/api/timers/active');
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.data)) {
+          const serverTimers = data.data;
+          
+          // Por cada timer del servidor, verificar si existe localmente
+          serverTimers.forEach((serverTimer: any) => {
+            const existsLocally = timersRef.current.some(
+              t => t.servicioId === serverTimer.servicioId
+            );
+
+            // Si no existe localmente, agregarlo
+            if (!existsLocally) {
+              console.log('[TimerContext] Sincronizando timer desde servidor:', serverTimer.codigo);
+
+              // Calcular tiempo restante
+              const now = new Date();
+              const start = new Date(serverTimer.startTime);
+              const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+              const remainingSeconds = Math.max(0, (serverTimer.duration * 60) - elapsedSeconds);
+
+              if (remainingSeconds > 0) {
+                const newTimer: Timer = {
+                  id: `${serverTimer.servicioId}-${serverTimer.roomId}-${Date.now()}`,
+                  servicioId: serverTimer.servicioId,
+                  roomId: serverTimer.roomId,
+                  roomName: serverTimer.roomName,
+                  duration: serverTimer.duration,
+                  remainingTime: remainingSeconds,
+                  isActive: true,
+                  isPaused: false,
+                  startTime: start,
+                  servicioCode: serverTimer.codigo,
+                  clienteNombre: serverTimer.clienteNombre,
+                  tipoTransaccion: serverTimer.tipoTransaccion || 'servicio',
+                  anfitrionas: serverTimer.anfitrionas || ''
+                };
+
+                setTimers(prev => [...prev, newTimer]);
+              }
+            }
+          });
+
+          // Remover timers locales que ya no están activos en el servidor
+          const serverTimerIds = new Set(serverTimers.map((t: any) => t.servicioId));
+          setTimers(prev => {
+            const filtered = prev.filter(timer => {
+              // Mantener timers temporales y de ventas
+              if (timer.isTemporary || timer.tipoTransaccion === 'venta') return true;
+              // Mantener timers de servicios que están en el servidor
+              return serverTimerIds.has(timer.servicioId);
+            });
+            return filtered;
+          });
+        }
+      } catch (error) {
+        console.error('[TimerContext] Error sincronizando timers activos:', error);
+      }
+    };
+
+    // Sincronizar inmediatamente al cargar
+    syncActiveTimers();
+
+    // Sincronizar cada 30 segundos
+    const interval = setInterval(syncActiveTimers, 30000);
+
+    return () => clearInterval(interval);
+  }, [isInitialized]);
+
   // Guardar timers en localStorage cuando cambien
   useEffect(() => {
     if (isInitialized) {
@@ -306,9 +382,116 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [timers, isInitialized]);
 
+  // Sincronización de timers via SSE para multi-dispositivo
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+
+    const connectSSE = () => {
+      console.log('[TimerContext] Conectando a SSE para sincronización de timers...');
+      eventSource = new EventSource('/api/notifications/sse');
+
+      eventSource.addEventListener('message', (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+
+          // Evento: Se inició un nuevo timer
+          if (payload?.type === 'timer_started' && payload?.data) {
+            const { servicioId, codigo, roomId, roomName, duration, startTime, clienteNombre, anfitrionas, tipoTransaccion } = payload.data;
+
+            // Verificar si ya existe este timer localmente
+            const existingTimer = timersRef.current.find(
+              t => t.servicioId === servicioId && t.codigo === codigo
+            );
+
+            if (!existingTimer) {
+              console.log('[TimerContext] SSE: Iniciando timer remoto:', codigo);
+              
+              // Calcular tiempo restante basándose en startTime
+              const now = new Date();
+              const start = new Date(startTime);
+              const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+              const remainingSeconds = Math.max(0, (duration * 60) - elapsedSeconds);
+
+              const newTimer: Timer = {
+                id: `${servicioId}-${roomId}-${Date.now()}`,
+                servicioId,
+                roomId,
+                roomName,
+                duration,
+                remainingTime: remainingSeconds,
+                isActive: true,
+                isPaused: false,
+                startTime: start,
+                servicioCode: codigo,
+                clienteNombre,
+                tipoTransaccion: tipoTransaccion || 'servicio',
+                anfitrionas: anfitrionas || ''
+              };
+
+              setTimers(prev => [...prev.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)), newTimer]);
+              saveTimersToStorage([...timersRef.current.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)), newTimer]);
+            }
+          }
+
+          // Evento: Se detuvo un timer
+          if (payload?.type === 'timer_stopped' && payload?.data) {
+            const { servicioId, roomId } = payload.data;
+            console.log('[TimerContext] SSE: Deteniendo timer remoto:', servicioId);
+
+            setTimers(prev => {
+              const updated = prev.filter(t => t.servicioId !== servicioId);
+              saveTimersToStorage(updated);
+              return updated;
+            });
+          }
+        } catch (error) {
+          console.error('[TimerContext] Error procesando evento SSE:', error);
+        }
+      });
+
+      eventSource.onerror = () => {
+        console.log('[TimerContext] SSE desconectado, reintentando...');
+        eventSource?.close();
+        setTimeout(connectSSE, 3000);
+      };
+    };
+
+    connectSSE();
+
+    return () => {
+      console.log('[TimerContext] Desconectando SSE');
+      eventSource?.close();
+    };
+  }, []);
+
   // Función para actualizar el estado de la habitación
   const updateRoomStatus = useCallback(async (roomId: number, status: number) => {
     try {
+      // Primero obtener los datos de la habitación
+      const roomResponse = await fetch(`/api/rooms/${roomId}`);
+      if (!roomResponse.ok) {
+        throw new Error('Error al obtener datos de habitación');
+      }
+      
+      const roomData = await roomResponse.json();
+      if (!roomData.success) {
+        throw new Error('No se pudo obtener datos de habitación');
+      }
+
+      const room = roomData.data;
+      
+      // Verificar si la habitación tiene precio, tiempo o comisión
+      const hasPrice = room.price != null && room.price > 0;
+      const hasTime = room.time != null && room.time > 0;
+      const hasCommission = room.comision_anfitriona != null && room.comision_anfitriona > 0;
+      
+      // Si la habitación NO tiene precio, tiempo ni comisión, no cambiar su estado
+      if (!hasPrice && !hasTime && !hasCommission) {
+        console.log(`ℹ️ Habitación ${roomId} sin precio/tiempo/comisión - no se cambia el estado`);
+        return;
+      }
+
+      // Si tiene al menos uno de los valores, actualizar el estado
       const response = await fetch(`/api/rooms/${roomId}`, {
         method: 'PATCH',
         headers: {
@@ -435,20 +618,34 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const updates = [];
 
-        // Solo actualizar estado del servicio si es un servicio (no una venta)
-        if (timer.tipoTransaccion !== 'venta') {
+        // Actualizar estado según el tipo de transacción
+        if (timer.tipoTransaccion === 'servicio') {
+          // Para servicios, actualizar el estado del servicio
           updates.push(updateServiceStatus(timer.servicioId, 0));
+        } else if (timer.tipoTransaccion === 'venta') {
+          // Para ventas, finalizar la venta
+          try {
+            const response = await fetch(`/api/ventas/${timer.servicioId}/stop`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              console.log(`✅ Venta ${timer.servicioId} finalizada en servidor`);
+            } else {
+              console.error(`❌ Error finalizando venta ${timer.servicioId}:`, response.statusText);
+            }
+          } catch (error) {
+            console.error(`❌ Error al finalizar venta:`, error);
+          }
         }
 
-        // Solo liberar la habitación si no hay más temporizadores activos para ella
-        // Y si NO es una venta (las ventas no deben tocar el estado de la habitación al finalizar según requerimiento)
-        if (otherTimersInSameRoom.length === 0 && timer.tipoTransaccion !== 'venta') {
+        // Liberar la habitación si no hay más temporizadores activos para ella
+        if (otherTimersInSameRoom.length === 0) {
           console.log(`🧹 Liberando habitación ${timer.roomId} - no quedan otros timers activos`);
           updates.push(updateRoomStatus(timer.roomId, 1));
-        } else if (timer.tipoTransaccion === 'venta') {
-          console.log(
-            `ℹ️ Timer de venta finalizado - no se toca el estado de la habitación ${timer.roomId}`
-          );
         } else {
           console.log(
             `⏳ Habitación ${timer.roomId} sigue ocupada - quedan ${otherTimersInSameRoom.length} timers activos`
@@ -499,8 +696,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     async (servicioId: number) => {
       const timerToStop = timers.find(timer => timer.servicioId === servicioId);
       if (timerToStop) {
-        await stopTimer(timerToStop.id);
-        toast.success(`Temporizador para servicio ${timerToStop.servicioCode} detenido.`);
+        await stopTimer(timerToStop.id, true); // true = es una parada manual
       } else {
         toast.error(`No se encontró un temporizador activo para el servicio ${servicioId}.`);
       }

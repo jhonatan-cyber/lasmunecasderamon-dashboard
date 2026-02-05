@@ -7,6 +7,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { NotificationProvider, NotificationStatus, ClientOnly } from '@/components/notifications';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ServicioAnfitrionasProvider } from '@/contexts/ServicioAnfitrionasContext';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 
 import './globals.css';
@@ -35,23 +36,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AnulacionProvider>
               <TimerProvider>
                 <ServicioAnfitrionasProvider>
-                  <NotificationProvider>
-                    <LayoutContent>{children}</LayoutContent>
-                  {/* Notification Status oculto */}
-                  {/* <div className='fixed bottom-4 left-4 z-50'>
-                    <ClientOnly>
-                      <NotificationStatus />
-                    </ClientOnly>
-                  </div> */}
-                  <Toaster
-                    richColors
-                    position='top-right'
-                    expand={true}
-                    closeButton={true}
-                    duration={4000}
-                  />
-                  <AnulacionNotificationModal />
-                </NotificationProvider>
+                  <NotificationsProvider>
+                    <NotificationProvider>
+                      <LayoutContent>{children}</LayoutContent>
+                    {/* Notification Status oculto */}
+                    {/* <div className='fixed bottom-4 left-4 z-50'>
+                      <ClientOnly>
+                        <NotificationStatus />
+                      </ClientOnly>
+                    </div> */}
+                    <Toaster
+                      richColors
+                      position='top-right'
+                      expand={true}
+                      closeButton={true}
+                      duration={4000}
+                    />
+                    <AnulacionNotificationModal />
+                    </NotificationProvider>
+                  </NotificationsProvider>
                 </ServicioAnfitrionasProvider>
               </TimerProvider>
             </AnulacionProvider>

@@ -394,13 +394,13 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
             </div>
 
             {/* Resumen financiero */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h5 className="font-medium text-lg mb-4 text-center">
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <h5 className="font-medium text-lg mb-4 text-center text-gray-900 dark:text-white">
                 Resumen Financiero
               </h5>
               <div className="flex justify-center gap-2 text-sm mb-6">
-                <span className="text-gray-600">Monto apertura:</span>
-                <span className="font-medium">
+                <span className="text-gray-600 dark:text-gray-400">Monto apertura:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
                   {formatCurrencyNoDecimals(caja.monto_apertura)}
                 </span>
               </div>
@@ -408,96 +408,96 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               {/* Tarjetas de resumen principal */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 {/* Tragos Chicas */}
-                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="text-center">
-                    <div className="text-xs text-blue-600 font-medium mb-1">TRAGOS CHICAS</div>
-                    <div className="text-lg font-bold text-blue-700">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">TRAGOS CHICAS</div>
+                    <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
                       {loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.total_venta)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Propinas: {loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.propinas)}
                     </div>
                     {/* Desglose */}
-                    <div className="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-600 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Monto Venta:</span>
-                        <span className="text-blue-600">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.monto_productos)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Monto Venta:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.monto_productos)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Comisiones:</span>
-                        <span className="text-purple-600">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.comisiones)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Comisiones:</span>
+                        <span className="text-purple-600 dark:text-purple-400">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.comisiones)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Champañas */}
-                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="text-center">
-                    <div className="text-xs text-purple-600 font-medium mb-1">CHAMPAÑAS</div>
-                    <div className="text-lg font-bold text-purple-700">
+                    <div className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">CHAMPAÑAS</div>
+                    <div className="text-lg font-bold text-purple-700 dark:text-purple-300">
                       {loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.total_venta)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Propinas: {loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.propinas)}
                     </div>
                     {/* Desglose */}
-                    <div className="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-600 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Monto (sin comisión):</span>
-                        <span className="text-purple-600">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.monto_champagne - ventasChampagne.comisiones)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Monto (sin comisión):</span>
+                        <span className="text-purple-600 dark:text-purple-400">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.monto_champagne - ventasChampagne.comisiones)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Comisiones:</span>
-                        <span className="text-blue-600">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.comisiones)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Comisiones:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.comisiones)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Barras */}
-                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="text-center">
-                    <div className="text-xs text-orange-600 font-medium mb-1">BARRAS</div>
-                    <div className="text-lg font-bold text-orange-700">
+                    <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">BARRAS</div>
+                    <div className="text-lg font-bold text-orange-700 dark:text-orange-300">
                       {loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.total_venta)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Propinas: {loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.propinas)}
                     </div>
                     {/* Desglose */}
-                    <div className="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-600 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Monto Venta:</span>
-                        <span className="text-orange-600">{loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.monto_productos)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Monto Venta:</span>
+                        <span className="text-orange-600 dark:text-orange-400">{loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.monto_productos)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Sin comisiones</span>
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-500 dark:text-gray-400">Sin comisiones</span>
+                        <span className="text-gray-400 dark:text-gray-500">-</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Servicios */}
-                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="text-center">
-                    <div className="text-xs text-green-600 font-medium mb-1">SERVICIOS</div>
-                    <div className="text-lg font-bold text-green-700">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">SERVICIOS</div>
+                    <div className="text-lg font-bold text-green-700 dark:text-green-300">
                       {formatCurrencyNoDecimals(caja.servicios)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       IVA: {formatCurrencyNoDecimals(serviciosDesglose.total_iva)}
                     </div>
                     {/* Desglose */}
-                    <div className="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-600 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Monto Servicio:</span>
-                        <span className="text-green-600">{formatCurrencyNoDecimals(serviciosDesglose.total_servicio_neto)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Monto Servicio:</span>
+                        <span className="text-green-600 dark:text-green-400">{formatCurrencyNoDecimals(serviciosDesglose.total_servicio_neto)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Habitaciones:</span>
-                        <span className="text-blue-600">{formatCurrencyNoDecimals(serviciosDesglose.total_habitacion)}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Habitaciones:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{formatCurrencyNoDecimals(serviciosDesglose.total_habitacion)}</span>
                       </div>
                     </div>
                   </div>
@@ -507,79 +507,79 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               {/* Resumen de totales */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Total Propinas */}
-                <div className="bg-green-50 p-3 rounded-lg">
+                <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-200 dark:border-green-700">
                   <div className="text-center">
-                    <div className="text-xs text-green-600 font-medium mb-1">TOTAL PROPINAS</div>
-                    <div className="text-lg font-bold text-green-700">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">TOTAL PROPINAS</div>
+                    <div className="text-lg font-bold text-green-700 dark:text-green-300">
                       {(loadingTragosChicas || loadingChampagne || loadingBarras) ? '...' : formatCurrencyNoDecimals(Number(ventasTragosChicas.propinas || 0) + Number(ventasChampagne.propinas || 0) + Number(ventasBarras.propinas || 0))}
                     </div>
                     {/* Desglose de propinas */}
-                    <div className="mt-2 pt-2 border-t border-green-200 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-700 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Tragos Chicas:</span>
-                        <span className="text-green-600">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.propinas || 0)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Tragos Chicas:</span>
+                        <span className="text-green-600 dark:text-green-400">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.propinas || 0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Champañas:</span>
-                        <span className="text-green-600">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.propinas || 0)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Champañas:</span>
+                        <span className="text-green-600 dark:text-green-400">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.propinas || 0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Barras:</span>
-                        <span className="text-green-600">{loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.propinas || 0)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Barras:</span>
+                        <span className="text-green-600 dark:text-green-400">{loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.propinas || 0)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Total Ingresos */}
-                <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
                   <div className="text-center">
-                    <div className="text-xs text-blue-600 font-medium mb-1">TOTAL INGRESOS</div>
-                    <div className="text-lg font-bold text-blue-700">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">TOTAL INGRESOS</div>
+                    <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
                       {formatCurrencyNoDecimals(totalIngresos)}
                     </div>
                     {/* Desglose de ingresos */}
-                    <div className="mt-2 pt-2 border-t border-blue-200 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Tragos Chicas:</span>
-                        <span className="text-blue-600">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.total_venta)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Tragos Chicas:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{loadingTragosChicas ? '...' : formatCurrencyNoDecimals(ventasTragosChicas.total_venta)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Champañas:</span>
-                        <span className="text-blue-600">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.total_venta)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Champañas:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{loadingChampagne ? '...' : formatCurrencyNoDecimals(ventasChampagne.total_venta)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Barras:</span>
-                        <span className="text-blue-600">{loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.total_venta)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Barras:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{loadingBarras ? '...' : formatCurrencyNoDecimals(ventasBarras.total_venta)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Servicios:</span>
-                        <span className="text-blue-600">{formatCurrencyNoDecimals(caja.servicios)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Servicios:</span>
+                        <span className="text-blue-600 dark:text-blue-400">{formatCurrencyNoDecimals(caja.servicios)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Total Egresos */}
-                <div className="bg-red-50 p-3 rounded-lg">
+                <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg border border-red-200 dark:border-red-700">
                   <div className="text-center">
-                    <div className="text-xs text-red-600 font-medium mb-1">TOTAL EGRESOS</div>
-                    <div className="text-lg font-bold text-red-700">
+                    <div className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">TOTAL EGRESOS</div>
+                    <div className="text-lg font-bold text-red-700 dark:text-red-300">
                       -{formatCurrencyNoDecimals(totalEgresos)}
                     </div>
                     {/* Desglose de egresos */}
-                    <div className="mt-2 pt-2 border-t border-red-200 text-xs space-y-1">
+                    <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-700 text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Devoluciones:</span>
-                        <span className="text-red-600">{formatCurrencyNoDecimals(caja.devoluciones)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Devoluciones:</span>
+                        <span className="text-red-600 dark:text-red-400">{formatCurrencyNoDecimals(caja.devoluciones)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Anticipos:</span>
-                        <span className="text-red-600">{formatCurrencyNoDecimals(caja.anticipo || 0)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Anticipos:</span>
+                        <span className="text-red-600 dark:text-red-400">{formatCurrencyNoDecimals(caja.anticipo || 0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Retiros:</span>
-                        <span className="text-red-600">{formatCurrencyNoDecimals(retiros.reduce((sum, r) => sum + r.monto, 0))}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Retiros:</span>
+                        <span className="text-red-600 dark:text-red-400">{formatCurrencyNoDecimals(retiros.reduce((sum, r) => sum + r.monto, 0))}</span>
                       </div>
                     </div>
                   </div>
@@ -587,80 +587,80 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               </div>
 
               {/* Distribución del dinero */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200 mb-4">
-                <h6 className="font-medium text-gray-800 text-base mb-4 text-center flex items-center justify-center gap-2">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 mb-4">
+                <h6 className="font-medium text-gray-800 dark:text-white text-base mb-4 text-center flex items-center justify-center gap-2">
                   <DollarSign className="w-4 h-4" />
                   Distribución del Dinero
                 </h6>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {/* Monto Apertura */}
-                  <div className="bg-white p-3 rounded-lg border border-blue-200 shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-blue-200 dark:border-blue-600 shadow-sm">
                     <div className="text-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Calendar className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <div className="text-xs text-blue-600 font-medium mb-1">APERTURA</div>
-                      <div className="text-sm font-bold text-blue-700">
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">APERTURA</div>
+                      <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
                         {formatCurrencyNoDecimals(caja.monto_apertura)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Inicial</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inicial</div>
                     </div>
                   </div>
 
                   {/* En Caja */}
-                  <div className="bg-white p-3 rounded-lg border border-green-200 shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-green-200 dark:border-green-600 shadow-sm">
                     <div className="text-center">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <DollarSign className="w-4 h-4 text-green-600" />
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
                       </div>
-                      <div className="text-xs text-green-600 font-medium mb-1">EN EFECTIVO</div>
-                      <div className="text-sm font-bold text-green-700">
+                      <div className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">EN EFECTIVO</div>
+                      <div className="text-sm font-bold text-green-700 dark:text-green-300">
                         {formatCurrencyNoDecimals(efectivoRealEnCaja)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Efectivo</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Efectivo</div>
                     </div>
                   </div>
 
                   {/* Tarjeta */}
-                  <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-purple-200 dark:border-purple-600 shadow-sm">
                     <div className="text-center">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v2H4V6zm0 4h12v4H4v-4z" />
                         </svg>
                       </div>
-                      <div className="text-xs text-purple-600 font-medium mb-1">TARJETA</div>
-                      <div className="text-sm font-bold text-purple-700">
+                      <div className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">TARJETA</div>
+                      <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
                         {formatCurrencyNoDecimals(caja.tarjeta)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Débito/Crédito</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Débito/Crédito</div>
                     </div>
                   </div>
 
                   {/* Transferencia */}
-                  <div className="bg-white p-3 rounded-lg border border-orange-200 shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-orange-200 dark:border-orange-600 shadow-sm">
                     <div className="text-center">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
                         </svg>
                       </div>
-                      <div className="text-xs text-orange-600 font-medium mb-1">TRANSFERENCIA</div>
-                      <div className="text-sm font-bold text-orange-700">
+                      <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">TRANSFERENCIA</div>
+                      <div className="text-sm font-bold text-orange-700 dark:text-orange-300">
                         {formatCurrencyNoDecimals(caja.transferencia)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Bancaria</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bancaria</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Balance Final */}
-              <div className="bg-gradient-to-r from-gray-100 to-gray-200 p-4 rounded-lg border-2 border-gray-300">
+              <div className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 p-4 rounded-lg border-2 border-gray-300 dark:border-gray-600">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-lg text-gray-800">Balance Final:</span>
+                  <span className="font-bold text-lg text-gray-800 dark:text-white">Balance Final:</span>
                   <span
-                    className={`font-bold text-2xl ${balanceActual >= 0 ? "text-green-600" : "text-red-600"
+                    className={`font-bold text-2xl ${balanceActual >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                       }`}
                   >
                     {formatCurrencyNoDecimals(balanceActual)}
@@ -670,18 +670,18 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
             </div>
 
             {/* Historial de Retiros */}
-            <div className='bg-gray-50 p-4 rounded-lg'>
-              <h5 className='font-medium text-lg mb-4 flex items-center gap-2'>
-                <ArrowDownCircle className='w-5 h-5 text-orange-600' />
+            <div className='bg-gray-50 dark:bg-gray-800 p-4 rounded-lg'>
+              <h5 className='font-medium text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2'>
+                <ArrowDownCircle className='w-5 h-5 text-orange-600 dark:text-orange-400' />
                 Historial de Retiros
               </h5>
 
               {retirosLoading ? (
                 <div className='flex justify-center items-center py-8'>
-                  <Loader2 className='h-6 w-6 animate-spin text-gray-400' />
+                  <Loader2 className='h-6 w-6 animate-spin text-gray-400 dark:text-gray-500' />
                 </div>
               ) : retiros.length === 0 ? (
-                <div className='text-center py-8 text-gray-500 text-sm'>
+                <div className='text-center py-8 text-gray-500 dark:text-gray-400 text-sm'>
                   No hay retiros registrados para esta caja
                 </div>
               ) : (
@@ -689,21 +689,21 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                   {retiros.map((retiro) => (
                     <div
                       key={retiro.id_retiro}
-                      className='bg-white p-3 rounded-lg border border-gray-200'
+                      className='bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600'
                     >
                       <div className='flex justify-between items-start mb-2'>
                         <div className='flex-1'>
                           <div className='flex items-center gap-2 mb-1'>
-                            <span className='font-medium text-orange-600'>
+                            <span className='font-medium text-orange-600 dark:text-orange-400'>
                               -${Math.round(retiro.monto).toLocaleString()}
                             </span>
-                            <span className='text-xs text-gray-500'>
+                            <span className='text-xs text-gray-500 dark:text-gray-400'>
                               por {retiro.usuario_nombre || 'Usuario desconocido'}
                             </span>
                           </div>
-                          <p className='text-sm text-gray-600'>{retiro.motivo}</p>
+                          <p className='text-sm text-gray-600 dark:text-gray-300'>{retiro.motivo}</p>
                         </div>
-                        <span className='text-xs text-gray-400 whitespace-nowrap ml-2'>
+                        <span className='text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-2'>
                           {new Date(retiro.fecha_retiro).toLocaleDateString('es-ES', {
                             day: '2-digit',
                             month: '2-digit',
@@ -715,10 +715,10 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                     </div>
                   ))}
                   {retiros.length > 0 && (
-                    <div className='border-t pt-3 mt-3'>
-                      <div className='flex justify-between text-sm font-medium'>
+                    <div className='border-t border-gray-200 dark:border-gray-600 pt-3 mt-3'>
+                      <div className='flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
                         <span>Total Retirado:</span>
-                        <span className='text-orange-600'>
+                        <span className='text-orange-600 dark:text-orange-400'>
                           -${Math.round(retiros.reduce((sum, r) => sum + r.monto, 0)).toLocaleString()}
                         </span>
                       </div>
@@ -729,18 +729,18 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
             </div>
 
             {/* Listado de Ventas */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h5 className="font-medium text-lg mb-4 flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-green-600" />
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <h5 className="font-medium text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
                 Ventas Realizadas ({ventas.length})
               </h5>
 
               {loadingVentas ? (
                 <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 dark:text-gray-500" />
                 </div>
               ) : ventas.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 text-sm">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
                   No hay ventas registradas para esta caja
                 </div>
               ) : (
@@ -748,49 +748,49 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs sm:text-sm">CLIENTE</TableHead>
-                          <TableHead className="text-xs sm:text-sm">ANFITRIONA</TableHead>
-                          <TableHead className="text-xs sm:text-sm">GARZÓN</TableHead>
-                          <TableHead className="text-xs sm:text-sm">CAJERO</TableHead>
-                          <TableHead className="text-xs sm:text-sm">TIPO VENTA</TableHead>
-                          <TableHead className="text-xs sm:text-sm">FECHA</TableHead>
-                          <TableHead className="text-xs sm:text-sm">MÉTODO PAGO</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">COMISIÓN</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">PROPINA</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">TOTAL</TableHead>
+                        <TableRow className="border-gray-200 dark:border-gray-700">
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">CLIENTE</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">ANFITRIONA</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">GARZÓN</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">CAJERO</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">TIPO VENTA</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">FECHA</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">MÉTODO PAGO</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">COMISIÓN</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">PROPINA</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">TOTAL</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {getPaginatedVentas().map((venta: any) => (
-                          <TableRow key={venta.id_venta}>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                          <TableRow key={venta.id_venta} className="border-gray-200 dark:border-gray-700">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {venta.cliente_nombre || 'Sin cliente'}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {venta.usuarios_nicks || 'N/A'}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {venta.garzon_nick || 'N/A'}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {venta.cajero_nick || 'N/A'}
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <Badge
                                 variant="outline"
                                 className={`text-xs px-2 py-0.5 ${venta.tiene_comision
-                                  ? 'border-blue-300 text-blue-700 bg-blue-50'
-                                  : 'border-orange-300 text-orange-700 bg-orange-50'
+                                  ? 'border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                                  : 'border-orange-300 dark:border-orange-600 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30'
                                   }`}
                               >
                                 {venta.tiene_comision ? 'Con Chica' : 'En Barra'}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm">
+                            <TableCell className="text-xs sm:text-sm text-gray-900 dark:text-gray-100">
                               <div className="flex flex-col">
                                 <span>{new Date(venta.fecha_crea).toLocaleDateString('es-ES')}</span>
-                                <span className="text-gray-500 text-xs">
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">
                                   {new Date(venta.fecha_crea).toLocaleTimeString('es-ES', {
                                     hour: '2-digit',
                                     minute: '2-digit'
@@ -799,17 +799,22 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                               </div>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm capitalize">
-                              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                              <Badge variant="secondary" className="text-xs px-2 py-0.5 dark:bg-gray-700 dark:text-gray-200">
                                 {venta.metodo_pago}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-blue-600">
-                              {formatCurrencyNoDecimals(venta.comision || 0)}
+                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
+                              <div className="flex flex-col items-end gap-1">
+                                <span>{formatCurrencyNoDecimals((venta.comision || 0) / (venta.usuarios?.length || 1))}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {venta.usuarios?.length ? `por anfitriona (${venta.usuarios.length})` : 'total'}
+                                </span>
+                              </div>
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-green-600">
+                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
                               {formatCurrencyNoDecimals(venta.propina || 0)}
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-gray-900">
+                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
                               {formatCurrencyNoDecimals(venta.total)}
                             </TableCell>
                           </TableRow>
@@ -829,18 +834,18 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
             </div>
 
             {/* Servicios Detallados */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h5 className="font-medium text-lg mb-4 flex items-center gap-2">
-                <Home className="w-5 h-5 text-purple-600" />
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <h5 className="font-medium text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                <Home className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 Servicios Realizados ({servicios.length})
               </h5>
 
               {loadingServicios ? (
                 <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 dark:text-gray-500" />
                 </div>
               ) : servicios.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 text-sm">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
                   No hay servicios registrados para esta caja
                 </div>
               ) : (
@@ -848,47 +853,57 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs sm:text-sm">CLIENTE</TableHead>
-                          <TableHead className="text-xs sm:text-sm">ANFITRIONAS</TableHead>
-                          <TableHead className="text-xs sm:text-sm">USUARIO</TableHead>
-                          <TableHead className="text-xs sm:text-sm">HABITACIÓN</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">PRECIO SERVICIO</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">PRECIO HABITACIÓN</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">IVA</TableHead>
-                          <TableHead className="text-xs sm:text-sm">FECHA</TableHead>
-                          <TableHead className="text-xs sm:text-sm">MÉTODO PAGO</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">TOTAL</TableHead>
+                        <TableRow className="border-gray-200 dark:border-gray-700">
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">CLIENTE</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">ANFITRIONAS</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">USUARIO</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">HABITACIÓN</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">PRECIO SERVICIO</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">PRECIO HABITACIÓN</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">IVA</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">FECHA</TableHead>
+                          <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">MÉTODO PAGO</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300">TOTAL</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {getPaginatedServicios().map((servicio: any) => (
-                          <TableRow key={servicio.id_servicio}>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                          <TableRow key={servicio.id_servicio} className="border-gray-200 dark:border-gray-700">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {servicio.cliente_nombre || 'Sin cliente'}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm font-medium">
-                              {servicio.anfitrionas_nicks || 'N/A'}
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {servicio.anfitrionas_nombres || 'N/A'}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {servicio.usuario_nick || 'N/A'}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm font-medium">
+                            <TableCell className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                               {servicio.habitacion_numero || 'N/A'}
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-green-600">
-                              {formatCurrencyNoDecimals(servicio.precio_servicio || 0)}
+                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
+                              <div className="flex flex-col items-end gap-1">
+                                <span>{formatCurrencyNoDecimals((servicio.precio_servicio || 0) / ((servicio.anfitrionas_nombres?.split(',').length) || 1))}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {servicio.anfitrionas_nombres ? `por anfitriona (${servicio.anfitrionas_nombres.split(',').length})` : 'total'}
+                                </span>
+                              </div>
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-blue-600">
-                              {formatCurrencyNoDecimals(servicio.precio_habitacion || 0)}
+                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
+                              <div className="flex flex-col items-end gap-1">
+                                <span>{formatCurrencyNoDecimals(servicio.precio_habitacion || 0)}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {servicio.anfitrionas_nombres ? `por anfitriona (${servicio.anfitrionas_nombres.split(',').length})` : 'total'}
+                                </span>
+                              </div>
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-purple-600">
+                            <TableCell className="text-right text-xs sm:text-sm font-semibold text-purple-600 dark:text-purple-400">
                               {formatCurrencyNoDecimals(servicio.iva || 0)}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm">
+                            <TableCell className="text-xs sm:text-sm text-gray-900 dark:text-gray-100">
                               <div className="flex flex-col">
                                 <span>{new Date(servicio.fecha_crea).toLocaleDateString('es-ES')}</span>
-                                <span className="text-gray-500 text-xs">
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">
                                   {new Date(servicio.fecha_crea).toLocaleTimeString('es-ES', {
                                     hour: '2-digit',
                                     minute: '2-digit'
@@ -897,11 +912,11 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                               </div>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm capitalize">
-                              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                              <Badge variant="secondary" className="text-xs px-2 py-0.5 dark:bg-gray-700 dark:text-gray-200">
                                 {servicio.metodo_pago || 'efectivo'}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm font-bold text-gray-900">
+                            <TableCell className="text-right text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100">
                               {formatCurrencyNoDecimals(servicio.total || 0)}
                             </TableCell>
                           </TableRow>
@@ -923,12 +938,12 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
         </div>
 
         {/* Footer con botón - fijo en la parte inferior */}
-        <div className="flex-shrink-0 border-t px-4 sm:px-6 py-4 bg-white">
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 bg-white dark:bg-gray-900">
           <div className="mt-6 flex justify-center">
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200"
+              className="rounded-full px-6 bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-all duration-200"
               onClick={() => onOpenChange(false)}
             >
               Cerrar

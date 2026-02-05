@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { sendNotificationToAll } from './notifications/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
@@ -152,9 +153,19 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         END as garzon_nick,
         GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as usuarios_nicks,
         GROUP_CONCAT(DISTINCT CONCAT(u.nombre, ' ', u.apellido) SEPARATOR ', ') as usuario_nombre,
-        COALESCE(SUM(dc.comision), 0) as comision,
+        (
+          SELECT COALESCE(SUM(dc.comision), 0) 
+          FROM comisiones com2
+          LEFT JOIN detalle_comisiones dc ON dc.comision_id = com2.id_comision
+          WHERE com2.venta_id = v.id_venta
+        ) as comision,
         CASE 
-          WHEN COALESCE(SUM(dc.comision), 0) > 0 THEN 1
+          WHEN (
+            SELECT COALESCE(SUM(dc.comision), 0) 
+            FROM comisiones com2
+            LEFT JOIN detalle_comisiones dc ON dc.comision_id = com2.id_comision
+            WHERE com2.venta_id = v.id_venta
+          ) > 0 THEN 1
           ELSE 0
         END as tiene_comision,
         (
@@ -169,8 +180,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
       LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
-      LEFT JOIN comisiones com ON com.venta_id = v.id_venta
-      LEFT JOIN detalle_comisiones dc ON dc.comision_id = com.id_comision
       ${whereClause}
       GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.tiempo, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
       ORDER BY v.fecha_crea DESC 
@@ -528,7 +537,10 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
         if (hostessesParaEsteProducto.length > 0) {
           // Dividir la comisión del producto entre sus anfitrionas seleccionadas
-          const montoPorAnfitriona = comision / hostessesParaEsteProducto.length;
+          // Usar Math.round para redondear correctamente en lugar de truncar
+          const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
+          
+          console.log(`[SALES POST] Producto: ${detalle.producto_id}, Comisión: ${comision}, Anfitrionas: ${hostessesParaEsteProducto.length}, Monto por anfitriona: ${montoPorAnfitriona}`);
 
           for (const hId of hostessesParaEsteProducto) {
             const actual = comisionesPorAnfitriona.get(hId) || 0;
@@ -536,6 +548,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           }
         }
       }
+
+      console.log('[SALES POST] Final commissions distribution:', Array.from(comisionesPorAnfitriona.entries()));
 
       // Insertar comisiones calculadas
       for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
@@ -546,7 +560,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
               servicio_id,
               monto
             ) VALUES (?, ?, ?)`,
-            [ventaId, null, Math.floor(monto)]
+            [ventaId, null, monto]
           );
 
           const comisionId = comisionResult.insertId;
@@ -557,7 +571,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
               usuario_id,
               comision
             ) VALUES (?, ?, ?)`,
-            [comisionId, usuarioId, Math.floor(monto)]
+            [comisionId, usuarioId, monto]
           );
         }
       }
@@ -636,6 +650,35 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const ventaCompleta = ventaCompletaResult[0];
 
     console.log('[SALES POST] ✅ Sale created successfully with ID:', ventaId);
+
+    // Enviar notificación SSE si la venta tiene habitación y tiempo
+    if (habitacion_id && tiempo > 0) {
+      try {
+        const habitacionInfo = await query(
+          'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
+          [habitacion_id]
+        ) as any[];
+        
+        const nombreHabitacion = habitacionInfo && habitacionInfo.length > 0 
+          ? habitacionInfo[0].nombre 
+          : `Habitación ${habitacion_id}`;
+
+        sendNotificationToAll('timer_started', {
+          servicioId: ventaId,
+          codigo: codigoVenta,
+          roomId: habitacion_id,
+          roomName: nombreHabitacion,
+          duration: tiempo,
+          startTime: new Date().toISOString(),
+          clienteNombre: ventaCompleta?.cliente_nombre ? `${ventaCompleta.cliente_nombre} ${ventaCompleta.cliente_apellido}` : 'Cliente',
+          anfitrionas: ventaCompleta?.usuarios_nicks || '',
+          tipoTransaccion: 'venta'
+        });
+        console.log('[SALES POST] Notificación timer_started enviada para venta:', ventaId);
+      } catch (notificacionError) {
+        console.error('[SALES POST] Error enviando notificación SSE:', notificacionError);
+      }
+    }
 
     return res.status(201).json({
       success: true,

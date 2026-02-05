@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useClientes } from "@/hooks/useClientes";
 import { useAnfitrionas } from "@/hooks/useAnfitrionas";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ServiceOrderForm from "@/components/orders/ServiceOrderFormNew";
 
 export default function NewOrder() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("productos");
   const [selectedCliente, setSelectedCliente] = useState("");
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]); // productos agregados
@@ -141,26 +144,46 @@ export default function NewOrder() {
         </Button>
       </div>
       <div className="p-8 bg-white ml-8 mr-8 space-y-6 shadow-md rounded-xl">
-        <OrderForm
-          clientes={clientesFiltrados}
-          anfitrionas={anfitrionasFiltradas}
-          categorias={categoriasFiltradas}
-          productos={productos}
-          selectedCliente={selectedCliente}
-          setSelectedCliente={setSelectedCliente}
-          selectedAnfitrionas={selectedAnfitrionas}
-          setSelectedAnfitrionas={setSelectedAnfitrionas}
-          onAddProducto={handleAddProducto}
-          onRemoveProducto={handleRemoveProducto}
-          onUpdateCantidad={handleUpdateCantidad}
-          onToggleComision={handleToggleComision}
-          onAssignHostess={handleAssignHostess}
-          onSubmit={handleSubmit}
-          searchCliente={searchCliente}
-          setSearchCliente={setSearchCliente}
-          searchAnfitriona={searchAnfitriona}
-          setSearchAnfitriona={setSearchAnfitriona}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 rounded-full">
+            <TabsTrigger value="productos" className="rounded-full">Pedidos de Productos</TabsTrigger>
+            <TabsTrigger value="servicios" className="rounded-full">Pedidos de Servicio</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="productos" className="space-y-6">
+            <OrderForm
+              clientes={clientesFiltrados}
+              anfitrionas={anfitrionasFiltradas}
+              categorias={categoriasFiltradas}
+              productos={productos}
+              selectedCliente={selectedCliente}
+              setSelectedCliente={setSelectedCliente}
+              selectedAnfitrionas={selectedAnfitrionas}
+              setSelectedAnfitrionas={setSelectedAnfitrionas}
+              onAddProducto={handleAddProducto}
+              onRemoveProducto={handleRemoveProducto}
+              onUpdateCantidad={handleUpdateCantidad}
+              onToggleComision={handleToggleComision}
+              onAssignHostess={handleAssignHostess}
+              onSubmit={handleSubmit}
+              searchCliente={searchCliente}
+              setSearchCliente={setSearchCliente}
+              searchAnfitriona={searchAnfitriona}
+              setSearchAnfitriona={setSearchAnfitriona}
+            />
+          </TabsContent>
+
+          <TabsContent value="servicios" className="space-y-6">
+            <ServiceOrderForm
+              clientes={clientes}
+              anfitrionas={anfitrionas}
+              searchCliente={searchCliente}
+              setSearchCliente={setSearchCliente}
+              searchAnfitriona={searchAnfitriona}
+              setSearchAnfitriona={setSearchAnfitriona}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );

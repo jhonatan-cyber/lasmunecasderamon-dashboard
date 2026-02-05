@@ -3,8 +3,10 @@ import { Room } from "@/types/room";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bed, Clock, DollarSign, Percent, MoreVertical, Edit, Trash2, Check, Power, Users } from "lucide-react";
+import { Bed, Clock, DollarSign, Percent, MoreVertical, Edit, Trash2, Check, Power, Users, GripVertical } from "lucide-react";
 import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const RoomCard: React.FC<{
   room: Room;
@@ -13,8 +15,27 @@ const RoomCard: React.FC<{
   onActivate: (room: Room) => void;
   onDeactivate: (room: Room) => void;
   onOccupy: (room: Room) => void;
-}> = ({ room, onEdit, onDelete, onActivate, onDeactivate, onOccupy }) => {
+  isDraggable?: boolean;
+}> = ({ room, onEdit, onDelete, onActivate, onDeactivate, onOccupy, isDraggable = false }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ 
+    id: room.id,
+    disabled: !isDraggable
+  });
+
+  const style = isDraggable ? {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  } : {};
   
   const getStatusColor = () => {
     switch (room.status) {
@@ -33,7 +54,7 @@ const RoomCard: React.FC<{
   };
 
   return (
-    <div className="group">
+    <div className="group" ref={isDraggable ? setNodeRef : undefined} style={style}>
       <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
         {/* Status indicator */}
         <div className={`absolute top-0 left-0 right-0 h-1 ${getStatusColor()}`} />
@@ -41,9 +62,20 @@ const RoomCard: React.FC<{
         {/* Header */}
         <div className="flex items-start justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Bed className="w-4 h-4 text-gray-600" />
-            </div>
+            {/* Drag handle en lugar del ícono de cama */}
+            {isDraggable ? (
+              <div
+                {...attributes}
+                {...listeners}
+                className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 cursor-grab active:cursor-grabbing hover:bg-gray-200 transition-colors"
+              >
+                <GripVertical className="w-4 h-4 text-gray-600" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Bed className="w-4 h-4 text-gray-600" />
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{room.name}</h3>
               <Badge 
@@ -64,7 +96,7 @@ const RoomCard: React.FC<{
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 rounded-lg flex-shrink-0"
+                className={`transition-opacity h-7 w-7 rounded-lg flex-shrink-0 ${isDraggable ? 'opacity-0 group-hover:opacity-100' : ''}`}
               >
                 <MoreVertical className="h-3 w-3" />
               </Button>
