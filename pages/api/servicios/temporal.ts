@@ -74,15 +74,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Generar código único para el servicio nuevo
     const codigo = generateUniqueCode();
 
+    // Normalizar números para evitar concatenaciones y valores inválidos
+    const totalNum = Number(total || 0);
+    const ivaNum = Number(iva || 0);
+    const subTotalNum = Number(sub_total || 0);
+
     // Redondear el total a múltiplos de 5000 y sumar excedente al IVA solo si es tarjeta
-    let totalFinal = total;
-    let ivaFinal = iva || 0;
+    let totalFinal = totalNum;
+    let ivaFinal = ivaNum;
 
     if (metodo_pago === "tarjeta") {
-      const totalRedondeado = Math.ceil(total / 5000) * 5000;
-      const excedente = totalRedondeado - total;
+      if (!ivaFinal && subTotalNum) {
+        ivaFinal = Math.floor(subTotalNum * 0.2);
+      }
+      const totalRedondeado = Math.ceil(totalFinal / 5000) * 5000;
+      const excedente = totalRedondeado - totalFinal;
       totalFinal = totalRedondeado;
-      ivaFinal = (iva || 0) + excedente;
+      ivaFinal = ivaFinal + excedente;
     }
 
     // Obtener la caja abierta actual

@@ -1,6 +1,6 @@
 'use client';
 
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationsContext } from '@/contexts/NotificationsContext';
 import { useRef, useEffect, useState } from 'react';
 
 interface NotificationProviderProps {
@@ -18,8 +18,8 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     }
   }, []);
 
-  // Siempre llamar el hook, pero el hook maneja internamente si debe conectarse
-  useNotifications();
+  // Usar el contexto de notificaciones (que ya inicializa el hook)
+  useNotificationsContext();
 
   // Este componente no renderiza nada, solo maneja las notificaciones
   return <>{children}</>;

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -33,14 +34,43 @@ interface Order {
   fecha_crea: string;
 }
 
+interface SolicitudServicio {
+  id_solicitud: number;
+  cliente_id?: number;
+  habitacion_id: number;
+  precio_servicio: number;
+  precio_habitacion: number;
+  anfitrionas_ids: number[];
+  metodo_pago: string;
+  tiempo: number;
+  total: number;
+  solicitado_por: number;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  motivo_rechazo?: string;
+  procesado_por?: number;
+  fecha_solicitud: string;
+  fecha_procesamiento?: string;
+  solicitado_por_nombre: string;
+  solicitado_por_nick: string;
+  procesado_por_nombre?: string;
+  cliente_nombre?: string;
+  habitacion_nombre: string;
+  habitacion_numero: number;
+}
+
 export default function OrdersPage() {
   const router = useRouter();
   const { hasPermission } = useUserPermissions();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [servicios, setServicios] = useState<SolicitudServicio[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [filteredServicios, setFilteredServicios] = useState<SolicitudServicio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingServicios, setLoadingServicios] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchServiciosTerm, setSearchServiciosTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('productos');
 
   // Estados para el modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,13 +85,42 @@ export default function OrdersPage() {
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Estados para eliminación de solicitudes de servicio
+  const [deleteServicioModalOpen, setDeleteServicioModalOpen] = useState(false);
+  const [servicioToDelete, setServicioToDelete] = useState<SolicitudServicio | null>(null);
+  const [isDeletingServicio, setIsDeletingServicio] = useState(false);
+
   useEffect(() => {
     fetchOrders();
+    fetchServicios();
   }, []);
 
   useEffect(() => {
     filterOrders();
   }, [orders, searchTerm]);
+
+  useEffect(() => {
+    filterServicios();
+  }, [servicios, searchServiciosTerm]);
+
+  // Escuchar evento para actualizar la lista cuando se procesa un pedido desde la campanita
+  useEffect(() => {
+    const handleUpdateOrders = () => {
+      fetchOrders();
+    };
+
+    const handleUpdateServiceRequests = () => {
+      fetchServicios();
+    };
+
+    window.addEventListener('updatePendingOrders', handleUpdateOrders);
+    window.addEventListener('updateServiceRequests', handleUpdateServiceRequests);
+
+    return () => {
+      window.removeEventListener('updatePendingOrders', handleUpdateOrders);
+      window.removeEventListener('updateServiceRequests', handleUpdateServiceRequests);
+    };
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -81,9 +140,31 @@ export default function OrdersPage() {
     }
   };
 
+  const fetchServicios = async () => {
+    try {
+      setLoadingServicios(true);
+      const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
+      const data = await response.json();
+
+      if (data.success) {
+        const pendientes = (data.data || []).filter((s: SolicitudServicio) => s.estado === 'pendiente');
+        setServicios(pendientes);
+      } else {
+        console.error('Error fetching servicios:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching servicios:', error);
+    } finally {
+      setLoadingServicios(false);
+    }
+  };
+
   // Helper: verificar permiso de procesar (soporta claves antiguas y nuevas)
   const hasProcessPermission = () =>
-    hasPermission('orders', 'procesar_pedidos') || hasPermission('pedidos', 'procesar_pedidos');
+    hasPermission('orders', 'process') ||
+    hasPermission('pedidos', 'procesar') ||
+    hasPermission('orders', 'procesar_pedidos') ||
+    hasPermission('pedidos', 'procesar_pedidos');
 
   const fetchOrderDetail = async (orderId: number) => {
     try {
@@ -121,6 +202,63 @@ export default function OrdersPage() {
     setFilteredOrders(filtered);
   };
 
+  const filterServicios = () => {
+    let filtered = servicios.filter(s => s.estado === 'pendiente');
+
+    // Filtrar por búsqueda
+    if (searchServiciosTerm) {
+      filtered = filtered.filter(
+        servicio =>
+          (servicio.cliente_nombre?.toLowerCase().includes(searchServiciosTerm.toLowerCase())) ||
+          servicio.habitacion_nombre.toLowerCase().includes(searchServiciosTerm.toLowerCase()) ||
+          servicio.solicitado_por_nombre.toLowerCase().includes(searchServiciosTerm.toLowerCase()) ||
+          servicio.id_solicitud.toString().includes(searchServiciosTerm)
+      );
+    }
+
+    setFilteredServicios(filtered);
+  };
+
+  const handleServicioClick = (servicio: SolicitudServicio) => {
+    window.dispatchEvent(new CustomEvent('openServiceRequestModal', { detail: { solicitud: servicio } }));
+  };
+
+  const handleDeleteServicioClick = (e: React.MouseEvent, servicio: SolicitudServicio) => {
+    e.stopPropagation();
+    setServicioToDelete(servicio);
+    setDeleteServicioModalOpen(true);
+  };
+
+  const handleConfirmDeleteServicio = async () => {
+    if (!servicioToDelete) return;
+
+    setIsDeletingServicio(true);
+    try {
+      const response = await fetch(`/api/solicitudes-servicios?id=${servicioToDelete.id_solicitud}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Solicitud eliminada exitosamente');
+        fetchServicios();
+        setDeleteServicioModalOpen(false);
+        setServicioToDelete(null);
+      } else {
+        toast.error(data.message || 'Error al eliminar la solicitud');
+      }
+    } catch (error) {
+      toast.error('Error inesperado al eliminar la solicitud');
+    } finally {
+      setIsDeletingServicio(false);
+    }
+  };
+
+  const handleCancelDeleteServicio = () => {
+    setDeleteServicioModalOpen(false);
+    setServicioToDelete(null);
+  };
+
   const getStatusBadge = (estado: number) => {
     switch (estado) {
       case 0:
@@ -136,6 +274,48 @@ export default function OrdersPage() {
       default:
         return <Badge variant='outline'>Desconocido</Badge>;
     }
+  };
+
+  const getServicioStatusBadge = (estado: string) => {
+    switch (estado) {
+      case 'pendiente':
+        return (
+          <Badge className='bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'>
+            Pendiente
+          </Badge>
+        );
+      case 'aprobada':
+        return (
+          <Badge className='bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'>
+            Aprobada
+          </Badge>
+        );
+      case 'rechazada':
+        return (
+          <Badge className='bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'>
+            Rechazada
+          </Badge>
+        );
+      default:
+        return <Badge variant='outline'>Desconocido</Badge>;
+    }
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(num);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('es-CL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getStatusText = (estado: number) => {
@@ -305,174 +485,321 @@ export default function OrdersPage() {
         )}
 
         {/* Estadísticas */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-center'>
-                <p className='text-2xl font-bold text-blue-600'>{orders.length}</p>
-                <p className='text-sm text-gray-600'>Total Órdenes</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-center'>
-                <p className='text-2xl font-bold text-yellow-600'>
-                  {orders.filter(o => o.estado === 1).length}
-                </p>
-                <p className='text-sm text-gray-600'>Pendientes</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-center'>
-                <p className='text-2xl font-bold text-green-600'>
-                  {orders.filter(o => o.estado === 0).length}
-                </p>
-                <p className='text-sm text-gray-600'>Completadas</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <div className='text-center'>
-                <p className='text-2xl font-bold text-red-600'>
-                  {orders.filter(o => o.estado === 2).length}
-                </p>
-                <p className='text-sm text-gray-600'>Canceladas</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {activeTab === 'productos' ? (
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-blue-600'>{orders.length}</p>
+                  <p className='text-sm text-gray-600'>Total Órdenes</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-yellow-600'>
+                    {orders.filter(o => o.estado === 1).length}
+                  </p>
+                  <p className='text-sm text-gray-600'>Pendientes</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-green-600'>
+                    {orders.filter(o => o.estado === 0).length}
+                  </p>
+                  <p className='text-sm text-gray-600'>Completadas</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-red-600'>
+                    {orders.filter(o => o.estado === 2).length}
+                  </p>
+                  <p className='text-sm text-gray-600'>Canceladas</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-blue-600'>{servicios.length}</p>
+                  <p className='text-sm text-gray-600'>Total Solicitudes</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-yellow-600'>
+                    {servicios.filter(s => s.estado === 'pendiente').length}
+                  </p>
+                  <p className='text-sm text-gray-600'>Pendientes</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-green-600'>
+                    {servicios.filter(s => s.estado === 'aprobada').length}
+                  </p>
+                  <p className='text-sm text-gray-600'>Aprobadas</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Filtros */}
+        {/* Buscador General */}
         <Card>
           <CardContent className='space-y-4'>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2 mt-2'>Buscar</label>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-2'>Buscar</label>
               <div className='relative'>
                 <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
                 <Input
-                  placeholder='Buscar por cliente, código, garzon...'
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className='pl-10'
+                  placeholder={activeTab === 'productos' ? 'Buscar por cliente, código, garzon...' : 'Buscar por cliente, habitación, solicitante...'}
+                  value={activeTab === 'productos' ? searchTerm : searchServiciosTerm}
+                  onChange={e => activeTab === 'productos' ? setSearchTerm(e.target.value) : setSearchServiciosTerm(e.target.value)}
+                  className='pl-10 rounded-full'
                 />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Lista de órdenes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Órdenes ({filteredOrders.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredOrders.length === 0 ? (
-              <div className='text-center py-8'>
-                <p className='text-gray-500'>No se encontraron órdenes</p>
-              </div>
-            ) : (
-              <div className='space-y-4'>
-                {filteredOrders.map(order => {
-                  const canProcess = hasProcessPermission() && hasOpenCaja;
-                  return (
-                    <div
-                      key={order.id_pedido}
-                      className={`p-4 border border-gray-200 rounded-lg transition-colors ${
-                        canProcess
-                          ? 'hover:bg-gray-50 cursor-pointer'
-                          : 'cursor-not-allowed opacity-60 pointer-events-none'
-                      }`}
-                      onClick={
-                        canProcess
-                          ? () => handleOrderClick(order.id_pedido, order.codigo)
-                          : undefined
-                      }
-                      aria-disabled={!canProcess}
-                      role={canProcess ? 'button' : undefined}
-                    >
-                      <div className='flex items-center justify-between'>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-4 mb-2'>
-                            <h3 className='font-medium text-gray-900'>{order.codigo}</h3>
-                            {getStatusBadge(order.estado)}
-                            {!hasProcessPermission() && (
-                              <Badge className='bg-gray-100 text-gray-600 text-xs'>
-                                Sin permiso para procesar
-                              </Badge>
-                            )}
-                            {hasProcessPermission() && !hasOpenCaja && (
-                              <Badge className='bg-yellow-100 text-yellow-700 text-xs'>
-                                Sin caja abierta
-                              </Badge>
-                            )}
-                          </div>
-                          <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600'>
-                            <div>
-                              <span className='font-medium'>Cliente:</span> {order.cliente}
-                            </div>
-                            <div>
-                              <span className='font-medium'>Garzón:</span> {order.garzon}
-                            </div>
-                            <div>
-                              <span className='font-medium'>Total:</span> $
-                              {order.total.toLocaleString()}
-                            </div>
-                          </div>
-                          {order.nicks && (
-                            <div className='mt-2'>
-                              <span className='text-sm font-medium text-gray-700'>
-                                Anfitriona(s):
-                              </span>
-                              <div className='mt-1 flex flex-wrap gap-1'>
-                                {order.nicks.split(',').map((nick, index) => (
-                                  <Badge
-                                    key={index}
-                                    className={`text-xs font-medium ${
-                                      index % 6 === 0
-                                        ? 'bg-blue-500 text-white'
-                                        : index % 6 === 1
-                                          ? 'bg-green-500 text-white'
-                                          : index % 6 === 2
-                                            ? 'bg-purple-500 text-white'
-                                            : index % 6 === 3
-                                              ? 'bg-orange-500 text-white'
-                                              : index % 6 === 4
-                                                ? 'bg-pink-500 text-white'
-                                                : 'bg-red-500 text-white'
-                                    }`}
-                                  >
-                                    {nick.trim()}
+        {/* Pestañas */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
+          <TabsList className='grid w-full max-w-md mx-auto grid-cols-2 rounded-full bg-gray-100 dark:bg-gray-800 p-1'>
+            <TabsTrigger value='productos' className='rounded-full'>
+              Pedidos de Productos
+            </TabsTrigger>
+            <TabsTrigger value='servicios' className='rounded-full'>
+              Pedidos de Servicios
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab de Productos */}
+          <TabsContent value='productos' className='space-y-6 mt-6'>
+
+            {/* Lista de órdenes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Órdenes de Productos ({filteredOrders.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className='text-center py-8'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
+                    <p className='text-gray-600'>Cargando...</p>
+                  </div>
+                ) : filteredOrders.length === 0 ? (
+                  <div className='text-center py-8'>
+                    <p className='text-gray-500'>No se encontraron órdenes</p>
+                  </div>
+                ) : (
+                  <div className='space-y-4'>
+                    {filteredOrders.map(order => {
+                      const canProcess = hasProcessPermission() && hasOpenCaja;
+                      return (
+                        <div
+                          key={order.id_pedido}
+                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors ${
+                            canProcess
+                              ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+                              : 'cursor-not-allowed opacity-60 pointer-events-none'
+                          }`}
+                          onClick={
+                            canProcess
+                              ? () => handleOrderClick(order.id_pedido, order.codigo)
+                              : undefined
+                          }
+                          aria-disabled={!canProcess}
+                          role={canProcess ? 'button' : undefined}
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div className='flex-1'>
+                              <div className='flex items-center gap-4 mb-2'>
+                                <h3 className='font-medium text-gray-900 dark:text-white'>{order.codigo}</h3>
+                                {getStatusBadge(order.estado)}
+                                {!hasProcessPermission() && (
+                                  <Badge className='bg-gray-100 text-gray-600 text-xs'>
+                                    Sin permiso para procesar
                                   </Badge>
-                                ))}
+                                )}
+                                {hasProcessPermission() && !hasOpenCaja && (
+                                  <Badge className='bg-yellow-100 text-yellow-700 text-xs'>
+                                    Sin caja abierta
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400'>
+                                <div>
+                                  <span className='font-medium'>Cliente:</span> {order.cliente}
+                                </div>
+                                <div>
+                                  <span className='font-medium'>Garzón:</span> {order.garzon}
+                                </div>
+                                <div>
+                                  <span className='font-medium'>Total:</span> $
+                                  {order.total.toLocaleString()}
+                                </div>
+                              </div>
+                              {order.nicks && (
+                                <div className='mt-2'>
+                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                                    Anfitriona(s):
+                                  </span>
+                                  <div className='mt-1 flex flex-wrap gap-1'>
+                                    {order.nicks.split(',').map((nick, index) => (
+                                      <Badge
+                                        key={index}
+                                        className={`text-xs font-medium ${
+                                          index % 6 === 0
+                                            ? 'bg-blue-500 text-white'
+                                            : index % 6 === 1
+                                              ? 'bg-green-500 text-white'
+                                              : index % 6 === 2
+                                                ? 'bg-purple-500 text-white'
+                                                : index % 6 === 3
+                                                  ? 'bg-orange-500 text-white'
+                                                  : index % 6 === 4
+                                                    ? 'bg-pink-500 text-white'
+                                                    : 'bg-red-500 text-white'
+                                        }`}
+                                      >
+                                        {nick.trim()}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Botón de eliminar */}
+                            <div className='ml-4'>
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
+                                onClick={e => handleDeleteClick(e, order)}
+                                title='Eliminar pedido'
+                              >
+                                <Trash2 className='w-3 h-3' />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab de Servicios */}
+          <TabsContent value='servicios' className='space-y-6 mt-6'>
+            {/* Lista de servicios */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Solicitudes de Servicios ({filteredServicios.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingServicios ? (
+                  <div className='text-center py-8'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
+                    <p className='text-gray-600'>Cargando...</p>
+                  </div>
+                ) : filteredServicios.length === 0 ? (
+                  <div className='text-center py-8'>
+                    <p className='text-gray-500'>No se encontraron solicitudes</p>
+                  </div>
+                ) : (
+                  <div className='space-y-4'>
+                    {filteredServicios.map(servicio => (
+                      <div
+                        key={servicio.id_solicitud}
+                        className='p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer'
+                        onClick={() => handleServicioClick(servicio)}
+                      >
+                        <div className='flex items-center justify-between'>
+                          <div className='flex-1'>
+                            <div className='flex items-center gap-4 mb-2'>
+                              <h3 className='font-medium text-gray-900 dark:text-white'>
+                                Solicitud #{servicio.id_solicitud}
+                              </h3>
+                              {getServicioStatusBadge(servicio.estado)}
+                            </div>
+                            <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400'>
+                              <div>
+                                <span className='font-medium'>Cliente:</span>{' '}
+                                {servicio.cliente_nombre || 'Sin cliente'}
+                              </div>
+                              <div>
+                                <span className='font-medium'>Habitación:</span>{' '}
+                                {servicio.habitacion_nombre} #{servicio.habitacion_numero}
+                              </div>
+                              <div>
+                                <span className='font-medium'>Total:</span> $
+                                {formatNumber(servicio.total)}
                               </div>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Botón de eliminar */}
-                        <div className='ml-4'>
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
-                            onClick={e => handleDeleteClick(e, order)}
-                            title='Eliminar pedido'
-                          >
-                            <Trash2 className='w-3 h-3' />
-                          </Button>
+                            <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400 mt-2'>
+                              <div>
+                                <span className='font-medium'>Solicitado por:</span>{' '}
+                                {servicio.solicitado_por_nombre}
+                              </div>
+                              <div>
+                                <span className='font-medium'>Anfitrionas:</span>{' '}
+                                {servicio.anfitrionas_ids.length}
+                              </div>
+                              <div>
+                                <span className='font-medium'>Fecha:</span>{' '}
+                                {formatDate(servicio.fecha_solicitud)}
+                              </div>
+                            </div>
+                            {servicio.motivo_rechazo && (
+                              <div className='mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg'>
+                                <span className='text-sm font-medium text-red-700 dark:text-red-400'>
+                                  Motivo de rechazo:
+                                </span>
+                                <p className='text-sm text-red-600 dark:text-red-300 mt-1'>
+                                  {servicio.motivo_rechazo}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          {/* Botón de eliminar */}
+                          <div className='ml-4'>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
+                              onClick={e => handleDeleteServicioClick(e, servicio)}
+                              title='Eliminar solicitud'
+                            >
+                              <Trash2 className='w-3 h-3' />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Modal de detalles del pedido */}
@@ -528,6 +855,26 @@ export default function OrdersPage() {
                   Eliminar
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación de solicitud */}
+      <Dialog open={deleteServicioModalOpen} onOpenChange={setDeleteServicioModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar solicitud</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de eliminar la solicitud #{servicioToDelete?.id_solicitud}? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant='outline' onClick={handleCancelDeleteServicio} disabled={isDeletingServicio}>
+              Cancelar
+            </Button>
+            <Button variant='destructive' onClick={handleConfirmDeleteServicio} disabled={isDeletingServicio}>
+              {isDeletingServicio ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>

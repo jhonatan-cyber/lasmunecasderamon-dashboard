@@ -1,14 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/useCategories';
 import { toast } from 'sonner';
 import CategoryFormDialog from '@/components/categories/CategoryFormDialog';
-import CategoryCard from '@/components/categories/CategoryCard';
+import SortableCategoryCard from '@/components/categories/SortableCategoryCard';
 import { Plus } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
 import { CategoryFilters } from '@/components/categories/CategoryFilters';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export default function Categories() {
   const {
@@ -21,7 +36,8 @@ export default function Categories() {
     updateCategory,
     deleteCategory,
     activateCategory,
-    deactivateCategory
+    deactivateCategory,
+    reorderCategories
   } = useCategories();
   const [filterStatus, setFilterStatus] = useState('all');
   const [openDialog, setOpenDialog] = useState(false);
@@ -33,9 +49,27 @@ export default function Categories() {
   } | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const [localCategories, setLocalCategories] = useState(filteredCategories);
+
+  // Configurar sensores para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Sincronizar categorías locales con las filtradas
+  useEffect(() => {
+    setLocalCategories(filteredCategories);
+  }, [filteredCategories]);
 
   // Filtrado real por estado
-  const filteredByStatus = filteredCategories.filter(category => {
+  const filteredByStatus = localCategories.filter(category => {
     if (filterStatus === 'all') return true;
     return String(category.status) === filterStatus;
   });
@@ -98,6 +132,33 @@ export default function Categories() {
     setPage(1);
   };
 
+  // Manejar drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = filteredByStatus.findIndex(cat => cat.id === active.id);
+    const newIndex = filteredByStatus.findIndex(cat => cat.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newOrder = arrayMove(filteredByStatus, oldIndex, newIndex);
+      setLocalCategories(newOrder);
+
+      // Guardar el nuevo orden en el servidor
+      const result = await reorderCategories(newOrder);
+      if (result.success) {
+        toast.success('Orden actualizado correctamente');
+      } else {
+        toast.error(result.message);
+        // Revertir el orden si falla
+        setLocalCategories(filteredByStatus);
+      }
+    }
+  };
+
   return (
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
@@ -132,26 +193,37 @@ export default function Categories() {
       {isLoading && <div className='text-center text-gray-500 text-sm sm:text-base'>Cargando categorías...</div>}
       {error && <div className='text-center text-red-500 text-sm sm:text-base'>{error}</div>}
 
-      <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-        {paginatedCategories.map(category => (
-          <CategoryCard
-            key={category.id}
-            category={{ ...category, description: category.description ?? '' }}
-            onDelete={handleDelete}
-            onActivate={async id => {
-              const result = await activateCategory(id);
-              if (result.success) toast.success(result.message);
-              else toast.error(result.message);
-            }}
-            onDeactivate={async id => {
-              const result = await deactivateCategory(id);
-              if (result.success) toast.success(result.message);
-              else toast.error(result.message);
-            }}
-            onEdit={handleEdit}
-          />
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={paginatedCategories.map(cat => cat.id)}
+          strategy={rectSortingStrategy}
+        >
+          <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+            {paginatedCategories.map(category => (
+              <SortableCategoryCard
+                key={category.id}
+                category={{ ...category, description: category.description ?? '' }}
+                onDelete={handleDelete}
+                onActivate={async id => {
+                  const result = await activateCategory(id);
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
+                }}
+                onDeactivate={async id => {
+                  const result = await deactivateCategory(id);
+                  if (result.success) toast.success(result.message);
+                  else toast.error(result.message);
+                }}
+                onEdit={handleEdit}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Paginador usando el componente Paginate */}
       {totalPages > 1 && (

@@ -149,6 +149,12 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
     return filtered;
   };
 
+  // Verificar si hay productos con comisión en la categoría actual
+  // Solo después de que los productos estén cargados
+  const hasProductsWithCommission = !loading && productosCategoria?.some(p => {
+    return (p.comision || p.commission || 0) > 0;
+  });
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0">
@@ -158,11 +164,13 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
               ? `Productos de ${modalCategoria.nombre || modalCategoria.name}`
               : "Productos"}
           </DialogTitle>
-          <div className="text-xs text-gray-600 mt-2 p-2 bg-blue-50 rounded">
-            <strong>Reglas de asignación:</strong>
-            <br />• <span className="text-purple-600">Champañas</span>: Selecciona múltiples anfitrionas (límite según precio)
-            <br />• <span className="text-green-600">Bebidas</span>: Una anfitriona por bebida
-          </div>
+          {!loading && hasProductsWithCommission && (
+            <div className="text-xs text-gray-700 dark:text-gray-200 mt-2 p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded">
+              <strong className="text-gray-900 dark:text-gray-100">Reglas de asignación:</strong>
+              <br />• <span className="text-purple-600 dark:text-purple-400 font-medium">Champañas</span>: Selecciona múltiples anfitrionas (límite según precio)
+              <br />• <span className="text-green-600 dark:text-green-400 font-medium">Bebidas</span>: Una anfitriona por bebida
+            </div>
+          )}
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 py-4 pb-8">
           {loading ? (
