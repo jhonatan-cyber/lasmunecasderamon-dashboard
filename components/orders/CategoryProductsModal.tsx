@@ -36,6 +36,9 @@ interface CategoryProductsModalProps {
   otherProductHostessSelections: { [key: string]: string[] }; // Cambiado a array para bebidas múltiples
   onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void; // Cambiado a array
   productosEnCarrito: any[]; // NUEVO: Productos ya agregados al pedido
+  habitaciones: any[]; // Habitaciones disponibles para asignar a productos
+  roomSelections: { [key: string]: string }; // Selección actual de habitaciones por producto
+  onRoomChange: (productId: string, roomId: string) => void; // Callback cuando cambia la habitación de un producto
 }
 
 const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({

@@ -146,7 +146,7 @@ export function useNotifications() {
       });
       const event = new CustomEvent('updateServiceRequests');
       window.dispatchEvent(event);
-      const openModalEvent = new CustomEvent('openServiceRequestModal', { detail: { servicioId: data.id } });
+      const openModalEvent = new CustomEvent('openServiceRequestModal', { detail: data });
       window.dispatchEvent(openModalEvent);
     },
     [user]

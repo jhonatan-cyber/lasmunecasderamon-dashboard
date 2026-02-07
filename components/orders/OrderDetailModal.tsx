@@ -119,18 +119,42 @@ export default function OrderDetailModal({
       setIsRegistering(false);
       setAgregarPropina(false);
       setConfirmVentaModalOpen(false);
+    } else {
+      // Cuando se abre el modal, verificar si el pedido ya tiene propina
+      if (detail && detail.length > 0) {
+        const propinaOriginal = detail[0]?.propina || 0;
+        console.log('Propina original del detalle:', propinaOriginal); // Log para depuración
+        console.log('Detalle completo:', detail[0]); // Log completo para depuración
+        if (propinaOriginal > 0) {
+          setPropina(propinaOriginal);
+          setPropinaDisplayValue(propinaOriginal.toLocaleString('es-CL'));
+          setAgregarPropina(true);
+        }
+      }
     }
-  }, [open]);
+  }, [open, detail]);
 
   useEffect(() => {
     if (agregarPropina && detail && detail.length > 0) {
-      const totalPedido = detail[0]?.total || 0;
-      const propinaCalculada = Math.round(totalPedido * 0.1);
-      setPropina(propinaCalculada);
-      setPropinaDisplayValue(propinaCalculada.toLocaleString('es-CL'));
+      const propinaOriginal = detail[0]?.propina || 0;
+      if (propinaOriginal > 0) {
+        // Si ya hay propina original, usar esa
+        setPropina(propinaOriginal);
+        setPropinaDisplayValue(propinaOriginal.toLocaleString('es-CL'));
+      } else {
+        // Si no hay propina original, calcular el 10%
+        const totalPedido = detail[0]?.total || 0;
+        const propinaCalculada = Math.round(totalPedido * 0.1);
+        setPropina(propinaCalculada);
+        setPropinaDisplayValue(propinaCalculada.toLocaleString('es-CL'));
+      }
     } else {
-      setPropina(0);
-      setPropinaDisplayValue('');
+      const propinaOriginal = detail[0]?.propina || 0;
+      if (propinaOriginal === 0) {
+        // Solo limpiar si no hay propina original
+        setPropina(0);
+        setPropinaDisplayValue('');
+      }
     }
   }, [agregarPropina, detail]);
 
@@ -693,6 +717,7 @@ export default function OrderDetailModal({
                             id='agregar-propina'
                             checked={agregarPropina}
                             onCheckedChange={checked => setAgregarPropina(checked === true)}
+                            disabled={detail[0]?.propina > 0} // Deshabilitar si ya hay propina original
                           />
                           <label
                             htmlFor='agregar-propina'
@@ -704,7 +729,15 @@ export default function OrderDetailModal({
                       </div>
                       {agregarPropina && (
                         <div className='text-xs text-green-600 mt-1'>
-                          ✓ Propina del 10%: ${propina.toLocaleString('es-CL')}
+                          {detail[0]?.propina > 0 
+                            ? `✓ Propina original: $${propina.toLocaleString('es-CL')}`
+                            : `✓ Propina del 10%: $${propina.toLocaleString('es-CL')}`
+                          }
+                        </div>
+                      )}
+                      {detail[0]?.propina > 0 && (
+                        <div className='text-xs text-blue-600 mt-1'>
+                          ℹ️ Este pedido ya incluye propina del cliente
                         </div>
                       )}
                     </div>

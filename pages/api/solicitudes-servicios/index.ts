@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../notifications/sse';
+import { logger } from '@/lib/logger';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method } = req;
@@ -85,45 +86,82 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       habitacion_id,
       precio_servicio,
       precio_habitacion,
+      comision_anfitriona,
       anfitrionas_ids,
       metodo_pago,
       tiempo,
       total,
-      iva
+      iva,
+      num_clientes
     } = req.body;
 
     // @ts-ignore
     const userId = req.user?.id;
 
+    logger.info('Solicitud de servicio recibida', { 
+      userId, 
+      body: req.body 
+    });
+
     if (!userId) {
+      logger.warn('Usuario no autenticado intentando crear solicitud');
       return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
 
     if (!habitacion_id || !anfitrionas_ids || anfitrionas_ids.length === 0) {
+      logger.warn('Datos incompletos en solicitud', { habitacion_id, anfitrionas_ids });
       return res.status(400).json({
         success: false,
         message: 'Habitación y anfitrionas son requeridos'
       });
     }
 
+    // Validar que los valores numéricos sean válidos
+    const precioServicio = parseFloat(precio_servicio) || 0;
+    const precioHabitacion = parseFloat(precio_habitacion) || 0;
+    const comisionAnfitriona = parseFloat(comision_anfitriona) || 0;
+    const totalParsed = parseFloat(total) || 0;
+    const ivaParsed = parseFloat(iva) || 0;
+    const tiempoParsed = parseInt(tiempo) || 0;
+    const numClientesParsed = parseInt(num_clientes) || 1;
+
+    logger.info('Insertando solicitud en BD', {
+      cliente_id,
+      habitacion_id,
+      precioServicio,
+      precioHabitacion,
+      comisionAnfitriona,
+      anfitrionas_ids,
+      metodo_pago,
+      tiempoParsed,
+      totalParsed,
+      ivaParsed,
+      numClientesParsed,
+      userId
+    });
+
     const result = (await query(
       `INSERT INTO solicitudes_servicios 
-        (cliente_id, habitacion_id, precio_servicio, precio_habitacion, anfitrionas_ids, 
-         metodo_pago, tiempo, total, iva, solicitado_por) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids, 
+         num_clientes, metodo_pago, tiempo, total, iva, solicitado_por) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         cliente_id || null,
         habitacion_id,
-        precio_servicio || 0,
-        precio_habitacion || 0,
+        precioServicio,
+        precioHabitacion,
+        comisionAnfitriona,
         JSON.stringify(anfitrionas_ids),
+        numClientesParsed,
         metodo_pago,
-        tiempo,
-        total,
-        iva || 0,
+        tiempoParsed,
+        totalParsed,
+        ivaParsed,
         userId
       ]
     )) as any;
+
+    logger.info('Solicitud insertada exitosamente', { insertId: result.insertId });
 
     // Enviar notificación a cajeros y administradores
     await notificarCajeros(result.insertId);
@@ -149,15 +187,22 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Enviar notificación SSE a todos los clientes conectados
     sendNotificationToAll('new_service_request', {
       id: result.insertId,
+      id_solicitud: result.insertId, // Agregar también id_solicitud para compatibilidad
       tipo: 'servicio',
       total: total,
       createdBy: userId,
       habitacion_id: habitacion_id,
       habitacion_nombre: info?.habitacion_nombre || null,
       tiempo: tiempo,
-      cliente: info?.cliente_nombre || null,
+      cliente_nombre: info?.cliente_nombre || null, // Cambiar 'cliente' a 'cliente_nombre'
       solicitado_por_nombre: info?.solicitado_por_nombre || null,
       solicitado_por_nick: info?.solicitado_por_nick || null,
+      // anfitrionas_ids ya es un array, no necesita JSON.parse
+      anfitrionas_ids: anfitrionas_ids,
+      metodo_pago: metodo_pago,
+      precio_servicio: precio_servicio || 0,
+      precio_habitacion: precio_habitacion || 0,
+      iva: iva || 0,
       timestamp: new Date().toISOString()
     });
 
@@ -166,8 +211,36 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       message: 'Solicitud de servicio creada exitosamente',
       data: { id_solicitud: result.insertId }
     });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error al crear solicitud' });
+  } catch (error: any) {
+    logger.error('Error al crear solicitud de servicio', { 
+      error: error.message,
+      stack: error.stack,
+      code: error.code,
+      sqlMessage: error.sqlMessage,
+      sql: error.sql
+    });
+    
+    // Si la tabla no existe
+    if (error?.code === 'ER_NO_SUCH_TABLE' || error?.message?.includes("doesn't exist")) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'La tabla solicitudes_servicios no existe. Ejecuta la migración.' 
+      });
+    }
+
+    // Error de foreign key
+    if (error?.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Datos inválidos: cliente, habitación o usuario no existe' 
+      });
+    }
+
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al crear solicitud',
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    });
   }
 };
 

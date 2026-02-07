@@ -73,27 +73,48 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     )) as any[];
     const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
 
-    // Calcular sub_total, iva y total
+    // Calcular sub_total, iva y total con las nuevas reglas
     const numAnfitrionas = anfitrionasIds.length;
+    const numClientes = solicitud.num_clientes || 1;
     const tiempo = Number(solicitud.tiempo || 0);
     const multiplicador = tiempo === 60 ? 2 : 1;
-    const precioServicio = (solicitud.precio_servicio || 0) * multiplicador;
-    const precioHabitacion = (solicitud.precio_habitacion || 0) * multiplicador;
+    const tieneComision = (solicitud.comision_anfitriona || 0) > 0;
+    
+    // REGLA: Si tiene comisión, precio_servicio es 0
+    const precioServicioBase = tieneComision ? 0 : (solicitud.precio_servicio || 0);
+    const precioServicio = precioServicioBase * multiplicador;
+    const precioHabitacionBase = solicitud.precio_habitacion || 0;
+    
+    // REGLA: Calcular precio habitación según reglas de comisión
+    let precioHabitacionTotal;
+    if (tieneComision) {
+      // REGLA: Siempre multiplicar por número de clientes (sin importar anfitrionas)
+      precioHabitacionTotal = precioHabitacionBase * Math.max(1, numClientes) * multiplicador;
+    } else {
+      // Lógica normal sin comisión
+      precioHabitacionTotal = precioHabitacionBase * numAnfitrionas * multiplicador;
+    }
 
     const subTotal = precioServicio * numAnfitrionas;
-    const precioHabitacionTotal = precioHabitacion * numAnfitrionas;
 
-    // Calcular IVA y redondeo si es tarjeta
+    // REGLA: Si tiene comisión, IVA es 0
     let ivaFinal = 0;
     let totalFinal = subTotal + precioHabitacionTotal;
 
-    if (solicitud.metodo_pago?.toLowerCase() === 'tarjeta') {
+    if (!tieneComision && solicitud.metodo_pago?.toLowerCase() === 'tarjeta') {
       ivaFinal = Math.floor(subTotal * 0.2);
       totalFinal = subTotal + precioHabitacionTotal + ivaFinal;
       const totalRedondeado = Math.ceil(totalFinal / 5000) * 5000;
       const excedente = totalRedondeado - totalFinal;
       ivaFinal = ivaFinal + excedente;
       totalFinal = totalRedondeado;
+    }
+
+    // REGLA: Calcular comisión dividida por anfitriona
+    let comisionPorAnfitriona = 0;
+    if (tieneComision && numAnfitrionas > 0) {
+      // REGLA: La comisión SIEMPRE se divide entre el número de anfitrionas y se redondea hacia abajo
+      comisionPorAnfitriona = Math.floor(solicitud.comision_anfitriona / numAnfitrionas);
     }
 
     // Crear el servicio
@@ -104,10 +125,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())`,
       [
         codigo,
-        solicitud.cliente_id || null,
+        numClientes > 0 ? (solicitud.cliente_id || null) : null,
         habitacionIdFinal,
         precioServicio,
-        precioHabitacion,
+        precioHabitacionBase,
         ivaFinal,
         subTotal,
         totalFinal,
@@ -121,18 +142,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const servicioId = resultServicio.insertId;
 
     // Insertar cliente en detalle_servicios_clientes si existe
-    if (solicitud.cliente_id) {
+    if (numClientes > 0 && solicitud.cliente_id) {
       await query(
         'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
         [servicioId, solicitud.cliente_id]
       );
     }
 
-    // Insertar anfitrionas en detalle_servicios
+    // Insertar anfitrionas en detalle_servicios con su comisión
     for (const anfitrionaId of anfitrionasIds) {
       await query(
-        'INSERT INTO detalle_servicios (usuario_id, servicio_id) VALUES (?, ?)',
-        [anfitrionaId, servicioId]
+        'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
+        [anfitrionaId, servicioId, comisionPorAnfitriona]
       );
     }
 
@@ -200,7 +221,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         roomName: service.habitacion_nombre || `Habitación ${service.habitacion_id}`,
         duration: service.tiempo,
         startTime: service.fecha_crea,
-        clienteNombre: service.cliente_nombre || 'Cliente',
+        clienteNombre: numClientes > 0 ? (service.cliente_nombre || 'Cliente') : 'Cliente sin registrar',
         anfitrionas: service.anfitrionas || '',
         tipoTransaccion: 'servicio'
       });
