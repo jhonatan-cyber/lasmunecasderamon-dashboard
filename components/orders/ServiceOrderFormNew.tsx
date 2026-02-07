@@ -8,6 +8,7 @@ import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAnfitrionas } from '@/hooks/useAnfitrionas';
 import { useHabitaciones } from '@/hooks/useHabitaciones';
+import { useClientes } from '@/hooks/useClientes';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import {
   Select,
@@ -18,6 +19,8 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronDown } from 'lucide-react';
+import CustomersSelect from '@/components/ui/CustomersSelect';
+import HostessSelect from '@/components/ui/HostessSelect';
 
 interface ServiceOrderFormProps {
   clientes: any[];
@@ -33,6 +36,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const { user } = useCurrentUser();
   const { anfitrionas } = useAnfitrionas();
   const { habitaciones } = useHabitaciones();
+  const { clientes: clientesDB } = useClientes();
 
   // Filtrar solo habitaciones disponibles (estado = 1)
   const habitacionesDisponibles = habitaciones?.filter(h => h.estado === 1 || h.status === 1) || [];
@@ -48,8 +52,10 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const [tempForm, setTempForm] = useState({
     precio_servicio: 0,
     precio_habitacion: 0,
+    comision_anfitriona: 0,
     habitacion_id: undefined as number | undefined,
     anfitrionas_ids: [] as number[],
+    clientes_ids: [] as number[], // Array para múltiples clientes
     metodo_pago: 'efectivo',
     tiempo: 0
   });
@@ -58,6 +64,44 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     precio_servicio: '',
     precio_habitacion: ''
   });
+
+  // Estados para controlar qué campos están habilitados
+  const habitacionSeleccionada = tempForm.habitacion_id !== undefined && tempForm.habitacion_id > 0;
+  const tieneComision = tempForm.comision_anfitriona > 0;
+
+  // REGLA: Limitar selección de anfitrionas y clientes según el total de 4 personas
+  const maxAnfitrionasPermitidas = 3;
+  const maxClientesPermitidos = 3;
+  const maxTotalPersonas = 4;
+
+  // Calcular límites dinámicos
+  const maxAnfitrionasSegunClientes = tempForm.comision_anfitriona > 0 
+    ? 3 // Máximo 3 anfitrionas para habitaciones con comisión
+    : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); // Máximo 3 anfitrionas si hay comisión
+  
+  const maxClientesSegunAnfitrionas = tempForm.comision_anfitriona > 0
+    ? 1 // Máximo 1 cliente para habitaciones con comisión
+    : Math.max(0, maxTotalPersonas - tempForm.anfitrionas_ids.length);
+
+  // Calcular límites específicos para combinaciones
+  const maxAnfitrionasCon1Cliente = tempForm.comision_anfitriona > 0 && tempForm.clientes_ids.length === 1
+    ? 3 // Máximo 3 anfitrionas con 1 cliente
+    : Math.max(0, maxTotalPersonas - 1); // Máximo 3 anfitrionas con 1 cliente
+
+  const maxClientesCon2Anfitrionas = tempForm.comision_anfitriona > 0 && tempForm.anfitrionas_ids.length === 2
+    ? 2 // Máximo 2 anfitrionas con 2 clientes
+    : Math.max(0, maxTotalPersonas - 2); // Máximo 2 anfitrionas con 2 clientes
+
+  // Determinar límite final según la combinación actual
+  const maxAnfitrionasFinal = tempForm.comision_anfitriona > 0
+    ? (tempForm.clientes_ids.length === 0 ? 3 // Máximo 3 anfitrionas sin clientes
+       : tempForm.clientes_ids.length === 1 ? maxAnfitrionasCon1Cliente
+       : tempForm.clientes_ids.length === 2 ? maxClientesCon2Anfitrionas
+       : maxClientesSegunAnfitrionas)
+    : maxAnfitrionasSegunClientes;
+
+  const haAlcanzadoMaxAnfitrionas = tempForm.anfitrionas_ids.length >= maxAnfitrionasFinal;
+  const haAlcanzadoMaxClientes = tempForm.clientes_ids.length >= maxClientesSegunAnfitrionas;
 
   // Obtener anfitrionas que están en servicios activos
   useState(() => {
@@ -126,11 +170,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   };
 
   const handleCreateOrder = async () => {
-    if (tempForm.precio_servicio <= 0) {
-      showErrorToast('El precio del servicio debe ser mayor a 0');
-      return;
-    }
-
     if (!tempForm.habitacion_id || tempForm.habitacion_id === 0) {
       showErrorToast('Selecciona una habitación');
       return;
@@ -147,7 +186,8 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cliente_id: selectedClienteId || null,
+          cliente_id: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids[0] : null, // Si no hay clientes, manda null (cliente no registrado)
+          clientes_ids: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids : [], // Array de clientes seleccionados
           habitacion_id: tempForm.habitacion_id,
           precio_servicio: tempForm.precio_servicio,
           precio_habitacion: tempForm.precio_habitacion,
@@ -162,15 +202,19 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
       const data = await response.json();
 
       if (data.success) {
-        showSuccessToast('Solicitud de servicio enviada exitosamente. Esperando aprobación de cajera.');
+        showSuccessToast(
+          'Solicitud de servicio enviada exitosamente. Esperando aprobación de cajera.'
+        );
         window.dispatchEvent(new CustomEvent('updateServiceRequests'));
         window.dispatchEvent(new CustomEvent('refreshNotifications'));
         setSelectedClienteId('');
         setTempForm({
           precio_servicio: 0,
           precio_habitacion: 0,
-          habitacion_id: 0,
+          comision_anfitriona: 0,
+          habitacion_id: undefined,
           anfitrionas_ids: [],
+          clientes_ids: [],
           metodo_pago: 'efectivo',
           tiempo: 30
         });
@@ -180,7 +224,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         showErrorToast(data.message || 'Error al crear solicitud');
       }
     } catch (error) {
-     
       showErrorToast('Error al crear solicitud');
     } finally {
       setIsSubmitting(false);
@@ -190,21 +233,34 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   // Calcular total en tiempo real
   const totalCalculado = useMemo(() => {
     const numAnfitrionas = tempForm.anfitrionas_ids.length;
-    
+    const numClientes = tempForm.clientes_ids.length;
+    const tieneComision = tempForm.comision_anfitriona > 0;
+
     // Multiplicador por tiempo: si es 60 minutos, todo se duplica
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
-    
+
+    // REGLA: Para habitaciones con comisión
+    if (tieneComision) {
+      // REGLA: Para habitaciones con comisión, NO multiplicar por número de clientes ni anfitrionas
+      // El precio es por habitación, no por persona
+      const precioHabitacionTotal = tempForm.precio_habitacion * multiplicador;
+      const precioServicioTotal = tempForm.precio_servicio * multiplicador;
+
+      // IVA siempre es 0 para habitaciones con comisión (incluso con tarjeta)
+      return precioServicioTotal + precioHabitacionTotal;
+    }
+
     // Si no hay anfitrionas, solo mostrar precio de habitación sin multiplicar
     if (numAnfitrionas === 0) {
       return tempForm.precio_habitacion * multiplicador;
     }
-    
+
     // Precio de habitación se multiplica por número de anfitrionas y por multiplicador de tiempo
     const precioHabitacionTotal = tempForm.precio_habitacion * numAnfitrionas * multiplicador;
-    
+
     // Precio de servicio se multiplica por número de anfitrionas y por multiplicador de tiempo
     const precioServicioTotal = tempForm.precio_servicio * numAnfitrionas * multiplicador;
-    
+
     // IVA se calcula sobre los precios ya multiplicados por tiempo
     const ivaTotal = calculateIVA(
       tempForm.precio_servicio * multiplicador,
@@ -217,7 +273,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   }, [
     tempForm.precio_servicio,
     tempForm.precio_habitacion,
+    tempForm.comision_anfitriona,
     tempForm.anfitrionas_ids.length,
+    tempForm.clientes_ids.length,
     tempForm.tiempo,
     tempForm.metodo_pago
   ]);
@@ -225,6 +283,13 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const ivaCalculado = useMemo(() => {
     const numAnfitrionas = tempForm.anfitrionas_ids.length;
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
+    const tieneComision = tempForm.comision_anfitriona > 0;
+    
+    // Para habitaciones con comisión, IVA siempre es 0 (incluso con tarjeta)
+    if (tieneComision) {
+      return 0;
+    }
+    
     return calculateIVA(
       tempForm.precio_servicio * multiplicador,
       tempForm.metodo_pago,
@@ -234,6 +299,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   }, [
     tempForm.precio_servicio,
     tempForm.precio_habitacion,
+    tempForm.comision_anfitriona,
     tempForm.anfitrionas_ids.length,
     tempForm.tiempo,
     tempForm.metodo_pago
@@ -257,6 +323,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
                 ...tempForm,
                 habitacion_id: habitacionId,
                 precio_habitacion: habitacion?.precio || habitacion?.price || 0,
+                comision_anfitriona: habitacion?.comision_anfitriona || 0,
                 tiempo: habitacion?.tiempo || habitacion?.time || 0
               });
             }}
@@ -306,161 +373,32 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
         {/* Anfitrionas */}
         <div>
-          <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>
-            Anfitrionas*
-          </Label>
-          <Popover open={anfitrionaDropdownOpen} onOpenChange={setAnfitrionaDropdownOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant='outline'
-                role='combobox'
-                aria-expanded={anfitrionaDropdownOpen}
-                className='w-full bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-[#3a3a3a] hover:text-gray-900 dark:hover:text-white rounded-full justify-between'
-              >
-                Seleccionar anfitrionas
-                <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className='w-full bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 p-0'
-              align='start'
-            >
-              <div className='p-2 border-b border-gray-200 dark:border-gray-700'>
-                <Input
-                  placeholder='Buscar anfitriona...'
-                  value={searchAnfitriona}
-                  onChange={e => setSearchAnfitriona(e.target.value)}
-                  className='bg-gray-100 dark:bg-[#1a1a1a] border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white'
-                />
-              </div>
-              <div className='max-h-60 overflow-y-auto p-2'>
-                {anfitrionasDisponibles && anfitrionasDisponibles.length > 0 ? (
-                  anfitrionasDisponibles
-                    .filter(a => {
-                      const nick = (a.nick || '').toLowerCase();
-                      const nombre = (a.nombre || a.name || '').toLowerCase();
-                      const searchLower = searchAnfitriona.toLowerCase();
-                      return nick.includes(searchLower) || nombre.includes(searchLower);
-                    })
-                    .map(a => {
-                      const id = (a.id_usuario || a.id) as number;
-                      const isSelected = tempForm.anfitrionas_ids.includes(id);
-                      return (
-                        <div
-                          key={id}
-                          className='flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer'
-                          onClick={() => {
-                            if (!isSelected) {
-                              setTempForm(prev => ({
-                                ...prev,
-                                anfitrionas_ids: [...prev.anfitrionas_ids, id]
-                              }));
-                            }
-                          }}
-                        >
-                          <Checkbox
-                            id={`anf-${id}`}
-                            checked={isSelected}
-                            className='border-gray-500'
-                          />
-                          <label
-                            htmlFor={`anf-${id}`}
-                            className='text-gray-900 dark:text-white text-sm cursor-pointer flex-1'
-                          >
-                            {a.nick || a.nombre || a.name}
-                          </label>
-                        </div>
-                      );
-                    })
-                ) : (
-                  <div className='text-gray-500 text-sm p-2'>No hay anfitrionas disponibles</div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-          {tempForm.anfitrionas_ids.length > 0 && (
-            <div className='mt-2 flex flex-wrap gap-2'>
-              {tempForm.anfitrionas_ids.map(id => {
-                const anf = anfitrionas.find(a => (a.id_usuario || a.id) === id);
-                return (
-                  <span
-                    key={id}
-                    className='bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1'
-                  >
-                    {anf?.nick || anf?.nombre || anf?.name}
-                    <button
-                      onClick={() =>
-                        setTempForm(prev => ({
-                          ...prev,
-                          anfitrionas_ids: prev.anfitrionas_ids.filter(aid => aid !== id)
-                        }))
-                      }
-                      className='hover:text-red-300'
-                    >
-                      ×
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          <HostessSelect
+            anfitrionas={anfitrionas}
+            value={tempForm.anfitrionas_ids.map(id => id.toString())}
+            onChange={(values: string[]) =>
+              setTempForm({ ...tempForm, anfitrionas_ids: values.map(v => parseInt(v)) })
+            }
+            label='Anfitrionas'
+            placeholder='Seleccionar anfitrionas'
+            maxSelection={maxAnfitrionasSegunClientes}
+            disabled={!habitacionSeleccionada}
+          />
         </div>
 
         {/* Clientes */}
         <div>
-          <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>
-            Clientes (Opcional)
-          </Label>
-          <Select value={selectedClienteId} onValueChange={setSelectedClienteId}>
-            <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
-              <SelectValue placeholder='Seleccionar cliente(s)' />
-            </SelectTrigger>
-            <SelectContent className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700'>
-              <div className='p-2'>
-                <Input
-                  placeholder='Buscar cliente...'
-                  value={searchCliente}
-                  onChange={e => setSearchCliente(e.target.value)}
-                  className='bg-gray-100 dark:bg-[#1a1a1a] border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white mb-2'
-                  onClick={e => e.stopPropagation()}
-                />
-              </div>
-              {clientes && clientes.length > 0 ? (
-                clientes
-                  .filter(cliente => {
-                    const nombre = (cliente.nombre || cliente.name || '').toLowerCase();
-                    const apellido = (cliente.apellido || cliente.lastName || '').toLowerCase();
-                    const run = (cliente.run || '').toLowerCase();
-                    const searchLower = searchCliente.toLowerCase();
-                    return (
-                      nombre.includes(searchLower) ||
-                      apellido.includes(searchLower) ||
-                      run.includes(searchLower)
-                    );
-                  })
-                  .map(cliente => (
-                    <SelectItem
-                      key={cliente.id_cliente || cliente.id}
-                      value={String(cliente.id_cliente || cliente.id)}
-                      className='text-white hover:bg-gray-700'
-                    >
-                      <div className='flex flex-col'>
-                        <span className='font-semibold'>
-                          {`${cliente.nombre || cliente.name || ''} ${cliente.apellido || cliente.lastName || ''}`.trim()}
-                        </span>
-                        {cliente.run && (
-                          <span className='text-xs text-gray-400'>RUN: {cliente.run}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))
-              ) : (
-                <SelectItem value='0' disabled className='text-gray-500'>
-                  No hay clientes
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+          <CustomersSelect
+            clientes={clientesDB || []}
+            value={tempForm.clientes_ids.map(id => id.toString())}
+            onChange={(values: string[]) =>
+              setTempForm({ ...tempForm, clientes_ids: values.map(v => parseInt(v)) })
+            }
+            label='Clientes'
+            placeholder='Seleccionar clientes'
+            maxSelection={maxClientesSegunAnfitrionas}
+            disabled={isSubmitting}
+          />
         </div>
       </div>
 
@@ -567,16 +505,15 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         <Button
           onClick={handleCreateOrder}
           disabled={
-            tempForm.precio_servicio <= 0 ||
             !tempForm.habitacion_id ||
             tempForm.habitacion_id === 0 ||
             tempForm.anfitrionas_ids.length === 0 ||
+            !tempForm.metodo_pago ||
             isSubmitting
           }
           className='bg-black hover:bg-gray-900 text-white px-8 py-3 rounded-full'
           size='lg'
         >
-        
           {isSubmitting ? 'Solicitando...' : 'Solicitar Servicio'}
         </Button>
       </div>

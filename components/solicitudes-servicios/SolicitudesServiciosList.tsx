@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, XCircle, Clock, User, Users, Home, DollarSign, Trash2 } from 'lucide-react';
@@ -405,6 +406,21 @@ export function SolicitudesServiciosList() {
                 <div>
                   <span className='font-medium'>Total:</span> ${formatNumber(selectedSolicitud.total)}
                 </div>
+                <div>
+                  <span className='font-medium'>Garzón:</span>{' '}
+                  {selectedSolicitud.solicitado_por_nombre || selectedSolicitud.solicitado_por_nick || 'N/A'}
+                </div>
+                <div>
+                  <span className='font-medium'>Método de pago:</span>{' '}
+                  {selectedSolicitud.metodo_pago}
+                </div>
+                <div>
+                  <span className='font-medium'>Anfitrionas:</span>{' '}
+                  {selectedSolicitud.anfitrionas_ids.map((anfId) => {
+                    const anf = anfitrionasInfo[anfId];
+                    return anf ? `${anf.nombre} ${anf.apellido}` : `Anfitriona #${anfId}`;
+                  }).join(', ')}
+                </div>
               </div>
             )}
             <div>
@@ -427,15 +443,15 @@ export function SolicitudesServiciosList() {
                   setMotivoRechazo('');
                   setSelectedSolicitud(null);
                 }}
-                variant='outline'
-                className='flex-1 rounded-full'
+                variant="outline"
+                className="flex-1 rounded-full"
                 disabled={processing}
               >
                 Cerrar
               </Button>
               <Button
                 onClick={() => selectedSolicitud && handleAprobar(selectedSolicitud)}
-                className='flex-1 bg-green-600 hover:bg-green-700 text-white rounded-full'
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-full"
                 disabled={processing || !selectedSolicitud}
               >
                 {processing ? 'Procesando...' : 'Aprobar'}

@@ -50,6 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           P.total,
           P.total_comision,
           P.subtotal AS total_subtotal,
+          P.propina,
           P.fecha_crea,
           
           -- Anfitrionas específicamente asignadas a este producto (champañas)
@@ -115,6 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           P.total,
           P.total_comision,
           P.subtotal AS total_subtotal,
+          P.propina,
           P.fecha_crea,
           NULL AS anfitrionas_asignadas,
           NULL AS anfitrionas_asignadas_ids
