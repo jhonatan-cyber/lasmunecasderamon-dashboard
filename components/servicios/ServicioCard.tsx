@@ -36,7 +36,6 @@ export default function ServicioCard({
     stopTimerByServicioId
   } = useTimer();
 
-
   const { actualizarAnfitrionas, obtenerAnfitrionas } = useServicioAnfitrionas();
 
   const globalTimer = getTimerByServicioId(servicio.id_servicio!);
@@ -45,25 +44,30 @@ export default function ServicioCard({
   const displayTimer = temporaryTimer || globalTimer;
   const isTemporaryActive = !!temporaryTimer;
 
+  // Obtener el ID del servicio original cuando hay timer temporal
+  const servicioIdOriginal = isTemporaryActive && temporaryTimer?.datosTemporales?.servicio_original_id 
+    ? temporaryTimer.datosTemporales.servicio_original_id 
+    : servicio.id_servicio;
 
-  const anfitrionasDelContexto = obtenerAnfitrionas(servicio.id_servicio!);
+  const anfitrionasDelContexto = obtenerAnfitrionas(servicioIdOriginal);
 
   const displayData = isTemporaryActive && temporaryTimer?.datosTemporales ? {
     ...servicio,
-    ...temporaryTimer.datosTemporales
+    ...temporaryTimer.datosTemporales,
+    // Mantener el ID del servicio original para que el key sea consistente
+    id_servicio: servicioIdOriginal
   } : {
     ...servicio,
     // Priorizar anfitrionas del contexto global (persistentes) sobre las originales del servicio
     anfitrionas_nombres: anfitrionasDelContexto || servicio.anfitrionas_nombres
   };
 
-  // Usar anfitrionas actuales si existen, sino usar las del displayData
   const finalDisplayData = {
     ...displayData
   };
 
   const handleTemporaryTimerComplete = useCallback((nuevasAnfitrionas: string) => {
-    console.log('🔄 Timer temporal terminado, actualizando anfitrionas en contexto global:', nuevasAnfitrionas);
+  
 
     if (servicio?.id_servicio) {
       // Usar el contexto global para mantener las anfitrionas actualizadas
@@ -142,7 +146,7 @@ export default function ServicioCard({
         toast.error(result.message || 'Error al actualizar servicio');
       }
     } catch (error) {
-      console.error('Error saving service edit:', error);
+   
       toast.error('Error de conexión al actualizar');
     } finally {
       setIsSaving(false);

@@ -28,6 +28,7 @@ const orderSchema = z.object({
   subtotal: z.number(),
   total: z.number(),
   totalComision: z.number(),
+  propina: z.number().optional().default(0), // Agregar campo propina
   detalles: z.array(orderDetailSchema),
   usuarios: z.array(orderUserSchema)
 });
@@ -72,15 +73,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         errors: parse.error.issues
       });
     }
-    const { codigo, meseroId, clienteId, subtotal, total, totalComision, detalles, usuarios } =
+    const { codigo, meseroId, clienteId, subtotal, total, totalComision, propina, detalles, usuarios } =
       parse.data;
 
     // Iniciar transacción
     await rawQuery('START TRANSACTION');
     // Insertar pedido principal
     const result: any = await query(
-      'INSERT INTO pedidos (codigo, mesero_id, cliente_id, subtotal, total, total_comision) VALUES (?, ?, ?, ?, ?, ?)',
-      [codigo, meseroId, clienteId || null, subtotal, total, totalComision]
+      'INSERT INTO pedidos (codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0]
     );
     const pedidoId = result.insertId;
 

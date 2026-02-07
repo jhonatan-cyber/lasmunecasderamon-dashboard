@@ -399,7 +399,8 @@ export default function EditServiceModal({
             return anfitriona ? (anfitriona.nick || anfitriona.nombre || anfitriona.name) : 'Desconocida';
           }).join(', '),
           total_usuarios: formData.usuarios.length,
-          servicio_temporal_id: servicioTemporalResult.data.id_servicio // Guardar ID del servicio temporal
+          servicio_temporal_id: servicioTemporalResult.data.id_servicio, // Guardar ID del servicio temporal
+          servicio_original_id: servicio.id_servicio // ID del servicio original para mantener consistencia
         };
 
         console.log('📊 Datos temporales para mostrar:', datosTemporales);
@@ -449,12 +450,9 @@ export default function EditServiceModal({
 
         toast.success(`Nuevo servicio creado - Timer de ${formData.tiempo} minutos iniciado`);
         handleClose();
-        if (onUpdate) {
-          // Forzar actualización inmediata de los datos
-          setTimeout(() => {
-            onUpdate();
-          }, 100);
-        }
+        // NO llamar a onUpdate() inmediatamente para evitar que se recargue la lista
+        // y aparezca el servicio temporal como un nuevo card
+        // El timer temporal manejará la actualización cuando termine
       } else {
         toast.error('Debe seleccionar un tiempo mayor a 0 para crear el servicio temporal');
       }
