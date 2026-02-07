@@ -18,7 +18,13 @@ export function useServicios() {
 
       if (data.success) {
         console.log('✅ Servicios obtenidos:', data.data.length);
-        setServicios(data.data);
+        // Filtrar servicios temporales para no mostrarlos en la lista principal
+        const serviciosFiltrados = data.data.filter((servicio: any) => {
+          // Excluir servicios temporales y servicios que tengan servicio_original_id (son temporales)
+          return !servicio.es_temporal && !servicio.servicio_original_id;
+        });
+        console.log('🔍 Servicios filtrados (sin temporales):', serviciosFiltrados.length);
+        setServicios(serviciosFiltrados);
       } else {
         setError(data.message || 'Error al cargar servicios');
       }
@@ -125,6 +131,22 @@ export function useServicios() {
   useEffect(() => {
     // Cargar todos los servicios al inicio (incluyendo terminados)
     getServicios(true);
+  }, [getServicios]);
+
+  // Escuchar eventos de actualización de servicios en tiempo real
+  useEffect(() => {
+    const handleServiceUpdate = () => {
+      console.log('🔄 Recargando servicios por evento de actualización');
+      getServicios(true); // Recargar todos los servicios
+    };
+
+    window.addEventListener('updateServiceRequests', handleServiceUpdate);
+    window.addEventListener('serviceStatusChanged', handleServiceUpdate);
+
+    return () => {
+      window.removeEventListener('updateServiceRequests', handleServiceUpdate);
+      window.removeEventListener('serviceStatusChanged', handleServiceUpdate);
+    };
   }, [getServicios]);
 
   return {

@@ -201,6 +201,25 @@ export function Header() {
       const solicitud = (event.detail && event.detail.solicitud) || event.detail;
       if (!solicitud) return;
 
+      console.log('🔍 Datos de solicitud recibida:', solicitud);
+      console.log('🔍 Anfitrionas IDs:', solicitud.anfitrionas_ids);
+      console.log('🔍 Anfitrionas disponibles:', anfitrionas);
+
+      // Esperar a que las anfitrionas carguen si es necesario
+      if (anfitrionas.length === 0) {
+        console.log('⏳ Esperando carga de anfitrionas...');
+        // Esperar un poco y volver a intentar
+        setTimeout(() => {
+          console.log('🔄 Reintentando con anfitrionas cargadas:', anfitrionas);
+          setSelectedServiceRequest(solicitud);
+          setRejectReason('');
+          setServiceModalOpen(true);
+          setShowDropdown(false);
+          loadRoomAvailability(solicitud);
+        }, 1000);
+        return;
+      }
+
       setSelectedServiceRequest(solicitud);
       setRejectReason('');
       setServiceModalOpen(true);
@@ -219,7 +238,7 @@ export function Header() {
         handleOpenServiceRequestModal as unknown as EventListener
       );
     };
-  }, []);
+  }, [anfitrionas]);
 
   // Escuchar evento para actualizar contador de pedidos pendientes
   useEffect(() => {
@@ -279,6 +298,8 @@ export function Header() {
   }, []);
 
   const getAnfitrionasNicks = (ids: number[] = []) => {
+    if (!ids || ids.length === 0) return 'N/A';
+    
     const nickMap = new Map<number, string>();
     anfitrionas.forEach((a: any) => {
       const id = a.id_usuario || a.id;
@@ -286,14 +307,42 @@ export function Header() {
         nickMap.set(id, a.nick || a.nombre || a.name || `#${id}`);
       }
     });
-    return ids.map((id: number) => nickMap.get(id) || `#${id}`).join(', ');
+    
+    const nicks = ids.map((id: number) => nickMap.get(id) || `#${id}`);
+    const result = nicks.length > 0 ? nicks.join(', ') : 'N/A';
+    
+    console.log('🔍 getAnfitrionasNicks - IDs:', ids);
+    console.log('🔍 getAnfitrionasNicks - anfitrionas:', anfitrionas);
+    console.log('🔍 getAnfitrionasNicks - nickMap:', Array.from(nickMap.entries()));
+    console.log('🔍 getAnfitrionasNicks - resultado:', result);
+    
+    return result;
   };
 
   const calculateIVA = (solicitud: any) => {
+    let anfitrionasIds = solicitud.anfitrionas_ids;
+    
+    // Parsear si viene como string JSON
+    if (typeof anfitrionasIds === 'string') {
+      try {
+        anfitrionasIds = JSON.parse(anfitrionasIds);
+        console.log('🔍 calculateIVA - Parseado anfitrionas_ids:', anfitrionasIds);
+      } catch (e) {
+        console.error('❌ calculateIVA - Error parseando anfitrionas_ids:', e);
+        anfitrionasIds = [];
+      }
+    }
+    
     const metodoPago = (solicitud?.metodo_pago || '').toString().toLowerCase();
-    if (metodoPago !== 'tarjeta') return 0;
-    const numAnfitrionas = Array.isArray(solicitud.anfitrionas_ids)
-      ? solicitud.anfitrionas_ids.length
+    console.log('🔍 calculateIVA - Método pago:', metodoPago);
+    
+    if (metodoPago !== 'tarjeta') {
+      console.log('🔍 calculateIVA - No es tarjeta, IVA = 0');
+      return 0;
+    }
+    
+    const numAnfitrionas = Array.isArray(anfitrionasIds)
+      ? anfitrionasIds.length
       : 0;
     const tiempo = Number(solicitud.tiempo || 0);
     const multiplicador = tiempo === 60 ? 2 : 1;
@@ -307,6 +356,18 @@ export function Header() {
     const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
     const excedente = totalRedondeado - nuevoTotal;
     nuevoIVA = nuevoIVA + excedente;
+    
+    console.log('🔍 calculateIVA - Cálculo:', {
+      numAnfitrionas,
+      tiempo,
+      multiplicador,
+      precioServicio,
+      precioHabitacion,
+      nuevoSubTotal,
+      precioHabitacionTotal,
+      nuevoIVA
+    });
+    
     return nuevoIVA;
   };
 
@@ -345,6 +406,10 @@ export function Header() {
 
   const handleApproveServiceRequest = async () => {
     if (!selectedServiceRequest) return;
+    
+    console.log('🔍 Aprobando solicitud:', selectedServiceRequest);
+    console.log('🔍 ID de solicitud:', selectedServiceRequest.id_solicitud);
+    
     if (!isRoomAvailable && !selectedRoomId) {
       showErrorToast('Selecciona una habitación disponible');
       return;
@@ -354,15 +419,18 @@ export function Header() {
       const habitacionIdFinal =
         (isRoomAvailable ? selectedServiceRequest.habitacion_id : selectedRoomId) ||
         selectedServiceRequest.habitacion_id;
-      const response = await fetch(
-        `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/aprobar`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ habitacion_id: habitacionIdFinal })
-        }
-      );
+      
+      const url = `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/aprobar`;
+      console.log('🔍 URL de aprobación:', url);
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habitacion_id: habitacionIdFinal })
+      });
       const data = await response.json();
+
+      console.log('🔍 Respuesta de aprobación:', data);
 
       if (data.success) {
         showSuccessToast('Solicitud aprobada exitosamente');
@@ -412,7 +480,8 @@ export function Header() {
       } else {
         showErrorToast(data.message || 'Error al aprobar solicitud');
       }
-    } catch {
+    } catch (error) {
+      console.error('❌ Error al aprobar solicitud:', error);
       showErrorToast('Error al aprobar solicitud');
     } finally {
       setServiceProcessing(false);
@@ -421,6 +490,10 @@ export function Header() {
 
   const handleRejectServiceRequest = async () => {
     if (!selectedServiceRequest) return;
+    
+    console.log('🔍 Rechazando solicitud:', selectedServiceRequest);
+    console.log('🔍 ID de solicitud:', selectedServiceRequest.id_solicitud);
+    
     if (!rejectReason.trim()) {
       showErrorToast('El motivo de rechazo es requerido');
       return;
@@ -428,15 +501,17 @@ export function Header() {
 
     setServiceProcessing(true);
     try {
-      const response = await fetch(
-        `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/rechazar`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ motivo_rechazo: rejectReason })
-        }
-      );
+      const url = `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/rechazar`;
+      console.log('🔍 URL de rechazo:', url);
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo_rechazo: rejectReason })
+      });
       const data = await response.json();
+
+      console.log('🔍 Respuesta de rechazo:', data);
 
       if (data.success) {
         showSuccessToast('Solicitud rechazada exitosamente');
@@ -449,7 +524,8 @@ export function Header() {
       } else {
         showErrorToast(data.message || 'Error al rechazar solicitud');
       }
-    } catch {
+    } catch (error) {
+      console.error('❌ Error al rechazar solicitud:', error);
       showErrorToast('Error al rechazar solicitud');
     } finally {
       setServiceProcessing(false);
@@ -606,7 +682,42 @@ export function Header() {
               <div className='space-y-3 text-sm'>
                 <div>
                   <span className='font-medium'>Anfitrionas:</span>{' '}
-                  {getAnfitrionasNicks(selectedServiceRequest.anfitrionas_ids)}
+                  {(() => {
+                    let anfitrionasIds = selectedServiceRequest.anfitrionas_ids;
+                    
+                    // Parsear si viene como string JSON
+                    if (typeof anfitrionasIds === 'string') {
+                      try {
+                        anfitrionasIds = JSON.parse(anfitrionasIds);
+                        console.log('🔍 Parseado anfitrionas_ids de string a array:', anfitrionasIds);
+                      } catch (e) {
+                        console.error('❌ Error parseando anfitrionas_ids:', e);
+                        anfitrionasIds = [];
+                      }
+                    }
+                    
+                    console.log('🔍 anfitrionas_ids final:', anfitrionasIds);
+                    console.log('🔍 Tipo:', typeof anfitrionasIds);
+                    console.log('🔍 Array.isArray:', Array.isArray(anfitrionasIds));
+                    console.log('🔍 anfitrionas disponibles:', anfitrionas);
+                    
+                    if (!anfitrionasIds || !Array.isArray(anfitrionasIds) || anfitrionasIds.length === 0) {
+                      return 'N/A';
+                    }
+                    
+                    const nickMap = new Map<number, string>();
+                    anfitrionas.forEach((a: any) => {
+                      const id = a.id_usuario || a.id;
+                      if (id) {
+                        nickMap.set(id, a.nick || a.nombre || a.name || `#${id}`);
+                      }
+                    });
+                    
+                    const nicks = anfitrionasIds.map((id: number) => nickMap.get(id) || `#${id}`);
+                    const result = nicks.length > 0 ? nicks.join(', ') : 'N/A';
+                    console.log('🔍 Resultado anfitrionas:', result);
+                    return result;
+                  })()}
                 </div>
                 <div>
                   <span className='font-medium'>Habitación:</span>{' '}
@@ -658,7 +769,18 @@ export function Header() {
                 </div>
                 <div>
                   <span className='font-medium'>IVA:</span> $
-                  {Math.round(calculateIVA(selectedServiceRequest)).toLocaleString('es-CL')}
+                  {(() => {
+                    const ivaCalculado = calculateIVA(selectedServiceRequest);
+                    console.log('🔍 IVA calculado:', ivaCalculado);
+                    console.log('🔍 Datos para IVA:', {
+                      metodo_pago: selectedServiceRequest.metodo_pago,
+                      anfitrionas_ids: selectedServiceRequest.anfitrionas_ids,
+                      tiempo: selectedServiceRequest.tiempo,
+                      precio_servicio: selectedServiceRequest.precio_servicio,
+                      precio_habitacion: selectedServiceRequest.precio_habitacion
+                    });
+                    return Math.round(ivaCalculado).toLocaleString('es-CL');
+                  })()}
                 </div>
               </div>
             )}
