@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface Permission {
-  id: string;
+  id: number;
   name: string;
   description: string;
   module: string;

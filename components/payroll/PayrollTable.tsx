@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -15,6 +16,7 @@ import type { PayrollRow } from '@/hooks/usePayroll';
 import { useConfirmModal } from '@/hooks/useConfirmModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface PayrollTableProps {
   title?: string;
@@ -37,6 +39,25 @@ export default function PayrollTable({
   onRefetch
 }: PayrollTableProps) {
   const { modalState, showConfirm, closeModal } = useConfirmModal();
+  const { userPermissions } = useUserPermissions();
+  
+  // Calcular canPay directamente desde userPermissions
+  const canPay = useMemo(() => {
+    // Buscar en ambos módulos por compatibilidad (payroll y planilla)
+    const result = userPermissions.some(p => 
+      (p.module === 'payroll' || p.module === 'planilla') && p.action === 'pagar'
+    );
+    
+    const payrollPerms = userPermissions.filter(p => p.module === 'payroll' || p.module === 'planilla');
+    console.log('🔍 [PayrollTable] Calculando canPay:', {
+      result,
+      totalPermissions: userPermissions.length,
+      payrollModulePermissions: payrollPerms.map(p => `${p.module}.${p.action} (id: ${p.id}, name: ${p.name})`),
+      buscando: 'payroll.pagar o planilla.pagar',
+      timestamp: new Date().toISOString()
+    });
+    return result;
+  }, [userPermissions]);
 
   const handlePay = async (row: PayrollRow) => {
     const confirmed = await showConfirm({
@@ -93,7 +114,7 @@ export default function PayrollTable({
                   </TableHead>
                   <TableHead className='text-right'>Anticipos</TableHead>
                   <TableHead className='text-right'>Total a Pagar</TableHead>
-                  <TableHead className='text-right'>Acciones</TableHead>
+                  {canPay && <TableHead className='text-right'>Acciones</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -128,11 +149,13 @@ export default function PayrollTable({
                     <TableCell className='text-right font-bold'>
                       {formatCurrencyNoDecimals(r.total)}
                     </TableCell>
-                    <TableCell className='text-right'>
-                      <Button size='sm' variant='outline' className='rounded-full' onClick={() => handlePay(r)}>
-                        Pagar
-                      </Button>
-                    </TableCell>
+                    {canPay && (
+                      <TableCell className='text-right'>
+                        <Button size='sm' variant='outline' className='rounded-full' onClick={() => handlePay(r)}>
+                          Pagar
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

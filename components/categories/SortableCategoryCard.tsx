@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import CategoryCard from './CategoryCard';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface SortableCategoryCardProps {
   category: {
@@ -33,6 +34,14 @@ export default function SortableCategoryCard({
     isDragging
   } = useSortable({ id: category.id });
 
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permisos
+  const canEdit = hasPermission('categorias', 'editar');
+  const canDelete = hasPermission('categorias', 'eliminar');
+  const canActivate = hasPermission('categorias', 'activar');
+  const canDeactivate = hasPermission('categorias', 'desactivar');
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -48,6 +57,10 @@ export default function SortableCategoryCard({
         onDeactivate={onDeactivate}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        canActivate={canActivate}
+        canDeactivate={canDeactivate}
       />
     </div>
   );

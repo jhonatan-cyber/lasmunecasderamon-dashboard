@@ -10,6 +10,7 @@ import { useCommissions } from '@/hooks/useCommissions';
 import useCommissionStats from '@/hooks/useCommissionStats';
 import { Commission } from '@/types/commission';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CommissionsPage() {
   const { filteredCommissions, isLoading, searchTerm, setSearchTerm } = useCommissions();
@@ -58,7 +59,8 @@ export default function CommissionsPage() {
   );
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <PermissionGuard module="comisiones" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <div>
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900'>
@@ -168,5 +170,6 @@ export default function CommissionsPage() {
         }
       />
     </div>
+    </PermissionGuard>
   );
 }

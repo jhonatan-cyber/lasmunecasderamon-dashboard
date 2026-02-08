@@ -16,15 +16,6 @@ const nextConfig = {
     });
     return config;
   },
-  // Configuración de Turbopack (equivalente a webpack)
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
 };
 
 export default nextConfig;

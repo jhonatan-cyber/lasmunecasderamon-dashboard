@@ -24,6 +24,7 @@ import CuentaDetailModal from "./CuentaDetailModal";
 import AgregarProductosModal from "./AgregarProductosModal";
 import CobrarCuentaModal from "./CobrarCuentaModal";
 import { useState } from "react";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 interface CuentaTableProps {
   loading: boolean;
@@ -40,12 +41,21 @@ export default function CuentaTable({
   onRefresh,
   onOrderStatusChange,
 }: CuentaTableProps) {
+  const { hasPermission } = useUserPermissions();
   const [selectedCuentaId, setSelectedCuentaId] = useState<number | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
   const [selectedCuentaForProductos, setSelectedCuentaForProductos] = useState<number | null>(null);
   const [cobrarCuentaOpen, setCobrarCuentaOpen] = useState(false);
   const [selectedCuentaForCobro, setSelectedCuentaForCobro] = useState<any>(null);
+  
+  // Verificar permisos
+  const canViewDetails = hasPermission('cuentas', 'ver_detalles');
+  const canAddProducts = hasPermission('cuentas', 'agregar_productos');
+  const canCobrar = hasPermission('cuentas', 'cobrar');
+  
+  // Si no tiene ningún permiso de acción, no mostrar el menú
+  const hasAnyAction = canViewDetails || canAddProducts || canCobrar;
   
   const getEstadoBadge = (estado: number) => {
     switch (estado) {
@@ -182,41 +192,49 @@ export default function CuentaTable({
               </div>
 
               {/* Acciones */}
-              <div className='flex items-center gap-2 pt-2 border-t border-gray-100'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => handleVerDetalles(cuenta.id_cuenta)}
-                  className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
-                >
-                  <Eye className='w-3 h-3 mr-1' />
-                  Ver Detalles
-                </Button>
-
-                {cuenta.estado === 1 && (
-                  <>
+              {hasAnyAction && (
+                <div className='flex items-center gap-2 pt-2 border-t border-gray-100'>
+                  {canViewDetails && (
                     <Button
                       variant='outline'
                       size='sm'
-                      onClick={() => handleAgregarProductos(cuenta.id_cuenta)}
-                      className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs'
+                      onClick={() => handleVerDetalles(cuenta.id_cuenta)}
+                      className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
                     >
-                      <ShoppingCart className='w-3 h-3 mr-1' />
-                      Agregar
+                      <Eye className='w-3 h-3 mr-1' />
+                      Ver Detalles
                     </Button>
+                  )}
 
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => handleCobrarCuenta(cuenta.id_cuenta)}
-                      className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white text-xs'
-                    >
-                      <CreditCard className='w-3 h-3 mr-1' />
-                      Cobrar
-                    </Button>
-                  </>
-                )}
-              </div>
+                  {cuenta.estado === 1 && (
+                    <>
+                      {canAddProducts && (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleAgregarProductos(cuenta.id_cuenta)}
+                          className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs'
+                        >
+                          <ShoppingCart className='w-3 h-3 mr-1' />
+                          Agregar
+                        </Button>
+                      )}
+
+                      {canCobrar && (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleCobrarCuenta(cuenta.id_cuenta)}
+                          className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white text-xs'
+                        >
+                          <CreditCard className='w-3 h-3 mr-1' />
+                          Cobrar
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -289,46 +307,54 @@ export default function CuentaTable({
                     {formatDate(cuenta.fecha_crea)}
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center">
-                    <div className="flex justify-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="bg-white hover:bg-gray-50 rounded-full"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            className="cursor-pointer hover:text-blue-700 hover:bg-blue-50"
-                            onClick={() => handleVerDetalles(cuenta.id_cuenta)}
-                          >
-                            <Eye className="h-4 w-4" />
-                            Ver detalles
-                          </DropdownMenuItem>
-                          {cuenta.estado === 1 && (
-                            <>
-                              <DropdownMenuItem 
-                                className="cursor-pointer hover:text-green-700 hover:bg-green-50"
-                                onClick={() => handleAgregarProductos(cuenta.id_cuenta)}
+                    {hasAnyAction && (
+                      <div className="flex justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="bg-white hover:bg-gray-50 rounded-full"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            {canViewDetails && (
+                              <DropdownMenuItem
+                                className="cursor-pointer hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleVerDetalles(cuenta.id_cuenta)}
                               >
-                                <ShoppingCart className="h-4 w-4" />
-                                Agregar productos
+                                <Eye className="h-4 w-4" />
+                                Ver detalles
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="cursor-pointer hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleCobrarCuenta(cuenta.id_cuenta)}
-                              >
-                                <CreditCard className="h-4 w-4" />
-                                Cobrar
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                            )}
+                            {cuenta.estado === 1 && (
+                              <>
+                                {canAddProducts && (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer hover:text-green-700 hover:bg-green-50"
+                                    onClick={() => handleAgregarProductos(cuenta.id_cuenta)}
+                                  >
+                                    <ShoppingCart className="h-4 w-4" />
+                                    Agregar productos
+                                  </DropdownMenuItem>
+                                )}
+                                {canCobrar && (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleCobrarCuenta(cuenta.id_cuenta)}
+                                  >
+                                    <CreditCard className="h-4 w-4" />
+                                    Cobrar
+                                  </DropdownMenuItem>
+                                )}
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

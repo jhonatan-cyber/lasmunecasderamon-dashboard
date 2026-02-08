@@ -33,6 +33,7 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy
 } from '@dnd-kit/sortable';
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
@@ -196,69 +197,72 @@ const ProductCategoryPage = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-col">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-            Productos de la categoría {category?.name}
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Gestiona los productos de esta categoría.
-          </p>
-        </div>
+    <PermissionGuard module="productos" action="listar_categoria">
+      <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              Productos de la categoría {category?.name}
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              Gestiona los productos de esta categoría.
+            </p>
+          </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 items-center">
-          {/* Solo mostrar botón de vista en desktop */}
-          <div className="hidden sm:flex gap-2 items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm",
-                showTableView
-                  ? "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100"
-                  : "hover:bg-gray-100"
-              )}
-              onClick={() => setShowTableView(!showTableView)}
-            >
-              {showTableView ? (
-                <>
-                  <Table className="w-3 h-3 sm:w-4 sm:h-4" />
-                  Tabla
-                </>
-              ) : (
-                <>
-                  <Grid3X3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  Cards
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="flex gap-2 items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className="whitespace-nowrap inline-flex items-center hover:bg-black hover:text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto"
-              onClick={() => router.push("/products")}
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Atrás
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto"
-              onClick={() => {
-                setEditProduct(null);
-                setOpenDialog(true);
-              }}
-            >
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Nuevo Producto
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-2 items-center">
+            {/* Solo mostrar botón de vista en desktop */}
+            <div className="hidden sm:flex gap-2 items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm",
+                  showTableView
+                    ? "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100"
+                    : "hover:bg-gray-100"
+                )}
+                onClick={() => setShowTableView(!showTableView)}
+              >
+                {showTableView ? (
+                  <>
+                    <Table className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Tabla
+                  </>
+                ) : (
+                  <>
+                    <Grid3X3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Cards
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="flex gap-2 items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="whitespace-nowrap inline-flex items-center hover:bg-black hover:text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto"
+                onClick={() => router.push("/products")}
+              >
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Atrás
+              </Button>
+              <PermissionGuard module="productos" action="crear_categoria" fallback={null}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto"
+                  onClick={() => {
+                    setEditProduct(null);
+                    setOpenDialog(true);
+                  }}
+                >
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  Nuevo Producto
+                </Button>
+              </PermissionGuard>
+            </div>
           </div>
         </div>
-      </div>
 
       <ProductFilters
         searchTerm={searchTerm}
@@ -383,6 +387,7 @@ const ProductCategoryPage = () => {
         isLoading={isLoading}
       />
     </div>
+  </PermissionGuard>
   );
 };
 

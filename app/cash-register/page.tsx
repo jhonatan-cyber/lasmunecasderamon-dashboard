@@ -17,6 +17,7 @@ import { CajaFilters } from '@/components/caja/CajaFilters';
 import { CashRegisterStatsCard, CashRegisterDetailedStats } from '@/components/cash-register';
 import { CajaWithUser, CajaCreate, CajaCierre, CajaRetiro } from '@/types/caja';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CashRegister() {
   const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero } = useCashRegister();
@@ -34,34 +35,19 @@ export default function CashRegister() {
   const isCajero = user?.role === 'cajero';
   
   // Verificar permisos específicos
-  const canOpenCaja = hasPermission('cajas', 'crear') || 
-                      hasPermission('cajas', 'abrir') || 
-                      hasPermission('caja', 'crear') || 
-                      hasPermission('caja', 'abrir');
-                      
-  const canCloseCaja = hasPermission('cajas', 'cerrar') || 
-                       hasPermission('cajas', 'actualizar') || 
-                       hasPermission('caja', 'cerrar') || 
-                       hasPermission('caja', 'actualizar');
-                       
-  const canViewCajas = hasPermission('cajas', 'ver') || 
-                       hasPermission('cajas', 'listar') || 
-                       hasPermission('caja', 'ver') || 
-                       hasPermission('caja', 'listar');
-                       
-  const canRetirar = hasPermission('cajas', 'retirar') || 
-                     hasPermission('cajas', 'actualizar') || 
-                     hasPermission('caja', 'retirar') || 
-                     hasPermission('caja', 'actualizar');
+  const canOpenCaja = hasPermission('caja', 'crear');
+  const canCloseCaja = hasPermission('caja', 'cerrar');
+  const canViewDetails = hasPermission('caja', 'ver_detalles');
+  const canWithdrawMoney = hasPermission('caja', 'retirar_efectivo');
 
-  // Nuevos permisos agregados
-  const canViewDetails = hasPermission('caja', 'detalles') || 
-                         hasPermission('caja', 'ver_detalles') ||
-                         hasPermission('cajas', 'detalles');
-
-  const canWithdrawMoney = hasPermission('caja', 'retirar') || 
-                           hasPermission('caja', 'retirar_dinero') ||
-                           hasPermission('cajas', 'retirar');
+  // Debug: Log para verificar permisos
+  console.log('🔍 Cash Register Permissions:', {
+    canOpenCaja,
+    canCloseCaja,
+    canViewDetails,
+    canWithdrawMoney,
+    userRole: user?.role
+  });
 
   // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
@@ -164,7 +150,8 @@ export default function CashRegister() {
   }
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <PermissionGuard module="caja" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
         <div>
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
@@ -193,18 +180,6 @@ export default function CashRegister() {
             // Mostrar botón de crear caja si tiene permisos
             canOpenCaja && <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
           )}
-          <Button
-            onClick={handleRefresh}
-            disabled={loading}
-            size='sm'
-            variant='outline'
-            className='rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
-          >
-            <RotateCcw
-              className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-            />
-            Actualizar
-          </Button>
         </div>
       </div>
 
@@ -381,5 +356,6 @@ export default function CashRegister() {
 
       <CajaDetails caja={selectedCaja} open={showDetails} onOpenChange={setShowDetails} />
     </div>
+    </PermissionGuard>
   );
 }
