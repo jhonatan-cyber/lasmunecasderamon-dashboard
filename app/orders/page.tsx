@@ -72,6 +72,9 @@ export default function OrdersPage() {
   const [searchServiciosTerm, setSearchServiciosTerm] = useState('');
   const [activeTab, setActiveTab] = useState('productos');
 
+  // Verificar permisos
+  const canDelete = hasPermission('pedidos', 'eliminar');
+
   // Estados para el modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
@@ -159,12 +162,8 @@ export default function OrdersPage() {
     }
   };
 
-  // Helper: verificar permiso de procesar (soporta claves antiguas y nuevas)
-  const hasProcessPermission = () =>
-    hasPermission('orders', 'process') ||
-    hasPermission('pedidos', 'procesar') ||
-    hasPermission('orders', 'procesar_pedidos') ||
-    hasPermission('pedidos', 'procesar_pedidos');
+  // Helper: verificar permiso de procesar
+  const hasProcessPermission = () => hasPermission('pedidos', 'registrar_venta');
 
   const fetchOrderDetail = async (orderId: number) => {
     try {
@@ -424,7 +423,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <PermissionGuard module='orders' action='view'>
+    <PermissionGuard module='pedidos' action='listar'>
       <div className='p-6 space-y-6'>
         {/* Header */}
         <div className='flex items-center justify-between'>
@@ -437,7 +436,7 @@ export default function OrdersPage() {
               <ArrowLeft className='h-4 w-4 mr-2' />
               Atrás
             </Button>
-            <PermissionGuard module='orders' action='create'>
+            <PermissionGuard module='pedidos' action='crear' fallback={null}>
               <Button
                 onClick={handleCreateOrder}
                 disabled={cajaLoading || !hasOpenCaja}
@@ -686,17 +685,19 @@ export default function OrdersPage() {
                             </div>
 
                             {/* Botón de eliminar */}
-                            <div className='ml-4'>
-                              <Button
-                                size='sm'
-                                variant='outline'
-                                className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
-                                onClick={e => handleDeleteClick(e, order)}
-                                title='Eliminar pedido'
-                              >
-                                <Trash2 className='w-3 h-3' />
-                              </Button>
-                            </div>
+                            {canDelete && (
+                              <div className='ml-4'>
+                                <Button
+                                  size='sm'
+                                  variant='outline'
+                                  className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
+                                  onClick={e => handleDeleteClick(e, order)}
+                                  title='Eliminar pedido'
+                                >
+                                  <Trash2 className='w-3 h-3' />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -780,17 +781,19 @@ export default function OrdersPage() {
                             )}
                           </div>
                           {/* Botón de eliminar */}
-                          <div className='ml-4'>
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
-                              onClick={e => handleDeleteServicioClick(e, servicio)}
-                              title='Eliminar solicitud'
-                            >
-                              <Trash2 className='w-3 h-3' />
-                            </Button>
-                          </div>
+                          {canDelete && (
+                            <div className='ml-4'>
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                className='rounded-full w-8 h-8 p-0 bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-all duration-200'
+                                onClick={e => handleDeleteServicioClick(e, servicio)}
+                                title='Eliminar solicitud'
+                              >
+                                <Trash2 className='w-3 h-3' />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

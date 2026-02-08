@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DeleteClientConfirmModal } from './DeleteClientConfirmModal';
 import { Card, CardContent } from '@/components/ui/card';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface ClientTableProps {
   clients: Client[];
@@ -42,6 +43,15 @@ export function ClientTable({
 }: ClientTableProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permisos
+  const canViewDetails = hasPermission('clientes', 'ver_detalles');
+  const canEdit = hasPermission('clientes', 'editar');
+  const canDelete = hasPermission('clientes', 'eliminar');
+  
+  // Si no tiene ningún permiso de acción, no mostrar el menú
+  const hasAnyAction = canViewDetails || canEdit || canDelete;
 
   const handleDeleteClick = (client: Client) => {
     setClientToDelete(client);
@@ -159,69 +169,77 @@ export function ClientTable({
               </div>
 
               {/* Acciones */}
-              <div className='flex justify-end pt-2 border-t border-gray-200'>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
-                    >
-                      <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end' className='w-40'>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuItem
-                            onClick={() => onViewDetails(client)}
-                            className='cursor-pointer group'
-                          >
-                            <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
-                            <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
-                              Ver detalles
-                            </span>
-                          </DropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Ver detalles del cliente</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuItem
-                            onClick={() => onEdit(client)}
-                            className='cursor-pointer group'
-                          >
-                            <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
-                            <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
-                              Editar
-                            </span>
-                          </DropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Editar cliente</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(client)}
-                            className='cursor-pointer group'
-                          >
-                            <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
-                            <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
-                              Eliminar
-                            </span>
-                          </DropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Eliminar cliente</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              {hasAnyAction && (
+                <div className='flex justify-end pt-2 border-t border-gray-200'>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
+                      >
+                        <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align='end' className='w-40'>
+                      {canViewDetails && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onViewDetails(client)}
+                                className='cursor-pointer group'
+                              >
+                                <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
+                                <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
+                                  Ver detalles
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver detalles del cliente</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      {canEdit && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onEdit(client)}
+                                className='cursor-pointer group'
+                              >
+                                <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
+                                <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
+                                  Editar
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar cliente</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      {canDelete && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(client)}
+                                className='cursor-pointer group'
+                              >
+                                <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
+                                <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
+                                  Eliminar
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Eliminar cliente</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))
@@ -300,69 +318,77 @@ export function ClientTable({
                     )}
                   </TableCell>
                   <TableCell className='py-3 px-4 text-center'>
-                    <div className='flex justify-center'>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
-                          >
-                            <MoreVertical />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end' className='w-40'>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onViewDetails(client)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors' />
-                                  <span className='group-hover:text-blue-700 transition-colors'>
-                                    Ver detalles
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Ver detalles del cliente</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onEdit(client)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
-                                  <span className='group-hover:text-purple-700 transition-colors'>
-                                    Editar
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Editar cliente</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteClick(client)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
-                                  <span className='group-hover:text-red-700 transition-colors'>
-                                    Eliminar
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Eliminar cliente</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    {hasAnyAction && (
+                      <div className='flex justify-center'>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
+                            >
+                              <MoreVertical />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end' className='w-40'>
+                            {canViewDetails && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuItem
+                                      onClick={() => onViewDetails(client)}
+                                      className='cursor-pointer group'
+                                    >
+                                      <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors' />
+                                      <span className='group-hover:text-blue-700 transition-colors'>
+                                        Ver detalles
+                                      </span>
+                                    </DropdownMenuItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Ver detalles del cliente</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {canEdit && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuItem
+                                      onClick={() => onEdit(client)}
+                                      className='cursor-pointer group'
+                                    >
+                                      <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
+                                      <span className='group-hover:text-purple-700 transition-colors'>
+                                        Editar
+                                      </span>
+                                    </DropdownMenuItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Editar cliente</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {canDelete && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteClick(client)}
+                                      className='cursor-pointer group'
+                                    >
+                                      <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
+                                      <span className='group-hover:text-red-700 transition-colors'>
+                                        Eliminar
+                                      </span>
+                                    </DropdownMenuItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Eliminar cliente</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

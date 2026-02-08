@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePermissions, Permission } from '@/hooks/usePermissions';
 import { Role } from '@/hooks/useRoles';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface PermissionsPanelProps {
   selectedRole: Role | null;
@@ -20,11 +21,15 @@ interface PermissionsPanelProps {
 
 export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const { permissionsByModule, getRolePermissions, updateRolePermissions } = usePermissions();
+  const { hasPermission } = useUserPermissions();
   const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  
+  // Verificar permiso para asignar permisos
+  const canAssignPermissions = hasPermission('roles', 'asignar_permisos');
 
   // Cargar permisos del rol cuando se selecciona uno
   useEffect(() => {
@@ -200,27 +205,29 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
             </h3>
             <p className='text-sm text-zinc-600 dark:text-neutral-400'>{selectedRole.name}</p>
           </div>
-          <Button
-            onClick={handleSavePermissions}
-            disabled={isSaving}
-            className='bg-black text-white hover:bg-zinc-900'
-          >
-            {isSaving ? (
-              <Loader2 className='h-4 w-4 animate-spin mr-2' />
-            ) : (
-              <Save className='h-4 w-4 mr-2' />
-            )}
-            Guardar
-          </Button>
+          {canAssignPermissions && (
+            <Button
+              onClick={handleSavePermissions}
+              disabled={isSaving}
+              className='bg-black text-white hover:bg-zinc-900 rounded-full'
+            >
+              {isSaving ? (
+                <Loader2 className='h-4 w-4 animate-spin mr-2' />
+              ) : (
+                <Save className='h-4 w-4 mr-2' />
+              )}
+              Guardar
+            </Button>
+          )}
         </div>
 
         {/* Controles de expansión */}
         <div className='flex gap-2'>
-          <Button variant='outline' size='sm' onClick={expandAllModules} className='text-xs'>
+          <Button variant='outline' size='sm' onClick={expandAllModules} className='text-xs rounded-full'>
             <ChevronDown className='h-3 w-3 mr-1' />
             Expandir Todo
           </Button>
-          <Button variant='outline' size='sm' onClick={collapseAllModules} className='text-xs'>
+          <Button variant='outline' size='sm' onClick={collapseAllModules} className='text-xs rounded-full'>
             <ChevronRight className='h-3 w-3 mr-1' />
             Colapsar Todo
           </Button>
@@ -268,7 +275,8 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                         e.stopPropagation();
                         handleSelectAllModule(module);
                       }}
-                      className='text-xs'
+                      className='text-xs rounded-full'
+                      disabled={!canAssignPermissions}
                     >
                       <CheckCircle className='h-3 w-3 mr-1' />
                       Todos
@@ -280,7 +288,8 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                         e.stopPropagation();
                         handleDeselectAllModule(module);
                       }}
-                      className='text-xs'
+                      className='text-xs rounded-full'
+                      disabled={!canAssignPermissions}
                     >
                       <XCircle className='h-3 w-3 mr-1' />
                       Ninguno
@@ -303,6 +312,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                               checked={selectedPermissions.includes(permission.id.toString())}
                               onChange={() => handlePermissionToggle(permission.id.toString())}
                               className='rounded border-zinc-300 dark:border-neutral-600 text-black focus:ring-black'
+                              disabled={!canAssignPermissions}
                             />
                             <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100'>
                               {permission.name}

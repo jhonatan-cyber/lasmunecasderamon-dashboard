@@ -1,4 +1,4 @@
-﻿import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
@@ -7,6 +7,55 @@ import bcrypt from 'bcryptjs';
 export const config = {
   api: {
     bodyParser: false
+  }
+};
+
+// Función para verificar permisos
+const checkPermission = async (req: NextApiRequest, module: string, action: string): Promise<boolean> => {
+  try {
+    // Obtener el usuario actual desde la sesión o token
+    const user = (req as any).user;
+    
+    console.log('[checkPermission API] Usuario:', {
+      id: user?.id,
+      role: user?.role,
+      roleId: user?.roleId
+    });
+    
+    // Si es administrador, tiene acceso a todo
+    if (user?.role?.toLowerCase() === 'administrador') {
+      console.log('[checkPermission API] Es administrador - acceso permitido');
+      return true;
+    }
+
+    // Obtener el rol del usuario
+    if (!user?.roleId) {
+      console.log('[checkPermission API] ❌ No tiene roleId');
+      return false;
+    }
+
+    // Consultar si el usuario tiene el permiso específico
+    const [permissionCheck] = await query(`
+      SELECT COUNT(*) as has_permission 
+      FROM role_permissions rp
+      INNER JOIN permissions p ON rp.permission_id = p.id
+      WHERE rp.role_id = ? AND p.module = ? AND p.action = ?
+    `, [user.roleId, module, action]) as any[];
+
+    const hasPermission = permissionCheck[0].has_permission > 0;
+    
+    console.log('[checkPermission API] Resultado:', {
+      roleId: user.roleId,
+      module,
+      action,
+      hasPermission,
+      count: permissionCheck[0].has_permission
+    });
+
+    return hasPermission;
+  } catch (error) {
+    console.error('[checkPermission API] Error:', error);
+    return false;
   }
 };
 
@@ -125,6 +174,15 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+    // Verificar permiso para crear usuarios
+    const hasPermission = await checkPermission(req, 'usuarios', 'crear');
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para crear usuarios'
+      });
+    }
+
     let fields: any = {};
 
     // Determinar si es FormData o JSON
@@ -132,7 +190,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (contentType.includes('multipart/form-data')) {
       // Es FormData, usar función personalizada para parsear
-
       fields = await parseFormData(req);
     } else {
       fields = req.body;
@@ -241,6 +298,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+    // Verificar permiso para editar usuarios
+    const hasPermission = await checkPermission(req, 'usuarios', 'editar');
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para editar usuarios'
+      });
+    }
+
     let fields: any = {};
     let userId: string | number | undefined;
 
@@ -249,13 +315,10 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (contentType.includes('multipart/form-data')) {
       // Es FormData, usar función personalizada para parsear
-
       fields = await parseFormData(req);
-
       userId = fields.id;
     } else {
       // Es JSON
-
       fields = req.body;
       userId = req.query.id || req.body.id;
     }
@@ -384,6 +447,30 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
+    let hasPermission = false;
+    let actionMessage = '';
+
+    // Verificar permisos según la acción
+    if (action === 'activate') {
+      hasPermission = await checkPermission(req, 'usuarios', 'activar');
+      actionMessage = 'activar';
+    } else if (action === 'deactivate') {
+      hasPermission = await checkPermission(req, 'usuarios', 'desactivar');
+      actionMessage = 'desactivar';
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Acción no válida. Use "activate" o "deactivate"'
+      });
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: `No tienes permisos para ${actionMessage} usuarios`
+      });
+    }
+
     let newStatus;
     if (action === 'activate') newStatus = 1;
     else if (action === 'deactivate') newStatus = 0;
@@ -424,6 +511,15 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+    // Verificar permiso para eliminar usuarios
+    const hasPermission = await checkPermission(req, 'usuarios', 'eliminar');
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para eliminar usuarios'
+      });
+    }
+
     const { id } = req.query;
     if (!id) {
       return res.status(400).json({

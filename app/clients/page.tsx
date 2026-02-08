@@ -13,6 +13,7 @@ import { ClientTable } from "@/components/clients/ClientTable";
 import { ClientFilters } from "@/components/clients/ClientFilters";
 import { ExportButtons } from "@/components/clients/ExportButtons";
 import Paginate from "@/components/ui/paginate";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 export default function Clients() {
   const {
@@ -133,46 +134,49 @@ export default function Clients() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
-        <div className="flex flex-col">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Clientes</h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Gestiona todos los clientes de la plataforma.
-          </p>
+    <PermissionGuard module="clients" action="listar">
+      <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+          <div className="flex flex-col">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Clientes</h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              Gestiona todos los clientes de la plataforma.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <ExportButtons clients={allClients || []} />
+            <PermissionGuard module="clients" action="crear" fallback={null}>
+              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={handleAddClick}
+                    size="sm"
+                    variant="outline"
+                    className="whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto"
+                  >
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    Nuevo Cliente
+                  </Button>
+                </DialogTrigger>
+                <ClientModal
+                  open={isModalOpen}
+                  onOpenChange={setIsModalOpen}
+                  isEditMode={isEditMode}
+                  clientData={modalClientData}
+                  setClientData={setModalClientData}
+                  isLoading={isLoading}
+                  onSubmit={isEditMode ? handleEditClient : handleAddClient}
+                  onCancel={() => {
+                    setIsModalOpen(false);
+                    setModalClientData(CLIENT_EMPTY);
+                    setIsEditMode(false);
+                    setEditClientId(null);
+                  }}
+                />
+              </Dialog>
+            </PermissionGuard>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <ExportButtons clients={allClients || []} />
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={handleAddClick}
-                size="sm"
-                variant="outline"
-                className="whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto"
-              >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Nuevo Cliente
-              </Button>
-            </DialogTrigger>
-            <ClientModal
-              open={isModalOpen}
-              onOpenChange={setIsModalOpen}
-              isEditMode={isEditMode}
-              clientData={modalClientData}
-              setClientData={setModalClientData}
-              isLoading={isLoading}
-              onSubmit={isEditMode ? handleEditClient : handleAddClient}
-              onCancel={() => {
-                setIsModalOpen(false);
-                setModalClientData(CLIENT_EMPTY);
-                setIsEditMode(false);
-                setEditClientId(null);
-              }}
-            />
-          </Dialog>
-        </div>
-      </div>
 
       <ClientFilters
         searchTerm={searchTerm}
@@ -219,5 +223,6 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
     </div>
+  </PermissionGuard>
   );
 }

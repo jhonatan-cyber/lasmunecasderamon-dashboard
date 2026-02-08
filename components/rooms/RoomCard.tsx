@@ -16,7 +16,27 @@ const RoomCard: React.FC<{
   onDeactivate: (room: Room) => void;
   onOccupy: (room: Room) => void;
   isDraggable?: boolean;
-}> = ({ room, onEdit, onDelete, onActivate, onDeactivate, onOccupy, isDraggable = false }) => {
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canActivate?: boolean;
+  canDeactivate?: boolean;
+  canOccupy?: boolean;
+  canLiberate?: boolean;
+}> = ({ 
+  room, 
+  onEdit, 
+  onDelete, 
+  onActivate, 
+  onDeactivate, 
+  onOccupy, 
+  isDraggable = false,
+  canEdit = true,
+  canDelete = true,
+  canActivate = true,
+  canDeactivate = true,
+  canOccupy = true,
+  canLiberate = true
+}) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   
   const {
@@ -91,50 +111,57 @@ const RoomCard: React.FC<{
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`transition-opacity h-7 w-7 rounded-lg flex-shrink-0 ${isDraggable ? 'opacity-0 group-hover:opacity-100' : ''}`}
-              >
-                <MoreVertical className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36">
-              <DropdownMenuItem onClick={() => onEdit(room)} className="text-xs">
-                <Edit className="mr-2 h-3 w-3" />
-                Editar
-              </DropdownMenuItem>
-              
-              {room.status === 1 && (
-                <DropdownMenuItem onClick={() => onOccupy(room)} className="text-xs">
-                  <Users className="mr-2 h-3 w-3" />
-                  Ocupar
-                </DropdownMenuItem>
-              )}
-              
-              {room.status === 1 ? (
-                <DropdownMenuItem onClick={() => onDeactivate(room)} className="text-xs">
-                  <Power className="mr-2 h-3 w-3" />
-                  Desactivar
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => onActivate(room)} className="text-xs">
-                  <Check className="mr-2 h-3 w-3" />
-                  {room.status === 2 ? 'Liberar' : 'Activar'}
-                </DropdownMenuItem>
-              )}
-              
-              <DropdownMenuItem 
-                onClick={() => setConfirmOpen(true)} 
-                className="text-red-600 focus:text-red-600 text-xs"
-              >
-                <Trash2 className="mr-2 h-3 w-3" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Solo mostrar el menú si tiene al menos un permiso */}
+          {(canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`transition-opacity h-7 w-7 rounded-lg flex-shrink-0 ${isDraggable ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                >
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(room)} className="text-xs">
+                    <Edit className="mr-2 h-3 w-3" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+                
+                {room.status === 1 && canOccupy && (
+                  <DropdownMenuItem onClick={() => onOccupy(room)} className="text-xs">
+                    <Users className="mr-2 h-3 w-3" />
+                    Ocupar
+                  </DropdownMenuItem>
+                )}
+                
+                {room.status === 1 && canDeactivate ? (
+                  <DropdownMenuItem onClick={() => onDeactivate(room)} className="text-xs">
+                    <Power className="mr-2 h-3 w-3" />
+                    Desactivar
+                  </DropdownMenuItem>
+                ) : (room.status === 0 && canActivate) || (room.status === 2 && canLiberate) ? (
+                  <DropdownMenuItem onClick={() => onActivate(room)} className="text-xs">
+                    <Check className="mr-2 h-3 w-3" />
+                    {room.status === 2 ? 'Liberar' : 'Activar'}
+                  </DropdownMenuItem>
+                ) : null}
+                
+                {canDelete && (
+                  <DropdownMenuItem 
+                    onClick={() => setConfirmOpen(true)} 
+                    className="text-red-600 focus:text-red-600 text-xs"
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Eliminar
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Info Grid */}

@@ -1,18 +1,15 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import useAsistencias from '@/hooks/useAsistencias';
 import { useAttendanceStats } from '@/hooks/useAttendanceStats';
 import AttendanceTable from '@/components/attendance/AttendanceTable';
 import AttendanceFilters from '@/components/attendance/AttendanceFilters';
 import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function AttendancePage() {
-  const router = useRouter();
   const { data, loading, error } = useAsistencias();
   const { stats: attendanceStats, loading: statsLoading, error: statsError } = useAttendanceStats();
 
@@ -53,62 +50,56 @@ export default function AttendancePage() {
   const stats = attendanceStats;
 
   return (
-    <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
-        <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>Asistencias</h1>
-        <Button
-          variant='outline'
-          onClick={() => router.back()}
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-        >
-          <ArrowLeft className='w-4 h-4 mr-2' />
-          Atrás
-        </Button>
-      </div>
+    <PermissionGuard module="asistencias" action="listar">
+      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>Asistencias</h1>
+        </div>
 
-      {error ? (
-        <Card className='shadow-sm'>
-          <CardHeader className='pb-4'>
-            <CardTitle className='text-lg sm:text-xl'>Error</CardTitle>
-            <CardDescription className='text-sm sm:text-base'>
-              Ocurrió un error al cargar los datos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='p-4 sm:p-6'>
-            <p className='text-sm sm:text-base text-red-500'>{error}</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Estadísticas */}
-          <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
-
-          {/* Filtros */}
-          <AttendanceFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            page={page}
-            setPage={setPage}
-            totalItems={totalItems}
-            totalPages={totalPages}
-            onClearFilters={handleClearFilters}
-          />
-
-          {/* Tabla de asistencias */}
+        {error ? (
           <Card className='shadow-sm'>
             <CardHeader className='pb-4'>
-              <CardTitle className='text-lg sm:text-xl'>Listado de Asistencias</CardTitle>
+              <CardTitle className='text-lg sm:text-xl'>Error</CardTitle>
+              <CardDescription className='text-sm sm:text-base'>
+                Ocurrió un error al cargar los datos
+              </CardDescription>
             </CardHeader>
             <CardContent className='p-4 sm:p-6'>
-              <div className='overflow-x-auto'>
-                <AttendanceTable data={paginatedData} />
-              </div>
+              <p className='text-sm sm:text-base text-red-500'>{error}</p>
             </CardContent>
           </Card>
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            {/* Estadísticas */}
+            <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
+
+            {/* Filtros */}
+            <AttendanceFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              page={page}
+              setPage={setPage}
+              totalItems={totalItems}
+              totalPages={totalPages}
+              onClearFilters={handleClearFilters}
+            />
+
+            {/* Tabla de asistencias */}
+            <Card className='shadow-sm'>
+              <CardHeader className='pb-4'>
+                <CardTitle className='text-lg sm:text-xl'>Listado de Asistencias</CardTitle>
+              </CardHeader>
+              <CardContent className='p-4 sm:p-6'>
+                <div className='overflow-x-auto'>
+                  <AttendanceTable data={paginatedData} />
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    </PermissionGuard>
   );
 }

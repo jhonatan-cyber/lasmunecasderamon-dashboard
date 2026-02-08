@@ -36,6 +36,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@radix-ui/react-label';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface UserTableProps {
   users: UserType[];
@@ -66,6 +67,18 @@ export function UserTable({
   currentPage,
   pageSize
 }: UserTableProps) {
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permisos
+  const canViewDetails = hasPermission('usuarios', 'ver_detalles');
+  const canEdit = hasPermission('usuarios', 'editar');
+  const canActivate = hasPermission('usuarios', 'activar');
+  const canDeactivate = hasPermission('usuarios', 'desactivar');
+  const canDelete = hasPermission('usuarios', 'eliminar');
+  
+  // Si no tiene ningún permiso de acción, no mostrar el menú
+  const hasAnyAction = canViewDetails || canEdit || canActivate || canDeactivate || canDelete;
+  
   if (users.length === 0) {
     return (
       <div className='py-8 text-center text-gray-500 text-sm sm:text-base'>
@@ -98,112 +111,120 @@ export function UserTable({
                   >
                     {user.status === 1 ? 'Activo' : 'Inactivo'}
                   </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
-                      >
-                        <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align='end' className='w-40'>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={() => onViewDetails(user)}
-                              className='cursor-pointer group'
-                            >
-                              <Eye
-                                className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                              />
-                              <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
-                                Ver detalles
-                              </span>
-                            </DropdownMenuItem>
-                          </TooltipTrigger>
-                          <TooltipContent>Ver detalles del usuario</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={() => onEdit(user)}
-                              className='cursor-pointer group'
-                            >
-                              <Pencil
-                                className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                              />
-                              <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
-                                Editar
-                              </span>
-                            </DropdownMenuItem>
-                          </TooltipTrigger>
-                          <TooltipContent>Editar usuario</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {user.status === 0 ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onActivate(user.id)}
-                                className='cursor-pointer group'
-                              >
-                                <Check
-                                  className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
-                                  Activar
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Activar usuario</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onDeactivate(user.id)}
-                                className='cursor-pointer group'
-                              >
-                                <Power
-                                  className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
-                                  Desactivar
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Desactivar usuario</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={() => onDelete(user.id)}
-                              className='cursor-pointer group'
-                            >
-                              <Trash2
-                                className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                              />
-                              <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
-                                Eliminar
-                              </span>
-                            </DropdownMenuItem>
-                          </TooltipTrigger>
-                          <TooltipContent>Eliminar usuario</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {hasAnyAction && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
+                        >
+                          <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end' className='w-40'>
+                        {canViewDetails && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  onClick={() => onViewDetails(user)}
+                                  className='cursor-pointer group'
+                                >
+                                  <Eye
+                                    className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                  />
+                                  <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
+                                    Ver detalles
+                                  </span>
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>Ver detalles del usuario</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {canEdit && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  onClick={() => onEdit(user)}
+                                  className='cursor-pointer group'
+                                >
+                                  <Pencil
+                                    className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                  />
+                                  <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
+                                    Editar
+                                  </span>
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>Editar usuario</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {user.status === 0 && canActivate ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  onClick={() => onActivate(user.id)}
+                                  className='cursor-pointer group'
+                                >
+                                  <Check
+                                    className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                  />
+                                  <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
+                                    Activar
+                                  </span>
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>Activar usuario</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : user.status === 1 && canDeactivate ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  onClick={() => onDeactivate(user.id)}
+                                  className='cursor-pointer group'
+                                >
+                                  <Power
+                                    className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                  />
+                                  <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
+                                    Desactivar
+                                  </span>
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>Desactivar usuario</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : null}
+                        {canDelete && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  onClick={() => onDelete(user.id)}
+                                  className='cursor-pointer group'
+                                >
+                                  <Trash2
+                                    className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                  />
+                                  <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
+                                    Eliminar
+                                  </span>
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>Eliminar usuario</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
 
@@ -470,112 +491,120 @@ export function UserTable({
                 </Badge>
               </TableCell>
               <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
-                    >
-                      <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuItem
-                            onClick={() => onViewDetails(user)}
-                            className='cursor-pointer group'
-                          >
-                            <Eye
-                              className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                            />
-                            <span className='group-hover:text-blue-700 transition-colors text-xs sm:text-sm'>
-                              Ver detalles
-                            </span>
-                          </DropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Ver detalles del usuario</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuItem
-                            onClick={() => onEdit(user)}
-                            className='cursor-pointer group'
-                          >
-                            <Pencil
-                              className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                            />
-                            <span className='group-hover:text-purple-700 transition-colors text-xs sm:text-sm'>
-                              Editar
-                            </span>
-                          </DropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Editar usuario</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    {user.status === 0 ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={() => onActivate(user.id)}
-                              className='cursor-pointer group'
-                            >
-                              <Check
-                                className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                              />
-                              <span className='group-hover:text-green-700 transition-colors text-xs sm:text-sm'>
-                                Activar
-                              </span>
-                            </DropdownMenuItem>
-                          </TooltipTrigger>
-                          <TooltipContent>Activar usuario</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={() => onDeactivate(user.id)}
-                              className='cursor-pointer group'
-                            >
-                              <Power
-                                className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                              />
-                              <span className='group-hover:text-orange-700 transition-colors text-xs sm:text-sm'>
-                                Desactivar
-                              </span>
-                            </DropdownMenuItem>
-                          </TooltipTrigger>
-                          <TooltipContent>Desactivar usuario</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuItem
-                            onClick={() => onDelete(user.id)}
-                            className='cursor-pointer group'
-                          >
-                            <Trash2
-                              className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                            />
-                            <span className='group-hover:text-red-700 transition-colors text-xs sm:text-sm'>
-                              Eliminar
-                            </span>
-                          </DropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent>Eliminar usuario permanentemente</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {hasAnyAction && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
+                      >
+                        <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align='end'>
+                      {canViewDetails && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onViewDetails(user)}
+                                className='cursor-pointer group'
+                              >
+                                <Eye
+                                  className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                />
+                                <span className='group-hover:text-blue-700 transition-colors text-xs sm:text-sm'>
+                                  Ver detalles
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver detalles del usuario</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      {canEdit && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onEdit(user)}
+                                className='cursor-pointer group'
+                              >
+                                <Pencil
+                                  className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                />
+                                <span className='group-hover:text-purple-700 transition-colors text-xs sm:text-sm'>
+                                  Editar
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar usuario</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      {user.status === 0 && canActivate ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onActivate(user.id)}
+                                className='cursor-pointer group'
+                              >
+                                <Check
+                                  className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                />
+                                <span className='group-hover:text-green-700 transition-colors text-xs sm:text-sm'>
+                                  Activar
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Activar usuario</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : user.status === 1 && canDeactivate ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onDeactivate(user.id)}
+                                className='cursor-pointer group'
+                              >
+                                <Power
+                                  className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                />
+                                <span className='group-hover:text-orange-700 transition-colors text-xs sm:text-sm'>
+                                  Desactivar
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Desactivar usuario</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : null}
+                      {canDelete && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() => onDelete(user.id)}
+                                className='cursor-pointer group'
+                              >
+                                <Trash2
+                                  className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                                />
+                                <span className='group-hover:text-red-700 transition-colors text-xs sm:text-sm'>
+                                  Eliminar
+                                </span>
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Eliminar usuario permanentemente</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </TableCell>
             </TableRow>
           ))}
