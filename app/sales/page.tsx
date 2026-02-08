@@ -6,6 +6,7 @@ import { VentaWithDetails } from '@/types/venta';
 import { showErrorToast, showSuccessToast } from '@/lib/toastUtils';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import Paginate from '@/components/ui/paginate';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 import {
   SalesHeader,
@@ -123,7 +124,8 @@ export default function Sales() {
   }
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <PermissionGuard module="ventas" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <SalesHeader loading={loading} onRefresh={handleRefresh} />
 
       <CajaStatusBanner />
@@ -204,5 +206,6 @@ export default function Sales() {
         metodoPagoLabels={metodoPagoLabels}
       />
     </div>
+    </PermissionGuard>
   );
 }

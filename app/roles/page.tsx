@@ -22,6 +22,7 @@ import { useRoles, Role } from '@/hooks/useRoles';
 import { RoleModal } from '@/components/roles/RoleModal';
 import { DeleteRoleConfirmModal } from '@/components/roles/DeleteRoleConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 // Las interfaces Role y Permission se importan desde los hooks
 
@@ -211,8 +212,9 @@ export default function RolesPage() {
   };
 
   return (
-    <TooltipProvider>
-      <>
+    <PermissionGuard module="roles" action="listar">
+      <TooltipProvider>
+        <>
         {/* Modal */}
         <RoleModal
           open={isAddRoleModalOpen}
@@ -256,25 +258,27 @@ export default function RolesPage() {
                 Administra roles y permisos del sistema
               </p>
             </div>
-            <button
-              className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-full hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
-              onClick={() => {
-                setIsAddRoleModalOpen(true);
-                setIsEditMode(false);
-                setEditRoleId(null);
-                setNewRole({ name: '', description: '' });
-              }}
-            >
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className='flex items-center'>
-                    <Plus className='h-4 w-4 mr-2' />
-                    Nuevo Rol
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>Crear nuevo rol</TooltipContent>
-              </Tooltip>
-            </button>
+            <PermissionGuard module="roles" action="crear" fallback={null}>
+              <button
+                className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-full hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
+                onClick={() => {
+                  setIsAddRoleModalOpen(true);
+                  setIsEditMode(false);
+                  setEditRoleId(null);
+                  setNewRole({ name: '', description: '' });
+                }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className='flex items-center'>
+                      <Plus className='h-4 w-4 mr-2' />
+                      Nuevo Rol
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Crear nuevo rol</TooltipContent>
+                </Tooltip>
+              </button>
+            </PermissionGuard>
           </div>
 
           {/* Stats Cards */}
@@ -299,9 +303,9 @@ export default function RolesPage() {
             />
           </div>
 
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6'>
-            {/* Columna izquierda - Filtros y Roles (2 columnas) */}
-            <div className='lg:col-span-2 space-y-4'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
+            {/* Columna izquierda - Filtros y Roles (50%) */}
+            <div className='space-y-4'>
               {/* Filters */}
               <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
                 <div className='flex flex-col sm:flex-row gap-4'>
@@ -323,7 +327,7 @@ export default function RolesPage() {
                       onChange={e =>
                         setFilterStatus(e.target.value === 'all' ? 'all' : Number(e.target.value))
                       }
-                      className='px-3 py-2 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
+                      className='px-2 py-1 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
                     >
                       <option value='all'>Todos</option>
                       <option value={1}>Activo</option>
@@ -331,10 +335,11 @@ export default function RolesPage() {
                     </select>
                     <button
                       onClick={assignAllPermissionsToAdmin}
-                      className='inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'
+                      
+                      className='inline-flex items-center px-2 py-1 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'
                       title='Asignar todos los permisos al administrador'
                     >
-                      <Shield className='h-4 w-4 mr-1' />
+                     
                       Admin Permisos
                     </button>
                   </div>
@@ -381,8 +386,8 @@ export default function RolesPage() {
               </div>
             </div>
             
-            {/* Columna derecha - Permissions Panel (1 columna) */}
-            <div className='lg:col-span-1'>
+            {/* Columna derecha - Permissions Panel (50%) */}
+            <div>
               <div
                 className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'
               >
@@ -393,5 +398,6 @@ export default function RolesPage() {
         </div>
       </>
     </TooltipProvider>
+    </PermissionGuard>
   );
 }

@@ -12,11 +12,25 @@ import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 export default function ServiciosPage() {
   const { habitaciones } = useHabitaciones();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
+  const { hasPermission } = useUserPermissions();
+  
+  const canCreate = hasPermission('privados', 'crear');
+  const canEdit = hasPermission('privados', 'editar');
+  const canFinalize = hasPermission('privados', 'finalizar');
+  
+  console.log('[ServiciosPage] Permisos:', {
+    canCreate,
+    canEdit,
+    canFinalize
+  });
+  
   const {
     servicios,
     loading,
@@ -67,46 +81,49 @@ export default function ServiciosPage() {
   };
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      {/* Header */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
-        <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
-            Servicios Privados
-          </h1>
-          <p className='text-sm sm:text-base text-gray-600 mt-2'>
-            Gestiona los servicios privados y habitaciones VIP
-          </p>
-        </div>
-        <Button
-          onClick={handleCreateServicioWithCheck}
-          disabled={cajaLoading || !hasOpenCaja}
-          variant='outline'
-          className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
-            hasOpenCaja
-              ? 'bg-black text-white hover:scale-105'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-          size='sm'
-        >
-          {cajaLoading ? (
-            <>
-              <div className='animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1' />
-              Verificando...
-            </>
-          ) : hasOpenCaja ? (
-            <>
-              <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-              Nuevo
-            </>
-          ) : (
-            <>
-              <AlertCircle className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-              Sin Caja
-            </>
+    <PermissionGuard module="privados" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        {/* Header */}
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+          <div>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
+              Servicios Privados
+            </h1>
+            <p className='text-sm sm:text-base text-gray-600 mt-2'>
+              Gestiona los servicios privados y habitaciones VIP
+            </p>
+          </div>
+          {canCreate && (
+            <Button
+              onClick={handleCreateServicioWithCheck}
+              disabled={cajaLoading || !hasOpenCaja}
+              variant='outline'
+              className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+                hasOpenCaja
+                  ? 'bg-black text-white hover:scale-105'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              size='sm'
+            >
+              {cajaLoading ? (
+                <>
+                  <div className='animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1' />
+                  Verificando...
+                </>
+              ) : hasOpenCaja ? (
+                <>
+                  <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+                  Nuevo
+                </>
+              ) : (
+                <>
+                  <AlertCircle className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+                  Sin Caja
+                </>
+              )}
+            </Button>
           )}
-        </Button>
-      </div>
+        </div>
 
       {/* Estadísticas de servicios */}
       <ServiceStats servicios={servicios} habitaciones={habitaciones} />
@@ -186,6 +203,7 @@ export default function ServiciosPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

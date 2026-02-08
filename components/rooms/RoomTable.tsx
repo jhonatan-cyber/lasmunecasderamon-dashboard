@@ -42,6 +42,12 @@ interface RoomTableProps {
   onDeactivate: (room: Room) => void;
   onOccupy: (room: Room) => void;
   onReorder?: (rooms: Room[]) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canActivate?: boolean;
+  canDeactivate?: boolean;
+  canOccupy?: boolean;
+  canLiberate?: boolean;
 }
 
 interface SortableRowProps {
@@ -53,6 +59,12 @@ interface SortableRowProps {
   onOccupy: (room: Room) => void;
   setRoomToDelete: (room: Room) => void;
   setConfirmOpen: (open: boolean) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canActivate?: boolean;
+  canDeactivate?: boolean;
+  canOccupy?: boolean;
+  canLiberate?: boolean;
 }
 
 const SortableRow: React.FC<SortableRowProps> = ({
@@ -63,7 +75,13 @@ const SortableRow: React.FC<SortableRowProps> = ({
   onDeactivate,
   onOccupy,
   setRoomToDelete,
-  setConfirmOpen
+  setConfirmOpen,
+  canEdit = true,
+  canDelete = true,
+  canActivate = true,
+  canDeactivate = true,
+  canOccupy = true,
+  canLiberate = true
 }) => {
   const {
     attributes,
@@ -129,55 +147,68 @@ const SortableRow: React.FC<SortableRowProps> = ({
         </Badge>
       </td>
       <td className='py-3 px-2 sm:px-4 text-center'>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200'
-            >
-              <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            <DropdownMenuItem onClick={() => onEdit(room)}>
-              <Edit className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-              Editar
-            </DropdownMenuItem>
-            {room.status === 0 ? (
+        {/* Solo mostrar el menú si tiene al menos un permiso */}
+        {(canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate) ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200'
+              >
+                <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+            {canEdit && (
+              <DropdownMenuItem onClick={() => onEdit(room)}>
+                <Edit className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                Editar
+              </DropdownMenuItem>
+            )}
+            {room.status === 0 && canActivate ? (
               <DropdownMenuItem onClick={() => onActivate(room)}>
                 <Check className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                 Activar
               </DropdownMenuItem>
             ) : room.status === 1 ? (
               <>
-                <DropdownMenuItem onClick={() => onOccupy(room)}>
-                  <Bed className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                  Ocupar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDeactivate(room)}>
-                  <Power className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                  Desactivar
-                </DropdownMenuItem>
+                {canOccupy && (
+                  <DropdownMenuItem onClick={() => onOccupy(room)}>
+                    <Bed className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                    Ocupar
+                  </DropdownMenuItem>
+                )}
+                {canDeactivate && (
+                  <DropdownMenuItem onClick={() => onDeactivate(room)}>
+                    <Power className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                    Desactivar
+                  </DropdownMenuItem>
+                )}
               </>
-            ) : (
+            ) : room.status === 2 && canLiberate ? (
               <DropdownMenuItem onClick={() => onActivate(room)}>
                 <Check className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                 Liberar
               </DropdownMenuItem>
+            ) : null}
+            {canDelete && (
+              <DropdownMenuItem
+                onClick={() => {
+                  setRoomToDelete(room);
+                  setConfirmOpen(true);
+                }}
+                className='text-red-600 focus:text-red-600'
+              >
+                <Trash2 className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                Eliminar
+              </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() => {
-                setRoomToDelete(room);
-                setConfirmOpen(true);
-              }}
-              className='text-red-600 focus:text-red-600'
-            >
-              <Trash2 className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-              Eliminar
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        ) : (
+          <span className='text-xs text-gray-400'>Sin acciones</span>
+        )}
       </td>
     </tr>
   );
@@ -191,6 +222,12 @@ const RoomTable: React.FC<RoomTableProps> = ({
   onDeactivate,
   onOccupy,
   onReorder,
+  canEdit = true,
+  canDelete = true,
+  canActivate = true,
+  canDeactivate = true,
+  canOccupy = true,
+  canLiberate = true
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
@@ -286,6 +323,12 @@ const RoomTable: React.FC<RoomTableProps> = ({
                         onOccupy={onOccupy}
                         setRoomToDelete={setRoomToDelete}
                         setConfirmOpen={setConfirmOpen}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
+                        canActivate={canActivate}
+                        canDeactivate={canDeactivate}
+                        canOccupy={canOccupy}
+                        canLiberate={canLiberate}
                       />
                     ))}
                   </SortableContext>

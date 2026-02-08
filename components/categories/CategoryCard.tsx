@@ -40,6 +40,10 @@ interface CategoryCardProps {
   onDeactivate: (id: number) => void;
   isDragging?: boolean;
   dragHandleProps?: any;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canActivate?: boolean;
+  canDeactivate?: boolean;
 }
 
 const statusColors = {
@@ -142,11 +146,18 @@ export default function CategoryCard({
   onActivate,
   onDeactivate,
   isDragging = false,
-  dragHandleProps
+  dragHandleProps,
+  canEdit = true,
+  canDelete = true,
+  canActivate = true,
+  canDeactivate = true
 }: CategoryCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const categoryColor = generateColor(category.name, category.id);
+  
+  // Si no tiene ningún permiso de acción, no mostrar el menú
+  const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
   // Crear slug para la URL
   const slug = category.name
@@ -204,102 +215,108 @@ export default function CategoryCard({
             </div>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200 p-2'
-              >
-                <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuItem
-                      onClick={() => onEdit(category)}
-                      className='cursor-pointer group'
-                    >
-                      <Edit
-                        className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                      />
-                      <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
-                        Editar
-                      </span>
-                    </DropdownMenuItem>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Editar esta categoría</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          {hasAnyAction && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200 p-2'
+                >
+                  <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                {canEdit && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem
+                          onClick={() => onEdit(category)}
+                          className='cursor-pointer group'
+                        >
+                          <Edit
+                            className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                          />
+                          <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
+                            Editar
+                          </span>
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Editar esta categoría</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
 
-              {category.status === 1 ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem
-                        onClick={() => onDeactivate(category.id)}
-                        className='cursor-pointer group'
-                      >
-                        <Power
-                          className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                        />
-                        <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
-                          Desactivar
-                        </span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Desactivar esta categoría</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem
-                        onClick={() => onActivate(category.id)}
-                        className='cursor-pointer group'
-                      >
-                        <CheckCircle
-                          className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                        />
-                        <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
-                          Activar
-                        </span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Activar esta categoría</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+                {category.status === 1 && canDeactivate ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem
+                          onClick={() => onDeactivate(category.id)}
+                          className='cursor-pointer group'
+                        >
+                          <Power
+                            className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                          />
+                          <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
+                            Desactivar
+                          </span>
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Desactivar esta categoría</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : category.status === 0 && canActivate ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem
+                          onClick={() => onActivate(category.id)}
+                          className='cursor-pointer group'
+                        >
+                          <CheckCircle
+                            className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                          />
+                          <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
+                            Activar
+                          </span>
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Activar esta categoría</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null}
 
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuItem
-                      className='cursor-pointer group'
-                      onClick={handleDeleteClick}
-                    >
-                      <Trash2
-                        className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                      />
-                      <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>Eliminar</span>
-                    </DropdownMenuItem>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Eliminar esta categoría</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {canDelete && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem
+                          className='cursor-pointer group'
+                          onClick={handleDeleteClick}
+                        >
+                          <Trash2
+                            className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
+                          />
+                          <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>Eliminar</span>
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Eliminar esta categoría</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Content */}

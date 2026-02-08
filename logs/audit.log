@@ -32,3 +32,39 @@
 {"body":{"anfitrionas_ids":[12,14,15],"cliente_id":null,"clientes_ids":[],"habitacion_id":4,"iva":30000,"metodo_pago":"tarjeta","precio_habitacion":80000,"precio_servicio":50000,"tiempo":1,"total":420000},"level":"info","message":"Solicitud de servicio recibida","timestamp":"2026-02-07 02:47:04","userId":6}
 {"anfitrionas_ids":[12,14,15],"cliente_id":null,"comisionAnfitriona":0,"habitacion_id":4,"ivaParsed":30000,"level":"info","message":"Insertando solicitud en BD","metodo_pago":"tarjeta","numClientesParsed":1,"precioHabitacion":80000,"precioServicio":50000,"tiempoParsed":1,"timestamp":"2026-02-07 02:47:04","totalParsed":420000,"userId":6}
 {"insertId":19,"level":"info","message":"Solicitud insertada exitosamente","timestamp":"2026-02-07 02:47:04"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2026-02-07","startDate":"2026-02-07","type":"ventas"},"timestamp":"2026-02-07 11:08:13"}
+{"endDate":"2026-02-07","level":"info","message":"Parámetros recibidos:","startDate":"2026-02-07","timestamp":"2026-02-07 11:08:13","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2026-02-07 - 2026-02-07","timestamp":"2026-02-07 11:08:13"}
+{"endDate":"2026-02-07","level":"info","message":"Ejecutando query de ventas:","startDate":"2026-02-07","timestamp":"2026-02-07 11:08:13"}
+{"level":"info","message":"Query SQL:","timestamp":"2026-02-07 11:08:13"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2026-02-07 11:08:13"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2026-02-07","startDate":"2026-02-07","type":"servicios"},"timestamp":"2026-02-07 11:08:16"}
+{"endDate":"2026-02-07","level":"info","message":"Parámetros recibidos:","startDate":"2026-02-07","timestamp":"2026-02-07 11:08:16","type":"servicios"}
+{"level":"info","message":"Obteniendo datos de servicios para el rango: 2026-02-07 - 2026-02-07","timestamp":"2026-02-07 11:08:16"}
+{"endDate":"2026-02-07","level":"info","message":"Ejecutando query de servicios:","startDate":"2026-02-07","timestamp":"2026-02-07 11:08:16"}
+{"level":"info","message":"Query SQL:","timestamp":"2026-02-07 11:08:16"}
+{"level":"info","message":"Se encontraron 22 servicios","timestamp":"2026-02-07 11:08:16"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2026-02-07","startDate":"2026-02-07","type":"ventas"},"timestamp":"2026-02-07 11:08:17"}
+{"endDate":"2026-02-07","level":"info","message":"Parámetros recibidos:","startDate":"2026-02-07","timestamp":"2026-02-07 11:08:17","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2026-02-07 - 2026-02-07","timestamp":"2026-02-07 11:08:17"}
+{"endDate":"2026-02-07","level":"info","message":"Ejecutando query de ventas:","startDate":"2026-02-07","timestamp":"2026-02-07 11:08:17"}
+{"level":"info","message":"Query SQL:","timestamp":"2026-02-07 11:08:17"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2026-02-07 11:08:17"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2026-02-07","startDate":"2026-02-07","type":"ventas"},"timestamp":"2026-02-07 11:13:21"}
+{"endDate":"2026-02-07","level":"info","message":"Parámetros recibidos:","startDate":"2026-02-07","timestamp":"2026-02-07 11:13:21","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2026-02-07 - 2026-02-07","timestamp":"2026-02-07 11:13:21"}
+{"endDate":"2026-02-07","level":"info","message":"Ejecutando query de ventas:","startDate":"2026-02-07","timestamp":"2026-02-07 11:13:21"}
+{"level":"info","message":"Query SQL:","timestamp":"2026-02-07 11:13:21"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2026-02-07 11:13:21"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2026-02-07","startDate":"2026-02-07","type":"ventas"},"timestamp":"2026-02-07 19:11:19"}
+{"endDate":"2026-02-07","level":"info","message":"Parámetros recibidos:","startDate":"2026-02-07","timestamp":"2026-02-07 19:11:19","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2026-02-07 - 2026-02-07","timestamp":"2026-02-07 19:11:19"}
+{"endDate":"2026-02-07","level":"info","message":"Ejecutando query de ventas:","startDate":"2026-02-07","timestamp":"2026-02-07 19:11:19"}
+{"level":"info","message":"Query SQL:","timestamp":"2026-02-07 19:11:19"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2026-02-07 19:11:19"}
+{"level":"info","message":"Calendar Data API - Inicio de request","method":"GET","query":{"endDate":"2026-02-07","startDate":"2026-02-07","type":"ventas"},"timestamp":"2026-02-07 19:11:29"}
+{"endDate":"2026-02-07","level":"info","message":"Parámetros recibidos:","startDate":"2026-02-07","timestamp":"2026-02-07 19:11:29","type":"ventas"}
+{"level":"info","message":"Obteniendo datos de ventas para el rango: 2026-02-07 - 2026-02-07","timestamp":"2026-02-07 19:11:29"}
+{"endDate":"2026-02-07","level":"info","message":"Ejecutando query de ventas:","startDate":"2026-02-07","timestamp":"2026-02-07 19:11:29"}
+{"level":"info","message":"Query SQL:","timestamp":"2026-02-07 19:11:29"}
+{"level":"info","message":"Se encontraron 6 ventas","timestamp":"2026-02-07 19:11:29"}

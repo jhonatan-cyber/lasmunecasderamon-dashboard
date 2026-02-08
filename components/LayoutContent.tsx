@@ -4,15 +4,20 @@ import { Header } from '@/components/header';
 import { Sidebar } from '@/components/sidebar';
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
 import { UserImageProvider } from '@/contexts/UserImageContext';
+import { RouteGuard } from '@/components/auth/RouteGuard';
 
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useSessionCheck } from '@/hooks/useSessionCheck';
+import { usePermissionsSSE } from '@/hooks/usePermissionsSSE';
 import React from 'react';
 import { cn } from '@/lib/utils';
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar();
+  
+  // Conectar al servidor SSE para recibir actualizaciones de permisos en tiempo real
+  usePermissionsSSE();
   
   return (
     <div className='flex h-screen bg-background'>
@@ -57,10 +62,12 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   useSessionCheck();
   
   return (
-    <UserImageProvider>
-      <SidebarProvider>
-        <MainLayout>{children}</MainLayout>
-      </SidebarProvider>
-    </UserImageProvider>
+    <RouteGuard>
+      <UserImageProvider>
+        <SidebarProvider>
+          <MainLayout>{children}</MainLayout>
+        </SidebarProvider>
+      </UserImageProvider>
+    </RouteGuard>
   );
 }

@@ -64,6 +64,16 @@ export const CajaCard = ({
   const estadoInfo = getEstadoInfo(caja.estado);
   const Icon = estadoInfo.icon;
 
+  // Debug: Log para verificar permisos
+  console.log('🔍 CajaCard Debug:', {
+    cajaId: caja.id_caja,
+    estado: caja.estado,
+    canRetirar,
+    onRetirar: !!onRetirar,
+    canCloseCaja,
+    showRetirarButton: caja.estado === 1 && canRetirar && !!onRetirar
+  });
+
   const totalIngresos = caja.efectivo + caja.tarjeta + caja.transferencia;
   const balanceActual = caja.monto_apertura + totalIngresos - caja.devoluciones;
 
@@ -175,22 +185,22 @@ export const CajaCard = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 rounded-full px-2 sm:px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs sm:text-sm h-10 min-w-0"
+                  className="w-full rounded-full px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs sm:text-sm h-10"
                   onClick={() => onRetirar(caja)}
                 >
                   <ArrowDownCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Retirar</span>
+                  <span>Retirar Efectivo</span>
                 </Button>
               )}
               {canCloseCaja && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 rounded-full px-2 sm:px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10 min-w-0"
+                  className="w-full rounded-full px-4 py-2 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs sm:text-sm h-10"
                   onClick={() => onCloseCaja(caja)}
                 >
                   <Lock className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Cerrar Caja</span>
+                  <span>Cerrar Caja</span>
                 </Button>
               )}
             </>

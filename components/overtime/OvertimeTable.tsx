@@ -15,6 +15,7 @@ import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { Overtime } from "@/types/overtime";
 import { User, Clock, DollarSign, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 interface OvertimeTableProps {
   loading: boolean;
@@ -29,6 +30,10 @@ export default function OvertimeTable({
   rowsPerPage,
   onViewDetail,
 }: OvertimeTableProps) {
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permiso para ver detalles
+  const canViewDetail = hasPermission('horas_extras', 'ver_detalles');
   if (rows.length === 0 && !loading) {
     return (
       <div className="text-center py-8 sm:py-12 text-gray-500 text-sm sm:text-base">
@@ -65,14 +70,16 @@ export default function OvertimeTable({
                     {overtime.usuario}
                   </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewDetail(overtime)}
-                  className="h-8 w-8 p-0 hover:bg-blue-50"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+                {canViewDetail && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetail(overtime)}
+                    className="h-8 w-8 p-0 hover:bg-blue-50"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
               {/* Información de horas extras */}
@@ -115,7 +122,9 @@ export default function OvertimeTable({
               <TableHead className="font-normal text-xs sm:text-sm text-gray-500 text-center">USUARIO</TableHead>
               <TableHead className="font-normal text-xs sm:text-sm text-gray-500 text-center">HORAS</TableHead>
               <TableHead className="font-normal text-xs sm:text-sm text-gray-500 text-center">TOTAL</TableHead>
-              <TableHead className="font-normal text-xs sm:text-sm text-gray-500 text-center">DETALLE</TableHead>
+              {canViewDetail && (
+                <TableHead className="font-normal text-xs sm:text-sm text-gray-500 text-center">DETALLE</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -132,9 +141,11 @@ export default function OvertimeTable({
                   <TableCell className="text-center">
                     <Skeleton className="h-4 w-24 mx-auto" />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-6 w-20 mx-auto" />
-                  </TableCell>
+                  {canViewDetail && (
+                    <TableCell className="text-center">
+                      <Skeleton className="h-6 w-20 mx-auto" />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (
@@ -150,16 +161,18 @@ export default function OvertimeTable({
                   <TableCell className="text-center font-semibold text-sm sm:text-base">
                     {formatCurrencyNoDecimals(overtime.total)}
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onViewDetail(overtime)}
-                      className="h-8 w-8 p-0 hover:bg-blue-50"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {canViewDetail && (
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewDetail(overtime)}
+                        className="h-8 w-8 p-0 hover:bg-blue-50"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

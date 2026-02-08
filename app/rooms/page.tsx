@@ -9,6 +9,8 @@ import Paginate from '@/components/ui/paginate';
 import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
 import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import {
   DndContext,
   closestCenter,
@@ -44,6 +46,25 @@ const RoomsPage = () => {
     occupyRoom,
     reorderRooms
   } = useRooms();
+
+  const { hasPermission } = useUserPermissions();
+  const canCreate = hasPermission('habitaciones', 'crear');
+  const canEdit = hasPermission('habitaciones', 'editar');
+  const canDelete = hasPermission('habitaciones', 'eliminar');
+  const canActivate = hasPermission('habitaciones', 'activar');
+  const canDeactivate = hasPermission('habitaciones', 'desactivar');
+  const canOccupy = hasPermission('habitaciones', 'ocupar');
+  const canLiberate = hasPermission('habitaciones', 'liberar');
+
+  console.log('[RoomsPage] Permisos:', {
+    canCreate,
+    canEdit,
+    canDelete,
+    canActivate,
+    canDeactivate,
+    canOccupy,
+    canLiberate
+  });
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editRoom, setEditRoom] = useState<Room | null>(null);
@@ -160,6 +181,7 @@ const RoomsPage = () => {
   };
 
   return (
+    <PermissionGuard module="habitaciones" action="listar">
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
         <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Habitaciones</h1>
@@ -184,18 +206,20 @@ const RoomsPage = () => {
               Cards
             </Button>
           </div>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => {
-              setEditRoom(null);
-              setOpenDialog(true);
-            }}
-            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
-          >
-            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Nueva Habitacion
-          </Button>
+          {canCreate && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                setEditRoom(null);
+                setOpenDialog(true);
+              }}
+              className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
+            >
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Nueva Habitacion
+            </Button>
+          )}
         </div>
       </div>
 
@@ -222,6 +246,12 @@ const RoomsPage = () => {
               onDeactivate={handleDeactivate}
               onOccupy={handleOccupy}
               onReorder={reorderRooms}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              canActivate={canActivate}
+              canDeactivate={canDeactivate}
+              canOccupy={canOccupy}
+              canLiberate={canLiberate}
             />
           </div>
           {totalPages > 1 && (
@@ -280,6 +310,12 @@ const RoomsPage = () => {
                       onDeactivate={handleDeactivate}
                       onOccupy={handleOccupy}
                       isDraggable={true}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canActivate={canActivate}
+                      canDeactivate={canDeactivate}
+                      canOccupy={canOccupy}
+                      canLiberate={canLiberate}
                     />
                   ))}
                 </div>
@@ -301,6 +337,7 @@ const RoomsPage = () => {
         isLoading={isLoading}
       />
     </div>
+    </PermissionGuard>
   );
 };
 

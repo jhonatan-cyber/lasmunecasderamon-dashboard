@@ -22,6 +22,8 @@ import SearchInput from '@/components/ui/SearchInput';
 import SelectElements from '@/components/ui/select-elements';
 import Paginate from '@/components/ui/paginate';
 import { useCalendarActions } from '@/hooks/useCalendarActions';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 // Utilidades para fechas
 const months = [
@@ -42,6 +44,16 @@ const months = [
 const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function PayrollCalendarPage() {
+  console.log('[PayrollCalendarPage] Componente cargando...');
+  
+  // Hook para verificar permisos
+  const { hasPermission } = useUserPermissions();
+  const canViewDetails = hasPermission('detalle_planilla', 'ver_detalles');
+  
+  console.log('[PayrollCalendarPage] Permisos:', {
+    canViewDetails
+  });
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -203,12 +215,23 @@ export default function PayrollCalendarPage() {
   };
 
   const handleMouseDown = (date: Date) => {
+    // Solo permitir selección si tiene permiso para ver detalles
+    if (!canViewDetails) {
+      console.log('[PayrollCalendarPage] ❌ Sin permiso para ver detalles');
+      return;
+    }
+    
     setIsDragging(true);
     setDragStartDate(date);
     setSelectedDates([date]);
   };
 
   const handleMouseEnter = (date: Date) => {
+    // Solo permitir selección si tiene permiso para ver detalles
+    if (!canViewDetails) {
+      return;
+    }
+    
     if (isDragging && dragStartDate) {
       const dateRange = getDateRange(dragStartDate, date);
       setSelectedDates(dateRange);
@@ -216,6 +239,11 @@ export default function PayrollCalendarPage() {
   };
 
   const handleMouseUp = () => {
+    // Solo permitir selección si tiene permiso para ver detalles
+    if (!canViewDetails) {
+      return;
+    }
+    
     const wasDragging = isDragging;
     setIsDragging(false);
     setDragStartDate(null);
@@ -420,13 +448,15 @@ export default function PayrollCalendarPage() {
             return (
               <div
                 key={index}
-                className={`min-h-[80px] p-2 border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors select-none ${
+                className={`min-h-[80px] p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
+                  canViewDetails ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'cursor-not-allowed opacity-60'
+                } transition-colors select-none ${
                   isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                 } ${
                   isSelected
                     ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600'
                     : ''
-                } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
+                } ${isDragging && canViewDetails ? 'cursor-grabbing' : ''}`}
                 onMouseDown={e => {
                   e.preventDefault();
                   handleMouseDown(day.date);
@@ -494,13 +524,15 @@ export default function PayrollCalendarPage() {
               return (
                 <div
                   key={index}
-                  className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors relative select-none ${
+                  className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 ${
+                    canViewDetails ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600' : 'cursor-not-allowed opacity-60'
+                  } transition-colors relative select-none ${
                     isCurrentDay ? 'bg-blue-100 dark:bg-blue-800' : ''
                   } ${
                     isSelected
                       ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600'
                       : ''
-                  } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
+                  } ${isDragging && canViewDetails ? 'cursor-grabbing' : ''}`}
                   onMouseDown={e => {
                     e.preventDefault();
                     handleMouseDown(day.date);
@@ -588,7 +620,11 @@ export default function PayrollCalendarPage() {
   };
 
   return (
-    <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
+    <PermissionGuard module="detalle_planilla" action="listar">
+      {(() => {
+        console.log('[PayrollCalendarPage] Renderizando contenido dentro de PermissionGuard');
+        return (
+          <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
       <div className='flex items-center justify-between mb-6'>
         <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>
           Calendario de Planillas
@@ -695,7 +731,13 @@ export default function PayrollCalendarPage() {
             <p>• Los símbolos aparecen en las fechas donde se registraron acciones</p>
             <p>• Se muestra un símbolo por cada tipo de acción (máximo 6 tipos diferentes)</p>
             <p>• Si hay múltiples acciones del mismo tipo, se muestra el total</p>
-            <p>• Selecciona fechas para ver los detalles de ventas y servicios</p>
+            {canViewDetails ? (
+              <p>• Selecciona fechas para ver los detalles de ventas y servicios</p>
+            ) : (
+              <p className='text-amber-600 dark:text-amber-400 font-medium'>
+                ⚠️ No tienes permiso para ver los detalles de las fechas
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -1050,5 +1092,8 @@ export default function PayrollCalendarPage() {
         </DialogContent>
       </Dialog>
     </div>
+        );
+      })()}
+    </PermissionGuard>
   );
 }

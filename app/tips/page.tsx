@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { useTipsResumen } from '@/hooks/useTips';
 import PropinasDetalleModal from '@/components/propinas/PropinasDetalleModal';
 import { PropinaResumen } from '@/types/propina';
@@ -13,9 +10,9 @@ import TipsTable from '@/components/propinas/TipsTable';
 import TipsFilters from '@/components/propinas/TipsFilters';
 import TipsStatsCards from '@/components/propinas/TipsStatsCards';
 import Paginate from '@/components/ui/paginate';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function TipsPage() {
-  const router = useRouter();
   const { data: tips, loading, fetchTipsResumen } = useTipsResumen();
   const [selectedUsuario, setSelectedUsuario] = useState<PropinaResumen | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -137,7 +134,8 @@ export default function TipsPage() {
   }, []);
 
   return (
-    <TooltipProvider>
+    <PermissionGuard module="propinas" action="listar">
+      <TooltipProvider>
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
           <div>
@@ -146,14 +144,6 @@ export default function TipsPage() {
               Gestiona todas las propinas de los empleados.
             </p>
           </div>
-          <Button
-            variant='outline'
-            onClick={() => router.back()}
-            className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-          >
-            <ArrowLeft className='w-4 h-4 mr-2' />
-            Atrás
-          </Button>
         </div>
 
         {/* Estadísticas */}
@@ -197,5 +187,6 @@ export default function TipsPage() {
         />
       </div>
     </TooltipProvider>
+    </PermissionGuard>
   );
 }

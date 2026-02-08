@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/formatters";
 import { PropinaResumen } from "@/types/propina";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 interface TipsTableProps {
   loading: boolean;
@@ -15,6 +16,10 @@ interface TipsTableProps {
 }
 
 export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: TipsTableProps) {
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permiso para ver detalles
+  const canViewDetail = hasPermission('propinas', 'ver_detalles');
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
       <Table>
@@ -24,7 +29,9 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
             <TableHead className="font-normal text-xs sm:text-sm text-gray-500">Total</TableHead>
             <TableHead className="font-normal text-xs sm:text-sm text-gray-500">Última</TableHead>
             <TableHead className="font-normal text-xs sm:text-sm text-gray-500">Promedio</TableHead>
-            <TableHead className="font-normal text-xs sm:text-sm text-gray-500">Detalle</TableHead>
+            {canViewDetail && (
+              <TableHead className="font-normal text-xs sm:text-sm text-gray-500">Detalle</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -35,7 +42,9 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                 <TableCell><Skeleton className="h-5 w-20 rounded" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-24 rounded" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-16 rounded" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-10 rounded" /></TableCell>
+                {canViewDetail && (
+                  <TableCell><Skeleton className="h-5 w-10 rounded" /></TableCell>
+                )}
               </TableRow>
             ))
           ) : (
@@ -52,21 +61,23 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                     {formatCurrencyNoDecimals(propina.total_propinas)}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onVerDetalle(propina)}
-                        className="hover:text-blue-600 border-none"
-                      >
-                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Ver detalle</TooltipContent>
-                  </Tooltip>
-                </TableCell>
+                {canViewDetail && (
+                  <TableCell>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onVerDetalle(propina)}
+                          className="hover:text-blue-600 border-none"
+                        >
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Ver detalle</TooltipContent>
+                    </Tooltip>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           )}

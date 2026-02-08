@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { notifyPermissionsUpdate } from '../../permissions/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -108,13 +109,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SELECT permission_id FROM role_permissions WHERE role_id = ?
       `, [roleId]) as any[];
 
+      // Notificar a todos los clientes conectados vía SSE
+      notifyPermissionsUpdate(roleId);
+
+      // Notificar a todos los usuarios con este rol que sus permisos han cambiado
+      // Esto se hace mediante un evento global que los clientes escuchan
       res.status(200).json({
         success: true,
         message: 'Permisos del rol actualizados correctamente',
         data: {
           roleId,
           permissionsCount: permissions.length,
-          savedCount: savedPermissions ? savedPermissions.length : 0
+          savedCount: savedPermissions ? savedPermissions.length : 0,
+          shouldRefresh: true // Indicador para que el cliente refresque permisos
         }
       });
     } catch (error) {

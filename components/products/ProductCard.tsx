@@ -14,6 +14,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/comp
 import { DeleteProductConfirmModal } from './DeleteProductConfirmModal';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface ProductCardProps {
   product: Product;
@@ -33,6 +34,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isDraggable = false
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permisos
+  const canEdit = hasPermission('productos', 'editar_categoria');
+  const canDelete = hasPermission('productos', 'eliminar');
+  const canActivate = hasPermission('productos', 'activar');
+  const canDeactivate = hasPermission('productos', 'desactivar');
+  
+  // Si no tiene ningún permiso de acción, no mostrar el menú
+  const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
   const {
     attributes,
@@ -77,92 +88,98 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <CardHeader className='pb-3 p-4 sm:p-6'>
           <div className='flex items-start justify-between'>
             <CardTitle className='text-sm sm:text-lg font-bold flex-1 truncate'>{product.name}</CardTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
-                >
-                  <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='end'>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem
-                        onClick={() => onEdit(product)}
-                        className='cursor-pointer group'
-                      >
-                        <Pencil
-                          className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors'
-                        />
-                        <span className='group-hover:text-purple-700 transition-colors'>
-                          Editar
-                        </span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Editar producto</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                {product.status === 1 ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuItem
-                          onClick={() => onDeactivate(product)}
-                          className='cursor-pointer group'
-                        >
-                          <Power
-                            className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors'
-                          />
-                          <span className='group-hover:text-orange-700 transition-colors'>
-                            Desactivar
-                          </span>
-                        </DropdownMenuItem>
-                      </TooltipTrigger>
-                      <TooltipContent>Desactivar producto</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuItem
-                          onClick={() => onActivate(product)}
-                          className='cursor-pointer group'
-                        >
-                          <CheckCircle
-                            className='mr-2 text-green-600 group-hover:text-green-700 transition-colors'
-                          />
-                          <span className='group-hover:text-green-700 transition-colors'>
-                            Activar
-                          </span>
-                        </DropdownMenuItem>
-                      </TooltipTrigger>
-                      <TooltipContent>Activar producto</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem
-                        onClick={handleDeleteClick}
-                        className='cursor-pointer group'
-                      >
-                        <Trash2
-                          className='mr-2 text-red-600 group-hover:text-red-700 transition-colors'
-                        />
-                        <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Eliminar producto</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {hasAnyAction && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
+                  >
+                    <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  {canEdit && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuItem
+                            onClick={() => onEdit(product)}
+                            className='cursor-pointer group'
+                          >
+                            <Pencil
+                              className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors'
+                            />
+                            <span className='group-hover:text-purple-700 transition-colors'>
+                              Editar
+                            </span>
+                          </DropdownMenuItem>
+                        </TooltipTrigger>
+                        <TooltipContent>Editar producto</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  {product.status === 1 && canDeactivate ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuItem
+                            onClick={() => onDeactivate(product)}
+                            className='cursor-pointer group'
+                          >
+                            <Power
+                              className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors'
+                            />
+                            <span className='group-hover:text-orange-700 transition-colors'>
+                              Desactivar
+                            </span>
+                          </DropdownMenuItem>
+                        </TooltipTrigger>
+                        <TooltipContent>Desactivar producto</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : product.status === 0 && canActivate ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuItem
+                            onClick={() => onActivate(product)}
+                            className='cursor-pointer group'
+                          >
+                            <CheckCircle
+                              className='mr-2 text-green-600 group-hover:text-green-700 transition-colors'
+                            />
+                            <span className='group-hover:text-green-700 transition-colors'>
+                              Activar
+                            </span>
+                          </DropdownMenuItem>
+                        </TooltipTrigger>
+                        <TooltipContent>Activar producto</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : null}
+                  {canDelete && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuItem
+                            onClick={handleDeleteClick}
+                            className='cursor-pointer group'
+                          >
+                            <Trash2
+                              className='mr-2 text-red-600 group-hover:text-red-700 transition-colors'
+                            />
+                            <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
+                          </DropdownMenuItem>
+                        </TooltipTrigger>
+                        <TooltipContent>Eliminar producto</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </CardHeader>
         <CardContent className='space-y-3 p-4 sm:p-6 pt-0'>
