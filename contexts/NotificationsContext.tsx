@@ -16,11 +16,6 @@ const NotificationsContext = createContext<NotificationsContextType | undefined>
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const notifications = useNotifications();
-  
-  console.log('[NotificationsProvider] Valor actual:', {
-    pendingOrdersCount: notifications.pendingOrdersCount,
-    pendingServiceRequestsCount: notifications.pendingServiceRequestsCount
-  });
 
   return (
     <NotificationsContext.Provider value={notifications}>
@@ -34,9 +29,5 @@ export function useNotificationsContext() {
   if (context === undefined) {
     throw new Error('useNotificationsContext debe ser usado dentro de NotificationsProvider');
   }
-  console.log('[useNotificationsContext] Retornando:', {
-    pendingOrdersCount: context.pendingOrdersCount,
-    pendingServiceRequestsCount: context.pendingServiceRequestsCount
-  });
   return context;
 }

@@ -57,7 +57,7 @@ export default function ReportsPage() {
   }
   
   return (
-    <PermissionGuard module="reportes" action="ver">
+    <PermissionGuard module="reportes" action="listar">
 
     <div className="p-6 space-y-6">
         {/* Header */}

@@ -41,19 +41,19 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, module: 'dashboard', action: 'view' },
-  { name: 'Usuarios', href: '/users', icon: Users, module: 'users', action: 'view' },
-  { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clients', action: 'view' },
-  { name: 'Productos', href: '/products', icon: Package, module: 'products', action: 'view' },
-  { name: 'Categorías', href: '/categories', icon: Tag, module: 'categories', action: 'view' },
-  { name: 'Pedidos', href: '/orders', icon: ShoppingCart, module: 'orders', action: 'view' },
-  { name: 'Reportes', href: '/reports', icon: FileText, module: 'reports', action: 'view' },
-  { name: 'Ventas', href: '/sales', icon: TrendingUp, module: 'sales', action: 'view' }
+  { name: 'Usuarios', href: '/users', icon: Users, module: 'usuarios', action: 'listar' },
+  { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clientes', action: 'listar' },
+  { name: 'Productos', href: '/products', icon: Package, module: 'productos', action: 'ver_categorias' },
+  { name: 'Categorías', href: '/categories', icon: Tag, module: 'categorias', action: 'listar' },
+  { name: 'Pedidos', href: '/orders', icon: ShoppingCart, module: 'pedidos', action: 'listar' },
+  { name: 'Reportes', href: '/reports', icon: FileText, module: 'reportes', action: 'listar' },
+  { name: 'Ventas', href: '/sales', icon: TrendingUp, module: 'ventas', action: 'listar' }
 ];
 
 const hrNavigation = [
-  { name: 'Roles', href: '/roles', icon: Shield, module: 'roles', action: 'view' },
-  { name: 'Asistencias', href: '/attendance', icon: Clock, module: 'attendance', action: 'view' },
-  { name: 'Horas Extras', href: '/overtime', icon: Clock, module: 'overtime', action: 'view' }
+  { name: 'Roles', href: '/roles', icon: Shield, module: 'roles', action: 'listar' },
+  { name: 'Asistencias', href: '/attendance', icon: Clock, module: 'asistencias', action: 'listar' },
+  { name: 'Horas Extras', href: '/overtime', icon: Clock, module: 'horas_extras', action: 'listar' }
 ];
 
 const financeNavigation = [
@@ -61,43 +61,61 @@ const financeNavigation = [
     name: 'Cajas',
     href: '/cash-register',
     icon: CreditCard,
-    module: 'cash_register',
-    action: 'view'
+    module: 'caja',
+    action: 'listar'
   },
-  { name: 'Cuentas', href: '/accounts', icon: Calculator, module: 'accounts', action: 'view' },
-  { name: 'Propinas', href: '/tips', icon: Gift, module: 'tips', action: 'view' },
+  {
+    name: 'Cuentas',
+    href: '/accounts',
+    icon: Calculator,
+    module: 'cuentas',
+    action: 'listar'
+  },
+  { name: 'Propinas', href: '/tips', icon: Gift, module: 'propinas', action: 'listar' },
   {
     name: 'Comisiones',
     href: '/commissions',
     icon: Percent,
-    module: 'commissions',
-    action: 'view'
+    module: 'comisiones',
+    action: 'listar'
   },
   {
     name: 'Pagos a Trabajadores',
     href: '/payroll',
     icon: DollarSign,
     module: 'payroll',
-    action: 'view'
+    action: 'listar'
   },
   {
     name: 'Detalle Planillas',
     href: '/payroll/calendar',
     icon: CalendarIcon,
-    module: 'payroll',
-    action: 'view'
+    module: 'detalle_planilla',
+    action: 'listar'
   },
-  { name: 'Anticipos', href: '/advances', icon: DollarSign, module: 'advances', action: 'view' },
-  { name: 'Devoluciones', href: '/returns', icon: RotateCcw, module: 'returns', action: 'view' }
+  {
+    name: 'Anticipos',
+    href: '/advances',
+    icon: DollarSign,
+    module: 'anticipos',
+    action: 'listar'
+  },
+  {
+    name: 'Devoluciones',
+    href: '/returns',
+    icon: RotateCcw,
+    module: 'devoluciones',
+    action: 'listar'
+  }
 ];
 
 const serviceNavigation = [
-  { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'rooms', action: 'view' },
-  { name: 'Vender Privado', href: '/private-rooms', icon: Lock, module: 'rooms', action: 'view' },
+  { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'habitaciones', action: 'crear' },
+  { name: 'Vender Privado', href: '/private-rooms', icon: Lock, module: 'privados', action: 'listar' }
 ];
 
 const secondaryNavigation = [
-  { name: 'Configuración', href: '/settings', icon: Settings, module: 'settings', action: 'view' }
+  { name: 'Configuración', href: '/settings', icon: Settings, module: 'configuraciones', action: 'listar' }
 ];
 
 export function Sidebar() {
@@ -107,58 +125,80 @@ export function Sidebar() {
   const { user, loading: userLoading } = useCurrentUser();
   const { userPermissions: permissions, isLoading: permissionsLoading } = useUserPermissions();
 
+  // Log inicial para debugging
+  React.useEffect(() => {
+    console.log('[Sidebar] Estado actual:', {
+      user: user?.role,
+      userLoading,
+      permissionsLoading,
+      permissionsCount: permissions.length,
+      permissions: permissions.map(p => `${p.module}.${p.action}`)
+    });
+  }, [user, userLoading, permissionsLoading, permissions]);
+
+  // Log del usuario y su rol
+  React.useEffect(() => {
+    if (user && !userLoading) {
+      console.log('[Sidebar] Usuario logueado:', {
+        id: user.id,
+        nombre: user.name,
+        apellido: user.lastName,
+        rol: user.role
+      });
+    }
+  }, [user, userLoading]);
+
   // Verificar si el usuario es anfitriona o garzón
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
 
-  const hasModulePermission = (module: string, action: string = 'view') => {
+  const hasModulePermission = (module: string, action: string = 'listar') => {
+    // Dashboard siempre accesible
     if (module === 'dashboard') return true;
 
+    // Administrador tiene acceso a todo
     const isAdminFromStorage =
       typeof window !== 'undefined'
         ? localStorage.getItem('userRole')?.toLowerCase() === 'administrador'
         : false;
 
     if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
-    if (userLoading) return true;
-    if (!permissions.length && !permissionsLoading) return true;
+    
+    // Si no hay permisos cargados, no tiene acceso
+    if (!permissions.length) {
+      console.log(`[Sidebar] No hay permisos para verificar ${module}.${action}`);
+      return false;
+    }
 
-    let mappedModule = module;
-    let mappedAction = action;
-
-    if (module === 'orders') mappedModule = 'pedidos';
-    if (module === 'users') mappedModule = 'usuarios';
-    if (module === 'clients') mappedModule = 'clientes';
-    if (module === 'products') mappedModule = 'productos';
-    if (module === 'categories') mappedModule = 'categorias';
-    if (module === 'sales') mappedModule = 'ventas';
-    if (module === 'roles') mappedModule = 'roles';
-    if (module === 'attendance') mappedModule = 'asistencias';
-    if (module === 'overtime') mappedModule = 'horas_extras';
-    if (module === 'cash_register') mappedModule = 'caja';
-    if (module === 'payroll') mappedModule = 'pagos_trabajadores';
-    if (module === 'payroll_details') mappedModule = 'detalle_planillas';
-    if (module === 'private_rooms') mappedModule = 'privados';
-    if (module === 'reports') mappedModule = 'reportes';
-
-    if (action === 'view') mappedAction = 'ver';
-    if (action === 'create') mappedAction = 'crear';
-    if (action === 'edit') mappedAction = 'editar';
-    if (action === 'delete') mappedAction = 'eliminar';
-    if (action === 'process') mappedAction = 'procesar';
-    if (action === 'close') mappedAction = 'cerrar';
-    if (action === 'details') mappedAction = 'detalles';
-
-    return permissions.some(
-      permission => permission.module === mappedModule && permission.action === mappedAction
+    const hasPermission = permissions.some(
+      permission => permission.module === module && permission.action === action
     );
+    
+    console.log(`[Sidebar] Verificando ${module}.${action} = ${hasPermission}`);
+    
+    return hasPermission;
   };
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  // Mostrar skeleton mientras carga el usuario O mientras carga permisos por primera vez
+  // Solo si no es administrador (admin no necesita permisos)
+  const isAdmin = user?.role?.toLowerCase() === 'administrador';
+  const needsPermissions = user && !isAdmin;
+  const permissionsReady = !needsPermissions || permissions.length > 0;
+  
+  console.log('[Sidebar] Estado de carga:', {
+    mounted,
+    userLoading,
+    needsPermissions,
+    permissionsLoading,
+    permissionsReady,
+    permissionsCount: permissions.length
+  });
+  
+  if (!mounted || userLoading || (needsPermissions && permissionsLoading && !permissionsReady)) {
     return (
       <div
         className={cn(
@@ -188,30 +228,51 @@ export function Sidebar() {
             )}
           </div>
         </div>
-        <nav className='flex-1 px-4 py-6 space-y-8 overflow-y-auto'>
+        <nav className='flex-1 px-4 py-6 space-y-2 overflow-y-auto'>
           {/* Skeleton del sidebar */}
+          {!isCollapsed && (
+            <>
+              <div className='h-4 bg-gray-200 rounded w-20 mb-4 animate-pulse'></div>
+              {[1, 2, 3].map(i => (
+                <div key={i} className='h-10 bg-gray-100 rounded animate-pulse mb-2'></div>
+              ))}
+            </>
+          )}
         </nav>
       </div>
     );
   }
 
-  // Filtrar listas por permisos
-  const allowedPrincipal = navigation.filter(item => {
-    if (isAnfitriona && item.name !== 'Dashboard') return false;
-    if (isGarzon && item.name !== 'Dashboard' && item.name !== 'Pedidos') return false;
-    return hasModulePermission(item.module, item.action);
+  // Log para debugging
+  console.log('[Sidebar] Renderizando con permisos:', {
+    permissionsCount: permissions.length,
+    userRole: user?.role,
+    isAdmin,
+    permissionsReady
   });
 
+  // Filtrar listas por permisos
+  const allowedPrincipal = navigation.filter(item => hasModulePermission(item.module, item.action));
   const allowedHR = hrNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedFinance = financeNavigation.filter(item =>
-    hasModulePermission(item.module, item.action)
-  );
-  const allowedService = serviceNavigation.filter(item =>
-    hasModulePermission(item.module, item.action)
-  );
-  const allowedSecondary = secondaryNavigation.filter(item =>
-    hasModulePermission(item.module, item.action)
-  );
+  const allowedFinance = financeNavigation.filter(item => hasModulePermission(item.module, item.action));
+  const allowedService = serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
+  const allowedSecondary = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
+
+  // Log específico para productos
+  console.log('[Sidebar] Verificando módulo productos:', {
+    hasProductosVer: hasModulePermission('productos', 'ver'),
+    productosPermissions: permissions.filter(p => p.module === 'productos'),
+    allPermissions: permissions.map(p => `${p.module}.${p.action}`)
+  });
+
+  // Log para debugging
+  console.log('[Sidebar] Items permitidos:', {
+    principal: allowedPrincipal.length,
+    hr: allowedHR.length,
+    finance: allowedFinance.length,
+    service: allowedService.length,
+    secondary: allowedSecondary.length
+  });
 
   const SidebarContent = () => (
     <div
@@ -271,7 +332,16 @@ export function Sidebar() {
                   <li key={item.name}>
                     <Link
                       href={item.href}
-                      onClick={closeSidebar}
+                      onClick={() => {
+                        if (item.name === 'Dashboard') {
+                          console.log('[Sidebar] Click en Dashboard - Usuario:', {
+                            nombre: user?.name,
+                            apellido: user?.lastName,
+                            rol: user?.role
+                          });
+                        }
+                        closeSidebar();
+                      }}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
                         isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'

@@ -13,6 +13,7 @@ import { Eye, User, Calendar, DollarSign, Coins, MinusCircle, Calculator } from 
 import { AsistenciaResumen } from '@/types/asistencia';
 import { Button } from '@/components/ui/button';
 import AttendanceDetailModal from './AttendanceDetailModal';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface AttendanceData {
   id_usuario: number;
@@ -31,12 +32,16 @@ interface AttendanceTableProps {
 
 export default function AttendanceTable({ data }: AttendanceTableProps) {
   const { loading, error } = useAsistencias();
+  const { hasPermission } = useUserPermissions();
   const [selectedUser, setSelectedUser] = useState<{
     id: number;
     name: string;
     nick: string;
   } | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Verificar permiso para ver detalles
+  const canViewDetail = hasPermission('asistencias', 'ver_detalles');
 
   const handleViewDetail = (user: AttendanceData) => {
     setSelectedUser({
@@ -147,17 +152,19 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
               </div>
 
               {/* Acción */}
-              <div className='flex justify-center pt-2 border-t border-gray-100'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
-                  onClick={() => handleViewDetail(item)}
-                >
-                  <Eye className='w-3 h-3 mr-1' />
-                  Ver Detalle
-                </Button>
-              </div>
+              {canViewDetail && (
+                <div className='flex justify-center pt-2 border-t border-gray-100'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
+                    onClick={() => handleViewDetail(item)}
+                  >
+                    <Eye className='w-3 h-3 mr-1' />
+                    Ver Detalle
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -183,7 +190,9 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                 Descuento <br /> Habitación
               </TableHead>
               <TableHead className='text-center text-sm'>Total</TableHead>
-              <TableHead className='text-center text-sm'>Detalles</TableHead>
+              {canViewDetail && (
+                <TableHead className='text-center text-sm'>Detalles</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -210,16 +219,18 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                 <TableCell className='text-center font-bold text-sm'>
                   {formatCurrencyNoDecimals(item.total_final)}
                 </TableCell>
-                <TableCell className='text-center hover:text-blue-700 cursor-pointer'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() => handleViewDetail(item)}
-                    className='h-8 w-8 p-0 hover:bg-blue-50'
-                  >
-                    <Eye className='w-4 h-4' />
-                  </Button>
-                </TableCell>
+                {canViewDetail && (
+                  <TableCell className='text-center hover:text-blue-700 cursor-pointer'>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => handleViewDetail(item)}
+                      className='h-8 w-8 p-0 hover:bg-blue-50'
+                    >
+                      <Eye className='w-4 h-4' />
+                    </Button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

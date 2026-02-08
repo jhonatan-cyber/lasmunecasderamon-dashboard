@@ -1,6 +1,7 @@
 import React from "react";
 import { Shield, Edit, Trash2, CheckCircle, Users as UsersIcon, XCircle, Power } from "lucide-react";
 import { ActionButtonWithTooltip } from "@/components/ui/ActionButtonWithTooltip";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 export function RoleCard({
   role,
@@ -19,6 +20,13 @@ export function RoleCard({
   onActivate: () => void;
   onDelete: () => void;
 }) {
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permisos
+  const canEdit = hasPermission('roles', 'editar');
+  const canActivate = hasPermission('roles', 'activar');
+  const canDeactivate = hasPermission('roles', 'desactivar');
+  const canDelete = hasPermission('roles', 'eliminar');
   return (
     <div
       className={`bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 hover:shadow-md transition-all duration-200 cursor-pointer ${
@@ -41,7 +49,7 @@ export function RoleCard({
           </div>
         </div>
         <div className="flex space-x-1">
-          {role.status === 1 && (
+          {role.status === 1 && canEdit && (
             <ActionButtonWithTooltip
               onClick={() => {
                 // Detener propagación manualmente
@@ -54,7 +62,7 @@ export function RoleCard({
               <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
             </ActionButtonWithTooltip>
           )}
-          {role.status === 0 ? (
+          {role.status === 0 && canActivate ? (
             <ActionButtonWithTooltip
               onClick={() => {
                 window.event?.stopPropagation?.();
@@ -65,7 +73,7 @@ export function RoleCard({
             >
               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             </ActionButtonWithTooltip>
-          ) : (
+          ) : role.status === 1 && canDeactivate ? (
             <ActionButtonWithTooltip
               onClick={() => {
                 window.event?.stopPropagation?.();
@@ -76,17 +84,19 @@ export function RoleCard({
             >
               <Power className="h-3 w-3 sm:h-4 sm:w-4" />
             </ActionButtonWithTooltip>
+          ) : null}
+          {canDelete && (
+            <ActionButtonWithTooltip
+              onClick={() => {
+                window.event?.stopPropagation?.();
+                onDelete();
+              }}
+              tooltip="Eliminar rol"
+              className="text-red-600 hover:text-red-800 p-1 rounded"
+            >
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+            </ActionButtonWithTooltip>
           )}
-          <ActionButtonWithTooltip
-            onClick={() => {
-              window.event?.stopPropagation?.();
-              onDelete();
-            }}
-            tooltip="Eliminar rol"
-            className="text-red-600 hover:text-red-800 p-1 rounded"
-          >
-            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-          </ActionButtonWithTooltip>
         </div>
       </div>
       <div className="flex items-center justify-between">

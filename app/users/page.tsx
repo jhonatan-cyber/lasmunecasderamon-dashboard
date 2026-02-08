@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import Paginate from '@/components/ui/paginate';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -211,30 +212,33 @@ export default function Users() {
   if (error) return <div>Error al cargar los usuarios: {error}</div>;
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
-        <div className='flex flex-col'>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Gestión de Usuarios</h1>
-          <p className='text-sm sm:text-base text-gray-600'>Gestiona todos los usuarios de la plataforma.</p>
-        </div>
-        <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-          <ExportButtons users={paginatedUsers || []} />
+    <PermissionGuard module="users" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+          <div className='flex flex-col'>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Gestión de Usuarios</h1>
+            <p className='text-sm sm:text-base text-gray-600'>Gestiona todos los usuarios de la plataforma.</p>
+          </div>
+          <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
+            <ExportButtons users={paginatedUsers || []} />
 
-          <Button
-            onClick={() => {
-              setSelectedUser(null);
-              setIsEditing(false);
-              setIsFormOpen(true);
-            }}
-            size='sm'
-            variant='outline'
-            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
-          >
-            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            Nuevo Usuario
-          </Button>
+            <PermissionGuard module="users" action="crear" fallback={null}>
+              <Button
+                onClick={() => {
+                  setSelectedUser(null);
+                  setIsEditing(false);
+                  setIsFormOpen(true);
+                }}
+                size='sm'
+                variant='outline'
+                className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
+              >
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Nuevo Usuario
+              </Button>
+            </PermissionGuard>
+          </div>
         </div>
-      </div>
 
       <UserFilters
         searchTerm={searchTerm}
@@ -330,12 +334,15 @@ export default function Users() {
         </DialogContent>
       </Dialog>
 
-      <DeleteUserConfirmModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        onConfirm={handleConfirmDelete}
-        userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
-      />
+      <PermissionGuard module="users" action="eliminar" fallback={null}>
+        <DeleteUserConfirmModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          onConfirm={handleConfirmDelete}
+          userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
+        />
+      </PermissionGuard>
     </div>
-  );
+  </PermissionGuard>
+);
 }

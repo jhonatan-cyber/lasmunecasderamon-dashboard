@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ShoppingCart, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { BackgroundGradient } from '@/components/ui/background-gradient';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function ReturnsPage() {
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <PermissionGuard module="devoluciones" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div className='mb-6 sm:mb-8'>
         <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-2'>Devoluciones</h1>
         <p className='text-sm sm:text-base text-gray-600 dark:text-neutral-400'>
@@ -167,6 +169,7 @@ export default function ReturnsPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

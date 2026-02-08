@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ShoppingCart, Beer, Eye, Ban, MoreVertical } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { AnulacionModal } from './AnulacionModal';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface SalesListProps {
   loading: boolean;
@@ -59,6 +60,15 @@ export function SalesList({
     ventaInfo: null
   });
   const hasFilters = searchTerm || filterStatus !== 'all' || filterMetodoPago !== 'all';
+  
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permisos
+  const canViewDetails = hasPermission('ventas', 'ver_detalles');
+  const canAnular = hasPermission('ventas', 'anular');
+  
+  // Si no tiene ningún permiso de acción, no mostrar el menú
+  const hasAnyAction = canViewDetails || canAnular;
 
   const handleAnularClick = (venta: VentaWithDetails) => {
     setAnulacionModal({
@@ -223,49 +233,53 @@ export function SalesList({
 
                     <div className='flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4'>
                       {/* Menú de acciones */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='sm' className='h-8 w-8 p-0 self-end'>
-                            <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end'>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onVerDetalles(venta?.id)}
-                                  className='hover:text-blue-600 group'
-                                >
-                                  <Eye className='group-hover:text-blue-600 w-3 h-3 sm:w-4 sm:h-4' />
-                                  <span className='ml-2 group-hover:text-blue-600'>
-                                    Ver detalles
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Ver detalles completos de la venta</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            {Number(venta?.estado) !== 0 && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuItem
-                                    onClick={() => handleAnularClick(venta)}
-                                    className='hover:text-red-600 group'
-                                  >
-                                    <Ban className='group-hover:text-red-600 w-3 h-3 sm:w-4 sm:h-4' />
-                                    <span className='ml-2 group-hover:text-red-600'>Anular</span>
-                                  </DropdownMenuItem>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Anular esta venta</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </TooltipProvider>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {hasAnyAction && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant='ghost' size='sm' className='h-8 w-8 p-0 self-end'>
+                              <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end'>
+                            <TooltipProvider>
+                              {canViewDetails && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuItem
+                                      onClick={() => onVerDetalles(venta?.id)}
+                                      className='hover:text-blue-600 group'
+                                    >
+                                      <Eye className='group-hover:text-blue-600 w-3 h-3 sm:w-4 sm:h-4' />
+                                      <span className='ml-2 group-hover:text-blue-600'>
+                                        Ver detalles
+                                      </span>
+                                    </DropdownMenuItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Ver detalles completos de la venta</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {Number(venta?.estado) !== 0 && canAnular && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuItem
+                                      onClick={() => handleAnularClick(venta)}
+                                      className='hover:text-red-600 group'
+                                    >
+                                      <Ban className='group-hover:text-red-600 w-3 h-3 sm:w-4 sm:h-4' />
+                                      <span className='ml-2 group-hover:text-red-600'>Anular</span>
+                                    </DropdownMenuItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Anular esta venta</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </TooltipProvider>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                       <div className='text-right'>
                         <div className='font-medium text-gray-900 text-sm sm:text-base'>
                           {formatCurrency(venta?.total || 0)}

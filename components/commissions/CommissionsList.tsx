@@ -14,6 +14,7 @@ import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { Commission } from '@/types/commission';
 import { DollarSign, User, Tag, ShoppingCart, Server, Coins, Eye } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface CommissionsListProps {
   loading: boolean;
@@ -34,6 +35,10 @@ export function CommissionsList({
   totalPages,
   onViewDetails
 }: CommissionsListProps) {
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar permiso para ver detalles
+  const canViewDetail = hasPermission('comisiones', 'ver_detalles');
   if (loading) {
     return (
       <Card>
@@ -132,16 +137,18 @@ export function CommissionsList({
             </div>
 
             {/* Botón de ver detalles */}
-            <div className='pt-3 border-t border-gray-200'>
-              <Button
-                onClick={() => onViewDetails(commission)}
-                size='sm'
-                variant='outline'
-                className='w-full rounded-full text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-200 group'
-              >
-                <Eye className='h-3 w-3 mr-2 group-hover:text-blue-600' />
-              </Button>
-            </div>
+            {canViewDetail && (
+              <div className='pt-3 border-t border-gray-200'>
+                <Button
+                  onClick={() => onViewDetails(commission)}
+                  size='sm'
+                  variant='outline'
+                  className='w-full rounded-full text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-200 group'
+                >
+                  <Eye className='h-3 w-3 mr-2 group-hover:text-blue-600' />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
@@ -164,7 +171,9 @@ export function CommissionsList({
                 <TableHead className='text-center text-sm sm:text-base'>Servicio</TableHead>
                 <TableHead className='text-center text-sm sm:text-base'>Total</TableHead>
                 <TableHead className='text-center text-sm sm:text-base'>Estado</TableHead>
-                <TableHead className='text-center text-sm sm:text-base'>Acciones</TableHead>
+                {canViewDetail && (
+                  <TableHead className='text-center text-sm sm:text-base'>Acciones</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -196,16 +205,18 @@ export function CommissionsList({
                           : 'Anulado'}
                     </Badge>
                   </TableCell>
-                  <TableCell className='text-center'>
-                    <Button
-                      onClick={() => onViewDetails(commission)}
-                      size='sm'
-                      variant='outline'
-                      className='rounded-full text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-200 group'
-                    >
-                      <Eye className='h-3 w-3 mr-1 group-hover:text-blue-600' />
-                    </Button>
-                  </TableCell>
+                  {canViewDetail && (
+                    <TableCell className='text-center'>
+                      <Button
+                        onClick={() => onViewDetails(commission)}
+                        size='sm'
+                        variant='outline'
+                        className='rounded-full text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-200 group'
+                      >
+                        <Eye className='h-3 w-3 mr-1 group-hover:text-blue-600' />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

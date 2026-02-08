@@ -9,6 +9,7 @@ import SortableCategoryCard from '@/components/categories/SortableCategoryCard';
 import { Plus } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
 import { CategoryFilters } from '@/components/categories/CategoryFilters';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import {
   DndContext,
   closestCenter,
@@ -160,24 +161,27 @@ export default function Categories() {
   };
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
-        <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Categorías</h1>
-          <p className='text-sm sm:text-base text-gray-600'>Organiza tus productos en categorías</p>
+    <PermissionGuard module="categorias" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
+          <div>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Categorías</h1>
+            <p className='text-sm sm:text-base text-gray-600'>Organiza tus productos en categorías</p>
+          </div>
+          <PermissionGuard module="categorias" action="crear" fallback={null}>
+            <CategoryFormDialog open={openDialog} setOpen={setOpenDialog} onCreate={handleCreate}>
+              <Button
+                variant='outline'
+                className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
+                type='button'
+                size='sm'
+              >
+                <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+                Nueva Categoria
+              </Button>
+            </CategoryFormDialog>
+          </PermissionGuard>
         </div>
-        <CategoryFormDialog open={openDialog} setOpen={setOpenDialog} onCreate={handleCreate}>
-          <Button
-            variant='outline'
-            className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
-            type='button'
-            size='sm'
-          >
-            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-            Nueva Categoria
-          </Button>
-        </CategoryFormDialog>
-      </div>
 
       <CategoryFilters
         searchTerm={searchTerm}
@@ -250,5 +254,6 @@ export default function Categories() {
         </CategoryFormDialog>
       )}
     </div>
+    </PermissionGuard>
   );
 }

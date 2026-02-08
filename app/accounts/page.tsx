@@ -8,6 +8,7 @@ import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from '@/co
 import Paginate from '@/components/ui/paginate';
 import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
 import { AlertCircle } from 'lucide-react';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function AccountsPage() {
   const { cuentas, loading, error, getCuentas } = useCuentas();
@@ -35,7 +36,8 @@ export default function AccountsPage() {
   };
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <PermissionGuard module="cuentas" action="listar">
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <CuentaHeader loading={loading} onRefresh={handleRefresh} />
 
       <CuentaStatsCards cuentas={cuentasData} formatCurrency={formatCurrencyNoDecimals} />
@@ -81,5 +83,6 @@ export default function AccountsPage() {
         </div>
       )}
     </div>
+    </PermissionGuard>
   );
 }
