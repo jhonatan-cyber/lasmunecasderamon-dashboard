@@ -651,6 +651,25 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     console.log('[SALES POST] ✅ Sale created successfully with ID:', ventaId);
 
+    // Si la venta tiene habitación y tiempo, marcar anfitrionas como ocupadas
+    if (habitacion_id && tiempo > 0 && usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
+      console.log('[SALES POST] Marcando anfitrionas como ocupadas...');
+      try {
+        // Actualizar estado de anfitrionas a ocupadas (estado = 2)
+        for (const usuarioId of usuarios) {
+          await query(
+            'UPDATE usuarios SET estado = 2 WHERE id_usuario = ?',
+            [usuarioId]
+          );
+          console.log(`[SALES POST] Anfitriona ${usuarioId} marcada como ocupada`);
+        }
+        console.log(`[SALES POST] ${usuarios.length} anfitrionas marcadas como ocupadas`);
+      } catch (error) {
+        console.error('[SALES POST] Error marcando anfitrionas como ocupadas:', error);
+        // No fallar la venta si hay error marcando anfitrionas
+      }
+    }
+
     // Enviar notificación SSE si la venta tiene habitación y tiempo
     if (habitacion_id && tiempo > 0) {
       try {
@@ -685,6 +704,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       message: 'Venta creada exitosamente',
       data: {
         ...ventaCompleta,
+        id: ventaCompleta.id_venta, // Mapear id_venta a id para consistencia con GET
+        id_venta: ventaId, // Mantener id_venta también
         comisiones_creadas:
           usuarios && usuarios.length > 0 && totalComision > 0 ? usuarios.length : 0,
         comision_por_anfitriona:

@@ -53,12 +53,11 @@ export default function NewSale() {
     }
     return '';
   });
-  const [enableTip, setEnableTip] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('enableTip') === 'true';
-    }
-    return false;
-  });
+  const [enableTip, setEnableTip] = useState(false);
+  
+  // Log para depurar
+  console.log('🔍 Estado enableTip:', enableTip);
+  
   const [productos, setProductos] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('productos');
@@ -66,6 +65,13 @@ export default function NewSale() {
     }
     return [];
   });
+
+  // Limpiar enableTip del localStorage al montar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('enableTip');
+    }
+  }, []);
 
   // Estado para almacenar información de la habitación seleccionada
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<any>(null);
@@ -76,10 +82,9 @@ export default function NewSale() {
       localStorage.setItem('selectedCliente', selectedCliente);
       localStorage.setItem('selectedHabitacion', selectedHabitacion);
       localStorage.setItem('metodoPago', metodoPago);
-      localStorage.setItem('enableTip', enableTip.toString());
       localStorage.setItem('productos', JSON.stringify(productos));
     }
-  }, [selectedCliente, selectedHabitacion, metodoPago, enableTip, productos]);
+  }, [selectedCliente, selectedHabitacion, metodoPago, productos]);
 
   // Efecto para limpiar localStorage al montar el componente
   useEffect(() => {
@@ -983,7 +988,10 @@ export default function NewSale() {
                 <Checkbox
                   id='enable-tip'
                   checked={enableTip}
-                  onCheckedChange={checked => setEnableTip(checked === true)}
+                  onCheckedChange={checked => {
+                    console.log('✅ Checkbox cambiado a:', checked);
+                    setEnableTip(checked === true);
+                  }}
                   disabled={!Array.isArray(productos) || productos.length === 0}
                 />
                 <label

@@ -44,15 +44,9 @@ const months = [
 const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function PayrollCalendarPage() {
-  console.log('[PayrollCalendarPage] Componente cargando...');
-  
   // Hook para verificar permisos
   const { hasPermission } = useUserPermissions();
   const canViewDetails = hasPermission('detalle_planilla', 'ver_detalles');
-  
-  console.log('[PayrollCalendarPage] Permisos:', {
-    canViewDetails
-  });
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -217,7 +211,6 @@ export default function PayrollCalendarPage() {
   const handleMouseDown = (date: Date) => {
     // Solo permitir selección si tiene permiso para ver detalles
     if (!canViewDetails) {
-      console.log('[PayrollCalendarPage] ❌ Sin permiso para ver detalles');
       return;
     }
     
@@ -622,7 +615,6 @@ export default function PayrollCalendarPage() {
   return (
     <PermissionGuard module="detalle_planilla" action="listar">
       {(() => {
-        console.log('[PayrollCalendarPage] Renderizando contenido dentro de PermissionGuard');
         return (
           <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
       <div className='flex items-center justify-between mb-6'>

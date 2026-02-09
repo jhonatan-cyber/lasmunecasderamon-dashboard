@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import OrderProductTable from './OrderProductTable';
-import CategoryProductsModal from '@/components/orders/CategoryProductsModal';
 import CustomerSelect from '@/components/ui/CustomerSelect';
 import HostessSelect from '@/components/ui/HostessSelect';
 import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
@@ -11,6 +11,22 @@ import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import useRooms from '@/hooks/useRooms';
 import RoomSelect from '../ui/RoomSelect';
+
+// Lazy load del modal de productos para reducir bundle inicial
+const CategoryProductsModal = dynamic(
+  () => import('@/components/orders/CategoryProductsModal'),
+  {
+    loading: () => (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Cargando productos...</p>
+        </div>
+      </div>
+    ),
+    ssr: false
+  }
+);
 
 interface OrderFormProps {
   clientes: any[];
@@ -63,24 +79,35 @@ export default function OrderForm({
   const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const [propina, setPropina] = useState(10);
-  const [propinaHabilitada, setPropinaHabilitada] = useState(true);
+  const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
 
+  // Memoizar el cálculo del subtotal para evitar recálculos innecesarios
+  const subtotal = useMemo(() => {
+    return productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
+  }, [productos]);
+
+  // Memoizar el cálculo de la propina
+  const tipAmount = useMemo(() => {
+    return propinaHabilitada ? (subtotal * propina) / 100 : 0;
+  }, [propinaHabilitada, subtotal, propina]);
+
+  // Memoizar el cálculo del total
+  const total = useMemo(() => {
+    return subtotal + tipAmount;
+  }, [subtotal, tipAmount]);
+
   // Manejar cambios en la propina desde OrderTotalHeader
-  const handleTipChange = (enabled: boolean, percentage: number) => {
+  const handleTipChange = useCallback((enabled: boolean, percentage: number) => {
     setPropinaHabilitada(enabled);
     setPropina(percentage);
-  };
+  }, []);
+  
   const router = useRouter();
   const { user } = useCurrentUser();
   const { rooms } = useRooms();
 
-  // Calcular el total sumando los subtotales de los productos agregados
-  const subtotal = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
-  const tipAmount = propinaHabilitada ? (subtotal * propina) / 100 : 0; // Calcular monto de propina solo si está habilitada
-  const total = subtotal + tipAmount;
-
-  const handleOpenCategoria = async (cat: any) => {
+  const handleOpenCategoria = useCallback(async (cat: any) => {
     setModalCategoria(cat);
     setModalOpen(true);
     setLoadingProductos(true);
@@ -94,35 +121,35 @@ export default function OrderForm({
     } finally {
       setLoadingProductos(false);
     }
-  };
+  }, []);
 
-  const handleCantidadChange = (id: string, value: string) => {
+  const handleCantidadChange = useCallback((id: string, value: string) => {
     const num = parseInt(value, 10);
     setCantidades(prev => ({ ...prev, [id]: isNaN(num) ? 1 : num }));
-  };
+  }, []);
 
-  const handleChampagneHostessChange = (productId: string, hostessIds: string[]) => {
+  const handleChampagneHostessChange = useCallback((productId: string, hostessIds: string[]) => {
     setChampagneHostessSelections(prev => ({
       ...prev,
       [productId]: hostessIds
     }));
-  };
+  }, []);
 
-  const handleOtherProductHostessChange = (productId: string, hostessIds: string[]) => {
+  const handleOtherProductHostessChange = useCallback((productId: string, hostessIds: string[]) => {
     setOtherProductHostessSelections(prev => ({
       ...prev,
       [productId]: hostessIds
     }));
-  };
+  }, []);
 
-  const handleRoomChange = (productId: string, roomId: string) => {
+  const handleRoomChange = useCallback((productId: string, roomId: string) => {
     setRoomSelections(prev => ({
       ...prev,
       [productId]: roomId
     }));
-  };
+  }, []);
 
-  const handleAgregarProducto = (producto: any) => {
+  const handleAgregarProducto = useCallback((producto: any) => {
     const cantidad = cantidades[producto.id_producto || producto.id] || 1;
     const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
 
@@ -167,33 +194,33 @@ export default function OrderForm({
       delete newState[productId];
       return newState;
     });
-  };
+  }, [cantidades, onAddProducto]);
 
-  const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
+  const handleUpdateCantidad = useCallback((index: number, nuevaCantidad: number) => {
     if (onUpdateCantidad) {
       onUpdateCantidad(index, nuevaCantidad);
     }
-  };
+  }, [onUpdateCantidad]);
 
-  const handleAssignHostess = (index: number, hostessId: string) => {
+  const handleAssignHostess = useCallback((index: number, hostessId: string) => {
     onAssignHostess?.(index, hostessId);
-  };
+  }, [onAssignHostess]);
 
-  const handleToggleComision = (index: number) => {
+  const handleToggleComision = useCallback((index: number) => {
     // Usar la función pasada desde el padre si existe
     if (onToggleComision) {
       onToggleComision(index);
     }
-  };
+  }, [onToggleComision]);
 
-  function generarCodigoPedido() {
+  const generarCodigoPedido = useCallback(() => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
     for (let i = 0; i < 8; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
-  }
+  }, []);
 
   const handleSubmit = async () => {
     // Cliente es opcional, no validamos que esté seleccionado
@@ -210,18 +237,6 @@ export default function OrderForm({
       if (!bebida.selectedHostesses || bebida.selectedHostesses.length === 0) {
         setError(
           `La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`
-        );
-        return;
-      }
-    }
-
-    // Verificar que las bebidas que requieren habitación la tengan asignada
-    const bebidasQueRequierenHabitacion = productos.filter(p => p.requiresRoom);
-
-    for (const bebida of bebidasQueRequierenHabitacion) {
-      if (!bebida.selectedRoom) {
-        setError(
-          `La bebida "${bebida.nombre || bebida.name}" requiere seleccionar una habitación (precio > $30,000 + comisión)`
         );
         return;
       }
@@ -415,6 +430,12 @@ export default function OrderForm({
         roomSelections={roomSelections}
         onRoomChange={handleRoomChange}
       />
+      {/* Mensaje de error */}
+      {error && (
+        <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm'>
+          {error}
+        </div>
+      )}
       {/* Total y botón de generar pedido */}
       <OrderTotalHeader
         total={total}

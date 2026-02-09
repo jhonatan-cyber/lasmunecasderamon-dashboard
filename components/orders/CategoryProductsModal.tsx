@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { useDebounce } from 'use-debounce';
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ import {
 import HostessMultiSelect from "@/components/orders/HostessMultiSelect";
 import IndividualHostessSelect from "@/components/ui/IndividualHostessSelect";
 import Paginate from "@/components/ui/paginate";
+import RoomSelect from "@/components/ui/RoomSelect";
 
 interface CategoryProductsModalProps {
   open: boolean;
@@ -30,15 +32,15 @@ interface CategoryProductsModalProps {
   handleCantidadChange: (id: string, value: string) => void;
   handleAgregarProducto: (producto: any) => void;
   modalCategoria: any;
-  anfitrionas: any[]; // Todas las anfitrionas disponibles
+  anfitrionas: any[]; 
   champagneHostessSelections: { [key: string]: string[] };
   onChampagneHostessChange: (productId: string, hostessIds: string[]) => void;
-  otherProductHostessSelections: { [key: string]: string[] }; // Cambiado a array para bebidas múltiples
-  onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void; // Cambiado a array
-  productosEnCarrito: any[]; // NUEVO: Productos ya agregados al pedido
-  habitaciones: any[]; // Habitaciones disponibles para asignar a productos
-  roomSelections: { [key: string]: string }; // Selección actual de habitaciones por producto
-  onRoomChange: (productId: string, roomId: string) => void; // Callback cuando cambia la habitación de un producto
+  otherProductHostessSelections: { [key: string]: string[] }; 
+  onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void; 
+  productosEnCarrito: any[]; 
+  habitaciones?: any[]; 
+  roomSelections?: { [key: string]: string }; 
+  onRoomChange?: (productId: string, roomId: string) => void; 
 }
 
 const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
@@ -56,43 +58,87 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
   otherProductHostessSelections,
   onOtherProductHostessChange,
   productosEnCarrito,
+  habitaciones = [],
+  roomSelections = {},
+  onRoomChange = () => { },
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
+  const [anfitrionasDisponibles, setAnfitrionasDisponibles] = useState<any[]>([]);
+  const [loadingAnfitrionas, setLoadingAnfitrionas] = useState(false);
+  
+  // Debounce de los valores de búsqueda para optimizar performance
+  const [debouncedSearchValues] = useDebounce(hostessSearchValues, 300);
+  
   const itemsPerPage = 5;
 
-  // Resetear página cuando se abre el modal o cambian los productos
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [open, productosCategoria]);
 
-  // Calcular productos para la página actual
+  // Cargar anfitrionas disponibles cuando hay habitaciones seleccionadas
+  useEffect(() => {
+    const hasAnyRoomSelected = Object.values(roomSelections).some(room => room && room !== '');
+    
+    if (hasAnyRoomSelected) {
+      // Si hay habitaciones seleccionadas, cargar anfitrionas disponibles
+      const fetchAnfitrionasDisponibles = async () => {
+        setLoadingAnfitrionas(true);
+        try {
+          const response = await fetch('/api/anfitrionas/disponibles');
+          const data = await response.json();
+          if (data.success) {
+            setAnfitrionasDisponibles(data.data);
+          }
+        } catch (error) {
+          console.error('Error al cargar anfitrionas disponibles:', error);
+        } finally {
+          setLoadingAnfitrionas(false);
+        }
+      };
+      fetchAnfitrionasDisponibles();
+    } else {
+      // Si no hay habitaciones seleccionadas, usar las anfitrionas originales
+      setAnfitrionasDisponibles([]);
+    }
+  }, [roomSelections]);
+
+  
   const totalPages = Math.ceil((productosCategoria?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentProductos = productosCategoria?.slice(startIndex, endIndex) || [];
 
-  // Función para verificar si un producto es champaña
+ 
   const isChampagneProduct = (producto: any) => {
     const categoria = (producto.categoria || producto.category_name || "").toLowerCase();
     return categoria.includes("champaña") || categoria.includes("shampaña") || categoria.includes("champagne");
   };
 
-  // Función para verificar si un producto tiene comisión
+  
   const hasCommission = (producto: any) => {
     return (producto.comision || producto.commission || 0) > 0;
   };
 
-  // Obtener anfitrionas disponibles (todas las anfitrionas que llegan)
-  const availableHostesses = anfitrionas || [];
+ 
+  const requiresRoom = (producto: any) => {
+    const precio = Number(producto.precio || producto.price || 0);
+    const tieneComision = hasCommission(producto);
+    const hayHabitacionesDisponibles = habitaciones && habitaciones.length > 0;
+    return precio >= 30000 && tieneComision && hayHabitacionesDisponibles;
+  };
 
-  // Obtener todas las anfitrionas ya asignadas a cualquier producto (incluyendo las del carrito)
-  const getAllAssignedHostesses = () => {
-    // Anfitrionas del modal actual
+ 
+  const availableHostesses = useMemo(() => anfitrionas || [], [anfitrionas]);
+
+  
+  const getAllAssignedHostesses = useMemo(() => {
+    
     const champagneAssigned = Object.values(champagneHostessSelections).flat();
     const otherProductsAssigned = Object.values(otherProductHostessSelections).flat();
 
-    // Anfitrionas de productos ya en el carrito/tabla
+    
     const carritoAssigned = productosEnCarrito.flatMap(producto => {
       if (producto.selectedHostesses && Array.isArray(producto.selectedHostesses)) {
         return producto.selectedHostesses;
@@ -102,15 +148,28 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
 
     const allAssigned = [...champagneAssigned, ...otherProductsAssigned, ...carritoAssigned];
     return allAssigned;
-  };
+  }, [champagneHostessSelections, otherProductHostessSelections, productosEnCarrito]);
 
-  // Función para obtener anfitrionas disponibles para champañas (excluyendo las ya asignadas a cualquier producto)
+ 
   const getAvailableHostessesForChampagne = (currentProductId: string) => {
-    const allAssignedHostesses = getAllAssignedHostesses();
+    const allAssignedHostesses = getAllAssignedHostesses;
     const currentSelection = champagneHostessSelections[currentProductId] || [];
+    const hasRoomSelected = roomSelections[currentProductId] && roomSelections[currentProductId] !== '';
 
+    // Si NO hay habitación seleccionada, mostrar TODAS las anfitrionas
+    if (!hasRoomSelected) {
+      return availableHostesses;
+    }
+
+    // Si hay habitación seleccionada, solo mostrar anfitrionas libres (estado = 1)
     const filtered = availableHostesses.filter(h => {
       const hostessId = String(h.id || h.id_usuario);
+      const estado = h.estado || h.status;
+
+      // Solo mostrar anfitrionas libres (estado = 1)
+      if (estado !== 1) {
+        return false;
+      }
 
       // Incluir si está en la selección actual del producto
       if (currentSelection.includes(hostessId)) {
@@ -128,13 +187,37 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
     return filtered;
   };
 
-  // Función para obtener anfitrionas disponibles para bebidas (excluyendo las ya asignadas a cualquier producto)
+  
   const getAvailableHostessesForOtherProducts = (currentProductId: string) => {
-    const allAssignedHostesses = getAllAssignedHostesses();
+    const allAssignedHostesses = getAllAssignedHostesses;
     const currentSelection = otherProductHostessSelections[currentProductId] || [];
+    const hasRoomSelected = roomSelections[currentProductId] && roomSelections[currentProductId] !== '';
 
+    console.log(`[CategoryProductsModal] Producto ${currentProductId}:`, {
+      hasRoomSelected,
+      totalAnfitrionas: availableHostesses.length,
+      anfitrionasEstados: availableHostesses.map(h => ({
+        id: h.id || h.id_usuario,
+        nick: h.nick,
+        estado: h.estado || h.status
+      }))
+    });
+
+    // Si NO hay habitación seleccionada, mostrar TODAS las anfitrionas
+    if (!hasRoomSelected) {
+      console.log(`[CategoryProductsModal] Sin habitación - mostrando todas: ${availableHostesses.length}`);
+      return availableHostesses;
+    }
+
+    // Si hay habitación seleccionada, solo mostrar anfitrionas libres (estado = 1)
     const filtered = availableHostesses.filter(h => {
       const hostessId = String(h.id || h.id_usuario);
+      const estado = h.estado || h.status;
+
+      // Solo mostrar anfitrionas libres (estado = 1)
+      if (estado !== 1) {
+        return false;
+      }
 
       // Incluir si está en la selección actual del producto
       if (currentSelection.includes(hostessId)) {
@@ -149,18 +232,20 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
       return true;
     });
 
+    console.log(`[CategoryProductsModal] Con habitación - anfitrionas filtradas: ${filtered.length}`);
     return filtered;
   };
 
   // Verificar si hay productos con comisión en la categoría actual
   // Solo después de que los productos estén cargados
-  const hasProductsWithCommission = !loading && productosCategoria?.some(p => {
-    return (p.comision || p.commission || 0) > 0;
-  });
+  const hasProductsWithCommission = useMemo(() => 
+    !loading && productosCategoria?.some(p => (p.comision || p.commission || 0) > 0),
+    [loading, productosCategoria]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0">
+      <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col p-0">
         <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle>
             {modalCategoria
@@ -171,7 +256,9 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
             <div className="text-xs text-gray-700 dark:text-gray-200 mt-2 p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded">
               <strong className="text-gray-900 dark:text-gray-100">Reglas de asignación:</strong>
               <br />• <span className="text-purple-600 dark:text-purple-400 font-medium">Champañas</span>: Selecciona múltiples anfitrionas (límite según precio)
-              <br />• <span className="text-green-600 dark:text-green-400 font-medium">Bebidas</span>: Una anfitriona por bebida
+              <br />• <span className="text-green-600 dark:text-green-400 font-medium">Bebidas ≥ $30,000</span>: Hasta el mismo número de anfitrionas que la cantidad de tragos
+              <br />• <span className="text-blue-600 dark:text-blue-400 font-medium">Bebidas &lt; $30,000</span>: Una anfitriona por bebida
+              <br />• <span className="text-orange-600 dark:text-orange-400 font-medium">Productos ≥ $30,000</span>: Se puede seleccionar habitación disponible
             </div>
           )}
         </DialogHeader>
@@ -196,6 +283,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                           <TableHead className="text-center">PRECIO</TableHead>
                           <TableHead className="text-center">COMISIÓN</TableHead>
                           <TableHead className="text-center">CANTIDAD</TableHead>
+                          <TableHead className="text-center">HABITACIÓN</TableHead>
                           <TableHead className="text-center">ANFITRIONA</TableHead>
                           <TableHead className="text-center">AGREGAR</TableHead>
                         </TableRow>
@@ -205,6 +293,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                           const id = String(p.id_producto || p.id);
                           const isChampagne = isChampagneProduct(p);
                           const hasComm = hasCommission(p);
+                          const needsRoom = requiresRoom(p);
 
                           return (
                             <TableRow key={id}>
@@ -256,6 +345,29 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                 </div>
                               </TableCell>
                               <TableCell className="text-center">
+                                {needsRoom ? (
+                                  <div className="space-y-2">
+                                    <RoomSelect
+                                      habitaciones={habitaciones?.filter(h =>
+                                        (h.estado === 1 || h.status === 1) &&
+                                        (h.comision_anfitriona === 0 || !h.comision_anfitriona)
+                                      ) || []}
+                                      value={roomSelections[id] || ''}
+                                      onChange={(roomId) => onRoomChange(id, roomId)}
+                                      placeholder="Seleccionar habitación"
+                                      className="w-full"
+                                    />
+                                    {roomSelections[id] && (
+                                      <div className="text-xs text-green-600 font-medium">
+                                        ✓ Habitación asignada
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-400">-</div>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
                                 {hasComm ? (
                                   isChampagne ? (
                                     // Para champañas: usar HostessMultiSelect de shadcn/ui
@@ -268,7 +380,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                             // El componente ya maneja el límite internamente
                                             onChampagneHostessChange(id, selectedIds);
                                           }}
-                                          searchValue={hostessSearchValues[id] || ''}
+                                          searchValue={debouncedSearchValues[id] || ''}
                                           onSearchChange={(searchValue) => {
                                             setHostessSearchValues(prev => ({
                                               ...prev,
@@ -303,37 +415,74 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                       </div>
                                     </div>
                                   ) : (
-                                    // Para otras bebidas con comisión: usar IndividualHostessSelect
+                                    // Para otras bebidas con comisión
                                     <div className="space-y-2">
-                                      <IndividualHostessSelect
-                                        anfitrionas={getAvailableHostessesForOtherProducts(id)}
-                                        value={otherProductHostessSelections[id]?.[0] || ''}
-                                        onChange={(selectedValue) => {
-                                          onOtherProductHostessChange(id, selectedValue ? [selectedValue] : []);
-                                        }}
-                                        placeholder={
-                                          getAvailableHostessesForOtherProducts(id).length === 0
-                                            ? "No hay anfitrionas disponibles"
-                                            : "Seleccionar anfitriona"
+                                      {(() => {
+                                        const currentProduct = productosCategoria.find(p => String(p.id_producto || p.id) === id);
+                                        const precio = Number(currentProduct?.precio || currentProduct?.price || 0);
+                                        const cantidad = cantidades[id] || 1;
+
+                                        // Si el precio es >= 30000, permitir múltiples anfitrionas (hasta la cantidad)
+                                        if (precio >= 30000) {
+                                          return (
+                                            <>
+                                              <HostessMultiSelect
+                                                anfitrionas={getAvailableHostessesForOtherProducts(id)}
+                                                value={otherProductHostessSelections[id] || []}
+                                                onChange={(selectedIds) => {
+                                                  onOtherProductHostessChange(id, selectedIds);
+                                                }}
+                                                searchValue={debouncedSearchValues[id] || ''}
+                                                onSearchChange={(searchValue) => {
+                                                  setHostessSearchValues(prev => ({
+                                                    ...prev,
+                                                    [id]: searchValue
+                                                  }));
+                                                }}
+                                                maxSelection={cantidad}
+                                              />
+                                              <div className="text-xs text-gray-500">
+                                                {otherProductHostessSelections[id]?.length || 0} de {cantidad} seleccionadas
+                                              </div>
+                                            </>
+                                          );
                                         }
-                                        className="w-full"
-                                      />
-                                      {otherProductHostessSelections[id]?.length > 0 ? (
-                                        <div className="text-xs text-green-600 font-medium">
-                                          ✓ Asignada: {(() => {
-                                            const hostessId = otherProductHostessSelections[id][0];
-                                            const hostess = availableHostesses.find(h => String(h.id || h.id_usuario) === hostessId);
-                                            return hostess?.nick || hostess?.name || hostess?.nombre || hostessId;
-                                          })()}
-                                        </div>
-                                      ) : (
-                                        <div className="text-xs text-gray-500">
-                                          {getAvailableHostessesForOtherProducts(id).length === 0
-                                            ? "Todas las anfitrionas están asignadas"
-                                            : "Una anfitriona por bebida"
-                                          }
-                                        </div>
-                                      )}
+
+                                        // Para bebidas < 30000, usar selector individual
+                                        return (
+                                          <>
+                                            <IndividualHostessSelect
+                                              anfitrionas={getAvailableHostessesForOtherProducts(id)}
+                                              value={otherProductHostessSelections[id]?.[0] || ''}
+                                              onChange={(selectedValue) => {
+                                                onOtherProductHostessChange(id, selectedValue ? [selectedValue] : []);
+                                              }}
+                                              placeholder={
+                                                getAvailableHostessesForOtherProducts(id).length === 0
+                                                  ? "No hay anfitrionas disponibles"
+                                                  : "Seleccionar anfitriona"
+                                              }
+                                              className="w-full"
+                                            />
+                                            {otherProductHostessSelections[id]?.length > 0 ? (
+                                              <div className="text-xs text-green-600 font-medium">
+                                                ✓ Asignada: {(() => {
+                                                  const hostessId = otherProductHostessSelections[id][0];
+                                                  const hostess = availableHostesses.find(h => String(h.id || h.id_usuario) === hostessId);
+                                                  return hostess?.nick || hostess?.name || hostess?.nombre || hostessId;
+                                                })()}
+                                              </div>
+                                            ) : (
+                                              <div className="text-xs text-gray-500">
+                                                {getAvailableHostessesForOtherProducts(id).length === 0
+                                                  ? "Todas las anfitrionas están asignadas"
+                                                  : "Una anfitriona por bebida"
+                                                }
+                                              </div>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                   )
                                 ) : (
@@ -346,13 +495,15 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                   variant="outline"
                                   className="rounded-full bg-black text-white hover:scale-110 transition-all duration-200"
                                   onClick={() => {
-                                    // Agregar información de anfitriona al producto
+                                    // Agregar información de anfitriona y habitación al producto
                                     const productWithExtras = {
                                       ...p,
                                       selectedHostesses: isChampagne
                                         ? champagneHostessSelections[id] || []
                                         : otherProductHostessSelections[id] || [],
-                                      isChampagne: isChampagne
+                                      isChampagne: isChampagne,
+                                      selectedRoom: roomSelections[id] || null,
+                                      requiresRoom: needsRoom
                                     };
                                     handleAgregarProducto(productWithExtras);
                                   }}

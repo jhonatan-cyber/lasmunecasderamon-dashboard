@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,10 +11,33 @@ import {
   DollarSign, 
   Calendar
 } from 'lucide-react';
-import { SalesReport } from '@/components/reports/SalesReport';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { CashRegisterReport } from '@/components/reports/CashRegisterReport';
-import { CommissionsReport } from '@/components/reports/CommissionsReport';
+import { ReportSkeleton } from '@/components/ui/skeletons';
+
+// Lazy loading de reportes pesados
+const SalesReport = dynamic(
+  () => import('@/components/reports/SalesReport').then(mod => ({ default: mod.SalesReport })),
+  { 
+    loading: () => <ReportSkeleton />,
+    ssr: false 
+  }
+);
+
+const CommissionsReport = dynamic(
+  () => import('@/components/reports/CommissionsReport').then(mod => ({ default: mod.CommissionsReport })),
+  { 
+    loading: () => <ReportSkeleton />,
+    ssr: false 
+  }
+);
+
+const CashRegisterReport = dynamic(
+  () => import('@/components/reports/CashRegisterReport').then(mod => ({ default: mod.CashRegisterReport })),
+  { 
+    loading: () => <ReportSkeleton />,
+    ssr: false 
+  }
+);
 
 
 

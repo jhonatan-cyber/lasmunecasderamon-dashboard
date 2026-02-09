@@ -16,21 +16,13 @@ const checkPermission = async (req: NextApiRequest, module: string, action: stri
     // Obtener el usuario actual desde la sesión o token
     const user = (req as any).user;
     
-    console.log('[checkPermission API] Usuario:', {
-      id: user?.id,
-      role: user?.role,
-      roleId: user?.roleId
-    });
-    
     // Si es administrador, tiene acceso a todo
     if (user?.role?.toLowerCase() === 'administrador') {
-      console.log('[checkPermission API] Es administrador - acceso permitido');
       return true;
     }
 
     // Obtener el rol del usuario
     if (!user?.roleId) {
-      console.log('[checkPermission API] ❌ No tiene roleId');
       return false;
     }
 
@@ -44,14 +36,6 @@ const checkPermission = async (req: NextApiRequest, module: string, action: stri
 
     const hasPermission = permissionCheck[0].has_permission > 0;
     
-    console.log('[checkPermission API] Resultado:', {
-      roleId: user.roleId,
-      module,
-      action,
-      hasPermission,
-      count: permissionCheck[0].has_permission
-    });
-
     return hasPermission;
   } catch (error) {
     console.error('[checkPermission API] Error:', error);
@@ -143,9 +127,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     const { anfitrionas } = req.query;
 
     if (anfitrionas === '1') {
-      // Obtener solo anfitrionas
+      // Obtener todas las anfitrionas (sin filtrar por estado)
       const anfitrionasData = (await query(
-        `SELECT u.*, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.estado = 1 AND r.nombre = 'anfitriona'`
+        `SELECT u.*, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE r.nombre = 'anfitriona'`
       )) as any[];
 
       return res.status(200).json({

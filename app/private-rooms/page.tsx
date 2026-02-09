@@ -25,12 +25,6 @@ export default function ServiciosPage() {
   const canEdit = hasPermission('privados', 'editar');
   const canFinalize = hasPermission('privados', 'finalizar');
   
-  console.log('[ServiciosPage] Permisos:', {
-    canCreate,
-    canEdit,
-    canFinalize
-  });
-  
   const {
     servicios,
     loading,

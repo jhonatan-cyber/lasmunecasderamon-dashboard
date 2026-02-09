@@ -43,8 +43,7 @@ const RoomsPage = () => {
     deleteRoom,
     activateRoom,
     deactivateRoom,
-    occupyRoom,
-    reorderRooms
+    occupyRoom
   } = useRooms();
 
   const { hasPermission } = useUserPermissions();
@@ -55,16 +54,6 @@ const RoomsPage = () => {
   const canDeactivate = hasPermission('habitaciones', 'desactivar');
   const canOccupy = hasPermission('habitaciones', 'ocupar');
   const canLiberate = hasPermission('habitaciones', 'liberar');
-
-  console.log('[RoomsPage] Permisos:', {
-    canCreate,
-    canEdit,
-    canDelete,
-    canActivate,
-    canDeactivate,
-    canOccupy,
-    canLiberate
-  });
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editRoom, setEditRoom] = useState<Room | null>(null);
@@ -121,8 +110,8 @@ const RoomsPage = () => {
       const newRooms = arrayMove(localRooms, oldIndex, newIndex);
       setLocalRooms(newRooms);
 
-      // Llamar al callback de reordenamiento
-      reorderRooms(newRooms);
+      // TODO: Implementar reordenamiento en el backend
+      // reorderRooms(newRooms);
     }
   };
 
@@ -245,7 +234,6 @@ const RoomsPage = () => {
               onActivate={handleActivate}
               onDeactivate={handleDeactivate}
               onOccupy={handleOccupy}
-              onReorder={reorderRooms}
               canEdit={canEdit}
               canDelete={canDelete}
               canActivate={canActivate}

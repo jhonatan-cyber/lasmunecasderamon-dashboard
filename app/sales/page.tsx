@@ -53,6 +53,20 @@ export default function Sales() {
     handleRefresh();
   }, []); 
 
+  // Escuchar evento de venta registrada para refrescar automáticamente
+  useEffect(() => {
+    const handleVentaRegistrada = () => {
+      console.log('[Sales] Evento ventaRegistrada recibido - refrescando ventas');
+      handleRefresh();
+    };
+
+    window.addEventListener('ventaRegistrada', handleVentaRegistrada);
+    
+    return () => {
+      window.removeEventListener('ventaRegistrada', handleVentaRegistrada);
+    };
+  }, [handleRefresh]);
+
  
   useEffect(() => {
     setRefreshCallback(() => handleRefresh);

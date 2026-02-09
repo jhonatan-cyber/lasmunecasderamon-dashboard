@@ -11,7 +11,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // @ts-ignore - El usuario ya está disponible gracias al middleware withAuth
     const user = req.user;
 
-    // Consulta para obtener los pedidos del usuario
+    // Consulta para obtener los pedidos del usuario (todos los estados)
     const orders = await db.query(
       `
   SELECT 
@@ -25,14 +25,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
         WHERE PU.pedido_id = P.id_pedido
     ) AS nicks,
-
     P.subtotal,
     P.total,
-    P.estado
+    P.estado,
+    P.fecha_crea,
+    P.fecha_mod
     FROM pedidos P
 LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
 LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
-WHERE P.mesero_id = ? AND P.estado = 1;
+WHERE P.mesero_id = ?
+ORDER BY P.fecha_crea DESC;
     `,
       [user.id]
     );
