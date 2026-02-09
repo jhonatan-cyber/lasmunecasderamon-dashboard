@@ -2,6 +2,7 @@ import { User as UserType } from '@/types/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import {
   MoreVertical,
   Eye,
@@ -235,9 +236,19 @@ export function UserTable({
                   <div className='flex items-center gap-2'>
                     <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
                       <AvatarImage
-                        src={`/img/users/${user.foto}` || '/img/users/default.png'}
+                        src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
                         alt={user.name}
-                      />
+                        asChild
+                      >
+                        <Image
+                          src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+                          alt={user.name}
+                          width={40}
+                          height={40}
+                          loading="lazy"
+                          className="object-cover"
+                        />
+                      </AvatarImage>
                       <AvatarFallback className='text-xs sm:text-sm'>
                         {user.name?.charAt(0) || 'U'}
                       </AvatarFallback>
@@ -397,9 +408,19 @@ export function UserTable({
                 <div className='flex items-center space-x-2 sm:space-x-3'>
                   <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
                     <AvatarImage
-                      src={`/img/users/${user.foto}` || '/img/users/default.png'}
+                      src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
                       alt={user.name}
-                    />
+                      asChild
+                    >
+                      <Image
+                        src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+                        alt={user.name}
+                        width={40}
+                        height={40}
+                        loading="lazy"
+                        className="object-cover"
+                      />
+                    </AvatarImage>
                     <AvatarFallback className='text-xs sm:text-sm'>
                       {user.name?.charAt(0) || 'U'}
                     </AvatarFallback>

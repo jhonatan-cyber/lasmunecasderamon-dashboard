@@ -28,7 +28,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Obtener anfitrionas disponibles (no ocupadas en servicios activos)
+    // Obtener anfitrionas disponibles (estado = 1)
+    // Excluir las que están:
+    // 1. En servicios activos (estado = 1)
+    // 2. En ventas activas con habitación y tiempo (estado = 1 con habitacion_id y tiempo > 0)
     const anfitrionasDisponibles = (await query(
       `SELECT u.*, r.nombre as rol_nombre, r.id_rol 
        FROM usuarios u 
@@ -36,10 +39,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        WHERE u.estado = 1 
        AND r.nombre = 'anfitriona'
        AND u.id_usuario NOT IN (
+         -- Anfitrionas en servicios activos
          SELECT DISTINCT ds.usuario_id 
          FROM detalle_servicios ds
          INNER JOIN servicios s ON ds.servicio_id = s.id_servicio
          WHERE s.estado = 1
+         
+         UNION
+         
+         -- Anfitrionas en ventas activas con habitación y tiempo
+         SELECT DISTINCT vu.usuario_id
+         FROM ventas_usuarios vu
+         INNER JOIN ventas v ON vu.venta_id = v.id_venta
+         WHERE v.estado = 1 
+         AND v.habitacion_id IS NOT NULL 
+         AND v.habitacion_id > 0
+         AND v.tiempo > 0
        )
        ORDER BY u.nick ASC`
     )) as any[];

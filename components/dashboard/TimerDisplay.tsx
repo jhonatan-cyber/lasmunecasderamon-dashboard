@@ -1,5 +1,3 @@
-'use client';
-
 import { useTimer } from '@/contexts/TimerContext';
 import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,14 +6,98 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useConfirmModal } from '@/hooks/useConfirmModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { useState } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
+
+// Función memoizada para determinar el tipo de transacción
+const getTipoTransaccionLabel = (timer: any): string => {
+  if (timer.tipoTransaccion === 'servicio') {
+    return 'Servicio';
+  }
+  
+  // Para ventas, intentar determinar si es champaña o tragos
+  if (timer.tipoTransaccion === 'venta') {
+    // Si el código contiene información sobre champaña
+    const codigo = (timer.servicioCode || '').toLowerCase();
+    if (codigo.includes('champ') || codigo.includes('sham')) {
+      return 'Venta - Champaña';
+    }
+    // Por defecto, asumir que es venta de tragos
+    return 'Venta - Tragos';
+  }
+  
+  return 'Venta';
+};
+
+// Componente memoizado para cada timer individual
+const TimerItem = memo(({ 
+  timer, 
+  onStop, 
+  formatTime 
+}: { 
+  timer: any; 
+  onStop: (timerId: string, roomName: string) => void;
+  formatTime: (time: number) => string;
+}) => {
+  const tipoLabel = useMemo(() => getTipoTransaccionLabel(timer), [timer.tipoTransaccion, timer.servicioCode]);
+  
+  return (
+    <div className='flex items-center justify-between p-1 bg-gray-50 rounded border'>
+      <div className='flex-1 min-w-0'>
+        <div className='flex flex-col'>
+          <span
+            className={`font-semibold text-sm truncate ${
+              timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
+            }`}
+          >
+            Privado: {timer.roomName}
+          </span>
+          <span className='text-[9px] text-green-600 font-medium'>
+            {tipoLabel}
+          </span>
+          {timer.waiterName && (
+            <span className='text-[9px] text-purple-600 font-medium truncate'>
+              Garzón: {timer.waiterName}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className='flex items-center gap-1 ml-1'>
+        <span
+          className={`font-mono text-xs font-bold ${
+            timer.isPaused ? 'text-yellow-600' : 'text-red-600'
+          }`}
+        >
+          {formatTime(timer.remainingTime)}
+          {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
+        </span>
+        {!timer.isPaused && (
+          <Button
+            size='sm'
+            variant='outline'
+            onClick={() => onStop(timer.id, timer.roomName)}
+            className='h-5 w-5 p-0'
+          >
+            <Square className='text-xs' />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Solo re-renderizar si cambian estos valores
+  return (
+    prevProps.timer.id === nextProps.timer.id &&
+    prevProps.timer.remainingTime === nextProps.timer.remainingTime &&
+    prevProps.timer.isPaused === nextProps.timer.isPaused
+  );
+});
 
 export function TimerDisplay() {
   const { timers, stopTimer, formatTime } = useTimer();
   const { modalState, showConfirm } = useConfirmModal();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleStopTimer = async (timerId: string, roomName: string) => {
+  const handleStopTimer = useCallback(async (timerId: string, roomName: string) => {
     // Mostrar confirmación con modal personalizado antes de detener
     const confirmed = await showConfirm({
       title: 'Detener Temporizador',
@@ -30,7 +112,12 @@ export function TimerDisplay() {
       await stopTimer(timerId);
       toast.success(`Temporizador detenido para ${roomName}`);
     }
-  };
+  }, [showConfirm, stopTimer]);
+
+  // Memoizar el conteo de timers pausados
+  const pausedCount = useMemo(() => {
+    return timers.filter(t => t.isPaused).length;
+  }, [timers]);
 
   if (timers.length === 0) {
     return null; // No mostrar nada si no hay temporizadores activos
@@ -55,47 +142,11 @@ export function TimerDisplay() {
               </CardTitle>
             </CardHeader>
             <CardContent className='pt-0'>
-              <div className='flex items-center justify-between p-1 bg-gray-50 rounded border'>
-                <div className='flex-1 min-w-0'>
-                  <div className='flex flex-col'>
-                    <span
-                      className={`font-semibold text-sm truncate ${
-                        timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
-                      }`}
-                    >
-                      {timer.roomName}
-                    </span>
-                    <span className='text-[11px] text-blue-700 font-bold font-mono'>
-                      {timer.servicioCode}
-                    </span>
-                    {timer.waiterName && (
-                      <span className='text-[9px] text-purple-600 font-medium truncate'>
-                        Garzón: {timer.waiterName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className='flex items-center gap-1 ml-1'>
-                  <span
-                    className={`font-mono text-xs font-bold ${
-                      timer.isPaused ? 'text-yellow-600' : 'text-red-600'
-                    }`}
-                  >
-                    {formatTime(timer.remainingTime)}
-                    {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
-                  </span>
-                  {!timer.isPaused && (
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      onClick={() => handleStopTimer(timer.id, timer.roomName)}
-                      className='h-5 w-5 p-0'
-                    >
-                      <Square className='text-xs' />
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <TimerItem
+                timer={timer}
+                onStop={handleStopTimer}
+                formatTime={formatTime}
+              />
             </CardContent>
           </Card>
         </div>
@@ -133,57 +184,20 @@ export function TimerDisplay() {
               <Badge variant='secondary' className='ml-auto text-xs'>
                 {timers.length}
               </Badge>
-              {timers.some(t => t.isPaused) && (
+              {pausedCount > 0 && (
                 <Badge variant='outline' className='text-yellow-600 border-yellow-600 text-xs'>
-                  {timers.filter(t => t.isPaused).length} Pausado
-                  {timers.filter(t => t.isPaused).length !== 1 ? 's' : ''}
+                  {pausedCount} Pausado{pausedCount !== 1 ? 's' : ''}
                 </Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className='pt-0'>
             {/* Timer principal (siempre visible) */}
-            <div className='flex items-center justify-between p-1 bg-gray-50 rounded border'>
-              <div className='flex-1 min-w-0'>
-                <div className='flex flex-col'>
-                  <span
-                    className={`font-semibold text-sm truncate ${
-                      firstTimer.isPaused ? 'text-yellow-600' : 'text-gray-900'
-                    }`}
-                  >
-                    {firstTimer.roomName}
-                  </span>
-                  <span className='text-[11px] text-blue-700 font-bold font-mono'>
-                    {firstTimer.servicioCode}
-                  </span>
-                  {firstTimer.waiterName && (
-                    <span className='text-[9px] text-purple-600 font-medium truncate'>
-                      Garzón: {firstTimer.waiterName}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className='flex items-center gap-1 ml-1'>
-                <span
-                  className={`font-mono text-xs font-bold ${
-                    firstTimer.isPaused ? 'text-yellow-600' : 'text-red-600'
-                  }`}
-                >
-                  {formatTime(firstTimer.remainingTime)}
-                  {firstTimer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
-                </span>
-                {!firstTimer.isPaused && (
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    onClick={() => handleStopTimer(firstTimer.id, firstTimer.roomName)}
-                    className='h-5 w-5 p-0'
-                  >
-                    <Square className='text-xs' />
-                  </Button>
-                )}
-              </div>
-            </div>
+            <TimerItem
+              timer={firstTimer}
+              onStop={handleStopTimer}
+              formatTime={formatTime}
+            />
 
             {/* Botón para expandir/contraer */}
             <Button
@@ -204,50 +218,12 @@ export function TimerDisplay() {
             {isExpanded && (
               <div className='space-y-1 mt-1 max-h-32 overflow-y-auto'>
                 {timers.slice(1).map(timer => (
-                  <div
+                  <TimerItem
                     key={timer.id}
-                    className='flex items-center justify-between p-1 bg-gray-50 rounded border'
-                  >
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex flex-col'>
-                        <span
-                          className={`font-semibold text-sm truncate ${
-                            timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
-                          }`}
-                        >
-                          {timer.roomName}
-                        </span>
-                        <span className='text-[11px] text-blue-700 font-bold font-mono'>
-                          {timer.servicioCode}
-                        </span>
-                        {timer.waiterName && (
-                          <span className='text-[9px] text-purple-600 font-medium truncate'>
-                            Garzón: {timer.waiterName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className='flex items-center gap-1 ml-1'>
-                      <span
-                        className={`font-mono text-xs font-bold ${
-                          timer.isPaused ? 'text-yellow-600' : 'text-red-600'
-                        }`}
-                      >
-                        {formatTime(timer.remainingTime)}
-                        {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
-                      </span>
-                      {!timer.isPaused && (
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => handleStopTimer(timer.id, timer.roomName)}
-                          className='h-5 w-5 p-0'
-                        >
-                          <Square className='text-xs' />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                    timer={timer}
+                    onStop={handleStopTimer}
+                    formatTime={formatTime}
+                  />
                 ))}
               </div>
             )}

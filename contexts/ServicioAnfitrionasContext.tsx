@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 interface ServicioAnfitrionasContextType {
   anfitrionasActualizadas: Record<number, string>; // servicioId -> anfitrionas_nombres
@@ -37,12 +37,15 @@ export const ServicioAnfitrionasProvider: React.FC<{ children: React.ReactNode }
     return result;
   }, [anfitrionasActualizadas]);
 
+  // Memoizar el valor del contexto
+  const contextValue = useMemo(() => ({
+    anfitrionasActualizadas,
+    actualizarAnfitrionas,
+    obtenerAnfitrionas
+  }), [anfitrionasActualizadas, actualizarAnfitrionas, obtenerAnfitrionas]);
+
   return (
-    <ServicioAnfitrionasContext.Provider value={{
-      anfitrionasActualizadas,
-      actualizarAnfitrionas,
-      obtenerAnfitrionas
-    }}>
+    <ServicioAnfitrionasContext.Provider value={contextValue}>
       {children}
     </ServicioAnfitrionasContext.Provider>
   );

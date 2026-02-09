@@ -7,7 +7,7 @@ import { Clock, User, Home, CreditCard, Square, Users, ShoppingBag } from 'lucid
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { useTimer } from '@/contexts/TimerContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface SaleCardProps {
@@ -16,23 +16,29 @@ interface SaleCardProps {
 }
 
 export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
-  const { getTimerByServicioId, formatTime, stopTimerByServicioId } = useTimer();
+  const { getTimerByServicioId, formatTime, stopTimerByServicioId, timers } = useTimer();
   const [stopping, setStopping] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Obtener el timer sincronizado con el contexto global
   const timer = getTimerByServicioId(venta.id);
+
+  // Forzar re-render cuando cambian los timers para mantener sincronización
+  useEffect(() => {
+    // Este efecto se ejecuta cada vez que cambian los timers globales
+  }, [timers]);
 
   const confirmStopTimer = async () => {
     setStopping(true);
     try {
-      // Liberar la habitación
+      // Detener el timer usando el contexto global
       await stopTimerByServicioId(venta.id);
 
-      toast.success('Habitación liberada exitosamente');
+      toast.success('Temporizador finalizado exitosamente');
       setShowConfirm(false);
       if (onRefresh) onRefresh();
     } catch (error) {
-      toast.error('Error al liberar la habitación');
+      toast.error('Error al finalizar el temporizador');
     } finally {
       setStopping(false);
     }
@@ -45,26 +51,26 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
 
   return (
     <Card
-      className={`w-full transition-all duration-200 hover:shadow-md ${isLowTime ? 'border-red-200 bg-red-50/30' : ''}`}
+      className={`w-full transition-all duration-200 hover:shadow-md ${isLowTime ? 'border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20' : ''}`}
     >
       <div className='p-4 space-y-4'>
         {/* Header Row */}
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
             <div className='flex items-center gap-2'>
-              <Home className='w-4 h-4 text-gray-600' />
-              <span className='font-semibold text-md text-gray-900'>
+              <Home className='w-4 h-4 text-gray-600 dark:text-gray-400' />
+              <span className='font-semibold text-md text-gray-900 dark:text-neutral-100'>
                 {venta.habitacion_numero ||
-                  (venta as any).habitacion_nombre ||
+                  venta.habitacion_nombre ||
                   timer?.roomName ||
                   'S/H'}
               </span>
             </div>
-            <Badge variant='secondary' className='text-xs bg-blue-100 text-blue-800'>
+            <Badge variant='secondary' className='text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
               Venta
             </Badge>
           </div>
-          <span className='text-xs text-gray-500 font-mono'>#{venta.codigo}</span>
+          <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>#{venta.codigo}</span>
         </div>
 
         {/* Timer Section */}
@@ -72,15 +78,15 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
               <Clock
-                className={`w-4 h-4 ${isLowTime ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}
+                className={`w-4 h-4 ${isLowTime ? 'text-red-500 animate-pulse' : 'text-gray-500 dark:text-gray-400'}`}
               />
-              <span className='text-xs font-bold text-gray-400 uppercase tracking-tight'>
+              <span className='text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight'>
                 Tiempo restante
               </span>
             </div>
             <div className='text-right'>
               <span
-                className={`font-mono text-xl font-bold ${isLowTime ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}
+                className={`font-mono text-xl font-bold ${isLowTime ? 'text-red-600 dark:text-red-500' : 'text-gray-900 dark:text-gray-100'}`}
               >
                 {timer ? formatTime(timer.remainingTime) : '00:00'}
               </span>
@@ -89,7 +95,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
 
           <div className='grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60'>
             <div className='flex flex-col'>
-              <span className='text-[9px] text-gray-400 font-bold uppercase'>Ingreso</span>
+              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>Ingreso</span>
               <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
                 {(() => {
                   const date = new Date((venta.fecha_crea || '').replace(' ', 'T'));
@@ -100,7 +106,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
               </span>
             </div>
             <div className='flex flex-col'>
-              <span className='text-[9px] text-gray-400 font-bold uppercase'>Salida</span>
+              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>Salida</span>
               <span className='text-xs font-bold text-blue-600 dark:text-blue-400'>
                 {(() => {
                   const entry = new Date((venta.fecha_crea || '').replace(' ', 'T'));
@@ -111,7 +117,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
               </span>
             </div>
             <div className='flex flex-col items-end'>
-              <span className='text-[9px] text-gray-400 font-bold uppercase'>Uso</span>
+              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>Uso</span>
               <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
                 {venta.tiempo || 60} min
               </span>
@@ -125,10 +131,10 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           <div className='flex items-center gap-2'>
             <User className='w-4 h-4 text-blue-500 flex-shrink-0' />
             <div className='min-w-0'>
-              <span className='text-[10px] text-gray-400 uppercase tracking-wider block font-bold'>
+              <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                 Cliente
               </span>
-              <span className='text-sm font-medium truncate block text-gray-900'>
+              <span className='text-sm font-medium truncate block text-gray-900 dark:text-neutral-100'>
                 {venta.cliente_nombre?.toLowerCase() === 'sin cliente' || !venta.cliente_nombre
                   ? 'cliente sin registrar'
                   : venta.cliente_nombre}
@@ -140,7 +146,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           <div className='flex items-start gap-2'>
             <Users className='w-4 h-4 text-purple-500 flex-shrink-0 mt-1' />
             <div className='min-w-0 flex-1'>
-              <span className='text-[10px] text-gray-400 uppercase tracking-wider block font-bold'>
+              <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                 Anfitrionas
               </span>
               <div className='flex flex-wrap gap-1 mt-1'>
@@ -149,13 +155,13 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
                     <Badge
                       key={idx}
                       variant='outline'
-                      className='text-[10px] bg-purple-50 text-purple-700 border-purple-100'
+                      className='text-[10px] bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
                     >
                       {nick}
                     </Badge>
                   ))
                 ) : (
-                  <span className='text-xs text-gray-400 italic'>Sin anfitrionas</span>
+                  <span className='text-xs text-gray-400 dark:text-gray-500 italic'>Sin anfitrionas</span>
                 )}
               </div>
             </div>
@@ -165,12 +171,12 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           <div className='flex items-start gap-2'>
             <ShoppingBag className='w-4 h-4 text-orange-500 flex-shrink-0 mt-1' />
             <div className='min-w-0 flex-1'>
-              <span className='text-[10px] text-gray-400 uppercase tracking-wider block font-bold'>
+              <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                 Productos
               </span>
               <div className='mt-1 space-y-1'>
                 {venta.detalles?.map((det, idx) => (
-                  <div key={idx} className='text-xs text-gray-600 flex justify-between gap-2'>
+                  <div key={idx} className='text-xs text-gray-600 dark:text-gray-400 flex justify-between gap-2'>
                     <span className='truncate flex-1'>• {det.producto_nombre || 'Producto'}</span>
                     <span className='font-medium whitespace-nowrap'>x{det.cantidad}</span>
                   </div>
@@ -185,10 +191,10 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           <div className='flex items-center gap-2 text-sm'>
             <User className='w-4 h-4 text-green-600 flex-shrink-0' />
             <div className='min-w-0'>
-              <span className='text-[10px] text-gray-400 uppercase tracking-wider block font-bold'>
+              <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                 Garzón / Mesero
               </span>
-              <span className='text-sm font-medium truncate block text-gray-900'>
+              <span className='text-sm font-medium truncate block text-gray-900 dark:text-neutral-100'>
                 {venta.garzon_nombre || timer?.waiterName}
               </span>
             </div>
@@ -196,17 +202,17 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
         )}
 
         {/* Pricing Section */}
-        <div className='flex items-center justify-between pt-3 border-t border-gray-200'>
+        <div className='flex items-center justify-between pt-3 border-t border-gray-200 dark:border-neutral-800'>
           <div className='flex flex-col'>
-            <span className='text-[10px] text-gray-400 uppercase tracking-wider font-bold'>
+            <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold'>
               Total Venta
             </span>
-            <span className='font-bold text-gray-900 text-lg'>
+            <span className='font-bold text-gray-900 dark:text-neutral-100 text-lg'>
               {formatCurrencyNoDecimals(venta.total)}
             </span>
           </div>
           <div className='text-right'>
-            <div className='flex items-center justify-end gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full'>
+            <div className='flex items-center justify-end gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-2 py-1 rounded-full'>
               <CreditCard className='w-3 h-3' />
               <span className='capitalize'>{venta.metodo_pago}</span>
             </div>
@@ -231,11 +237,11 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
 
       {showConfirm && (
         <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4'>
-          <div className='bg-white rounded-lg shadow-xl p-6 max-w-sm w-full font-sans'>
+          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xl p-6 max-w-sm w-full font-sans'>
             <div className='text-center'>
               <Clock className='w-12 h-12 text-blue-500 mx-auto mb-4' />
-              <h3 className='text-lg font-semibold mb-2'>¿Finalizar temporizador?</h3>
-              <p className='text-sm text-gray-600 mb-6'>
+              <h3 className='text-lg font-semibold mb-2 text-gray-900 dark:text-neutral-100'>¿Finalizar temporizador?</h3>
+              <p className='text-sm text-gray-600 dark:text-gray-400 mb-6'>
                 Se detendrá el contador de esta venta. La habitación no cambiará su estado.
               </p>
               <div className='flex gap-3'>

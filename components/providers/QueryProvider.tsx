@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 
 interface QueryProviderProps {
@@ -28,26 +29,45 @@ export function QueryProvider({ children }: QueryProviderProps) {
             },
             // Reintentar con delay exponencial
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            // Refetch en window focus solo en producción
-            refetchOnWindowFocus: process.env.NODE_ENV === 'production',
+            // Optimizado: No refetch en window focus (evita requests innecesarios)
+            refetchOnWindowFocus: false,
             // Refetch en reconnect
-            refetchOnReconnect: true,
-            // Refetch en mount
-            refetchOnMount: true,
+            refetchOnReconnect: 'always',
+            // Optimizado: No refetch en mount si no está stale
+            refetchOnMount: false,
+            // Optimizado: Refetch interval solo para datos críticos
+            refetchInterval: false,
+            // Optimizado: Mantener datos en background
+            structuralSharing: true, // Optimización de memoria
+            // Deduplicación automática de requests
+            networkMode: 'online',
           },
           mutations: {
             // Reintentos para mutaciones
             retry: 1,
             // Retry delay para mutaciones
             retryDelay: 1000,
+            // Optimizado: Timeout para mutaciones
+            networkMode: 'online',
           },
         },
+        // Configuración global de deduplicación
+        queryCache: undefined,
+        mutationCache: undefined,
       })
   );
 
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      {/* DevTools solo en desarrollo */}
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools 
+          initialIsOpen={false} 
+          position="bottom-right"
+          buttonPosition="bottom-right"
+        />
+      )}
     </QueryClientProvider>
   );
 }

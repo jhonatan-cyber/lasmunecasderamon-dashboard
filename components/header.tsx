@@ -2,6 +2,7 @@
 
 import { Bell, User, ChevronDown, Menu, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,10 +41,18 @@ import { useNotificationsContext } from '@/contexts/NotificationsContext';
 import { useAnfitrionas } from '@/hooks/useAnfitrionas';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
-
-import OrderDetailModal from '@/components/orders/OrderDetailModal';
+import dynamic from 'next/dynamic';
 import { CodigoVerificacionHeader } from '@/components/dashboard/CodigoVerificacionHeader';
 import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
+
+// Lazy load del modal de detalle de pedido
+const OrderDetailModal = dynamic(
+  () => import('@/components/orders/OrderDetailModal'),
+  {
+    loading: () => null, // No mostrar loading en el header para no interferir con la UI
+    ssr: false
+  }
+);
 
 export function Header() {
   const router = useRouter();
@@ -819,15 +828,21 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' className='flex items-center gap-2 px-2 sm:px-3'>
                 <Avatar className='h-8 w-8'>
-                  <AvatarImage
-                    src={
-                      user?.foto
-                        ? `/img/users/${user.foto}?v=${imageVersion}`
-                        : '/img/users/default.png'
-                    }
-                    alt={user ? `${user.name} ${user.lastName}` : 'Usuario'}
-                    key={`${user?.foto}-${imageVersion}`}
-                  />
+                  <AvatarImage asChild>
+                    <Image
+                      src={
+                        user?.foto
+                          ? `/img/users/${user.foto}?v=${imageVersion}`
+                          : '/img/users/default.png'
+                      }
+                      alt={user ? `${user.name} ${user.lastName}` : 'Usuario'}
+                      width={32}
+                      height={32}
+                      loading="lazy"
+                      className="object-cover rounded-full"
+                      key={`${user?.foto}-${imageVersion}`}
+                    />
+                  </AvatarImage>
                   <AvatarFallback>
                     {user ? `${user.name?.[0] || ''}${user.lastName?.[0] || ''}` : 'U'}
                   </AvatarFallback>

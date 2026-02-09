@@ -2,11 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { FileText as FilePdf, FileSpreadsheet as FileXls } from "lucide-react";
-import ExcelJS from "exceljs";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { User } from "@/types/user";
+import { toast } from "sonner";
 
 interface ExportButtonsProps {
   users: User[];
@@ -14,68 +12,75 @@ interface ExportButtonsProps {
 }
 
 export function ExportButtons({ users }: ExportButtonsProps) {
+  const [isExporting, setIsExporting] = useState(false);
 
+  const exportToExcel = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    
+    try {
+      // Lazy load ExcelJS solo cuando se necesita
+      const ExcelJS = (await import("exceljs")).default;
+      
+      const data = users.map((user, index) => ({
+        "#": index + 1,
+        RUN: user.run || "Sin RUN",
+        Nombre: user.name || "",
+        Apellido: user.lastName || "",
+        Email: user.email || "Sin email",
+        Teléfono: user.phone || "Sin teléfono",
+        Rol: user.role || "Sin rol",
+        Estado: user.status === 1 ? "Activo" : "Inactivo",
+        "Estado Civil": user.maritalStatus || "Sin especificar",
+        AFP: user.afp || "Sin especificar",
+        Sueldo: user.salary ? `${new Intl.NumberFormat('es-CL').format(user.salary)}` : "Sin sueldo",
+        "Fecha Creación": user.created_at
+          ? new Date(user.created_at).toLocaleDateString()
+          : "Sin fecha",
+        "Última Modificación": user.updated_at
+          ? new Date(user.updated_at).toLocaleDateString()
+          : "Sin modificar",
+      }));
 
-  const exportToExcel = () => {
-    const data = users.map((user, index) => ({
-      "#": index + 1,
-      RUN: user.run || "Sin RUN",
-      Nombre: user.name || "",
-      Apellido: user.lastName || "",
-      Email: user.email || "Sin email",
-      Teléfono: user.phone || "Sin teléfono",
-      Rol: user.role || "Sin rol",
-      Estado: user.status === 1 ? "Activo" : "Inactivo",
-      "Estado Civil": user.maritalStatus || "Sin especificar",
-      AFP: user.afp || "Sin especificar",
-      Sueldo: user.salary ? `$${new Intl.NumberFormat('es-CL').format(user.salary)}` : "Sin sueldo",
-      "Fecha Creación": user.created_at
-        ? new Date(user.created_at).toLocaleDateString()
-        : "Sin fecha",
-      "Última Modificación": user.updated_at
-        ? new Date(user.updated_at).toLocaleDateString()
-        : "Sin modificar",
-    }));
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Usuarios");
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Usuarios");
+      // Definir columnas
+      worksheet.columns = [
+        { header: "#", key: "index", width: 6 },
+        { header: "RUN", key: "run", width: 20 },
+        { header: "Nombre", key: "name", width: 20 },
+        { header: "Apellido", key: "lastName", width: 20 },
+        { header: "Email", key: "email", width: 30 },
+        { header: "Teléfono", key: "phone", width: 18 },
+        { header: "Rol", key: "role", width: 16 },
+        { header: "Estado", key: "status", width: 12 },
+        { header: "Estado Civil", key: "maritalStatus", width: 16 },
+        { header: "AFP", key: "afp", width: 16 },
+        { header: "Sueldo", key: "salary", width: 16 },
+        { header: "Fecha Creación", key: "created_at", width: 16 },
+        { header: "Última Modificación", key: "updated_at", width: 16 },
+      ];
 
-    // Definir columnas
-    worksheet.columns = [
-      { header: "#", key: "index", width: 6 },
-      { header: "RUN", key: "run", width: 20 },
-      { header: "Nombre", key: "name", width: 20 },
-      { header: "Apellido", key: "lastName", width: 20 },
-      { header: "Email", key: "email", width: 30 },
-      { header: "Teléfono", key: "phone", width: 18 },
-      { header: "Rol", key: "role", width: 16 },
-      { header: "Estado", key: "status", width: 12 },
-      { header: "Estado Civil", key: "maritalStatus", width: 16 },
-      { header: "AFP", key: "afp", width: 16 },
-      { header: "Sueldo", key: "salary", width: 16 },
-      { header: "Fecha Creación", key: "created_at", width: 16 },
-      { header: "Última Modificación", key: "updated_at", width: 16 },
-    ];
-
-    data.forEach((row) => {
-      worksheet.addRow({
-        index: row['#'],
-        run: row.RUN,
-        name: row.Nombre,
-        lastName: row.Apellido,
-        email: row.Email,
-        phone: row['Teléfono'],
-        role: row.Rol,
-        status: row.Estado,
-        maritalStatus: row['Estado Civil'],
-        afp: row.AFP,
-        salary: row.Sueldo,
-        created_at: row['Fecha Creación'],
-        updated_at: row['Última Modificación'],
+      data.forEach((row) => {
+        worksheet.addRow({
+          index: row['#'],
+          run: row.RUN,
+          name: row.Nombre,
+          lastName: row.Apellido,
+          email: row.Email,
+          phone: row['Teléfono'],
+          role: row.Rol,
+          status: row.Estado,
+          maritalStatus: row['Estado Civil'],
+          afp: row.AFP,
+          salary: row.Sueldo,
+          created_at: row['Fecha Creación'],
+          updated_at: row['Última Modificación'],
+        });
       });
-    });
 
-    workbook.xlsx.writeBuffer().then((buffer) => {
+      const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -85,73 +90,95 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    });
+      
+      toast.success("Excel exportado correctamente");
+    } catch (error) {
+      console.error("Error exportando Excel:", error);
+      toast.error("Error al exportar Excel");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    const title = "Listado de Usuarios";
-    const headers = [["#", "RUN", "Nombre", "Apellido", "Email", "Teléfono", "Rol", "Estado"]];
+  const exportToPDF = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    
+    try {
+      // Lazy load jsPDF y autoTable solo cuando se necesita
+      const { jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+      
+      const doc = new jsPDF();
+      const title = "Listado de Usuarios";
+      const headers = [["#", "RUN", "Nombre", "Apellido", "Email", "Teléfono", "Rol", "Estado"]];
 
-    const data = users.map((user, index) => [
-      (index + 1).toString(),
-      user.run || "Sin RUN",
-      user.name || "",
-      user.lastName || "",
-      user.email || "Sin email",
-      user.phone || "Sin teléfono",
-      user.role || "Sin rol",
-      user.status === 1 ? "Activo" : "Inactivo",
-    ]);
+      const data = users.map((user, index) => [
+        (index + 1).toString(),
+        user.run || "Sin RUN",
+        user.name || "",
+        user.lastName || "",
+        user.email || "Sin email",
+        user.phone || "Sin teléfono",
+        user.role || "Sin rol",
+        user.status === 1 ? "Activo" : "Inactivo",
+      ]);
 
-    // Título del documento
-    doc.setFontSize(18);
-    doc.text(title, 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
+      // Título del documento
+      doc.setFontSize(18);
+      doc.text(title, 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100);
 
-    // Tabla de datos
-    autoTable(doc, {
-      head: headers,
-      body: data,
-      startY: 30,
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-        overflow: "linebreak",
-        halign: "left",
-        valign: "middle",
-      },
-      headStyles: {
-        fillColor: [22, 22, 22],
-        textColor: 255,
-        fontStyle: "bold",
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245],
-      },
-      margin: { top: 30 },
-    });
+      // Tabla de datos
+      autoTable(doc, {
+        head: headers,
+        body: data,
+        startY: 30,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: "linebreak",
+          halign: "left",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [22, 22, 22],
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { top: 30 },
+      });
 
-    // Pie de página
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(10);
-      doc.setTextColor(150);
-      doc.text(
-        `Página ${i} de ${pageCount}`,
-        doc.internal.pageSize.width - 30,
-        doc.internal.pageSize.height - 10
-      );
-      doc.text(
-        `Generado el: ${new Date().toLocaleDateString()}`,
-        14,
-        doc.internal.pageSize.height - 10
-      );
+      // Pie de página
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text(
+          `Página ${i} de ${pageCount}`,
+          doc.internal.pageSize.width - 30,
+          doc.internal.pageSize.height - 10
+        );
+        doc.text(
+          `Generado el: ${new Date().toLocaleDateString()}`,
+          14,
+          doc.internal.pageSize.height - 10
+        );
+      }
+
+      doc.save(`usuarios_${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("PDF exportado correctamente");
+    } catch (error) {
+      console.error("Error exportando PDF:", error);
+      toast.error("Error al exportar PDF");
+    } finally {
+      setIsExporting(false);
     }
-
-    doc.save(`usuarios_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const printRef = useRef<HTMLDivElement>(null);
@@ -162,21 +189,21 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         variant="outline"
         size="sm"
         onClick={exportToPDF}
+        disabled={isExporting}
         className="gap-2 rounded-full hover:text-red-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
       >
         <FilePdf className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
-        PDF
+        {isExporting ? "Exportando..." : "PDF"}
       </Button>
       <Button
         variant="outline"
         size="sm"
         onClick={exportToExcel}
+        disabled={isExporting}
         className="gap-2 rounded-full hover:text-green-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
       >
-        <FileXls
-          className="h-3 w-3 sm:h-4 sm:w-4 text-green-500"
-        />
-        Excel
+        <FileXls className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+        {isExporting ? "Exportando..." : "Excel"}
       </Button>
 
       {/* Tabla oculta para la impresión */}
@@ -236,4 +263,4 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       </div>
     </div>
   );
-} 
+}

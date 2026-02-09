@@ -19,17 +19,11 @@ export function usePermissionsSSE() {
     const eventSource = new EventSource('/api/permissions/sse');
     eventSourceRef.current = eventSource;
 
-    eventSource.onopen = () => {
-      console.log('🔌 Conectado al servidor de permisos SSE');
-    };
-
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         
         if (data.type === 'permissions-updated') {
-          console.log('📡 Permisos actualizados desde el servidor:', data);
-          
           // Emitir evento local para que useUserPermissions lo capture
           window.dispatchEvent(new CustomEvent('permissions-updated', {
             detail: { roleId: data.roleId, source: 'sse' }
@@ -48,7 +42,6 @@ export function usePermissionsSSE() {
     // Cleanup al desmontar
     return () => {
       if (eventSourceRef.current) {
-        console.log('🔌 Desconectando del servidor SSE');
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }

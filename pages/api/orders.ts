@@ -35,6 +35,8 @@ const orderSchema = z.object({
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+    console.log('[ORDERS API] 🔍 Obteniendo pedidos pendientes...');
+    
     // Consulta directa para obtener todos los pedidos con detalles
     const orders = await query(`
       SELECT
@@ -48,12 +50,16 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
         P.subtotal,
         P.total,
-        P.estado
+        P.estado,
+        P.fecha_crea
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
       WHERE P.estado = 1
+      ORDER BY P.fecha_crea DESC
     `, []);
+    
+    console.log(`[ORDERS API] ✅ Se encontraron ${Array.isArray(orders) ? orders.length : 0} pedidos pendientes`);
     
     return res.status(200).json({ success: true, data: orders });
   } catch (error) {
@@ -87,9 +93,25 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Insertar detalles
     for (const d of detalles) {
+      // Verificar si la columna habitacion_id existe, si no, agregarla
+      try {
+        await query(
+          'ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS habitacion_id INT NULL AFTER hostess_id'
+        );
+      } catch (alterError) {
+        // Si falla, intentar sin IF NOT EXISTS (para MySQL más antiguo)
+        try {
+          await query(
+            'ALTER TABLE detalle_pedidos ADD COLUMN habitacion_id INT NULL AFTER hostess_id'
+          );
+        } catch (e) {
+          // La columna ya existe, continuar
+        }
+      }
+
       const detalleResult: any = await query(
-        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [pedidoId, d.productoId, d.precio, d.comision, d.generaComision ?? 1, d.cantidad, d.subtotal, d.hostessId || null]
+        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id, habitacion_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [pedidoId, d.productoId, d.precio, d.comision, d.generaComision ?? 1, d.cantidad, d.subtotal, d.hostessId || null, d.roomId || null]
       );
       
       // Si el producto tiene anfitrionas específicamente asignadas (champañas), crear registros individuales
@@ -196,11 +218,26 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { id } = req.query;
     if (!id) return res.status(400).json({ success: false, message: 'Falta el id' });
+    
+    // Obtener información del pedido antes de eliminarlo
+    const pedidoInfo = await query('SELECT * FROM pedidos WHERE id_pedido = ?', [id]) as any[];
+    
     await rawQuery('START TRANSACTION');
     await query('DELETE FROM detalle_pedidos WHERE pedido_id = ?', [id]);
     await query('DELETE FROM pedidos_usuarios WHERE pedido_id = ?', [id]);
     await query('DELETE FROM pedidos WHERE id_pedido = ?', [id]);
     await rawQuery('COMMIT');
+    
+    // Enviar notificación en tiempo real de que el pedido fue eliminado
+    if (pedidoInfo && pedidoInfo.length > 0) {
+      console.info('[ORDERS] sending order_deleted notification', { id: Number(id), meseroId: pedidoInfo[0].mesero_id });
+      sendNotificationToAll('order_deleted', {
+        id: Number(id),
+        meseroId: pedidoInfo[0].mesero_id,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     return res.status(200).json({ success: true, message: 'Pedido eliminado correctamente' });
   } catch (error) {
     console.error('❌ Error en DELETE /api/orders:', error);
