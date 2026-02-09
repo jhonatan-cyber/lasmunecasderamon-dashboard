@@ -141,8 +141,6 @@ async function verifyToken(token: string) {
 
 async function checkUserPermission(userId: number, module: string, action: string): Promise<boolean> {
   try {
-    console.log('[checkUserPermission] Verificando:', { userId, module, action });
-    
     const mysql = await import('mysql2/promise');
     
     const connection = await mysql.createConnection({
@@ -159,10 +157,7 @@ async function checkUserPermission(userId: number, module: string, action: strin
         [userId]
       ) as any[];
 
-      console.log('[checkUserPermission] Usuario encontrado:', userRows[0]);
-
       if (!userRows || userRows.length === 0) {
-        console.log('[checkUserPermission] ❌ Usuario no encontrado');
         return false;
       }
 
@@ -178,14 +173,6 @@ async function checkUserPermission(userId: number, module: string, action: strin
 
       const hasPermission = permissionRows[0]?.has_permission > 0;
       
-      console.log('[checkUserPermission] Resultado:', {
-        roleId,
-        module,
-        action,
-        hasPermission,
-        count: permissionRows[0]?.has_permission
-      });
-
       return hasPermission;
     } finally {
       await connection.end();
@@ -282,26 +269,14 @@ export async function proxy(request: NextRequest) {
       
       // El dashboard es accesible para todos los usuarios autenticados
       if (module === 'dashboard') {
-        console.log('[Middleware] ✅ Dashboard - acceso permitido para usuario autenticado');
         return NextResponse.next();
       }
       
       const hasPermission = await checkUserPermission(userId, module, action);
       
-      console.log('[Middleware] 📊 Resultado verificación:', {
-        hasPermission,
-        module,
-        action,
-        userId,
-        willRedirect: !hasPermission
-      });
-      
       if (!hasPermission) {
-        console.log('[Middleware] ❌ Acceso denegado - redirigiendo a /access-denied');
         return NextResponse.redirect(new URL('/access-denied', request.url));
       }
-      
-      console.log('[Middleware] ✅ Acceso permitido - continuando a la página');
     }
   }
 

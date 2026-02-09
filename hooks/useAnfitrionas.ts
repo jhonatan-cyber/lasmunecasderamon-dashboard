@@ -8,9 +8,11 @@ interface Anfitriona {
   apellido?: string;
   lastName?: string;
   nick?: string;
+  estado?: number;
+  status?: number;
 }
 
-export function useAnfitrionas() {
+export function useAnfitrionas(disponiblesOnly: boolean = false) {
   const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,12 @@ export function useAnfitrionas() {
   const getAnfitrionas = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/users?anfitrionas=1");
+      // Si disponiblesOnly es true, usar el endpoint que excluye ocupadas
+      const endpoint = disponiblesOnly 
+        ? "/api/anfitrionas/disponibles" 
+        : "/api/users?anfitrionas=1";
+      
+      const response = await fetch(endpoint);
       const data = await response.json();
 
       if (data.success) {
@@ -35,7 +42,7 @@ export function useAnfitrionas() {
 
   useEffect(() => {
     getAnfitrionas();
-  }, []);
+  }, [disponiblesOnly]);
 
   return {
     anfitrionas,

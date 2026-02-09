@@ -17,9 +17,25 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import OrderDetailModal from '@/components/orders/OrderDetailModal';
+import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+
+// Lazy load del modal de detalle de pedido
+const OrderDetailModal = dynamic(
+  () => import('@/components/orders/OrderDetailModal'),
+  {
+    loading: () => (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Cargando pedido...</p>
+        </div>
+      </div>
+    ),
+    ssr: false
+  }
+);
 import { toast } from 'sonner';
 
 interface Order {
@@ -127,17 +143,21 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
+      console.log('[ORDERS PAGE] 🔍 Obteniendo pedidos...');
       setLoading(true);
       const response = await fetch('/api/orders');
       const data = await response.json();
 
+      console.log('[ORDERS PAGE] 📦 Respuesta de API:', data);
+
       if (data.success) {
+        console.log(`[ORDERS PAGE] ✅ Se cargaron ${data.data.length} pedidos`);
         setOrders(data.data);
       } else {
-        console.error('Error fetching orders:', data.message);
+        console.error('[ORDERS PAGE] ❌ Error fetching orders:', data.message);
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('[ORDERS PAGE] ❌ Error fetching orders:', error);
     } finally {
       setLoading(false);
     }
@@ -432,10 +452,6 @@ export default function OrdersPage() {
             <p className='text-gray-600'>Administra todas las órdenes del sistema</p>
           </div>
           <div className='flex gap-2'>
-            <Button onClick={() => router.back()} variant='outline' className='rounded-full'>
-              <ArrowLeft className='h-4 w-4 mr-2' />
-              Atrás
-            </Button>
             <PermissionGuard module='pedidos' action='crear' fallback={null}>
               <Button
                 onClick={handleCreateOrder}

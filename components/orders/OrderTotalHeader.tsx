@@ -19,7 +19,7 @@ const OrderTotalHeader: React.FC<OrderTotalHeaderProps> = ({
   onSubmit,
   onTipChange,
   tipPercentage: initialTipPercentage = 10,
-  tipEnabled: initialTipEnabled = true
+  tipEnabled: initialTipEnabled = false
 }) => {
   const [tipEnabled, setTipEnabled] = useState(initialTipEnabled);
   const [tipPercentage, setTipPercentage] = useState(initialTipPercentage);

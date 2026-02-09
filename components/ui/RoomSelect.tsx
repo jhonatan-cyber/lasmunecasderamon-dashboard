@@ -126,7 +126,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   };
 
   const handleValueChange = (newValue: string) => {
-    onChange(newValue);
+    // Convertir el valor especial "__none__" a string vacío
+    onChange(newValue === "__none__" ? "" : newValue);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +138,6 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   return (
     <div className={`flex flex-col ${className}`}>
       <Label className="block text-xs font-medium text-gray-500 mb-1">
-        <Home className="inline mr-1 w-4 h-4" />
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
@@ -169,6 +169,16 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
             
             {/* Lista de habitaciones */}
             <div className="max-h-60 overflow-y-auto">
+              {/* Opción para limpiar selección */}
+              {value && (
+                <SelectItem 
+                  value="__none__" 
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="text-gray-500 italic">Sin habitación</span>
+                </SelectItem>
+              )}
+              
               {filteredHabitaciones.length === 0 ? (
                 <div className="p-2 text-center text-gray-500 text-sm">
                   {searchTerm ? "No se encontraron habitaciones" : "No hay habitaciones disponibles"}

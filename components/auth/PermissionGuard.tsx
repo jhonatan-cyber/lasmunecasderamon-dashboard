@@ -29,12 +29,6 @@ export function PermissionGuard({
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-    console.log('[PermissionGuard] 🎬 Componente montado', {
-      module,
-      action,
-      requireAll,
-      actions
-    });
   }, []);
   
   if (!mounted) {
@@ -48,12 +42,6 @@ export function PermissionGuard({
   const isLoadingUser = userLoading || !user;
   
   if (isLoadingUser) {
-    console.log('[PermissionGuard] ⏳ Esperando usuario...', { 
-      userLoading, 
-      hasUser: !!user, 
-      module, 
-      action 
-    });
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -72,11 +60,6 @@ export function PermissionGuard({
 
   // Si es administrador o es el módulo dashboard, mostrar contenido inmediatamente
   if (isAdmin || isDashboardModule) {
-    console.log('[PermissionGuard] ✅ Acceso permitido (admin o dashboard)', { 
-      module, 
-      action,
-      userRole: user.role 
-    });
     return <>{children}</>;
   }
 
@@ -85,7 +68,6 @@ export function PermissionGuard({
   const shouldShowLoading = permissionsLoading && userPermissions.length === 0;
 
   if (shouldShowLoading) {
-    console.log('[PermissionGuard] ⏳ Cargando permisos...', { module, action });
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -95,16 +77,6 @@ export function PermissionGuard({
       </div>
     );
   }
-
-  // Ahora sí, loggear el estado completo antes de verificar permisos
-  console.log('[PermissionGuard] 🔍 Verificando permisos:', {
-    module,
-    action,
-    userRole: user.role,
-    userId: user.id,
-    permissionsCount: userPermissions.length,
-    availablePermissions: userPermissions.map(p => `${p.module}.${p.action}`)
-  });
 
   let hasAccess = false;
 
@@ -153,17 +125,7 @@ export function PermissionGuard({
     if (action === 'liberar') mappedAction = 'liberar';
     if (action === 'ocupar') mappedAction = 'ocupar';
     
-    console.log('[PermissionGuard] Verificando acceso:', {
-      original: `${module}.${action}`,
-      mapped: `${mappedModule}.${mappedAction}`,
-      userPermissions: userPermissions.length,
-      hasPermission: hasPermission(mappedModule, mappedAction),
-      availablePermissions: userPermissions.filter(p => p.module === mappedModule).map(p => `${p.module}.${p.action}`)
-    });
-    
     hasAccess = hasPermission(mappedModule, mappedAction);
-    
-    console.log('[PermissionGuard] Resultado:', hasAccess ? '✅ ACCESO PERMITIDO' : '❌ ACCESO DENEGADO');
   } else {
     hasAccess = hasAnyPermission(module);
   }

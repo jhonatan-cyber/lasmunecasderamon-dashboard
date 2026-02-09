@@ -37,13 +37,18 @@ export default function GarzonPedidosPage() {
 
   // Fetch pedidos del usuario
   const fetchOrders = async () => {
-    setLoading(true);
+    // Solo mostrar loading en la primera carga
+    if (orders.length === 0) {
+      setLoading(true);
+    }
+    
     try {
       const response = await fetch("/api/orders/user");
       const data = await response.json();
       
       if (data.success) {
         setOrders(data.data || []);
+        console.log('✅ Pedidos actualizados:', data.data?.length || 0);
       } else {
         console.error('Error fetching orders:', data.message);
       }
@@ -56,7 +61,17 @@ export default function GarzonPedidosPage() {
 
   useEffect(() => {
     if (user && !userLoading) {
+      console.log('🔄 Iniciando carga de pedidos para usuario:', user.id);
       fetchOrders();
+      
+      // Actualización automática cada 3 segundos
+      const interval = setInterval(() => {
+        fetchOrders();
+      }, 3000);
+      
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [user, userLoading]);
 
@@ -109,24 +124,44 @@ export default function GarzonPedidosPage() {
   const totalOrders = orders.length;
   const totalAmount = orders.reduce((sum, order) => sum + (order.total || 0), 0);
   const pendingOrders = orders.filter(order => order.estado === 1).length;
-  const completedOrders = orders.filter(order => order.estado === 0).length;
+  const approvedOrders = orders.filter(order => order.estado === 0).length;
+  const rejectedOrders = orders.filter(order => order.estado === 2).length;
 
 
 
   // Obtener badge de estado
   const getStatusBadge = (estado: number) => {
-    if (estado === 1) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-          Pendiente
-        </span>
-      );
-    } else {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Completado
-        </span>
-      );
+    switch (estado) {
+      case 1:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            Pendiente
+          </span>
+        );
+      case 0:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            Aprobado
+          </span>
+        );
+      case 2:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            Rechazado
+          </span>
+        );
+      case 3:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            Cancelado
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            Desconocido
+          </span>
+        );
     }
   };
 
@@ -184,7 +219,7 @@ export default function GarzonPedidosPage() {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
@@ -196,7 +231,7 @@ export default function GarzonPedidosPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{pendingOrders}</p>
+              <p className="text-2xl font-bold text-yellow-600">{pendingOrders}</p>
               <p className="text-sm text-gray-600">Pendientes</p>
             </div>
           </CardContent>
@@ -204,8 +239,16 @@ export default function GarzonPedidosPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
-              <p className="text-sm text-gray-600">Completados</p>
+              <p className="text-2xl font-bold text-green-600">{approvedOrders}</p>
+              <p className="text-sm text-gray-600">Aprobados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{rejectedOrders}</p>
+              <p className="text-sm text-gray-600">Rechazados</p>
             </div>
           </CardContent>
         </Card>
@@ -246,7 +289,9 @@ export default function GarzonPedidosPage() {
                  <SelectContent>
                    <SelectItem value="all">Todos</SelectItem>
                    <SelectItem value="1">Pendiente</SelectItem>
-                   <SelectItem value="0">Completado</SelectItem>
+                   <SelectItem value="0">Aprobado</SelectItem>
+                   <SelectItem value="2">Rechazado</SelectItem>
+                   <SelectItem value="3">Cancelado</SelectItem>
                  </SelectContent>
                </Select>
             </div>

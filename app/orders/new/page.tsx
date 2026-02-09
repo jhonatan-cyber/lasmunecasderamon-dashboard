@@ -17,7 +17,7 @@ export default function NewOrder() {
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]); // productos agregados
   const { clientes, loading: loadingClientes } = useClientes();
-  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas();
+  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas(false); // false = todas las anfitrionas
   const [searchCliente, setSearchCliente] = useState("");
   const [searchAnfitriona, setSearchAnfitriona] = useState("");
   const [categorias, setCategorias] = useState<any[]>([]);

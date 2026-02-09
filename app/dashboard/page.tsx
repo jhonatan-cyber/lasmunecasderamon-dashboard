@@ -1,13 +1,32 @@
 'use client';
 
-import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
-import DashboardStatsCards from '@/components/dashboard/DashboardStatsCards';
-import { SalesChart } from '@/components/sales-chart';
-import { WeeklySalesChart } from '@/components/weekly-sales-chart';
-
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/ui/skeletons';
+
+// Lazy load de componentes pesados
+const LoggedUsersCards = dynamic(
+  () => import('@/components/dashboard/LoggedUsersCards'),
+  { loading: () => <StatsCardSkeleton /> }
+);
+
+const DashboardStatsCards = dynamic(
+  () => import('@/components/dashboard/DashboardStatsCards'),
+  { loading: () => <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">{[...Array(4)].map((_, i) => <StatsCardSkeleton key={i} />)}</div> }
+);
+
+const SalesChart = dynamic(
+  () => import('@/components/sales-chart').then(mod => ({ default: mod.SalesChart })),
+  { loading: () => <ChartSkeleton /> }
+);
+
+const WeeklySalesChart = dynamic(
+  () => import('@/components/weekly-sales-chart').then(mod => ({ default: mod.WeeklySalesChart })),
+  { loading: () => <ChartSkeleton /> }
+);
 
 export default function Dashboard() {
   const { user, loading } = useCurrentUser();
