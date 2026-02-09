@@ -166,15 +166,12 @@ export function Sidebar() {
     
     // Si no hay permisos cargados, no tiene acceso
     if (!permissions.length) {
-      console.log(`[Sidebar] No hay permisos para verificar ${module}.${action}`);
       return false;
     }
 
     const hasPermission = permissions.some(
       permission => permission.module === module && permission.action === action
     );
-    
-    console.log(`[Sidebar] Verificando ${module}.${action} = ${hasPermission}`);
     
     return hasPermission;
   };
@@ -188,15 +185,6 @@ export function Sidebar() {
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
   const needsPermissions = user && !isAdmin;
   const permissionsReady = !needsPermissions || permissions.length > 0;
-  
-  console.log('[Sidebar] Estado de carga:', {
-    mounted,
-    userLoading,
-    needsPermissions,
-    permissionsLoading,
-    permissionsReady,
-    permissionsCount: permissions.length
-  });
   
   if (!mounted || userLoading || (needsPermissions && permissionsLoading && !permissionsReady)) {
     return (
@@ -243,36 +231,12 @@ export function Sidebar() {
     );
   }
 
-  // Log para debugging
-  console.log('[Sidebar] Renderizando con permisos:', {
-    permissionsCount: permissions.length,
-    userRole: user?.role,
-    isAdmin,
-    permissionsReady
-  });
-
   // Filtrar listas por permisos
   const allowedPrincipal = navigation.filter(item => hasModulePermission(item.module, item.action));
   const allowedHR = hrNavigation.filter(item => hasModulePermission(item.module, item.action));
   const allowedFinance = financeNavigation.filter(item => hasModulePermission(item.module, item.action));
   const allowedService = serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
   const allowedSecondary = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
-
-  // Log específico para productos
-  console.log('[Sidebar] Verificando módulo productos:', {
-    hasProductosVer: hasModulePermission('productos', 'ver'),
-    productosPermissions: permissions.filter(p => p.module === 'productos'),
-    allPermissions: permissions.map(p => `${p.module}.${p.action}`)
-  });
-
-  // Log para debugging
-  console.log('[Sidebar] Items permitidos:', {
-    principal: allowedPrincipal.length,
-    hr: allowedHR.length,
-    finance: allowedFinance.length,
-    service: allowedService.length,
-    secondary: allowedSecondary.length
-  });
 
   const SidebarContent = () => (
     <div

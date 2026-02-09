@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -55,6 +56,7 @@ export const CerrarCajaDialog = ({
     id_caja: 0,
     usuario_id_cierre: 0,
     fecha_cierre: new Date().toISOString(),
+    monto_cierre: 0,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -68,6 +70,7 @@ export const CerrarCajaDialog = ({
         id_caja: caja.id_caja,
         usuario_id_cierre: currentUser.id,
         fecha_cierre: new Date().toISOString(),
+        monto_cierre: 0,
       });
     }
   }, [caja, currentUser]);
@@ -83,6 +86,11 @@ export const CerrarCajaDialog = ({
     e.preventDefault();
 
     if (!validateForm()) {
+      return;
+    }
+
+    if (!caja) {
+      toast.error('No hay caja seleccionada');
       return;
     }
 
@@ -109,6 +117,7 @@ export const CerrarCajaDialog = ({
         id_caja: 0,
         usuario_id_cierre: 0,
         fecha_cierre: new Date().toISOString(),
+        monto_cierre: 0,
       });
       setErrors({});
     } catch (error) {
@@ -122,6 +131,7 @@ export const CerrarCajaDialog = ({
       id_caja: 0,
       usuario_id_cierre: 0,
       fecha_cierre: new Date().toISOString(),
+      monto_cierre: 0,
     });
     setErrors({});
   };

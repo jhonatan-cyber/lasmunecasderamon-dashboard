@@ -57,7 +57,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     // Función para verificar autorización
     const checkAuth = () => {
       // Si es una ruta pública, permitir acceso
-      if (publicRoutes.some(route => pathname === route || pathname.startsWith(route))) {
+      if (pathname && publicRoutes.some(route => pathname === route || pathname.startsWith(route))) {
         setAuthorized(true);
         setChecking(false);
         return;
@@ -70,7 +70,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       // Si no hay usuario, redirigir a login
       if (!user) {
-        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        router.push(`/login?redirect=${encodeURIComponent(pathname || '/')}`);
         return;
       }
 
@@ -87,7 +87,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       const sortedRoutes = Object.entries(routePermissions).sort((a, b) => b[0].length - a[0].length);
       
       const requiredPermission = sortedRoutes.find(([route]) => 
-        pathname === route || pathname.startsWith(route + '/')
+        pathname && (pathname === route || pathname.startsWith(route + '/'))
       );
 
       // Si no hay permiso definido para esta ruta, permitir acceso
@@ -123,12 +123,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       if (!hasAccess) {
         // Redirigir a página de acceso denegado
-        console.log('[RouteGuard] ❌ Acceso denegado - redirigiendo a /access-denied');
         router.push('/access-denied');
         return;
       }
 
-      console.log('[RouteGuard] ✅ Acceso permitido');
       setAuthorized(true);
       setChecking(false);
     };

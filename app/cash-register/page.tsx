@@ -40,15 +40,6 @@ export default function CashRegister() {
   const canViewDetails = hasPermission('caja', 'ver_detalles');
   const canWithdrawMoney = hasPermission('caja', 'retirar_efectivo');
 
-  // Debug: Log para verificar permisos
-  console.log('🔍 Cash Register Permissions:', {
-    canOpenCaja,
-    canCloseCaja,
-    canViewDetails,
-    canWithdrawMoney,
-    userRole: user?.role
-  });
-
   // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
     const matchesSearch =

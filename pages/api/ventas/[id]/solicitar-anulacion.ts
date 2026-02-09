@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { enviarMensajeAnulacion } from '@/lib/whatsappService';
 import { withAuth } from '@/lib/middleware/auth';
+import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -99,6 +100,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       estado,
       ventaId
     ]);
+
+    // Enviar notificación SSE a todos los clientes para actualizar en tiempo real
+    sendNotificationToAll('sale_cancelled', {
+      ventaId,
+      codigo: venta.codigo,
+      estado
+    });
 
     // Generar token único para esta solicitud
     const token =

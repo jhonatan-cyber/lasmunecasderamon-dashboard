@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useQuery } from '@tanstack/react-query';
 
 interface NotificationData {
   id: number;
@@ -14,6 +15,7 @@ interface NotificationData {
 }
 
 export function useNotifications() {
+  console.log('🔔🔔🔔 [useNotifications] HOOK INICIALIZADO 🔔🔔🔔');
   const [isConnected, setIsConnected] = useState(false);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [lastNotification, setLastNotification] = useState<any>(null);
@@ -22,30 +24,41 @@ export function useNotifications() {
   const isConnectingRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const { user } = useCurrentUser();
+  
+  console.log('🔔 [useNotifications] Usuario actual:', user?.id, user?.nick);
 
-  const loadPendingCounts = useCallback(async () => {
-    try {
+  // Usar React Query para cachear y optimizar las peticiones de conteo
+  const { data: pendingCounts, refetch: refetchCounts } = useQuery({
+    queryKey: ['notifications', 'pending-count'],
+    queryFn: async () => {
       const res = await fetch('/api/notifications/pending-count');
+      if (!res.ok) throw new Error('Failed to fetch pending counts');
+      return res.json();
+    },
+    staleTime: 20000, // 20 segundos
+    refetchInterval: 30000, // Refetch cada 30 segundos
+    refetchOnWindowFocus: true,
+  });
 
-      if (res.ok) {
-        const data = await res.json();
-
-        setPendingOrdersCount(data.pedidosCount || 0);
-        setPendingServiceRequestsCount(data.solicitudesCount || 0);
-      }
-    } catch (error) {
-      console.error('[useNotifications] Error cargando conteos de notificaciones:', error);
+  // Actualizar los contadores cuando cambien los datos de React Query
+  useEffect(() => {
+    if (pendingCounts) {
+      setPendingOrdersCount(pendingCounts.pedidosCount || 0);
+      setPendingServiceRequestsCount(pendingCounts.solicitudesCount || 0);
     }
-  }, []);
+  }, [pendingCounts]);
+
+  // Función memoizada para cargar conteos manualmente
+  const loadPendingCounts = useCallback(async () => {
+    refetchCounts();
+  }, [refetchCounts]);
 
   // Cargar ambos conteos de notificaciones al inicializar
-  useEffect(() => {
-    loadPendingCounts();
-  }, [loadPendingCounts]);
+  // Ya no es necesario porque React Query lo maneja automáticamente
 
   // Actualizar conteos cuando se disparen eventos locales
   useEffect(() => {
-    const handleRefresh = () => loadPendingCounts();
+    const handleRefresh = () => refetchCounts();
 
     window.addEventListener('updatePendingOrders', handleRefresh);
     window.addEventListener('updateServiceRequests', handleRefresh);
@@ -56,22 +69,32 @@ export function useNotifications() {
       window.removeEventListener('updateServiceRequests', handleRefresh);
       window.removeEventListener('refreshNotifications', handleRefresh);
     };
-  }, [loadPendingCounts]);
+  }, [refetchCounts]);
 
-  const playNotificationSound = () => {
+  const playNotificationSound = useCallback(() => {
     try {
       const audio = new Audio('/notification.mp3');
       audio.play().catch(() => {});
     } catch (_) {}
-  };
+  }, []);
 
   const showNotification = useCallback(
     (data: NotificationData) => {
+      console.log('[useNotifications] showNotification llamado:', {
+        user,
+        userId: user?.id,
+        createdBy: data.createdBy,
+        shouldSkip: user && data.createdBy && user.id === data.createdBy
+      });
+
       if (user && data.createdBy && user.id === data.createdBy) {
+        console.log('[useNotifications] Notificación omitida - el usuario creó el pedido');
         const event = new CustomEvent('updatePendingOrders');
         window.dispatchEvent(event);
         return;
       }
+      
+      console.log('[useNotifications] Mostrando notificación de pedido');
       // Para asegurar que todos vean la notificación durante la depuración, no filtramos por rol
       playNotificationSound();
       toast.success(`¡NUEVO PEDIDO! #${data.codigo}`, {
@@ -108,7 +131,7 @@ export function useNotifications() {
       const openModalEvent = new CustomEvent('openOrderModal', { detail: { orderId: data.id } });
       window.dispatchEvent(openModalEvent);
     },
-    [user]
+    [user, playNotificationSound]
   );
 
   const showServiceNotification = useCallback(
@@ -149,10 +172,10 @@ export function useNotifications() {
       const openModalEvent = new CustomEvent('openServiceRequestModal', { detail: data });
       window.dispatchEvent(openModalEvent);
     },
-    [user]
+    [user, playNotificationSound]
   );
 
-  const cleanup = () => {
+  const cleanup = useCallback(() => {
     if (eventSourceRef.current) {
       try {
         eventSourceRef.current.close();
@@ -160,18 +183,21 @@ export function useNotifications() {
       eventSourceRef.current = null;
     }
     setIsConnected(false);
-  };
+  }, []);
 
   const connectSSE = useCallback(() => {
     if (isConnectingRef.current || eventSourceRef.current) {
+      console.log('🔔 [useNotifications] Ya hay una conexión activa');
       return;
     }
+    console.log('🔔🔔🔔 [useNotifications] INICIANDO CONEXIÓN SSE 🔔🔔🔔');
     isConnectingRef.current = true;
 
     const es = new EventSource('/api/notifications/sse');
     eventSourceRef.current = es;
 
     es.onopen = () => {
+      console.log('🔔✅ [useNotifications] CONEXIÓN SSE ESTABLECIDA ✅🔔');
       setIsConnected(true);
       setConnectionAttempts(0);
       isConnectingRef.current = false;
@@ -180,8 +206,10 @@ export function useNotifications() {
     es.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
+        console.log('🔔📨 [useNotifications] MENSAJE SSE RECIBIDO:', payload.type);
 
         if (payload?.type === 'new_order' && payload?.data) {
+          console.log('🔔🆕 [useNotifications] PROCESANDO NEW_ORDER:', payload.data);
           showNotification(payload.data as NotificationData);
 
           setPendingOrdersCount(prev => {
@@ -226,8 +254,31 @@ export function useNotifications() {
         }
 
         if (payload?.type === 'order_updated') {
+          // Decrementar el contador cuando se procesa un pedido
+          setPendingOrdersCount(prev => Math.max(0, prev - 1));
           const updateEvent = new CustomEvent('updatePendingOrders');
           window.dispatchEvent(updateEvent);
+        }
+
+        if (payload?.type === 'sale_cancelled' && payload?.data) {
+          console.log('🔔🗑️ [useNotifications] VENTA CANCELADA:', payload.data);
+          // Disparar evento ventaRegistrada para refrescar la lista de ventas
+          const ventaEvent = new CustomEvent('ventaRegistrada');
+          window.dispatchEvent(ventaEvent);
+        }
+
+        if (payload?.type === 'anulacion_confirmada' && payload?.data) {
+          console.log('🔔✅ [useNotifications] ANULACIÓN CONFIRMADA:', payload.data);
+          // Disparar evento ventaRegistrada para refrescar la lista de ventas
+          const ventaEvent = new CustomEvent('ventaRegistrada');
+          window.dispatchEvent(ventaEvent);
+        }
+
+        if (payload?.type === 'anulacion_rechazada' && payload?.data) {
+          console.log('🔔❌ [useNotifications] ANULACIÓN RECHAZADA:', payload.data);
+          // Disparar evento ventaRegistrada para refrescar la lista de ventas
+          const ventaEvent = new CustomEvent('ventaRegistrada');
+          window.dispatchEvent(ventaEvent);
         }
       } catch (err) {
         console.error('[useNotifications] Error al parsear mensaje:', err);
@@ -240,7 +291,7 @@ export function useNotifications() {
       setConnectionAttempts(c => c + 1);
       setTimeout(connectSSE, 3000);
     };
-  }, [showNotification]);
+  }, [showNotification, showServiceNotification, cleanup]);
 
   const reconnect = useCallback(() => {
     cleanup();
@@ -250,8 +301,10 @@ export function useNotifications() {
   }, [connectSSE]);
 
   useEffect(() => {
+    console.log('[useNotifications] 🚀 useEffect ejecutado - llamando connectSSE');
     connectSSE();
     return () => {
+      console.log('[useNotifications] 🧹 Limpiando conexión SSE');
       cleanup();
     };
   }, [connectSSE]);

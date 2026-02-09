@@ -230,8 +230,8 @@ export default function NuevoServicioPage() {
         if (selectedRoom) {
           // Obtener nombres de anfitrionas seleccionadas
           const anfitrionasSeleccionadas = servicioDataToSubmit.usuarios
-            .map(userId => {
-              const anfitriona = anfitrionas.find(a => a.id_usuario.toString() === userId);
+            .map((userId: string) => {
+              const anfitriona = anfitrionas.find(a => a.id_usuario?.toString() === userId);
               return anfitriona ? (anfitriona.nick || anfitriona.nombre) : null;
             })
             .filter(Boolean)

@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "dev": "next dev --turbopack --hostname 0.0.0.0",
     "lint": "next lint",
     "start": "next start --hostname 0.0.0.0",
-    "prepare": "husky",
+    "prepare": "husky install",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -15,7 +16,8 @@
     "check-db": "node scripts/check-database.js",
     "db:setup": "node database/setup.js",
     "db:import": "node database/import-production.js",
-    "db:password": "node database/generate-password.js"
+    "db:password": "node database/generate-password.js",
+    "optimize:images": "node scripts/optimize-images.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -80,6 +82,7 @@
     "react-hook-form": "^7.62.0",
     "react-resizable-panels": "^3.0.4",
     "react-timer-hook": "^4.0.5",
+    "react-window": "^2.2.6",
     "recharts": "3.1.2",
     "sonner": "^2.0.7",
     "swagger-ui-react": "^5.27.1",
@@ -88,6 +91,7 @@
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.8.0",
+    "use-debounce": "^10.1.0",
     "vaul": "^1.1.2",
     "winston": "^3.17.0",
     "zod": "^4.0.15"
@@ -110,6 +114,7 @@
     "@types/punycode": "^2.1.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "compression-webpack-plugin": "^11.1.0",
     "eslint": "^9.32.0",
     "exceljs": "^4.4.0",
     "husky": "^9.1.7",

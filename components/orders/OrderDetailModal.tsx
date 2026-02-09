@@ -26,6 +26,13 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
 import RoomSelect from '@/components/ui/RoomSelect';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { useSales } from '@/hooks/useSales';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
@@ -94,6 +101,7 @@ export default function OrderDetailModal({
   const [metodoPago, setMetodoPago] = useState('');
   const [propina, setPropina] = useState(0);
   const [habitacionId, setHabitacionId] = useState('');
+  const [tiempoHabitacion, setTiempoHabitacion] = useState(30); // Tiempo en minutos, por defecto 30
   const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
   const [agregarPropina, setAgregarPropina] = useState(false);
@@ -114,6 +122,7 @@ export default function OrderDetailModal({
       setMetodoPago('');
       setPropina(0);
       setHabitacionId('');
+      setTiempoHabitacion(30);
       setPropinaDisplayValue('');
       setShowMetodoPagoError(false);
       setIsRegistering(false);
@@ -129,6 +138,12 @@ export default function OrderDetailModal({
           setPropina(propinaOriginal);
           setPropinaDisplayValue(propinaOriginal.toLocaleString('es-CL'));
           setAgregarPropina(true);
+        }
+        
+        // Pre-seleccionar habitación si viene en el pedido
+        const habitacionDelPedido = detail[0]?.habitacion_id;
+        if (habitacionDelPedido) {
+          setHabitacionId(String(habitacionDelPedido));
         }
       }
     }
@@ -357,7 +372,7 @@ export default function OrderDetailModal({
         })),
         usuarios: usuariosIds,
         habitacion_id: habitacionId ? parseInt(habitacionId) : undefined,
-        tiempo: selectedRoom ? selectedRoom.time || 60 : 0
+        tiempo: habitacionId ? tiempoHabitacion : 0
       };
 
       const resultado = await createVenta(ventaData);
@@ -407,10 +422,17 @@ export default function OrderDetailModal({
 
         onOrderStatusChange?.();
         window.dispatchEvent(new CustomEvent('updatePendingOrders'));
+        window.dispatchEvent(new CustomEvent('refreshNotifications'));
 
         if (habitacionId) {
           const selectedRoom = rooms.find(room => room.id === parseInt(habitacionId));
           if (selectedRoom) {
+            console.log('[OrderDetailModal] Procesando venta con habitación:', {
+              ventaId: resultado.data?.id || resultado.data?.id_venta,
+              habitacionId: selectedRoom.id,
+              tiempo: tiempoHabitacion
+            });
+            
             try {
               const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
                 method: 'PATCH',
@@ -422,28 +444,46 @@ export default function OrderDetailModal({
                 })
               });
 
+              console.log('[OrderDetailModal] Room update response:', roomUpdateResponse.ok);
+
               if (roomUpdateResponse.ok) {
+                console.log('[OrderDetailModal] Iniciando timer con:', {
+                  servicioId: resultado.data?.id || resultado.data?.id_venta || orderId || 0,
+                  roomId: selectedRoom.id,
+                  roomName: selectedRoom.name,
+                  tiempo: tiempoHabitacion,
+                  codigo: resultado.data?.codigo || `VENTA_${orderId}`
+                });
+                
                 startTimer(
-                  resultado.data?.id_venta || orderId || 0,
+                  resultado.data?.id || resultado.data?.id_venta || orderId || 0,
                   selectedRoom.id,
                   selectedRoom.name,
-                  selectedRoom.time || 60,
+                  tiempoHabitacion,
                   resultado.data?.codigo || `VENTA_${orderId}`,
                   detail[0]?.cliente || 'cliente sin registrar',
                   detail[0]?.anfitriona || '',
                   'venta',
                   detail[0]?.garzon || undefined
                 );
+                
+                console.log('[OrderDetailModal] Timer iniciado exitosamente');
               } else {
                 toast.error('Error al actualizar estado de habitación');
               }
             } catch (error) {
+              console.error('[OrderDetailModal] Error al actualizar habitación:', error);
               toast.error('Error al actualizar estado de habitación');
             }
           }
         }
 
         toast.success('Venta registrada exitosamente');
+        
+        // Disparar evento para refrescar ventas en tiempo real
+        window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+        console.log('[OrderDetailModal] Evento ventaRegistrada disparado');
+        
         onClose();
         onVentaRegistrada?.();
       }
@@ -463,6 +503,7 @@ export default function OrderDetailModal({
     try {
       await actualizarEstadoPedido(2);
       window.dispatchEvent(new CustomEvent('updatePendingOrders'));
+      window.dispatchEvent(new CustomEvent('refreshNotifications'));
       toast.success('Pedido rechazado exitosamente');
       onClose();
       onVentaRegistrada?.();
@@ -686,16 +727,41 @@ export default function OrderDetailModal({
                       )}
                     </div>
                     {shouldShowRoomSelector && (
-                      <RoomSelect
-                        habitaciones={habitacionesActivas}
-                        value={habitacionId}
-                        onChange={setHabitacionId}
-                        label='Habitación (opcional)'
-                        placeholder='Seleccione una habitación'
-                        searchPlaceholder='Buscar habitación...'
-                        filterByStatus={1}
-                        showTime={true}
-                      />
+                      <>
+                        <RoomSelect
+                          habitaciones={habitacionesActivas}
+                          value={habitacionId}
+                          onChange={setHabitacionId}
+                          label='Habitación (opcional)'
+                          placeholder='Seleccione una habitación'
+                          searchPlaceholder='Buscar habitación...'
+                          filterByStatus={1}
+                          showTime={true}
+                        />
+                        {habitacionId && (
+                          <div>
+                            <Label className='block text-xs font-medium text-muted-foreground dark:text-gray-400 mb-2'>
+                              Tiempo de uso (minutos)
+                            </Label>
+                            <Select
+                              value={tiempoHabitacion.toString()}
+                              onValueChange={(val) => setTiempoHabitacion(Number(val))}
+                            >
+                              <SelectTrigger className='w-full rounded-full'>
+                                <SelectValue placeholder='Seleccionar tiempo' />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value='5'>5 minutos</SelectItem>
+                                <SelectItem value='10'>10 minutos</SelectItem>
+                                <SelectItem value='15'>15 minutos</SelectItem>
+                                <SelectItem value='20'>20 minutos</SelectItem>
+                                <SelectItem value='25'>25 minutos</SelectItem>
+                                <SelectItem value='30'>30 minutos</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div>
                       <Label className='block text-xs font-medium text-muted-foreground mb-2'>
@@ -895,10 +961,15 @@ export default function OrderDetailModal({
                 </div>
               )}
               {habitacionId && (
-                <div>
-                  <strong>Habitación:</strong>{' '}
-                  {rooms.find(r => r.id === parseInt(habitacionId))?.name || habitacionId}
-                </div>
+                <>
+                  <div>
+                    <strong>Habitación:</strong>{' '}
+                    {rooms.find(r => r.id === parseInt(habitacionId))?.name || habitacionId}
+                  </div>
+                  <div>
+                    <strong>Tiempo:</strong> {tiempoHabitacion} minutos
+                  </div>
+                </>
               )}
             </div>
           </div>

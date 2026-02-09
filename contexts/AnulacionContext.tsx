@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 
 interface AnulacionContextType {
@@ -294,18 +294,27 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
     };
   }, [openModal, showNotification]); // Removido refreshCallback de las dependencias
 
+  // Memoizar el valor del contexto para evitar re-renders innecesarios
+  const contextValue = useMemo(() => ({
+    showNotification,
+    setRefreshCallback,
+    refreshCallback,
+    modalData,
+    isModalOpen,
+    openModal,
+    closeModal
+  }), [
+    showNotification,
+    setRefreshCallback,
+    refreshCallback,
+    modalData,
+    isModalOpen,
+    openModal,
+    closeModal
+  ]);
+
   return (
-    <AnulacionContext.Provider
-      value={{
-        showNotification,
-        setRefreshCallback,
-        refreshCallback,
-        modalData,
-        isModalOpen,
-        openModal,
-        closeModal
-      }}
-    >
+    <AnulacionContext.Provider value={contextValue}>
       {children}
     </AnulacionContext.Provider>
   );

@@ -27,10 +27,6 @@ export default function AdvancesPage() {
   // Verificar permisos
   const canCreate = hasPermission('anticipos', 'crear');
 
-  console.log('[AdvancesPage] Permisos:', {
-    canCreate
-  });
-
   // Convertir datos del hook al formato esperado por la tabla
   const advances: Advance[] = anticipos.map(a => ({
     id: a.id_anticipo,
