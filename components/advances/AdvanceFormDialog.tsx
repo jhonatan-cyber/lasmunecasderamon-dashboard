@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useUsers } from "@/hooks/useUsers";
+import { useUsers } from "@/hooks/personal/useUsers";
 import { toast } from "sonner";
 import {
   Select,

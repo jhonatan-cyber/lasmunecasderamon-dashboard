@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ShoppingCart, Beer, Eye, Ban, MoreVertical } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { AnulacionModal } from './AnulacionModal';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface SalesListProps {
   loading: boolean;

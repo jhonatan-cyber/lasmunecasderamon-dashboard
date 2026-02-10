@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import CategoryCard from './CategoryCard';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface SortableCategoryCardProps {
   category: {

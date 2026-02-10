@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import useAsistencias from '@/hooks/useAsistencias';
-import { useAttendanceStats } from '@/hooks/useAttendanceStats';
+import useAsistencias from '@/hooks/personal/useAsistencias';
+import { useAttendanceStats } from '@/hooks/personal/useAttendanceStats';
 import AttendanceTable from '@/components/attendance/AttendanceTable';
 import AttendanceFilters from '@/components/attendance/AttendanceFilters';
 import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';

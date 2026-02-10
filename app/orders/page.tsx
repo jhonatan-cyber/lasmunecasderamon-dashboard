@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/dialog';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import dynamic from 'next/dynamic';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 
 // Lazy load del modal de detalle de pedido
 const OrderDetailModal = dynamic(

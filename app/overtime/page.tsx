@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useOvertime } from '@/hooks/useOvertime';
-import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useOvertime } from '@/hooks/personal/useOvertime';
+import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import OvertimeFilters from '@/components/overtime/OvertimeFilters';
 import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';

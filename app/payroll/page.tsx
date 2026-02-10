@@ -3,9 +3,9 @@
 import PayrollTable from '@/components/payroll/PayrollTable';
 import PayrollFilters from '@/components/payroll/PayrollFilters';
 import PayrollRoleButtons from '@/components/payroll/PayrollRoleButtons';
-import usePayroll from '@/hooks/usePayroll';
+import usePayroll from '@/hooks/personal/usePayroll';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 export default function PayrollPage() {
   const {

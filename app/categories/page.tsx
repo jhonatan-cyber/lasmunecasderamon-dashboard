@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/productos/useCategories';
 import { toast } from 'sonner';
 import CategoryFormDialog from '@/components/categories/CategoryFormDialog';
 import SortableCategoryCard from '@/components/categories/SortableCategoryCard';

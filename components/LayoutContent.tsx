@@ -7,9 +7,9 @@ import { UserImageProvider } from '@/contexts/UserImageContext';
 import { RouteGuard } from '@/components/auth/RouteGuard';
 
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useSessionCheck } from '@/hooks/useSessionCheck';
-import { usePermissionsSSE } from '@/hooks/usePermissionsSSE';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useSessionCheck } from '@/hooks/auth/useSessionCheck';
+import { usePermissionsSSE } from '@/hooks/auth/usePermissionsSSE';
 import React from 'react';
 import { cn } from '@/lib/utils';
 

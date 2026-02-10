@@ -27,7 +27,7 @@ import {
   ShoppingCart,
   Home,
 } from "lucide-react";
-import { useRetiros } from "@/hooks/useRetiros";
+import { useRetiros } from "@/hooks/caja/useRetiros";
 import { useEffect, useState } from "react";
 import Paginate from "@/components/ui/paginate";
 

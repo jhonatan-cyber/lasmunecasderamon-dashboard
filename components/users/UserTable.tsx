@@ -1,30 +1,6 @@
+import { useMemo } from 'react';
 import { User as UserType } from '@/types/user';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import {
-  MoreVertical,
-  Eye,
-  Pencil,
-  Trash2,
-  AtSign,
-  Phone,
-  MapPin,
-  Power,
-  Check,
-  User,
-  Calendar,
-  DollarSign,
-  PiggyBank,
-  Home
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -33,11 +9,13 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@radix-ui/react-label';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { UserActionMenu } from './UserActionMenu';
+import { UserInfoDisplay } from './UserInfoDisplay';
+import { UserContactInfo } from './UserContactInfo';
+import { UserFinancialInfo } from './UserFinancialInfo';
 
 interface UserTableProps {
   users: UserType[];
@@ -70,15 +48,19 @@ export function UserTable({
 }: UserTableProps) {
   const { hasPermission } = useUserPermissions();
   
-  // Verificar permisos
-  const canViewDetails = hasPermission('usuarios', 'ver_detalles');
-  const canEdit = hasPermission('usuarios', 'editar');
-  const canActivate = hasPermission('usuarios', 'activar');
-  const canDeactivate = hasPermission('usuarios', 'desactivar');
-  const canDelete = hasPermission('usuarios', 'eliminar');
+  // Memoizar permisos
+  const permissions = useMemo(() => ({
+    canViewDetails: hasPermission('usuarios', 'ver_detalles'),
+    canEdit: hasPermission('usuarios', 'editar'),
+    canActivate: hasPermission('usuarios', 'activar'),
+    canDeactivate: hasPermission('usuarios', 'desactivar'),
+    canDelete: hasPermission('usuarios', 'eliminar')
+  }), [hasPermission]);
   
-  // Si no tiene ningún permiso de acción, no mostrar el menú
-  const hasAnyAction = canViewDetails || canEdit || canActivate || canDeactivate || canDelete;
+  const hasAnyAction = useMemo(() => 
+    Object.values(permissions).some(Boolean),
+    [permissions]
+  );
   
   if (users.length === 0) {
     return (
@@ -112,245 +94,26 @@ export function UserTable({
                   >
                     {user.status === 1 ? 'Activo' : 'Inactivo'}
                   </Badge>
-                  {hasAnyAction && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
-                        >
-                          <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end' className='w-40'>
-                        {canViewDetails && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onViewDetails(user)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Eye
-                                    className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                  />
-                                  <span className='group-hover:text-blue-700 transition-colors text-sm sm:text-base'>
-                                    Ver detalles
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Ver detalles del usuario</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        {canEdit && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onEdit(user)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Pencil
-                                    className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                  />
-                                  <span className='group-hover:text-purple-700 transition-colors text-sm sm:text-base'>
-                                    Editar
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Editar usuario</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        {user.status === 0 && canActivate ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onActivate(user.id)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Check
-                                    className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                  />
-                                  <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
-                                    Activar
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Activar usuario</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : user.status === 1 && canDeactivate ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onDeactivate(user.id)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Power
-                                    className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                  />
-                                  <span className='group-hover:text-orange-700 transition-colors text-sm sm:text-base'>
-                                    Desactivar
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Desactivar usuario</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : null}
-                        {canDelete && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => onDelete(user.id)}
-                                  className='cursor-pointer group'
-                                >
-                                  <Trash2
-                                    className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                  />
-                                  <span className='group-hover:text-red-700 transition-colors text-sm sm:text-base'>
-                                    Eliminar
-                                  </span>
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Eliminar usuario</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                  <UserActionMenu
+                    user={user}
+                    onViewDetails={onViewDetails}
+                    onEdit={onEdit}
+                    onActivate={onActivate}
+                    onDeactivate={onDeactivate}
+                    onDelete={onDelete}
+                    {...permissions}
+                    hasAnyAction={hasAnyAction}
+                  />
                 </div>
               </div>
 
-              {/* Información del usuario en dos columnas */}
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                {/* Columna izquierda - Información personal */}
-                <div className='space-y-2'>
-                  <div className='flex items-center gap-2'>
-                    <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
-                      <AvatarImage
-                        src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-                        alt={user.name}
-                        asChild
-                      >
-                        <Image
-                          src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-                          alt={user.name}
-                          width={40}
-                          height={40}
-                          loading="lazy"
-                          className="object-cover"
-                        />
-                      </AvatarImage>
-                      <AvatarFallback className='text-xs sm:text-sm'>
-                        {user.name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-2'>
-                        <span className='font-medium text-sm sm:text-base'>
-                          {user.name} {user.lastName}
-                        </span>
-                        <Badge
-                          className={`text-xs ${
-                            ['Soltero', 'Soltera'].includes(user.maritalStatus)
-                              ? 'bg-green-100 text-green-700'
-                              : ['Casado', 'Casada'].includes(user.maritalStatus)
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {user.maritalStatus || 'Sin estado civil'}
-                        </Badge>
-                      </div>
-                      <div className='text-xs sm:text-sm text-gray-500'>
-                        @{user.nick}{' '}
-                        <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
-                          {user.role}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <User className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-600'>RUN: {user.run}</span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <AtSign className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-600'>{user.email}</span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <Phone className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-600'>
-                      Telefono : {user.phone}
-                    </span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <MapPin className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-500'>
-                      Direccion : {user.address || 'Sin dirección'}
-                    </span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <Calendar className='h-3 w-3 text-gray-400' />
-                    <span className='text-xs sm:text-sm text-gray-500'>
-                      Fecha creacion : {user.created_at ? formatDate(user.created_at) : 'Sin fecha'}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Columna derecha - Información financiera */}
-                <div className='space-y-2'>
-                  <div className='text-xs font-medium text-gray-700 mb-2'>
-                    Información Financiera
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <DollarSign className='h-3 w-3 text-green-600' />
-                    <span className='text-xs sm:text-sm text-gray-600'>
-                      Sueldo: {formatCurrencyNoDecimals(user.salary)}
-                    </span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <PiggyBank className='h-3 w-3 text-blue-600' />
-                    <span className='text-xs sm:text-sm text-gray-600'>
-                      Aporte: {formatCurrencyNoDecimals(user.contributions)}
-                    </span>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    <Home className='h-3 w-3 text-orange-600' />
-                    <span className='text-xs sm:text-sm text-gray-600'>
-                      Descuento:{' '}
-                      {user.discount && user.discount > 0
-                        ? formatCurrencyNoDecimals(user.discount)
-                        : 'Sin descuento'}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Home className='h-3 w-3 text-blue-600' />
-                    <span className='text-xs sm:text-sm text-gray-600'>
-                      Institucion de aporte :
-                      <Badge className='text-xs bg-blue-100 text-blue-700'>
-                        {user.afp || 'Sin AFP'}
-                      </Badge>{' '}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              {/* Información del usuario */}
+              <UserInfoDisplay
+                user={user}
+                formatDate={formatDate}
+                getRoleBadgeColor={getRoleBadgeColor}
+                variant='card'
+              />
             </CardContent>
           </Card>
         ))
@@ -364,7 +127,6 @@ export function UserTable({
       <Table className='min-w-full text-base bg-white rounded-xl overflow-hidden text-center'>
         <TableHeader className='border-b last:border-b-0 bg-white group'>
           <TableRow>
-     
             <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-400'>
               Usuario
             </TableHead>
@@ -389,7 +151,7 @@ export function UserTable({
           {users.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={6}
                 className='py-8 text-center text-gray-500 text-sm sm:text-base'
               >
                 No se encontraron usuarios que coincidan con la búsqueda
@@ -403,105 +165,29 @@ export function UserTable({
                 idx === 0 ? 'first:rounded-t-xl' : ''
               } ${idx === users.length - 1 ? 'last:rounded-b-xl' : ''}`}
             >
+              <TableCell className='py-3 px-2 sm:px-4 text-start'>
+                <UserInfoDisplay
+                  user={user}
+                  formatDate={formatDate}
+                  getRoleBadgeColor={getRoleBadgeColor}
+                  variant='table'
+                />
+              </TableCell>
               
               <TableCell className='py-3 px-2 sm:px-4 text-start'>
-                <div className='flex items-center space-x-2 sm:space-x-3'>
-                  <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
-                    <AvatarImage
-                      src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-                      alt={user.name}
-                      asChild
-                    >
-                      <Image
-                        src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-                        alt={user.name}
-                        width={40}
-                        height={40}
-                        loading="lazy"
-                        className="object-cover"
-                      />
-                    </AvatarImage>
-                    <AvatarFallback className='text-xs sm:text-sm'>
-                      {user.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className='text-left space-y-1'>
-                    <div className='flex items-center space-x-2'>
-                      <p className='font-medium text-gray-900 text-xs sm:text-sm'>
-                        {user.name} {user.lastName}
-                      </p>
-                      <Badge
-                        className={`text-xs ${
-                          ['Soltero', 'Soltera'].includes(user.maritalStatus)
-                            ? 'bg-green-100 text-green-700'
-                            : ['Casado', 'Casada'].includes(user.maritalStatus)
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {user.maritalStatus || 'Sin estado civil'}
-                      </Badge>
-                    </div>
-                    <p className='text-xs sm:text-sm text-gray-500'>@{user.nick}</p>
-                    <p className='text-xs text-gray-400'>RUN: {user.run}</p>
-                    <div className='text-xs sm:text-sm text-gray-400'>
-                      Institucion de aporte:{' '}
-                      <Badge className='text-xs bg-blue-100 text-blue-700'>
-                        {user.afp || 'Sin AFP'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+                <UserContactInfo user={user} />
               </TableCell>
-              <TableCell className='py-3 px-2 sm:px-4 text-start'>
-                <div className='space-y-1'>
-                  <div className='flex items-center space-x-2'>
-                    <AtSign className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4' />
-                    <span className='text-xs sm:text-sm'>{user.email}</span>
-                  </div>
-                  <div className='flex items-center space-x-2'>
-                    <Phone
-                      className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4'
-                    />
-                    <span className='text-xs sm:text-sm'>{user.phone}</span>
-                  </div>
-                  <div className='flex items-center space-x-2'>
-                    <MapPin
-                      className='text-gray-400 w-3 h-3 sm:w-4 sm:h-4'
-                    />
-                    <span className='text-xs sm:text-sm'>{user.address || 'Sin dirección'}</span>
-                  </div>
-                </div>
-              </TableCell>
+              
               <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                <div className='space-y-1'>
-                  <div className='flex items-start justify-start space-x-2'>
-                    <Label className='text-xs sm:text-sm text-gray-600'>Sueldo</Label>
-                    <span className='text-xs sm:text-sm font-medium'>
-                      {formatCurrencyNoDecimals(user.salary)}
-                    </span>
-                  </div>
-                  <div className='flex items-start justify-start space-x-2'>
-                    <Label className='text-xs sm:text-sm text-gray-600'>Aporte AFP</Label>
-                    <span className='text-xs sm:text-sm font-medium'>
-                      {formatCurrencyNoDecimals(user.contributions)}
-                    </span>
-                  </div>
-                  <div className='flex items-start justify-start space-x-2'>
-                    <Label className='text-xs sm:text-sm text-gray-600'>Descuento habitacion</Label>
-                    <span className='text-xs sm:text-sm font-medium'>
-                      {user.discount && user.discount > 0
-                        ? formatCurrencyNoDecimals(user.discount)
-                        : 'Sin descuento'}
-                    </span>
-                  </div>
-                </div>
+                <UserFinancialInfo user={user} />
               </TableCell>
+              
               <TableCell className='py-3 px-2 sm:px-4 text-center'>
                 <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
                   {user.role}
                 </Badge>
               </TableCell>
+              
               <TableCell className='py-3 px-2 sm:px-4 text-center'>
                 <Badge
                   className={`text-xs sm:text-sm ${
@@ -511,121 +197,18 @@ export function UserTable({
                   {user.status === 1 ? 'Activo' : 'Inactivo'}
                 </Badge>
               </TableCell>
+              
               <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                {hasAnyAction && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
-                      >
-                        <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align='end'>
-                      {canViewDetails && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onViewDetails(user)}
-                                className='cursor-pointer group'
-                              >
-                                <Eye
-                                  className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-blue-700 transition-colors text-xs sm:text-sm'>
-                                  Ver detalles
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Ver detalles del usuario</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                      {canEdit && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onEdit(user)}
-                                className='cursor-pointer group'
-                              >
-                                <Pencil
-                                  className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-purple-700 transition-colors text-xs sm:text-sm'>
-                                  Editar
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar usuario</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                      {user.status === 0 && canActivate ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onActivate(user.id)}
-                                className='cursor-pointer group'
-                              >
-                                <Check
-                                  className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-green-700 transition-colors text-xs sm:text-sm'>
-                                  Activar
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Activar usuario</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : user.status === 1 && canDeactivate ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onDeactivate(user.id)}
-                                className='cursor-pointer group'
-                              >
-                                <Power
-                                  className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-orange-700 transition-colors text-xs sm:text-sm'>
-                                  Desactivar
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Desactivar usuario</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : null}
-                      {canDelete && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() => onDelete(user.id)}
-                                className='cursor-pointer group'
-                              >
-                                <Trash2
-                                  className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4'
-                                />
-                                <span className='group-hover:text-red-700 transition-colors text-xs sm:text-sm'>
-                                  Eliminar
-                                </span>
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>Eliminar usuario permanentemente</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <UserActionMenu
+                  user={user}
+                  onViewDetails={onViewDetails}
+                  onEdit={onEdit}
+                  onActivate={onActivate}
+                  onDeactivate={onDeactivate}
+                  onDelete={onDelete}
+                  {...permissions}
+                  hasAnyAction={hasAnyAction}
+                />
               </TableCell>
             </TableRow>
           ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useServiceTimer } from '@/hooks/useServiceTimer';
+import { useServiceTimer } from '@/hooks/servicios/useServiceTimer';
 import { Button } from '@/components/ui/button';
 
 export default function TimerTest() {

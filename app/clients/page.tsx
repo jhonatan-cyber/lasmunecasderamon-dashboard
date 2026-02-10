@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { useClients } from "@/hooks/useClients";
+import { useClients } from "@/hooks/clientes/useClients";
 import { Client } from "@/types/client";
 import { ClientModal } from "@/components/clients/ClientModal";
 import { ClientDetails } from "@/components/clients/ClientDetails";

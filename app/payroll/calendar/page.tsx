@@ -21,9 +21,9 @@ import {
 import SearchInput from '@/components/ui/SearchInput';
 import SelectElements from '@/components/ui/select-elements';
 import Paginate from '@/components/ui/paginate';
-import { useCalendarActions } from '@/hooks/useCalendarActions';
+import { useCalendarActions } from '@/hooks/calendario/useCalendarActions';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 // Utilidades para fechas
 const months = [

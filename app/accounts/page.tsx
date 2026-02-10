@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useCuentas } from '@/hooks/useCuentas';
-import useOrders from '@/hooks/useOrders';
+import { useCuentas } from '@/hooks/caja/useCuentas';
+import useOrders from '@/hooks/servicios/useOrders';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from '@/components/cuentas';
 import Paginate from '@/components/ui/paginate';
-import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { AlertCircle } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 

@@ -8,7 +8,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 import { StatsCard, StatCard } from '@/components/ui/StatsCard';
-import { useCashRegister } from '@/hooks/useCashRegister';
+import { useCashRegister } from '@/hooks/caja/useCashRegister';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 
 export function CashRegisterDetailedStats() {

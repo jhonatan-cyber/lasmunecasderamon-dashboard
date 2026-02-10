@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ServicioWithDetails } from '@/types/servicio';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
-import HostessSelect from '@/components/ui/HostessSelect';
-import { useAnfitrionas } from '@/hooks/useAnfitrionas';
-import { useHabitaciones } from '@/hooks/useHabitaciones';
+import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
+import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
+import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
+import { useServicePricing } from '@/hooks/shared/useServicePricing';
+import { ServiceFormFields } from './ServiceFormFields';
+import { ServicePriceSummary } from './ServicePriceSummary';
 
 interface EditServiceModalProps {
   open: boolean;
@@ -47,29 +47,13 @@ export default function EditServiceModal({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [numAnfitrionas, setNumAnfitrionas] = useState(1);
-  const [displayValues, setDisplayValues] = useState({
-    precio_servicio: '',
-    precio_habitacion: ''
-  });
   const [anfitrionasDisponibles, setAnfitrionasDisponibles] = useState<any[]>([]);
   const [anfitrionasDelServicio, setAnfitrionasDelServicio] = useState<string[]>([]);
   const [precioHabitacionSinComision, setPrecioHabitacionSinComision] = useState<number>(0);
 
-  const formatNumberWithDots = useCallback((value: number | string) => {
-    if (!value || value === 0) return '';
-    const numValue = typeof value === 'string' ? parseInt(value.replace(/[^\d]/g, ''), 10) : value;
-    if (isNaN(numValue) || numValue === 0) return '';
-    return numValue.toLocaleString('es-CL');
-  }, []);
-
-  const parseNumberFromDots = useCallback((value: string) => {
-    if (!value || value.trim() === '') return 0;
-
-    const cleanValue = value.replace(/[^\d]/g, '');
-    if (cleanValue === '') return 0;
-    const numValue = parseInt(cleanValue, 10);
-    return isNaN(numValue) ? 0 : numValue;
-  }, []);
+  // Hooks de formateo
+  const precioServicioFormatter = useNumberFormatter(formData.precio_servicio);
+  const precioHabitacionFormatter = useNumberFormatter(formData.precio_habitacion);
 
   const obtenerPrecioHabitacionSinComision = useCallback(() => {
     console.log('Habitaciones disponibles:', habitaciones.length);
@@ -171,14 +155,13 @@ export default function EditServiceModal({
       const precio = obtenerPrecioHabitacionSinComision();
       if (precio > 0) {
         setFormData(prev => ({ ...prev, precio_habitacion: precio }));
-        setDisplayValues(prev => ({
-          ...prev,
-          precio_habitacion: formatNumberWithDots(precio)
-        }));
+        precioHabitacionFormatter.setFormattedValue(
+          precioHabitacionFormatter.formatNumber(precio)
+        );
         console.log('Precio de habitación actualizado:', precio);
       }
     }
-  }, [habitaciones, open, obtenerPrecioHabitacionSinComision, formatNumberWithDots]);
+  }, [habitaciones, open, obtenerPrecioHabitacionSinComision, precioHabitacionFormatter]);
 
 
   useEffect(() => {
@@ -199,11 +182,11 @@ export default function EditServiceModal({
         usuarios: []
       });
 
-
-      setDisplayValues({
-        precio_servicio: '',
-        precio_habitacion: precioSinComision > 0 ? formatNumberWithDots(precioSinComision) : ''
-      });
+      // Actualizar formatters
+      precioServicioFormatter.setFormattedValue('');
+      precioHabitacionFormatter.setFormattedValue(
+        precioSinComision > 0 ? precioHabitacionFormatter.formatNumber(precioSinComision) : ''
+      );
 
 
       if (servicio.id_servicio) {
@@ -212,11 +195,9 @@ export default function EditServiceModal({
         });
       }
 
-
       if (onPauseMainTimer) {
         setTimeout(() => {
           onPauseMainTimer();
-
           if (servicio?.id_servicio) {
             pauseTimerByServicioId(servicio.id_servicio);
           }
@@ -224,7 +205,7 @@ export default function EditServiceModal({
         }, 0);
       }
     }
-  }, [servicio?.id_servicio, open, fetchAnfitrionasParaEdicion, obtenerPrecioHabitacionSinComision, formatNumberWithDots]); // Actualizado las dependencias
+  }, [servicio?.id_servicio, open, fetchAnfitrionasParaEdicion, obtenerPrecioHabitacionSinComision, precioHabitacionFormatter, precioServicioFormatter]);
 
   useEffect(() => {
     if (!open && onResumeMainTimer && servicio?.id_servicio) {
@@ -243,80 +224,36 @@ export default function EditServiceModal({
   }, [open, servicio?.id_servicio]);
 
 
-  const calculateIVA = useCallback((precioServicio: number, metodoPago: string, numAnfitrionas: number, precioHabitacion: number) => {
-    if (metodoPago === 'tarjeta') {
-      const nuevoSubTotal = precioServicio * numAnfitrionas;
-      const precioHabitacionTotal = precioHabitacion * numAnfitrionas;
-
-
-      let nuevoIVA = Math.floor(nuevoSubTotal * 0.20);
-
-      let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
-
-
-      const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
-      const excedente = totalRedondeado - nuevoTotal;
-
-      nuevoIVA = nuevoIVA + excedente;
-
-      return nuevoIVA;
-    }
-    return 0;
-  }, []);
-
-  // Calcular totales
+  // Calcular totales con hook
   const numAnfitrionasSeleccionadas = formData.usuarios.length || 1;
-  const multiplicadorTiempo = formData.tiempo === 60 ? 2 : 1;
+  
+  const pricing = useServicePricing({
+    precioServicio: formData.precio_servicio,
+    precioHabitacion: formData.precio_habitacion,
+    metodoPago: formData.metodo_pago,
+    tiempo: formData.tiempo,
+    numAnfitrionas: numAnfitrionasSeleccionadas
+  });
 
-  const precioServicioTotal = (formData.precio_servicio * numAnfitrionasSeleccionadas) * multiplicadorTiempo;
-  const precioHabitacionTotal = (formData.precio_habitacion * numAnfitrionasSeleccionadas) * multiplicadorTiempo;
-  const iva = calculateIVA(formData.precio_servicio * multiplicadorTiempo, formData.metodo_pago, numAnfitrionasSeleccionadas, formData.precio_habitacion * multiplicadorTiempo);
-  const subTotal = precioServicioTotal;
+  const { precioServicioTotal, precioHabitacionTotal, iva, subTotal, total, multiplicadorTiempo } = pricing;
 
-  // Calcular total final (replicando lógica de creación)
-  let total = subTotal + precioHabitacionTotal + iva;
-  if (formData.metodo_pago === 'tarjeta') {
-    // El total ya está redondeado por la función calculateIVA
-    total = Math.ceil((subTotal + precioHabitacionTotal + Math.floor(subTotal * 0.20)) / 5000) * 5000;
-  }
+  const handlePrecioServicioChange = useCallback((value: string) => {
+    precioServicioFormatter.handleChange(value, (numValue) => {
+      setFormData(prev => ({ ...prev, precio_servicio: numValue }));
+    });
+  }, [precioServicioFormatter]);
 
-  const handleInputChange = useCallback((field: string, value: string | number) => {
-    if (field === 'precio_servicio' || field === 'precio_habitacion') {
-      // Para campos de precio, manejar el formateo
-      const stringValue = String(value);
-      const numericValue = parseNumberFromDots(stringValue);
-      const formattedValue = formatNumberWithDots(numericValue);
-
-      setFormData(prev => ({
-        ...prev,
-        [field]: numericValue
-      }));
-
-      setDisplayValues(prev => ({
-        ...prev,
-        [field]: formattedValue
-      }));
-    } else {
-      // Para otros campos, comportamiento normal
-      setFormData(prev => ({
-        ...prev,
-        [field]: typeof value === 'string' ? (field === 'metodo_pago' ? value : (value === '' ? 0 : Number(value))) : value
-      }));
-    }
-  }, [parseNumberFromDots, formatNumberWithDots]);
-
-  const handleInputFocus = useCallback((_field: 'precio_servicio' | 'precio_habitacion') => {
-    // No necesitamos hacer nada especial en el focus
+  const handleMetodoPagoChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, metodo_pago: value }));
   }, []);
 
-  const handleInputBlur = useCallback((field: 'precio_servicio' | 'precio_habitacion') => {
-    // Si el campo está vacío al perder el focus, limpiar tanto el valor como el display
-    const value = formData[field];
-    if (value === null || value === undefined || String(value) === '' || isNaN(Number(value)) || value === 0) {
-      setFormData(prev => ({ ...prev, [field]: 0 }));
-      setDisplayValues(prev => ({ ...prev, [field]: '' }));
-    }
-  }, [formData]);
+  const handleTiempoChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, tiempo: Number(value) }));
+  }, []);
+
+  const handleUsuariosChange = useCallback((usuarios: string[]) => {
+    setFormData(prev => ({ ...prev, usuarios }));
+  }, []);
 
   const handleClose = useCallback(() => {
     onOpenChange(false);
@@ -490,185 +427,42 @@ export default function EditServiceModal({
 
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           <div className="space-y-4">
-            {/* Selector de Anfitrionas */}
-            <div className="space-y-2">
-              <Label>Anfitrionas</Label>
-              <HostessSelect
-                anfitrionas={anfitrionasDisponibles}
-                value={formData.usuarios}
-                onChange={(usuarios) => setFormData(prev => ({ ...prev, usuarios }))}
-                placeholder="Seleccione anfitrionas"
-                maxSelection={10}
-                disabled={isSaving || loadingAnfitrionas}
-              />
-              {formData.usuarios.length > 0 && (
-                <p className="text-xs text-gray-500">
-                  {formData.usuarios.length} anfitriona{formData.usuarios.length > 1 ? 's' : ''} seleccionada{formData.usuarios.length > 1 ? 's' : ''}
-                </p>
-              )}
-              {anfitrionasDelServicio.length > 0 && (
-                <p className="text-xs text-blue-600">
-                  Anfitrionas actuales del servicio están incluidas en la lista
-                </p>
-              )}
-            </div>
+            <ServiceFormFields
+              anfitrionasDisponibles={anfitrionasDisponibles}
+              selectedUsuarios={formData.usuarios}
+              onUsuariosChange={handleUsuariosChange}
+              anfitrionasDelServicio={anfitrionasDelServicio}
+              loadingAnfitrionas={loadingAnfitrionas}
+              precioServicioDisplay={precioServicioFormatter.formattedValue}
+              onPrecioServicioChange={handlePrecioServicioChange}
+              onPrecioServicioFocus={() => {}}
+              onPrecioServicioBlur={() => {}}
+              precioServicioTotal={precioServicioTotal}
+              numAnfitrionas={numAnfitrionasSeleccionadas}
+              multiplicadorTiempo={multiplicadorTiempo}
+              precioHabitacionDisplay={precioHabitacionFormatter.formattedValue}
+              precioHabitacionSinComision={precioHabitacionSinComision}
+              precioHabitacionTotal={precioHabitacionTotal}
+              metodoPago={formData.metodo_pago}
+              onMetodoPagoChange={handleMetodoPagoChange}
+              precioServicioTotalForIVA={precioServicioTotal}
+              iva={iva}
+              tiempo={formData.tiempo}
+              onTiempoChange={handleTiempoChange}
+              isSaving={isSaving}
+            />
 
-            {/* Precio del Servicio */}
-            <div className="space-y-2">
-              <Label htmlFor="precio_servicio">
-                Precio del Servicio {numAnfitrionasSeleccionadas > 1 ? `(por anfitriona)` : ''}
-              </Label>
-              <Input
-                id="precio_servicio"
-                type="text"
-                value={displayValues.precio_servicio}
-                onChange={(e) => handleInputChange('precio_servicio', e.target.value)}
-                onFocus={() => handleInputFocus('precio_servicio')}
-                onBlur={() => handleInputBlur('precio_servicio')}
-                placeholder="Ingrese el precio del servicio"
-                disabled={isSaving}
-              />
-              {numAnfitrionasSeleccionadas > 1 && formData.precio_servicio > 0 && (
-                <p className="text-xs text-gray-500">
-                  Total: {formatCurrencyNoDecimals(precioServicioTotal)} ({numAnfitrionasSeleccionadas} × {formatCurrencyNoDecimals(formData.precio_servicio)}{multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo}` : ''})
-                </p>
-              )}
-              {multiplicadorTiempo > 1 && (
-                <p className="text-xs text-orange-600">
-                  Precio duplicado por seleccionar 60 minutos
-                </p>
-              )}
-            </div>
-
-            {/* Precio de la Habitación */}
-            <div className="space-y-2">
-              <Label htmlFor="precio_habitacion">
-                Precio de la Habitación {numAnfitrionasSeleccionadas > 1 ? `(por anfitriona)` : ''}
-              </Label>
-              <Input
-                id="precio_habitacion"
-                type="text"
-                value={displayValues.precio_habitacion}
-                onChange={(e) => handleInputChange('precio_habitacion', e.target.value)}
-                onFocus={() => handleInputFocus('precio_habitacion')}
-                onBlur={() => handleInputBlur('precio_habitacion')}
-                placeholder="Precio tomado de habitación sin comisión"
-                disabled={true}
-                className="bg-gray-100 cursor-not-allowed"
-              />
-              {precioHabitacionSinComision > 0 && (
-                <p className="text-xs text-blue-600">
-                  Precio automático de habitación sin comisión: {formatCurrencyNoDecimals(precioHabitacionSinComision)}
-                </p>
-              )}
-              {numAnfitrionasSeleccionadas > 1 && formData.precio_habitacion > 0 && (
-                <p className="text-xs text-gray-500">
-                  Total: {formatCurrencyNoDecimals(precioHabitacionTotal)} ({numAnfitrionasSeleccionadas} × {formatCurrencyNoDecimals(formData.precio_habitacion)}{multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo}` : ''})
-                </p>
-              )}
-              {multiplicadorTiempo > 1 && formData.precio_habitacion > 0 && (
-                <p className="text-xs text-orange-600">
-                  Precio duplicado por seleccionar 60 minutos
-                </p>
-              )}
-            </div>
-
-            {/* Método de Pago */}
-            <div className="space-y-2">
-              <Label htmlFor="metodo_pago">Método de Pago</Label>
-              <Select
-                value={formData.metodo_pago}
-                onValueChange={(value) => handleInputChange('metodo_pago', value)}
-                disabled={isSaving}
-              >
-                <SelectTrigger className="rounded-full">
-                  <SelectValue placeholder="Seleccione método de pago" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="tarjeta">Tarjeta (+ 20% IVA)</SelectItem>
-                  <SelectItem value="transferencia">Transferencia</SelectItem>
-                </SelectContent>
-              </Select>
-              {formData.metodo_pago === 'tarjeta' && (
-                <div className="space-y-1">
-                  <p className="text-xs text-purple-600">
-                    Se aplicará automáticamente 20% de IVA sobre el precio total del servicio ({formatCurrencyNoDecimals(precioServicioTotal)})
-                  </p>
-                  {iva > 0 && (
-                    <p className="text-xs text-gray-500">
-                      Total IVA ajustado: {formatCurrencyNoDecimals(iva)}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Tiempo */}
-            <div className="space-y-2">
-              <Label htmlFor="tiempo">Tiempo Adicional (minutos)</Label>
-              <Select
-                value={formData.tiempo.toString()}
-                onValueChange={(value) => handleInputChange('tiempo', value)}
-                disabled={isSaving}
-              >
-                <SelectTrigger className="rounded-full">
-                  <SelectValue placeholder="Seleccione tiempo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Seleccione tiempo</SelectItem>
-                  <SelectItem value="2">2 minutos</SelectItem>
-                  <SelectItem value="10">10 minutos</SelectItem>
-                  <SelectItem value="20">20 minutos</SelectItem>
-                  <SelectItem value="30">30 minutos</SelectItem>
-                  <SelectItem value="60">60 minutos (costos duplicados)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-blue-600">
-                Este tiempo creará un nuevo servicio completo en la base de datos. El timer principal se pausará hasta que termine.
-              </p>
-              {formData.tiempo === 60 && (
-                <p className="text-xs text-orange-600 font-medium">
-                  Con 60 minutos los costos se duplicarán automáticamente
-                </p>
-              )}
-            </div>
-
-            {/* Resumen de Totales */}
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal:</span>
-                <span>{formatCurrencyNoDecimals(subTotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Habitación:</span>
-                <span>{formatCurrencyNoDecimals(precioHabitacionTotal)}</span>
-              </div>
-              {iva > 0 && (
-                <div className="flex justify-between text-sm text-purple-600">
-                  <span>IVA (20%):</span>
-                  <span>{formatCurrencyNoDecimals(iva)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                <span>Total:</span>
-                <span>{formatCurrencyNoDecimals(total)}</span>
-              </div>
-              {numAnfitrionasSeleccionadas === 1 && (
-                <div className="text-xs text-blue-600 font-medium mt-1">
-                  Comisión para anfitriona: {formatCurrencyNoDecimals(precioServicioTotal)}
-                </div>
-              )}
-              {numAnfitrionasSeleccionadas > 1 && (
-                <div className="text-xs text-gray-500 border-t pt-2">
-                  <p>Desglose por anfitriona:</p>
-                  <p>• Servicio: {formatCurrencyNoDecimals(formData.precio_servicio)} × {numAnfitrionasSeleccionadas}{multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo} (60min)` : ''}</p>
-                  <p>• Habitación: {formatCurrencyNoDecimals(formData.precio_habitacion)} × {numAnfitrionasSeleccionadas}{multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo} (60min)` : ''}</p>
-                  {iva > 0 && <p>• IVA: {formatCurrencyNoDecimals(iva)} (20% + ajuste para redondeo a $5.000)</p>}
-                  <p className="text-blue-600 font-medium mt-1">Comisión por anfitriona: {formatCurrencyNoDecimals(Math.floor(precioServicioTotal / numAnfitrionasSeleccionadas))}</p>
-                </div>
-              )}
-            </div>
+            <ServicePriceSummary
+              subTotal={subTotal}
+              precioHabitacionTotal={precioHabitacionTotal}
+              iva={iva}
+              total={total}
+              precioServicioTotal={precioServicioTotal}
+              numAnfitrionas={numAnfitrionasSeleccionadas}
+              multiplicadorTiempo={multiplicadorTiempo}
+              precioServicio={formData.precio_servicio}
+              precioHabitacion={formData.precio_habitacion}
+            />
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { useConfirmModal } from '@/hooks/useConfirmModal';
+import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useState, useMemo, useCallback, memo } from 'react';
 

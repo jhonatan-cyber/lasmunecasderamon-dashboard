@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useMemo } from 'react';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/hooks/notificaciones/useNotifications';
 
 interface NotificationsContextType {
   isConnected: boolean;
