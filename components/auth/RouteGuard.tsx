@@ -2,9 +2,8 @@
 
 import { useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { Shield, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -48,8 +47,7 @@ const publicRoutes = [
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading: userLoading } = useCurrentUser();
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { user, userLoading, userPermissions, permissionsLoading, hasPermission } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -81,6 +79,20 @@ export function RouteGuard({ children }: RouteGuardProps) {
         return;
       }
 
+      // IMPORTANTE: Esperar a que los permisos se carguen antes de verificar acceso
+      if (permissionsLoading) {
+        console.log('[RouteGuard] ⏳ Esperando a que se carguen los permisos...');
+        return;
+      }
+
+      // Si no hay permisos cargados aún, esperar
+      if (!userPermissions || userPermissions.length === 0) {
+        console.log('[RouteGuard] ⏳ Permisos aún no cargados, esperando...');
+        return;
+      }
+
+      console.log('[RouteGuard] ✅ Permisos cargados:', userPermissions.length);
+
       // Buscar el permiso requerido para la ruta actual
       // IMPORTANTE: Buscar la coincidencia MÁS ESPECÍFICA primero
       // Ordenar las rutas por longitud descendente para que /payroll/calendar se verifique antes que /payroll
@@ -99,29 +111,15 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       const [, { module, action }] = requiredPermission;
 
-      console.log('[RouteGuard] Verificando ruta:', {
-        pathname,
-        matchedRoute: requiredPermission[0],
-        module,
-        action
-      });
-
-      // Si aún están cargando los permisos, esperar
-      if (permissionsLoading) {
-        return;
-      }
+      console.log('[RouteGuard] 🔍 Verificando permiso:', { module, action, pathname });
 
       // Verificar si el usuario tiene el permiso
       const hasAccess = hasPermission(module, action);
 
-      console.log('[RouteGuard] Resultado:', {
-        hasAccess,
-        module,
-        action,
-        willRedirect: !hasAccess
-      });
+      console.log('[RouteGuard] 🔑 Tiene acceso?', hasAccess);
 
       if (!hasAccess) {
+        console.log('[RouteGuard] ❌ Acceso denegado, redirigiendo...');
         // Redirigir a página de acceso denegado
         router.push('/access-denied');
         return;
@@ -132,7 +130,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [pathname, user, userLoading, permissionsLoading, hasPermission, router]);
+  }, [pathname, user, userLoading, userPermissions, permissionsLoading, hasPermission, router]);
 
   // Mostrar loading mientras se verifica
   if (checking || userLoading || permissionsLoading) {

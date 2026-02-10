@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, ArrowLeft, AlertCircle, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 
 // Lazy load del modal de detalle de pedido
 const OrderDetailModal = dynamic(
@@ -108,6 +109,35 @@ export default function OrdersPage() {
   const [deleteServicioModalOpen, setDeleteServicioModalOpen] = useState(false);
   const [servicioToDelete, setServicioToDelete] = useState<SolicitudServicio | null>(null);
   const [isDeletingServicio, setIsDeletingServicio] = useState(false);
+
+  // Función para actualizar pedidos (usar useCallback para evitar recrear en cada render)
+  const handleOrderUpdate = useCallback((data: { type: string; orderId: number }) => {
+    console.log('🔄 [ORDERS PAGE] Actualizando lista de pedidos por SSE...', data);
+    
+    // Actualizar el estado directamente sin recargar el componente
+    setOrders(prevOrders => {
+      if (data.type === 'order-processed' || data.type === 'order-deleted') {
+        // Eliminar el pedido de la lista
+        const updated = prevOrders.filter(order => order.id_pedido !== data.orderId);
+        console.log(`✅ [ORDERS PAGE] Pedido ${data.orderId} eliminado de la lista (${data.type})`);
+        return updated;
+      } else if (data.type === 'order-created') {
+        // Para pedidos nuevos, recargar la lista completa
+        console.log('🔄 [ORDERS PAGE] Recargando lista para nuevo pedido...');
+        fetchOrders();
+        return prevOrders;
+      }
+      return prevOrders;
+    });
+    
+    // También actualizar servicios si es necesario
+    if (data.type === 'order-processed' || data.type === 'order-deleted') {
+      fetchServicios();
+    }
+  }, []);
+
+  // Conectar al SSE para actualizaciones en tiempo real
+  useOrdersSSE(handleOrderUpdate);
 
   useEffect(() => {
     fetchOrders();

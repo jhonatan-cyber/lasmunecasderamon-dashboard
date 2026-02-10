@@ -110,12 +110,35 @@ export default function OrderDetailModal({
 
   useEffect(() => {
     if (!open) return;
-    fetch('/api/rooms?status=1')
+    // Cargar TODAS las habitaciones (disponibles y ocupadas) para poder mostrar la pre-seleccionada
+    fetch('/api/rooms')
       .then(res => res.json())
       .then(data => {
         if (data.success) setRooms(data.data);
       });
   }, [open]);
+
+  // Escuchar evento para cerrar el modal cuando se procese el pedido
+  useEffect(() => {
+    const handleCloseOrderModal = (event: CustomEvent) => {
+      const { orderId: processedOrderId } = event.detail;
+      console.log('🔔 [ORDER MODAL] Evento closeOrderModal recibido:', processedOrderId);
+      console.log('🔔 [ORDER MODAL] Modal abierto:', open);
+      console.log('🔔 [ORDER MODAL] Order ID actual:', orderId);
+      
+      // Si el modal está abierto y es el pedido que se procesó, cerrarlo
+      if (open && orderId === processedOrderId) {
+        console.log('✅ [ORDER MODAL] Cerrando modal automáticamente...');
+        onClose();
+      }
+    };
+
+    window.addEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+
+    return () => {
+      window.removeEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+    };
+  }, [open, orderId, onClose]);
 
   useEffect(() => {
     if (!open) {
@@ -132,22 +155,102 @@ export default function OrderDetailModal({
       // Cuando se abre el modal, verificar si el pedido ya tiene propina
       if (detail && detail.length > 0) {
         const propinaOriginal = detail[0]?.propina || 0;
-        console.log('Propina original del detalle:', propinaOriginal); // Log para depuración
-        console.log('Detalle completo:', detail[0]); // Log completo para depuración
+
         if (propinaOriginal > 0) {
           setPropina(propinaOriginal);
           setPropinaDisplayValue(propinaOriginal.toLocaleString('es-CL'));
           setAgregarPropina(true);
         }
-        
-        // Pre-seleccionar habitación si viene en el pedido
-        const habitacionDelPedido = detail[0]?.habitacion_id;
-        if (habitacionDelPedido) {
-          setHabitacionId(String(habitacionDelPedido));
+
+        // Pre-seleccionar habitación si viene en algún detalle del pedido
+        // Buscar en todos los detalles, no solo en el primero
+        const detalleConHabitacion = detail.find(d => d.habitacion_id);
+        if (detalleConHabitacion && detalleConHabitacion.habitacion_id) {
+          const habitacionId = String(detalleConHabitacion.habitacion_id);
+          setHabitacionId(habitacionId);
+          console.log('[ORDER MODAL] 🏠 Habitación auto-seleccionada del pedido (guardada):', habitacionId);
+        } else {
+          // Si no hay habitación guardada, buscar dinámicamente si alguna anfitriona está en venta activa
+          buscarHabitacionActiva();
         }
       }
     }
   }, [open, detail]);
+
+  // Función para buscar si alguna anfitriona del pedido está en una venta activa con habitación
+  const buscarHabitacionActiva = async () => {
+    if (!detail || detail.length === 0) {
+      console.log('[ORDER MODAL] ⚠️ No hay detalles del pedido');
+      return;
+    }
+
+    try {
+      console.log('[ORDER MODAL] 📋 Detalles del pedido:', detail);
+      
+      // Obtener IDs de todas las anfitrionas del pedido
+      const anfitrionasIds: number[] = [];
+      
+      // Obtener anfitrionas del primer detalle (anfitrionas generales del pedido)
+      const anfitrionaIdsStr = detail[0]?.anfitrionaIds;
+      console.log('[ORDER MODAL] 📝 anfitrionaIds del detalle[0]:', anfitrionaIdsStr);
+      
+      if (anfitrionaIdsStr) {
+        const ids = anfitrionaIdsStr.split(',').map((id: string) => parseInt(id.trim())).filter((id: number) => !isNaN(id));
+        anfitrionasIds.push(...ids);
+        console.log('[ORDER MODAL] ✅ IDs extraídos de anfitrionaIds:', ids);
+      }
+
+      // También obtener anfitrionas asignadas específicamente a productos
+      detail.forEach((d, index) => {
+        console.log(`[ORDER MODAL] 📝 Detalle[${index}] hostess_id:`, d.hostess_id);
+        console.log(`[ORDER MODAL] 📝 Detalle[${index}] anfitrionas_asignadas_ids:`, d.anfitrionas_asignadas_ids);
+        
+        if (d.hostess_id) {
+          anfitrionasIds.push(d.hostess_id);
+        }
+        if (d.anfitrionas_asignadas_ids) {
+          const ids = d.anfitrionas_asignadas_ids.split(',').map((id: string) => parseInt(id.trim())).filter((id: number) => !isNaN(id));
+          anfitrionasIds.push(...ids);
+        }
+      });
+
+      // Eliminar duplicados
+      const anfitrionasUnicas = [...new Set(anfitrionasIds)];
+
+      if (anfitrionasUnicas.length === 0) {
+        console.log('[ORDER MODAL] ℹ️ No hay anfitrionas en el pedido');
+        return;
+      }
+
+      console.log('[ORDER MODAL] 🔍 Buscando venta activa para anfitrionas:', anfitrionasUnicas);
+
+      // Llamar al endpoint para verificar si alguna anfitriona está en venta activa
+      const response = await fetch('/api/orders/check-active-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ anfitrionasIds: anfitrionasUnicas }),
+      });
+
+      const data = await response.json();
+      console.log('[ORDER MODAL] 📡 Respuesta del servidor:', data);
+
+      if (data.success && data.hasActiveRoom && data.data) {
+        const habitacionId = String(data.data.habitacionId);
+        setHabitacionId(habitacionId);
+        setTiempoHabitacion(data.data.tiempo || 30);
+        console.log('[ORDER MODAL] ✅ Habitación auto-seleccionada (venta activa):', habitacionId);
+        console.log('[ORDER MODAL] 📍 Anfitriona en venta:', data.data.anfitrionaId);
+        console.log('[ORDER MODAL] 🏠 Habitación:', data.data.habitacionNombre);
+        console.log('[ORDER MODAL] ⏱️ Tiempo:', data.data.tiempo, 'minutos');
+      } else {
+        console.log('[ORDER MODAL] ℹ️ Ninguna anfitriona está en venta activa con habitación');
+      }
+    } catch (error) {
+      console.error('[ORDER MODAL] ❌ Error buscando habitación activa:', error);
+    }
+  };
 
   useEffect(() => {
     if (agregarPropina && detail && detail.length > 0) {
@@ -398,8 +501,7 @@ export default function OrderDetailModal({
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${
-                  dataPropina.data.usuarios_distribucion
+                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
@@ -427,12 +529,8 @@ export default function OrderDetailModal({
         if (habitacionId) {
           const selectedRoom = rooms.find(room => room.id === parseInt(habitacionId));
           if (selectedRoom) {
-            console.log('[OrderDetailModal] Procesando venta con habitación:', {
-              ventaId: resultado.data?.id || resultado.data?.id_venta,
-              habitacionId: selectedRoom.id,
-              tiempo: tiempoHabitacion
-            });
-            
+
+
             try {
               const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
                 method: 'PATCH',
@@ -444,17 +542,11 @@ export default function OrderDetailModal({
                 })
               });
 
-              console.log('[OrderDetailModal] Room update response:', roomUpdateResponse.ok);
+
 
               if (roomUpdateResponse.ok) {
-                console.log('[OrderDetailModal] Iniciando timer con:', {
-                  servicioId: resultado.data?.id || resultado.data?.id_venta || orderId || 0,
-                  roomId: selectedRoom.id,
-                  roomName: selectedRoom.name,
-                  tiempo: tiempoHabitacion,
-                  codigo: resultado.data?.codigo || `VENTA_${orderId}`
-                });
-                
+
+
                 startTimer(
                   resultado.data?.id || resultado.data?.id_venta || orderId || 0,
                   selectedRoom.id,
@@ -466,24 +558,20 @@ export default function OrderDetailModal({
                   'venta',
                   detail[0]?.garzon || undefined
                 );
-                
-                console.log('[OrderDetailModal] Timer iniciado exitosamente');
+
+
               } else {
                 toast.error('Error al actualizar estado de habitación');
               }
             } catch (error) {
-              console.error('[OrderDetailModal] Error al actualizar habitación:', error);
+
               toast.error('Error al actualizar estado de habitación');
             }
           }
         }
 
         toast.success('Venta registrada exitosamente');
-        
-        // Disparar evento para refrescar ventas en tiempo real
         window.dispatchEvent(new CustomEvent('ventaRegistrada'));
-        console.log('[OrderDetailModal] Evento ventaRegistrada disparado');
-        
         onClose();
         onVentaRegistrada?.();
       }
@@ -607,7 +695,20 @@ export default function OrderDetailModal({
     return result;
   };
 
-  const habitacionesActivas = rooms.filter(room => room.status === 1);
+  // Filtrar habitaciones activas, pero incluir la habitación pre-seleccionada aunque esté ocupada
+  const habitacionesActivas = rooms.filter(room => {
+    // Incluir habitaciones disponibles (status = 1)
+    if (room.status === 1) return true;
+    
+    // También incluir la habitación pre-seleccionada aunque esté ocupada
+    if (habitacionId && room.id_habitacion === parseInt(habitacionId)) {
+      console.log('[ORDER MODAL] 📍 Incluyendo habitación ocupada pre-seleccionada:', room.nombre);
+      return true;
+    }
+    
+    return false;
+  });
+  
   const hasChampagne = detail.some((item: any) => {
     const cat = (item.categoria || '').toLowerCase();
     return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
@@ -736,6 +837,7 @@ export default function OrderDetailModal({
                           placeholder='Seleccione una habitación'
                           searchPlaceholder='Buscar habitación...'
                           filterByStatus={1}
+                          includeRoomIds={habitacionId ? [parseInt(habitacionId)] : []}
                           showTime={true}
                         />
                         {habitacionId && (
@@ -795,7 +897,7 @@ export default function OrderDetailModal({
                       </div>
                       {agregarPropina && (
                         <div className='text-xs text-green-600 mt-1'>
-                          {detail[0]?.propina > 0 
+                          {detail[0]?.propina > 0
                             ? `✓ Propina original: $${propina.toLocaleString('es-CL')}`
                             : `✓ Propina del 10%: $${propina.toLocaleString('es-CL')}`
                           }
@@ -973,7 +1075,7 @@ export default function OrderDetailModal({
               )}
             </div>
           </div>
-          <DialogFooter className='flex gap-2 sm:gap-0'>
+          <DialogFooter className='flex justify-center items-center gap-3 sm:justify-center'>
             <Button
               variant='outline'
               onClick={handleCancelRegistrarVenta}
@@ -983,6 +1085,7 @@ export default function OrderDetailModal({
               Cancelar
             </Button>
             <Button
+              variant='outline'
               onClick={handleConfirmRegistrarVenta}
               disabled={isRegistering}
               className='rounded-full bg-green-600 hover:bg-green-700'
@@ -993,7 +1096,7 @@ export default function OrderDetailModal({
                   Registrando...
                 </>
               ) : (
-                'Confirmar Venta'
+                'Confirmar'
               )}
             </Button>
           </DialogFooter>

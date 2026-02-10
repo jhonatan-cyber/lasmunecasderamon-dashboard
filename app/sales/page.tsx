@@ -196,7 +196,7 @@ export default function Sales() {
             />
           </div>
 
-          {totalPages > 1 && (
+          {filteredVentas.length > rowsPerPage && (
             <div className='flex justify-center'>
               <Paginate page={page} totalPages={totalPages} setPage={setPage} />
             </div>

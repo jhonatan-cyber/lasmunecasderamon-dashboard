@@ -2,7 +2,6 @@
 
 import { Bell, User, ChevronDown, Menu, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +55,7 @@ const OrderDetailModal = dynamic(
 
 export function Header() {
   const router = useRouter();
-  const { orders, refetch, orderDetail, fetchOrderDetail, isDetailLoading, detailError } =
+  const { orders, refetch, orderDetail, fetchOrderDetail, isDetailLoading, detailError, setOrders } =
     useOrders();
   const { user, loading: userLoading } = useCurrentUser();
   const { toggleSidebar, isCollapsed, toggleCollapse } = useSidebar();
@@ -89,6 +88,20 @@ export function Header() {
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
   const isCajero = user?.role?.toLowerCase() === 'cajero';
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
+
+  // Log para debugging de foto de perfil
+  useEffect(() => {
+    if (user) {
+      console.log('👤 [HEADER] Datos del usuario:', {
+        id: user.id,
+        name: user.name,
+        foto: user.foto,
+        fotoType: typeof user.foto,
+        fotoLength: user.foto?.length,
+        imageVersion
+      });
+    }
+  }, [user, imageVersion]);
 
   // Habilitar audio cuando el usuario interactúe
   const enableAudio = () => {
@@ -149,7 +162,7 @@ export function Header() {
 
   const handleOrderClick = (orderId: number) => {
     // Verificar si tiene permiso para procesar pedidos
-    if (!hasPermission('orders', 'process')) {
+    if (!hasPermission('pedidos', 'registrar_venta')) {
       toast.error('No tienes permisos para procesar pedidos');
       setShowDropdown(false);
       return;
@@ -176,7 +189,7 @@ export function Header() {
   useEffect(() => {
     const handleOpenOrderModal = (event: CustomEvent) => {
       // Verificar si tiene permiso para procesar pedidos
-      if (!hasPermission('orders', 'process')) {
+      if (!hasPermission('pedidos', 'registrar_venta')) {
         toast.error('No tienes permisos para procesar pedidos');
         return;
       }
@@ -251,24 +264,58 @@ export function Header() {
 
   // Escuchar evento para actualizar contador de pedidos pendientes
   useEffect(() => {
-    const handleUpdatePendingOrders = () => {
-      refetch(); // Recargar los pedidos para obtener el contador actualizado
+    const handleUpdatePendingOrders = (event?: CustomEvent) => {
+      // Si viene con datos del evento SSE, actualizar el estado directamente
+      if (event && event.detail) {
+        const { type, orderId } = event.detail;
+        console.log('🔄 [HEADER] Actualizando pedidos por SSE:', { type, orderId });
+        
+        if (type === 'order-processed' || type === 'order-deleted') {
+          // Eliminar el pedido de la lista sin recargar
+          setOrders((prevOrders: any[]) => {
+            const updated = prevOrders.filter((o: any) => o.id_pedido !== orderId);
+            console.log(`✅ [HEADER] Pedido ${orderId} eliminado de la lista`);
+            return updated;
+          });
+        } else if (type === 'order-created') {
+          // Para pedidos nuevos, recargar la lista
+          console.log('🔄 [HEADER] Recargando lista para nuevo pedido...');
+          refetch();
+        }
+      } else {
+        // Si no viene con datos, recargar (comportamiento legacy)
+        refetch();
+      }
     };
 
-    window.addEventListener('updatePendingOrders', handleUpdatePendingOrders);
-
-    // También escuchar eventos de notificaciones SSE
-    const handleSSENotification = () => {
-      refetch();
-    };
-
-    window.addEventListener('updatePendingOrders', handleSSENotification);
+    window.addEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
 
     return () => {
-      window.removeEventListener('updatePendingOrders', handleUpdatePendingOrders);
-      window.removeEventListener('updatePendingOrders', handleSSENotification);
+      window.removeEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
     };
-  }, [refetch]);
+  }, [refetch, setOrders]);
+
+  // Escuchar evento para cerrar el modal cuando se procese un pedido
+  useEffect(() => {
+    const handleCloseOrderModal = (event: CustomEvent) => {
+      const { orderId: processedOrderId } = event.detail;
+      console.log('🔔 [HEADER] Evento closeOrderModal recibido:', processedOrderId);
+      console.log('🔔 [HEADER] Modal abierto:', modalOpen);
+      console.log('🔔 [HEADER] Order ID actual:', selectedOrderId);
+      
+      // Si el modal está abierto y es el pedido que se procesó, cerrarlo
+      if (modalOpen && selectedOrderId === processedOrderId) {
+        console.log('✅ [HEADER] Cerrando modal automáticamente...');
+        handleCloseModal();
+      }
+    };
+
+    window.addEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+
+    return () => {
+      window.removeEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+    };
+  }, [modalOpen, selectedOrderId]);
 
   const handleCloseModal = () => {
     setModalOpen(false);
@@ -828,21 +875,30 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' className='flex items-center gap-2 px-2 sm:px-3'>
                 <Avatar className='h-8 w-8'>
-                  <AvatarImage asChild>
-                    <Image
-                      src={
-                        user?.foto
-                          ? `/img/users/${user.foto}?v=${imageVersion}`
-                          : '/img/users/default.png'
-                      }
+                  {user?.foto && user.foto !== '' ? (
+                    <img
+                      src={`/img/users/${user.foto}?v=${imageVersion}`}
                       alt={user ? `${user.name} ${user.lastName}` : 'Usuario'}
-                      width={32}
-                      height={32}
-                      loading="lazy"
-                      className="object-cover rounded-full"
-                      key={`${user?.foto}-${imageVersion}`}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        console.error('❌ Error cargando imagen de perfil:', {
+                          foto: user?.foto,
+                          src: e.currentTarget.src,
+                          imageVersion
+                        });
+                        e.currentTarget.src = '/img/users/default.png';
+                      }}
+                      onLoad={() => {
+                        console.log('✅ Imagen de perfil cargada:', {
+                          foto: user?.foto,
+                          imageVersion,
+                          src: `/img/users/${user.foto}?v=${imageVersion}`
+                        });
+                      }}
                     />
-                  </AvatarImage>
+                  ) : (
+                    <AvatarImage src="/img/users/default.png" alt="Usuario" />
+                  )}
                   <AvatarFallback>
                     {user ? `${user.name?.[0] || ''}${user.lastName?.[0] || ''}` : 'U'}
                   </AvatarFallback>

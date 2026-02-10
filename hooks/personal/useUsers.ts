@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { User } from '@/types/user';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericFilters } from '../shared/useGenericFilters';
@@ -23,6 +23,8 @@ interface UseUsersReturn {
   setSearchTerm: (term: string) => void;
   filterStatus: string;
   setFilterStatus: (status: string) => void;
+  filterRole: string;
+  setFilterRole: (role: string) => void;
   page: number;
   setPage: (page: number) => void;
   pageSize: number;
@@ -45,6 +47,7 @@ interface UseUsersReturn {
 
 export function useUsers(): UseUsersReturn {
   const [error, setError] = useState<string | null>(null);
+  const [filterRole, setFilterRole] = useState<string>('all');
 
   // Usar hook genérico para fetch
   const { data: users, isLoading, error: fetchError, refetch: fetchUsers, setData: setUsers } = useGenericFetch<User>(
@@ -59,6 +62,29 @@ export function useUsers(): UseUsersReturn {
     searchFields: ['name', 'lastName', 'run', 'email', 'phone', 'nick', 'address'],
     initialPageSize: 5
   });
+
+  // Aplicar filtro de rol adicional
+  const filteredByRole = useMemo(() => {
+    if (filterRole === 'all') {
+      return filters.filteredData;
+    }
+    return filters.filteredData.filter(user => 
+      user.role?.toLowerCase() === filterRole.toLowerCase()
+    );
+  }, [filters.filteredData, filterRole]);
+
+  // Recalcular paginación con el filtro de rol
+  const paginatedByRole = useMemo(() => {
+    const start = (filters.page - 1) * filters.pageSize;
+    return filteredByRole.slice(start, start + filters.pageSize);
+  }, [filteredByRole, filters.page, filters.pageSize]);
+
+  const totalPagesWithRole = Math.max(1, Math.ceil(filteredByRole.length / filters.pageSize));
+
+  // Resetear página cuando cambie el filtro de rol
+  useEffect(() => {
+    filters.setPage(1);
+  }, [filterRole]);
 
   // Limpiar error
   const clearError = useCallback(() => {
@@ -392,8 +418,8 @@ export function useUsers(): UseUsersReturn {
 
   return {
     users: users || [],
-    filteredUsers: filters.filteredData,
-    paginatedUsers: filters.paginatedData,
+    filteredUsers: filteredByRole,
+    paginatedUsers: paginatedByRole,
     isLoading,
     error: error || fetchError,
     searchTerm: filters.searchTerm,
@@ -404,11 +430,13 @@ export function useUsers(): UseUsersReturn {
       else if (status === 'active') filters.setFilterStatus(1);
       else if (status === 'inactive') filters.setFilterStatus(0);
     },
+    filterRole,
+    setFilterRole,
     page: filters.page,
     setPage: filters.setPage,
     pageSize: filters.pageSize,
     setPageSize: filters.setPageSize,
-    totalPages: filters.totalPages,
+    totalPages: totalPagesWithRole,
     fetchUsers,
     createUser,
     updateUser,

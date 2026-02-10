@@ -9,15 +9,14 @@ import { RouteGuard } from '@/components/auth/RouteGuard';
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useSessionCheck } from '@/hooks/auth/useSessionCheck';
-import { usePermissionsSSE } from '@/hooks/auth/usePermissionsSSE';
 import React from 'react';
 import { cn } from '@/lib/utils';
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar();
   
-  // Conectar al servidor SSE para recibir actualizaciones de permisos en tiempo real
-  usePermissionsSSE();
+  // NOTA: usePermissionsSSE ya se ejecuta globalmente en app/layout.tsx
+  // No es necesario llamarlo aquí
   
   return (
     <div className='flex h-screen bg-background'>

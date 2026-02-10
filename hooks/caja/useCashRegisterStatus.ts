@@ -21,10 +21,24 @@ export function useCashRegisterStatus() {
     refetch: refresh,
   } = useGenericFetch<any>('/api/cashregister?status=check', {
     initialFetch: true,
-    transform: (data) => (data.success ? data.data : { hasOpenCaja: false, cajaInfo: null }),
+    transform: (data) => {
+      console.log('[useCashRegisterStatus] 📦 Datos recibidos:', data);
+      const result = data.success ? data.data : { hasOpenCaja: false, cajaInfo: null };
+      console.log('[useCashRegisterStatus] ✅ Resultado transformado:', result);
+      return result;
+    },
   });
 
-  const statusData = data?.[0] || { hasOpenCaja: false, cajaInfo: null };
+  // CORRECCIÓN: data ya es el objeto transformado, no un array
+  const statusData = data || { hasOpenCaja: false, cajaInfo: null };
+
+  console.log('[useCashRegisterStatus] 🔍 Estado final:', {
+    hasOpenCaja: statusData.hasOpenCaja,
+    cajaInfo: statusData.cajaInfo,
+    loading,
+    error,
+    dataRaw: data
+  });
 
   return {
     hasOpenCaja: statusData.hasOpenCaja,

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { query, rawQuery } from "@/lib/db";
 import { sendNotificationToAll } from "../notifications/sse";
+import { notifyOrderDeleted } from "./sse";
 
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -32,6 +33,16 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         id: Number(id),
         estado: req.body.estado
       });
+      
+      // Si el pedido fue rechazado (estado = 2), notificar por SSE para actualizar la lista
+      if (req.body.estado === 2) {
+        console.log(`[ORDERS] Pedido ${id} rechazado, notificando por SSE...`);
+        try {
+          notifyOrderDeleted(Number(id));
+        } catch (sseError) {
+          console.error('[ORDERS] Error notificando rechazo por SSE:', sseError);
+        }
+      }
       
       return res
         .status(200)
@@ -91,6 +102,14 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       await rawQuery('COMMIT');
+      
+      // Notificar por SSE para actualizar la lista de pedidos
+      console.log(`[ORDERS] Pedido ${id} eliminado, notificando por SSE...`);
+      try {
+        notifyOrderDeleted(Number(id));
+      } catch (sseError) {
+        console.error('[ORDERS] Error notificando eliminación por SSE:', sseError);
+      }
       
       return res.status(200).json({ 
         success: true, 

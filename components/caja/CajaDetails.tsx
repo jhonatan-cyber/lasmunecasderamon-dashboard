@@ -256,7 +256,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
       const timeoutId = setTimeout(() => {
         // Refrescar retiros cuando cambie el efectivo (indica nuevo retiro)
         refetchRetiros();
-        
+
         // Recargar ventas
         setLoadingVentas(true);
         fetch(`/api/sales?caja_id=${caja.id_caja}`)
@@ -398,11 +398,18 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               <h5 className="font-medium text-lg mb-4 text-center text-gray-900 dark:text-white">
                 Resumen Financiero
               </h5>
-              <div className="flex justify-center gap-2 text-sm mb-6">
-                <span className="text-gray-600 dark:text-gray-400">Monto apertura:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {formatCurrencyNoDecimals(caja.monto_apertura)}
-                </span>
+
+              {/* Monto de apertura en card pequeño */}
+              <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-blue-200 dark:border-blue-600 shadow-sm mb-6 max-w-xs mx-auto">
+                <div className="text-center">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">MONTO APERTURA</div>
+                  <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                    {formatCurrencyNoDecimals(caja.monto_apertura)}
+                  </div>
+                </div>
               </div>
 
               {/* Tarjetas de resumen principal */}
@@ -565,7 +572,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                   <div className="text-center">
                     <div className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">TOTAL EGRESOS</div>
                     <div className="text-lg font-bold text-red-700 dark:text-red-300">
-                      -{formatCurrencyNoDecimals(totalEgresos)}
+                      {formatCurrencyNoDecimals(totalEgresos)}
                     </div>
                     {/* Desglose de egresos */}
                     <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-700 text-xs space-y-1">
@@ -592,21 +599,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                   <DollarSign className="w-4 h-4" />
                   Distribución del Dinero
                 </h6>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Monto Apertura */}
-                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-blue-200 dark:border-blue-600 shadow-sm">
-                    <div className="text-center">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">APERTURA</div>
-                      <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                        {formatCurrencyNoDecimals(caja.monto_apertura)}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inicial</div>
-                    </div>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* En Caja */}
                   <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-green-200 dark:border-green-600 shadow-sm">
                     <div className="text-center">
@@ -695,7 +688,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                         <div className='flex-1'>
                           <div className='flex items-center gap-2 mb-1'>
                             <span className='font-medium text-orange-600 dark:text-orange-400'>
-                              -${Math.round(retiro.monto).toLocaleString()}
+                              ${Math.round(retiro.monto).toLocaleString()}
                             </span>
                             <span className='text-xs text-gray-500 dark:text-gray-400'>
                               por {retiro.usuario_nombre || 'Usuario desconocido'}
@@ -719,7 +712,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
                       <div className='flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
                         <span>Total Retirado:</span>
                         <span className='text-orange-600 dark:text-orange-400'>
-                          -${Math.round(retiros.reduce((sum, r) => sum + r.monto, 0)).toLocaleString()}
+                          ${Math.round(retiros.reduce((sum, r) => sum + r.monto, 0)).toLocaleString()}
                         </span>
                       </div>
                     </div>
