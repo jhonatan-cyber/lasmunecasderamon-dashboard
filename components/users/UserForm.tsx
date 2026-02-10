@@ -40,7 +40,7 @@ import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
 import { FormFieldWithIcon } from './FormFieldWithIcon';
 import { ImageUploadField } from './ImageUploadField';
 import { NumberInputField } from './NumberInputField';
-// Esquema de validación con Zod
+
 const userFormSchema = z.object({
   run: z.string().min(8, 'El RUN es requerido'),
   nick: z.string().min(3, 'El nick debe tener al menos 3 caracteres'),
@@ -57,7 +57,8 @@ const userFormSchema = z.object({
   rol_id: z.string().min(1, 'El rol es requerido'),
   correo: z.string().optional(), // Completamente opcional, sin validación de email
   password: z.string().optional(),
-  foto: z.string().optional()
+  foto: z.string().optional(),
+  foto_anterior: z.string().optional()
 });
 export type UserFormValues = z.infer<typeof userFormSchema>;
 
@@ -73,18 +74,16 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
   const { roles, isLoading: isLoadingRoles } = useRoles();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Hooks de formateo de números
+
+
   const sueldo = useNumberFormatter(user?.salary || 0);
   const aporte = useNumberFormatter(user?.contributions || 0);
   const descuento = useNumberFormatter(user?.discount || 0);
 
-  // Debug: Log roles cuando cambien
+
   useEffect(() => {
-    console.log('🔵 [USERFORM] Roles cargados:', roles.length);
-    if (roles.length > 0) {
-      console.log('🔵 [USERFORM] Primer rol:', roles[0]);
-    }
+
+
   }, [roles]);
 
   // Funciones memoizadas para mapeo de estado civil
@@ -144,16 +143,13 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
   const housingDiscount = form.watch('housing_discount');
 
   const handleFormSubmit = useCallback(async (values: UserFormValues) => {
-    console.log('🔵 Formulario enviado', values);
+
     try {
       setIsSubmitting(true);
 
       // Verificar que los campos nombre y apellido estén presentes
       if (!values.nombre || !values.apellido) {
-        console.error('Error: Nombre o apellido faltantes', {
-          nombre: values.nombre,
-          apellido: values.apellido
-        });
+
         form.setError('nombre', {
           type: 'manual',
           message: !values.nombre ? 'El nombre es requerido' : ''
@@ -167,12 +163,12 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
 
       // Verificar si hay una imagen para enviar
       if (imageFile) {
-        console.log('Enviando imagen:', imageFile.name, imageFile.type, imageFile.size);
+
 
         // Verificar tipo de archivo nuevamente
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
         if (!allowedTypes.includes(imageFile.type)) {
-          console.error('Tipo de archivo no permitido:', imageFile.type);
+
           form.setError('foto', {
             type: 'manual',
             message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF)'
@@ -182,7 +178,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
 
         // Verificar tamaño nuevamente
         if (imageFile.size > 5 * 1024 * 1024) {
-          console.error('Tamaño de archivo excede el límite:', imageFile.size);
+
           form.setError('foto', {
             type: 'manual',
             message: 'La imagen no puede superar los 5MB'
@@ -193,23 +189,29 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
         console.log('No hay imagen para enviar');
       }
 
-      // Asegurarse de que los campos numéricos sean números usando valores formateados
+
       const processedValues = { ...values };
       processedValues.sueldo = Number(sueldo.getNumericValue(sueldo.formattedValue)) || 0;
       processedValues.aporte = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
       processedValues.descuento = Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
 
-      // Mapear el estado civil del select al formato de la BD
+
       processedValues.estado_civil = mapSelectToEstadoCivil(processedValues.estado_civil);
 
-      // Si estamos editando y el RUN cambió, actualizar la contraseña al nuevo RUN
+
       if (isEditMode && user && processedValues.run !== user.run) {
         processedValues.password = processedValues.run;
       }
+
+
+      if (isEditMode && user && user.foto && !imageFile) {
+        processedValues.foto_anterior = user.foto;
+      }
+
       await onSubmit(processedValues, imageFile || undefined);
     } catch (error) {
-      console.error('Error al enviar el formulario:', error);
-      // Mostrar error general
+
+
       form.setError('root', {
         type: 'manual',
         message: 'Error al enviar el formulario. Por favor, inténtelo de nuevo.'

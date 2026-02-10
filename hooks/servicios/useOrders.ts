@@ -16,6 +16,7 @@ export default function useOrders() {
     isLoading: fetchLoading,
     error: fetchError,
     refetch: fetchOrders,
+    setData: setOrders, // Exponer setData para actualizar el estado directamente
   } = useGenericFetch<Order>('/api/orders', {
     initialFetch: true,
     transform: (data) => data.success ? data.data : []
@@ -126,6 +127,7 @@ export default function useOrders() {
     fetchOrders,
     fetchOrderDetail,
     refetch: fetchOrders,
+    setOrders, // Exponer setOrders para actualizar el estado directamente
     createOrder,
     updateOrder,
     deleteOrder,

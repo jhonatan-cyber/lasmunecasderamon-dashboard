@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SelectElements from "@/components/ui/select-elements";
 import Paginate from "@/components/ui/paginate";
+import { useOrdersSSE } from "@/hooks/orders/useOrdersSSE";
 
 interface Order {
   id_pedido: number;
@@ -63,17 +64,35 @@ export default function GarzonPedidosPage() {
     if (user && !userLoading) {
       console.log('🔄 Iniciando carga de pedidos para usuario:', user.id);
       fetchOrders();
-      
-      // Actualización automática cada 3 segundos
-      const interval = setInterval(() => {
-        fetchOrders();
-      }, 3000);
-      
-      return () => {
-        clearInterval(interval);
-      };
     }
   }, [user, userLoading]);
+
+  // Escuchar actualizaciones en tiempo real mediante SSE
+  useOrdersSSE((data) => {
+    console.log('📢 [GARZON PEDIDOS] Actualización SSE recibida:', data);
+    
+    if (data.type === 'order-processed') {
+      // Actualizar el estado del pedido procesado a "Aprobado" (estado = 0)
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id_pedido === data.orderId 
+            ? { ...order, estado: 0 }
+            : order
+        )
+      );
+      console.log('✅ [GARZON PEDIDOS] Pedido actualizado a Aprobado:', data.orderId);
+    } else if (data.type === 'order-deleted') {
+      // Remover el pedido eliminado de la lista
+      setOrders(prevOrders => 
+        prevOrders.filter(order => order.id_pedido !== data.orderId)
+      );
+      console.log('✅ [GARZON PEDIDOS] Pedido eliminado:', data.orderId);
+    } else if (data.type === 'order-created') {
+      // Recargar todos los pedidos cuando se crea uno nuevo
+      fetchOrders();
+      console.log('✅ [GARZON PEDIDOS] Nuevo pedido creado, recargando lista');
+    }
+  });
 
   // Filtrar y ordenar pedidos
   useEffect(() => {

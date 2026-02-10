@@ -68,10 +68,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
 // Función para enviar notificaciones a todos los clientes
 export function sendNotificationToAll(type: string, data: any) {
-  console.log(`[SSE] sendNotificationToAll llamado con type="${type}", clients.size=${clients.size}`);
+
   
   if (clients.size === 0) {
-    console.warn('[SSE] ⚠️ NO HAY CLIENTES CONECTADOS - Notificación no se enviará');
+
     return;
   }
 
@@ -83,7 +83,7 @@ export function sendNotificationToAll(type: string, data: any) {
 
   const deadClients: NextApiResponse[] = [];
 
-  console.info(`[SSE] 📤 Broadcasting ${type} a ${clients.size} clientes`);
+
 
   clients.forEach(client => {
     try {

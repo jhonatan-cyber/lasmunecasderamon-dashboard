@@ -98,7 +98,6 @@ export function ClientFilters({
               className="w-full lg:w-auto rounded-full px-4 text-sm"
             >
               <Eraser className="w-3 h-3 mr-1" />
-              Limpiar
             </Button>
           </div>
         </div>

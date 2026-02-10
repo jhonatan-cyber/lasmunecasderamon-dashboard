@@ -1,6 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
-import { usePathname } from 'next/navigation';
-import { useGenericFetch } from '../shared/useGenericFetch';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CurrentUser {
   id: number;
@@ -8,6 +6,7 @@ interface CurrentUser {
   lastName: string;
   email?: string;
   role: string;
+  roleId?: number; // ID del rol para comparar con SSE
   status: number;
   foto?: string;
   username?: string;
@@ -24,41 +23,19 @@ interface UseCurrentUserReturn {
   refetch: () => Promise<void>;
 }
 
+/**
+ * Hook optimizado que usa el contexto de autenticación
+ * Evita múltiples llamadas al API
+ */
 export const useCurrentUser = (): UseCurrentUserReturn => {
-  const pathname = usePathname();
-
-  // Verificar si es una página pública
-  const isPublicPage = useMemo(() => 
-    pathname === '/login' ||
-    pathname === '/api-docs' ||
-    pathname === '/confirmar-anulacion' ||
-    pathname === '/confirmar-anulacion-servicio',
-    [pathname]
-  );
-
-  const {
-    data,
-    isLoading: loading,
-    error,
-    refetch: fetchCurrentUser,
-  } = useGenericFetch<CurrentUser>('/api/auth/me', {
-    initialFetch: !isPublicPage,
-    transform: (data) => (data.success ? data.user : null),
-  });
-
-  const user = data?.[0] || null;
-
-  // Refetch cuando cambia la ruta (solo si no es pública)
-  useEffect(() => {
-    if (!isPublicPage) {
-      fetchCurrentUser();
-    }
-  }, [pathname, isPublicPage, fetchCurrentUser]);
+  const { user, userLoading, refreshUser } = useAuth();
 
   return {
     user,
-    loading: isPublicPage ? false : loading,
-    error,
-    refetch: fetchCurrentUser
+    loading: userLoading,
+    error: null,
+    refetch: refreshUser
   };
 };
+
+export default useCurrentUser;

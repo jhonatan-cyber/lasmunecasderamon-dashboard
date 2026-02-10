@@ -72,7 +72,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    // Obtener información completa del usuario incluyendo rol
+    // Obtener información completa del usuario incluyendo rol y permisos
     const userInfo = await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
@@ -89,17 +89,47 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const user = userInfo[0];
-    const isCajero = user.rol_nombre === 'cajero';
+    const isAdmin = user.rol_nombre?.toLowerCase() === 'administrador';
+    
+    // Verificar si tiene permisos de caja (listar)
+    let hasCajaPermission = isAdmin; // Admin siempre tiene permiso
+    
+    if (!isAdmin) {
+      const permissionCheck = await query(
+        `SELECT COUNT(*) as has_permission 
+         FROM role_permissions rp
+         INNER JOIN permissions p ON rp.permission_id = p.id
+         WHERE rp.role_id = ? AND p.module = 'caja' AND p.action = 'listar'
+         AND p.deleted_at IS NULL`,
+        [user.rol_id]
+      ) as any[];
+      
+      hasCajaPermission = permissionCheck[0]?.has_permission > 0;
+    }
+    
+    // Si no tiene permisos de caja, solo puede ver su propia caja
+    const canViewAllCajas = hasCajaPermission;
 
     // Endpoint para verificar estado de caja (equivalente a caja-status.ts)
     if (status === 'check') {
       try {
+        console.log('[CASHREGISTER] 🔍 Verificando estado de caja...');
         const cajaResult = (await query(
           'SELECT id_caja, usuario_id_apertura, fecha_apertura FROM cajas WHERE estado = 1 LIMIT 1'
         )) as any[];
 
         const hasOpenCaja = cajaResult.length > 0;
         const cajaInfo = hasOpenCaja ? cajaResult[0] : null;
+
+        console.log('[CASHREGISTER] ✅ Estado de caja:', {
+          hasOpenCaja,
+          cajaInfo: cajaInfo ? {
+            id_caja: cajaInfo.id_caja,
+            usuario_id_apertura: cajaInfo.usuario_id_apertura
+          } : null,
+          usuario_consultando: currentUser.id,
+          rol: user.rol_nombre
+        });
 
         return res.status(200).json({
           success: true,
@@ -122,7 +152,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     if (resumen === '1') {
-      // Si es cajero, solo obtener datos de su caja abierta
+      // Si no tiene permisos de caja, solo obtener datos de su caja abierta
       let cajaAbiertaQuery = `
         SELECT 
           c.*, 
@@ -134,7 +164,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       
       const cajaAbiertaParams: any[] = [];
       
-      if (isCajero) {
+      if (!canViewAllCajas) {
         cajaAbiertaQuery += ' AND c.usuario_id_apertura = ?';
         cajaAbiertaParams.push(currentUser.id);
       }
@@ -147,7 +177,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         ? cajaAbiertaResult[0] 
         : null;
 
-      // Contadores de cajas (para cajeros solo contar su caja)
+      // Contadores de cajas (si no tiene permisos, solo contar su caja)
       let cajasCountQuery = `
         SELECT 
           COUNT(CASE WHEN estado = 1 THEN 1 END) AS cajas_abiertas,
@@ -158,7 +188,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       
       const cajasCountParams: any[] = [];
       
-      if (isCajero) {
+      if (!canViewAllCajas) {
         cajasCountQuery += ' AND usuario_id_apertura = ?';
         cajasCountParams.push(currentUser.id);
       }
@@ -307,15 +337,18 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       let whereClause = 'WHERE c.estado IN (0, 1)';
       const params: any[] = [];
 
-      // Si es cajero, solo mostrar su caja abierta
-      if (isCajero) {
+      // Si no tiene permisos de caja, solo mostrar su caja abierta
+      if (!canViewAllCajas) {
         whereClause += ' AND c.usuario_id_apertura = ? AND c.estado = 1';
         params.push(currentUser.id);
       } else {
-        // Para otros roles, aplicar filtros normales
+        // Para usuarios con permisos de caja, solo mostrar cajas abiertas
         if (estado !== undefined) {
           whereClause += ' AND c.estado = ?';
           params.push(parseInt(estado as string));
+        } else {
+          // Por defecto, solo mostrar cajas abiertas si tiene permisos
+          whereClause += ' AND c.estado = 1';
         }
       }
 

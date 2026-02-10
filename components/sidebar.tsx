@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import {
-  BarChart3,
   Users,
   ShoppingCart,
   Package,
@@ -13,8 +12,6 @@ import {
   Home,
   FileText,
   TrendingUp,
-  Bell,
-  HelpCircle,
   UserCheck,
   Tag,
   Shield,
@@ -27,12 +24,8 @@ import {
   Percent,
   DollarSign,
   RotateCcw,
-  ClipboardList,
   Calendar as CalendarIcon,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Menu
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -121,38 +114,59 @@ const secondaryNavigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const [mounted, setMounted] = React.useState(false);
-  const { isSidebarOpen, isCollapsed, closeSidebar, toggleCollapse } = useSidebar();
+  const { isSidebarOpen, isCollapsed, closeSidebar } = useSidebar();
   const { user, loading: userLoading } = useCurrentUser();
   const { userPermissions: permissions, isLoading: permissionsLoading } = useUserPermissions();
 
-  // Log inicial para debugging
-  React.useEffect(() => {
-    console.log('[Sidebar] Estado actual:', {
-      user: user?.role,
-      userLoading,
-      permissionsLoading,
-      permissionsCount: permissions.length,
-      permissions: permissions.map(p => `${p.module}.${p.action}`)
-    });
-  }, [user, userLoading, permissionsLoading, permissions]);
+  // Estado para forzar re-render cuando cambien permisos
+  const [permissionsVersion, setPermissionsVersion] = React.useState(0);
+  const prevPermissionsRef = React.useRef<typeof permissions>([]);
 
-  // Log del usuario y su rol
+  // Detectar cambios en el array de permisos comparando con la versión anterior
   React.useEffect(() => {
-    if (user && !userLoading) {
-      console.log('[Sidebar] Usuario logueado:', {
-        id: user.id,
-        nombre: user.name,
-        apellido: user.lastName,
-        rol: user.role
+    const prevPermissions = prevPermissionsRef.current;
+
+    // Si cambió la cantidad o el contenido de permisos
+    if (permissions.length !== prevPermissions.length ||
+      JSON.stringify(permissions) !== JSON.stringify(prevPermissions)) {
+
+      console.log('🔄 [Sidebar] PERMISOS CAMBIARON!', {
+        antes: prevPermissions.length,
+        ahora: permissions.length,
+        permisosNuevos: permissions.map(p => `${p.module}.${p.action}`)
       });
+
+      setPermissionsVersion(prev => prev + 1);
+
+      // Actualizar referencia
+      prevPermissionsRef.current = permissions;
+    }
+  }, [permissions]);
+
+  // Crear una clave única basada en los permisos para detectar cambios
+  const permissionsKey = React.useMemo(() => {
+    return `${permissions.length}:${permissions.map(p => `${p.module}.${p.action}`).sort().join('|')}`;
+  }, [permissions]);
+
+  // Log inicial para debugging (solo en desarrollo)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Sidebar] Estado:', {
+        user: user?.role,
+        permissionsCount: permissions.length,
+        permissionsVersion
+      });
+    }
+  }, [user, permissions, permissionsVersion]);
+
+  // Log del usuario y su rol (solo en desarrollo)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && user && !userLoading) {
+      console.log('[Sidebar] Usuario:', user.name, user.role);
     }
   }, [user, userLoading]);
 
-  // Verificar si el usuario es anfitriona o garzón
-  const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
-  const isGarzon = user?.role?.toLowerCase() === 'garzon';
-
-  const hasModulePermission = (module: string, action: string = 'listar') => {
+  const hasModulePermission = React.useCallback((module: string, action: string = 'listar') => {
     // Dashboard siempre accesible
     if (module === 'dashboard') return true;
 
@@ -163,18 +177,37 @@ export function Sidebar() {
         : false;
 
     if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
-    
+
     // Si no hay permisos cargados, no tiene acceso
     if (!permissions.length) {
       return false;
     }
 
-    const hasPermission = permissions.some(
+    return permissions.some(
       permission => permission.module === module && permission.action === action
     );
-    
-    return hasPermission;
-  };
+  }, [user?.role, permissions]);
+
+  // Recalcular listas filtradas cuando cambien permisos
+  const allowedPrincipal = React.useMemo(() => {
+    return navigation.filter(item => hasModulePermission(item.module, item.action));
+  }, [hasModulePermission, permissionsVersion, permissions]);
+
+  const allowedHR = React.useMemo(() => {
+    return hrNavigation.filter(item => hasModulePermission(item.module, item.action));
+  }, [hasModulePermission, permissionsVersion, permissions]);
+
+  const allowedFinance = React.useMemo(() => {
+    return financeNavigation.filter(item => hasModulePermission(item.module, item.action));
+  }, [hasModulePermission, permissionsVersion, permissions]);
+
+  const allowedService = React.useMemo(() => {
+    return serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
+  }, [hasModulePermission, permissionsVersion, permissions]);
+
+  const allowedSecondary = React.useMemo(() => {
+    return secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
+  }, [hasModulePermission, permissionsVersion, permissions]);
 
   React.useEffect(() => {
     setMounted(true);
@@ -185,7 +218,7 @@ export function Sidebar() {
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
   const needsPermissions = user && !isAdmin;
   const permissionsReady = !needsPermissions || permissions.length > 0;
-  
+
   if (!mounted || userLoading || (needsPermissions && permissionsLoading && !permissionsReady)) {
     return (
       <div
@@ -231,12 +264,7 @@ export function Sidebar() {
     );
   }
 
-  // Filtrar listas por permisos
-  const allowedPrincipal = navigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedHR = hrNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedFinance = financeNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedService = serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
-  const allowedSecondary = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
+  // Las listas filtradas ya están calculadas con useMemo arriba
 
   const SidebarContent = () => (
     <div

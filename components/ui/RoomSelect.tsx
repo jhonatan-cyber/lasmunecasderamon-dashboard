@@ -37,6 +37,7 @@ interface RoomSelectProps {
   showPrice?: boolean;
   showTime?: boolean;
   filterByStatus?: number; // 1 = disponible, 2 = ocupada, 0 = inactiva
+  includeRoomIds?: number[]; // IDs de habitaciones que deben incluirse siempre, incluso si están ocupadas
 }
 
 const RoomSelect: React.FC<RoomSelectProps> = ({
@@ -52,6 +53,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   showPrice = false,
   showTime = false,
   filterByStatus,
+  includeRoomIds = [],
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -64,11 +66,14 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     
     let filtered = habitaciones;
     
-    // Filtrar por estado si se especifica
+    // Filtrar por estado si se especifica, pero siempre incluir las habitaciones en includeRoomIds
     if (filterByStatus !== undefined) {
       filtered = filtered.filter((habitacion) => {
+        const id = habitacion.id_habitacion || habitacion.id;
         const estado = habitacion.estado || habitacion.status;
-        return estado === filterByStatus;
+        
+        // Incluir si cumple el filtro de estado O si está en la lista de IDs a incluir
+        return estado === filterByStatus || (id && includeRoomIds.includes(id));
       });
     }
     
@@ -85,7 +90,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
         numero.toLowerCase().includes(searchLower)
       );
     });
-  }, [habitaciones, searchTerm, filterByStatus]);
+  }, [habitaciones, searchTerm, filterByStatus, includeRoomIds]);
 
   // Formatear tiempo (ej: 2 horas)
   const formatTime = (min: number) => {

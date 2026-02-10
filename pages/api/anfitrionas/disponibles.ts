@@ -3,11 +3,11 @@ import { query } from '@/lib/db';
 
 const mapUserFromDB = (row: any) => ({
   id_usuario: row.id_usuario,
-  id: row.id_usuario, // Alias para compatibilidad
+  id: row.id_usuario,
   nombre: row.nombre,
-  name: row.nombre, // Alias para compatibilidad
+  name: row.nombre,
   apellido: row.apellido,
-  lastName: row.apellido, // Alias para compatibilidad
+  lastName: row.apellido,
   nick: row.nick,
   email: row.email,
   telefono: row.telefono,
@@ -28,10 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Obtener anfitrionas disponibles (estado = 1)
-    // Excluir las que están:
-    // 1. En servicios activos (estado = 1)
-    // 2. En ventas activas con habitación y tiempo (estado = 1 con habitacion_id y tiempo > 0)
+
     const anfitrionasDisponibles = (await query(
       `SELECT u.*, r.nombre as rol_nombre, r.id_rol 
        FROM usuarios u 
@@ -44,17 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          FROM detalle_servicios ds
          INNER JOIN servicios s ON ds.servicio_id = s.id_servicio
          WHERE s.estado = 1
-         
-         UNION
-         
-         -- Anfitrionas en ventas activas con habitación y tiempo
-         SELECT DISTINCT vu.usuario_id
-         FROM ventas_usuarios vu
-         INNER JOIN ventas v ON vu.venta_id = v.id_venta
-         WHERE v.estado = 1 
-         AND v.habitacion_id IS NOT NULL 
-         AND v.habitacion_id > 0
-         AND v.tiempo > 0
        )
        ORDER BY u.nick ASC`
     )) as any[];
