@@ -1,6 +1,6 @@
 'use client';
 
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import AnfitrionaCalendar from '@/components/anfitriona/AnfitrionaCalendar';
 
 export default function AnfitrionaCalendarPage() {

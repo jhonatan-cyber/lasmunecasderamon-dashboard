@@ -2,18 +2,18 @@
 
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle } from 'lucide-react';
-import { useHabitaciones } from '@/hooks/useHabitaciones';
+import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import ServicioCard from '@/components/servicios/ServicioCard';
 import Paginate from '@/components/ui/paginate';
 import ServiceStats from '@/components/servicios/ServiceStats';
 import ServiceFilters from '@/components/servicios/ServiceFilters';
-import { useServiceLogic } from '@/hooks/useServiceLogic';
-import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
+import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
+import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 export default function ServiciosPage() {
   const { habitaciones } = useHabitaciones();

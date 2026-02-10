@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo } from 'react';
-import useRooms from '@/hooks/useRooms';
+import useRooms from '@/hooks/habitaciones/useRooms';
 import RoomFormDialog, { RoomForm } from '@/components/rooms/RoomFormDialog';
 import RoomCard from '@/components/rooms/RoomCard';
 import RoomTable from '@/components/rooms/RoomTable';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
 import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import {
   DndContext,
   closestCenter,

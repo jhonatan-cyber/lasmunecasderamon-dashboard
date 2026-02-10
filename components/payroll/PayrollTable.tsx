@@ -12,11 +12,11 @@ import {
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/ui/paginate';
-import type { PayrollRow } from '@/hooks/usePayroll';
-import { useConfirmModal } from '@/hooks/useConfirmModal';
+import type { PayrollRow } from '@/hooks/personal/usePayroll';
+import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface PayrollTableProps {
   title?: string;

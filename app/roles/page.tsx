@@ -18,7 +18,7 @@ import { StatsCard } from '@/components/ui/stats-card';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
-import { useRoles, Role } from '@/hooks/useRoles';
+import { useRoles, Role } from '@/hooks/personal/useRoles';
 import { RoleModal } from '@/components/roles/RoleModal';
 import { DeleteRoleConfirmModal } from '@/components/roles/DeleteRoleConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';

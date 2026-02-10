@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useAnfitrionas } from '@/hooks/useAnfitrionas';
-import { useHabitaciones } from '@/hooks/useHabitaciones';
-import { useClientes } from '@/hooks/useClientes';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
+import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
+import { useClientes } from '@/hooks/clientes/useClients';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import {
   Select,

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useSales } from '@/hooks/useSales';
-import { useDevolucionFilters } from '@/hooks/useDevolucionFilters';
-import { useDevolucionVentasLogic } from '@/hooks/useDevolucionVentasLogic';
+import { useSales } from '@/hooks/caja/useSales';
+import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
+import { useDevolucionVentasLogic } from '@/hooks/servicios/useDevolucionVentasLogic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Paginate from '@/components/ui/paginate';
 import { SalesDetailModal } from '@/components/sales';

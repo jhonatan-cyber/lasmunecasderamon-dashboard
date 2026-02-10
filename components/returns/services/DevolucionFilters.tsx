@@ -10,7 +10,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Search, Eraser } from 'lucide-react';
-import { DevolucionFilters as DevolucionFiltersType } from '@/hooks/useDevolucionFilters';
+import { DevolucionFilters as DevolucionFiltersType } from '@/hooks/servicios/useDevolucionFilters';
 
 interface DevolucionFiltersProps {
   filters: DevolucionFiltersType;

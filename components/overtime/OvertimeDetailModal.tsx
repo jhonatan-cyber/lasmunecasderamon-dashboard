@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useOvertime } from '@/hooks/useOvertime';
+import { useOvertime } from '@/hooks/personal/useOvertime';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,

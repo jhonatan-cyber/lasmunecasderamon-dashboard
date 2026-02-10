@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useCategories, Category } from "@/hooks/useCategories";
+import { useCategories, Category } from "@/hooks/productos/useCategories";
 import { useRouter } from "next/navigation";
 import CategoryCard from "@/components/products/CategoryCard";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";

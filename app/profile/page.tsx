@@ -14,7 +14,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
 

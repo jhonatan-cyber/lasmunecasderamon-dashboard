@@ -16,7 +16,7 @@ import {
   ApplicationModal
 } from '@/components/landing';
 import Footer from '@/components/landing/Footer';
-import { useLandingState } from '@/hooks/useLandingState';
+import { useLandingState } from '@/hooks/landing/useLandingState';
 
 export default function LandingPage() {
   const {

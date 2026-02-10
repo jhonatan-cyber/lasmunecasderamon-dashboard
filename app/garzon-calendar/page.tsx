@@ -1,6 +1,6 @@
 'use client';
 
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/auth/useCurrentUser";
 import GarzonCalendar from "@/components/garzon/GarzonCalendar";
 
 export default function GarzonCalendarPage() {

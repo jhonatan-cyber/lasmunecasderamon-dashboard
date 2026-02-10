@@ -17,8 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CajaWithUser, CajaCierre } from "@/types/caja";
-import { useUsers } from "@/hooks/useUsers";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useUsers } from "@/hooks/personal/useUsers";
+import { useCurrentUser } from "@/hooks/auth/useCurrentUser";
 import { formatCurrency } from "@/lib/formatters";
 import { Loader2 } from "lucide-react";
 

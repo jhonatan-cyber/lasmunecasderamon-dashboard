@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import OrderForm from "@/components/orders/OrderForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useClientes } from "@/hooks/useClientes";
-import { useAnfitrionas } from "@/hooks/useAnfitrionas";
+import { useClientes } from "@/hooks/clientes/useClients";
+import { useAnfitrionas } from "@/hooks/personal/useAnfitrionas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ServiceOrderForm from "@/components/orders/ServiceOrderFormNew";
 

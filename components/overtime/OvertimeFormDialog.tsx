@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { useEmployees } from '@/hooks/useEmployees';
-import { useOvertime } from '@/hooks/useOvertime';
+import { useEmployees } from '@/hooks/personal/useEmployees';
+import { useOvertime } from '@/hooks/personal/useOvertime';
 import { toast } from 'sonner';
 import GarzonSelect from '@/components/overtime/GarzonSelect';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';

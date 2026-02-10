@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DeleteClientConfirmModal } from './DeleteClientConfirmModal';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface ClientTableProps {
   clients: Client[];

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/formatters";
 import { PropinaResumen } from "@/types/propina";
-import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
 
 interface TipsTableProps {
   loading: boolean;

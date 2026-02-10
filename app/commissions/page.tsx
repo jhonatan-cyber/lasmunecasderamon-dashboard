@@ -6,8 +6,8 @@ import CommissionsDetalleModal from '@/components/commissions/CommissionsDetalle
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
 
-import { useCommissions } from '@/hooks/useCommissions';
-import useCommissionStats from '@/hooks/useCommissionStats';
+import { useCommissions } from '@/hooks/personal/useCommissions';
+import useCommissionStats from '@/hooks/personal/useCommissionStats';
 import { Commission } from '@/types/commission';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';

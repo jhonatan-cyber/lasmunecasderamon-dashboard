@@ -15,7 +15,7 @@ import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { Overtime } from "@/types/overtime";
 import { User, Clock, DollarSign, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
 
 interface OvertimeTableProps {
   loading: boolean;
