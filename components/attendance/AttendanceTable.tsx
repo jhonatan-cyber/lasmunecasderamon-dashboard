@@ -6,14 +6,14 @@ import { Table } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import useAsistencias from '@/hooks/useAsistencias';
+import useAsistencias from '@/hooks/personal/useAsistencias';
 import { Badge } from '../ui/badge';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Eye, User, Calendar, DollarSign, Coins, MinusCircle, Calculator } from 'lucide-react';
 import { AsistenciaResumen } from '@/types/asistencia';
 import { Button } from '@/components/ui/button';
 import AttendanceDetailModal from './AttendanceDetailModal';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface AttendanceData {
   id_usuario: number;

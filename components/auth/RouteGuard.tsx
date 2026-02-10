@@ -2,8 +2,8 @@
 
 import { useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Shield, Loader2 } from 'lucide-react';
 
 interface RouteGuardProps {

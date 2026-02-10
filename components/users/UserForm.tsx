@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { User as UserType } from '@/types/user';
@@ -33,11 +33,13 @@ import {
   Home,
   DollarSign,
   Coins,
-  Users,
-  Image,
-  Trash2
+  Users
 } from 'lucide-react';
-import { useRoles } from '@/hooks/useRoles';
+import { useRoles } from '@/hooks/personal/useRoles';
+import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
+import { FormFieldWithIcon } from './FormFieldWithIcon';
+import { ImageUploadField } from './ImageUploadField';
+import { NumberInputField } from './NumberInputField';
 // Esquema de validación con Zod
 const userFormSchema = z.object({
   run: z.string().min(8, 'El RUN es requerido'),
@@ -68,29 +70,14 @@ interface UserFormProps {
 }
 
 export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = false }: UserFormProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { roles, isLoading: isLoadingRoles } = useRoles();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Estados para valores formateados
-  const [formattedSueldo, setFormattedSueldo] = useState<string>('');
-  const [formattedAporte, setFormattedAporte] = useState<string>('');
-  const [formattedDescuento, setFormattedDescuento] = useState<string>('');
-
-  // Funciones para formatear números con separadores de miles
-  const formatNumber = (value: string | number) => {
-    // Convertir a string y remover todo excepto números
-    const numericValue = String(value).replace(/\D/g, '');
-    // Formatear con separadores de miles
-    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
-
-  // Función para obtener el valor numérico sin formato
-  const getNumericValue = (formattedValue: string) => {
-    return formattedValue.replace(/\./g, '');
-  };
+  // Hooks de formateo de números
+  const sueldo = useNumberFormatter(user?.salary || 0);
+  const aporte = useNumberFormatter(user?.contributions || 0);
+  const descuento = useNumberFormatter(user?.discount || 0);
 
   // Debug: Log roles cuando cambien
   useEffect(() => {
@@ -100,64 +87,41 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
     }
   }, [roles]);
 
-  // Función para mapear valores de BD a valores del select
-  const mapEstadoCivilToSelect = (estadoCivil: string | undefined): string => {
+  // Funciones memoizadas para mapeo de estado civil
+  const mapEstadoCivilToSelect = useCallback((estadoCivil: string | undefined): string => {
     if (!estadoCivil) return '';
-
     const estado = estadoCivil.toLowerCase();
     if (estado.includes('soltero') || estado.includes('soltera')) return 'Soltero';
     if (estado.includes('casado') || estado.includes('casada')) return 'Casado';
     if (estado.includes('divorciado') || estado.includes('divorciada')) return 'Divorciado';
     if (estado.includes('viudo') || estado.includes('viuda')) return 'Viudo';
     if (estado.includes('separado') || estado.includes('separada')) return 'Separado';
+    return estadoCivil;
+  }, []);
 
-    return estadoCivil; // Si no coincide, devolver el valor original
-  };
-
-  // Función para mapear valores del select a valores de BD
-  const mapSelectToEstadoCivil = (selectValue: string): string => {
-    switch (selectValue) {
-      case 'Soltero':
-        return 'Soltero/a';
-      case 'Casado':
-        return 'Casado/a';
-      case 'Divorciado':
-        return 'Divorciado/a';
-      case 'Viudo':
-        return 'Viudo/a';
-      case 'Separado':
-        return 'Separado/a';
-      default:
-        return selectValue;
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl && !previewUrl.startsWith('http')) {
-        URL.revokeObjectURL(previewUrl);
-      }
+  const mapSelectToEstadoCivil = useCallback((selectValue: string): string => {
+    const mapping: Record<string, string> = {
+      'Soltero': 'Soltero/a',
+      'Casado': 'Casado/a',
+      'Divorciado': 'Divorciado/a',
+      'Viudo': 'Viudo/a',
+      'Separado': 'Separado/a'
     };
-  }, [previewUrl]);
+    return mapping[selectValue] || selectValue;
+  }, []);
 
+  // Inicializar valores formateados cuando cambia el usuario
   useEffect(() => {
-    if (user?.foto) {
-      // Si es una URL completa, usarla directamente; si no, construir la ruta
-      const imageUrl = user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`;
-      setPreviewUrl(imageUrl);
-    }
-    
-    // Inicializar valores formateados
     if (user) {
-      setFormattedSueldo(user.salary ? formatNumber(user.salary) : '');
-      setFormattedAporte(user.contributions ? formatNumber(user.contributions) : '');
-      setFormattedDescuento(user.discount ? formatNumber(user.discount) : '');
+      sueldo.setFormattedValue(user.salary ? sueldo.formatNumber(user.salary) : '');
+      aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');
+      descuento.setFormattedValue(user.discount ? descuento.formatNumber(user.discount) : '');
     }
-  }, [user]);
+  }, [user, sueldo, aporte, descuento]);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: {
+    defaultValues: useMemo(() => ({
       run: user?.run || '',
       nick: user?.nick || '',
       nombre: user?.name || '',
@@ -170,49 +134,16 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
       aporte: user?.contributions || 0,
       descuento: user?.discount || 0,
       rol_id: user?.roleId ? user.roleId.toString() : '',
-      correo: '', // No inicializar con email en modo edición
+      correo: '',
       password: '',
       foto: user?.foto || '',
       housing_discount: (user?.discount && user.discount > 0) || false
-    }
+    }), [user, mapEstadoCivilToSelect])
   });
 
   const housingDiscount = form.watch('housing_discount');
-  const descuentoValue = form.watch('descuento');
-  const hasDescuento = descuentoValue !== undefined && descuentoValue > 0;
 
-
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validaciones del archivo
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Solo se permiten archivos de imagen (JPG, PNG, GIF)');
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB
-        alert('La imagen no puede superar los 5MB');
-        return;
-      }
-
-      setImageFile(file);
-      // Limpiar URL anterior si existe
-      if (previewUrl && !previewUrl.startsWith('http')) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setPreviewUrl(URL.createObjectURL(file));
-      form.setValue('foto', file.name);
-      console.log('Imagen seleccionada:', file.name, 'tipo:', file.type, 'tamaño:', file.size);
-    } else {
-      console.log('No se seleccionó ninguna imagen');
-    }
-  };
-
-  const handleFormSubmit = async (values: UserFormValues) => {
+  const handleFormSubmit = useCallback(async (values: UserFormValues) => {
     console.log('🔵 Formulario enviado', values);
     try {
       setIsSubmitting(true);
@@ -264,9 +195,9 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
 
       // Asegurarse de que los campos numéricos sean números usando valores formateados
       const processedValues = { ...values };
-      processedValues.sueldo = Number(getNumericValue(formattedSueldo)) || 0;
-      processedValues.aporte = Number(getNumericValue(formattedAporte)) || 0;
-      processedValues.descuento = Number(getNumericValue(formattedDescuento)) || 0;
+      processedValues.sueldo = Number(sueldo.getNumericValue(sueldo.formattedValue)) || 0;
+      processedValues.aporte = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
+      processedValues.descuento = Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
 
       // Mapear el estado civil del select al formato de la BD
       processedValues.estado_civil = mapSelectToEstadoCivil(processedValues.estado_civil);
@@ -286,7 +217,7 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [imageFile, isEditMode, user, onSubmit, sueldo, aporte, descuento, mapSelectToEstadoCivil, form]);
 
 
   return (
@@ -295,221 +226,70 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
           <div className='flex flex-col gap-4 sm:gap-6'>
             {/* RUN */}
-            <FormField
+            <FormFieldWithIcon
               control={form.control}
               name='run'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className='text-sm sm:text-base'>RUN</FormLabel>
-                  <div className='relative'>
-                    <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                      <CreditCard className='w-3 h-3 sm:w-4 sm:h-4' />
-                    </span>
-                    <FormControl>
-                      <Input
-                        className='pl-10 sm:pl-12 text-sm sm:text-base'
-                        placeholder='Run del usuario'
-                        {...field}
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label='RUN'
+              placeholder='Run del usuario'
+              icon={CreditCard}
             />
 
             {/* Nick */}
-            <FormField
+            <FormFieldWithIcon
               control={form.control}
               name='nick'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className='text-sm sm:text-base'>Nick</FormLabel>
-                  <div className='relative'>
-                    <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                      <UserCircle className='w-3 h-3 sm:w-4 sm:h-4' />
-                    </span>
-                    <FormControl>
-                      <Input
-                        className='pl-10 sm:pl-12 text-sm sm:text-base'
-                        placeholder='Nick del usuario'
-                        {...field}
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label='Nick'
+              placeholder='Nick del usuario'
+              icon={UserCircle}
             />
           </div>
 
           {/* Imagen */}
-          <FormField
+          <ImageUploadField
             control={form.control}
-            name='foto'
-            render={({ field: { onChange, onBlur, name, ref, value } }) => {
-              const handleClickPreview = () => {
-                fileInputRef.current?.click();
-              };
-
-              return (
-                <FormItem className='flex items-center gap-4 justify-center'>
-                  <input
-                    type='file'
-                    accept='image/*'
-                    className='hidden'
-                    onChange={handleImageChange}
-                    ref={fileInputRef}
-                    name={name}
-                    onBlur={onBlur}
-                  />
-
-                  <div className='flex flex-col items-center'>
-                    <button
-                      type='button'
-                      onClick={handleClickPreview}
-                      className='w-40 h-36 rounded-md border border-gray-300 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:border-gray-400 transition-colors'
-                      title='Seleccionar imagen'
-                    >
-                      {previewUrl ? (
-                        <img
-                          src={previewUrl}
-                          alt='Vista previa'
-                          className='w-full h-full object-cover'
-                        />
-                      ) : (
-                        <div className='w-full h-full flex flex-col items-center justify-center text-gray-400'>
-                          <Image size={32} />
-                          <span className='text-sm mt-1'>Seleccionar imagen</span>
-                        </div>
-                      )}
-                    </button>
-
-                    {previewUrl && (
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='sm'
-                        className='mt-2 text-red-500 hover:text-red-700'
-                        onClick={() => {
-                          if (previewUrl && !previewUrl.startsWith('http')) {
-                            URL.revokeObjectURL(previewUrl);
-                          }
-                          setPreviewUrl(null);
-                          setImageFile(null);
-                          form.setValue('foto', '');
-                          if (fileInputRef.current) fileInputRef.current.value = '';
-                        }}
-                      >
-                        <Trash2 className='mr-1' />
-                        Eliminar
-                      </Button>
-                    )}
-                  </div>
-
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+            initialImageUrl={user?.foto}
+            onImageChange={setImageFile}
           />
         </div>
 
         {/* Segunda fila: todos los demás campos, ocupa 2 columnas */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
           {/* Nombre */}
-          <FormField
+          <FormFieldWithIcon
             control={form.control}
             name='nombre'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className='text-sm sm:text-base'>Nombre</FormLabel>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <User className='w-3 h-3 sm:w-4 sm:h-4' />
-                  </span>
-                  <FormControl>
-                    <Input
-                      className='pl-10 sm:pl-12 text-sm sm:text-base'
-                      placeholder='Nombre(s)'
-                      {...field}
-                    />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
+            label='Nombre'
+            placeholder='Nombre(s)'
+            icon={User}
           />
 
           {/* Apellido */}
-          <FormField
+          <FormFieldWithIcon
             control={form.control}
             name='apellido'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className='text-sm sm:text-base'>Apellido</FormLabel>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <FileSignature className='w-3 h-3 sm:w-4 sm:h-4' />
-                  </span>
-                  <FormControl>
-                    <Input
-                      className='pl-10 sm:pl-12 text-sm sm:text-base'
-                      placeholder='Apellido(s)'
-                      {...field}
-                    />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
+            label='Apellido'
+            placeholder='Apellido(s)'
+            icon={FileSignature}
           />
 
           {/* Dirección - ocupa 2 columnas */}
-          <FormField
-            control={form.control}
-            name='direccion'
-            render={({ field }) => (
-              <FormItem className='lg:col-span-2'>
-                <FormLabel className='text-sm sm:text-base'>Dirección</FormLabel>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <MapPin className='w-3 h-3 sm:w-4 sm:h-4' />
-                  </span>
-                  <FormControl>
-                    <Input
-                      className='pl-10 sm:pl-12 text-sm sm:text-base'
-                      placeholder='Dirección completa'
-                      {...field}
-                    />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className='lg:col-span-2'>
+            <FormFieldWithIcon
+              control={form.control}
+              name='direccion'
+              label='Dirección'
+              placeholder='Dirección completa'
+              icon={MapPin}
+            />
+          </div>
 
           {/* Teléfono */}
-          <FormField
+          <FormFieldWithIcon
             control={form.control}
             name='telefono'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className='text-sm sm:text-base'>Teléfono</FormLabel>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <Phone className='w-3 h-3 sm:w-4 sm:h-4' />
-                  </span>
-                  <FormControl>
-                    <Input
-                      className='pl-10 sm:pl-12 text-sm sm:text-base'
-                      placeholder='Telefono'
-                      {...field}
-                    />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
+            label='Teléfono'
+            placeholder='Telefono'
+            icon={Phone}
           />
 
           {/* Estado Civil */}
@@ -605,65 +385,23 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
           />
 
           {/* Sueldo */}
-          <FormField
+          <NumberInputField
             control={form.control}
             name='sueldo'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Monto en Sueldo</FormLabel>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <DollarSign />
-                  </span>
-                  <FormControl>
-                    <Input
-                      className='pl-12'
-                      type='text'
-                      value={formattedSueldo}
-                      onChange={e => {
-                        const formatted = formatNumber(e.target.value);
-                        setFormattedSueldo(formatted);
-                        field.onChange(Number(getNumericValue(formatted)) || 0);
-                      }}
-                      placeholder='0'
-                      inputMode='numeric'
-                    />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
+            label='Monto en Sueldo'
+            icon={DollarSign}
+            formattedValue={sueldo.formattedValue}
+            onValueChange={sueldo.handleChange}
           />
 
           {/* Aporte AFP */}
-          <FormField
+          <NumberInputField
             control={form.control}
             name='aporte'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Monto en Aporte AFP</FormLabel>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                    <Coins />
-                  </span>
-                  <FormControl>
-                    <Input
-                      className='pl-12'
-                      type='text'
-                      value={formattedAporte}
-                      onChange={e => {
-                        const formatted = formatNumber(e.target.value);
-                        setFormattedAporte(formatted);
-                        field.onChange(Number(getNumericValue(formatted)) || 0);
-                      }}
-                      placeholder='0'
-                      inputMode='numeric'
-                    />
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
+            label='Monto en Aporte AFP'
+            icon={Coins}
+            formattedValue={aporte.formattedValue}
+            onValueChange={aporte.handleChange}
           />
 
           {/* Descuento de Alojamiento */}
@@ -688,34 +426,13 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
 
             {/* Conditional Discount Amount Field */}
             {form.watch('housing_discount') && (
-              <FormField
+              <NumberInputField
                 control={form.control}
                 name='descuento'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Monto en Descuento</FormLabel>
-                    <div className='relative'>
-                      <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
-                        <DollarSign />
-                      </span>
-                      <FormControl>
-                        <Input
-                          className='pl-12'
-                          type='text'
-                          value={formattedDescuento}
-                          onChange={e => {
-                            const formatted = formatNumber(e.target.value);
-                            setFormattedDescuento(formatted);
-                            field.onChange(Number(getNumericValue(formatted)) || 0);
-                          }}
-                          placeholder='0'
-                          inputMode='numeric'
-                        />
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label='Monto en Descuento'
+                icon={DollarSign}
+                formattedValue={descuento.formattedValue}
+                onValueChange={descuento.handleChange}
               />
             )}
           </div>

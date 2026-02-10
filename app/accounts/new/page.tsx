@@ -16,10 +16,10 @@ import {
   X,
   MoreVertical
 } from 'lucide-react';
-import { useCuentas } from '@/hooks/useCuentas';
-import { useClients } from '@/hooks/useClients';
-import { useUsers } from '@/hooks/useUsers';
-import useRooms from '@/hooks/useRooms';
+import { useCuentas } from '@/hooks/caja/useCuentas';
+import { useClients } from '@/hooks/clientes/useClients';
+import { useUsers } from '@/hooks/personal/useUsers';
+import useRooms from '@/hooks/habitaciones/useRooms';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';

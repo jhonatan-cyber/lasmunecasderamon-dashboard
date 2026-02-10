@@ -1,28 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { X, Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import { toast } from "sonner";
 import CategoryCardList from "@/components/ui/CategoryCardList";
 import SaleProductModal from "@/components/sales/SaleProductModal";
 import ProductSearch from "@/components/ui/ProductSearch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ProductCartTable } from "./ProductCartTable";
+import { CartSummary } from "./CartSummary";
+import { useProductCart } from "@/hooks/shared/useProductCart";
 
 interface AgregarProductosModalProps {
   open: boolean;
@@ -53,15 +44,6 @@ interface Producto {
   stock?: number;
 }
 
-interface ProductoCarrito {
-  id_producto: number;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  sub_total: number;
-  categoria_nombre: string;
-}
-
 export default function AgregarProductosModal({
   open,
   onOpenChange,
@@ -69,19 +51,26 @@ export default function AgregarProductosModal({
   onProductosAgregados,
 }: AgregarProductosModalProps) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [productosCarrito, setProductosCarrito] = useState<ProductoCarrito[]>(
-    []
-  );
-  const [loading, setLoading] = useState(false);
   const [loadingAgregar, setLoadingAgregar] = useState(false);
 
   // Estados para el modal de productos
   const [modalCategoria, setModalCategoria] = useState<Categoria | null>(null);
   const [productosCategoria, setProductosCategoria] = useState<Producto[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
-  const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Hook del carrito
+  const {
+    productos: productosCarrito,
+    cantidades,
+    total: totalCarrito,
+    agregarProducto,
+    actualizarCantidad,
+    eliminarProducto,
+    limpiarCarrito,
+    setCantidad,
+  } = useProductCart();
 
   useEffect(() => {
     if (open) {
@@ -89,7 +78,7 @@ export default function AgregarProductosModal({
     }
   }, [open]);
 
-  const fetchCategorias = async () => {
+  const fetchCategorias = useCallback(async () => {
     try {
       const response = await fetch("/api/categories");
       if (response.ok) {
@@ -147,9 +136,9 @@ export default function AgregarProductosModal({
       ];
       await loadCategoriasConProductos(categoriasPrueba);
     }
-  };
+  }, []);
 
-  const loadCategoriasConProductos = async (categoriasData: any[]) => {
+  const loadCategoriasConProductos = useCallback(async (categoriasData: any[]) => {
     const categoriasConConteo = categoriasData.map((cat) => {
       // Usar total_products del endpoint o 0 si no existe
       const productCount = cat.total_products || 0;
@@ -163,9 +152,9 @@ export default function AgregarProductosModal({
       };
     });
     setCategorias(categoriasConConteo);
-  };
+  }, []);
 
-  const handleOpenCategoria = async (cat: Categoria) => {
+  const handleOpenCategoria = useCallback(async (cat: Categoria) => {
     setModalCategoria(cat);
     setModalOpen(true);
     setLoadingProductos(true);
@@ -339,97 +328,14 @@ export default function AgregarProductosModal({
     } finally {
       setLoadingProductos(false);
     }
-  };
+  }, []);
 
-  const handleCantidadChange = (id: string, value: string) => {
+  const handleCantidadChange = useCallback((id: string, value: string) => {
     const num = parseInt(value, 10);
-    setCantidades((prev) => ({ ...prev, [id]: isNaN(num) ? 1 : num }));
-  };
+    setCantidad(id, isNaN(num) ? 1 : num);
+  }, [setCantidad]);
 
-  const handleAgregarProducto = (producto: any) => {
-    console.log("Producto recibido:", producto);
-
-    // Normalizar el producto para manejar tanto Producto como SearchResult
-    const productoNormalizado = {
-      id_producto: producto.id_producto || producto.id,
-      nombre: producto.nombre || producto.name,
-      precio: producto.precio || producto.price || 0,
-      categoria_nombre:
-        producto.categoria_nombre ||
-        producto.categoria ||
-        producto.category ||
-        "Sin categoría",
-    };
-
-    console.log("Producto normalizado:", productoNormalizado);
-
-    const cantidad = cantidades[productoNormalizado.id_producto] || 1;
-    const productoExistente = productosCarrito.find(
-      (p) => p.id_producto === productoNormalizado.id_producto
-    );
-
-    if (productoExistente) {
-      // Si ya existe, aumentar cantidad
-      setProductosCarrito((prev) =>
-        prev.map((p) =>
-          p.id_producto === productoNormalizado.id_producto
-            ? {
-                ...p,
-                cantidad: p.cantidad + cantidad,
-                sub_total: (p.cantidad + cantidad) * p.precio,
-              }
-            : p
-        )
-      );
-    } else {
-      // Si no existe, agregar nuevo
-      const nuevoProducto: ProductoCarrito = {
-        id_producto: productoNormalizado.id_producto,
-        nombre: productoNormalizado.nombre,
-        precio: productoNormalizado.precio,
-        cantidad: cantidad,
-        sub_total: productoNormalizado.precio * cantidad,
-        categoria_nombre: productoNormalizado.categoria_nombre,
-      };
-      setProductosCarrito((prev) => [...prev, nuevoProducto]);
-    }
-
-    // Resetear cantidad para este producto
-    setCantidades((prev) => ({
-      ...prev,
-      [productoNormalizado.id_producto]: 1,
-    }));
-
-    toast.success(`${productoNormalizado.nombre} agregado al carrito`);
-    console.log("Productos en carrito después de agregar:", productosCarrito);
-    console.log("Total del carrito después de agregar:", totalCarrito);
-  };
-
-  const actualizarCantidad = (index: number, nuevaCantidad: number) => {
-    if (nuevaCantidad <= 0) {
-      eliminarDelCarrito(index);
-      return;
-    }
-
-    setProductosCarrito((prev) =>
-      prev.map((p, idx) =>
-        idx === index
-          ? {
-              ...p,
-              cantidad: nuevaCantidad,
-              sub_total: nuevaCantidad * p.precio,
-            }
-          : p
-      )
-    );
-  };
-
-  const eliminarDelCarrito = (index: number) => {
-    setProductosCarrito((prev) => prev.filter((_, idx) => idx !== index));
-    toast.success("Producto eliminado del carrito");
-  };
-
-  const agregarProductosACuenta = async () => {
+  const agregarProductosACuenta = useCallback(async () => {
     if (!cuentaId || productosCarrito.length === 0) {
       toast.error("No hay productos en el carrito");
       return;
@@ -461,7 +367,7 @@ export default function AgregarProductosModal({
         const result = await response.json();
         console.log("Respuesta de la API:", result);
         toast.success("Productos agregados exitosamente");
-        setProductosCarrito([]);
+        limpiarCarrito();
         onProductosAgregados?.();
         onOpenChange(false);
       } else {
@@ -475,19 +381,13 @@ export default function AgregarProductosModal({
     } finally {
       setLoadingAgregar(false);
     }
-  };
+  }, [cuentaId, productosCarrito, limpiarCarrito, onProductosAgregados, onOpenChange]);
 
-  const handleClose = () => {
-    setProductosCarrito([]);
-    setCantidades({});
+  const handleClose = useCallback(() => {
+    limpiarCarrito();
     setModalOpen(false);
     onOpenChange(false);
-  };
-
-  const totalCarrito = productosCarrito.reduce(
-    (sum, producto) => sum + producto.sub_total,
-    0
-  );
+  }, [limpiarCarrito, onOpenChange]);
 
   // Debug: Ver productos en carrito cuando cambian
   useEffect(() => {
@@ -515,7 +415,7 @@ export default function AgregarProductosModal({
             {/* Tabla de búsqueda - Contenedor independiente */}
             <div className="w-full">
               <ProductSearch
-                onAddProduct={handleAgregarProducto}
+                onAddProduct={agregarProducto}
                 placeholder="Buscar productos..."
                 className=""
                 searchOnly={false}
@@ -532,21 +432,12 @@ export default function AgregarProductosModal({
               filter={(c) => c.estado === 1 && (c.productCount || 0) > 0}
             />
 
-            <div className="flex flex-col items-center justify-center">
-              <div className="text-lg font-bold mb-2">TOTAL</div>
-              <div className="text-lg font-bold text-green-600">
-                {formatCurrencyNoDecimals(totalCarrito)}
-              </div>
-
-              <Button
-                onClick={agregarProductosACuenta}
-                disabled={loadingAgregar || productosCarrito.length === 0}
-                className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                {loadingAgregar ? "Agregando..." : "Agregar"}
-              </Button>
-            </div>
+            <CartSummary
+              total={totalCarrito}
+              itemCount={productosCarrito.length}
+              onSubmit={agregarProductosACuenta}
+              loading={loadingAgregar}
+            />
 
             {/* Detalles Producto */}
             <div className="text-center text-sm text-gray-600">
@@ -554,93 +445,11 @@ export default function AgregarProductosModal({
             </div>
 
             {/* Tabla de productos */}
-            <div className="rounded-lg p-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>PRODUCTO</TableHead>
-                    <TableHead className="text-center">CANTIDAD</TableHead>
-                    <TableHead className="text-center">PRECIO</TableHead>
-                    <TableHead className="text-center">COMISIÓN</TableHead>
-                    <TableHead className="text-center">SUB TOTAL</TableHead>
-                    <TableHead className="text-center">ACCIONES</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {productosCarrito.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-gray-500"
-                      >
-                        No hay productos agregados
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    productosCarrito.map((producto, index) => (
-                      <TableRow key={producto.id_producto}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{producto.nombre}</div>
-                            <div className="text-xs text-gray-500">
-                              {producto.categoria_nombre}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                actualizarCantidad(index, producto.cantidad - 1)
-                              }
-                              className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center">
-                              {producto.cantidad}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                actualizarCantidad(index, producto.cantidad + 1)
-                              }
-                              className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {formatCurrencyNoDecimals(producto.precio)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {formatCurrencyNoDecimals(
-                            Math.round(producto.sub_total * 0.25)
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {formatCurrencyNoDecimals(producto.sub_total)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            onClick={() => eliminarDelCarrito(index)}
-                            className="rounded-full text-red-600 hover:text-red-700 hover:scale-105 transition-all duration-200"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <ProductCartTable
+              productos={productosCarrito}
+              onUpdateQuantity={actualizarCantidad}
+              onRemove={eliminarProducto}
+            />
           </div>
         </div>
         </DialogContent>
@@ -654,8 +463,14 @@ export default function AgregarProductosModal({
         productos={productosCategoria}
         cantidades={cantidades}
         handleCantidadChange={handleCantidadChange}
-        handleAgregarProducto={handleAgregarProducto}
+        handleAgregarProducto={agregarProducto}
         categoria={modalCategoria}
+        anfitrionas={[]}
+        champagneHostessSelections={{}}
+        onChampagneHostessChange={() => {}}
+        otherProductHostessSelections={{}}
+        onOtherProductHostessChange={() => {}}
+        productosEnCarrito={productosCarrito}
       />
     </>
   );

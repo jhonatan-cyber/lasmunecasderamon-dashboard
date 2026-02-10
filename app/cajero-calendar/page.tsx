@@ -1,6 +1,6 @@
 'use client';
 
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/auth/useCurrentUser";
 import CajeroCalendar from "@/components/cajero/CajeroCalendar";
 
 export default function CajeroCalendarPage() {

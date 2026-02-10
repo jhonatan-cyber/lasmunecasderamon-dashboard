@@ -2,7 +2,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCashRegister } from '@/hooks/useCashRegister';
+import { useCashRegister } from '@/hooks/caja/useCashRegister';
 
 export function CajaStatusBanner() {
   const { hasOpenCaja, loading, error } = useCashRegister();

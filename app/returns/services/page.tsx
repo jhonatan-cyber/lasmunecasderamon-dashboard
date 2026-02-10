@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useServicios } from '@/hooks/useServicios';
-import { useDevolucionFilters } from '@/hooks/useDevolucionFilters';
-import { useDevolucionLogic } from '@/hooks/useDevolucionLogic';
-import { useDevolucionResponse } from '@/hooks/useDevolucionResponse';
-import { useServicioTimerSync } from '@/hooks/useServicioTimerSync';
+import { useServicios } from '@/hooks/servicios/useServicios';
+import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
+import { useDevolucionLogic } from '@/hooks/servicios/useDevolucionLogic';
+import { useDevolucionResponse } from '@/hooks/servicios/useDevolucionResponse';
+import { useServicioTimerSync } from '@/hooks/servicios/useServicioTimerSync';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import { useTimer } from '@/contexts/TimerContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

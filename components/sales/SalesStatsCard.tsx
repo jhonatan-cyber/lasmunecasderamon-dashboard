@@ -1,6 +1,6 @@
 import { DollarSign, TrendingUp } from "lucide-react";
 import { StatsCard, StatCard } from "@/components/ui/StatsCard";
-import { useStats } from "@/hooks/useStats";
+import { useStats } from "@/hooks/estadisticas/useStats";
 
 interface SalesStats {
   total_ventas: number;

@@ -18,9 +18,9 @@ import CustomersSelect from "@/components/ui/CustomersSelect";
 import HostessSelect from "@/components/ui/HostessSelect";
 import RoomSelect from "@/components/ui/RoomSelect";
 import PaymentMethodSelect from "@/components/ui/PaymentMethodSelect";
-import { useClientes } from "@/hooks/useClientes";
-import { useAnfitrionasDisponibles } from "@/hooks/useAnfitrionasDisponibles";
-import { useHabitaciones } from "@/hooks/useHabitaciones";
+import { useClientes } from "@/hooks/clientes/useClients";
+import { useAnfitrionasDisponibles } from "@/hooks/personal/useAnfitrionasDisponibles";
+import { useHabitaciones } from "@/hooks/habitaciones/useHabitaciones";
 import { useTimer } from "@/contexts/TimerContext";
 
 export default function NuevoServicioPage() {

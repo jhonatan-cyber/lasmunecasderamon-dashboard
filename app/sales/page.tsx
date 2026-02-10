@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSales } from '@/hooks/useSales';
+import { useSales } from '@/hooks/caja/useSales';
 import { VentaWithDetails } from '@/types/venta';
 import { showErrorToast, showSuccessToast } from '@/lib/toastUtils';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';

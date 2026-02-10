@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/ui/skeletons';

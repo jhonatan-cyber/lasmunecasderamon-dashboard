@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useTipsResumen } from '@/hooks/useTips';
+import { useTipsResumen } from '@/hooks/personal/useTips';
 import PropinasDetalleModal from '@/components/propinas/PropinasDetalleModal';
 import { PropinaResumen } from '@/types/propina';
 import TipsTable from '@/components/propinas/TipsTable';

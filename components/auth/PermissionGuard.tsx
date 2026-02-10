@@ -1,8 +1,8 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Shield, AlertTriangle } from 'lucide-react';
 
 interface PermissionGuardProps {

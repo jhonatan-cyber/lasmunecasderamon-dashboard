@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CajaCreate } from '@/types/caja';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 import { Plus, Loader2, DollarSign, Calendar } from 'lucide-react';
 interface CajaFormDialogProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { RoleFilter } from "@/hooks/usePayroll";
+import { RoleFilter } from "@/hooks/personal/usePayroll";
 
 interface Props {
   roleFilter: RoleFilter;

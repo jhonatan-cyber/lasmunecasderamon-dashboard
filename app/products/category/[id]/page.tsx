@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import useProducts from "@/hooks/useProducts";
-import { useCategories } from "@/hooks/useCategories";
+import useProducts from "@/hooks/productos/useProducts";
+import { useCategories } from "@/hooks/productos/useCategories";
 import ProductCard from "@/components/products/ProductCard";
 import ProductFormDialog from "@/components/products/ProductFormDialog";
 import { ProductFilters } from "@/components/products/ProductFilters";
