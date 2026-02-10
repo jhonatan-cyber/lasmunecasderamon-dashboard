@@ -7,14 +7,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Minus, Search, ShoppingCart, X, Package, DollarSign, Coins } from "lucide-react";
+import { Search, ShoppingCart, Package } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -22,6 +20,9 @@ import {
 import Paginate from "@/components/ui/paginate";
 import ProductSummaryCard from "./ProductSummaryCard";
 import ProductStatsBar from "./ProductStatsBar";
+import { ProductGridCard } from "./ProductGridCard";
+import { ProductTableRow } from "./ProductTableRow";
+import { useProductSelection } from "@/hooks/shared/useProductSelection";
 
 interface SaleProductModalProps {
   open: boolean;
@@ -49,17 +50,32 @@ export default function SaleProductModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [selectedProducts, setSelectedProducts] = useState<{[key: string]: number}>({});
   const itemsPerPage = viewMode === 'grid' ? 8 : 5;
+
+  // Hook de selección de productos
+  const {
+    selectedProducts,
+    handleAddToSelection,
+    handleRemoveFromSelection,
+    handleAddAllSelected,
+    clearSelection,
+    totalSelected,
+    totalValue
+  } = useProductSelection({
+    productos,
+    cantidades,
+    onCantidadChange: handleCantidadChange,
+    onAgregarProducto: handleAgregarProducto
+  });
 
   // Resetear estados cuando se abre el modal
   useEffect(() => {
     if (open) {
       setCurrentPage(1);
       setSearchTerm("");
-      setSelectedProducts({});
+      clearSelection();
     }
-  }, [open]);
+  }, [open, clearSelection]);
 
   // Filtrar productos por búsqueda
   const filteredProductos = useMemo(() => {
@@ -82,81 +98,33 @@ export default function SaleProductModal({
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const handleAddToSelection = (producto: any) => {
-    const id = producto.id_producto || producto.id;
-    const cantidad = cantidades[id] || 1;
-    setSelectedProducts(prev => ({
-      ...prev,
-      [id]: cantidad
-    }));
-  };
-
-  const handleRemoveFromSelection = (id: string) => {
-    setSelectedProducts(prev => {
-      const newSelection = { ...prev };
-      delete newSelection[id];
-      return newSelection;
-    });
-  };
-
-  const handleAddAllSelected = () => {
-    Object.entries(selectedProducts).forEach(([id, cantidad]) => {
-      const producto = productos?.find(p => (p.id_producto || p.id).toString() === id);
-      if (producto) {
-        // Actualizar cantidad antes de agregar
-        handleCantidadChange(id, cantidad.toString());
-        handleAgregarProducto(producto);
-      }
-    });
-    setSelectedProducts({});
-  };
-
-  const getTotalSelected = () => {
-    return Object.values(selectedProducts).reduce((sum, cantidad) => sum + cantidad, 0);
-  };
-
-  const getTotalValue = () => {
-    return Object.entries(selectedProducts).reduce((sum, [id, cantidad]) => {
-      const producto = productos?.find(p => (p.id_producto || p.id).toString() === id);
-      if (producto) {
-        return sum + (producto.precio || producto.price || 0) * cantidad;
-      }
-      return sum;
-    }, 0);
-  };
-
   // Atajos de teclado
   useEffect(() => {
     if (!open) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape para cerrar
       if (e.key === 'Escape') {
         onClose();
         return;
       }
 
-      // Ctrl/Cmd + A para agregar todos los seleccionados
       if ((e.ctrlKey || e.metaKey) && e.key === 'a' && Object.keys(selectedProducts).length > 0) {
         e.preventDefault();
         handleAddAllSelected();
         return;
       }
 
-      // Ctrl/Cmd + D para limpiar selección
       if ((e.ctrlKey || e.metaKey) && e.key === 'd' && Object.keys(selectedProducts).length > 0) {
         e.preventDefault();
-        setSelectedProducts({});
+        clearSelection();
         return;
       }
 
-      // G para cambiar a vista de cuadrícula
       if (e.key === 'g' || e.key === 'G') {
         setViewMode('grid');
         return;
       }
 
-      // T para cambiar a vista de tabla
       if (e.key === 't' || e.key === 'T') {
         setViewMode('table');
         return;
@@ -165,125 +133,27 @@ export default function SaleProductModal({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, selectedProducts, onClose, handleAddAllSelected]);
+  }, [open, selectedProducts, onClose, handleAddAllSelected, clearSelection]);
 
   const renderGridView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {currentProductos.map((producto) => {
         const id = (producto.id_producto || producto.id).toString();
-        const isSelected = selectedProducts[id];
+        const isSelected = !!selectedProducts[id];
         const cantidad = cantidades[id] || 1;
         
         return (
-          <Card 
-            key={id} 
-            className={`transition-all duration-200 hover:shadow-lg ${
-              isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
-            }`}
-          >
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {/* Header del producto */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sm line-clamp-2">
-                      {producto.nombre || producto.name}
-                    </h3>
-                    {(producto.codigo || producto.code) && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {producto.codigo || producto.code}
-                      </p>
-                    )}
-                  </div>
-                  {isSelected && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      {selectedProducts[id]}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Precios */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="w-3 h-3 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">
-                      {formatCurrencyNoDecimals(producto.precio || producto.price)}
-                    </span>
-                  </div>
-                  {(producto.comision || producto.commission) > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Coins className="w-3 h-3 text-orange-600" />
-                      <span className="text-xs text-orange-600">
-                        Comisión: {formatCurrencyNoDecimals(producto.comision || producto.commission)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Controles de cantidad */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (cantidad > 1) {
-                          handleCantidadChange(id, (cantidad - 1).toString());
-                        }
-                      }}
-                      className="w-6 h-6 p-0 rounded-full"
-                      disabled={cantidad <= 1}
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="w-8 text-center text-sm font-medium">
-                      {cantidad}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        handleCantidadChange(id, (cantidad + 1).toString());
-                      }}
-                      className="w-6 h-6 p-0 rounded-full"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
-
-                  {/* Botones de acción */}
-                  <div className="flex gap-1">
-                    {isSelected ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRemoveFromSelection(id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAddToSelection(producto)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={() => handleAgregarProducto(producto)}
-                      className="bg-black text-white hover:bg-gray-800"
-                    >
-                      <ShoppingCart className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ProductGridCard
+            key={id}
+            producto={producto}
+            cantidad={cantidad}
+            isSelected={isSelected}
+            selectedQuantity={selectedProducts[id]}
+            onCantidadChange={(newCantidad) => handleCantidadChange(id, newCantidad.toString())}
+            onAddToSelection={() => handleAddToSelection(producto)}
+            onRemoveFromSelection={() => handleRemoveFromSelection(id)}
+            onAddToCart={() => handleAgregarProducto(producto)}
+          />
         );
       })}
     </div>
@@ -304,102 +174,21 @@ export default function SaleProductModal({
         <TableBody>
           {currentProductos.map((producto) => {
             const id = (producto.id_producto || producto.id).toString();
-            const isSelected = selectedProducts[id];
+            const isSelected = !!selectedProducts[id];
             const cantidad = cantidades[id] || 1;
             
             return (
-              <TableRow 
-                key={id} 
-                className={isSelected ? 'bg-blue-50' : ''}
-              >
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {isSelected && (
-                      <Badge variant="secondary" className="text-xs">
-                        {selectedProducts[id]}
-                      </Badge>
-                    )}
-                    <div>
-                      <div className="font-medium">{producto.nombre || producto.name}</div>
-                      {(producto.codigo || producto.code) && (
-                        <div className="text-xs text-gray-500">
-                          {producto.codigo || producto.code}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <span className="text-green-600 font-medium">
-                    {formatCurrencyNoDecimals(producto.precio || producto.price)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  <span className="text-orange-600">
-                    {formatCurrencyNoDecimals(producto.comision || producto.commission || 0)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (cantidad > 1) {
-                          handleCantidadChange(id, (cantidad - 1).toString());
-                        }
-                      }}
-                      className="w-6 h-6 p-0 rounded-full"
-                      disabled={cantidad <= 1}
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="w-8 text-center font-medium">
-                      {cantidad}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        handleCantidadChange(id, (cantidad + 1).toString());
-                      }}
-                      className="w-6 h-6 p-0 rounded-full"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    {isSelected ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRemoveFromSelection(id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAddToSelection(producto)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={() => handleAgregarProducto(producto)}
-                      className="bg-black text-white hover:bg-gray-800"
-                    >
-                      <ShoppingCart className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <ProductTableRow
+                key={id}
+                producto={producto}
+                cantidad={cantidad}
+                isSelected={isSelected}
+                selectedQuantity={selectedProducts[id]}
+                onCantidadChange={(newCantidad) => handleCantidadChange(id, newCantidad.toString())}
+                onAddToSelection={() => handleAddToSelection(producto)}
+                onRemoveFromSelection={() => handleRemoveFromSelection(id)}
+                onAddToCart={() => handleAgregarProducto(producto)}
+              />
             );
           })}
         </TableBody>
@@ -461,7 +250,7 @@ export default function SaleProductModal({
             {Object.keys(selectedProducts).length > 0 && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="px-3 py-1">
-                  {getTotalSelected()} seleccionados
+                  {totalSelected} seleccionados
                 </Badge>
                 <Button
                   onClick={handleAddAllSelected}
@@ -469,7 +258,7 @@ export default function SaleProductModal({
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <ShoppingCart className="w-4 h-4 mr-1" />
-                  Agregar Todos ({formatCurrencyNoDecimals(getTotalValue())})
+                  Agregar Todos ({formatCurrencyNoDecimals(totalValue)})
                 </Button>
               </div>
             )}
@@ -530,7 +319,7 @@ export default function SaleProductModal({
                   productos={productos}
                   onRemoveProduct={handleRemoveFromSelection}
                   onAddAllSelected={handleAddAllSelected}
-                  onClearSelection={() => setSelectedProducts({})}
+                  onClearSelection={clearSelection}
                 />
               </div>
             )}
@@ -546,7 +335,7 @@ export default function SaleProductModal({
               </span>
               {Object.keys(selectedProducts).length > 0 && (
                 <span className="text-blue-600 font-medium">
-                  {getTotalSelected()} productos seleccionados
+                  {totalSelected} productos seleccionados
                 </span>
               )}
               <div className="hidden md:flex items-center gap-2 text-xs text-gray-400">
@@ -565,7 +354,7 @@ export default function SaleProductModal({
             <div className="flex gap-2">
               {Object.keys(selectedProducts).length > 0 && (
                 <Button
-                  onClick={() => setSelectedProducts({})}
+                  onClick={clearSelection}
                   variant="outline"
                   size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full"

@@ -1,9 +1,9 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus, RotateCcw, AlertCircle } from "lucide-react";
-import { useCashRegisterStatus } from "@/hooks/useCashRegisterStatus";
+import { useCashRegisterStatus } from "@/hooks/caja/useCashRegisterStatus";
 import { toast } from "sonner";
-import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 interface CuentaHeaderProps {

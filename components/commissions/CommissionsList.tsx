@@ -14,7 +14,7 @@ import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { Commission } from '@/types/commission';
 import { DollarSign, User, Tag, ShoppingCart, Server, Coins, Eye } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface CommissionsListProps {
   loading: boolean;

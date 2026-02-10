@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { useSales } from '@/hooks/useSales';
+import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
 

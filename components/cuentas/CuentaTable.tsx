@@ -24,7 +24,7 @@ import CuentaDetailModal from "./CuentaDetailModal";
 import AgregarProductosModal from "./AgregarProductosModal";
 import CobrarCuentaModal from "./CobrarCuentaModal";
 import { useState } from "react";
-import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
 
 interface CuentaTableProps {
   loading: boolean;

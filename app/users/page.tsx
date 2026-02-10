@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { useUsers } from '@/hooks/useUsers';
+import { useUsers } from '@/hooks/personal/useUsers';
 import { User } from '@/types/user';
 import { UserDetails } from '@/components/users/UserDetails';
 import { UserTable } from '@/components/users/UserTable';

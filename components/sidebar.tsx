@@ -36,8 +36,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, module: 'dashboard', action: 'view' },

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { SwaggerUIWrapper } from '@/components/SwaggerUIWrapper';
-import { useSwaggerWarnings } from '@/hooks/useSwaggerWarnings';
+import { useSwaggerWarnings } from '@/hooks/docs/useSwaggerWarnings';
 import './swagger-styles.css';
 
 // Importar SwaggerUI dinámicamente para evitar problemas de SSR

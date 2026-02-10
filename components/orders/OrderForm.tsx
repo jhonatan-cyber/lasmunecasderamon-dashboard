@@ -8,8 +8,8 @@ import CategoryCardList from '@/components/ui/CategoryCardList';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { useRouter } from 'next/navigation';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import useRooms from '@/hooks/useRooms';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import useRooms from '@/hooks/habitaciones/useRooms';
 import RoomSelect from '../ui/RoomSelect';
 
 // Lazy load del modal de productos para reducir bundle inicial

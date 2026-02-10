@@ -4,15 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle } from 'lucide-react';
-import { useCashRegisterStatus } from '@/hooks/useCashRegisterStatus';
-import useAnticipos from '@/hooks/useAnticipos';
+import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import useAnticipos from '@/hooks/personal/useAnticipos';
 import AdvanceFormDialog from '@/components/advances/AdvanceFormDialog';
 import AdvancesTable, { Advance } from '@/components/advances/AdvancesTable';
 import AdvancesFilters from '@/components/advances/AdvancesFilters';
 import Paginate from '@/components/ui/paginate';
 import { toast } from 'sonner';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 export default function AdvancesPage() {
   const router = useRouter();

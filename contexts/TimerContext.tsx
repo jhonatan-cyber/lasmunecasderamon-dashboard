@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { useConfirmModal } from '@/hooks/useConfirmModal';
+import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
 import { TimerExpiredModal } from '@/components/notifications';
 
 interface Timer {

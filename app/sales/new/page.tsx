@@ -16,7 +16,7 @@ import {
 import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
 import IndividualHostessSelect from '@/components/ui/IndividualHostessSelect';
 
-import { useSales } from '@/hooks/useSales';
+import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import SaleProductModal from '@/components/sales/SaleProductModal';

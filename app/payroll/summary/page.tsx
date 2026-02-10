@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import usePayrollSummary from '@/hooks/usePayrollSummary'
+import usePayrollSummary from '@/hooks/personal/usePayrollSummary'
 import PayrollSummaryStats from '@/components/payroll/PayrollSummaryStats'
 import PayrollSummaryList from '@/components/payroll/PayrollSummaryList'
 
