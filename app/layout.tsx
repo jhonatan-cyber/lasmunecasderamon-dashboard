@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 import LayoutContent from '@/components/LayoutContent';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { AnulacionProvider } from '@/contexts/AnulacionContext';
 import { TimerProvider } from '@/contexts/TimerContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
@@ -12,6 +13,8 @@ import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { FetchInterceptorInit } from '@/components/FetchInterceptorInit';
+import { PermissionsSSEListener } from '@/components/PermissionsSSEListener';
 
 import './globals.css';
 import '@/styles/sidebar.css';
@@ -52,28 +55,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className='font-sans antialiased'>
         <ErrorBoundary>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <QueryProvider>
-              <AnulacionProvider>
-                <TimerProvider>
-                  <ServicioAnfitrionasProvider>
-                    <NotificationsProvider>
-                      <NotificationProvider>
-                        <LayoutContent>{children}</LayoutContent>
-                        <Toaster
-                          richColors
-                          position='top-right'
-                          expand={true}
-                          closeButton={true}
-                          duration={4000}
-                        />
-                        <AnulacionNotificationModal />
-                        <ServiceWorkerRegistration />
-                      </NotificationProvider>
-                    </NotificationsProvider>
-                  </ServicioAnfitrionasProvider>
-                </TimerProvider>
-              </AnulacionProvider>
-            </QueryProvider>
+            <FetchInterceptorInit />
+            <AuthProvider>
+              <PermissionsSSEListener />
+              <QueryProvider>
+                <AnulacionProvider>
+                  <TimerProvider>
+                    <ServicioAnfitrionasProvider>
+                      <NotificationsProvider>
+                        <NotificationProvider>
+                          <LayoutContent>{children}</LayoutContent>
+                          <Toaster
+                            richColors
+                            position='top-right'
+                            expand={true}
+                            closeButton={true}
+                            duration={4000}
+                          />
+                          <AnulacionNotificationModal />
+                          <ServiceWorkerRegistration />
+                        </NotificationProvider>
+                      </NotificationsProvider>
+                    </ServicioAnfitrionasProvider>
+                  </TimerProvider>
+                </AnulacionProvider>
+              </QueryProvider>
+            </AuthProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

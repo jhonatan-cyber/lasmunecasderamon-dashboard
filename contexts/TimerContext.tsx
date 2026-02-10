@@ -611,6 +611,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           `🛑 Deteniendo timer: ${timer.id} (${timer.roomName}), manual: ${isManualStop}`
         );
 
+        // PRIMERO: Eliminar el timer del estado local inmediatamente para evitar que se vuelva a mostrar
+        setTimers(prev => prev.filter(t => t.id !== timerId));
+
         // Determinar qué actualizaciones realizar
         const otherTimersInSameRoom = timersRef.current.filter(
           t => t.roomId === timer.roomId && t.id !== timerId && t.isActive
@@ -625,6 +628,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } else if (timer.tipoTransaccion === 'venta') {
           // Para ventas, finalizar la venta
           try {
+            console.log(`[STOP TIMER] 📡 Finalizando venta ${timer.servicioId} en servidor...`);
             const response = await fetch(`/api/ventas/${timer.servicioId}/stop`, {
               method: 'PATCH',
               headers: {
@@ -633,7 +637,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
 
             if (response.ok) {
-              console.log(`✅ Venta ${timer.servicioId} finalizada en servidor`);
+              const data = await response.json();
+              console.log(`✅ Venta ${timer.servicioId} finalizada en servidor:`, data);
             } else {
               console.error(`❌ Error finalizando venta ${timer.servicioId}:`, response.statusText);
             }
@@ -671,8 +676,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else {
         console.warn(`⚠️ No se encontró el timer ${timerId} para detenerlo`);
       }
-
-      setTimers(prev => prev.filter(t => t.id !== timerId));
     },
     [updateRoomStatus, updateServiceStatus]
   );

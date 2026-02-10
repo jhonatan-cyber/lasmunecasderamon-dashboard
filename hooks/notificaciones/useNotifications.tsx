@@ -24,10 +24,7 @@ export function useNotifications() {
   const isConnectingRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const { user } = useCurrentUser();
-  
-  console.log('🔔 [useNotifications] Usuario actual:', user?.id, user?.nick);
 
-  // Usar React Query para cachear y optimizar las peticiones de conteo
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
     queryKey: ['notifications', 'pending-count'],
     queryFn: async () => {
@@ -35,12 +32,11 @@ export function useNotifications() {
       if (!res.ok) throw new Error('Failed to fetch pending counts');
       return res.json();
     },
-    staleTime: 20000, // 20 segundos
-    refetchInterval: 30000, // Refetch cada 30 segundos
+    staleTime: 20000,
+    refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
 
-  // Actualizar los contadores cuando cambien los datos de React Query
   useEffect(() => {
     if (pendingCounts) {
       setPendingOrdersCount(pendingCounts.pedidosCount || 0);
@@ -48,15 +44,11 @@ export function useNotifications() {
     }
   }, [pendingCounts]);
 
-  // Función memoizada para cargar conteos manualmente
+
   const loadPendingCounts = useCallback(async () => {
     refetchCounts();
   }, [refetchCounts]);
 
-  // Cargar ambos conteos de notificaciones al inicializar
-  // Ya no es necesario porque React Query lo maneja automáticamente
-
-  // Actualizar conteos cuando se disparen eventos locales
   useEffect(() => {
     const handleRefresh = () => refetchCounts();
 
@@ -74,8 +66,8 @@ export function useNotifications() {
   const playNotificationSound = useCallback(() => {
     try {
       const audio = new Audio('/notification.mp3');
-      audio.play().catch(() => {});
-    } catch (_) {}
+      audio.play().catch(() => { });
+    } catch (_) { }
   }, []);
 
   const showNotification = useCallback(
@@ -83,9 +75,11 @@ export function useNotifications() {
       console.log('[useNotifications] showNotification llamado:', {
         user,
         userId: user?.id,
+        userRole: user?.role,
         createdBy: data.createdBy,
         shouldSkip: user && data.createdBy && user.id === data.createdBy
       });
+
 
       if (user && data.createdBy && user.id === data.createdBy) {
         console.log('[useNotifications] Notificación omitida - el usuario creó el pedido');
@@ -93,9 +87,14 @@ export function useNotifications() {
         window.dispatchEvent(event);
         return;
       }
-      
+
+
+      if (user?.role?.toLowerCase() === 'anfitriona') {
+        console.log('[useNotifications] Notificación omitida - usuario es anfitriona');
+        return;
+      }
+
       console.log('[useNotifications] Mostrando notificación de pedido');
-      // Para asegurar que todos vean la notificación durante la depuración, no filtramos por rol
       playNotificationSound();
       toast.success(`¡NUEVO PEDIDO! #${data.codigo}`, {
         description: (
@@ -179,7 +178,7 @@ export function useNotifications() {
     if (eventSourceRef.current) {
       try {
         eventSourceRef.current.close();
-      } catch (_) {}
+      } catch (_) { }
       eventSourceRef.current = null;
     }
     setIsConnected(false);
@@ -187,17 +186,17 @@ export function useNotifications() {
 
   const connectSSE = useCallback(() => {
     if (isConnectingRef.current || eventSourceRef.current) {
-      console.log('🔔 [useNotifications] Ya hay una conexión activa');
+
       return;
     }
-    console.log('🔔🔔🔔 [useNotifications] INICIANDO CONEXIÓN SSE 🔔🔔🔔');
+
     isConnectingRef.current = true;
 
     const es = new EventSource('/api/notifications/sse');
     eventSourceRef.current = es;
 
     es.onopen = () => {
-      console.log('🔔✅ [useNotifications] CONEXIÓN SSE ESTABLECIDA ✅🔔');
+
       setIsConnected(true);
       setConnectionAttempts(0);
       isConnectingRef.current = false;
@@ -206,10 +205,10 @@ export function useNotifications() {
     es.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
-        console.log('🔔📨 [useNotifications] MENSAJE SSE RECIBIDO:', payload.type);
+
 
         if (payload?.type === 'new_order' && payload?.data) {
-          console.log('🔔🆕 [useNotifications] PROCESANDO NEW_ORDER:', payload.data);
+
           showNotification(payload.data as NotificationData);
 
           setPendingOrdersCount(prev => {
@@ -223,8 +222,6 @@ export function useNotifications() {
         if (payload?.type === 'new_service_request' && payload?.data) {
           showServiceNotification(payload.data);
 
-          // Incrementar contador de solicitudes de servicio
-
           setPendingServiceRequestsCount(prev => {
             const newCount = prev + 1;
 
@@ -237,7 +234,6 @@ export function useNotifications() {
             timestamp: Date.now()
           });
 
-          // Disparar evento para actualizar listas
           const updateEvent = new CustomEvent('updateServiceRequests');
           window.dispatchEvent(updateEvent);
         }
@@ -246,37 +242,34 @@ export function useNotifications() {
           payload?.type === 'service_request_approved' ||
           payload?.type === 'service_request_rejected'
         ) {
-          // Decrementar el contador cuando se aprueba o rechaza
+
           setPendingServiceRequestsCount(prev => Math.max(0, prev - 1));
-          // Disparar evento para actualizar listas
+
           const updateEvent = new CustomEvent('updateServiceRequests');
           window.dispatchEvent(updateEvent);
         }
 
         if (payload?.type === 'order_updated') {
-          // Decrementar el contador cuando se procesa un pedido
+
           setPendingOrdersCount(prev => Math.max(0, prev - 1));
           const updateEvent = new CustomEvent('updatePendingOrders');
           window.dispatchEvent(updateEvent);
         }
 
         if (payload?.type === 'sale_cancelled' && payload?.data) {
-          console.log('🔔🗑️ [useNotifications] VENTA CANCELADA:', payload.data);
-          // Disparar evento ventaRegistrada para refrescar la lista de ventas
+
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
         }
 
         if (payload?.type === 'anulacion_confirmada' && payload?.data) {
-          console.log('🔔✅ [useNotifications] ANULACIÓN CONFIRMADA:', payload.data);
-          // Disparar evento ventaRegistrada para refrescar la lista de ventas
+
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
         }
 
         if (payload?.type === 'anulacion_rechazada' && payload?.data) {
-          console.log('🔔❌ [useNotifications] ANULACIÓN RECHAZADA:', payload.data);
-          // Disparar evento ventaRegistrada para refrescar la lista de ventas
+
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
         }
@@ -296,15 +289,15 @@ export function useNotifications() {
   const reconnect = useCallback(() => {
     cleanup();
     setConnectionAttempts(c => c + 1);
-   
+
     setTimeout(connectSSE, 200);
   }, [connectSSE]);
 
   useEffect(() => {
-    console.log('[useNotifications] 🚀 useEffect ejecutado - llamando connectSSE');
+
     connectSSE();
     return () => {
-      console.log('[useNotifications] 🧹 Limpiando conexión SSE');
+
       cleanup();
     };
   }, [connectSSE]);

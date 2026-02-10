@@ -15,21 +15,23 @@ export const useSales = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentFilters, setCurrentFilters] = useState<VentaFiltros | undefined>(undefined);
 
-  // Construir endpoint con filtros
+
   const endpoint = useMemo(() => {
-    if (!currentFilters) return '/api/sales';
-    
     const params = new URLSearchParams();
-    Object.entries(currentFilters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        params.append(key, value.toString());
-      }
-    });
-    
+
+    params.append('limit', '1000');
+
+    if (currentFilters) {
+      Object.entries(currentFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && key !== 'limit' && key !== 'page') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
     return `/api/sales?${params.toString()}`;
   }, [currentFilters]);
 
-  // Usar hook genérico para fetch de ventas
   const {
     data: ventas,
     isLoading: fetchLoading,
@@ -39,21 +41,18 @@ export const useSales = () => {
   } = useGenericFetch<VentaWithDetails>(endpoint, {
     initialFetch: false,
     transform: (data) => {
-      console.log('[useSales] Response data:', data);
-      console.log('[useSales] Data structure - data.data:', data.data, 'data:', data);
-      
-      // El API devuelve { success: true, data: [...], pagination: {...} }
+
+
+
       const ventasArray = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
-      console.log('[useSales] Setting ventas with', ventasArray.length, 'items');
       return ventasArray;
     }
   });
 
-  // Combinar loading states
   const loading = fetchLoading || mutationLoading;
 
   const getVentas = useCallback(async (filtros?: VentaFiltros) => {
-    console.log('[useSales] Fetching sales with filters:', filtros);
+
     setCurrentFilters(filtros);
     await refetch();
   }, [refetch]);

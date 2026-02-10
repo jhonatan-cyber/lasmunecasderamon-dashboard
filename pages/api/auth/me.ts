@@ -7,6 +7,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ success: false, message: 'Método no permitido' });
   }
 
+  // IMPORTANTE: Deshabilitar caché para que siempre obtenga datos actualizados
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+
   try {
     // Obtener datos del usuario usando la función helper
     const userData = getCurrentUser(req);
@@ -44,6 +50,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         lastName: user.apellido || '',
         email: user.email,
         role: user.rol_nombre || 'garzon',
+        roleId: user.rol_id, // ← AGREGADO: ID del rol para SSE
         status: user.estado,
         foto: user.foto || '',
         nick: user.nick || '',

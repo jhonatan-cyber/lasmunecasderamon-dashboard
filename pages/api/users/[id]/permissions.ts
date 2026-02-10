@@ -9,6 +9,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
+  // IMPORTANTE: Deshabilitar caché para que siempre obtenga permisos actualizados
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+
   const { id } = req.query;
   const userId = parseInt(id as string);
 

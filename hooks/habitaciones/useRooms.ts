@@ -56,19 +56,23 @@ export default function useRooms(): UseRooms {
 
   // Wrapper para updateRoom con tipo específico
   const updateRoom = useCallback(async (id: number, room: Omit<Room, "id" | "status" | "fecha_crea" | "fecha_mod" | "fecha_elim">) => {
+    console.log('[useRooms] Actualizando habitación:', { id, room });
     await update({ id, ...room });
   }, [update]);
 
   // Wrapper para deleteRoom
   const deleteRoom = useCallback(async (id: number) => {
+    console.log('[useRooms] Eliminando habitación:', id);
     await remove(id);
   }, [remove]);
 
   // Funciones especiales
   const activateRoom = useCallback(async (id: number) => {
+    console.log('[useRooms] Activando habitación:', id);
     try {
       const res = await fetch(`/api/rooms?id=${id}&action=activate`, { method: "PATCH" });
       const data = await res.json();
+      console.log('[useRooms] Respuesta activar:', data);
       if (data.success) {
         showSuccessToast(data.message || "Habitación activada correctamente");
         await refetch();
@@ -76,14 +80,17 @@ export default function useRooms(): UseRooms {
         showErrorToast(data.message || "Error al activar habitación");
       }
     } catch (err) {
+      console.error('[useRooms] Error activando:', err);
       showErrorToast("Error de red al activar habitación");
     }
   }, [refetch]);
 
   const deactivateRoom = useCallback(async (id: number) => {
+    console.log('[useRooms] Desactivando habitación:', id);
     try {
       const res = await fetch(`/api/rooms?id=${id}&action=deactivate`, { method: "PATCH" });
       const data = await res.json();
+      console.log('[useRooms] Respuesta desactivar:', data);
       if (data.success) {
         showSuccessToast(data.message || "Habitación desactivada correctamente");
         await refetch();
@@ -91,6 +98,7 @@ export default function useRooms(): UseRooms {
         showErrorToast(data.message || "Error al desactivar habitación");
       }
     } catch (err) {
+      console.error('[useRooms] Error desactivando:', err);
       showErrorToast("Error de red al desactivar habitación");
     }
   }, [refetch]);
