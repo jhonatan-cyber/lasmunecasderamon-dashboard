@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-// Almacenar las conexiones activas
-const clients = new Set<NextApiResponse>();
+// Almacenar las conexiones activas con información adicional
+const clients = new Map<NextApiResponse, { id: string; connectedAt: Date }>();
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -13,15 +13,46 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
+  // Generar ID único para esta conexión
+  const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
   // Agregar cliente a la lista
-  clients.add(res);
+  clients.set(res, { id: clientId, connectedAt: new Date() });
+  
+  console.log(`✅ [SSE] Cliente conectado: ${clientId} (Total: ${clients.size})`);
 
   // Enviar mensaje inicial
-  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Conectado al servidor de permisos' })}\n\n`);
+  res.write(`data: ${JSON.stringify({ 
+    type: 'connected', 
+    message: 'Conectado al servidor de permisos',
+    clientId 
+  })}\n\n`);
+
+  // Heartbeat cada 30 segundos para mantener la conexión viva
+  const heartbeatInterval = setInterval(() => {
+    try {
+      res.write(`:heartbeat\n\n`);
+    } catch (error) {
+      console.error(`❌ [SSE] Error en heartbeat para ${clientId}:`, error);
+      clearInterval(heartbeatInterval);
+      clients.delete(res);
+    }
+  }, 30000);
 
   // Manejar desconexión del cliente
   req.on('close', () => {
+    clearInterval(heartbeatInterval);
+    clients.delete(res);
+    console.log(`🔴 [SSE] Cliente desconectado: ${clientId} (Total: ${clients.size})`);
+  });
+
+  // Manejar errores
+  req.on('error', (error) => {
+    console.error(`❌ [SSE] Error en conexión ${clientId}:`, error);
+    clearInterval(heartbeatInterval);
     clients.delete(res);
   });
 }
@@ -34,7 +65,22 @@ export function notifyPermissionsUpdate(roleId: number) {
     timestamp: new Date().toISOString()
   });
 
-  clients.forEach((client) => {
-    client.write(`data: ${message}\n\n`);
+  console.log(`📢 [SSE] Notificando actualización de permisos a ${clients.size} clientes (roleId: ${roleId})`);
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  clients.forEach((clientInfo, client) => {
+    try {
+      client.write(`data: ${message}\n\n`);
+      successCount++;
+      console.log(`✅ [SSE] Mensaje enviado a ${clientInfo.id}`);
+    } catch (error) {
+      errorCount++;
+      console.error(`❌ [SSE] Error enviando a ${clientInfo.id}:`, error);
+      clients.delete(client);
+    }
   });
+
+  console.log(`📊 [SSE] Resultado: ${successCount} exitosos, ${errorCount} errores`);
 }

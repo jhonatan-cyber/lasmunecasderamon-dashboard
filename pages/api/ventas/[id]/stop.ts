@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { sendNotificationToAll } from '../../notifications/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PATCH') {
@@ -57,7 +58,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     
-    await query('UPDATE ventas SET fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
+    // Actualizar el estado de la venta a finalizada (estado = 0)
+    await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
+    console.log(`✅ Venta ${ventaId} marcada como finalizada (estado = 0)`);
+
+    // Enviar notificación SSE para finalizar el temporizador en tiempo real en todos los clientes
+    if (venta.habitacion_id) {
+      console.log(`[STOP VENTA] 📡 Enviando notificación timer_stopped para habitación ${venta.habitacion_id}`);
+      
+      // Obtener nombre de la habitación
+      const habitacionInfo = await query(
+        'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
+        [venta.habitacion_id]
+      ) as any[];
+      
+      const nombreHabitacion = habitacionInfo && habitacionInfo.length > 0 
+        ? habitacionInfo[0].nombre 
+        : `Habitación ${venta.habitacion_id}`;
+      
+      sendNotificationToAll('timer_stopped', {
+        servicioId: ventaId,
+        roomId: venta.habitacion_id,
+        roomName: nombreHabitacion,
+        reason: 'Venta finalizada manualmente',
+        tipoTransaccion: 'venta'
+      });
+      
+      console.log(`[STOP VENTA] ✅ Notificación timer_stopped enviada en tiempo real para venta ${ventaId}`);
+      console.log(`[STOP VENTA] 📡 Todos los usuarios verán el temporizador finalizado inmediatamente`);
+    }
 
     return res.status(200).json({
       success: true,

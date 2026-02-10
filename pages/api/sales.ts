@@ -1,6 +1,48 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { sendNotificationToAll } from './notifications/sse';
+import { notifyOrderProcessed } from './orders/sse';
+
+/**
+ * Busca si una anfitriona está actualmente en una venta con habitación y temporizador activo
+ * @param anfitrionaId ID de la anfitriona
+ * @returns Información de la venta activa con habitación, o null si no está en ninguna
+ */
+async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
+  id_venta: number;
+  habitacion_id: number;
+  habitacion_nombre: string;
+  tiempo: number;
+  codigo: string;
+} | null> {
+  try {
+    const resultado = await query(`
+      SELECT 
+        v.id_venta,
+        v.habitacion_id,
+        h.nombre as habitacion_nombre,
+        v.tiempo,
+        v.codigo
+      FROM ventas v
+      INNER JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
+      INNER JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+      WHERE vu.usuario_id = ?
+        AND v.habitacion_id IS NOT NULL
+        AND v.tiempo > 0
+        AND v.estado = 1
+      ORDER BY v.fecha_crea DESC
+      LIMIT 1
+    `, [anfitrionaId]) as any[];
+
+    if (resultado && resultado.length > 0) {
+      return resultado[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('[SALES] Error buscando venta activa con habitación:', error);
+    return null;
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
@@ -91,8 +133,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       params.push(estado);
     }
 
-    // Si se proporciona caja_id específico, usarlo
-    // Si no, obtener la caja abierta actual y filtrar por ella
+
     if (caja_id) {
       whereClause += ' AND v.caja_id = ?';
       params.push(caja_id);
@@ -112,7 +153,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         whereClause += ' AND v.caja_id = ?';
         params.push(cajaAbiertaId);
       } else {
-        // Si no hay caja abierta, no mostrar ninguna venta
+
         whereClause += ' AND v.caja_id IS NULL';
       }
     }
@@ -123,7 +164,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     console.log('[SALES GET LISTA] Total ventas:', total);
 
     console.log('[SALES GET LISTA] Getting sales list...');
-    // Usar literales para LIMIT y OFFSET en lugar de placeholders
+
     const salesSql = `
       SELECT 
         v.id_venta, 
@@ -194,10 +235,10 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     const totalPages = Math.ceil(total / limitNum);
 
     console.log('[SALES GET LISTA] Processing sales...');
-    // Procesar los datos para formatear usuarios como array y obtener detalles
+
     const processedSales = await Promise.all(
       salesResult.map(async venta => {
-        // Obtener usuarios de esta venta
+
         const usuariosSql = `
           SELECT DISTINCT u.id_usuario, u.nick 
           FROM ventas_usuarios vu 
@@ -211,7 +252,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           usuario_nombre: u.nick
         }));
 
-        // Obtener detalles de la venta
+
         const detallesSql = `
           SELECT 
             dv.id_detalle_venta,
@@ -229,17 +270,16 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
 
         return {
           ...venta,
-          id: venta.id_venta, // Asegurar que el frontend use 'id'
+          id: venta.id_venta,
           usuarios,
           detalles,
-          // Mantener compatibilidad con el frontend
           cliente_nombre: venta.cliente_nombre || 'Sin cliente',
           habitacion_nombre: venta.habitacion_nombre || 'Sin habitación'
         };
       })
     );
 
-    console.log('[SALES GET LISTA] ✅ Sales processed successfully');
+
     return res.status(200).json({
       success: true,
       data: processedSales,
@@ -378,9 +418,9 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log('[SALES POST] Request body:', JSON.stringify(req.body, null, 2));
 
-    const {
+
+    let {
       total,
       detalles,
       cliente_id,
@@ -395,14 +435,58 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     } = req.body;
 
     if (!total || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
-      console.error('[SALES POST] Validation failed: missing total or detalles');
+
       return res.status(400).json({
         success: false,
         message: 'Total y detalles son requeridos'
       });
     }
 
-    console.log('[SALES POST] Validation passed, generating code...');
+
+
+    // NUEVA LÓGICA: Verificar si hay productos >= 30,000 con anfitrionas
+    const tieneProductosEspeciales = detalles.some(d => {
+      const precio = d.precio || 0;
+      const tieneAnfitrionas = (d.hostesses && d.hostesses.length > 0) || d.hostess_id;
+      return precio >= 30000 && tieneAnfitrionas;
+    });
+
+    console.log('[SALES POST] ¿Tiene productos >= 30,000 con anfitrionas?', tieneProductosEspeciales);
+
+    // Solo verificar ventas activas si hay productos especiales
+    if (tieneProductosEspeciales && usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
+
+
+      for (const usuarioId of usuarios) {
+        const ventaActiva = await buscarVentaActivaConHabitacion(usuarioId);
+
+        if (ventaActiva) {
+
+
+          // Auto-seleccionar la habitación si no se proporcionó una
+          if (!habitacion_id) {
+            habitacion_id = ventaActiva.habitacion_id;
+            console.log(`[SALES POST] 🏠 Auto-seleccionando habitación ${ventaActiva.habitacion_nombre} (ID: ${habitacion_id})`);
+          }
+
+          // Si se proporcionó un nuevo tiempo, se usará para reiniciar el temporizador
+          // Si no se proporcionó tiempo, usar el tiempo de la venta activa
+          if (!tiempo || tiempo === 0) {
+            tiempo = ventaActiva.tiempo;
+            console.log(`[SALES POST] ⏱️ Usando tiempo de venta activa: ${tiempo} minutos`);
+          } else {
+            console.log(`[SALES POST] ⏱️ Nuevo tiempo proporcionado: ${tiempo} minutos - Se reiniciará el temporizador`);
+          }
+
+          // Solo necesitamos encontrar una venta activa, salir del loop
+          break;
+        }
+      }
+    } else if (!tieneProductosEspeciales) {
+      console.log('[SALES POST] ℹ️ No hay productos >= 30,000 con anfitrionas - No se auto-selecciona habitación');
+    }
+
+    console.log('[SALES POST] Generating code...');
 
     console.log('[SALES POST] Validation passed, generating code...');
 
@@ -514,10 +598,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    console.log('[SALES POST] User relations inserted');
 
-    // Registrar comisiones para cada anfitriona según asignaciones por producto
-    console.log('[SALES POST] Registering commissions...');
+
+
     if (totalComision > 0) {
       // Agrupar comisiones por anfitriona
       const comisionesPorAnfitriona = new Map<number, number>();
@@ -526,7 +609,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         const comision = detalle.comision || 0;
         if (comision <= 0) continue;
 
-        // Obtener anfitrionas para este producto (priorizar array 'hostesses')
+
         let hostessesParaEsteProducto: number[] = [];
 
         if (detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 0) {
@@ -536,12 +619,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
 
         if (hostessesParaEsteProducto.length > 0) {
-          // Dividir la comisión del producto entre sus anfitrionas seleccionadas
-          // Usar Math.round para redondear correctamente en lugar de truncar
-          const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
-          
-          console.log(`[SALES POST] Producto: ${detalle.producto_id}, Comisión: ${comision}, Anfitrionas: ${hostessesParaEsteProducto.length}, Monto por anfitriona: ${montoPorAnfitriona}`);
 
+          const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
           for (const hId of hostessesParaEsteProducto) {
             const actual = comisionesPorAnfitriona.get(hId) || 0;
             comisionesPorAnfitriona.set(hId, actual + montoPorAnfitriona);
@@ -549,9 +628,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
       }
 
-      console.log('[SALES POST] Final commissions distribution:', Array.from(comisionesPorAnfitriona.entries()));
 
-      // Insertar comisiones calculadas
       for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
         if (monto > 0) {
           const comisionResult: any = await query(
@@ -577,10 +654,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    console.log('[SALES POST] Commissions registered');
 
-    // Actualizar la caja activa con las ventas y comisiones
-    console.log('[SALES POST] Updating active cash register...');
     const cajaActiva = (await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1')) as any[];
 
     if (cajaActiva && cajaActiva.length > 0) {
@@ -625,13 +699,10 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           cajaId
         ]
       );
-      console.log('[SALES POST] Cash register updated');
-    } else {
-      console.warn('[SALES POST] No active cash register found');
+
     }
 
-    // Obtener la venta completa con información relacionada
-    console.log('[SALES POST] Fetching complete sale info...');
+
     const ventaCompletaSql = `
       SELECT 
         v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, 
@@ -649,39 +720,102 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const ventaCompletaResult = (await query(ventaCompletaSql, [ventaId])) as any[];
     const ventaCompleta = ventaCompletaResult[0];
 
-    console.log('[SALES POST] ✅ Sale created successfully with ID:', ventaId);
 
-    // Si la venta tiene habitación y tiempo, marcar anfitrionas como ocupadas
-    if (habitacion_id && tiempo > 0 && usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
-      console.log('[SALES POST] Marcando anfitrionas como ocupadas...');
+    if (pedido_id) {
       try {
-        // Actualizar estado de anfitrionas a ocupadas (estado = 2)
-        for (const usuarioId of usuarios) {
-          await query(
-            'UPDATE usuarios SET estado = 2 WHERE id_usuario = ?',
-            [usuarioId]
-          );
-          console.log(`[SALES POST] Anfitriona ${usuarioId} marcada como ocupada`);
-        }
-        console.log(`[SALES POST] ${usuarios.length} anfitrionas marcadas como ocupadas`);
-      } catch (error) {
-        console.error('[SALES POST] Error marcando anfitrionas como ocupadas:', error);
-        // No fallar la venta si hay error marcando anfitrionas
+
+        notifyOrderProcessed(pedido_id);
+      } catch (notificationError) {
+        console.error('[SALES POST] Error notificando pedido procesado:', notificationError);
+        // No fallar la venta si hay error en la notificación
       }
     }
 
-    // Enviar notificación SSE si la venta tiene habitación y tiempo
+
+
     if (habitacion_id && tiempo > 0) {
       try {
         const habitacionInfo = await query(
           'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
           [habitacion_id]
         ) as any[];
-        
-        const nombreHabitacion = habitacionInfo && habitacionInfo.length > 0 
-          ? habitacionInfo[0].nombre 
+
+        const nombreHabitacion = habitacionInfo && habitacionInfo.length > 0
+          ? habitacionInfo[0].nombre
           : `Habitación ${habitacion_id}`;
 
+        // Verificar si hay un temporizador activo para esta habitación
+        const ventasActivasEnHabitacion = await query(`
+          SELECT COUNT(*) as count
+          FROM ventas
+          WHERE habitacion_id = ?
+            AND tiempo > 0
+            AND estado = 1
+            AND id_venta != ?
+        `, [habitacion_id, ventaId]) as any[];
+
+        const hayTemporizadorActivo = ventasActivasEnHabitacion[0]?.count > 0;
+
+        if (hayTemporizadorActivo) {
+          console.log(`[SALES POST] 🔄 Reiniciando temporizador para habitación ${nombreHabitacion} con nuevo tiempo: ${tiempo} minutos`);
+          console.log(`[SALES POST] 📋 Card de ventas con habitación debe actualizarse con datos de la nueva venta`);
+
+          // Obtener la venta anterior para finalizarla correctamente
+          const ventaAnterior = (await query(`
+            SELECT id_venta, codigo
+            FROM ventas
+            WHERE habitacion_id = ?
+              AND tiempo > 0
+              AND estado = 1
+              AND id_venta != ?
+            ORDER BY fecha_crea DESC
+            LIMIT 1
+          `, [habitacion_id, ventaId])) as any[];
+
+          if (ventaAnterior && ventaAnterior.length > 0) {
+            const ventaAnteriorId = ventaAnterior[0].id_venta;
+            const ventaAnteriorCodigo = ventaAnterior[0].codigo;
+            
+            console.log(`[SALES POST] 🛑 Finalizando venta anterior ${ventaAnteriorCodigo} (ID: ${ventaAnteriorId})`);
+            
+            // Finalizar la venta anterior (actualizar estado a 0)
+            await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [ventaAnteriorId]);
+            console.log(`[SALES POST] ✅ Venta anterior ${ventaAnteriorId} marcada como finalizada (estado = 0)`);
+            
+            // Liberar anfitrionas de la venta anterior
+            const anfitrionasAnteriores = (await query(`
+              SELECT vu.usuario_id, r.nombre as rol 
+              FROM ventas_usuarios vu
+              INNER JOIN usuarios u ON vu.usuario_id = u.id_usuario
+              LEFT JOIN roles r ON u.rol_id = r.id_rol
+              WHERE vu.venta_id = ?
+            `, [ventaAnteriorId])) as any[];
+
+            if (anfitrionasAnteriores.length > 0) {
+              for (const anfitriona of anfitrionasAnteriores) {
+                if (anfitriona.rol === 'anfitriona') {
+                  await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
+                  console.log(`[SALES POST] ✅ Anfitriona ${anfitriona.usuario_id} liberada de venta anterior`);
+                }
+              }
+            }
+            
+            // PRIMERO: Detener el temporizador anterior de esta habitación
+            console.log(`[SALES POST] 🛑 Deteniendo temporizador anterior de habitación ${nombreHabitacion}`);
+            sendNotificationToAll('timer_stopped', {
+              servicioId: ventaAnteriorId, // Incluir el ID de la venta anterior
+              roomId: habitacion_id,
+              roomName: nombreHabitacion,
+              reason: 'Nueva venta en la misma habitación',
+              tipoTransaccion: 'venta'
+            });
+            console.log(`[SALES POST] ✅ Notificación timer_stopped enviada para venta anterior ${ventaAnteriorId}`);
+          }
+        } else {
+          console.log(`[SALES POST] ⏱️ Iniciando nuevo temporizador para habitación ${nombreHabitacion}: ${tiempo} minutos`);
+        }
+
+        // SEGUNDO: Iniciar el nuevo temporizador
         sendNotificationToAll('timer_started', {
           servicioId: ventaId,
           codigo: codigoVenta,
@@ -691,9 +825,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           startTime: new Date().toISOString(),
           clienteNombre: ventaCompleta?.cliente_nombre ? `${ventaCompleta.cliente_nombre} ${ventaCompleta.cliente_apellido}` : 'Cliente',
           anfitrionas: ventaCompleta?.usuarios_nicks || '',
-          tipoTransaccion: 'venta'
+          tipoTransaccion: 'venta',
+          isRestart: hayTemporizadorActivo, // Indicar si es un reinicio
+          ventaId: ventaId, // ID de la nueva venta para actualizar el card
+          total: total, // Total de la nueva venta
+          subtotal: sub_total || 0, // Subtotal de la nueva venta
+          metodoPago: metodo_pago // Método de pago de la nueva venta
         });
-        console.log('[SALES POST] Notificación timer_started enviada para venta:', ventaId);
+        console.log('[SALES POST] ✅ Notificación SSE timer_started enviada en tiempo real para venta:', ventaId);
+        console.log('[SALES POST] 📡 Todos los clientes conectados recibirán la actualización del card inmediatamente');
       } catch (notificacionError) {
         console.error('[SALES POST] Error enviando notificación SSE:', notificacionError);
       }
@@ -716,7 +856,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('[SALES POST] ❌ Error creating sale:', error);
+
     console.error(
       '[SALES POST] Error stack:',
       error instanceof Error ? error.stack : 'No stack trace'

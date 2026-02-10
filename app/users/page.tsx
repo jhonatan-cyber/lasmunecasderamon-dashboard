@@ -17,6 +17,8 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserImage } from '@/contexts/UserImageContext';
 
 export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -25,6 +27,8 @@ export default function Users() {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const { user: currentUser, refetch: refetchCurrentUser } = useCurrentUser();
+  const { updateImage } = useUserImage();
 
 
   const {
@@ -35,6 +39,8 @@ export default function Users() {
     setSearchTerm,
     filterStatus,
     setFilterStatus,
+    filterRole,
+    setFilterRole,
     page,
     setPage,
     pageSize,
@@ -52,6 +58,7 @@ export default function Users() {
   const handleClearFilters = () => {
     setSearchTerm('');
     setFilterStatus('all');
+    setFilterRole('all');
     setPage(1);
   };
 
@@ -99,6 +106,13 @@ export default function Users() {
             setIsEditing(false);
             setSelectedUser(null);
             fetchUsers();
+            
+            // Si se editó el usuario actual, actualizar contexto de autenticación
+            if (currentUser && selectedUser.id === currentUser.id) {
+              console.log('🔄 Actualizando contexto de usuario actual...');
+              updateImage(); // Actualizar versión de imagen
+              await refetchCurrentUser(); // Recargar datos del usuario
+            }
           } else {
             toast.error(result.message || 'Error al actualizar usuario');
           }
@@ -117,7 +131,7 @@ export default function Users() {
         toast.error('Error al procesar la solicitud');
       }
     },
-    [isEditing, selectedUser, createUser, updateUser, fetchUsers]
+    [isEditing, selectedUser, createUser, updateUser, fetchUsers, currentUser, updateImage, refetchCurrentUser]
   );
 
   const handleFormCancel = useCallback(() => {
@@ -245,6 +259,8 @@ export default function Users() {
         setSearchTerm={setSearchTerm}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
+        filterRole={filterRole}
+        setFilterRole={setFilterRole}
         onClearFilters={handleClearFilters}
         pageSize={pageSize}
         setPageSize={setPageSize}

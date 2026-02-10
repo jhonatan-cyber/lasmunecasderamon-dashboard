@@ -20,6 +20,8 @@ interface UserFiltersProps {
   setSearchTerm: (term: string) => void;
   filterStatus: string;
   setFilterStatus: (status: string) => void;
+  filterRole: string;
+  setFilterRole: (role: string) => void;
   onClearFilters: () => void;
   pageSize: number;
   setPageSize: (size: number) => void;
@@ -31,6 +33,8 @@ export function UserFilters({
   setSearchTerm,
   filterStatus,
   setFilterStatus,
+  filterRole,
+  setFilterRole,
   onClearFilters,
   pageSize,
   setPageSize,
@@ -44,61 +48,80 @@ export function UserFilters({
   return (
     <Card className='shadow-sm'>
       <CardContent className='mt-3 p-4 sm:p-6'>
-                 <div className='flex flex-col lg:flex-row gap-4 items-end'>
-           {/* Buscador */}
-           <div className='w-full lg:w-1/3'>
-             <Label htmlFor='search' className='mb-2 text-sm'>
-               Buscar
-             </Label>
-             <SearchInput
-               id='search'
-               value={searchTerm}
-               onChange={setSearchTerm}
-               placeholder='Buscar usuarios...'
-               className='w-full text-sm'
-             />
-           </div>
+        <div className='flex flex-col lg:flex-row gap-4 items-end'>
+          {/* Buscador */}
+          <div className='w-full lg:w-1/3'>
+            <Label htmlFor='search' className='mb-2 text-sm'>
+              Buscar
+            </Label>
+            <SearchInput
+              id='search'
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder='Buscar usuarios...'
+              className='w-full text-sm'
+            />
+          </div>
 
-           {/* Filtro de estado */}
-           <div className='w-full lg:w-auto'>
-             <Label htmlFor='status' className='mb-2 text-sm'>
-               Estado
-             </Label>
-             <Select value={filterStatus} onValueChange={setFilterStatus}>
-               <SelectTrigger id='status' className='w-full lg:w-[140px] text-sm rounded-full'>
-                 <SelectValue />
-               </SelectTrigger>
-               <SelectContent>
-                 <SelectItem value='all'>Todos</SelectItem>
-                 <SelectItem value='active'>Activos</SelectItem>
-                 <SelectItem value='inactive'>Inactivos</SelectItem>
-               </SelectContent>
-             </Select>
-           </div>
+          {/* Filtro de estado */}
+          <div className='w-full lg:w-auto'>
+            <Label htmlFor='status' className='mb-2 text-sm'>
+              Estado
+            </Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger id='status' className='w-full lg:w-[140px] text-sm rounded-full'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>Todos</SelectItem>
+                <SelectItem value='active'>Activos</SelectItem>
+                <SelectItem value='inactive'>Inactivos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-           {/* Elementos por página */}
-           <div className='w-full lg:w-auto'>
-             <SelectElements
-               value={pageSize}
-               onChange={handlePageSizeChange}
-               options={[5, 10, 20, 40]}
-               label='Usuarios por página'
-             />
-           </div>
+          {/* Filtro de rol */}
+          <div className='w-full lg:w-auto'>
+            <Label htmlFor='role' className='mb-2 text-sm'>
+              Rol
+            </Label>
+            <Select value={filterRole} onValueChange={setFilterRole}>
+              <SelectTrigger id='role' className='w-full lg:w-[160px] text-sm rounded-full'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>Todos los roles</SelectItem>
+                <SelectItem value='administrador'>Administrador</SelectItem>
+                <SelectItem value='cajero'>Cajero</SelectItem>
+                <SelectItem value='garzon'>Garzón</SelectItem>
+                <SelectItem value='anfitriona'>Anfitriona</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-           {/* Botón limpiar filtros */}
-           <div className='w-full lg:w-auto'>
-             <Button
-               onClick={onClearFilters}
-               size='sm'
-               variant='outline'
-               className='w-full lg:w-auto rounded-full px-4 text-sm'
-             >
-               <Eraser className='w-3 h-3 mr-1' />
-               Limpiar
-             </Button>
-           </div>
-         </div>
+          {/* Elementos por página */}
+          <div className='w-full lg:w-auto'>
+            <SelectElements
+              value={pageSize}
+              onChange={handlePageSizeChange}
+              options={[5, 10, 20, 40]}
+              label='Usuarios por página'
+            />
+          </div>
+
+          {/* Botón limpiar filtros */}
+          <div className='w-full lg:w-auto'>
+            <Button
+              onClick={onClearFilters}
+              size='sm'
+              variant='outline'
+              className='w-full lg:w-auto rounded-full px-4 text-sm'
+            >
+              <Eraser className='w-2 h-1 mr-1' />
+
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

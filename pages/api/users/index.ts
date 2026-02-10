@@ -2,6 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import formidable from 'formidable';
+import fs from 'fs';
+import path from 'path';
 
 // Configurar para que Next.js no parseé automáticamente el body
 export const config = {
@@ -53,48 +56,42 @@ const generatePassword = async (run: string): Promise<string> => {
   return await bcrypt.hash(run, 10);
 };
 
-// Función simple para parsear FormData
-const parseFormData = async (req: NextApiRequest): Promise<any> => {
+// Función para parsear FormData con archivos usando formidable
+const parseFormData = async (req: NextApiRequest): Promise<{ fields: any; files: any }> => {
   return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      try {
-        const boundary = req.headers['content-type']?.split('boundary=')[1];
-        if (!boundary) {
-          reject(new Error('No boundary found'));
-          return;
-        }
+    const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
+    
+    // Crear directorio si no existe
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
-        const parts = body.split(`--${boundary}`);
-        const fields: any = {};
-
-        parts.forEach(part => {
-          if (part.trim() && !part.includes('--')) {
-            const lines = part.split('\r\n');
-            let fieldName = '';
-            let fieldValue = '';
-
-            lines.forEach(line => {
-              if (line.startsWith('Content-Disposition: form-data; name=')) {
-                fieldName = line.split('name=')[1].replace(/"/g, '');
-              } else if (line.trim() && !line.startsWith('Content-')) {
-                fieldValue = line.trim();
-              }
-            });
-
-            if (fieldName) {
-              fields[fieldName] = fieldValue;
-            }
-          }
-        });
-
-        resolve(fields);
-      } catch (error) {
-        reject(error);
+    const form = formidable({
+      uploadDir,
+      keepExtensions: true,
+      maxFileSize: 5 * 1024 * 1024, // 5MB
+      filename: (name, ext, part) => {
+        // Generar nombre único para el archivo
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        return `user-${uniqueSuffix}${ext}`;
       }
+    });
+
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        console.error('Error parsing form:', err);
+        reject(err);
+        return;
+      }
+
+      // Convertir arrays de formidable a valores simples
+      const parsedFields: any = {};
+      Object.keys(fields).forEach(key => {
+        const value = fields[key];
+        parsedFields[key] = Array.isArray(value) ? value[0] : value;
+      });
+
+      resolve({ fields: parsedFields, files });
     });
   });
 };
@@ -168,13 +165,25 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     let fields: any = {};
+    let fotoFilename: string | null = null;
 
     // Determinar si es FormData o JSON
     const contentType = req.headers['content-type'] || '';
 
     if (contentType.includes('multipart/form-data')) {
-      // Es FormData, usar función personalizada para parsear
-      fields = await parseFormData(req);
+      // Es FormData, usar formidable para parsear
+      const { fields: parsedFields, files } = await parseFormData(req);
+      fields = parsedFields;
+
+      // Procesar archivo de foto si existe
+      if (files.foto) {
+        const fotoFile = Array.isArray(files.foto) ? files.foto[0] : files.foto;
+        if (fotoFile && fotoFile.filepath) {
+          // Obtener solo el nombre del archivo
+          fotoFilename = path.basename(fotoFile.filepath);
+          console.log('📸 Foto guardada:', fotoFilename);
+        }
+      }
     } else {
       fields = req.body;
     }
@@ -239,11 +248,13 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       rol_id,
       sueldo,
       aporte,
-      descuento || null // descuento es opcional
+      descuento || null, // descuento es opcional
+      fotoFilename // agregar foto
     ];
 
-    // Verificar que no haya undefined en los parámetros
+    // Verificar que no haya undefined en los parámetros (excepto foto que puede ser null)
     const undefinedParams = params
+      .slice(0, -1) // Excluir foto de la validación
       .map((param, index) => ({ param, index }))
       .filter(({ param }) => param === undefined);
     if (undefinedParams.length > 0) {
@@ -257,12 +268,12 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const email = generateEmail(nick);
     const password = await generatePassword(run);
 
-    // Insertar nuevo usuario con email y password
+    // Insertar nuevo usuario con email, password y foto
     const result = await query(
       `INSERT INTO usuarios (
         run, nick, nombre, apellido, direccion, telefono, 
-        estado_civil, afp, rol_id, sueldo, aporte, descuento, email, password, estado
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        estado_civil, afp, rol_id, sueldo, aporte, descuento, foto, email, password, estado
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [...params, email, password]
     );
 
@@ -272,6 +283,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       id: (result as any).insertId
     });
   } catch (error) {
+    console.error('Error al crear usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al crear usuario',
@@ -293,14 +305,39 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
     let fields: any = {};
     let userId: string | number | undefined;
+    let fotoFilename: string | null = null;
 
     // Determinar si es FormData o JSON
     const contentType = req.headers['content-type'] || '';
 
     if (contentType.includes('multipart/form-data')) {
-      // Es FormData, usar función personalizada para parsear
-      fields = await parseFormData(req);
+      // Es FormData, usar formidable para parsear
+      const { fields: parsedFields, files } = await parseFormData(req);
+      fields = parsedFields;
       userId = fields.id;
+
+      // Procesar archivo de foto si existe
+      if (files.foto) {
+        const fotoFile = Array.isArray(files.foto) ? files.foto[0] : files.foto;
+        if (fotoFile && fotoFile.filepath) {
+          // Obtener solo el nombre del archivo
+          fotoFilename = path.basename(fotoFile.filepath);
+          console.log('📸 Foto actualizada:', fotoFilename);
+
+          // Eliminar foto anterior si existe
+          if (fields.foto_anterior) {
+            const oldPhotoPath = path.join(process.cwd(), 'public', 'img', 'users', fields.foto_anterior);
+            if (fs.existsSync(oldPhotoPath)) {
+              try {
+                fs.unlinkSync(oldPhotoPath);
+                console.log('🗑️ Foto anterior eliminada:', fields.foto_anterior);
+              } catch (err) {
+                console.error('Error eliminando foto anterior:', err);
+              }
+            }
+          }
+        }
+      }
     } else {
       // Es JSON
       fields = req.body;
@@ -369,7 +406,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     const password = await generatePassword(run);
 
     // Verificar si el usuario existe
-    const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [
+    const existingUser = (await query('SELECT id_usuario, foto FROM usuarios WHERE id_usuario = ?', [
       userIdNumber
     ])) as any[];
 
@@ -380,13 +417,16 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    // Actualizar usuario con email y password
+    // Si no hay nueva foto, mantener la foto anterior
+    const finalFoto = fotoFilename || existingUser[0].foto;
+
+    // Actualizar usuario con email, password y foto
     await query(
       `UPDATE usuarios SET 
         run = ?, nick = ?, nombre = ?, apellido = ?, 
         direccion = ?, telefono = ?, estado_civil = ?, 
         afp = ?, rol_id = ?, sueldo = ?, aporte = ?, descuento = ?,
-        email = ?, password = ?
+        foto = ?, email = ?, password = ?
       WHERE id_usuario = ?`,
       [
         run,
@@ -401,6 +441,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         sueldo,
         aporte,
         descuento || null, // descuento es opcional
+        finalFoto,
         email,
         password,
         userIdNumber
@@ -412,6 +453,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       message: 'Usuario actualizado exitosamente'
     });
   } catch (error) {
+    console.error('Error al actualizar usuario:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar usuario',
