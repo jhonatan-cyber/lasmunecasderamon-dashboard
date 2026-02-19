@@ -197,7 +197,7 @@ const ProductCategoryPage = () => {
   };
 
   return (
-    <PermissionGuard module="productos" action="listar_categoria">
+    <PermissionGuard module="products" action="view">
       <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col">
@@ -246,7 +246,7 @@ const ProductCategoryPage = () => {
                 <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Atrás
               </Button>
-              <PermissionGuard module="productos" action="crear_categoria" fallback={null}>
+              <PermissionGuard module="products" action="create" fallback={null}>
                 <Button
                   size="sm"
                   variant="outline"

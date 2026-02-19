@@ -12,21 +12,17 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import useRooms from '@/hooks/habitaciones/useRooms';
 import RoomSelect from '../ui/RoomSelect';
 
-// Lazy load del modal de productos para reducir bundle inicial
-const CategoryProductsModal = dynamic(
-  () => import('@/components/orders/CategoryProductsModal'),
-  {
-    loading: () => (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Cargando productos...</p>
-        </div>
+const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {
+  loading: () => (
+    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+      <div className='bg-white rounded-lg p-6'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto'></div>
+        <p className='mt-2 text-sm text-gray-600'>Cargando productos...</p>
       </div>
-    ),
-    ssr: false
-  }
-);
+    </div>
+  ),
+  ssr: false
+});
 
 interface OrderFormProps {
   clientes: any[];
@@ -82,30 +78,26 @@ export default function OrderForm({
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
 
-  // Memoizar el cálculo del subtotal para evitar recálculos innecesarios
   const subtotal = useMemo(() => {
     return productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
   }, [productos]);
 
-  // Memoizar el cálculo de la propina
   const tipAmount = useMemo(() => {
     return propinaHabilitada ? (subtotal * propina) / 100 : 0;
   }, [propinaHabilitada, subtotal, propina]);
 
-  // Memoizar el cálculo del total
   const total = useMemo(() => {
     return subtotal + tipAmount;
   }, [subtotal, tipAmount]);
 
-  // Manejar cambios en la propina desde OrderTotalHeader
   const handleTipChange = useCallback((enabled: boolean, percentage: number) => {
     setPropinaHabilitada(enabled);
     setPropina(percentage);
   }, []);
-  
+
   const router = useRouter();
   const { user } = useCurrentUser();
-  const { rooms } = useRooms();
+  const { rooms, fetchRooms } = useRooms();
 
   const handleOpenCategoria = useCallback(async (cat: any) => {
     setModalCategoria(cat);
@@ -149,69 +141,77 @@ export default function OrderForm({
     }));
   }, []);
 
-  const handleAgregarProducto = useCallback((producto: any) => {
-    const cantidad = cantidades[producto.id_producto || producto.id] || 1;
-    const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
+  const handleAgregarProducto = useCallback(
+    (producto: any) => {
+      const cantidad = cantidades[producto.id_producto || producto.id] || 1;
+      const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
+      const generaComision = comisionUnitaria > 0 ? 1 : 0;
 
-    // Lógica inteligente: Si el producto tiene comisión > 0, es para las chicas (1)
-    // Si no tiene comisión (0), es para el cliente (0)
-    const generaComision = comisionUnitaria > 0 ? 1 : 0;
+      if (onAddProducto) {
+        onAddProducto({
+          ...producto,
+          comision: comisionUnitaria * cantidad,
+          comisionUnitaria: comisionUnitaria,
+          cantidad,
+          subtotal: (producto.precio || producto.price) * cantidad,
+          generaComision: generaComision,
+          hostessId: '',
+          selectedHostesses: producto.selectedHostesses || [],
+          isChampagne: producto.isChampagne || false,
+          selectedRoom: producto.selectedRoom || null,
+          requiresRoom: producto.requiresRoom || false
+        });
+      }
+      setCantidades(prev => ({
+        ...prev,
+        [producto.id_producto || producto.id]: 1
+      }));
 
-    if (onAddProducto) {
-      onAddProducto({
-        ...producto,
-        comision: comisionUnitaria * cantidad, // Comisión total = comisión unitaria * cantidad
-        comisionUnitaria: comisionUnitaria, // Guardar también la comisión unitaria
-        cantidad,
-        subtotal: (producto.precio || producto.price) * cantidad,
-        generaComision: generaComision,
-        hostessId: '', // anfitriona asignada para la comisión
-        selectedHostesses: producto.selectedHostesses || [], // Anfitrionas seleccionadas en el modal
-        isChampagne: producto.isChampagne || false, // Si es champaña
-        selectedRoom: producto.selectedRoom || null, // Habitación seleccionada
-        requiresRoom: producto.requiresRoom || false // Si requiere habitación
+      const productId = String(producto.id_producto || producto.id);
+      setChampagneHostessSelections(prev => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
       });
-    }
-    setCantidades(prev => ({
-      ...prev,
-      [producto.id_producto || producto.id]: 1
-    }));
+      setOtherProductHostessSelections(prev => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
+      });
+      setRoomSelections(prev => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
+      });
+    },
+    [cantidades, onAddProducto]
+  );
 
-    // Limpiar selecciones del modal después de agregar
-    const productId = String(producto.id_producto || producto.id);
-    setChampagneHostessSelections(prev => {
-      const newState = { ...prev };
-      delete newState[productId];
-      return newState;
-    });
-    setOtherProductHostessSelections(prev => {
-      const newState = { ...prev };
-      delete newState[productId];
-      return newState;
-    });
-    setRoomSelections(prev => {
-      const newState = { ...prev };
-      delete newState[productId];
-      return newState;
-    });
-  }, [cantidades, onAddProducto]);
+  const handleUpdateCantidad = useCallback(
+    (index: number, nuevaCantidad: number) => {
+      if (onUpdateCantidad) {
+        onUpdateCantidad(index, nuevaCantidad);
+      }
+    },
+    [onUpdateCantidad]
+  );
 
-  const handleUpdateCantidad = useCallback((index: number, nuevaCantidad: number) => {
-    if (onUpdateCantidad) {
-      onUpdateCantidad(index, nuevaCantidad);
-    }
-  }, [onUpdateCantidad]);
+  const handleAssignHostess = useCallback(
+    (index: number, hostessId: string) => {
+      onAssignHostess?.(index, hostessId);
+    },
+    [onAssignHostess]
+  );
 
-  const handleAssignHostess = useCallback((index: number, hostessId: string) => {
-    onAssignHostess?.(index, hostessId);
-  }, [onAssignHostess]);
-
-  const handleToggleComision = useCallback((index: number) => {
-    // Usar la función pasada desde el padre si existe
-    if (onToggleComision) {
-      onToggleComision(index);
-    }
-  }, [onToggleComision]);
+  const handleToggleComision = useCallback(
+    (index: number) => {
+      // Usar la función pasada desde el padre si existe
+      if (onToggleComision) {
+        onToggleComision(index);
+      }
+    },
+    [onToggleComision]
+  );
 
   const generarCodigoPedido = useCallback(() => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -223,14 +223,11 @@ export default function OrderForm({
   }, []);
 
   const handleSubmit = async () => {
-    // Cliente es opcional, no validamos que esté seleccionado
-
     if (productos.length === 0) {
       setError('Debe agregar al menos un producto');
       return;
     }
 
-    // Verificar que todas las bebidas con comisión tengan anfitrionas asignadas
     const bebidasConComision = productos.filter(p => p.generaComision === 1);
 
     for (const bebida of bebidasConComision) {
@@ -242,7 +239,6 @@ export default function OrderForm({
       }
     }
 
-    // Si no hay productos con comisión, no validamos anfitrionas
     const hayProductosParaChicas = bebidasConComision.length > 0;
 
     const isChampagneProduct = (p: any) => {
@@ -250,16 +246,10 @@ export default function OrderForm({
       return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
     };
 
-    // Validar que no haya conflictos entre asignaciones de anfitrionas
     const todasLasAnfitrionasAsignadas = bebidasConComision.flatMap(p => p.selectedHostesses || []);
     const anfitrionasUnicas = Array.from(new Set(todasLasAnfitrionasAsignadas));
-
-    // Para champañas: pueden compartir anfitrionas entre sí
-    // Para bebidas no-champaña: cada una debe tener anfitrionas únicas
     const champagnes = bebidasConComision.filter(isChampagneProduct);
     const bebidasNoChampagne = bebidasConComision.filter(p => !isChampagneProduct(p));
-
-    // Validar que bebidas no-champaña no compartan anfitrionas entre sí
     const anfitrionasBebidasNoChampagne = bebidasNoChampagne.flatMap(
       p => p.selectedHostesses || []
     );
@@ -271,8 +261,6 @@ export default function OrderForm({
       );
       return;
     }
-
-    // Validar que anfitrionas de bebidas no-champaña no estén asignadas a champañas
     const anfitrionasChampagnes = champagnes.flatMap(p => p.selectedHostesses || []);
     const conflictos = anfitrionasUnicasBebidasNoChampagne.filter(hostessId =>
       anfitrionasChampagnes.includes(hostessId)
@@ -284,12 +272,8 @@ export default function OrderForm({
       );
       return;
     }
-    // Si NO hay champaña o no hay asignaciones, la comisión se reparte entre todas
-
-    // Validar límites de anfitrionas por producto
     for (const producto of bebidasConComision) {
       if (isChampagneProduct(producto)) {
-        // Para champañas: validar límite según precio
         const precio = Number(producto.precio || producto.price || 0);
         let champagneLimit = 1;
 
@@ -305,7 +289,6 @@ export default function OrderForm({
           return;
         }
       } else {
-        // Para bebidas no-champaña: máximo 1 anfitriona por cantidad
         const maxAnfitrionas = Number(producto.cantidad || 1);
         if (producto.selectedHostesses.length > maxAnfitrionas) {
           setError(
@@ -334,13 +317,13 @@ export default function OrderForm({
         precio: Number(item.precio || item.price),
         subtotal: Number(item.subtotal),
         comision: Number(item.comision || 0),
-        generaComision: Number(item.generaComision ?? 1), // Por defecto 1 (genera comisión)
+        generaComision: Number(item.generaComision ?? 1),
         hostessId:
           item.selectedHostesses && item.selectedHostesses.length === 1
             ? Number(item.selectedHostesses[0])
-            : null, // Solo para bebidas con comisión individual
-        selectedHostesses: item.selectedHostesses || [], // Para champañas con múltiples anfitrionas
-        roomId: item.selectedRoom ? Number(item.selectedRoom) : null // Habitación seleccionada
+            : null,
+        selectedHostesses: item.selectedHostesses || [],
+        roomId: item.selectedRoom ? Number(item.selectedRoom) : null
       }));
       const usuarios = Array.from(
         new Set(bebidasConComision.flatMap(p => p.selectedHostesses || []))
@@ -349,10 +332,10 @@ export default function OrderForm({
       const payload = {
         codigo,
         meseroId: Number(user.id),
-        clienteId: selectedCliente ? Number(selectedCliente) : null, // NULL si no hay cliente
+        clienteId: selectedCliente ? Number(selectedCliente) : null,
         subtotal: Number(subtotal),
-        total: Number(total), // El total ya incluye la propina calculada
-        propina: Number(tipAmount), // Enviar el monto de la propina, no el porcentaje
+        total: Number(total),
+        propina: Number(tipAmount),
         totalComision: Number(totalComision),
         detalles,
         usuarios
@@ -367,15 +350,27 @@ export default function OrderForm({
 
       if (res.status === 201 && data.success) {
         showSuccessToast('¡Pedido generado exitosamente!');
+
+        // Si la orden asignó una habitación, refrescar estado de habitaciones (NO tocar anfitrionas)
+        if (data.habitacion_auto_seleccionada) {
+          try {
+            await fetchRooms();
+            window.dispatchEvent(
+              new CustomEvent('refreshRooms', {
+                detail: { roomId: data.habitacion_auto_seleccionada }
+              })
+            );
+          } catch (_) {
+            /* noop */
+          }
+        }
+
         window.dispatchEvent(new CustomEvent('updatePendingOrders'));
         window.dispatchEvent(new CustomEvent('refreshNotifications'));
-        // Limpiar formularios
         setSelectedCliente('');
-        // Limpiar selecciones del modal
         setChampagneHostessSelections({});
         setOtherProductHostessSelections({});
         setRoomSelections({});
-        // Redirigir a la lista de pedidos después de un pequeño delay
         setTimeout(() => {
           router.push('/orders');
         }, 1500);

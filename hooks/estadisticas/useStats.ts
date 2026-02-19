@@ -14,16 +14,14 @@ interface UseStatsReturn<T> {
   refetch: () => Promise<void>;
 }
 
-export function useStats<T = any>({ 
-  endpoint, 
-  params = {}, 
-  autoFetch = true 
+export function useStats<T = any>({
+  endpoint,
+  params = {},
+  autoFetch = true
 }: UseStatsOptions): UseStatsReturn<T> {
-  
-  // Construir URL con parámetros
   const fullEndpoint = useMemo(() => {
     if (Object.keys(params).length === 0) return endpoint;
-    
+
     const url = new URL(endpoint, window.location.origin);
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, String(value));
@@ -35,18 +33,17 @@ export function useStats<T = any>({
     data: rawData,
     isLoading,
     error,
-    refetch,
+    refetch
   } = useGenericFetch<T>(fullEndpoint, {
     initialFetch: autoFetch,
-    transform: (result) => {
-      // Manejar la estructura de respuesta que incluye success y data
+    transform: result => {
       if (result.success && result.data) {
         return result.data;
       } else if (result.data) {
         return result.data;
       }
       return result;
-    },
+    }
   });
 
   const data = rawData?.[0] || null;
@@ -57,4 +54,4 @@ export function useStats<T = any>({
     error,
     refetch
   };
-} 
+}

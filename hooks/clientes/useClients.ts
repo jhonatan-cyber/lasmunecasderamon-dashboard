@@ -8,6 +8,7 @@ export function useClients() {
   const [isMutating, setIsMutating] = useState(false);
   const {
     data,
+    setData,
     isLoading: isFetching,
     error,
     refetch
@@ -25,8 +26,11 @@ export function useClients() {
       }))
   });
 
-  const { create, update, remove } = useGenericMutations<Client>('/api/clients', {
-    onSuccess: refetch,
+  const {
+    create: createMutation,
+    update: updateMutation,
+    remove: removeMutation
+  } = useGenericMutations<Client>('/api/clients', {
     showToasts: false,
     entityName: 'Cliente'
   });
@@ -36,19 +40,45 @@ export function useClients() {
     initialPageSize: 5
   });
 
-  const createClient = async (data: any) => {
+  const createClient = async (payload: any) => {
     setIsMutating(true);
     try {
-      await create(data);
+      const res = await createMutation(payload);
+
+      if (res && (res as any).id) {
+        const newClient: Client = {
+          id: (res as any).id,
+          run: payload.run || '',
+          name: payload.name,
+          lastName: payload.lastName,
+          phone: payload.phone || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          status: 1
+        };
+        setData(prev => [newClient, ...(prev || [])]);
+      } else {
+        await refetch();
+      }
+
+      return res;
     } finally {
       setIsMutating(false);
     }
   };
 
-  const updateClient = async (data: any) => {
+  const updateClient = async (payload: any) => {
     setIsMutating(true);
     try {
-      await update(data);
+      const res = await updateMutation(payload);
+
+      setData(prev =>
+        (prev || []).map(c =>
+          c.id === payload.id ? { ...c, ...payload, updated_at: new Date().toISOString() } : c
+        )
+      );
+
+      return res;
     } finally {
       setIsMutating(false);
     }
@@ -57,7 +87,11 @@ export function useClients() {
   const deleteClient = async (id: number) => {
     setIsMutating(true);
     try {
-      await remove(id);
+      const res = await removeMutation(id);
+
+      setData(prev => (prev || []).filter(c => c.id !== id));
+
+      return res;
     } finally {
       setIsMutating(false);
     }

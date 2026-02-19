@@ -1,14 +1,12 @@
 import winston from 'winston';
 import path from 'path';
 
-// Configuración de formatos
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.json()
 );
 
-// Configuración de colores para consola
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -17,26 +15,25 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-// Crear el logger
 export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: logFormat,
   transports: [
-    // Logs de error
-    new winston.transports.File({ 
-      filename: path.join(process.cwd(), 'logs', 'error.log'), 
+
+    new winston.transports.File({
+      filename: path.join(process.cwd(), 'logs', 'error.log'),
       level: 'error',
-      maxsize: 5242880, // 5MB
+      maxsize: 5242880,
       maxFiles: 5,
     }),
-    // Logs combinados
-    new winston.transports.File({ 
+
+    new winston.transports.File({
       filename: path.join(process.cwd(), 'logs', 'combined.log'),
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
     // Logs de auditoría
-    new winston.transports.File({ 
+    new winston.transports.File({
       filename: path.join(process.cwd(), 'logs', 'audit.log'),
       level: 'info',
       maxsize: 5242880, // 5MB
@@ -56,59 +53,59 @@ if (process.env.NODE_ENV !== 'production') {
 export const auditLogger = {
   login: (userId: number, ip: string, success: boolean) => {
     if (process.env.NODE_ENV !== 'production') {
-      logger.info('Login attempt', { 
-        userId, 
-        ip, 
-        success, 
+      logger.info('Login attempt', {
+        userId,
+        ip,
+        success,
         timestamp: new Date().toISOString(),
-        action: 'LOGIN'
+        actionType: 'LOGIN'
       });
     }
   },
 
   logout: (userId: number, ip: string) => {
     if (process.env.NODE_ENV !== 'production') {
-      logger.info('Logout', { 
-        userId, 
-        ip, 
+      logger.info('Logout', {
+        userId,
+        ip,
         timestamp: new Date().toISOString(),
-        action: 'LOGOUT'
+        actionType: 'LOGOUT'
       });
     }
   },
 
   dataAccess: (userId: number, action: string, resource: string, details?: any) => {
     if (process.env.NODE_ENV !== 'production') {
-      logger.info('Data access', { 
-        userId, 
-        action, 
-        resource, 
+      logger.info('Data access', {
+        userId,
+        action,
+        resource,
         details,
         timestamp: new Date().toISOString(),
-        action: 'DATA_ACCESS'
+        actionType: 'DATA_ACCESS'
       });
     }
   },
 
   securityEvent: (userId: number, event: string, details: any) => {
     if (process.env.NODE_ENV !== 'production') {
-      logger.warn('Security event', { 
-        userId, 
-        event, 
+      logger.warn('Security event', {
+        userId,
+        event,
         details,
         timestamp: new Date().toISOString(),
-        action: 'SECURITY_EVENT'
+        actionType: 'SECURITY_EVENT'
       });
     }
   },
 
   error: (error: Error, context?: any) => {
-    logger.error('Application error', { 
+    logger.error('Application error', {
       error: error.message,
       stack: error.stack,
       context,
       timestamp: new Date().toISOString(),
-      action: 'ERROR'
+      actionType: 'ERROR'
     });
   }
 };

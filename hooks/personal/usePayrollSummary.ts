@@ -5,7 +5,6 @@ import { AsistenciaResumen } from '@/types/asistencia';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
 export default function usePayrollSummary(month?: number, year?: number) {
-  // Construir URL con parámetros de consulta
   const endpoint = useMemo(() => {
     let url = '/api/asistencias?resumen=true';
     if (month !== undefined) {
@@ -30,7 +29,6 @@ export default function usePayrollSummary(month?: number, year?: number) {
     if (!data || data.length === 0) {
       return { sueldo: 0, descuento: 0, total: 0 };
     }
-    // Calcular totales desde los datos
     return data.reduce(
       (acc, item: any) => ({
         sueldo: acc.sueldo + (item.sueldo || 0),

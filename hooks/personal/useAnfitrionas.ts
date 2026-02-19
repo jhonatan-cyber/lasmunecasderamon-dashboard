@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useGenericFetch } from "../shared/useGenericFetch";
+import { useState, useEffect, useMemo } from 'react';
+import { useGenericFetch } from '../shared/useGenericFetch';
 
 interface Anfitriona {
   id_usuario?: number;
@@ -15,25 +15,25 @@ interface Anfitriona {
 
 export function useAnfitrionas(disponiblesOnly: boolean = false) {
   // Determinar endpoint según disponibilidad - memoizado para evitar cambios
-  const endpoint = useMemo(() => 
-    disponiblesOnly 
-      ? "/api/anfitrionas/disponibles" 
-      : "/api/users?anfitrionas=1",
+  const endpoint = useMemo(
+    () => (disponiblesOnly ? '/api/anfitrionas/disponibles' : '/api/users?anfitrionas=1'),
     [disponiblesOnly]
   );
 
   // Usar hook genérico para fetch
-  const { data: anfitrionas, isLoading: loading, error, refetch: getAnfitrionas } = useGenericFetch<Anfitriona>(
-    endpoint,
-    {
-      transform: (result) => result.success ? result.data : []
-    }
-  );
+  const {
+    data: anfitrionas,
+    isLoading: loading,
+    error,
+    refetch: getAnfitrionas
+  } = useGenericFetch<Anfitriona>(endpoint, {
+    transform: result => (result.success ? result.data : [])
+  });
 
   return {
     anfitrionas: anfitrionas || [],
     loading,
     error,
-    getAnfitrionas,
+    getAnfitrionas
   };
-} 
+}

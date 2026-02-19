@@ -64,8 +64,8 @@ export function SalesList({
   const { hasPermission } = useUserPermissions();
   
   // Verificar permisos
-  const canViewDetails = hasPermission('ventas', 'ver_detalles');
-  const canAnular = hasPermission('ventas', 'anular');
+  const canViewDetails = hasPermission('sales', 'view_details');
+  const canAnular = hasPermission('sales', 'cancel');
   
   // Si no tiene ningún permiso de acción, no mostrar el menú
   const hasAnyAction = canViewDetails || canAnular;

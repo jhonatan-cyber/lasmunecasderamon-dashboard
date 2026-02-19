@@ -46,9 +46,9 @@ export function ClientTable({
   const { hasPermission } = useUserPermissions();
   
   // Verificar permisos
-  const canViewDetails = hasPermission('clientes', 'ver_detalles');
-  const canEdit = hasPermission('clientes', 'editar');
-  const canDelete = hasPermission('clientes', 'eliminar');
+  const canViewDetails = hasPermission('clients', 'view_details');
+  const canEdit = hasPermission('clients', 'edit');
+  const canDelete = hasPermission('clients', 'delete');
   
   // Si no tiene ningún permiso de acción, no mostrar el menú
   const hasAnyAction = canViewDetails || canEdit || canDelete;

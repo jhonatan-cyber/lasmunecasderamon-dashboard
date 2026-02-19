@@ -30,7 +30,6 @@ export default function Users() {
   const { user: currentUser, refetch: refetchCurrentUser } = useCurrentUser();
   const { updateImage } = useUserImage();
 
-
   const {
     paginatedUsers,
     isLoading,
@@ -70,7 +69,6 @@ export default function Users() {
         Object.entries(values).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             formData.append(key, String(value));
-    
           }
         });
 
@@ -79,34 +77,31 @@ export default function Users() {
         if (isEditing && selectedUser) {
           // Solo generar nuevo correo si el nick cambió
           shouldGenerateEmail = values.nick !== selectedUser.nick;
-    
         }
 
         if (shouldGenerateEmail) {
           const correo = `${values.nick}@lasmuñecasderamon.com`;
           formData.set('correo', correo);
-                  // Correo generado
-      } else {
-        // No se genera nuevo correo - nick no cambió
-      }
+          // Correo generado
+        } else {
+          // No se genera nuevo correo - nick no cambió
+        }
 
         formData.set('password', values.run);
-  
 
         if (file) {
           formData.append('foto', file);
-  
         }
 
         if (isEditing && selectedUser) {
-                  const result = await updateUser(selectedUser.id, formData);
-                            if (result.success) {
+          const result = await updateUser(selectedUser.id, formData);
+          if (result.success) {
             toast.success(result.message || 'Usuario actualizado exitosamente');
             setIsFormOpen(false);
             setIsEditing(false);
             setSelectedUser(null);
-            fetchUsers();
-            
+            // Datos ya actualizados en estado local
+
             // Si se editó el usuario actual, actualizar contexto de autenticación
             if (currentUser && selectedUser.id === currentUser.id) {
               console.log('🔄 Actualizando contexto de usuario actual...');
@@ -117,11 +112,11 @@ export default function Users() {
             toast.error(result.message || 'Error al actualizar usuario');
           }
         } else {
-                  const result = await createUser(formData);
+          const result = await createUser(formData);
           if (result.success) {
             toast.success(result.message || 'Usuario creado exitosamente');
             setIsFormOpen(false);
-            fetchUsers();
+            // Datos ya actualizados en estado local
           } else {
             toast.error(result.message || 'Error al crear usuario');
           }
@@ -131,7 +126,16 @@ export default function Users() {
         toast.error('Error al procesar la solicitud');
       }
     },
-    [isEditing, selectedUser, createUser, updateUser, fetchUsers, currentUser, updateImage, refetchCurrentUser]
+    [
+      isEditing,
+      selectedUser,
+      createUser,
+      updateUser,
+      fetchUsers,
+      currentUser,
+      updateImage,
+      refetchCurrentUser
+    ]
   );
 
   const handleFormCancel = useCallback(() => {
@@ -151,43 +155,52 @@ export default function Users() {
     setIsFormOpen(true);
   }, []);
 
-  const handleActivateUser = useCallback(async (userId: number) => {
-    try {
-      const result = await activateUser(userId);
-      if (result.success) {
-        toast.success('Usuario activado exitosamente');
-        fetchUsers();
-      } else {
-        toast.error(result.message || 'Error al activar usuario');
+  const handleActivateUser = useCallback(
+    async (userId: number) => {
+      try {
+        const result = await activateUser(userId);
+        if (result.success) {
+          toast.success('Usuario activado exitosamente');
+          // Datos ya actualizados en estado local
+        } else {
+          toast.error(result.message || 'Error al activar usuario');
+        }
+      } catch (error) {
+        console.error('Error al activar usuario:', error);
+        toast.error('Error al activar usuario');
       }
-    } catch (error) {
-      console.error('Error al activar usuario:', error);
-      toast.error('Error al activar usuario');
-    }
-  }, [activateUser, fetchUsers]);
+    },
+    [activateUser, fetchUsers]
+  );
 
-  const handleDeactivateUser = useCallback(async (userId: number) => {
-    try {
-      const result = await deactivateUser(userId);
-      if (result.success) {
-        toast.success('Usuario desactivado exitosamente');
-        fetchUsers();
-      } else {
-        toast.error(result.message || 'Error al desactivar usuario');
+  const handleDeactivateUser = useCallback(
+    async (userId: number) => {
+      try {
+        const result = await deactivateUser(userId);
+        if (result.success) {
+          toast.success('Usuario desactivado exitosamente');
+          // Datos ya actualizados en estado local
+        } else {
+          toast.error(result.message || 'Error al desactivar usuario');
+        }
+      } catch (error) {
+        console.error('Error al desactivar usuario:', error);
+        toast.error('Error al desactivar usuario');
       }
-    } catch (error) {
-      console.error('Error al desactivar usuario:', error);
-      toast.error('Error al desactivar usuario');
-    }
-  }, [deactivateUser, fetchUsers]);
+    },
+    [deactivateUser, fetchUsers]
+  );
 
-  const handleDeleteUser = useCallback((userId: number) => {
-    const user = paginatedUsers?.find(u => u.id === userId);
-    if (user) {
-      setUserToDelete(user);
-      setDeleteModalOpen(true);
-    }
-  }, [paginatedUsers]);
+  const handleDeleteUser = useCallback(
+    (userId: number) => {
+      const user = paginatedUsers?.find(u => u.id === userId);
+      if (user) {
+        setUserToDelete(user);
+        setDeleteModalOpen(true);
+      }
+    },
+    [paginatedUsers]
+  );
 
   const handleConfirmDelete = useCallback(async () => {
     if (!userToDelete) return;
@@ -198,7 +211,7 @@ export default function Users() {
         toast.success('Usuario eliminado exitosamente');
         setDeleteModalOpen(false);
         setUserToDelete(null);
-        fetchUsers();
+        // Datos ya actualizados en estado local
       } else {
         toast.error(result.message || 'Error al eliminar usuario');
       }
@@ -226,17 +239,19 @@ export default function Users() {
   if (error) return <div>Error al cargar los usuarios: {error}</div>;
 
   return (
-    <PermissionGuard module="users" action="listar">
+    <PermissionGuard module='users' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
           <div className='flex flex-col'>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Gestión de Usuarios</h1>
-            <p className='text-sm sm:text-base text-gray-600'>Gestiona todos los usuarios de la plataforma.</p>
+            <p className='text-sm sm:text-base text-gray-600'>
+              Gestiona todos los usuarios de la plataforma.
+            </p>
           </div>
           <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
             <ExportButtons users={paginatedUsers || []} />
 
-            <PermissionGuard module="users" action="crear" fallback={null}>
+            <PermissionGuard module='users' action='create' fallback={null}>
               <Button
                 onClick={() => {
                   setSelectedUser(null);
@@ -247,118 +262,111 @@ export default function Users() {
                 variant='outline'
                 className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
               >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
                 Nuevo Usuario
               </Button>
             </PermissionGuard>
           </div>
         </div>
 
-      <UserFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        filterRole={filterRole}
-        setFilterRole={setFilterRole}
-        onClearFilters={handleClearFilters}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        setPage={setPage}
-      />
+        <UserFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          filterRole={filterRole}
+          setFilterRole={setFilterRole}
+          onClearFilters={handleClearFilters}
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          setPage={setPage}
+        />
 
-      <div className='mt-4 sm:mt-6'>
-        <div className='overflow-x-auto'>
-          <UserTable
-            users={paginatedUsers}
-            onViewDetails={handleViewDetails}
-            onEdit={handleEditUser}
-            onActivate={handleActivateUser}
-            onDeactivate={handleDeactivateUser}
-            onDelete={handleDeleteUser}
-            formatCurrency={formatCurrency}
-            formatDate={formatDate}
-            getRoleBadgeColor={getRoleBadgeColor}
-            currentPage={page}
-            pageSize={pageSize}
-          />
-        </div>
-      </div>
-
-      {totalPages > 1 && (
-        <div className='flex justify-center mt-4 sm:mt-6'>
-          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-        </div>
-      )}
-
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-            <DialogTitle className='text-lg sm:text-xl'>Detalles del Usuario</DialogTitle>
-          </DialogHeader>
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-            {selectedUser && (
-              <UserDetails
-                user={selectedUser}
-                onEdit={() => {
-                  setIsDetailsOpen(false);
-                  handleEditUser(selectedUser);
-                }}
-                onClose={() => setIsDetailsOpen(false)}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-            <DialogTitle className='text-lg sm:text-xl'>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
-          </DialogHeader>
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-            <UserForm
-              user={selectedUser || undefined}
-              onSubmit={handleFormSubmit}
-              onCancel={handleFormCancel}
-              isEditMode={isEditing}
-              hideButtons={true}
+        <div className='mt-4 sm:mt-6'>
+          <div className='overflow-x-auto'>
+            <UserTable
+              users={paginatedUsers}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEditUser}
+              onActivate={handleActivateUser}
+              onDeactivate={handleDeactivateUser}
+              onDelete={handleDeleteUser}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getRoleBadgeColor={getRoleBadgeColor}
+              currentPage={page}
+              pageSize={pageSize}
             />
           </div>
-          <div className='flex-shrink-0 border-t px-6 py-4'>
-            <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full'>
-              <Button
-                type='button'
-                size='default'
-                className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
-                variant='outline'
-                onClick={handleFormCancel}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type='submit'
-                form='user-form'
-                size='default'
-                className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
-                variant='outline'
-              >
-                {isEditing ? 'Actualizar' : 'Guardar'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
 
-      <PermissionGuard module="users" action="eliminar" fallback={null}>
-        <DeleteUserConfirmModal
-          open={deleteModalOpen}
-          onOpenChange={setDeleteModalOpen}
-          onConfirm={handleConfirmDelete}
-          userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
-        />
-      </PermissionGuard>
-    </div>
-  </PermissionGuard>
-);
+        {totalPages > 1 && (
+          <div className='flex justify-center mt-4 sm:mt-6'>
+            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+          </div>
+        )}
+
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl max-h-[90vh] flex flex-col p-0'>
+            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+              <DialogTitle className='text-lg sm:text-xl'>Detalles del Usuario</DialogTitle>
+            </DialogHeader>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              {selectedUser && <UserDetails user={selectedUser} />}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
+            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+              <DialogTitle className='text-lg sm:text-xl'>
+                {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              <UserForm
+                user={selectedUser || undefined}
+                onSubmit={handleFormSubmit}
+                onCancel={handleFormCancel}
+                isEditMode={isEditing}
+                hideButtons={true}
+              />
+            </div>
+            <div className='flex-shrink-0 border-t px-6 py-4'>
+              <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full'>
+                <Button
+                  type='button'
+                  size='default'
+                  className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
+                  variant='outline'
+                  onClick={handleFormCancel}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='submit'
+                  form='user-form'
+                  size='default'
+                  className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+                  variant='outline'
+                >
+                  {isEditing ? 'Actualizar' : 'Guardar'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <PermissionGuard module='users' action='delete' fallback={null}>
+          <DeleteUserConfirmModal
+            open={deleteModalOpen}
+            onOpenChange={setDeleteModalOpen}
+            onConfirm={handleConfirmDelete}
+            userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
+          />
+        </PermissionGuard>
+      </div>
+    </PermissionGuard>
+  );
 }

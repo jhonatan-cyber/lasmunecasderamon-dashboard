@@ -162,7 +162,7 @@ export function Header() {
 
   const handleOrderClick = (orderId: number) => {
     // Verificar si tiene permiso para procesar pedidos
-    if (!hasPermission('pedidos', 'registrar_venta')) {
+    if (!hasPermission('orders', 'process')) {
       toast.error('No tienes permisos para procesar pedidos');
       setShowDropdown(false);
       return;
@@ -189,7 +189,7 @@ export function Header() {
   useEffect(() => {
     const handleOpenOrderModal = (event: CustomEvent) => {
       // Verificar si tiene permiso para procesar pedidos
-      if (!hasPermission('pedidos', 'registrar_venta')) {
+      if (!hasPermission('orders', 'process')) {
         toast.error('No tienes permisos para procesar pedidos');
         return;
       }

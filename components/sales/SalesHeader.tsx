@@ -19,7 +19,7 @@ export function SalesHeader({ loading, onRefresh }: SalesHeaderProps) {
           Panel de control de ventas y transacciones
         </p>
       </div>
-      <PermissionGuard module="ventas" action="crear" fallback={null}>
+      <PermissionGuard module="sales" action="create" fallback={null}>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             onClick={() => router.push("/sales/new")}

@@ -31,13 +31,11 @@ export const useCashRegister = (): UseCashRegisterReturn => {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<number | undefined>(undefined);
 
-  // Construir endpoint dinámico para cajas
   const cajasEndpoint = useMemo(() => {
     if (estadoFilter === undefined) return '/api/cashregister';
     return `/api/cashregister?estado=${estadoFilter}`;
   }, [estadoFilter]);
 
-  // Usar hook genérico para fetch de cajas
   const {
     data: cajas,
     isLoading: fetchLoading,
@@ -49,7 +47,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     transform: (data) => (data.success ? data.data : []),
   });
 
-  // Combinar loading y error states
+
   const loading = fetchLoading || mutationLoading;
   const error = fetchError || mutationError;
 
@@ -147,6 +145,10 @@ export const useCashRegister = (): UseCashRegisterReturn => {
       toast.success('Caja creada exitosamente');
       await getCajas();
       await checkCajaStatus();
+      
+ 
+      window.dispatchEvent(new CustomEvent('cajaOpened', { detail: result.data }));
+      
       return result.data;
     } catch (error) {
       handleError(error, 'Error al crear caja');
@@ -206,6 +208,10 @@ export const useCashRegister = (): UseCashRegisterReturn => {
       toast.success('Caja cerrada exitosamente');
       await getCajas();
       await checkCajaStatus();
+      
+      // Disparar evento para actualizar el estado de caja en otros componentes
+      window.dispatchEvent(new CustomEvent('cajaClosed', { detail: result.data }));
+      
       return result.data;
     } catch (error) {
       handleError(error, 'Error al cerrar caja');

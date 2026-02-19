@@ -60,17 +60,19 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
             <div className='flex items-center gap-2'>
               <Home className='w-4 h-4 text-gray-600 dark:text-gray-400' />
               <span className='font-semibold text-md text-gray-900 dark:text-neutral-100'>
-                {venta.habitacion_numero ||
-                  venta.habitacion_nombre ||
-                  timer?.roomName ||
-                  'S/H'}
+                {venta.habitacion_numero || venta.habitacion_nombre || timer?.roomName || 'S/H'}
               </span>
             </div>
-            <Badge variant='secondary' className='text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
+            <Badge
+              variant='secondary'
+              className='text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+            >
               Venta
             </Badge>
           </div>
-          <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>#{venta.codigo}</span>
+          <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>
+            #{venta.codigo}
+          </span>
         </div>
 
         {/* Timer Section */}
@@ -95,7 +97,9 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
 
           <div className='grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60'>
             <div className='flex flex-col'>
-              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>Ingreso</span>
+              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
+                Ingreso
+              </span>
               <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
                 {(() => {
                   const date = new Date((venta.fecha_crea || '').replace(' ', 'T'));
@@ -106,7 +110,9 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
               </span>
             </div>
             <div className='flex flex-col'>
-              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>Salida</span>
+              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
+                Salida
+              </span>
               <span className='text-xs font-bold text-blue-600 dark:text-blue-400'>
                 {(() => {
                   const entry = new Date((venta.fecha_crea || '').replace(' ', 'T'));
@@ -117,7 +123,9 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
               </span>
             </div>
             <div className='flex flex-col items-end'>
-              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>Uso</span>
+              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
+                Uso
+              </span>
               <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
                 {venta.tiempo || 60} min
               </span>
@@ -161,7 +169,9 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
                     </Badge>
                   ))
                 ) : (
-                  <span className='text-xs text-gray-400 dark:text-gray-500 italic'>Sin anfitrionas</span>
+                  <span className='text-xs text-gray-400 dark:text-gray-500 italic'>
+                    Sin anfitrionas
+                  </span>
                 )}
               </div>
             </div>
@@ -176,7 +186,10 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
               </span>
               <div className='mt-1 space-y-1'>
                 {venta.detalles?.map((det, idx) => (
-                  <div key={idx} className='text-xs text-gray-600 dark:text-gray-400 flex justify-between gap-2'>
+                  <div
+                    key={idx}
+                    className='text-xs text-gray-600 dark:text-gray-400 flex justify-between gap-2'
+                  >
                     <span className='truncate flex-1'>• {det.producto_nombre || 'Producto'}</span>
                     <span className='font-medium whitespace-nowrap'>x{det.cantidad}</span>
                   </div>
@@ -240,9 +253,12 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xl p-6 max-w-sm w-full font-sans'>
             <div className='text-center'>
               <Clock className='w-12 h-12 text-blue-500 mx-auto mb-4' />
-              <h3 className='text-lg font-semibold mb-2 text-gray-900 dark:text-neutral-100'>¿Finalizar temporizador?</h3>
+              <h3 className='text-lg font-semibold mb-2 text-gray-900 dark:text-neutral-100'>
+                ¿Finalizar temporizador?
+              </h3>
               <p className='text-sm text-gray-600 dark:text-gray-400 mb-6'>
-                Se detendrá el contador de esta venta. La habitación no cambiará su estado.
+                Se detendrá el contador de esta venta. La habitación será liberada y el temporizador
+                se quitará del almacenamiento local.
               </p>
               <div className='flex gap-3'>
                 <Button

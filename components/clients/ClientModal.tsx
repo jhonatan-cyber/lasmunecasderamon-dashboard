@@ -38,7 +38,9 @@ export function ClientModal({
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    watch,
+    setValue
   } = useForm({
     defaultValues: clientData
   });
@@ -46,6 +48,33 @@ export function ClientModal({
   React.useEffect(() => {
     reset(clientData);
   }, [clientData, reset, open]);
+
+  // Capitalizar en tiempo real nombre y apellido
+  const capitalizeWords = (value?: string) => {
+    if (!value) return '';
+    return value
+      .trim()
+      .split(/\s+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const watchedName = watch('name');
+  const watchedLastName = watch('lastName');
+
+  React.useEffect(() => {
+    const cap = capitalizeWords(watchedName);
+    if (watchedName !== undefined && cap !== watchedName) {
+      setValue('name', cap, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [watchedName, setValue]);
+
+  React.useEffect(() => {
+    const cap = capitalizeWords(watchedLastName);
+    if (watchedLastName !== undefined && cap !== watchedLastName) {
+      setValue('lastName', cap, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [watchedLastName, setValue]);
 
   const handleFormSubmit = (data: any) => {
     setClientData(data);

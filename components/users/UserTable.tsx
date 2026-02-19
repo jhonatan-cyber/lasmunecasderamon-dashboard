@@ -50,11 +50,11 @@ export function UserTable({
   
   // Memoizar permisos
   const permissions = useMemo(() => ({
-    canViewDetails: hasPermission('usuarios', 'ver_detalles'),
-    canEdit: hasPermission('usuarios', 'editar'),
-    canActivate: hasPermission('usuarios', 'activar'),
-    canDeactivate: hasPermission('usuarios', 'desactivar'),
-    canDelete: hasPermission('usuarios', 'eliminar')
+    canViewDetails: hasPermission('users', 'view_details'),
+    canEdit: hasPermission('users', 'edit'),
+    canActivate: hasPermission('users', 'activate'),
+    canDeactivate: hasPermission('users', 'deactivate'),
+    canDelete: hasPermission('users', 'delete')
   }), [hasPermission]);
   
   const hasAnyAction = useMemo(() => 

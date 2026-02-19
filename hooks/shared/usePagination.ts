@@ -103,7 +103,7 @@ export function usePagination<T>(
     },
     setItemsPerPage: (newItemsPerPage: number) => {
       setItemsPerPage(newItemsPerPage);
-      setCurrentPage(1); // Reset to first page when changing items per page
+      setCurrentPage(1);
     }
   };
 

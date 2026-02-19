@@ -35,12 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const user = users[0];
-
-    // Debug logs
-    console.log('🔍 [LOGIN] Datos del usuario obtenidos de la BD:');
-    
-
-    // Verificar contraseña
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(401).json({
@@ -48,24 +42,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Credenciales inválidas'
       });
     }
-
-    // 1. Verificar y cerrar sesiones activas del usuario
-    
-
     try {
-      // Cerrar todas las sesiones activas del usuario (estado 1 -> 0)
+   
       await query(
         `UPDATE logins 
          SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
         [user.id_usuario]
       );
-
-      
     } catch (error) {
-      console.error('❌ [LOGIN] Error al cerrar sesiones activas:', error);
+      throw error instanceof Error
+        ? error
+        : new Error('Error al cerrar sesiones activas del usuario');
     }
-
-    // 2. Generar token JWT con la estructura que espera el middleware
     const token = jwt.sign(
       {
         id: user.id_usuario,
@@ -76,10 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
-
-    // 3. Registrar el nuevo login
     
-
     try {
       await query(
         `INSERT INTO logins (
@@ -89,10 +74,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ) VALUES (?, NOW(), 1)`,
         [user.id_usuario]
       );
-
-   
     } catch (error) {
-      console.error('❌ [LOGIN] Error al registrar nuevo login:', error);
+      throw error instanceof Error
+        ? error
+        : new Error('Error al registrar el nuevo login del usuario');
     }
 
     // Configurar cookie
@@ -115,7 +100,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       codigo: 200
     });
   } catch (error) {
-  
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

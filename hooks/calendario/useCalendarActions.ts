@@ -17,8 +17,6 @@ interface CalendarActions {
 
 export const useCalendarActions = (startDate?: string, endDate?: string) => {
   const [mutationError, setMutationError] = useState<string | null>(null);
-
-  // Construir endpoint dinámico con fechas
   const endpoint = useMemo(() => {
     if (!startDate || !endDate) return null;
     return `/api/calendar-actions?startDate=${startDate}&endDate=${endDate}`;
@@ -28,24 +26,26 @@ export const useCalendarActions = (startDate?: string, endDate?: string) => {
     data: actions,
     isLoading: loading,
     error: fetchError,
-    refetch,
+    refetch
   } = useGenericFetch<CalendarActions>(endpoint || '/api/calendar-actions', {
     initialFetch: !!endpoint,
-    transform: (data) => (data.success ? data.data : {}),
+    transform: data => (data.success ? data.data : {})
   });
 
   const error = fetchError || mutationError;
 
-  const fetchActions = useCallback(async (start: string, end: string) => {
-    setMutationError(null);
-    // Actualizar endpoint y refetch se hará automáticamente
-    await refetch();
-  }, [refetch]);
+  const fetchActions = useCallback(
+    async (start: string, end: string) => {
+      setMutationError(null);
+      await refetch();
+    },
+    [refetch]
+  );
 
-  return { 
-    actions: actions?.[0] || {}, 
-    loading, 
-    error, 
-    refetch: fetchActions 
+  return {
+    actions: actions?.[0] || {},
+    loading,
+    error,
+    refetch: fetchActions
   };
 };

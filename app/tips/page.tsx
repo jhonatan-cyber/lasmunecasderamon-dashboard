@@ -41,7 +41,6 @@ export default function TipsPage() {
     }
   };
 
-
   // Filtrar datos por término de búsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
@@ -88,9 +87,7 @@ export default function TipsPage() {
     );
     const totalUsuariosCajaActiva = filteredTipsCajaActiva.length;
     const tipsPorUsuario =
-      totalUsuariosCajaActiva > 0
-        ? Math.round(totalTipsCajaActiva / totalUsuariosCajaActiva)
-        : 0;
+      totalUsuariosCajaActiva > 0 ? Math.round(totalTipsCajaActiva / totalUsuariosCajaActiva) : 0;
 
     return {
       totalTips,
@@ -134,59 +131,59 @@ export default function TipsPage() {
   }, []);
 
   return (
-    <PermissionGuard module="propinas" action="listar">
+    <PermissionGuard module='tips' action='view'>
       <TooltipProvider>
-      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
-          <div>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Propinas</h1>
-            <p className='text-sm sm:text-base text-gray-600'>
-              Gestiona todas las propinas de los empleados.
-            </p>
+        <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+          <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
+            <div>
+              <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Propinas</h1>
+              <p className='text-sm sm:text-base text-gray-600'>
+                Gestiona todas las propinas de los empleados.
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Estadísticas */}
-        <TipsStatsCards
-          totalTips={stats.totalTips}
-          totalUsuarios={stats.totalUsuarios}
-          tipsPorUsuario={stats.tipsPorUsuario}
-          formatCurrency={formatCurrency}
-        />
+          {/* Estadísticas */}
+          <TipsStatsCards
+            totalTips={stats.totalTips}
+            totalUsuarios={stats.totalUsuarios}
+            tipsPorUsuario={stats.tipsPorUsuario}
+            formatCurrency={formatCurrency}
+          />
 
-        {/* Filtros */}
-        <TipsFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-          loading={loading}
-          onRefresh={handleRefresh}
-        />
-
-        {/* Lista de tips */}
-        <div className='overflow-x-auto'>
-          <TipsTable
-            loading={loading}
-            rows={paginatedTips}
+          {/* Filtros */}
+          <TipsFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
             rowsPerPage={rowsPerPage}
-            onVerDetalle={handleVerDetalle}
+            setRowsPerPage={setRowsPerPage}
+            setPage={setPage}
+            loading={loading}
+            onRefresh={handleRefresh}
+          />
+
+          {/* Lista de tips */}
+          <div className='overflow-x-auto'>
+            <TipsTable
+              loading={loading}
+              rows={paginatedTips}
+              rowsPerPage={rowsPerPage}
+              onVerDetalle={handleVerDetalle}
+            />
+          </div>
+          {totalPages > 1 && (
+            <div className='flex justify-center mt-4 sm:mt-6'>
+              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+            </div>
+          )}
+          {/* Modal de detalles */}
+          <PropinasDetalleModal
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            usuario={selectedUsuario}
           />
         </div>
-        {totalPages > 1 && (
-          <div className='flex justify-center mt-4 sm:mt-6'>
-            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-          </div>
-        )}
-        {/* Modal de detalles */}
-        <PropinasDetalleModal
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          usuario={selectedUsuario}
-        />
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
     </PermissionGuard>
   );
 }

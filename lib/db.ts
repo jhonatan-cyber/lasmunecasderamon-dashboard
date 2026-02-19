@@ -1,6 +1,5 @@
 import mysql from 'mysql2/promise';
 
-// Database connection configuration
 export interface DatabaseConfig {
   host: string;
   user: string;
@@ -12,7 +11,6 @@ export interface DatabaseConfig {
   queueLimit?: number;
 }
 
-// Default configuration - replace with your actual database credentials
 const defaultConfig: DatabaseConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -24,10 +22,8 @@ const defaultConfig: DatabaseConfig = {
   queueLimit: 0
 };
 
-// Create a connection pool
 const pool = mysql.createPool(defaultConfig);
 
-// Function to create a direct connection (more reliable for production)
 async function createConnection() {
   try {
     const connection = await mysql.createConnection({
@@ -39,7 +35,6 @@ async function createConnection() {
     });
     return connection;
   } catch (error) {
-    console.error('❌ [DB] Error al conectar:', error);
     throw error;
   }
 }
@@ -52,13 +47,6 @@ export async function query(sql: string, params: any[] = []) {
     const [rows] = await connection.execute(sql, params);
     return rows;
   } catch (error) {
-    console.error('❌ Database query error:', error);
-    console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      errno: (error as any)?.errno,
-      sqlState: (error as any)?.sqlState
-    });
     throw error;
   } finally {
     if (connection) {
@@ -67,7 +55,6 @@ export async function query(sql: string, params: any[] = []) {
   }
 }
 
-// Function to execute raw SQL queries (no prepared statements)
 export async function rawQuery(sql: string) {
   let connection;
   try {
@@ -75,7 +62,6 @@ export async function rawQuery(sql: string) {
     const [rows] = await connection.query(sql);
     return rows;
   } catch (error) {
-    console.error('❌ Database raw query error:', error);
     throw error;
   } finally {
     if (connection) {
@@ -84,20 +70,12 @@ export async function rawQuery(sql: string) {
   }
 }
 
-// Test the database connection
 export async function testConnection() {
   try {
     const connection = await createConnection();
     await connection.end();
     return true;
   } catch (error) {
-    console.error('❌ [DB] Error en prueba de conexión:', error);
-    console.error('❌ [DB] Detalles del error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      errno: (error as any)?.errno,
-      sqlState: (error as any)?.sqlState
-    });
     return false;
   }
 }
