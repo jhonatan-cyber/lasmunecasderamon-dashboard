@@ -1,7 +1,6 @@
 'use client'
 
-import { useMemo, useCallback, useState } from 'react'
-import { useCurrentUser } from '../auth/useCurrentUser'
+import { useCallback, useState } from 'react'
 import { useGenericFetch } from '../shared/useGenericFetch'
 
 interface UseTipsReturn {
@@ -26,12 +25,7 @@ interface UseTipsDetalleReturn {
 }
 
 export default function useTips(): UseTipsReturn {
-  const { user } = useCurrentUser()
-  
-  const endpoint = useMemo(() => 
-    user?.role?.toLowerCase() === 'cajero' ? '/api/tips/user' : '/api/tips?tipo=resumen',
-    [user?.role]
-  )
+  const endpoint = '/api/tips?tipo=resumen'
   
   const { data, isLoading, error, refetch } = useGenericFetch<any>(
     endpoint,
@@ -49,12 +43,7 @@ export default function useTips(): UseTipsReturn {
 }
 
 export function useTipsResumen(): UseTipsResumenReturn {
-  const { user } = useCurrentUser()
-  
-  const endpoint = useMemo(() => 
-    user?.role?.toLowerCase() === 'cajero' ? '/api/tips/user-resumen' : '/api/tips?tipo=resumen',
-    [user?.role]
-  )
+  const endpoint = '/api/tips?tipo=resumen'
   
   const { data, isLoading, error, refetch } = useGenericFetch<any>(
     endpoint,
@@ -72,7 +61,6 @@ export function useTipsResumen(): UseTipsResumenReturn {
 }
 
 export function useTipsDetalle(usuarioId?: number): UseTipsDetalleReturn {
-  const { user } = useCurrentUser()
   const [detalles, setDetalles] = useState<any[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,11 +70,12 @@ export function useTipsDetalle(usuarioId?: number): UseTipsDetalleReturn {
       setLoading(true)
       setError(null)
       
-      const endpoint = user?.role?.toLowerCase() === 'cajero' 
-        ? `/api/tips/user?tipo=detalle` 
-        : `/api/tips?tipo=detalle&usuario_id=${userId}`
+      const endpoint = `/api/tips?tipo=detalle&usuario_id=${userId}`
       
-      const response = await fetch(endpoint)
+      const response = await fetch(endpoint, {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       
       if (!response.ok) {
         throw new Error('Error al obtener los detalles de propinas')
@@ -105,7 +94,7 @@ export function useTipsDetalle(usuarioId?: number): UseTipsDetalleReturn {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [])
 
   return {
     detalles,

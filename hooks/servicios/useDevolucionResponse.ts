@@ -8,7 +8,6 @@ export const useDevolucionResponse = () => {
   const handleDevolucionConfirmada = useCallback(
     async (servicioId: number) => {
       try {
-        // Finalizar el temporizador del servicio
         await stopTimerByServicioId(servicioId);
 
         showSuccessToast('Devolución confirmada. Temporizador finalizado y habitación liberada.');
@@ -22,7 +21,7 @@ export const useDevolucionResponse = () => {
   const handleDevolucionRechazada = useCallback(
     async (servicioId: number) => {
       try {
-        // Reanudar el temporizador del servicio
+ 
         resumeTimerByServicioId(servicioId);
         showSuccessToast(
           'Devolución rechazada. El servicio continúa activo y el temporizador se ha reanudado.'

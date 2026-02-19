@@ -156,7 +156,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     // Verificar permiso para crear usuarios
-    const hasPermission = await checkPermission(req, 'usuarios', 'crear');
+    const hasPermission = await checkPermission(req, 'users', 'create');
     if (!hasPermission) {
       return res.status(403).json({
         success: false,
@@ -295,7 +295,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     // Verificar permiso para editar usuarios
-    const hasPermission = await checkPermission(req, 'usuarios', 'editar');
+    const hasPermission = await checkPermission(req, 'users', 'edit');
     if (!hasPermission) {
       return res.status(403).json({
         success: false,
@@ -478,10 +478,10 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verificar permisos según la acción
     if (action === 'activate') {
-      hasPermission = await checkPermission(req, 'usuarios', 'activar');
+      hasPermission = await checkPermission(req, 'users', 'activate');
       actionMessage = 'activar';
     } else if (action === 'deactivate') {
-      hasPermission = await checkPermission(req, 'usuarios', 'desactivar');
+      hasPermission = await checkPermission(req, 'users', 'deactivate');
       actionMessage = 'desactivar';
     } else {
       return res.status(400).json({
@@ -538,7 +538,7 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
 const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     // Verificar permiso para eliminar usuarios
-    const hasPermission = await checkPermission(req, 'usuarios', 'eliminar');
+    const hasPermission = await checkPermission(req, 'users', 'delete');
     if (!hasPermission) {
       return res.status(403).json({
         success: false,

@@ -22,7 +22,6 @@ export interface PayrollRow {
 export type RoleFilter = 'all' | 'anfitriona' | 'garzon' | 'cajero';
 
 export default function usePayroll() {
-  // Filtros y paginación
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
@@ -66,11 +65,9 @@ export default function usePayroll() {
   };
 
   return {
-    // data
     rows,
     loading,
     error,
-    // filters
     roleFilter,
     setRoleFilter,
     searchTerm,
@@ -79,11 +76,9 @@ export default function usePayroll() {
     setRowsPerPage,
     page,
     setPage,
-    // derived
     filtered,
     paginated,
     totalPages,
-    // actions
     fetchPayroll,
     clearFilters,
   };

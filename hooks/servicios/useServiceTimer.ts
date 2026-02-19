@@ -52,8 +52,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const temporaryCallbacksRef = useRef<Map<string, () => void>>(new Map());
   const expiredRef = useRef(false);
-
-  // Cargar estado desde localStorage
   useEffect(() => {
     const storageKey = `timer_${servicioId}`;
     const stored = localStorage.getItem(storageKey);
@@ -63,19 +61,17 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
         const parsedState: TimerState = JSON.parse(stored);
         setTimerState(parsedState);
       } catch (error) {
-        console.error('Error loading timer state:', error);
+        throw new Error('Error parsing timer state from localStorage');
       }
     }
   }, [servicioId]);
 
-  // Guardar estado en localStorage
   const saveTimerState = useCallback((state: TimerState) => {
     const storageKey = `timer_${servicioId}`;
     localStorage.setItem(storageKey, JSON.stringify(state));
     setTimerState(state);
   }, [servicioId]);
 
-  // Calcular tiempo restante del timer principal
   const calculateRemainingTime = useCallback((state: TimerState, now: number) => {
     if (state.isPaused && state.remainingTimeWhenPaused !== undefined) {
       return Math.max(0, state.remainingTimeWhenPaused);
@@ -89,7 +85,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     return Math.max(0, state.duration - elapsed);
   }, []);
 
-  // Calcular tiempo restante del timer temporal actual
   const calculateTemporaryRemainingTime = useCallback((state: TimerState, now: number) => {
     if (!state.currentTemporary) {
       return 0;
@@ -99,7 +94,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     return Math.max(0, state.currentTemporary.duration - elapsed);
   }, []);
 
-  // Iniciar el siguiente temporizador temporal de la cola
   const startNextTemporaryTimer = useCallback((state: TimerState, now: number): TimerState | null => {
     if (state.temporaryQueue.length === 0) {
       return null;
@@ -118,12 +112,12 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       }
     };
 
-    toast.info(`⏱️ Timer temporal ${remainingQueue.length > 0 ? `(${remainingQueue.length + 1} en cola)` : ''}: ${Math.ceil(nextTemporary.duration / 60)} min`);
+    toast.info(`Timer temporal ${remainingQueue.length > 0 ? `(${remainingQueue.length + 1} en cola)` : ''}: ${Math.ceil(nextTemporary.duration / 60)} min`);
     
     return newState;
   }, []);
 
-  // Efecto para el intervalo del timer
+
   useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -136,7 +130,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       const mainRemaining = calculateRemainingTime(timerState, now);
       const tempRemaining = calculateTemporaryRemainingTime(timerState, now);
 
-      // Si hay un timer temporal activo pero el principal no está pausado, pausarlo automáticamente
       if (timerState.currentTemporary && !timerState.isPaused) {
         const newState: TimerState = {
           ...timerState,
@@ -146,31 +139,28 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
         };
         
         saveTimerState(newState);
-        toast.info('⏸️ Timer principal pausado automáticamente - Timer temporal activo');
+        toast.info('Timer principal pausado automáticamente - Timer temporal activo');
         return;
       }
 
-      // Verificar si el timer temporal actual terminó
       if (timerState.currentTemporary && tempRemaining <= 0) {
         const currentTempId = timerState.currentTemporary.id;
-        
-        // Ejecutar callback del temporizador que acaba de terminar
+
         const callback = temporaryCallbacksRef.current.get(currentTempId);
         if (callback) {
           callback();
           temporaryCallbacksRef.current.delete(currentTempId);
         }
 
-        // Verificar si hay más temporizadores en la cola
         if (timerState.temporaryQueue.length > 0) {
-          // Iniciar el siguiente temporizador temporal
+
           const newStateWithNext = startNextTemporaryTimer(timerState, now);
           if (newStateWithNext) {
             saveTimerState(newStateWithNext);
-            toast.success(`✅ Timer temporal completado. Iniciando siguiente... (${timerState.temporaryQueue.length} restantes)`);
+            toast.success(`Timer temporal completado. Iniciando siguiente... (${timerState.temporaryQueue.length} restantes)`);
           }
         } else {
-          // No hay más temporizadores temporales, reanudar el principal
+
           const newState: TimerState = {
             ...timerState,
             currentTemporary: undefined,
@@ -182,12 +172,11 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
           };
 
           saveTimerState(newState);
-          toast.success('⏰ Timer temporal completado. Timer principal reanudado automáticamente.');
+          toast.success('Timer temporal completado. Timer principal reanudado automáticamente.');
         }
         return;
       }
 
-      // Verificar si el timer principal terminó (solo si no hay timer temporal)
       if (!timerState.currentTemporary && !timerState.isPaused && mainRemaining <= 0 && !expiredRef.current) {
         expiredRef.current = true;
         
@@ -195,9 +184,8 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
           onExpire();
         }
         
-        toast.success(`⏰ Tiempo terminado para servicio ${servicioId}`);
+        toast.success(`Tiempo terminado para servicio ${servicioId}`);
         
-        // Limpiar del localStorage
         localStorage.removeItem(`timer_${servicioId}`);
       }
     }, 1000);
@@ -209,13 +197,11 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     };
   }, [timerState, calculateRemainingTime, calculateTemporaryRemainingTime, onExpire, servicioId, saveTimerState, startNextTemporaryTimer]);
 
-  // Función para agregar un timer temporal a la cola
   const startTemporaryTimer = useCallback((config: TemporaryTimerConfig) => {
     const now = Date.now();
     const tempId = `temp_${now}_${Math.random().toString(36).substr(2, 9)}`;
     const durationInSeconds = config.duration * 60;
 
-    // Guardar el callback
     temporaryCallbacksRef.current.set(tempId, config.onComplete);
 
     const newTemporary: TemporaryTimerInQueue = {
@@ -224,7 +210,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       onComplete: config.onComplete
     };
 
-    // Si ya hay un temporizador temporal activo, agregar a la cola
     if (timerState.currentTemporary) {
       const newState: TimerState = {
         ...timerState,
@@ -232,9 +217,9 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       };
 
       saveTimerState(newState);
-      toast.info(`⏱️ Timer temporal agregado a la cola. Posición: ${timerState.temporaryQueue.length + 2}`);
+      toast.info(`Timer temporal agregado a la cola. Posición: ${timerState.temporaryQueue.length + 2}`);
     } else {
-      // No hay temporizador temporal activo, pausar el principal e iniciar este
+
       const currentMainRemaining = calculateRemainingTime(timerState, now);
 
       const newState: TimerState = {
@@ -254,7 +239,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     }
   }, [timerState, calculateRemainingTime, saveTimerState]);
 
-  // Función para pausar manualmente el timer principal
   const pauseMainTimer = useCallback(() => {
     if (!timerState.currentTemporary && !timerState.isPaused) {
       const now = Date.now();
@@ -268,11 +252,11 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       };
 
       saveTimerState(newState);
-      toast.info('⏸️ Timer principal pausado manualmente');
+      toast.info('Timer principal pausado manualmente');
     }
   }, [timerState, calculateRemainingTime, saveTimerState]);
 
-  // Función para reanudar manualmente el timer principal
+
   const resumeMainTimer = useCallback(() => {
     if (!timerState.currentTemporary && timerState.isPaused) {
       const now = Date.now();
@@ -288,11 +272,10 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       };
 
       saveTimerState(newState);
-      toast.success('▶️ Timer principal reanudado manualmente');
+      toast.success('Timer principal reanudado manualmente');
     }
   }, [timerState, saveTimerState]);
 
-  // Función para formatear tiempo
   const formatTime = useCallback((seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -304,11 +287,9 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  // Calcular valores actuales
   const mainRemainingTime = calculateRemainingTime(timerState, currentTime);
   const tempRemainingTime = calculateTemporaryRemainingTime(timerState, currentTime);
 
-  // Timer principal
   const mainTimer = {
     totalSeconds: mainRemainingTime,
     isPaused: timerState.isPaused || !!timerState.currentTemporary,
@@ -316,7 +297,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     isRunning: !timerState.isPaused && !timerState.currentTemporary && mainRemainingTime > 0
   };
 
-  // Timer temporal
   const temporaryTimer = timerState.currentTemporary ? {
     totalSeconds: tempRemainingTime,
     isPaused: false,
@@ -325,7 +305,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     queueLength: timerState.temporaryQueue.length
   } : null;
 
-  // Timer para mostrar
   const displayTimer = timerState.currentTemporary ? {
     totalSeconds: tempRemainingTime,
     isPaused: false,
@@ -345,26 +324,16 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
   };
 
   return {
-    // Timer principal
     mainTimer,
-    
-    // Timer temporal
     temporaryTimer,
     isTemporaryActive: !!timerState.currentTemporary,
     temporaryQueueLength: timerState.temporaryQueue.length,
-    
-    // Timer para mostrar (temporal si está activo, sino principal)
     displayTimer,
-    
-    // Funciones de control
+
     pauseMainTimer,
     resumeMainTimer,
     startTemporaryTimer,
-    
-    // Utilidades
     formatTime,
-    
-    // Estados
     isPaused: timerState.isPaused || !!timerState.currentTemporary,
     servicioId
   };

@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { User } from '@/types/user';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -18,8 +17,6 @@ import {
 
 interface UserDetailsProps {
   user: User | null;
-  onEdit: () => void;
-  onClose: () => void;
 }
 
 const formatDate = (dateString: string | undefined) => {
@@ -41,7 +38,7 @@ const getRoleBadgeColor = (role: string) => {
   return roleColors[normalizedRole] || roleColors['default'];
 };
 
-export function UserDetails({ user, onEdit }: UserDetailsProps) {
+export function UserDetails({ user }: UserDetailsProps) {
   if (!user) return null;
 
   const formatCurrency = (
@@ -93,16 +90,7 @@ export function UserDetails({ user, onEdit }: UserDetailsProps) {
             </div>
           </div>
         </div>
-        <div className='flex flex-col sm:flex-row gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={onEdit}
-            className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-          >
-            Editar
-          </Button>
-        </div>
+        <div className='flex flex-col sm:flex-row gap-2' />
       </div>
       <div className='space-y-4 sm:space-y-6'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>

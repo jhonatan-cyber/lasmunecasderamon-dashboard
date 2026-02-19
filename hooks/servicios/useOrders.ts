@@ -10,19 +10,17 @@ export default function useOrders() {
   const [mutationLoading, setMutationLoading] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  // Usar hook genérico para fetch de orders
   const {
     data: orders,
     isLoading: fetchLoading,
     error: fetchError,
     refetch: fetchOrders,
-    setData: setOrders, // Exponer setData para actualizar el estado directamente
+    setData: setOrders, 
   } = useGenericFetch<Order>('/api/orders', {
     initialFetch: true,
     transform: (data) => data.success ? data.data : []
   });
 
-  // Combinar loading y error states
   const isLoading = fetchLoading || mutationLoading;
   const error = fetchError || mutationError;
 
@@ -127,7 +125,7 @@ export default function useOrders() {
     fetchOrders,
     fetchOrderDetail,
     refetch: fetchOrders,
-    setOrders, // Exponer setOrders para actualizar el estado directamente
+    setOrders, 
     createOrder,
     updateOrder,
     deleteOrder,

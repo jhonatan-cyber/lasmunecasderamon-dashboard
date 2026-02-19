@@ -49,31 +49,30 @@ export function useUsers(): UseUsersReturn {
   const [error, setError] = useState<string | null>(null);
   const [filterRole, setFilterRole] = useState<string>('all');
 
-  // Usar hook genérico para fetch
-  const { data: users, isLoading, error: fetchError, refetch: fetchUsers, setData: setUsers } = useGenericFetch<User>(
-    '/api/users',
-    {
-      transform: (result) => result.data || []
-    }
-  );
+  const {
+    data: users,
+    isLoading,
+    error: fetchError,
+    refetch: fetchUsers,
+    setData: setUsers
+  } = useGenericFetch<User>('/api/users', {
+    transform: result => result.data || []
+  });
 
-  // Usar hook genérico para filtros y paginación
   const filters = useGenericFilters(users || [], {
     searchFields: ['name', 'lastName', 'run', 'email', 'phone', 'nick', 'address'],
     initialPageSize: 5
   });
 
-  // Aplicar filtro de rol adicional
   const filteredByRole = useMemo(() => {
     if (filterRole === 'all') {
       return filters.filteredData;
     }
-    return filters.filteredData.filter(user => 
-      user.role?.toLowerCase() === filterRole.toLowerCase()
+    return filters.filteredData.filter(
+      user => user.role?.toLowerCase() === filterRole.toLowerCase()
     );
   }, [filters.filteredData, filterRole]);
 
-  // Recalcular paginación con el filtro de rol
   const paginatedByRole = useMemo(() => {
     const start = (filters.page - 1) * filters.pageSize;
     return filteredByRole.slice(start, start + filters.pageSize);
@@ -81,17 +80,40 @@ export function useUsers(): UseUsersReturn {
 
   const totalPagesWithRole = Math.max(1, Math.ceil(filteredByRole.length / filters.pageSize));
 
-  // Resetear página cuando cambie el filtro de rol
   useEffect(() => {
     filters.setPage(1);
   }, [filterRole]);
 
-  // Limpiar error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Obtener usuario por ID
+  const formDataToObject = (formData: FormData) => {
+    const result: Record<string, string> = {};
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === 'string') {
+        result[key] = value;
+      }
+    }
+    return result;
+  };
+
+  const mapFormToUserPatch = (fields: Record<string, string>): Partial<User> => ({
+    run: fields.run,
+    nick: fields.nick,
+    name: fields.nombre,
+    lastName: fields.apellido,
+    email: fields.correo || fields.email,
+    phone: fields.telefono,
+    address: fields.direccion,
+    maritalStatus: fields.estado_civil,
+    roleId: fields.rol_id ? Number(fields.rol_id) : undefined,
+    afp: fields.afp,
+    salary: fields.sueldo ? Number(fields.sueldo) : undefined,
+    contributions: fields.aporte ? Number(fields.aporte) : undefined,
+    discount: fields.descuento ? Number(fields.descuento) : undefined
+  });
+
   const getUserById = useCallback(async (id: number): Promise<User | null> => {
     try {
       setError(null);
@@ -117,7 +139,6 @@ export function useUsers(): UseUsersReturn {
     }
   }, []);
 
-  // Crear nuevo usuario
   const createUser = useCallback(
     async (formData: FormData) => {
       try {
@@ -125,7 +146,6 @@ export function useUsers(): UseUsersReturn {
         let hasCriticalFields = true;
         let missingFields = [];
 
-        // Verificar campos obligatorios
         const requiredFields = [
           'run',
           'nick',
@@ -176,7 +196,6 @@ export function useUsers(): UseUsersReturn {
           };
         }
 
-        // Recargar usuarios después de crear
         await fetchUsers();
 
         return {
@@ -194,7 +213,6 @@ export function useUsers(): UseUsersReturn {
     [fetchUsers]
   );
 
-  // Actualizar usuario existente
   const updateUser = useCallback(
     async (id: number, userData: any) => {
       try {
@@ -262,10 +280,11 @@ export function useUsers(): UseUsersReturn {
           };
         }
 
-        // Actualizar el usuario en el estado local
+        const patch = isFormData ? mapFormToUserPatch(formDataToObject(userData)) : userData;
+
         setUsers(prevUsers =>
           prevUsers.map(user =>
-            user.id === id ? { ...user, ...userData, updated_at: new Date().toISOString() } : user
+            user.id === id ? { ...user, ...patch, updated_at: new Date().toISOString() } : user
           )
         );
 
@@ -286,7 +305,6 @@ export function useUsers(): UseUsersReturn {
     [setUsers]
   );
 
-  // Activar usuario
   const activateUser = useCallback(
     async (id: number) => {
       try {
@@ -330,7 +348,6 @@ export function useUsers(): UseUsersReturn {
     [setUsers]
   );
 
-  // Desactivar usuario
   const deactivateUser = useCallback(
     async (id: number) => {
       try {
@@ -375,7 +392,6 @@ export function useUsers(): UseUsersReturn {
     [setUsers]
   );
 
-  // Eliminar usuario permanentemente
   const deleteUser = useCallback(
     async (id: number) => {
       try {
@@ -424,7 +440,8 @@ export function useUsers(): UseUsersReturn {
     error: error || fetchError,
     searchTerm: filters.searchTerm,
     setSearchTerm: filters.setSearchTerm,
-    filterStatus: filters.filterStatus === null ? 'all' : filters.filterStatus === 1 ? 'active' : 'inactive',
+    filterStatus:
+      filters.filterStatus === null ? 'all' : filters.filterStatus === 1 ? 'active' : 'inactive',
     setFilterStatus: (status: string) => {
       if (status === 'all') filters.setFilterStatus(null);
       else if (status === 'active') filters.setFilterStatus(1);

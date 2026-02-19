@@ -23,20 +23,17 @@ import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 
 // Lazy load del modal de detalle de pedido
-const OrderDetailModal = dynamic(
-  () => import('@/components/orders/OrderDetailModal'),
-  {
-    loading: () => (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Cargando pedido...</p>
-        </div>
+const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
+  loading: () => (
+    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+      <div className='bg-white rounded-lg p-6'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto'></div>
+        <p className='mt-2 text-sm text-gray-600'>Cargando pedido...</p>
       </div>
-    ),
-    ssr: false
-  }
-);
+    </div>
+  ),
+  ssr: false
+});
 import { toast } from 'sonner';
 
 interface Order {
@@ -89,60 +86,94 @@ export default function OrdersPage() {
   const [searchServiciosTerm, setSearchServiciosTerm] = useState('');
   const [activeTab, setActiveTab] = useState('productos');
 
-  // Verificar permisos
-  const canDelete = hasPermission('pedidos', 'eliminar');
-
-  // Estados para el modal
+  const canDelete = hasPermission('orders', 'delete');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState('');
   const [orderDetail, setOrderDetail] = useState<any[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-
-  // Estados para el modal de eliminación
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // Estados para eliminación de solicitudes de servicio
   const [deleteServicioModalOpen, setDeleteServicioModalOpen] = useState(false);
   const [servicioToDelete, setServicioToDelete] = useState<SolicitudServicio | null>(null);
   const [isDeletingServicio, setIsDeletingServicio] = useState(false);
 
-  // Función para actualizar pedidos (usar useCallback para evitar recrear en cada render)
+  // Definir fetchOrders y fetchServicios con useCallback PRIMERO
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/orders');
+      const data = await response.json();
+
+      if (data.success) {
+        setOrders(data.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar los pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchServicios = useCallback(async () => {
+    try {
+      setLoadingServicios(true);
+      const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
+      const data = await response.json();
+
+      if (data.success) {
+        const pendientes = (data.data || []).filter(
+          (s: SolicitudServicio) => s.estado === 'pendiente'
+        );
+        setServicios(pendientes);
+      }
+    } catch (error) {
+      console.error('Error al cargar las solicitudes de servicio:', error);
+    } finally {
+      setLoadingServicios(false);
+    }
+  }, []);
+
   const handleOrderUpdate = useCallback((data: { type: string; orderId: number }) => {
-    console.log('🔄 [ORDERS PAGE] Actualizando lista de pedidos por SSE...', data);
-    
-    // Actualizar el estado directamente sin recargar el componente
     setOrders(prevOrders => {
       if (data.type === 'order-processed' || data.type === 'order-deleted') {
-        // Eliminar el pedido de la lista
         const updated = prevOrders.filter(order => order.id_pedido !== data.orderId);
-        console.log(`✅ [ORDERS PAGE] Pedido ${data.orderId} eliminado de la lista (${data.type})`);
         return updated;
       } else if (data.type === 'order-created') {
-        // Para pedidos nuevos, recargar la lista completa
-        console.log('🔄 [ORDERS PAGE] Recargando lista para nuevo pedido...');
         fetchOrders();
         return prevOrders;
       }
       return prevOrders;
     });
-    
-    // También actualizar servicios si es necesario
+
     if (data.type === 'order-processed' || data.type === 'order-deleted') {
       fetchServicios();
     }
-  }, []);
+  }, [fetchOrders, fetchServicios]);
 
-  // Conectar al SSE para actualizaciones en tiempo real
   useOrdersSSE(handleOrderUpdate);
 
+  // Cargar datos iniciales
   useEffect(() => {
     fetchOrders();
     fetchServicios();
-  }, []);
+  }, [fetchOrders, fetchServicios]);
+
+  // Fallback: refetch cada 15 segundos para asegurar actualización en tiempo real
+  useEffect(() => {
+    console.log('[ORDERS PAGE] ⏰ Iniciando polling cada 15 segundos como fallback');
+    const interval = setInterval(() => {
+      console.log('[ORDERS PAGE] 🔄 Refetch automático cada 15 segundos (fallback)');
+      fetchOrders();
+    }, 15000);
+
+    return () => {
+      console.log('[ORDERS PAGE] ⏰ Limpiando polling interval');
+      clearInterval(interval);
+    };
+  }, [fetchOrders]);
 
   useEffect(() => {
     filterOrders();
@@ -152,68 +183,79 @@ export default function OrdersPage() {
     filterServicios();
   }, [servicios, searchServiciosTerm]);
 
-  // Escuchar evento para actualizar la lista cuando se procesa un pedido desde la campanita
   useEffect(() => {
-    const handleUpdateOrders = () => {
+    const handleUpdateOrders = (event?: Event) => {
+      const detail = (event as CustomEvent)?.detail;
+      let orderId: number | null = null;
+      let eventType: string | undefined;
+
+      if (detail && typeof detail === 'object') {
+        // Verificar si hay tipo directamente en el detalle
+        if ('type' in detail && typeof detail.type === 'string') {
+          eventType = detail.type;
+        }
+        
+        // Buscar ID del pedido
+        if ('orderId' in detail && typeof detail.orderId === 'number') {
+          orderId = detail.orderId;
+        } else if ('id' in detail && typeof detail.id === 'number') {
+          orderId = detail.id;
+        } else if (
+          eventType === 'order_deleted' &&
+          'data' in detail &&
+          detail.data &&
+          detail.data.id
+        ) {
+          orderId = detail.data.id;
+        }
+      }
+
+      console.log('[ORDERS PAGE] 📢 Listener updatePendingOrders EJECUTADO', { eventType, orderId, detail });
+
+      // Manejar eventos específicos
+      if (eventType === 'order-created') {
+        console.log('[ORDERS PAGE] ✅ NUEVO PEDIDO DETECTADO - Refrescando lista');
+        fetchOrders();
+        return;
+      }
+
+      if (orderId) {
+        console.log(`[ORDERS PAGE] 🗑️ Pedido ${orderId} eliminado - Actualizando lista`);
+        setOrders(prev => prev.filter(o => o.id_pedido !== orderId));
+        setFilteredOrders(prev => prev.filter(o => o.id_pedido !== orderId));
+        if (selectedOrderId === orderId) {
+          setModalOpen(false);
+          setSelectedOrderId(null);
+          setSelectedOrderCode('');
+          setOrderDetail([]);
+        }
+
+        fetchServicios();
+        return;
+      }
+
+      // Si no hay detalles específicos, refetch completo
+      console.log('[ORDERS PAGE] 🔄 Refrescando lista sin detalles específicos');
       fetchOrders();
     };
 
     const handleUpdateServiceRequests = () => {
+      console.log('[ORDERS PAGE] 🔔 Actualizando solicitudes de servicio');
       fetchServicios();
     };
 
-    window.addEventListener('updatePendingOrders', handleUpdateOrders);
+    console.log('[ORDERS PAGE] 📌 Montado - Agregando listeners de eventos');
+    window.addEventListener('updatePendingOrders', handleUpdateOrders as EventListener);
     window.addEventListener('updateServiceRequests', handleUpdateServiceRequests);
 
     return () => {
-      window.removeEventListener('updatePendingOrders', handleUpdateOrders);
+      console.log('[ORDERS PAGE] 🗑️ Desmontado - Removiendo listeners');
+      window.removeEventListener('updatePendingOrders', handleUpdateOrders as EventListener);
       window.removeEventListener('updateServiceRequests', handleUpdateServiceRequests);
     };
-  }, []);
+  }, [fetchOrders, fetchServicios, selectedOrderId]);
 
-  const fetchOrders = async () => {
-    try {
-      console.log('[ORDERS PAGE] 🔍 Obteniendo pedidos...');
-      setLoading(true);
-      const response = await fetch('/api/orders');
-      const data = await response.json();
-
-      console.log('[ORDERS PAGE] 📦 Respuesta de API:', data);
-
-      if (data.success) {
-        console.log(`[ORDERS PAGE] ✅ Se cargaron ${data.data.length} pedidos`);
-        setOrders(data.data);
-      } else {
-        console.error('[ORDERS PAGE] ❌ Error fetching orders:', data.message);
-      }
-    } catch (error) {
-      console.error('[ORDERS PAGE] ❌ Error fetching orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchServicios = async () => {
-    try {
-      setLoadingServicios(true);
-      const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
-      const data = await response.json();
-
-      if (data.success) {
-        const pendientes = (data.data || []).filter((s: SolicitudServicio) => s.estado === 'pendiente');
-        setServicios(pendientes);
-      } else {
-        console.error('Error fetching servicios:', data.message);
-      }
-    } catch (error) {
-      console.error('Error fetching servicios:', error);
-    } finally {
-      setLoadingServicios(false);
-    }
-  };
-
-  // Helper: verificar permiso de procesar
-  const hasProcessPermission = () => hasPermission('pedidos', 'registrar_venta');
+  const hasProcessPermission = () => hasPermission('orders', 'process');
 
   const fetchOrderDetail = async (orderId: number) => {
     try {
@@ -258,9 +300,11 @@ export default function OrdersPage() {
     if (searchServiciosTerm) {
       filtered = filtered.filter(
         servicio =>
-          (servicio.cliente_nombre?.toLowerCase().includes(searchServiciosTerm.toLowerCase())) ||
+          servicio.cliente_nombre?.toLowerCase().includes(searchServiciosTerm.toLowerCase()) ||
           servicio.habitacion_nombre.toLowerCase().includes(searchServiciosTerm.toLowerCase()) ||
-          servicio.solicitado_por_nombre.toLowerCase().includes(searchServiciosTerm.toLowerCase()) ||
+          servicio.solicitado_por_nombre
+            .toLowerCase()
+            .includes(searchServiciosTerm.toLowerCase()) ||
           servicio.id_solicitud.toString().includes(searchServiciosTerm)
       );
     }
@@ -269,7 +313,9 @@ export default function OrdersPage() {
   };
 
   const handleServicioClick = (servicio: SolicitudServicio) => {
-    window.dispatchEvent(new CustomEvent('openServiceRequestModal', { detail: { solicitud: servicio } }));
+    window.dispatchEvent(
+      new CustomEvent('openServiceRequestModal', { detail: { solicitud: servicio } })
+    );
   };
 
   const handleDeleteServicioClick = (e: React.MouseEvent, servicio: SolicitudServicio) => {
@@ -283,9 +329,12 @@ export default function OrdersPage() {
 
     setIsDeletingServicio(true);
     try {
-      const response = await fetch(`/api/solicitudes-servicios?id=${servicioToDelete.id_solicitud}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `/api/solicitudes-servicios?id=${servicioToDelete.id_solicitud}`,
+        {
+          method: 'DELETE'
+        }
+      );
       const data = await response.json();
 
       if (data.success) {
@@ -381,13 +430,11 @@ export default function OrdersPage() {
   };
 
   const handleOrderClick = (orderId: number, orderCode: string) => {
-    // Verificar si tiene permiso para procesar pedidos
     if (!hasProcessPermission()) {
       toast.error('No tienes permisos para procesar pedidos');
       return;
     }
 
-    // Verificar si hay caja abierta para procesar pedidos
     if (!hasOpenCaja) {
       toast.error(
         'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
@@ -410,11 +457,11 @@ export default function OrdersPage() {
   };
 
   const handleOrderStatusChange = () => {
-    fetchOrders(); // Recargar la lista de pedidos
+    fetchOrders();
   };
 
   const handleDeleteClick = (e: React.MouseEvent, order: Order) => {
-    e.stopPropagation(); // Evitar que se abra el modal de detalles
+    e.stopPropagation();
     setOrderToDelete(order);
     setDeleteModalOpen(true);
   };
@@ -432,14 +479,22 @@ export default function OrdersPage() {
 
       if (data.success) {
         toast.success('Pedido eliminado exitosamente');
-        fetchOrders(); // Recargar la lista
+
+        setOrders(prev => prev.filter(o => o.id_pedido !== orderToDelete!.id_pedido));
+        setFilteredOrders(prev => prev.filter(o => o.id_pedido !== orderToDelete!.id_pedido));
+
+        window.dispatchEvent(
+          new CustomEvent('updatePendingOrders', {
+            detail: { type: 'order-deleted', orderId: orderToDelete!.id_pedido }
+          })
+        );
+
         setDeleteModalOpen(false);
         setOrderToDelete(null);
       } else {
         toast.error(data.message || 'Error al eliminar el pedido');
       }
     } catch (error) {
-      console.error('Error al eliminar pedido:', error);
       toast.error('Error inesperado al eliminar el pedido');
     } finally {
       setIsDeleting(false);
@@ -473,7 +528,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <PermissionGuard module='pedidos' action='listar'>
+    <PermissionGuard module='orders' action='view'>
       <div className='p-6 space-y-6'>
         {/* Header */}
         <div className='flex items-center justify-between'>
@@ -482,7 +537,7 @@ export default function OrdersPage() {
             <p className='text-gray-600'>Administra todas las órdenes del sistema</p>
           </div>
           <div className='flex gap-2'>
-            <PermissionGuard module='pedidos' action='crear' fallback={null}>
+            <PermissionGuard module='orders' action='create' fallback={null}>
               <Button
                 onClick={handleCreateOrder}
                 disabled={cajaLoading || !hasOpenCaja}
@@ -608,13 +663,23 @@ export default function OrdersPage() {
         <Card>
           <CardContent className='space-y-4'>
             <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-2'>Buscar</label>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-2'>
+                Buscar
+              </label>
               <div className='relative'>
                 <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
                 <Input
-                  placeholder={activeTab === 'productos' ? 'Buscar por cliente, código, garzon...' : 'Buscar por cliente, habitación, solicitante...'}
+                  placeholder={
+                    activeTab === 'productos'
+                      ? 'Buscar por cliente, código, garzon...'
+                      : 'Buscar por cliente, habitación, solicitante...'
+                  }
                   value={activeTab === 'productos' ? searchTerm : searchServiciosTerm}
-                  onChange={e => activeTab === 'productos' ? setSearchTerm(e.target.value) : setSearchServiciosTerm(e.target.value)}
+                  onChange={e =>
+                    activeTab === 'productos'
+                      ? setSearchTerm(e.target.value)
+                      : setSearchServiciosTerm(e.target.value)
+                  }
                   className='pl-10 rounded-full'
                 />
               </div>
@@ -635,7 +700,6 @@ export default function OrdersPage() {
 
           {/* Tab de Productos */}
           <TabsContent value='productos' className='space-y-6 mt-6'>
-
             {/* Lista de órdenes */}
             <Card>
               <CardHeader>
@@ -674,7 +738,9 @@ export default function OrdersPage() {
                           <div className='flex items-center justify-between'>
                             <div className='flex-1'>
                               <div className='flex items-center gap-4 mb-2'>
-                                <h3 className='font-medium text-gray-900 dark:text-white'>{order.codigo}</h3>
+                                <h3 className='font-medium text-gray-900 dark:text-white'>
+                                  {order.codigo}
+                                </h3>
                                 {getStatusBadge(order.estado)}
                                 {!hasProcessPermission() && (
                                   <Badge className='bg-gray-100 text-gray-600 text-xs'>
@@ -915,14 +981,23 @@ export default function OrdersPage() {
           <DialogHeader>
             <DialogTitle>Eliminar solicitud</DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de eliminar la solicitud #{servicioToDelete?.id_solicitud}? Esta acción no se puede deshacer.
+              ¿Estás seguro de eliminar la solicitud #{servicioToDelete?.id_solicitud}? Esta acción
+              no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant='outline' onClick={handleCancelDeleteServicio} disabled={isDeletingServicio}>
+            <Button
+              variant='outline'
+              onClick={handleCancelDeleteServicio}
+              disabled={isDeletingServicio}
+            >
               Cancelar
             </Button>
-            <Button variant='destructive' onClick={handleConfirmDeleteServicio} disabled={isDeletingServicio}>
+            <Button
+              variant='destructive'
+              onClick={handleConfirmDeleteServicio}
+              disabled={isDeletingServicio}
+            >
               {isDeletingServicio ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>

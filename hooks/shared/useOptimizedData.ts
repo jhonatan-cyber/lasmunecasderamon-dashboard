@@ -134,7 +134,6 @@ export function useProducts(filters?: any) {
   };
 }
 
-// Hook para estadísticas de ventas
 export function useSalesStats() {
   return useQuery({
     queryKey: queryKeys.sales.stats(),
@@ -145,11 +144,11 @@ export function useSalesStats() {
       }
       return response.json();
     },
-    staleTime: 30 * 1000, // 30 segundos (datos dinámicos sin parpadeo)
+    staleTime: 30 * 1000, 
   });
 }
 
-// Hook para estado de caja
+
 export function useCashRegisterStatus() {
   return useQuery({
     queryKey: queryKeys.cashRegister.status(),
@@ -160,12 +159,11 @@ export function useCashRegisterStatus() {
       }
       return response.json();
     },
-    staleTime: 10 * 1000, // 10 segundos
-    refetchInterval: 30 * 1000, // Refetch cada 30 segundos sin parpadeo
+    staleTime: 10 * 1000,
+    refetchInterval: 30 * 1000, 
   });
 }
 
-// Hook para mutaciones de usuarios
 export function useUserMutations() {
   const queryClient = useQueryClient();
 
@@ -225,7 +223,6 @@ export function useUserMutations() {
   };
 }
 
-// Hook para mutaciones de ventas
 export function useSalesMutations() {
   const queryClient = useQueryClient();
 

@@ -36,7 +36,6 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
 
   const stats = data?.[0] || null;
 
-  // Actualizar automáticamente cada 30 segundos sin parpadeo visual
   useEffect(() => {
     const interval = setInterval(async () => {
       setSilentRefreshing(true);

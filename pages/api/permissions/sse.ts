@@ -18,25 +18,24 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // Generar ID único para esta conexión
   const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
+
   // Agregar cliente a la lista
   clients.set(res, { id: clientId, connectedAt: new Date() });
-  
-  console.log(`✅ [SSE] Cliente conectado: ${clientId} (Total: ${clients.size})`);
 
   // Enviar mensaje inicial
-  res.write(`data: ${JSON.stringify({ 
-    type: 'connected', 
-    message: 'Conectado al servidor de permisos',
-    clientId 
-  })}\n\n`);
+  res.write(
+    `data: ${JSON.stringify({
+      type: 'connected',
+      message: 'Conectado al servidor de permisos',
+      clientId
+    })}\n\n`
+  );
 
   // Heartbeat cada 30 segundos para mantener la conexión viva
   const heartbeatInterval = setInterval(() => {
     try {
       res.write(`:heartbeat\n\n`);
     } catch (error) {
-      console.error(`❌ [SSE] Error en heartbeat para ${clientId}:`, error);
       clearInterval(heartbeatInterval);
       clients.delete(res);
     }
@@ -46,12 +45,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   req.on('close', () => {
     clearInterval(heartbeatInterval);
     clients.delete(res);
-    console.log(`🔴 [SSE] Cliente desconectado: ${clientId} (Total: ${clients.size})`);
   });
 
   // Manejar errores
-  req.on('error', (error) => {
-    console.error(`❌ [SSE] Error en conexión ${clientId}:`, error);
+  req.on('error', error => {
     clearInterval(heartbeatInterval);
     clients.delete(res);
   });
@@ -65,8 +62,6 @@ export function notifyPermissionsUpdate(roleId: number) {
     timestamp: new Date().toISOString()
   });
 
-  console.log(`📢 [SSE] Notificando actualización de permisos a ${clients.size} clientes (roleId: ${roleId})`);
-
   let successCount = 0;
   let errorCount = 0;
 
@@ -74,13 +69,10 @@ export function notifyPermissionsUpdate(roleId: number) {
     try {
       client.write(`data: ${message}\n\n`);
       successCount++;
-      console.log(`✅ [SSE] Mensaje enviado a ${clientInfo.id}`);
     } catch (error) {
       errorCount++;
-      console.error(`❌ [SSE] Error enviando a ${clientInfo.id}:`, error);
+
       clients.delete(client);
     }
   });
-
-  console.log(`📊 [SSE] Resultado: ${successCount} exitosos, ${errorCount} errores`);
 }

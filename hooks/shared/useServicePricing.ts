@@ -8,10 +8,6 @@ interface ServicePricingParams {
   numAnfitrionas: number;
 }
 
-/**
- * Hook para calcular precios de servicios con IVA y multiplicadores
- * Consolida la lógica de cálculo de precios, IVA y totales
- */
 export function useServicePricing({
   precioServicio,
   precioHabitacion,

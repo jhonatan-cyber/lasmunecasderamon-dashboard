@@ -55,7 +55,7 @@ export default function AdvancesPage() {
   const totalPages = Math.ceil(filteredAdvances.length / rowsPerPage) || 1;
 
   return (
-    <PermissionGuard module="anticipos" action="listar">
+    <PermissionGuard module="advances" action="view">
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 pt-4 sm:pt-8 px-4 sm:px-8'>
           <div className='flex items-center gap-4'>

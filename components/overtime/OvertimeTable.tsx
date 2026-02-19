@@ -33,7 +33,7 @@ export default function OvertimeTable({
   const { hasPermission } = useUserPermissions();
   
   // Verificar permiso para ver detalles
-  const canViewDetail = hasPermission('horas_extras', 'ver_detalles');
+  const canViewDetail = hasPermission('overtime', 'view_details');
   if (rows.length === 0 && !loading) {
     return (
       <div className="text-center py-8 sm:py-12 text-gray-500 text-sm sm:text-base">

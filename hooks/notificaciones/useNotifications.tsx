@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
+import { th } from 'date-fns/locale';
 
 interface NotificationData {
   id: number;
@@ -15,7 +16,6 @@ interface NotificationData {
 }
 
 export function useNotifications() {
-  console.log('🔔🔔🔔 [useNotifications] HOOK INICIALIZADO 🔔🔔🔔');
   const [isConnected, setIsConnected] = useState(false);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [lastNotification, setLastNotification] = useState<any>(null);
@@ -34,7 +34,7 @@ export function useNotifications() {
     },
     staleTime: 20000,
     refetchInterval: 30000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: true
   });
 
   useEffect(() => {
@@ -43,7 +43,6 @@ export function useNotifications() {
       setPendingServiceRequestsCount(pendingCounts.solicitudesCount || 0);
     }
   }, [pendingCounts]);
-
 
   const loadPendingCounts = useCallback(async () => {
     refetchCounts();
@@ -66,35 +65,39 @@ export function useNotifications() {
   const playNotificationSound = useCallback(() => {
     try {
       const audio = new Audio('/notification.mp3');
-      audio.play().catch(() => { });
-    } catch (_) { }
+      audio.play().catch(() => {});
+    } catch (_) {}
   }, []);
 
   const showNotification = useCallback(
     (data: NotificationData) => {
-      console.log('[useNotifications] showNotification llamado:', {
-        user,
-        userId: user?.id,
-        userRole: user?.role,
+      console.log('[useNotifications] 📥 showNotification llamado con:', {
         createdBy: data.createdBy,
-        shouldSkip: user && data.createdBy && user.id === data.createdBy
+        userId: user?.id,
+        isCreator: user && data.createdBy && user.id === data.createdBy
       });
 
-
       if (user && data.createdBy && user.id === data.createdBy) {
-        console.log('[useNotifications] Notificación omitida - el usuario creó el pedido');
-        const event = new CustomEvent('updatePendingOrders');
+        // Si el usuario es quien creó el pedido, refrescar lista
+        console.log(
+          '[useNotifications] ✅ El usuario creó el pedido - Disparando evento de actualización'
+        );
+        const event = new CustomEvent('updatePendingOrders', {
+          detail: { type: 'order-created', orderId: data.id }
+        });
         window.dispatchEvent(event);
         return;
       }
 
-
+      // Solo mostrar modal automáticamente a Admin y Cajero (roles que procesan pedidos)
+      // Anfitriona no recibe notificación de pedidos
       if (user?.role?.toLowerCase() === 'anfitriona') {
-        console.log('[useNotifications] Notificación omitida - usuario es anfitriona');
         return;
       }
 
-      console.log('[useNotifications] Mostrando notificación de pedido');
+      const userRole = user?.role?.toLowerCase();
+      const shouldShowModal = userRole === 'administrador' || userRole === 'cajero';
+
       playNotificationSound();
       toast.success(`¡NUEVO PEDIDO! #${data.codigo}`, {
         description: (
@@ -125,10 +128,21 @@ export function useNotifications() {
         ),
         duration: 5000
       });
-      const event = new CustomEvent('updatePendingOrders');
+
+      // Refrescar lista de pedidos para todos que no sean el creador
+      console.log(
+        '[useNotifications] 🎯 Disparando updatePendingOrders para refrescar lista (usuario no es creador)'
+      );
+      const event = new CustomEvent('updatePendingOrders', {
+        detail: { type: 'order-created', orderId: data.id }
+      });
       window.dispatchEvent(event);
-      const openModalEvent = new CustomEvent('openOrderModal', { detail: { orderId: data.id } });
-      window.dispatchEvent(openModalEvent);
+
+      // Solo abrir modal automáticamente si el usuario tiene permiso para procesar pedidos
+      if (shouldShowModal) {
+        const openModalEvent = new CustomEvent('openOrderModal', { detail: { orderId: data.id } });
+        window.dispatchEvent(openModalEvent);
+      }
     },
     [user, playNotificationSound]
   );
@@ -178,7 +192,7 @@ export function useNotifications() {
     if (eventSourceRef.current) {
       try {
         eventSourceRef.current.close();
-      } catch (_) { }
+      } catch (_) {}
       eventSourceRef.current = null;
     }
     setIsConnected(false);
@@ -186,7 +200,6 @@ export function useNotifications() {
 
   const connectSSE = useCallback(() => {
     if (isConnectingRef.current || eventSourceRef.current) {
-
       return;
     }
 
@@ -196,7 +209,6 @@ export function useNotifications() {
     eventSourceRef.current = es;
 
     es.onopen = () => {
-
       setIsConnected(true);
       setConnectionAttempts(0);
       isConnectingRef.current = false;
@@ -205,10 +217,14 @@ export function useNotifications() {
     es.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
-
+        console.log('[useNotifications] 📨 Mensaje SSE recibido:', {
+          type: payload?.type,
+          hasData: !!payload?.data,
+          payload
+        });
 
         if (payload?.type === 'new_order' && payload?.data) {
-
+          console.log('[useNotifications] 🆕 Nuevo pedido SSE:', payload.data);
           showNotification(payload.data as NotificationData);
 
           setPendingOrdersCount(prev => {
@@ -242,7 +258,6 @@ export function useNotifications() {
           payload?.type === 'service_request_approved' ||
           payload?.type === 'service_request_rejected'
         ) {
-
           setPendingServiceRequestsCount(prev => Math.max(0, prev - 1));
 
           const updateEvent = new CustomEvent('updateServiceRequests');
@@ -250,31 +265,38 @@ export function useNotifications() {
         }
 
         if (payload?.type === 'order_updated') {
-
           setPendingOrdersCount(prev => Math.max(0, prev - 1));
           const updateEvent = new CustomEvent('updatePendingOrders');
           window.dispatchEvent(updateEvent);
         }
 
-        if (payload?.type === 'sale_cancelled' && payload?.data) {
+        if (payload?.type === 'order_deleted' && payload?.data) {
+          setPendingOrdersCount(prev => Math.max(0, prev - 1));
+          const updateEvent = new CustomEvent('updatePendingOrders', { detail: payload.data });
+          window.dispatchEvent(updateEvent);
+        }
 
+        if (payload?.type === 'categories_updated' && payload?.data) {
+          const event = new CustomEvent('categoriesUpdated', { detail: payload.data });
+          window.dispatchEvent(event);
+        }
+
+        if (payload?.type === 'sale_cancelled' && payload?.data) {
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
         }
 
         if (payload?.type === 'anulacion_confirmada' && payload?.data) {
-
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
         }
 
         if (payload?.type === 'anulacion_rechazada' && payload?.data) {
-
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
         }
       } catch (err) {
-        console.error('[useNotifications] Error al parsear mensaje:', err);
+        throw err instanceof Error ? err : new Error('Error al procesar mensaje SSE');
       }
     };
 
@@ -294,10 +316,8 @@ export function useNotifications() {
   }, [connectSSE]);
 
   useEffect(() => {
-
     connectSSE();
     return () => {
-
       cleanup();
     };
   }, [connectSSE]);

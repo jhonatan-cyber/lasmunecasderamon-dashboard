@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import {  showErrorToast } from '@/lib/toastUtils';
 import { useTimer } from '@/contexts/TimerContext';
-import { solicitarAnulacionServicio } from '@/lib/serviciosUtils';
+
 
 export const useDevolucionLogic = () => {
   const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAnulacionModalOpen, setIsAnulacionModalOpen] = useState(false);
-  const { stopTimerByServicioId, pauseTimerByServicioId } = useTimer();
-
+  
   const handleVerDetalles = (servicio: ServicioWithDetails) => {
     setSelectedServicio(servicio);
     setIsDetailModalOpen(true);
@@ -32,7 +31,6 @@ export const useDevolucionLogic = () => {
 
       await getServicios();
 
-      // Pequeño delay para asegurar que el hook de sincronización se ejecute después
       setTimeout(() => {}, 500);
     } catch (error) {
       let errorMessage = 'Error al procesar la anulación del servicio';

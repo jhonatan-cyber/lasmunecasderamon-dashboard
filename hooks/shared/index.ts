@@ -4,4 +4,4 @@ export { useGenericMutations } from './useGenericMutations';
 export { useGenericFilters } from './useGenericFilters';
 export { usePagination } from './usePagination';
 export { useConfirmModal } from './useConfirmModal';
-export { useOptimizedData } from './useOptimizedData';
+export { default as useOptimizedData } from './useOptimizedData';

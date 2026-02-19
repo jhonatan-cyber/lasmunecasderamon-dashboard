@@ -1,11 +1,31 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Obtener usuario autenticado
+  const currentUser = getCurrentUser(req);
+  if (!currentUser) {
+    return res.status(401).json({ success: false, message: 'No autorizado' });
+  }
+
+  // Obtener información del rol del usuario
+  const userInfo = await query(
+    `SELECT u.*, r.nombre as rol_nombre 
+     FROM usuarios u 
+     LEFT JOIN roles r ON u.rol_id = r.id_rol 
+     WHERE u.id_usuario = ?`,
+    [currentUser.id]
+  ) as any[];
+
+  const user = userInfo[0];
+  const isAdmin = user?.rol_nombre?.toLowerCase() === 'administrador';
+
   // Endpoint para obtener detalles de horas extras de un usuario específico
   if (req.method === 'GET' && req.query.userId) {
     try {
-      const userId = req.query.userId;
+      // Si no es admin, solo puede ver sus propias horas extras
+      const userId = isAdmin ? req.query.userId : currentUser.id;
 
       const result = (await query(
         `
@@ -73,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Endpoint para obtener el resumen de horas extras
   if (req.method === 'GET') {
     try {
-      const rowsResult = (await query(`
+      let query_str = `
         SELECT 
           HR.id_hora_extra,
           U.id_usuario, 
@@ -86,8 +106,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           HR.estado
         FROM horas_extras HR
         INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
-        ORDER BY HR.fecha_crea DESC
-      `)) as any[];
+      `;
+
+      const params: any[] = [];
+
+      // Si no es administrador, filtrar solo sus horas extras
+      if (!isAdmin) {
+        query_str += ' WHERE HR.usuario_id = ?';
+        params.push(currentUser.id);
+      }
+
+      query_str += ' ORDER BY HR.fecha_crea DESC';
+
+      const rowsResult = (await query(query_str, params)) as any[];
 
       // Asegurar que rowsResult sea siempre un array
       const rowsArray = Array.isArray(rowsResult) ? rowsResult : [rowsResult];
@@ -190,3 +221,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withAuth(handler);

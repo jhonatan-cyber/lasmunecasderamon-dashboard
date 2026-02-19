@@ -14,14 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       solo_visual = false 
     } = req.body;
 
-    console.log('🔄 Actualizando estados de anfitrionas:', {
-      servicio_id,
-      anfitrionas_liberar,
-      anfitrionas_ocupar,
-      solo_visual
-    });
-
-    // Liberar anfitrionas originales (cambiar estado a 1 - disponible)
     if (anfitrionas_liberar.length > 0) {
       const liberarIds = anfitrionas_liberar.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
       
@@ -30,11 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           `UPDATE usuarios SET estado = 1 WHERE id_usuario IN (${liberarIds.map(() => '?').join(',')})`,
           liberarIds
         );
-        console.log('✅ Anfitrionas liberadas:', liberarIds);
       }
     }
 
-    // Ocupar nuevas anfitrionas (cambiar estado a 2 - ocupada)
     if (anfitrionas_ocupar.length > 0) {
       const ocuparIds = anfitrionas_ocupar.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
       
@@ -43,19 +33,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           `UPDATE usuarios SET estado = 2 WHERE id_usuario IN (${ocuparIds.map(() => '?').join(',')})`,
           ocuparIds
         );
-        console.log('✅ Anfitrionas ocupadas:', ocuparIds);
       }
     }
 
-    // Si no es solo visual, también actualizar la relación servicio-usuarios
+
     if (!solo_visual && servicio_id) {
-      // Eliminar relaciones anteriores
       await query(
         'DELETE FROM servicio_usuarios WHERE id_servicio = ?',
         [servicio_id]
       );
 
-      // Agregar nuevas relaciones
       if (anfitrionas_ocupar.length > 0) {
         const ocuparIds = anfitrionas_ocupar.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
         
@@ -65,7 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [servicio_id, userId]
           );
         }
-        console.log('✅ Relaciones servicio-usuarios actualizadas');
       }
     }
 
@@ -80,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('Error actualizando estados de anfitrionas:', error);
+   
     res.status(500).json({ 
       success: false, 
       message: 'Error interno del servidor',

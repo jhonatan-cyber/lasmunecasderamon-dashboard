@@ -47,7 +47,7 @@ export default function PayrollCalendarPage() {
   // Hook para verificar permisos
   const { hasPermission } = useUserPermissions();
   const canViewDetails = hasPermission('detalle_planilla', 'ver_detalles');
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -60,9 +60,16 @@ export default function PayrollCalendarPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Hook para obtener acciones del calendario
-  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
-  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
-  const { actions: calendarActions, loading: actionsLoading } = useCalendarActions(startDate, endDate);
+  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    .toISOString()
+    .split('T')[0];
+  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+    .toISOString()
+    .split('T')[0];
+  const { actions: calendarActions, loading: actionsLoading } = useCalendarActions(
+    startDate,
+    endDate
+  );
 
   // Estados para filtros y paginación
   const [searchTerm, setSearchTerm] = useState('');
@@ -152,19 +159,19 @@ export default function PayrollCalendarPage() {
   const getActionIcon = (tipo: string) => {
     switch (tipo) {
       case 'venta':
-        return <ShoppingCart className="w-3 h-3 text-green-600" />;
+        return <ShoppingCart className='w-3 h-3 text-green-600' />;
       case 'servicio':
-        return <Users className="w-3 h-3 text-blue-600" />;
+        return <Users className='w-3 h-3 text-blue-600' />;
       case 'asistencia':
-        return <Clock className="w-3 h-3 text-purple-600" />;
+        return <Clock className='w-3 h-3 text-purple-600' />;
       case 'propina':
-        return <Gift className="w-3 h-3 text-yellow-600" />;
+        return <Gift className='w-3 h-3 text-yellow-600' />;
       case 'anticipo':
-        return <DollarSign className="w-3 h-3 text-red-600" />;
+        return <DollarSign className='w-3 h-3 text-red-600' />;
       case 'hora_extra':
-        return <Zap className="w-3 h-3 text-orange-600" />;
+        return <Zap className='w-3 h-3 text-orange-600' />;
       default:
-        return <DollarSign className="w-3 h-3 text-gray-600" />;
+        return <DollarSign className='w-3 h-3 text-gray-600' />;
     }
   };
 
@@ -183,13 +190,13 @@ export default function PayrollCalendarPage() {
 
     const uniqueActions = Object.values(actionsByType);
     const totalActions = actions.length;
-    
+
     return (
-      <div className="flex flex-col gap-1 mt-1">
+      <div className='flex flex-col gap-1 mt-1'>
         {uniqueActions.map((action: any, index) => (
-          <div key={index} className="flex items-center gap-1 text-xs">
+          <div key={index} className='flex items-center gap-1 text-xs'>
             {getActionIcon(action.tipo)}
-            <span className="truncate text-gray-600">
+            <span className='truncate text-gray-600'>
               {action.tipo === 'venta' && 'V'}
               {action.tipo === 'servicio' && 'S'}
               {action.tipo === 'asistencia' && 'A'}
@@ -200,9 +207,7 @@ export default function PayrollCalendarPage() {
           </div>
         ))}
         {totalActions > uniqueActions.length && (
-          <div className="text-xs text-gray-500">
-            {totalActions} total
-          </div>
+          <div className='text-xs text-gray-500'>{totalActions} total</div>
         )}
       </div>
     );
@@ -213,7 +218,7 @@ export default function PayrollCalendarPage() {
     if (!canViewDetails) {
       return;
     }
-    
+
     setIsDragging(true);
     setDragStartDate(date);
     setSelectedDates([date]);
@@ -224,7 +229,7 @@ export default function PayrollCalendarPage() {
     if (!canViewDetails) {
       return;
     }
-    
+
     if (isDragging && dragStartDate) {
       const dateRange = getDateRange(dragStartDate, date);
       setSelectedDates(dateRange);
@@ -236,7 +241,7 @@ export default function PayrollCalendarPage() {
     if (!canViewDetails) {
       return;
     }
-    
+
     const wasDragging = isDragging;
     setIsDragging(false);
     setDragStartDate(null);
@@ -442,7 +447,9 @@ export default function PayrollCalendarPage() {
               <div
                 key={index}
                 className={`min-h-[80px] p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
-                  canViewDetails ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'cursor-not-allowed opacity-60'
+                  canViewDetails
+                    ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
+                    : 'cursor-not-allowed opacity-60'
                 } transition-colors select-none ${
                   isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                 } ${
@@ -518,7 +525,9 @@ export default function PayrollCalendarPage() {
                 <div
                   key={index}
                   className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 ${
-                    canViewDetails ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600' : 'cursor-not-allowed opacity-60'
+                    canViewDetails
+                      ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600'
+                      : 'cursor-not-allowed opacity-60'
                   } transition-colors relative select-none ${
                     isCurrentDay ? 'bg-blue-100 dark:bg-blue-800' : ''
                   } ${
@@ -544,17 +553,20 @@ export default function PayrollCalendarPage() {
                     {day.date.getDate()}
                   </div>
                   {day.isCurrentMonth && (
-                    <div className="flex flex-wrap gap-0.5 mt-0.5">
+                    <div className='flex flex-wrap gap-0.5 mt-0.5'>
                       {(() => {
                         const actions = getActionsForDate(day.date);
-                        const actionsByType = actions.reduce((acc: { [key: string]: any }, action) => {
-                          if (!acc[action.tipo]) {
-                            acc[action.tipo] = action;
-                          }
-                          return acc;
-                        }, {});
+                        const actionsByType = actions.reduce(
+                          (acc: { [key: string]: any }, action) => {
+                            if (!acc[action.tipo]) {
+                              acc[action.tipo] = action;
+                            }
+                            return acc;
+                          },
+                          {}
+                        );
                         const uniqueActions = Object.values(actionsByType);
-                        
+
                         return uniqueActions.slice(0, 4).map((action: any, index) => {
                           let colorClass = 'bg-gray-400';
                           switch (action.tipo) {
@@ -578,7 +590,10 @@ export default function PayrollCalendarPage() {
                               break;
                           }
                           return (
-                            <div key={index} className={`w-1.5 h-1.5 rounded-full ${colorClass}`}></div>
+                            <div
+                              key={index}
+                              className={`w-1.5 h-1.5 rounded-full ${colorClass}`}
+                            ></div>
                           );
                         });
                       })()}
@@ -613,477 +628,524 @@ export default function PayrollCalendarPage() {
   };
 
   return (
-    <PermissionGuard module="detalle_planilla" action="listar">
+    <PermissionGuard module='payroll_details' action='view'>
       {(() => {
         return (
           <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
-      <div className='flex items-center justify-between mb-6'>
-        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>
-          Calendario de Planillas
-        </h1>
-      </div>
-
-      <div className='flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700'>
-        {/* Header del calendario */}
-        <div className='flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700'>
-          <div className='flex items-center gap-4'>
-            <Button variant='ghost' size='sm' onClick={() => navigate(-1)}>
-              <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M15 19l-7-7 7-7'
-                />
-              </svg>
-            </Button>
-
-            <h2 className='text-xl font-semibold text-gray-900 dark:text-white min-w-[200px]'>
-              {getTitle()}
-            </h2>
-
-            <Button variant='ghost' size='sm' onClick={() => navigate(1)}>
-              <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M9 5l7 7-7 7'
-                />
-              </svg>
-            </Button>
-          </div>
-
-          <div className='flex items-center gap-2'>
-            <Button variant='secondary' onClick={goToToday}>
-              Hoy
-            </Button>
-
-            {selectedDates.length > 0 && (
-              <Button variant='ghost' size='sm' onClick={clearSelection}>
-                Limpiar ({selectedDates.length})
-              </Button>
-            )}
-
-            {/* Botones de vista */}
-            <div className='flex gap-1 ml-4'>
-              <Button
-                variant={currentView === 'multi' ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setCurrentView('multi')}
-              >
-                <Grid3X3 className='w-3 h-3 sm:w-4 sm:h-4' />
-              </Button>
-              <Button
-                variant={currentView === 'month' ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setCurrentView('month')}
-              >
-                Mes
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Vista del calendario */}
-        <div className='flex-1'>{renderCurrentView()}</div>
-
-        {/* Leyenda de acciones */}
-        <div className='border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800'>
-          <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3'>
-            Leyenda de Acciones
-          </h3>
-          <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3'>
-            <div className='flex items-center gap-2 text-xs'>
-              <ShoppingCart className='w-4 h-4 text-green-600' />
-              <span className='text-gray-600 dark:text-gray-400'>V - Venta</span>
-            </div>
-            <div className='flex items-center gap-2 text-xs'>
-              <Users className='w-4 h-4 text-blue-600' />
-              <span className='text-gray-600 dark:text-gray-400'>S - Servicio</span>
-            </div>
-            <div className='flex items-center gap-2 text-xs'>
-              <Clock className='w-4 h-4 text-purple-600' />
-              <span className='text-gray-600 dark:text-gray-400'>A - Asistencia</span>
-            </div>
-            <div className='flex items-center gap-2 text-xs'>
-              <Gift className='w-4 h-4 text-yellow-600' />
-              <span className='text-gray-600 dark:text-gray-400'>P - Propina</span>
-            </div>
-            <div className='flex items-center gap-2 text-xs'>
-              <DollarSign className='w-4 h-4 text-red-600' />
-              <span className='text-gray-600 dark:text-gray-400'>Ant - Anticipo</span>
-            </div>
-            <div className='flex items-center gap-2 text-xs'>
-              <Zap className='w-4 h-4 text-orange-600' />
-              <span className='text-gray-600 dark:text-gray-400'>HE - Hora Extra</span>
-            </div>
-          </div>
-          <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
-            <p>• Los símbolos aparecen en las fechas donde se registraron acciones</p>
-            <p>• Se muestra un símbolo por cada tipo de acción (máximo 6 tipos diferentes)</p>
-            <p>• Si hay múltiples acciones del mismo tipo, se muestra el total</p>
-            {canViewDetails ? (
-              <p>• Selecciona fechas para ver los detalles de ventas y servicios</p>
-            ) : (
-              <p className='text-amber-600 dark:text-amber-400 font-medium'>
-                ⚠️ No tienes permiso para ver los detalles de las fechas
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Modal de fechas seleccionadas */}
-      <Dialog open={isModalOpen && selectedDates.length > 0} onOpenChange={setIsModalOpen}>
-        <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
-            <DialogTitle className='text-lg font-semibold'>{formatDatesList()}</DialogTitle>
-          </DialogHeader>
-
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-
-            <div className='space-y-4 text-center'>
-            <div className='flex justify-center gap-4'>
-              <Button
-                className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
-                  showVentasTable 
-                    ? 'bg-black text-white hover:bg-gray-800'
-                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-                variant={showVentasTable ? 'default' : 'outline'}
-                disabled={isLoading}
-                onClick={() => {
-                  setShowVentasTable(true);
-                  setCurrentPage(1);
-                  setSearchTerm('');
-                  fetchCalendarData('ventas');
-                }}
-              >
-                {isLoading && showVentasTable ? 'Cargando...' : 'Ventas'}
-              </Button>
-              <Button
-                className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
-                  !showVentasTable 
-                    ? 'bg-black text-white hover:bg-gray-800'
-                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-                variant={!showVentasTable ? 'default' : 'outline'}
-                disabled={isLoading}
-                onClick={() => {
-                  setShowVentasTable(false);
-                  setCurrentPage(1);
-                  setSearchTerm('');
-                  fetchCalendarData('servicios');
-                }}
-              >
-                {isLoading && !showVentasTable ? 'Cargando...' : 'Servicios'}
-              </Button>
+            <div className='flex items-center justify-between mb-6'>
+              <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>
+                Calendario de Planillas
+              </h1>
             </div>
 
-            {/* Sección de Filtros */}
-            <div className='mt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border'>
-              <div className='flex-1 max-w-md'>
-                <SearchInput
-                  value={searchTerm}
-                  onChange={setSearchTerm}
-                  placeholder={showVentasTable ? 'Buscar en ventas...' : 'Buscar en servicios...'}
-                />
-              </div>
+            <div className='flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700'>
+              {/* Header del calendario */}
+              <div className='flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700'>
+                <div className='flex items-center gap-4'>
+                  <Button variant='ghost' size='sm' onClick={() => navigate(-1)}>
+                    <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M15 19l-7-7 7-7'
+                      />
+                    </svg>
+                  </Button>
 
-              <div className='flex items-center gap-4'>
-                <SelectElements
-                  value={rowsPerPage}
-                  onChange={(value) => {
-                    setRowsPerPage(value);
-                    setCurrentPage(1);
-                  }}
-                  options={[5, 10, 20, 40]}
-                  label='Mostrar'
-                />
-              </div>
-            </div>
+                  <h2 className='text-xl font-semibold text-gray-900 dark:text-white min-w-[200px]'>
+                    {getTitle()}
+                  </h2>
 
-            {/* Tabla de Ventas */}
-            {showVentasTable && (
-              <div className='mt-6 border rounded-lg overflow-x-auto'>
-                {realVentasData.length === 0 ? (
-                  <div className='p-8 text-center'>
-                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                      No hay datos de ventas
-                    </div>
-                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                      No se encontraron ventas para {formatDatesList().toLowerCase()}
-                    </div>
+                  <Button variant='ghost' size='sm' onClick={() => navigate(1)}>
+                    <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M9 5l7 7-7 7'
+                      />
+                    </svg>
+                  </Button>
+                </div>
+
+                <div className='flex items-center gap-2'>
+                  <Button variant='secondary' onClick={goToToday}>
+                    Hoy
+                  </Button>
+
+                  {selectedDates.length > 0 && (
+                    <Button variant='ghost' size='sm' onClick={clearSelection}>
+                      Limpiar ({selectedDates.length})
+                    </Button>
+                  )}
+
+                  {/* Botones de vista */}
+                  <div className='flex gap-1 ml-4'>
+                    <Button
+                      variant={currentView === 'multi' ? 'default' : 'outline'}
+                      size='sm'
+                      onClick={() => setCurrentView('multi')}
+                    >
+                      <Grid3X3 className='w-3 h-3 sm:w-4 sm:h-4' />
+                    </Button>
+                    <Button
+                      variant={currentView === 'month' ? 'default' : 'outline'}
+                      size='sm'
+                      onClick={() => setCurrentView('month')}
+                    >
+                      Mes
+                    </Button>
                   </div>
-                ) : (
-                  <>
-                    <Table className='min-w-full'>
-                      <TableHeader>
-                        <TableRow className='text-xs'>
-                          <TableHead className='w-20 px-4 py-3'>Código</TableHead>
-                          <TableHead className='w-40 px-4 py-3'>Cliente</TableHead>
-                          <TableHead className='w-24 px-4 py-3'>Habitación</TableHead>
-                          <TableHead className='w-28 px-4 py-3 text-right'>Propina</TableHead>
-                          <TableHead className='w-32 px-4 py-3 text-right'>Precio Hab.</TableHead>
-                          <TableHead className='w-28 px-4 py-3 text-right'>Subtotal</TableHead>
-                          <TableHead className='w-28 px-4 py-3 text-right'>Total</TableHead>
-                          <TableHead className='w-28 px-4 py-3 text-right'>Comisión</TableHead>
-                          <TableHead className='w-32 px-4 py-3'>Fecha Venta</TableHead>
-                          <TableHead className='w-24 px-4 py-3'>Estado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(() => {
-                          const { data: paginatedData } = getFilteredAndPaginatedData(realVentasData);
-                          return paginatedData.map(venta => (
-                            <TableRow key={venta.codigo} className='text-sm'>
-                              <TableCell className='font-medium px-4 py-3'>{venta.codigo}</TableCell>
-                              <TableCell className='px-4 py-3'>{venta.cliente}</TableCell>
-                              <TableCell className='px-4 py-3'>{venta.habitacion || 'N/A'}</TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(venta.propina || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(venta.precio || venta.precioHabitacion || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(venta.sub_total || venta.subtotal || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(venta.total || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(venta.total_comision || venta.comision || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='px-4 py-3'>
-                                {venta.fecha_crea || venta.fechaVenta ? (
-                                  <div className='text-center'>
-                                    <div className='text-sm font-medium'>
-                                      {formatDateToSpanish(venta.fecha_crea || venta.fechaVenta)}
-                                    </div>
-                                    <div className='text-xs text-gray-500 dark:text-gray-400'>
-                                      {formatTimeFromDate(venta.fecha_crea || venta.fechaVenta)}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  'N/A'
-                                )}
-                              </TableCell>
-                              <TableCell className='px-4 py-3'>
-                                <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    (venta.estado === 1 || venta.estado === 3)
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                      : venta.estado === 0
-                                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                        : venta.estado === 2
-                                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-                                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                                  }`}
-                                >
-                                  {(venta.estado === 1 || venta.estado === 3)
-                                    ? 'Vendido'
-                                    : venta.estado === 0
-                                      ? 'Anulado'
-                                      : venta.estado === 2
-                                        ? 'Pendiente de anulación'
-                                        : 'Desconocido'}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ));
-                        })()}
-                      </TableBody>
-                    </Table>
-
-                    {/* Paginador para Ventas */}
-                    {(() => {
-                      const { totalPages } = getFilteredAndPaginatedData(realVentasData);
-                      return totalPages > 1 ? (
-                        <div className='p-4 border-t'>
-                          <Paginate
-                            page={currentPage}
-                            totalPages={totalPages}
-                            setPage={setCurrentPage}
-                          />
-                        </div>
-                      ) : null;
-                    })()}
-                  </>
-                )}
+                </div>
               </div>
-            )}
 
-            {/* Tabla de Servicios */}
-            {!showVentasTable && (
-              <div className='mt-6 border rounded-lg overflow-x-auto'>
-                {realServiciosData.length === 0 ? (
-                  <div className='p-8 text-center'>
-                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                      No hay datos de servicios
-                    </div>
-                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                      No se encontraron servicios para {formatDatesList().toLowerCase()}
-                    </div>
+              {/* Vista del calendario */}
+              <div className='flex-1'>{renderCurrentView()}</div>
+
+              {/* Leyenda de acciones */}
+              <div className='border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800'>
+                <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3'>
+                  Leyenda de Acciones
+                </h3>
+                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3'>
+                  <div className='flex items-center gap-2 text-xs'>
+                    <ShoppingCart className='w-4 h-4 text-green-600' />
+                    <span className='text-gray-600 dark:text-gray-400'>V - Venta</span>
                   </div>
-                ) : (
-                  <>
-                    <Table className='min-w-full'>
-                      <TableHeader>
-                        <TableRow className='text-xs'>
-                          <TableHead className='w-20 px-4 py-3'>Código</TableHead>
-                          <TableHead className='w-40 px-4 py-3'>Cliente</TableHead>
-                          <TableHead className='w-48 px-4 py-3'>Anfitrionas</TableHead>
-                          <TableHead className='w-24 px-4 py-3'>Habitación</TableHead>
-                          <TableHead className='w-24 px-4 py-3'>Tiempo</TableHead>
-                          <TableHead className='w-32 px-4 py-3 text-right'>Precio Hab.</TableHead>
-                          <TableHead className='w-32 px-4 py-3 text-right'>Precio Servicio</TableHead>
-                          <TableHead className='w-24 px-4 py-3 text-right'>IVA</TableHead>
-                          <TableHead className='w-28 px-4 py-3 text-right'>Subtotal</TableHead>
-                          <TableHead className='w-28 px-4 py-3 text-right'>Total</TableHead>
-                          <TableHead className='w-28 px-4 py-3'>Método Pago</TableHead>
-                          <TableHead className='w-36 px-4 py-3'>Fecha y Hora</TableHead>
-                          <TableHead className='w-28 px-4 py-3'>Estado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(() => {
-                          const { data: paginatedData } = getFilteredAndPaginatedData(realServiciosData);
-                          return paginatedData.map(servicio => (
-                            <TableRow key={servicio.codigo} className='text-sm'>
-                              <TableCell className='font-medium px-4 py-3'>{servicio.codigo}</TableCell>
-                              <TableCell className='px-4 py-3'>{servicio.cliente}</TableCell>
-                              <TableCell
-                                className='px-4 py-3'
-                                title={servicio.anfitriona || servicio.anfitrionas}
-                              >
-                                <div className='max-w-48 truncate'>
-                                  {servicio.anfitriona || servicio.anfitrionas || 'N/A'}
+                  <div className='flex items-center gap-2 text-xs'>
+                    <Users className='w-4 h-4 text-blue-600' />
+                    <span className='text-gray-600 dark:text-gray-400'>S - Servicio</span>
+                  </div>
+                  <div className='flex items-center gap-2 text-xs'>
+                    <Clock className='w-4 h-4 text-purple-600' />
+                    <span className='text-gray-600 dark:text-gray-400'>A - Asistencia</span>
+                  </div>
+                  <div className='flex items-center gap-2 text-xs'>
+                    <Gift className='w-4 h-4 text-yellow-600' />
+                    <span className='text-gray-600 dark:text-gray-400'>P - Propina</span>
+                  </div>
+                  <div className='flex items-center gap-2 text-xs'>
+                    <DollarSign className='w-4 h-4 text-red-600' />
+                    <span className='text-gray-600 dark:text-gray-400'>Ant - Anticipo</span>
+                  </div>
+                  <div className='flex items-center gap-2 text-xs'>
+                    <Zap className='w-4 h-4 text-orange-600' />
+                    <span className='text-gray-600 dark:text-gray-400'>HE - Hora Extra</span>
+                  </div>
+                </div>
+                <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
+                  <p>• Los símbolos aparecen en las fechas donde se registraron acciones</p>
+                  <p>• Se muestra un símbolo por cada tipo de acción (máximo 6 tipos diferentes)</p>
+                  <p>• Si hay múltiples acciones del mismo tipo, se muestra el total</p>
+                  {canViewDetails ? (
+                    <p>• Selecciona fechas para ver los detalles de ventas y servicios</p>
+                  ) : (
+                    <p className='text-amber-600 dark:text-amber-400 font-medium'>
+                      ⚠️ No tienes permiso para ver los detalles de las fechas
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal de fechas seleccionadas */}
+            <Dialog open={isModalOpen && selectedDates.length > 0} onOpenChange={setIsModalOpen}>
+              <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
+                <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+                  <DialogTitle className='text-lg font-semibold'>{formatDatesList()}</DialogTitle>
+                </DialogHeader>
+
+                <div className='flex-1 overflow-y-auto px-6 py-4'>
+                  <div className='space-y-4 text-center'>
+                    <div className='flex justify-center gap-4'>
+                      <Button
+                        className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+                          showVentasTable
+                            ? 'bg-black text-white hover:bg-gray-800'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                        }`}
+                        variant={showVentasTable ? 'default' : 'outline'}
+                        disabled={isLoading}
+                        onClick={() => {
+                          setShowVentasTable(true);
+                          setCurrentPage(1);
+                          setSearchTerm('');
+                          fetchCalendarData('ventas');
+                        }}
+                      >
+                        {isLoading && showVentasTable ? 'Cargando...' : 'Ventas'}
+                      </Button>
+                      <Button
+                        className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+                          !showVentasTable
+                            ? 'bg-black text-white hover:bg-gray-800'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                        }`}
+                        variant={!showVentasTable ? 'default' : 'outline'}
+                        disabled={isLoading}
+                        onClick={() => {
+                          setShowVentasTable(false);
+                          setCurrentPage(1);
+                          setSearchTerm('');
+                          fetchCalendarData('servicios');
+                        }}
+                      >
+                        {isLoading && !showVentasTable ? 'Cargando...' : 'Servicios'}
+                      </Button>
+                    </div>
+
+                    {/* Sección de Filtros */}
+                    <div className='mt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border'>
+                      <div className='flex-1 max-w-md'>
+                        <SearchInput
+                          value={searchTerm}
+                          onChange={setSearchTerm}
+                          placeholder={
+                            showVentasTable ? 'Buscar en ventas...' : 'Buscar en servicios...'
+                          }
+                        />
+                      </div>
+
+                      <div className='flex items-center gap-4'>
+                        <SelectElements
+                          value={rowsPerPage}
+                          onChange={value => {
+                            setRowsPerPage(value);
+                            setCurrentPage(1);
+                          }}
+                          options={[5, 10, 20, 40]}
+                          label='Mostrar'
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tabla de Ventas */}
+                    {showVentasTable && (
+                      <div className='mt-6 border rounded-lg overflow-x-auto'>
+                        {realVentasData.length === 0 ? (
+                          <div className='p-8 text-center'>
+                            <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
+                              No hay datos de ventas
+                            </div>
+                            <div className='text-gray-400 dark:text-gray-500 text-sm'>
+                              No se encontraron ventas para {formatDatesList().toLowerCase()}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Table className='min-w-full'>
+                              <TableHeader>
+                                <TableRow className='text-xs'>
+                                  <TableHead className='w-20 px-4 py-3'>Código</TableHead>
+                                  <TableHead className='w-40 px-4 py-3'>Cliente</TableHead>
+                                  <TableHead className='w-24 px-4 py-3'>Habitación</TableHead>
+                                  <TableHead className='w-28 px-4 py-3 text-right'>
+                                    Propina
+                                  </TableHead>
+                                  <TableHead className='w-32 px-4 py-3 text-right'>
+                                    Precio Hab.
+                                  </TableHead>
+                                  <TableHead className='w-28 px-4 py-3 text-right'>
+                                    Subtotal
+                                  </TableHead>
+                                  <TableHead className='w-28 px-4 py-3 text-right'>Total</TableHead>
+                                  <TableHead className='w-28 px-4 py-3 text-right'>
+                                    Comisión
+                                  </TableHead>
+                                  <TableHead className='w-32 px-4 py-3'>Fecha Venta</TableHead>
+                                  <TableHead className='w-24 px-4 py-3'>Estado</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {(() => {
+                                  const { data: paginatedData } =
+                                    getFilteredAndPaginatedData(realVentasData);
+                                  return paginatedData.map(venta => (
+                                    <TableRow key={venta.codigo} className='text-sm'>
+                                      <TableCell className='font-medium px-4 py-3'>
+                                        {venta.codigo}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>{venta.cliente}</TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {venta.habitacion || 'N/A'}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        ${(venta.propina || 0).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        $
+                                        {(
+                                          venta.precio ||
+                                          venta.precioHabitacion ||
+                                          0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        ${(venta.sub_total || venta.subtotal || 0).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        ${(venta.total || 0).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        $
+                                        {(
+                                          venta.total_comision ||
+                                          venta.comision ||
+                                          0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {venta.fecha_crea || venta.fechaVenta ? (
+                                          <div className='text-center'>
+                                            <div className='text-sm font-medium'>
+                                              {formatDateToSpanish(
+                                                venta.fecha_crea || venta.fechaVenta
+                                              )}
+                                            </div>
+                                            <div className='text-xs text-gray-500 dark:text-gray-400'>
+                                              {formatTimeFromDate(
+                                                venta.fecha_crea || venta.fechaVenta
+                                              )}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          'N/A'
+                                        )}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        <span
+                                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                            venta.estado === 1 || venta.estado === 3
+                                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                              : venta.estado === 0
+                                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                : venta.estado === 2
+                                                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                                          }`}
+                                        >
+                                          {venta.estado === 1 || venta.estado === 3
+                                            ? 'Vendido'
+                                            : venta.estado === 0
+                                              ? 'Anulado'
+                                              : venta.estado === 2
+                                                ? 'Pendiente de anulación'
+                                                : 'Desconocido'}
+                                        </span>
+                                      </TableCell>
+                                    </TableRow>
+                                  ));
+                                })()}
+                              </TableBody>
+                            </Table>
+
+                            {/* Paginador para Ventas */}
+                            {(() => {
+                              const { totalPages } = getFilteredAndPaginatedData(realVentasData);
+                              return totalPages > 1 ? (
+                                <div className='p-4 border-t'>
+                                  <Paginate
+                                    page={currentPage}
+                                    totalPages={totalPages}
+                                    setPage={setCurrentPage}
+                                  />
                                 </div>
-                              </TableCell>
-                              <TableCell className='px-4 py-3'>{servicio.habitacion}</TableCell>
-                              <TableCell className='px-4 py-3'>
-                                {servicio.tiempo}
-                                {servicio.tiempo && !servicio.tiempo.toString().includes('hrs')
-                                  ? ' min'
-                                  : ''}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                $
-                                {(
-                                  servicio.precio_habitacion ||
-                                  servicio.precioHabitacion ||
-                                  0
-                                ).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                $
-                                {(
-                                  servicio.precio_servicio ||
-                                  servicio.precioServicio ||
-                                  0
-                                ).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(servicio.iva || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(servicio.sub_total || servicio.subtotal || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='text-right px-4 py-3'>
-                                ${(servicio.total || 0).toLocaleString()}
-                              </TableCell>
-                              <TableCell className='px-4 py-3'>
-                                {servicio.metodo_pago || servicio.metodoPago}
-                              </TableCell>
-                              <TableCell className='px-4 py-3'>
-                                {servicio.fecha_crea || servicio.fechaHoraServicio ? (
-                                  <div className='text-center'>
-                                    <div className='text-sm font-medium'>
-                                      {formatDateToSpanish(
-                                        servicio.fecha_crea || servicio.fechaHoraServicio
-                                      )}
-                                    </div>
-                                    <div className='text-xs text-gray-500 dark:text-gray-400'>
-                                      {formatTimeFromDate(
-                                        servicio.fecha_crea || servicio.fechaHoraServicio
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  'N/A'
-                                )}
-                              </TableCell>
-                              <TableCell className='px-4 py-3'>
-                                <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    servicio.estado === 0
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                      : servicio.estado === 1
-                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                                        : servicio.estado === 2
-                                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-                                          : servicio.estado === 3
-                                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                            : servicio.estado === 4
-                                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
-                                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                                  }`}
-                                >
-                                  {servicio.estado === 0
-                                    ? 'Finalizado'
-                                    : servicio.estado === 1
-                                      ? 'En proceso'
-                                      : servicio.estado === 2
-                                        ? 'Pendiente de anulación'
-                                        : servicio.estado === 3
-                                          ? 'Anulado'
-                                          : servicio.estado === 4
-                                            ? 'Pagado'
-                                            : 'Desconocido'}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ));
-                        })()}
-                      </TableBody>
-                    </Table>
+                              ) : null;
+                            })()}
+                          </>
+                        )}
+                      </div>
+                    )}
 
-                    {/* Paginador para Servicios */}
-                    {(() => {
-                      const { totalPages } = getFilteredAndPaginatedData(realServiciosData);
-                      return totalPages > 1 ? (
-                        <div className='p-4 border-t'>
-                          <Paginate
-                            page={currentPage}
-                            totalPages={totalPages}
-                            setPage={setCurrentPage}
-                          />
-                        </div>
-                      ) : null;
-                    })()}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-          </div>
+                    {/* Tabla de Servicios */}
+                    {!showVentasTable && (
+                      <div className='mt-6 border rounded-lg overflow-x-auto'>
+                        {realServiciosData.length === 0 ? (
+                          <div className='p-8 text-center'>
+                            <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
+                              No hay datos de servicios
+                            </div>
+                            <div className='text-gray-400 dark:text-gray-500 text-sm'>
+                              No se encontraron servicios para {formatDatesList().toLowerCase()}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Table className='min-w-full'>
+                              <TableHeader>
+                                <TableRow className='text-xs'>
+                                  <TableHead className='w-20 px-4 py-3'>Código</TableHead>
+                                  <TableHead className='w-40 px-4 py-3'>Cliente</TableHead>
+                                  <TableHead className='w-48 px-4 py-3'>Anfitrionas</TableHead>
+                                  <TableHead className='w-24 px-4 py-3'>Habitación</TableHead>
+                                  <TableHead className='w-24 px-4 py-3'>Tiempo</TableHead>
+                                  <TableHead className='w-32 px-4 py-3 text-right'>
+                                    Precio Hab.
+                                  </TableHead>
+                                  <TableHead className='w-32 px-4 py-3 text-right'>
+                                    Precio Servicio
+                                  </TableHead>
+                                  <TableHead className='w-24 px-4 py-3 text-right'>IVA</TableHead>
+                                  <TableHead className='w-28 px-4 py-3 text-right'>
+                                    Subtotal
+                                  </TableHead>
+                                  <TableHead className='w-28 px-4 py-3 text-right'>Total</TableHead>
+                                  <TableHead className='w-28 px-4 py-3'>Método Pago</TableHead>
+                                  <TableHead className='w-36 px-4 py-3'>Fecha y Hora</TableHead>
+                                  <TableHead className='w-28 px-4 py-3'>Estado</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {(() => {
+                                  const { data: paginatedData } =
+                                    getFilteredAndPaginatedData(realServiciosData);
+                                  return paginatedData.map(servicio => (
+                                    <TableRow key={servicio.codigo} className='text-sm'>
+                                      <TableCell className='font-medium px-4 py-3'>
+                                        {servicio.codigo}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {servicio.cliente}
+                                      </TableCell>
+                                      <TableCell
+                                        className='px-4 py-3'
+                                        title={servicio.anfitriona || servicio.anfitrionas}
+                                      >
+                                        <div className='max-w-48 truncate'>
+                                          {servicio.anfitriona || servicio.anfitrionas || 'N/A'}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {servicio.habitacion}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {servicio.tiempo}
+                                        {servicio.tiempo &&
+                                        !servicio.tiempo.toString().includes('hrs')
+                                          ? ' min'
+                                          : ''}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        $
+                                        {(
+                                          servicio.precio_habitacion ||
+                                          servicio.precioHabitacion ||
+                                          0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        $
+                                        {(
+                                          servicio.precio_servicio ||
+                                          servicio.precioServicio ||
+                                          0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        ${(servicio.iva || 0).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        $
+                                        {(
+                                          servicio.sub_total ||
+                                          servicio.subtotal ||
+                                          0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='text-right px-4 py-3'>
+                                        ${(servicio.total || 0).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {servicio.metodo_pago || servicio.metodoPago}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        {servicio.fecha_crea || servicio.fechaHoraServicio ? (
+                                          <div className='text-center'>
+                                            <div className='text-sm font-medium'>
+                                              {formatDateToSpanish(
+                                                servicio.fecha_crea || servicio.fechaHoraServicio
+                                              )}
+                                            </div>
+                                            <div className='text-xs text-gray-500 dark:text-gray-400'>
+                                              {formatTimeFromDate(
+                                                servicio.fecha_crea || servicio.fechaHoraServicio
+                                              )}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          'N/A'
+                                        )}
+                                      </TableCell>
+                                      <TableCell className='px-4 py-3'>
+                                        <span
+                                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                            servicio.estado === 0
+                                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                              : servicio.estado === 1
+                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                : servicio.estado === 2
+                                                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                  : servicio.estado === 3
+                                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                    : servicio.estado === 4
+                                                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+                                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                                          }`}
+                                        >
+                                          {servicio.estado === 0
+                                            ? 'Finalizado'
+                                            : servicio.estado === 1
+                                              ? 'En proceso'
+                                              : servicio.estado === 2
+                                                ? 'Pendiente de anulación'
+                                                : servicio.estado === 3
+                                                  ? 'Anulado'
+                                                  : servicio.estado === 4
+                                                    ? 'Pagado'
+                                                    : 'Desconocido'}
+                                        </span>
+                                      </TableCell>
+                                    </TableRow>
+                                  ));
+                                })()}
+                              </TableBody>
+                            </Table>
 
-          <div className="flex-shrink-0 border-t px-6 py-4">
-            <div className='flex justify-center'>
-              <Button
-                variant='outline'
-                className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
-                onClick={() => setIsModalOpen(false)}
-              >
-                Cerrar
-              </Button>
-            </div>
+                            {/* Paginador para Servicios */}
+                            {(() => {
+                              const { totalPages } = getFilteredAndPaginatedData(realServiciosData);
+                              return totalPages > 1 ? (
+                                <div className='p-4 border-t'>
+                                  <Paginate
+                                    page={currentPage}
+                                    totalPages={totalPages}
+                                    setPage={setCurrentPage}
+                                  />
+                                </div>
+                              ) : null;
+                            })()}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className='flex-shrink-0 border-t px-6 py-4'>
+                  <div className='flex justify-center'>
+                    <Button
+                      variant='outline'
+                      className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
+                      onClick={() => setIsModalOpen(false)}
+                    >
+                      Cerrar
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
         );
       })()}
     </PermissionGuard>

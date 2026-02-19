@@ -1,15 +1,11 @@
 import { useState, useCallback } from 'react';
 
-// Función helper fuera del hook para evitar problemas de scope
 const formatNumberHelper = (value: string | number) => {
   const numericValue = String(value).replace(/\D/g, '');
   return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
-/**
- * Hook para formatear números con separadores de miles
- * Consolida la lógica de formateo repetida en formularios
- */
+
 export function useNumberFormatter(initialValue: number = 0) {
   const [formattedValue, setFormattedValue] = useState<string>(
     initialValue ? formatNumberHelper(initialValue) : ''

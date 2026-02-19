@@ -35,10 +35,10 @@ export default function CashRegister() {
   const isCajero = user?.role === 'cajero';
   
   // Verificar permisos específicos
-  const canOpenCaja = hasPermission('caja', 'crear');
-  const canCloseCaja = hasPermission('caja', 'cerrar');
-  const canViewDetails = hasPermission('caja', 'ver_detalles');
-  const canWithdrawMoney = hasPermission('caja', 'retirar_efectivo');
+  const canOpenCaja = hasPermission('cash_register', 'open');
+  const canCloseCaja = hasPermission('cash_register', 'close');
+  const canViewDetails = hasPermission('cash_register', 'view_details');
+  const canWithdrawMoney = hasPermission('cash_register', 'withdraw');
 
   // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
@@ -141,7 +141,7 @@ export default function CashRegister() {
   }
 
   return (
-    <PermissionGuard module="caja" action="listar">
+    <PermissionGuard module="cash_register" action="view">
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
         <div>

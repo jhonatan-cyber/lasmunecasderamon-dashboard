@@ -47,13 +47,13 @@ const RoomsPage = () => {
   } = useRooms();
 
   const { hasPermission } = useUserPermissions();
-  const canCreate = hasPermission('habitaciones', 'crear');
-  const canEdit = hasPermission('habitaciones', 'editar');
-  const canDelete = hasPermission('habitaciones', 'eliminar');
-  const canActivate = hasPermission('habitaciones', 'activar');
-  const canDeactivate = hasPermission('habitaciones', 'desactivar');
-  const canOccupy = hasPermission('habitaciones', 'ocupar');
-  const canLiberate = hasPermission('habitaciones', 'liberar');
+  const canCreate = hasPermission('rooms', 'create');
+  const canEdit = hasPermission('rooms', 'edit');
+  const canDelete = hasPermission('rooms', 'delete');
+  const canActivate = hasPermission('rooms', 'activate');
+  const canDeactivate = hasPermission('rooms', 'deactivate');
+  const canOccupy = hasPermission('rooms', 'occupy');
+  const canLiberate = hasPermission('rooms', 'liberate');
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editRoom, setEditRoom] = useState<Room | null>(null);
@@ -170,7 +170,7 @@ const RoomsPage = () => {
   };
 
   return (
-    <PermissionGuard module="habitaciones" action="listar">
+    <PermissionGuard module="rooms" action="view">
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
         <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Habitaciones</h1>

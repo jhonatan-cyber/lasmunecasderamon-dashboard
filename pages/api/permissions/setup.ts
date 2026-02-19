@@ -603,6 +603,106 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description: 'Acceso para visualizar todas las ventas',
         module: 'sales',
         action: 'view'
+      },
+
+      // Módulo de clientes
+      {
+        name: 'Crear clientes',
+        description: 'Acceso para crear nuevos clientes en el sistema',
+        module: 'clients',
+        action: 'create'
+      },
+      {
+        name: 'Editar clientes',
+        description: 'Acceso para modificar información de clientes',
+        module: 'clients',
+        action: 'edit'
+      },
+      {
+        name: 'Eliminar clientes',
+        description: 'Acceso para eliminar clientes del sistema',
+        module: 'clients',
+        action: 'delete'
+      },
+      {
+        name: 'Ver clientes',
+        description: 'Acceso para visualizar todos los clientes',
+        module: 'clients',
+        action: 'view'
+      },
+      {
+        name: 'Ver detalles de clientes',
+        description: 'Acceso para ver información detallada de clientes',
+        module: 'clients',
+        action: 'view_details'
+      },
+
+      // Módulo de dashboard
+      {
+        name: 'Ver dashboard',
+        description: 'Acceso al panel de control principal',
+        module: 'dashboard',
+        action: 'view'
+      },
+
+      // Módulo de privados
+      {
+        name: 'Crear privados',
+        description: 'Acceso para crear servicios de habitaciones privadas',
+        module: 'private_rooms',
+        action: 'create'
+      },
+      {
+        name: 'Editar privados',
+        description: 'Acceso para modificar servicios de habitaciones privadas',
+        module: 'private_rooms',
+        action: 'edit'
+      },
+      {
+        name: 'Finalizar privados',
+        description: 'Acceso para finalizar servicios de habitaciones privadas',
+        module: 'private_rooms',
+        action: 'finalize'
+      },
+      {
+        name: 'Ver privados',
+        description: 'Acceso para visualizar servicios de habitaciones privadas',
+        module: 'private_rooms',
+        action: 'view'
+      },
+
+      // Módulo de cuentas
+      {
+        name: 'Crear cuentas',
+        description: 'Acceso para crear nuevas cuentas de clientes',
+        module: 'accounts',
+        action: 'create'
+      },
+      {
+        name: 'Editar cuentas',
+        description: 'Acceso para modificar cuentas de clientes',
+        module: 'accounts',
+        action: 'edit'
+      },
+      {
+        name: 'Eliminar cuentas',
+        description: 'Acceso para eliminar cuentas de clientes',
+        module: 'accounts',
+        action: 'delete'
+      },
+      {
+        name: 'Ver cuentas',
+        description: 'Acceso para visualizar cuentas de clientes',
+        module: 'accounts',
+        action: 'view'
+      },
+
+      // Permisos adicionales de caja
+      {
+        name: 'Retirar efectivo',
+        description: 'Acceso para retirar efectivo de la caja',
+        module: 'cash_register',
+        action: 'withdraw'
       }
     ];
 
