@@ -69,7 +69,8 @@ export function usePermissionsSSE() {
                 }
               }
             } catch (error) {
-              console.error('❌ [SSE] Error al procesar mensaje:', error);
+              throw error instanceof Error ? error : new Error('Error al procesar mensaje SSE');
+              
             }
           })();
         };
@@ -95,14 +96,13 @@ export function usePermissionsSSE() {
           }
         };
       } catch (error) {
-        console.error('❌ [SSE] Error al crear conexión:', error);
+        throw error instanceof Error ? error : new Error('Error al crear conexión SSE');
+    
       }
     };
 
- 
     connectSSE();
 
-   
     return () => {
 
       if (eventSourceRef.current) {

@@ -16,7 +16,8 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
   codigo: string;
 } | null> {
   try {
-    const resultado = await query(`
+    const resultado = (await query(
+      `
       SELECT 
         v.id_venta,
         v.habitacion_id,
@@ -32,7 +33,9 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
         AND v.estado = 1
       ORDER BY v.fecha_crea DESC
       LIMIT 1
-    `, [anfitrionaId]) as any[];
+    `,
+      [anfitrionaId]
+    )) as any[];
 
     if (resultado && resultado.length > 0) {
       return resultado[0];
@@ -133,7 +136,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       params.push(estado);
     }
 
-
     if (caja_id) {
       whereClause += ' AND v.caja_id = ?';
       params.push(caja_id);
@@ -153,7 +155,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         whereClause += ' AND v.caja_id = ?';
         params.push(cajaAbiertaId);
       } else {
-
         whereClause += ' AND v.caja_id IS NULL';
       }
     }
@@ -238,7 +239,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
 
     const processedSales = await Promise.all(
       salesResult.map(async venta => {
-
         const usuariosSql = `
           SELECT DISTINCT u.id_usuario, u.nick 
           FROM ventas_usuarios vu 
@@ -251,7 +251,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           nick: u.nick,
           usuario_nombre: u.nick
         }));
-
 
         const detallesSql = `
           SELECT 
@@ -278,7 +277,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         };
       })
     );
-
 
     return res.status(200).json({
       success: true,
@@ -418,8 +416,6 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
-
-
     let {
       total,
       detalles,
@@ -435,14 +431,11 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     } = req.body;
 
     if (!total || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
-
       return res.status(400).json({
         success: false,
         message: 'Total y detalles son requeridos'
       });
     }
-
-
 
     // NUEVA LÓGICA: Verificar si hay productos >= 30,000 con anfitrionas
     const tieneProductosEspeciales = detalles.some(d => {
@@ -451,22 +444,23 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       return precio >= 30000 && tieneAnfitrionas;
     });
 
-    console.log('[SALES POST] ¿Tiene productos >= 30,000 con anfitrionas?', tieneProductosEspeciales);
+    console.log(
+      '[SALES POST] ¿Tiene productos >= 30,000 con anfitrionas?',
+      tieneProductosEspeciales
+    );
 
     // Solo verificar ventas activas si hay productos especiales
     if (tieneProductosEspeciales && usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
-
-
       for (const usuarioId of usuarios) {
         const ventaActiva = await buscarVentaActivaConHabitacion(usuarioId);
 
         if (ventaActiva) {
-
-
           // Auto-seleccionar la habitación si no se proporcionó una
           if (!habitacion_id) {
             habitacion_id = ventaActiva.habitacion_id;
-            console.log(`[SALES POST] 🏠 Auto-seleccionando habitación ${ventaActiva.habitacion_nombre} (ID: ${habitacion_id})`);
+            console.log(
+              `[SALES POST] 🏠 Auto-seleccionando habitación ${ventaActiva.habitacion_nombre} (ID: ${habitacion_id})`
+            );
           }
 
           // Si se proporcionó un nuevo tiempo, se usará para reiniciar el temporizador
@@ -475,7 +469,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             tiempo = ventaActiva.tiempo;
             console.log(`[SALES POST] ⏱️ Usando tiempo de venta activa: ${tiempo} minutos`);
           } else {
-            console.log(`[SALES POST] ⏱️ Nuevo tiempo proporcionado: ${tiempo} minutos - Se reiniciará el temporizador`);
+            console.log(
+              `[SALES POST] ⏱️ Nuevo tiempo proporcionado: ${tiempo} minutos - Se reiniciará el temporizador`
+            );
           }
 
           // Solo necesitamos encontrar una venta activa, salir del loop
@@ -483,7 +479,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
       }
     } else if (!tieneProductosEspeciales) {
-      console.log('[SALES POST] ℹ️ No hay productos >= 30,000 con anfitrionas - No se auto-selecciona habitación');
+      console.log(
+        '[SALES POST] ℹ️ No hay productos >= 30,000 con anfitrionas - No se auto-selecciona habitación'
+      );
     }
 
     console.log('[SALES POST] Generating code...');
@@ -598,9 +596,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-
-
-
     if (totalComision > 0) {
       // Agrupar comisiones por anfitriona
       const comisionesPorAnfitriona = new Map<number, number>();
@@ -608,7 +603,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       for (const detalle of detalles) {
         const comision = detalle.comision || 0;
         if (comision <= 0) continue;
-
 
         let hostessesParaEsteProducto: number[] = [];
 
@@ -619,7 +613,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
 
         if (hostessesParaEsteProducto.length > 0) {
-
           const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
           for (const hId of hostessesParaEsteProducto) {
             const actual = comisionesPorAnfitriona.get(hId) || 0;
@@ -627,7 +620,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           }
         }
       }
-
 
       for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
         if (monto > 0) {
@@ -653,7 +645,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
       }
     }
-
 
     const cajaActiva = (await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1')) as any[];
 
@@ -699,9 +690,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           cajaId
         ]
       );
-
     }
-
 
     const ventaCompletaSql = `
       SELECT 
@@ -720,10 +709,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const ventaCompletaResult = (await query(ventaCompletaSql, [ventaId])) as any[];
     const ventaCompleta = ventaCompletaResult[0];
 
-
     if (pedido_id) {
       try {
-
         notifyOrderProcessed(pedido_id);
       } catch (notificationError) {
         console.error('[SALES POST] Error notificando pedido procesado:', notificationError);
@@ -731,37 +718,64 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-
-
     if (habitacion_id && tiempo > 0) {
       try {
-        const habitacionInfo = await query(
+        const habitacionInfo = (await query(
           'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
           [habitacion_id]
-        ) as any[];
+        )) as any[];
 
-        const nombreHabitacion = habitacionInfo && habitacionInfo.length > 0
-          ? habitacionInfo[0].nombre
-          : `Habitación ${habitacion_id}`;
+        const nombreHabitacion =
+          habitacionInfo && habitacionInfo.length > 0
+            ? habitacionInfo[0].nombre
+            : `Habitación ${habitacion_id}`;
+
+        // Marcar la habitación como ocupada en la base de datos (asegurar consistencia)
+        try {
+          await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
+            habitacion_id
+          ]);
+          console.info('[SALES POST] Habitación marcada como ocupada (venta):', habitacion_id);
+        } catch (roomUpdateErr) {
+          console.error('[SALES POST] Error marcando habitación como ocupada:', roomUpdateErr);
+        }
+
+        // Emitir evento `room_occupied` para sincronizar UI que no depende del timer
+        try {
+          sendNotificationToAll('room_occupied', {
+            roomId: Number(habitacion_id),
+            timestamp: new Date().toISOString()
+          });
+        } catch (roomNotifyErr) {
+          console.error('[SALES POST] Error notificando room_occupied:', roomNotifyErr);
+        }
 
         // Verificar si hay un temporizador activo para esta habitación
-        const ventasActivasEnHabitacion = await query(`
+        const ventasActivasEnHabitacion = (await query(
+          `
           SELECT COUNT(*) as count
           FROM ventas
           WHERE habitacion_id = ?
             AND tiempo > 0
             AND estado = 1
             AND id_venta != ?
-        `, [habitacion_id, ventaId]) as any[];
+        `,
+          [habitacion_id, ventaId]
+        )) as any[];
 
         const hayTemporizadorActivo = ventasActivasEnHabitacion[0]?.count > 0;
 
         if (hayTemporizadorActivo) {
-          console.log(`[SALES POST] 🔄 Reiniciando temporizador para habitación ${nombreHabitacion} con nuevo tiempo: ${tiempo} minutos`);
-          console.log(`[SALES POST] 📋 Card de ventas con habitación debe actualizarse con datos de la nueva venta`);
+          console.log(
+            `[SALES POST] 🔄 Reiniciando temporizador para habitación ${nombreHabitacion} con nuevo tiempo: ${tiempo} minutos`
+          );
+          console.log(
+            `[SALES POST] 📋 Card de ventas con habitación debe actualizarse con datos de la nueva venta`
+          );
 
           // Obtener la venta anterior para finalizarla correctamente
-          const ventaAnterior = (await query(`
+          const ventaAnterior = (await query(
+            `
             SELECT id_venta, codigo
             FROM ventas
             WHERE habitacion_id = ?
@@ -770,38 +784,55 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
               AND id_venta != ?
             ORDER BY fecha_crea DESC
             LIMIT 1
-          `, [habitacion_id, ventaId])) as any[];
+          `,
+            [habitacion_id, ventaId]
+          )) as any[];
 
           if (ventaAnterior && ventaAnterior.length > 0) {
             const ventaAnteriorId = ventaAnterior[0].id_venta;
             const ventaAnteriorCodigo = ventaAnterior[0].codigo;
-            
-            console.log(`[SALES POST] 🛑 Finalizando venta anterior ${ventaAnteriorCodigo} (ID: ${ventaAnteriorId})`);
-            
+
+            console.log(
+              `[SALES POST] 🛑 Finalizando venta anterior ${ventaAnteriorCodigo} (ID: ${ventaAnteriorId})`
+            );
+
             // Finalizar la venta anterior (actualizar estado a 0)
-            await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [ventaAnteriorId]);
-            console.log(`[SALES POST] ✅ Venta anterior ${ventaAnteriorId} marcada como finalizada (estado = 0)`);
-            
+            await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [
+              ventaAnteriorId
+            ]);
+            console.log(
+              `[SALES POST] ✅ Venta anterior ${ventaAnteriorId} marcada como finalizada (estado = 0)`
+            );
+
             // Liberar anfitrionas de la venta anterior
-            const anfitrionasAnteriores = (await query(`
+            const anfitrionasAnteriores = (await query(
+              `
               SELECT vu.usuario_id, r.nombre as rol 
               FROM ventas_usuarios vu
               INNER JOIN usuarios u ON vu.usuario_id = u.id_usuario
               LEFT JOIN roles r ON u.rol_id = r.id_rol
               WHERE vu.venta_id = ?
-            `, [ventaAnteriorId])) as any[];
+            `,
+              [ventaAnteriorId]
+            )) as any[];
 
             if (anfitrionasAnteriores.length > 0) {
               for (const anfitriona of anfitrionasAnteriores) {
                 if (anfitriona.rol === 'anfitriona') {
-                  await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
-                  console.log(`[SALES POST] ✅ Anfitriona ${anfitriona.usuario_id} liberada de venta anterior`);
+                  await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [
+                    anfitriona.usuario_id
+                  ]);
+                  console.log(
+                    `[SALES POST] ✅ Anfitriona ${anfitriona.usuario_id} liberada de venta anterior`
+                  );
                 }
               }
             }
-            
+
             // PRIMERO: Detener el temporizador anterior de esta habitación
-            console.log(`[SALES POST] 🛑 Deteniendo temporizador anterior de habitación ${nombreHabitacion}`);
+            console.log(
+              `[SALES POST] 🛑 Deteniendo temporizador anterior de habitación ${nombreHabitacion}`
+            );
             sendNotificationToAll('timer_stopped', {
               servicioId: ventaAnteriorId, // Incluir el ID de la venta anterior
               roomId: habitacion_id,
@@ -809,10 +840,14 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
               reason: 'Nueva venta en la misma habitación',
               tipoTransaccion: 'venta'
             });
-            console.log(`[SALES POST] ✅ Notificación timer_stopped enviada para venta anterior ${ventaAnteriorId}`);
+            console.log(
+              `[SALES POST] ✅ Notificación timer_stopped enviada para venta anterior ${ventaAnteriorId}`
+            );
           }
         } else {
-          console.log(`[SALES POST] ⏱️ Iniciando nuevo temporizador para habitación ${nombreHabitacion}: ${tiempo} minutos`);
+          console.log(
+            `[SALES POST] ⏱️ Iniciando nuevo temporizador para habitación ${nombreHabitacion}: ${tiempo} minutos`
+          );
         }
 
         // SEGUNDO: Iniciar el nuevo temporizador
@@ -823,7 +858,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           roomName: nombreHabitacion,
           duration: tiempo,
           startTime: new Date().toISOString(),
-          clienteNombre: ventaCompleta?.cliente_nombre ? `${ventaCompleta.cliente_nombre} ${ventaCompleta.cliente_apellido}` : 'Cliente',
+          clienteNombre: ventaCompleta?.cliente_nombre
+            ? `${ventaCompleta.cliente_nombre} ${ventaCompleta.cliente_apellido}`
+            : 'Cliente',
           anfitrionas: ventaCompleta?.usuarios_nicks || '',
           tipoTransaccion: 'venta',
           isRestart: hayTemporizadorActivo, // Indicar si es un reinicio
@@ -832,8 +869,13 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           subtotal: sub_total || 0, // Subtotal de la nueva venta
           metodoPago: metodo_pago // Método de pago de la nueva venta
         });
-        console.log('[SALES POST] ✅ Notificación SSE timer_started enviada en tiempo real para venta:', ventaId);
-        console.log('[SALES POST] 📡 Todos los clientes conectados recibirán la actualización del card inmediatamente');
+        console.log(
+          '[SALES POST] ✅ Notificación SSE timer_started enviada en tiempo real para venta:',
+          ventaId
+        );
+        console.log(
+          '[SALES POST] 📡 Todos los clientes conectados recibirán la actualización del card inmediatamente'
+        );
       } catch (notificacionError) {
         console.error('[SALES POST] Error enviando notificación SSE:', notificacionError);
       }
@@ -856,7 +898,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-
     console.error(
       '[SALES POST] Error stack:',
       error instanceof Error ? error.stack : 'No stack trace'

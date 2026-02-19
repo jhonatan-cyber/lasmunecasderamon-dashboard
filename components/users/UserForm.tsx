@@ -70,21 +70,22 @@ interface UserFormProps {
   hideButtons?: boolean;
 }
 
-export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = false }: UserFormProps) {
+export function UserForm({
+  user,
+  onSubmit,
+  onCancel,
+  isEditMode,
+  hideButtons = false
+}: UserFormProps) {
   const { roles, isLoading: isLoadingRoles } = useRoles();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
 
   const sueldo = useNumberFormatter(user?.salary || 0);
   const aporte = useNumberFormatter(user?.contributions || 0);
   const descuento = useNumberFormatter(user?.discount || 0);
 
-
-  useEffect(() => {
-
-
-  }, [roles]);
+  useEffect(() => {}, [roles]);
 
   // Funciones memoizadas para mapeo de estado civil
   const mapEstadoCivilToSelect = useCallback((estadoCivil: string | undefined): string => {
@@ -100,13 +101,22 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
 
   const mapSelectToEstadoCivil = useCallback((selectValue: string): string => {
     const mapping: Record<string, string> = {
-      'Soltero': 'Soltero/a',
-      'Casado': 'Casado/a',
-      'Divorciado': 'Divorciado/a',
-      'Viudo': 'Viudo/a',
-      'Separado': 'Separado/a'
+      Soltero: 'Soltero/a',
+      Casado: 'Casado/a',
+      Divorciado: 'Divorciado/a',
+      Viudo: 'Viudo/a',
+      Separado: 'Separado/a'
     };
     return mapping[selectValue] || selectValue;
+  }, []);
+
+  const capitalizeWords = useCallback((value: string | undefined) => {
+    if (!value) return '';
+    return value
+      .trim()
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }, []);
 
   // Inicializar valores formateados cuando cambia el usuario
@@ -120,111 +130,113 @@ export function UserForm({ user, onSubmit, onCancel, isEditMode, hideButtons = f
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: useMemo(() => ({
-      run: user?.run || '',
-      nick: user?.nick || '',
-      nombre: user?.name || '',
-      apellido: user?.lastName || '',
-      direccion: user?.address || '',
-      telefono: user?.phone || '',
-      estado_civil: mapEstadoCivilToSelect(user?.maritalStatus),
-      afp: user?.afp || '',
-      sueldo: user?.salary || 0,
-      aporte: user?.contributions || 0,
-      descuento: user?.discount || 0,
-      rol_id: user?.roleId ? user.roleId.toString() : '',
-      correo: '',
-      password: '',
-      foto: user?.foto || '',
-      housing_discount: (user?.discount && user.discount > 0) || false
-    }), [user, mapEstadoCivilToSelect])
+    defaultValues: useMemo(
+      () => ({
+        run: user?.run || '',
+        nick: user?.nick || '',
+        nombre: user?.name || '',
+        apellido: user?.lastName || '',
+        direccion: user?.address || '',
+        telefono: user?.phone || '',
+        estado_civil: mapEstadoCivilToSelect(user?.maritalStatus),
+        afp: user?.afp || '',
+        sueldo: user?.salary || 0,
+        aporte: user?.contributions || 0,
+        descuento: user?.discount || 0,
+        rol_id: user?.roleId ? user.roleId.toString() : '',
+        correo: '',
+        password: '',
+        foto: user?.foto || '',
+        housing_discount: (user?.discount && user.discount > 0) || false
+      }),
+      [user, mapEstadoCivilToSelect]
+    )
   });
 
   const housingDiscount = form.watch('housing_discount');
 
-  const handleFormSubmit = useCallback(async (values: UserFormValues) => {
+  const handleFormSubmit = useCallback(
+    async (values: UserFormValues) => {
+      try {
+        setIsSubmitting(true);
 
-    try {
-      setIsSubmitting(true);
-
-      // Verificar que los campos nombre y apellido estén presentes
-      if (!values.nombre || !values.apellido) {
-
-        form.setError('nombre', {
-          type: 'manual',
-          message: !values.nombre ? 'El nombre es requerido' : ''
-        });
-        form.setError('apellido', {
-          type: 'manual',
-          message: !values.apellido ? 'El apellido es requerido' : ''
-        });
-        return;
-      }
-
-      // Verificar si hay una imagen para enviar
-      if (imageFile) {
-
-
-        // Verificar tipo de archivo nuevamente
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(imageFile.type)) {
-
-          form.setError('foto', {
+        // Verificar que los campos nombre y apellido estén presentes
+        if (!values.nombre || !values.apellido) {
+          form.setError('nombre', {
             type: 'manual',
-            message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF)'
+            message: !values.nombre ? 'El nombre es requerido' : ''
+          });
+          form.setError('apellido', {
+            type: 'manual',
+            message: !values.apellido ? 'El apellido es requerido' : ''
           });
           return;
         }
 
-        // Verificar tamaño nuevamente
-        if (imageFile.size > 5 * 1024 * 1024) {
+        // Verificar si hay una imagen para enviar
+        if (imageFile) {
+          // Verificar tipo de archivo nuevamente
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+          if (!allowedTypes.includes(imageFile.type)) {
+            form.setError('foto', {
+              type: 'manual',
+              message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF)'
+            });
+            return;
+          }
 
-          form.setError('foto', {
-            type: 'manual',
-            message: 'La imagen no puede superar los 5MB'
-          });
-          return;
+          // Verificar tamaño nuevamente
+          if (imageFile.size > 5 * 1024 * 1024) {
+            form.setError('foto', {
+              type: 'manual',
+              message: 'La imagen no puede superar los 5MB'
+            });
+            return;
+          }
+        } else {
+          console.log('No hay imagen para enviar');
         }
-      } else {
-        console.log('No hay imagen para enviar');
+
+        const processedValues = { ...values };
+        processedValues.nick = capitalizeWords(processedValues.nick);
+        processedValues.nombre = capitalizeWords(processedValues.nombre);
+        processedValues.apellido = capitalizeWords(processedValues.apellido);
+        processedValues.direccion = capitalizeWords(processedValues.direccion);
+        processedValues.sueldo = Number(sueldo.getNumericValue(sueldo.formattedValue)) || 0;
+        processedValues.aporte = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
+        processedValues.descuento =
+          Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
+
+        processedValues.estado_civil = mapSelectToEstadoCivil(processedValues.estado_civil);
+
+        if (isEditMode && user && processedValues.run !== user.run) {
+          processedValues.password = processedValues.run;
+        }
+
+        if (isEditMode && user && user.foto && !imageFile) {
+          processedValues.foto_anterior = user.foto;
+        }
+
+        await onSubmit(processedValues, imageFile || undefined);
+      } catch (error) {
+        form.setError('root', {
+          type: 'manual',
+          message: 'Error al enviar el formulario. Por favor, inténtelo de nuevo.'
+        });
+      } finally {
+        setIsSubmitting(false);
       }
-
-
-      const processedValues = { ...values };
-      processedValues.sueldo = Number(sueldo.getNumericValue(sueldo.formattedValue)) || 0;
-      processedValues.aporte = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
-      processedValues.descuento = Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
-
-
-      processedValues.estado_civil = mapSelectToEstadoCivil(processedValues.estado_civil);
-
-
-      if (isEditMode && user && processedValues.run !== user.run) {
-        processedValues.password = processedValues.run;
-      }
-
-
-      if (isEditMode && user && user.foto && !imageFile) {
-        processedValues.foto_anterior = user.foto;
-      }
-
-      await onSubmit(processedValues, imageFile || undefined);
-    } catch (error) {
-
-
-      form.setError('root', {
-        type: 'manual',
-        message: 'Error al enviar el formulario. Por favor, inténtelo de nuevo.'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [imageFile, isEditMode, user, onSubmit, sueldo, aporte, descuento, mapSelectToEstadoCivil, form]);
-
+    },
+    [imageFile, isEditMode, user, onSubmit, sueldo, aporte, descuento, mapSelectToEstadoCivil, form]
+  );
 
   return (
     <Form {...form}>
-      <form id='user-form' onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-4 sm:space-y-6'>
+      <form
+        id='user-form'
+        onSubmit={form.handleSubmit(handleFormSubmit)}
+        className='space-y-4 sm:space-y-6'
+      >
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
           <div className='flex flex-col gap-4 sm:gap-6'>
             {/* RUN */}

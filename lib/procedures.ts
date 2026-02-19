@@ -1,9 +1,6 @@
 import { query } from './db';
 
-/**
- * Agregar un cliente
- * Reemplaza: CALL add_client(run, name, lastName, phone)
- */
+
 export const addClient = async (
   run: string,
   name: string,
@@ -16,10 +13,7 @@ export const addClient = async (
   );
 };
 
-/**
- * Obtener todos los clientes
- * Reemplaza: CALL get_all_client()
- */
+
 export const getAllClients = async () => {
   console.log('[PROCEDURES] getAllClients called');
   const result = await query('SELECT * FROM clientes WHERE estado = 1 ORDER BY nombre ASC');

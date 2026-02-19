@@ -32,7 +32,7 @@ export default function OvertimePage() {
   } | null>(null);
 
   // Verificar permiso para crear horas extras
-  const canCreate = hasPermission('horas_extras', 'crear');
+  const canCreate = hasPermission('overtime', 'create');
 
   // Asegurar que overtime sea siempre un array
   const overtimeData = overtime || [];
@@ -73,7 +73,7 @@ export default function OvertimePage() {
   };
 
   return (
-    <PermissionGuard module="horas_extras" action="listar">
+    <PermissionGuard module="overtime" action="view">
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
           <div className='flex flex-col'>
@@ -83,7 +83,7 @@ export default function OvertimePage() {
             </p>
           </div>
           <div className='flex gap-2 w-full sm:w-auto'>
-            <PermissionGuard module="horas_extras" action="crear" fallback={null}>
+            <PermissionGuard module="overtime" action="create" fallback={null}>
               <Button
                 size='sm'
                 disabled={cajaLoading || !hasOpenCaja}

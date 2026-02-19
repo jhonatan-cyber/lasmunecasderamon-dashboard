@@ -15,11 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-   
-    const ventaExistente = (await query(
-      'SELECT * FROM ventas WHERE id_venta = ?',
-      [ventaId]
-    )) as any[];
+    const ventaExistente = (await query('SELECT * FROM ventas WHERE id_venta = ?', [
+      ventaId
+    ])) as any[];
 
     if (ventaExistente.length === 0) {
       return res.status(404).json({ error: 'Venta no encontrada' });
@@ -27,11 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const venta = ventaExistente[0];
     if (venta.habitacion_id) {
-
       await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
         venta.habitacion_id
       ]);
-      console.log(`✅ Habitación ${venta.habitacion_id} liberada`);
     }
 
     const anfitrionasLiberadas = (await query(
@@ -49,33 +45,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [
             anfitriona.usuario_id
           ]);
-          console.log(`✅ Anfitriona ${anfitriona.usuario_id} liberada (estado = 1)`);
         }
       }
-      console.log(
-        `✅ ${anfitrionasLiberadas.length} anfitrionas liberadas de la venta ${ventaId}`
-      );
     }
 
-    
-    // Actualizar el estado de la venta a finalizada (estado = 0)
     await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
-    console.log(`✅ Venta ${ventaId} marcada como finalizada (estado = 0)`);
 
-    // Enviar notificación SSE para finalizar el temporizador en tiempo real en todos los clientes
     if (venta.habitacion_id) {
-      console.log(`[STOP VENTA] 📡 Enviando notificación timer_stopped para habitación ${venta.habitacion_id}`);
-      
-      // Obtener nombre de la habitación
-      const habitacionInfo = await query(
+      const habitacionInfo = (await query(
         'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
         [venta.habitacion_id]
-      ) as any[];
-      
-      const nombreHabitacion = habitacionInfo && habitacionInfo.length > 0 
-        ? habitacionInfo[0].nombre 
-        : `Habitación ${venta.habitacion_id}`;
-      
+      )) as any[];
+
+      const nombreHabitacion =
+        habitacionInfo && habitacionInfo.length > 0
+          ? habitacionInfo[0].nombre
+          : `Habitación ${venta.habitacion_id}`;
+
       sendNotificationToAll('timer_stopped', {
         servicioId: ventaId,
         roomId: venta.habitacion_id,
@@ -83,9 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         reason: 'Venta finalizada manualmente',
         tipoTransaccion: 'venta'
       });
-      
-      console.log(`[STOP VENTA] ✅ Notificación timer_stopped enviada en tiempo real para venta ${ventaId}`);
-      console.log(`[STOP VENTA] 📡 Todos los usuarios verán el temporizador finalizado inmediatamente`);
     }
 
     return res.status(200).json({
@@ -96,7 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       anfitrionasLiberadas: anfitrionasLiberadas.length
     });
   } catch (error) {
-    console.error('Error al finalizar venta:', error);
     return res.status(500).json({
       error: 'Error interno del servidor',
       details: error instanceof Error ? error.message : String(error)

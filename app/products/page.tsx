@@ -16,7 +16,7 @@ const ProductsPage = () => {
   };
 
   return (
-    <PermissionGuard module="productos" action="ver_categorias">
+    <PermissionGuard module="products" action="view">
       <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
         <div className="flex justify-between items-center">
           <div>

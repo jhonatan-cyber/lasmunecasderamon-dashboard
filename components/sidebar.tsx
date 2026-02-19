@@ -34,19 +34,19 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, module: 'dashboard', action: 'view' },
-  { name: 'Usuarios', href: '/users', icon: Users, module: 'usuarios', action: 'listar' },
-  { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clientes', action: 'listar' },
-  { name: 'Productos', href: '/products', icon: Package, module: 'productos', action: 'ver_categorias' },
-  { name: 'Categorías', href: '/categories', icon: Tag, module: 'categorias', action: 'listar' },
-  { name: 'Pedidos', href: '/orders', icon: ShoppingCart, module: 'pedidos', action: 'listar' },
-  { name: 'Reportes', href: '/reports', icon: FileText, module: 'reportes', action: 'listar' },
-  { name: 'Ventas', href: '/sales', icon: TrendingUp, module: 'ventas', action: 'listar' }
+  { name: 'Usuarios', href: '/users', icon: Users, module: 'users', action: 'view' },
+  { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clients', action: 'view' },
+  { name: 'Productos', href: '/products', icon: Package, module: 'products', action: 'view' },
+  { name: 'Categorías', href: '/categories', icon: Tag, module: 'categories', action: 'view' },
+  { name: 'Pedidos', href: '/orders', icon: ShoppingCart, module: 'orders', action: 'view' },
+  { name: 'Reportes', href: '/reports', icon: FileText, module: 'reports', action: 'view' },
+  { name: 'Ventas', href: '/sales', icon: TrendingUp, module: 'sales', action: 'view' }
 ];
 
 const hrNavigation = [
-  { name: 'Roles', href: '/roles', icon: Shield, module: 'roles', action: 'listar' },
-  { name: 'Asistencias', href: '/attendance', icon: Clock, module: 'asistencias', action: 'listar' },
-  { name: 'Horas Extras', href: '/overtime', icon: Clock, module: 'horas_extras', action: 'listar' }
+  { name: 'Roles', href: '/roles', icon: Shield, module: 'roles', action: 'view' },
+  { name: 'Asistencias', href: '/attendance', icon: Clock, module: 'attendance', action: 'view' },
+  { name: 'Horas Extras', href: '/overtime', icon: Clock, module: 'overtime', action: 'view' }
 ];
 
 const financeNavigation = [
@@ -54,61 +54,67 @@ const financeNavigation = [
     name: 'Cajas',
     href: '/cash-register',
     icon: CreditCard,
-    module: 'caja',
-    action: 'listar'
+    module: 'cash_register',
+    action: 'view'
   },
   {
     name: 'Cuentas',
     href: '/accounts',
     icon: Calculator,
-    module: 'cuentas',
-    action: 'listar'
+    module: 'accounts',
+    action: 'view'
   },
-  { name: 'Propinas', href: '/tips', icon: Gift, module: 'propinas', action: 'listar' },
+  { name: 'Propinas', href: '/tips', icon: Gift, module: 'tips', action: 'view' },
   {
     name: 'Comisiones',
     href: '/commissions',
     icon: Percent,
-    module: 'comisiones',
-    action: 'listar'
+    module: 'commissions',
+    action: 'view'
   },
   {
     name: 'Pagos a Trabajadores',
     href: '/payroll',
     icon: DollarSign,
     module: 'payroll',
-    action: 'listar'
+    action: 'view'
   },
   {
     name: 'Detalle Planillas',
     href: '/payroll/calendar',
     icon: CalendarIcon,
-    module: 'detalle_planilla',
-    action: 'listar'
+    module: 'payroll_details',
+    action: 'view'
   },
   {
     name: 'Anticipos',
     href: '/advances',
     icon: DollarSign,
-    module: 'anticipos',
-    action: 'listar'
+    module: 'advances',
+    action: 'view'
   },
   {
     name: 'Devoluciones',
     href: '/returns',
     icon: RotateCcw,
-    module: 'devoluciones',
-    action: 'listar'
+    module: 'returns',
+    action: 'view'
   }
 ];
 
 const serviceNavigation = [
-  { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'habitaciones', action: 'crear' },
-  { name: 'Vender Privado', href: '/private-rooms', icon: Lock, module: 'privados', action: 'listar' }
+  { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'rooms', action: 'create' },
+  {
+    name: 'Vender Privado',
+    href: '/private-rooms',
+    icon: Lock,
+    module: 'private_rooms',
+    action: 'view'
+  }
 ];
 
 const secondaryNavigation = [
-  { name: 'Configuración', href: '/settings', icon: Settings, module: 'configuraciones', action: 'listar' }
+  { name: 'Configuración', href: '/settings', icon: Settings, module: 'settings', action: 'view' }
 ];
 
 export function Sidebar() {
@@ -127,9 +133,10 @@ export function Sidebar() {
     const prevPermissions = prevPermissionsRef.current;
 
     // Si cambió la cantidad o el contenido de permisos
-    if (permissions.length !== prevPermissions.length ||
-      JSON.stringify(permissions) !== JSON.stringify(prevPermissions)) {
-
+    if (
+      permissions.length !== prevPermissions.length ||
+      JSON.stringify(permissions) !== JSON.stringify(prevPermissions)
+    ) {
       console.log('🔄 [Sidebar] PERMISOS CAMBIARON!', {
         antes: prevPermissions.length,
         ahora: permissions.length,
@@ -145,7 +152,10 @@ export function Sidebar() {
 
   // Crear una clave única basada en los permisos para detectar cambios
   const permissionsKey = React.useMemo(() => {
-    return `${permissions.length}:${permissions.map(p => `${p.module}.${p.action}`).sort().join('|')}`;
+    return `${permissions.length}:${permissions
+      .map(p => `${p.module}.${p.action}`)
+      .sort()
+      .join('|')}`;
   }, [permissions]);
 
   // Log inicial para debugging (solo en desarrollo)
@@ -166,27 +176,30 @@ export function Sidebar() {
     }
   }, [user, userLoading]);
 
-  const hasModulePermission = React.useCallback((module: string, action: string = 'listar') => {
-    // Dashboard siempre accesible
-    if (module === 'dashboard') return true;
+  const hasModulePermission = React.useCallback(
+    (module: string, action: string = 'listar') => {
+      // Dashboard siempre accesible
+      if (module === 'dashboard') return true;
 
-    // Administrador tiene acceso a todo
-    const isAdminFromStorage =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('userRole')?.toLowerCase() === 'administrador'
-        : false;
+      // Administrador tiene acceso a todo
+      const isAdminFromStorage =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('userRole')?.toLowerCase() === 'administrador'
+          : false;
 
-    if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
+      if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
 
-    // Si no hay permisos cargados, no tiene acceso
-    if (!permissions.length) {
-      return false;
-    }
+      // Si no hay permisos cargados, no tiene acceso
+      if (!permissions.length) {
+        return false;
+      }
 
-    return permissions.some(
-      permission => permission.module === module && permission.action === action
-    );
-  }, [user?.role, permissions]);
+      return permissions.some(
+        permission => permission.module === module && permission.action === action
+      );
+    },
+    [user?.role, permissions]
+  );
 
   // Recalcular listas filtradas cuando cambien permisos
   const allowedPrincipal = React.useMemo(() => {

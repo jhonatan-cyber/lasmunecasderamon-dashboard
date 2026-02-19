@@ -10,29 +10,30 @@ interface RouteGuardProps {
 }
 
 // Mapeo de rutas a módulos y acciones requeridas
+// IMPORTANTE: Los nombres de módulos y acciones deben coincidir con la tabla 'permissions' en la BD
 const routePermissions: Record<string, { module: string; action: string }> = {
   '/dashboard': { module: 'dashboard', action: 'view' },
-  '/users': { module: 'usuarios', action: 'listar' },
-  '/clients': { module: 'clientes', action: 'listar' },
-  '/products': { module: 'productos', action: 'listar_categoria' },
-  '/categories': { module: 'categorias', action: 'listar' },
-  '/orders': { module: 'pedidos', action: 'listar' },
-  '/sales': { module: 'ventas', action: 'listar' },
-  '/reports': { module: 'reportes', action: 'listar' },
-  '/roles': { module: 'roles', action: 'listar' },
-  '/attendance': { module: 'asistencias', action: 'listar' },
-  '/overtime': { module: 'horas_extras', action: 'listar' },
-  '/cash-register': { module: 'caja', action: 'listar' },
-  '/accounts': { module: 'cuentas', action: 'listar' },
-  '/tips': { module: 'propinas', action: 'listar' },
-  '/commissions': { module: 'comisiones', action: 'listar' },
-  '/payroll': { module: 'payroll', action: 'listar' },
-  '/payroll/calendar': { module: 'detalle_planilla', action: 'listar' },
-  '/advances': { module: 'anticipos', action: 'listar' },
-  '/returns': { module: 'devoluciones', action: 'listar' },
-  '/rooms': { module: 'habitaciones', action: 'listar' },
-  '/private-rooms': { module: 'privados', action: 'listar' },
-  '/settings': { module: 'configuraciones', action: 'listar' }
+  '/users': { module: 'users', action: 'view' },
+  '/clients': { module: 'clients', action: 'view' },
+  '/products': { module: 'products', action: 'view' },
+  '/categories': { module: 'categories', action: 'view' },
+  '/orders': { module: 'orders', action: 'view' },
+  '/sales': { module: 'sales', action: 'view' },
+  '/reports': { module: 'reports', action: 'view' },
+  '/roles': { module: 'roles', action: 'view' },
+  '/attendance': { module: 'attendance', action: 'view' },
+  '/overtime': { module: 'overtime', action: 'view' },
+  '/cash-register': { module: 'cash_register', action: 'view' },
+  '/accounts': { module: 'accounts', action: 'view' },
+  '/tips': { module: 'tips', action: 'view' },
+  '/commissions': { module: 'commissions', action: 'view' },
+  '/payroll': { module: 'payroll', action: 'view' },
+  '/payroll/calendar': { module: 'payroll_details', action: 'view' },
+  '/advances': { module: 'advances', action: 'view' },
+  '/returns': { module: 'returns', action: 'view' },
+  '/rooms': { module: 'rooms', action: 'view' },
+  '/private-rooms': { module: 'private_rooms', action: 'view' },
+  '/settings': { module: 'settings', action: 'view' }
 };
 
 // Rutas públicas que no requieren autenticación

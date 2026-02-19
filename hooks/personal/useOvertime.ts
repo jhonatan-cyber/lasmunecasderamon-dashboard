@@ -13,7 +13,6 @@ export interface OvertimeDetail {
 }
 
 export const useOvertime = () => {
-  // Fetch principal de overtime
   const { data: overtime, isLoading: loading, error, refetch: getOvertime } = useGenericFetch<Overtime>(
     '/api/overtime',
     {
@@ -21,7 +20,6 @@ export const useOvertime = () => {
     }
   );
 
-  // Estados para detalles
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [overtimeDetails, setOvertimeDetails] = useState<OvertimeDetail[]>([]);
@@ -40,7 +38,7 @@ export const useOvertime = () => {
       }
 
       const result = await response.json();
-      await getOvertime(); // Recargar lista
+      await getOvertime(); 
       return result;
     } catch (err) {
       throw err;

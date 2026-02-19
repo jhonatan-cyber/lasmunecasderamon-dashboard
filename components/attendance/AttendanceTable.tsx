@@ -41,7 +41,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Verificar permiso para ver detalles
-  const canViewDetail = hasPermission('asistencias', 'ver_detalles');
+  const canViewDetail = hasPermission('attendance', 'view_details');
 
   const handleViewDetail = (user: AttendanceData) => {
     setSelectedUser({

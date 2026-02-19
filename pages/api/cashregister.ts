@@ -73,13 +73,13 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Obtener información completa del usuario incluyendo rol y permisos
-    const userInfo = await query(
+    const userInfo = (await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
        WHERE u.id_usuario = ? AND u.estado = 1`,
       [currentUser.id]
-    ) as any[];
+    )) as any[];
 
     if (userInfo.length === 0) {
       return res.status(404).json({
@@ -90,66 +90,25 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const user = userInfo[0];
     const isAdmin = user.rol_nombre?.toLowerCase() === 'administrador';
-    
+
     // Verificar si tiene permisos de caja (listar)
     let hasCajaPermission = isAdmin; // Admin siempre tiene permiso
-    
+
     if (!isAdmin) {
-      const permissionCheck = await query(
+      const permissionCheck = (await query(
         `SELECT COUNT(*) as has_permission 
          FROM role_permissions rp
          INNER JOIN permissions p ON rp.permission_id = p.id
-         WHERE rp.role_id = ? AND p.module = 'caja' AND p.action = 'listar'
+         WHERE rp.role_id = ? AND p.module = 'cash_register' AND p.action = 'view'
          AND p.deleted_at IS NULL`,
         [user.rol_id]
-      ) as any[];
-      
+      )) as any[];
+
       hasCajaPermission = permissionCheck[0]?.has_permission > 0;
     }
-    
+
     // Si no tiene permisos de caja, solo puede ver su propia caja
     const canViewAllCajas = hasCajaPermission;
-
-    // Endpoint para verificar estado de caja (equivalente a caja-status.ts)
-    if (status === 'check') {
-      try {
-        console.log('[CASHREGISTER] 🔍 Verificando estado de caja...');
-        const cajaResult = (await query(
-          'SELECT id_caja, usuario_id_apertura, fecha_apertura FROM cajas WHERE estado = 1 LIMIT 1'
-        )) as any[];
-
-        const hasOpenCaja = cajaResult.length > 0;
-        const cajaInfo = hasOpenCaja ? cajaResult[0] : null;
-
-        console.log('[CASHREGISTER] ✅ Estado de caja:', {
-          hasOpenCaja,
-          cajaInfo: cajaInfo ? {
-            id_caja: cajaInfo.id_caja,
-            usuario_id_apertura: cajaInfo.usuario_id_apertura
-          } : null,
-          usuario_consultando: currentUser.id,
-          rol: user.rol_nombre
-        });
-
-        return res.status(200).json({
-          success: true,
-          data: {
-            hasOpenCaja,
-            cajaInfo: cajaInfo
-              ? {
-                  id_caja: cajaInfo.id_caja,
-                  usuario_id_apertura: cajaInfo.usuario_id_apertura,
-                  fecha_apertura: cajaInfo.fecha_apertura
-                }
-              : null
-          }
-        });
-      } catch (statusCheckError) {
-        console.error('❌ Error en status=check:', statusCheckError);
-        console.error('Error details:', statusCheckError instanceof Error ? statusCheckError.message : String(statusCheckError));
-        throw statusCheckError;
-      }
-    }
 
     if (resumen === '1') {
       // Si no tiene permisos de caja, solo obtener datos de su caja abierta
@@ -161,21 +120,25 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
         WHERE c.estado = 1
       `;
-      
+
       const cajaAbiertaParams: any[] = [];
-      
+
       if (!canViewAllCajas) {
         cajaAbiertaQuery += ' AND c.usuario_id_apertura = ?';
         cajaAbiertaParams.push(currentUser.id);
       }
-      
+
       cajaAbiertaQuery += ' ORDER BY c.fecha_apertura DESC LIMIT 1';
 
-      const cajaAbiertaResult = (await query(cajaAbiertaQuery, cajaAbiertaParams)) as RowDataPacket[];
+      const cajaAbiertaResult = (await query(
+        cajaAbiertaQuery,
+        cajaAbiertaParams
+      )) as RowDataPacket[];
 
-      const cajaAbiertaRow = Array.isArray(cajaAbiertaResult) && cajaAbiertaResult.length > 0 
-        ? cajaAbiertaResult[0] 
-        : null;
+      const cajaAbiertaRow =
+        Array.isArray(cajaAbiertaResult) && cajaAbiertaResult.length > 0
+          ? cajaAbiertaResult[0]
+          : null;
 
       // Contadores de cajas (si no tiene permisos, solo contar su caja)
       let cajasCountQuery = `
@@ -185,9 +148,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         FROM cajas
         WHERE estado IN (0,1)
       `;
-      
+
       const cajasCountParams: any[] = [];
-      
+
       if (!canViewAllCajas) {
         cajasCountQuery += ' AND usuario_id_apertura = ?';
         cajasCountParams.push(currentUser.id);

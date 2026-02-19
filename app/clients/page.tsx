@@ -1,19 +1,25 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
-import { useClients } from "@/hooks/clientes/useClients";
-import { Client } from "@/types/client";
-import { ClientModal } from "@/components/clients/ClientModal";
-import { ClientDetails } from "@/components/clients/ClientDetails";
-import { toast } from "sonner";
-import { ClientTable } from "@/components/clients/ClientTable";
-import { ClientFilters } from "@/components/clients/ClientFilters";
-import { ExportButtons } from "@/components/clients/ExportButtons";
-import Paginate from "@/components/ui/paginate";
-import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Plus } from 'lucide-react';
+import { useClients } from '@/hooks/clientes/useClients';
+import { Client } from '@/types/client';
+import { ClientModal } from '@/components/clients/ClientModal';
+import { ClientDetails } from '@/components/clients/ClientDetails';
+import { toast } from 'sonner';
+import { ClientTable } from '@/components/clients/ClientTable';
+import { ClientFilters } from '@/components/clients/ClientFilters';
+import { ExportButtons } from '@/components/clients/ExportButtons';
+import Paginate from '@/components/ui/paginate';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function Clients() {
   const {
@@ -31,20 +37,20 @@ export default function Clients() {
     setPage,
     pageSize,
     setPageSize,
-    totalPages,
+    totalPages
   } = useClients();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const CLIENT_EMPTY = { run: "", name: "", lastName: "", phone: "" };
+  const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
   const [modalClientData, setModalClientData] = useState(CLIENT_EMPTY);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editClientId, setEditClientId] = useState<number | null>(null);
 
   // Función para limpiar filtros
   const handleClearFilters = () => {
-    setSearchTerm("");
+    setSearchTerm('');
     setFilterStatus(null);
     setPage(1);
   };
@@ -60,9 +66,9 @@ export default function Clients() {
       await createClient(data);
       setIsModalOpen(false);
       setModalClientData(CLIENT_EMPTY);
-      toast.success("Cliente creado correctamente");
+      toast.success('Cliente creado correctamente');
     } catch (error) {
-      toast.error("Error al crear el cliente");
+      toast.error('Error al crear el cliente');
     }
   };
 
@@ -77,15 +83,15 @@ export default function Clients() {
     try {
       await updateClient({
         id: editClientId,
-        ...data,
+        ...data
       });
       setIsModalOpen(false);
       setIsEditMode(false);
       setEditClientId(null);
       setModalClientData(CLIENT_EMPTY);
-      toast.success("Cliente actualizado correctamente");
+      toast.success('Cliente actualizado correctamente');
     } catch (error) {
-      toast.error("Error al actualizar el cliente");
+      toast.error('Error al actualizar el cliente');
     }
   };
 
@@ -93,9 +99,9 @@ export default function Clients() {
   const handleDeleteClient = async (client: Client) => {
     try {
       await deleteClient(client.id);
-      toast.success("Cliente eliminado correctamente");
+      toast.success('Cliente eliminado correctamente');
     } catch (error) {
-      toast.error("Error al eliminar el cliente");
+      toast.error('Error al eliminar el cliente');
     }
   };
 
@@ -108,10 +114,10 @@ export default function Clients() {
   // Editar cliente
   const handleEditClick = (client: Client) => {
     setModalClientData({
-      run: client.run || "",
-      name: client.name || "",
-      lastName: client.lastName || "",
-      phone: client.phone || "",
+      run: client.run || '',
+      name: client.name || '',
+      lastName: client.lastName || '',
+      phone: client.phone || ''
     });
     setEditClientId(client.id);
     setIsEditMode(true);
@@ -134,27 +140,27 @@ export default function Clients() {
   };
 
   return (
-    <PermissionGuard module="clients" action="listar">
-      <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
-          <div className="flex flex-col">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Clientes</h1>
-            <p className="text-sm sm:text-base text-gray-600">
+    <PermissionGuard module='clients' action='view'>
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+          <div className='flex flex-col'>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Clientes</h1>
+            <p className='text-sm sm:text-base text-gray-600'>
               Gestiona todos los clientes de la plataforma.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
             <ExportButtons clients={allClients || []} />
-            <PermissionGuard module="clients" action="crear" fallback={null}>
+            <PermissionGuard module='clients' action='create' fallback={null}>
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
                   <Button
                     onClick={handleAddClick}
-                    size="sm"
-                    variant="outline"
-                    className="whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto"
+                    size='sm'
+                    variant='outline'
+                    className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
                   >
-                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
                     Nuevo Cliente
                   </Button>
                 </DialogTrigger>
@@ -178,51 +184,51 @@ export default function Clients() {
           </div>
         </div>
 
-      <ClientFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        onClearFilters={handleClearFilters}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        setPage={setPage}
-      />
-      <div className="mt-4 sm:mt-6">
-        <div className="overflow-x-auto">
-          <ClientTable
-            clients={clients}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClient}
-            onViewDetails={handleViewDetails}
-            currentPage={page}
-            pageSize={pageSize}
-          />
-        </div>
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-4 sm:mt-6">
-          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-        </div>
-      )}
-
-      {/* Diálogo de detalles del cliente */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl w-[95vw] max-w-[95vw] sm:w-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Detalles del Cliente</DialogTitle>
-          </DialogHeader>
-          {selectedClient && (
-            <ClientDetails
-              client={selectedClient}
-              onEdit={handleEditFromDetails}
-              onClose={() => setIsDetailsOpen(false)}
+        <ClientFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          onClearFilters={handleClearFilters}
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          setPage={setPage}
+        />
+        <div className='mt-4 sm:mt-6'>
+          <div className='overflow-x-auto'>
+            <ClientTable
+              clients={clients}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClient}
+              onViewDetails={handleViewDetails}
+              currentPage={page}
+              pageSize={pageSize}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  </PermissionGuard>
+          </div>
+        </div>
+
+        {totalPages > 1 && (
+          <div className='flex justify-center mt-4 sm:mt-6'>
+            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+          </div>
+        )}
+
+        {/* Diálogo de detalles del cliente */}
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className='max-w-2xl w-[95vw] max-w-[95vw] sm:w-auto'>
+            <DialogHeader>
+              <DialogTitle className='text-lg sm:text-xl'>Detalles del Cliente</DialogTitle>
+            </DialogHeader>
+            {selectedClient && (
+              <ClientDetails
+                client={selectedClient}
+                onEdit={handleEditFromDetails}
+                onClose={() => setIsDetailsOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </PermissionGuard>
   );
 }

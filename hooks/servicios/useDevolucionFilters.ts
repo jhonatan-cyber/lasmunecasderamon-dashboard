@@ -19,7 +19,6 @@ export const useDevolucionFilters = () => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      // Resetear a página 1 cuando cambian los filtros
       ...(key !== 'currentPage' && key !== 'rowsPerPage' ? { currentPage: 1 } : {})
     }));
   };

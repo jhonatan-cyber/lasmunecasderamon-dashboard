@@ -17,7 +17,9 @@
     "db:setup": "node database/setup.js",
     "db:import": "node database/import-production.js",
     "db:password": "node database/generate-password.js",
-    "optimize:images": "node scripts/optimize-images.js"
+    "optimize:images": "node scripts/optimize-images.js",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -106,6 +108,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.35.0",
     "@types/cookies": "^0.9.1",
     "@types/formidable": "^3.4.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -117,7 +120,7 @@
     "compression-webpack-plugin": "^11.1.0",
     "eslint": "^9.32.0",
     "exceljs": "^4.4.0",
-    "husky": "^9.1.7",
+    "husky": "^8.0.0",
     "lint-staged": "^16.1.4",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",

@@ -24,8 +24,7 @@ interface UseAnticiposReturn {
 
 export default function useAnticipos(): UseAnticiposReturn {
   const { user } = useCurrentUser()
-  
-  // Determinar qué endpoint usar basado en el rol del usuario
+
   const endpoint = useMemo(() => 
     user?.role?.toLowerCase() === 'cajero' ? '/api/anticipos/user' : '/api/anticipos',
     [user?.role]

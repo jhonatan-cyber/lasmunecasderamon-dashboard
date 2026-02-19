@@ -59,36 +59,38 @@ export default function RolesPage() {
   // Función para configurar la tabla de roles si no existen
   const setupRolesTable = async () => {
     try {
-      const response = await fetch("/api/roles/setup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/roles/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
-        showSuccessToast("Tabla de roles configurada correctamente");
+        showSuccessToast('Tabla de roles configurada correctamente');
         await fetchRoles(); // Recargar roles después de configurar
       } else {
-        showErrorToast(result.message || "Error al configurar roles");
+        showErrorToast(result.message || 'Error al configurar roles');
       }
     } catch (error) {
-      showErrorToast("Error al configurar la tabla de roles");
+      showErrorToast('Error al configurar la tabla de roles');
     }
   };
 
   // Función para asignar todos los permisos al administrador
   const assignAllPermissionsToAdmin = async () => {
     try {
-      const response = await fetch("/api/roles/admin-permissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/roles/admin-permissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
-        showSuccessToast(`Todos los permisos asignados al administrador (${result.data.assignedPermissions} permisos)`);
+        showSuccessToast(
+          `Todos los permisos asignados al administrador (${result.data.assignedPermissions} permisos)`
+        );
         // Si hay un rol seleccionado y es el administrador, recargar sus permisos
         if (selectedRole && selectedRole.name === 'Administrador') {
           // Recargar permisos del rol seleccionado
@@ -96,10 +98,10 @@ export default function RolesPage() {
           window.dispatchEvent(event);
         }
       } else {
-        showErrorToast(result.message || "Error al asignar permisos al administrador");
+        showErrorToast(result.message || 'Error al asignar permisos al administrador');
       }
     } catch (error) {
-      showErrorToast("Error al asignar permisos al administrador");
+      showErrorToast('Error al asignar permisos al administrador');
     }
   };
 
@@ -168,9 +170,6 @@ export default function RolesPage() {
     return matchesSearch && matchesStatus;
   });
 
-
-
-
   const handleActivateRole = async (roleId: number) => {
     try {
       await activateRole(roleId);
@@ -206,198 +205,197 @@ export default function RolesPage() {
       }
       setRoleToAction(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : `Error al ${modalAction === 'delete' ? 'eliminar' : 'desactivar'} el rol`;
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : `Error al ${modalAction === 'delete' ? 'eliminar' : 'desactivar'} el rol`;
       showErrorToast(errorMessage);
     }
   };
 
   return (
-    <PermissionGuard module="roles" action="listar">
+    <PermissionGuard module='roles' action='view'>
       <TooltipProvider>
         <>
-        {/* Modal */}
-        <RoleModal
-          open={isAddRoleModalOpen}
-          onOpenChange={open => {
-            setIsAddRoleModalOpen(open);
-            if (!open) {
+          {/* Modal */}
+          <RoleModal
+            open={isAddRoleModalOpen}
+            onOpenChange={open => {
+              setIsAddRoleModalOpen(open);
+              if (!open) {
+                setIsEditMode(false);
+                setEditRoleId(null);
+                setNewRole({ name: '', description: '' });
+              }
+            }}
+            isEditMode={isEditMode}
+            newRole={newRole}
+            setNewRole={setNewRole}
+            isLoading={isSubmitting}
+            onSubmit={handleSubmitRole}
+            onCancel={() => {
+              setIsAddRoleModalOpen(false);
               setIsEditMode(false);
               setEditRoleId(null);
               setNewRole({ name: '', description: '' });
-            }
-          }}
-          isEditMode={isEditMode}
-          newRole={newRole}
-          setNewRole={setNewRole}
-          isLoading={isSubmitting}
-          onSubmit={handleSubmitRole}
-          onCancel={() => {
-            setIsAddRoleModalOpen(false);
-            setIsEditMode(false);
-            setEditRoleId(null);
-            setNewRole({ name: '', description: '' });
-          }}
-        />
+            }}
+          />
 
-        {/* Confirmation Modal */}
-        <DeleteRoleConfirmModal
-          open={isConfirmModalOpen}
-          onOpenChange={setIsConfirmModalOpen}
-          onConfirm={confirmAction}
-          roleName={roleToAction?.name || ''}
-          action={modalAction}
-        />
-    <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-          {/* Header */}
-               <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
-            <div>
-              <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-neutral-100'>
-                Gestión de Roles
-              </h2>
-              <p className='text-sm sm:text-base text-zinc-600 dark:text-neutral-300 mt-1'>
-                Administra roles y permisos del sistema
-              </p>
+          {/* Confirmation Modal */}
+          <DeleteRoleConfirmModal
+            open={isConfirmModalOpen}
+            onOpenChange={setIsConfirmModalOpen}
+            onConfirm={confirmAction}
+            roleName={roleToAction?.name || ''}
+            action={modalAction}
+          />
+          <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+            {/* Header */}
+            <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
+              <div>
+                <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-neutral-100'>
+                  Gestión de Roles
+                </h2>
+                <p className='text-sm sm:text-base text-zinc-600 dark:text-neutral-300 mt-1'>
+                  Administra roles y permisos del sistema
+                </p>
+              </div>
+              <PermissionGuard module='roles' action='create' fallback={null}>
+                <button
+                  className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-full hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
+                  onClick={() => {
+                    setIsAddRoleModalOpen(true);
+                    setIsEditMode(false);
+                    setEditRoleId(null);
+                    setNewRole({ name: '', description: '' });
+                  }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className='flex items-center'>
+                        <Plus className='h-4 w-4 mr-2' />
+                        Nuevo Rol
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>Crear nuevo rol</TooltipContent>
+                  </Tooltip>
+                </button>
+              </PermissionGuard>
             </div>
-            <PermissionGuard module="roles" action="crear" fallback={null}>
-              <button
-                className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-full hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
-                onClick={() => {
-                  setIsAddRoleModalOpen(true);
-                  setIsEditMode(false);
-                  setEditRoleId(null);
-                  setNewRole({ name: '', description: '' });
-                }}
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className='flex items-center'>
-                      <Plus className='h-4 w-4 mr-2' />
-                      Nuevo Rol
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Crear nuevo rol</TooltipContent>
-                </Tooltip>
-              </button>
-            </PermissionGuard>
-          </div>
 
-          {/* Stats Cards */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-            <StatsCard
-              icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
-              bgColor='bg-black'
-              title='Total Roles'
-              value={totalRoles}
-            />
-            <StatsCard
-              icon={<CheckCircle className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
-              bgColor='bg-green-600'
-              title='Roles Activos'
-              value={activeRoles}
-            />
-            <StatsCard
-              icon={<UsersIcon className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
-              bgColor='bg-zinc-700'
-              title='Usuarios Asignados'
-              value={totalUsersAssigned}
-            />
-          </div>
+            {/* Stats Cards */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
+              <StatsCard
+                icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
+                bgColor='bg-black'
+                title='Total Roles'
+                value={totalRoles}
+              />
+              <StatsCard
+                icon={<CheckCircle className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
+                bgColor='bg-green-600'
+                title='Roles Activos'
+                value={activeRoles}
+              />
+              <StatsCard
+                icon={<UsersIcon className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
+                bgColor='bg-zinc-700'
+                title='Usuarios Asignados'
+                value={totalUsersAssigned}
+              />
+            </div>
 
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-            {/* Columna izquierda - Filtros y Roles (50%) */}
-            <div className='space-y-4'>
-              {/* Filters */}
-              <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
-                <div className='flex flex-col sm:flex-row gap-4'>
-                  <div className='flex-1'>
-                    <div className='relative'>
-                      <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-neutral-500' />
-                      <input
-                        type='text'
-                        placeholder='Buscar roles...'
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className='w-full pl-10 pr-4 py-2 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100 placeholder:text-zinc-400 dark:placeholder:text-neutral-500'
-                      />
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
+              {/* Columna izquierda - Filtros y Roles (50%) */}
+              <div className='space-y-4'>
+                {/* Filters */}
+                <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
+                  <div className='flex flex-col sm:flex-row gap-4'>
+                    <div className='flex-1'>
+                      <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-neutral-500' />
+                        <input
+                          type='text'
+                          placeholder='Buscar roles...'
+                          value={searchTerm}
+                          onChange={e => setSearchTerm(e.target.value)}
+                          className='w-full pl-10 pr-4 py-2 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100 placeholder:text-zinc-400 dark:placeholder:text-neutral-500'
+                        />
+                      </div>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <select
+                        value={filterStatus}
+                        onChange={e =>
+                          setFilterStatus(e.target.value === 'all' ? 'all' : Number(e.target.value))
+                        }
+                        className='px-2 py-1 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
+                      >
+                        <option value='all'>Todos</option>
+                        <option value={1}>Activo</option>
+                        <option value={0}>Inactivo</option>
+                      </select>
+                      <button
+                        onClick={assignAllPermissionsToAdmin}
+                        className='inline-flex items-center px-2 py-1 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'
+                        title='Asignar todos los permisos al administrador'
+                      >
+                        Admin Permisos
+                      </button>
                     </div>
                   </div>
-                  <div className='flex items-center gap-2'>
-                    <select
-                      value={filterStatus}
-                      onChange={e =>
-                        setFilterStatus(e.target.value === 'all' ? 'all' : Number(e.target.value))
-                      }
-                      className='px-2 py-1 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
-                    >
-                      <option value='all'>Todos</option>
-                      <option value={1}>Activo</option>
-                      <option value={0}>Inactivo</option>
-                    </select>
-                    <button
-                      onClick={assignAllPermissionsToAdmin}
-                      
-                      className='inline-flex items-center px-2 py-1 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'
-                      title='Asignar todos los permisos al administrador'
-                    >
-                     
-                      Admin Permisos
-                    </button>
-                  </div>
+                </div>
+
+                {/* Roles List */}
+                <div className='space-y-4 overflow-y-auto max-h-[500px] pr-3 pl-3 pt-3'>
+                  {filteredRoles.length === 0 ? (
+                    <div className='text-center py-8'>
+                      <Shield className='h-8 w-8 sm:h-12 sm:w-12 text-zinc-400 mx-auto mb-4' />
+                      <h3 className='text-base sm:text-lg font-medium text-zinc-600 dark:text-neutral-300 mb-2'>
+                        No se encontraron roles
+                      </h3>
+                      <p className='text-xs sm:text-sm text-zinc-500 dark:text-neutral-400 mb-4'>
+                        {searchTerm || filterStatus !== 'all'
+                          ? 'Intenta ajustar los filtros de búsqueda'
+                          : 'No hay roles registrados en el sistema'}
+                      </p>
+                      {!searchTerm && filterStatus === 'all' && (
+                        <button
+                          onClick={setupRolesTable}
+                          className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
+                        >
+                          <Shield className='h-4 w-4 mr-2' />
+                          Configurar Roles del Sistema
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    filteredRoles.map(role => (
+                      <RoleCard
+                        key={role.id || `role-${Math.random()}`}
+                        role={role}
+                        selected={selectedRole?.id === role.id}
+                        onSelect={() => setSelectedRole(role)}
+                        onEdit={() => handleEditRole(role)}
+                        onDeactivate={() => handleDeactivateRole(role)}
+                        onActivate={() => handleActivateRole(role.id)}
+                        onDelete={() => handleDeleteRole(role)}
+                      />
+                    ))
+                  )}
                 </div>
               </div>
 
-              {/* Roles List */}
-              <div className='space-y-4 overflow-y-auto max-h-[500px] pr-3 pl-3 pt-3'>
-                {filteredRoles.length === 0 ? (
-                  <div className='text-center py-8'>
-                    <Shield className='h-8 w-8 sm:h-12 sm:w-12 text-zinc-400 mx-auto mb-4' />
-                    <h3 className='text-base sm:text-lg font-medium text-zinc-600 dark:text-neutral-300 mb-2'>
-                      No se encontraron roles
-                    </h3>
-                    <p className='text-xs sm:text-sm text-zinc-500 dark:text-neutral-400 mb-4'>
-                      {searchTerm || filterStatus !== 'all'
-                        ? 'Intenta ajustar los filtros de búsqueda'
-                        : 'No hay roles registrados en el sistema'}
-                    </p>
-                    {!searchTerm && filterStatus === 'all' && (
-                      <button
-                        onClick={setupRolesTable}
-                        className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
-                      >
-                        <Shield className='h-4 w-4 mr-2' />
-                        Configurar Roles del Sistema
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  filteredRoles.map(role => (
-                    <RoleCard
-                      key={role.id || `role-${Math.random()}`}
-                      role={role}
-                      selected={selectedRole?.id === role.id}
-                      onSelect={() => setSelectedRole(role)}
-                      onEdit={() => handleEditRole(role)}
-                      onDeactivate={() => handleDeactivateRole(role)}
-                      onActivate={() => handleActivateRole(role.id)}
-                      onDelete={() => handleDeleteRole(role)}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-            
-            {/* Columna derecha - Permissions Panel (50%) */}
-            <div>
-              <div
-                className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'
-              >
-                <PermissionsPanel selectedRole={selectedRole} />
+              {/* Columna derecha - Permissions Panel (50%) */}
+              <div>
+                <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
+                  <PermissionsPanel selectedRole={selectedRole} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </>
-    </TooltipProvider>
+        </>
+      </TooltipProvider>
     </PermissionGuard>
   );
 }
