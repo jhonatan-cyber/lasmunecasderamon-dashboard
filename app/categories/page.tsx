@@ -18,16 +18,17 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  UniqueIdentifier
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  rectSortingStrategy,
+  rectSortingStrategy
 } from '@dnd-kit/sortable';
-
 export default function Categories() {
   const {
+    // lista completa
     filteredCategories,
     searchTerm,
     setSearchTerm,
@@ -50,27 +51,41 @@ export default function Categories() {
   } | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
-  const [localCategories, setLocalCategories] = useState(filteredCategories);
+  const [localCategories, setLocalCategories] = useState<any[]>([]);
 
   // Configurar sensores para drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
-      },
+        distance: 8
+      }
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 
-  // Sincronizar categorías locales con las filtradas
+  // Sincronizar categorías locales con la lista completa (no con el subconjunto filtrado)
+  // Además deduplicar por seguridad para evitar `key` duplicadas en el render
   useEffect(() => {
-    setLocalCategories(filteredCategories);
+    if (!filteredCategories) return setLocalCategories([]);
+    const seen = new Set<any>();
+    const unique = filteredCategories.filter((c: any) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+    if (unique.length !== filteredCategories.length) {
+      console.warn(
+        '[CategoriesPage] duplicate category ids removed before setLocalCategories',
+        filteredCategories.map((c: any) => c.id)
+      );
+    }
+    setLocalCategories(unique);
   }, [filteredCategories]);
 
   // Filtrado real por estado
-  const filteredByStatus = localCategories.filter(category => {
+  const filteredByStatus = localCategories.filter((category: { status: any }) => {
     if (filterStatus === 'all') return true;
     return String(category.status) === filterStatus;
   });
@@ -113,7 +128,7 @@ export default function Categories() {
 
   const handleUpdate = async (form: { name: string; description: string }) => {
     if (!editCategory) return;
-    
+
     const result = await updateCategory(editCategory.id, {
       name: form.name,
       description: form.description
@@ -133,42 +148,60 @@ export default function Categories() {
     setPage(1);
   };
 
-  // Manejar drag end
+  // Manejar drag end — operar sobre el array completo (localCategories) para no perder elementos
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
 
-    const oldIndex = filteredByStatus.findIndex(cat => cat.id === active.id);
-    const newIndex = filteredByStatus.findIndex(cat => cat.id === over.id);
+    // Índices relativos al array completo localCategories
+    const oldIndex = localCategories.findIndex(
+      (cat: { id: UniqueIdentifier }) => cat.id === active.id
+    );
+    const newIndex = localCategories.findIndex(
+      (cat: { id: UniqueIdentifier }) => cat.id === over.id
+    );
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newOrder = arrayMove(filteredByStatus, oldIndex, newIndex);
-      setLocalCategories(newOrder);
+    if (oldIndex === -1 || newIndex === -1) return;
 
-      // Guardar el nuevo orden en el servidor
-      const result = await reorderCategories(newOrder);
-      if (result.success) {
-        toast.success('Orden actualizado correctamente');
-      } else {
-        toast.error(result.message);
-        // Revertir el orden si falla
-        setLocalCategories(filteredByStatus);
-      }
+    // Guardar respaldo por si hay rollback
+    const previous = [...localCategories];
+
+    // Nuevo orden en el array completo
+    const newLocalOrder = arrayMove(localCategories, oldIndex, newIndex);
+
+    // Actualizar UI inmediatamente
+    setLocalCategories(newLocalOrder);
+
+    // Enviar la lista completa al servidor para persistir display_order
+    const result = await reorderCategories(newLocalOrder);
+
+    // El hook `useCategories` ya muestra toasts y mantiene el cache; aquí solo revertimos en caso de fallo
+    if (!result.success) {
+      setLocalCategories(previous);
     }
   };
 
+  // Debug: detectar ids duplicados antes de render
+  const duplicateIds = (() => {
+    const ids = paginatedCategories.map((c: any) => c.id);
+    return ids.filter((v: any, i: number, a: any[]) => a.indexOf(v) !== i);
+  })();
+  if (duplicateIds.length) {
+    console.error('[Categories] duplicate ids present in paginatedCategories:', duplicateIds);
+  }
+
   return (
-    <PermissionGuard module="categorias" action="listar">
+    <PermissionGuard module='categories' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Categorías</h1>
-            <p className='text-sm sm:text-base text-gray-600'>Organiza tus productos en categorías</p>
+            <p className='text-sm sm:text-base text-gray-600'>
+              Organiza tus productos en categorías
+            </p>
           </div>
-          <PermissionGuard module="categorias" action="crear" fallback={null}>
+          <PermissionGuard module='categories' action='create' fallback={null}>
             <CategoryFormDialog open={openDialog} setOpen={setOpenDialog} onCreate={handleCreate}>
               <Button
                 variant='outline'
@@ -183,77 +216,88 @@ export default function Categories() {
           </PermissionGuard>
         </div>
 
-      <CategoryFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        onClearFilters={handleClearFilters}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        setPage={setPage}
-      />
+        <CategoryFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          onClearFilters={handleClearFilters}
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          setPage={setPage}
+        />
 
-      {isLoading && <div className='text-center text-gray-500 text-sm sm:text-base'>Cargando categorías...</div>}
-      {error && <div className='text-center text-red-500 text-sm sm:text-base'>{error}</div>}
+        {error && <div className='text-center text-red-500 text-sm sm:text-base'>{error}</div>}
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={paginatedCategories.map(cat => cat.id)}
-          strategy={rectSortingStrategy}
-        >
-          <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-            {paginatedCategories.map(category => (
-              <SortableCategoryCard
-                key={category.id}
-                category={{ ...category, description: category.description ?? '' }}
-                onDelete={handleDelete}
-                onActivate={async id => {
-                  const result = await activateCategory(id);
-                  if (result.success) toast.success(result.message);
-                  else toast.error(result.message);
-                }}
-                onDeactivate={async id => {
-                  const result = await deactivateCategory(id);
-                  if (result.success) toast.success(result.message);
-                  else toast.error(result.message);
-                }}
-                onEdit={handleEdit}
-              />
-            ))}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={paginatedCategories.map((cat: { id: any }) => cat.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+              {paginatedCategories.map(
+                (category: {
+                  id: any;
+                  description: any;
+                  name?: string;
+                  status?: number;
+                  total_products?: number | undefined;
+                  created_at?: string | undefined;
+                }) => (
+                  <SortableCategoryCard
+                    key={category.id}
+                    category={{
+                      id: category.id,
+                      name: category.name ?? '',
+                      description: category.description ?? '',
+                      status: category.status ?? 1,
+                      total_products: category.total_products,
+                      created_at: category.created_at
+                    }}
+                    onDelete={handleDelete}
+                    onActivate={async id => {
+                      const result = await activateCategory(id);
+                      if (result.success) toast.success(result.message);
+                      else toast.error(result.message);
+                    }}
+                    onDeactivate={async id => {
+                      const result = await deactivateCategory(id);
+                      if (result.success) toast.success(result.message);
+                      else toast.error(result.message);
+                    }}
+                    onEdit={handleEdit}
+                  />
+                )
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
+
+        {/* Paginador usando el componente Paginate */}
+        {totalPages > 1 && (
+          <div className='flex justify-center mt-4 sm:mt-6'>
+            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
           </div>
-        </SortableContext>
-      </DndContext>
+        )}
 
-      {/* Paginador usando el componente Paginate */}
-      {totalPages > 1 && (
-        <div className='flex justify-center mt-4 sm:mt-6'>
-          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-        </div>
-      )}
-
-      {/* Pasa los valores iniciales al formulario de edición */}
-      {editCategory && (
-        <CategoryFormDialog
-          open={editDialog}
-          setOpen={open => {
-            setEditDialog(open);
-            if (!open) setEditCategory(null);
-          }}
-          onCreate={handleUpdate}
-          initialValues={{
-            name: editCategory.name,
-            description: editCategory.description
-          }}
-        >
-          <span />
-        </CategoryFormDialog>
-      )}
-    </div>
+        {/* Pasa los valores iniciales al formulario de edición */}
+        {editCategory && (
+          <CategoryFormDialog
+            open={editDialog}
+            setOpen={open => {
+              setEditDialog(open);
+              if (!open) setEditCategory(null);
+            }}
+            onCreate={handleUpdate}
+            initialValues={{
+              name: editCategory.name,
+              description: editCategory.description
+            }}
+          >
+            <span />
+          </CategoryFormDialog>
+        )}
+      </div>
     </PermissionGuard>
   );
 }

@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import { logger } from '../logger';
 
-// Headers de seguridad
 export const securityHeaders = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -9,13 +8,12 @@ export const securityHeaders = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:;"
+  'Content-Security-Policy':
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:;"
 };
 
-// Middleware para aplicar headers de seguridad
 export function withSecurityHeaders(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
-    // Aplicar headers de seguridad
     Object.entries(securityHeaders).forEach(([key, value]) => {
       res.setHeader(key, value);
     });
@@ -24,16 +22,13 @@ export function withSecurityHeaders(handler: NextApiHandler) {
   };
 }
 
-// Validación de entrada básica
 export function validateInput(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const { method } = req;
-    
-    // Validar tamaño del body para métodos POST/PUT
     if ((method === 'POST' || method === 'PUT') && req.body) {
       const contentLength = parseInt(req.headers['content-length'] || '0');
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      
+      const maxSize = 10 * 1024 * 1024;
+
       if (contentLength > maxSize) {
         logger.warn('Request body too large', {
           ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
@@ -41,7 +36,7 @@ export function validateInput(handler: NextApiHandler) {
           maxSize,
           path: req.url
         });
-        
+
         return res.status(413).json({
           success: false,
           message: 'Payload too large',
@@ -50,7 +45,6 @@ export function validateInput(handler: NextApiHandler) {
       }
     }
 
-    // Validar Content-Type para APIs que esperan JSON
     if (method === 'POST' || method === 'PUT') {
       const contentType = req.headers['content-type'];
       if (!contentType || !contentType.includes('application/json')) {
@@ -66,21 +60,17 @@ export function validateInput(handler: NextApiHandler) {
   };
 }
 
-// Middleware para sanitizar entrada
 export function sanitizeInput(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
-    // Sanitizar query parameters
     if (req.query) {
       Object.keys(req.query).forEach(key => {
         const value = req.query[key];
         if (typeof value === 'string') {
-          // Remover caracteres peligrosos
           req.query[key] = value.replace(/[<>]/g, '');
         }
       });
     }
 
-    // Sanitizar body
     if (req.body && typeof req.body === 'object') {
       const sanitizeObject = (obj: any): any => {
         if (typeof obj === 'string') {
@@ -106,12 +96,11 @@ export function sanitizeInput(handler: NextApiHandler) {
   };
 }
 
-// Middleware para validar métodos HTTP
 export function validateMethod(allowedMethods: string[]) {
-  return function(handler: NextApiHandler) {
+  return function (handler: NextApiHandler) {
     return async (req: NextApiRequest, res: NextApiResponse) => {
       const { method } = req;
-      
+
       if (!method || !allowedMethods.includes(method)) {
         logger.warn('Invalid HTTP method', {
           method,
@@ -119,7 +108,7 @@ export function validateMethod(allowedMethods: string[]) {
           ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
           path: req.url
         });
-        
+
         res.setHeader('Allow', allowedMethods);
         return res.status(405).json({
           success: false,
@@ -134,12 +123,11 @@ export function validateMethod(allowedMethods: string[]) {
   };
 }
 
-// Middleware para validar origen de requests
 export function validateOrigin(allowedOrigins: string[]) {
-  return function(handler: NextApiHandler) {
+  return function (handler: NextApiHandler) {
     return async (req: NextApiRequest, res: NextApiResponse) => {
       const origin = req.headers.origin;
-      
+
       if (origin && !allowedOrigins.includes(origin)) {
         logger.warn('Invalid origin', {
           origin,
@@ -147,7 +135,7 @@ export function validateOrigin(allowedOrigins: string[]) {
           ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
           path: req.url
         });
-        
+
         return res.status(403).json({
           success: false,
           message: 'Origin not allowed',
@@ -160,25 +148,14 @@ export function validateOrigin(allowedOrigins: string[]) {
   };
 }
 
-// Middleware para logging de requests
 export function requestLogger(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
-    // Desactivar logs de información para limpiar la consola
-    // Solo mantener logs de errores y warnings
-    
     return handler(req, res);
   };
 }
 
-// Middleware combinado de seguridad
 export function withSecurity(handler: NextApiHandler) {
-  return withSecurityHeaders(
-    validateInput(
-      sanitizeInput(
-        requestLogger(handler)
-      )
-    )
-  );
+  return withSecurityHeaders(validateInput(sanitizeInput(requestLogger(handler))));
 }
 
 export default {
@@ -190,4 +167,4 @@ export default {
   requestLogger,
   withSecurity,
   securityHeaders
-}; 
+};

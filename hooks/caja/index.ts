@@ -1,6 +1,6 @@
 // Hooks de caja y finanzas
-export { default as useCashRegister } from './useCashRegister';
-export { default as useCashRegisterStatus } from './useCashRegisterStatus';
-export { default as useRetiros } from './useRetiros';
-export { default as useCuentas } from './useCuentas';
-export { default as useSales } from './useSales';
+export {useCashRegister } from './useCashRegister';
+export {useCashRegisterStatus } from './useCashRegisterStatus';
+export {useRetiros } from './useRetiros';
+export {useCuentas } from './useCuentas';
+export {useSales } from './useSales';

@@ -36,7 +36,7 @@ export default function AccountsPage() {
   };
 
   return (
-    <PermissionGuard module="cuentas" action="listar">
+    <PermissionGuard module="accounts" action="view">
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <CuentaHeader loading={loading} onRefresh={handleRefresh} />
 

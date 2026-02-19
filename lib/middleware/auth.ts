@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import jwt from 'jsonwebtoken';
 import { logger, auditLogger } from '../logger';
 
-// Tipos para permisos y roles
 export interface UserPermissions {
   users: {
     read: boolean;
@@ -56,7 +55,7 @@ export interface AuthenticatedUser {
   exp: number;
 }
 
-// Mapeo de roles a permisos
+
 const rolePermissions: Record<string, UserPermissions> = {
   administrador: {
     users: { read: true, write: true, delete: true },
@@ -100,12 +99,10 @@ const rolePermissions: Record<string, UserPermissions> = {
   }
 };
 
-// Función para obtener permisos del usuario desde la base de datos
 async function getUserPermissionsFromDB(userId: number): Promise<UserPermissions> {
   try {
     const { query } = await import('@/lib/db');
-    
-    // Obtener el rol del usuario
+
     const userResult = await query(`
       SELECT rol_id FROM usuarios WHERE id_usuario = ?
     `, [userId]) as any[];
@@ -116,7 +113,6 @@ async function getUserPermissionsFromDB(userId: number): Promise<UserPermissions
 
     const roleId = userResult[0].rol_id;
 
-    // Obtener los permisos del rol
     const permissions = await query(`
       SELECT 
         p.module,
@@ -127,8 +123,6 @@ async function getUserPermissionsFromDB(userId: number): Promise<UserPermissions
     `, [roleId]) as any[];
 
 
-
-    // Convertir permisos a formato UserPermissions
     const userPerms: UserPermissions = {
       users: { read: false, write: false, delete: false },
       sales: { read: false, write: false, delete: false, anulate: false },

@@ -19,7 +19,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
   const { hasPermission } = useUserPermissions();
   
   // Verificar permiso para ver detalles
-  const canViewDetail = hasPermission('propinas', 'ver_detalles');
+  const canViewDetail = hasPermission('tips', 'view_details');
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
       <Table>

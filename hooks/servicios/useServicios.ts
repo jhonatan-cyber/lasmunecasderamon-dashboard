@@ -6,13 +6,9 @@ export function useServicios() {
   const [mutationLoading, setMutationLoading] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [includeAll, setIncludeAll] = useState(true);
-
-  // Construir endpoint dinámico
   const endpoint = useMemo(() => {
     return includeAll ? '/api/servicios' : '/api/servicios?all=false';
   }, [includeAll]);
-
-  // Usar hook genérico para fetch de servicios
   const {
     data: servicios,
     isLoading: fetchLoading,
@@ -21,30 +17,27 @@ export function useServicios() {
     setData: setServicios
   } = useGenericFetch<ServicioWithDetails>(endpoint, {
     initialFetch: true,
-    transform: (data) => {
+    transform: data => {
       if (data.success) {
-        console.log('✅ Servicios obtenidos:', data.data.length);
-        // Filtrar servicios temporales para no mostrarlos en la lista principal
         const serviciosFiltrados = data.data.filter((servicio: any) => {
-          // Excluir servicios temporales y servicios que tengan servicio_original_id (son temporales)
           return !servicio.es_temporal && !servicio.servicio_original_id;
         });
-        console.log('🔍 Servicios filtrados (sin temporales):', serviciosFiltrados.length);
         return serviciosFiltrados;
       }
       return [];
     }
   });
 
-  // Combinar loading y error states
   const loading = fetchLoading || mutationLoading;
   const error = fetchError || mutationError;
 
-  const getServicios = useCallback(async (includeAllParam: boolean = true) => {
-    console.log('📡 Obteniendo servicios, includeAll:', includeAllParam);
-    setIncludeAll(includeAllParam);
-    await refetch();
-  }, [refetch]);
+  const getServicios = useCallback(
+    async (includeAllParam: boolean = true) => {
+      setIncludeAll(includeAllParam);
+      await refetch();
+    },
+    [refetch]
+  );
 
   const createServicio = useCallback(
     async (servicioData: any) => {
@@ -62,7 +55,7 @@ export function useServicios() {
         const data = await response.json();
 
         if (data.success) {
-          await getServicios(true); // Recargar todos los servicios
+          await getServicios(true);
           return { success: true, data: data.data };
         } else {
           setMutationError(data.message);
@@ -109,7 +102,7 @@ export function useServicios() {
         const data = await response.json();
 
         if (data.success) {
-          await getServicios(true); // Recargar todos los servicios
+          await getServicios(true);
           return { success: true, data: data.data };
         } else {
           setMutationError(data.message);
@@ -137,7 +130,7 @@ export function useServicios() {
         const data = await response.json();
 
         if (data.success) {
-          await getServicios(true); // Recargar todos los servicios
+          await getServicios(true);
           return { success: true };
         } else {
           setMutationError(data.message);
@@ -153,15 +146,16 @@ export function useServicios() {
     [getServicios]
   );
 
-  const removeServicioFromState = useCallback((id: number) => {
-    setServicios(prev => prev.filter(servicio => servicio.id_servicio !== id));
-  }, [setServicios]);
+  const removeServicioFromState = useCallback(
+    (id: number) => {
+      setServicios(prev => prev.filter(servicio => servicio.id_servicio !== id));
+    },
+    [setServicios]
+  );
 
-  // Escuchar eventos de actualización de servicios en tiempo real
   useEffect(() => {
     const handleServiceUpdate = () => {
-      console.log('🔄 Recargando servicios por evento de actualización');
-      getServicios(true); // Recargar todos los servicios
+      getServicios(true);
     };
 
     window.addEventListener('updateServiceRequests', handleServiceUpdate);

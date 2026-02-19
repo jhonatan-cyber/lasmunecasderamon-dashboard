@@ -1,7 +1,3 @@
-/**
- * Errores personalizados para el manejo de comisiones
- */
-
 export class CommissionError extends Error {
   constructor(
     message: string,
@@ -85,9 +81,6 @@ export class DatabaseError extends CommissionError {
   }
 }
 
-/**
- * Formatea un error para la respuesta de la API
- */
 export const formatErrorResponse = (error: unknown) => {
   if (error instanceof CommissionError) {
     return {
@@ -119,9 +112,6 @@ export const formatErrorResponse = (error: unknown) => {
   };
 };
 
-/**
- * Valida una transición de estado de comisión
- */
 export const validateStatusTransition = (currentStatus: string, newStatus: string): boolean => {
   const transitions: Record<string, string[]> = {
     'por_pagar': ['pagado', 'anulado'],

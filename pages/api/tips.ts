@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery } from '@/lib/db';
+import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method, query: queryParams } = req;
 
   if (method === 'POST') {
@@ -87,6 +88,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { tipo, usuario_id } = queryParams;
 
+      // Obtener datos del usuario actual
+      const currentUser = getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado'
+        });
+      }
+
+      // Obtener información del rol del usuario
+      const userInfo = (await query(
+        `SELECT u.*, r.nombre as rol_nombre 
+         FROM usuarios u 
+         LEFT JOIN roles r ON u.rol_id = r.id_rol 
+         WHERE u.id_usuario = ?`,
+        [currentUser.id]
+      )) as any[];
+
+      const user = userInfo[0];
+      const isAdmin = user?.rol_nombre?.toLowerCase() === 'administrador';
+
       if (!tipo) {
         return res.status(400).json({
           success: false,
@@ -100,14 +122,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let whereClause = '';
         const params: any[] = [];
 
+        // Si no es administrador, mostrar solo sus propias propinas
+        if (!isAdmin) {
+          whereClause = 'WHERE DP.usuario_id = ?';
+          params.push(currentUser.id);
+        }
+
         if (caja_activa === '1') {
           const cajaAbiertaResult = await query(
             `SELECT fecha_apertura FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
           );
-          const cajaAbierta = Array.isArray(cajaAbiertaResult) ? cajaAbiertaResult[0] : cajaAbiertaResult as any;
+          const cajaAbierta = Array.isArray(cajaAbiertaResult)
+            ? cajaAbiertaResult[0]
+            : (cajaAbiertaResult as any);
 
           if (cajaAbierta?.fecha_apertura) {
-            whereClause = 'WHERE P.fecha_crea >= ?';
+            if (whereClause) {
+              whereClause += ' AND P.fecha_crea >= ?';
+            } else {
+              whereClause = 'WHERE P.fecha_crea >= ?';
+            }
             params.push(cajaAbierta.fecha_apertura);
           } else {
             return res.status(200).json({
@@ -117,7 +151,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        const propinasResumen = (await query(`
+        const propinasResumen = (await query(
+          `
           SELECT 
             U.id_usuario, 
             U.nick,
@@ -137,7 +172,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             U.nombre, 
             U.apellido
           ORDER BY total_propinas DESC
-        `, params)) as any[];
+        `,
+          params
+        )) as any[];
 
         return res.status(200).json({
           success: true,
@@ -145,7 +182,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       } else if (tipo === 'detalle') {
         // OBTENER DETALLE DE PROPINAS
-        if (!usuario_id) {
+        // Si no es admin, mostrar solo sus detalles
+        const finalUsuarioId = isAdmin && usuario_id ? usuario_id : currentUser.id;
+
+        if (!finalUsuarioId) {
           return res.status(400).json({
             success: false,
             message: 'usuario_id es requerido para obtener detalle'
@@ -172,7 +212,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           WHERE DP.usuario_id = ?
           ORDER BY P.fecha_crea DESC
         `,
-          [usuario_id]
+          [finalUsuarioId]
         )) as any[];
 
         return res.status(200).json({
@@ -199,3 +239,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+
+export default withAuth(handler);

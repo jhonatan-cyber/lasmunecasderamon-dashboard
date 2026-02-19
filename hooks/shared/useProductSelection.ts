@@ -7,10 +7,6 @@ interface UseProductSelectionParams {
   onAgregarProducto: (producto: any) => void;
 }
 
-/**
- * Hook para manejar la selección de productos en modales
- * Consolida la lógica de selección múltiple y agregado en lote
- */
 export function useProductSelection({
   productos,
   cantidades,

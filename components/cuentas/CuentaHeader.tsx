@@ -32,7 +32,7 @@ export function CuentaHeader({ loading, onRefresh }: CuentaHeaderProps) {
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-        <PermissionGuard module="cuentas" action="crear" fallback={null}>
+        <PermissionGuard module="accounts" action="create" fallback={null}>
           <Button
             onClick={handleCreateAccount}
             disabled={cajaLoading || !hasOpenCaja}

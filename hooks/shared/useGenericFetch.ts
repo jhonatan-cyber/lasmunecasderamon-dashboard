@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-/**
- * Hook genérico para fetch de datos con manejo de loading y errores
- * Consolida la lógica repetida de fetch en múltiples hooks
- */
+
 export function useGenericFetch<T>(
   endpoint: string,
   options?: {
@@ -15,7 +12,6 @@ export function useGenericFetch<T>(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Usar ref para mantener la función de transformación estable
   const transformRef = useRef(options?.transform);
   transformRef.current = options?.transform;
 
@@ -26,6 +22,8 @@ export function useGenericFetch<T>(
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        cache: 'no-store'
       });
       
       if (!response.ok) {

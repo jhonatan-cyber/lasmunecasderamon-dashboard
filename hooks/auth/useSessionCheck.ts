@@ -14,7 +14,11 @@ export const useSessionCheck = () => {
   const isCheckingRef = useRef(false);
 
   // Páginas públicas que no requieren verificación
-  const isPublicPage = 
+  const isPublicPage =
+    pathname === '/' ||
+    pathname === '/landing' ||
+    pathname === '/terminos-y-condiciones' ||
+    pathname === '/politica-de-privacidad' ||
     pathname === '/login' ||
     pathname === '/api-docs' ||
     pathname === '/confirmar-anulacion' ||
@@ -23,10 +27,10 @@ export const useSessionCheck = () => {
   const checkSessionStatus = async () => {
     // No verificar en páginas públicas
     if (isPublicPage) return;
-    
+
     // Evitar verificaciones simultáneas
     if (isCheckingRef.current) return;
-    
+
     isCheckingRef.current = true;
 
     try {
@@ -41,7 +45,6 @@ export const useSessionCheck = () => {
       }
 
       if (!response.ok) {
-        console.warn('⚠️ [SESSION] Error verificando sesión:', response.status);
         isCheckingRef.current = false;
         return;
       }
@@ -49,45 +52,33 @@ export const useSessionCheck = () => {
       const data = await response.json();
 
       if (data.success && data.debeDesconectar) {
-        // Sesión debe cerrarse
         toast.info('Sesión expirada', {
           description: 'Debe ingresar con código de verificación',
-          duration: 3000,
+          duration: 3000
         });
 
-        // Limpiar datos locales
         localStorage.removeItem('userRole');
-        
-        // Redirigir al login
+
         setTimeout(() => {
           router.push(`/login?redirect=${encodeURIComponent(pathname || '/')}`);
         }, 500);
       }
     } catch (error) {
-      // Solo log, no mostrar toast para evitar spam
-      console.error('❌ [SESSION] Error verificando sesión:', error);
     } finally {
       isCheckingRef.current = false;
     }
   };
 
   useEffect(() => {
-    // No iniciar verificaciones en páginas públicas
     if (isPublicPage) return;
-
-    // Verificar sesión cada 5 minutos (300000 ms)
-    // Esto es un respaldo, el sistema principal es AuthContext + fetchInterceptor
     checkInterval.current = setInterval(checkSessionStatus, 300000);
 
-    // Verificación inicial (con delay para evitar conflicto con AuthContext)
     const initialCheckTimeout = setTimeout(() => {
       checkSessionStatus();
-    }, 5000); // 5 segundos después de montar
+    }, 5000);
 
-    // Verificar cuando la ventana vuelve a estar activa
     const handleVisibilityChange = () => {
       if (!document.hidden && !isPublicPage) {
-        // Delay para evitar múltiples verificaciones simultáneas
         setTimeout(checkSessionStatus, 1000);
       }
     };
@@ -104,6 +95,6 @@ export const useSessionCheck = () => {
   }, [router, isPublicPage]);
 
   return {
-    checkSessionStatus,
+    checkSessionStatus
   };
 };

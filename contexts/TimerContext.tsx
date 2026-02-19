@@ -297,7 +297,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (data.success && Array.isArray(data.data)) {
           const serverTimers = data.data;
-          
+
           // Por cada timer del servidor, verificar si existe localmente
           serverTimers.forEach((serverTimer: any) => {
             const existsLocally = timersRef.current.some(
@@ -312,7 +312,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const now = new Date();
               const start = new Date(serverTimer.startTime);
               const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-              const remainingSeconds = Math.max(0, (serverTimer.duration * 60) - elapsedSeconds);
+              const remainingSeconds = Math.max(0, serverTimer.duration * 60 - elapsedSeconds);
 
               if (remainingSeconds > 0) {
                 const newTimer: Timer = {
@@ -390,13 +390,23 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.log('[TimerContext] Conectando a SSE para sincronización de timers...');
       eventSource = new EventSource('/api/notifications/sse');
 
-      eventSource.addEventListener('message', (event) => {
+      eventSource.addEventListener('message', event => {
         try {
           const payload = JSON.parse(event.data);
 
           // Evento: Se inició un nuevo timer
           if (payload?.type === 'timer_started' && payload?.data) {
-            const { servicioId, codigo, roomId, roomName, duration, startTime, clienteNombre, anfitrionas, tipoTransaccion } = payload.data;
+            const {
+              servicioId,
+              codigo,
+              roomId,
+              roomName,
+              duration,
+              startTime,
+              clienteNombre,
+              anfitrionas,
+              tipoTransaccion
+            } = payload.data;
 
             // Verificar si ya existe este timer localmente
             const existingTimer = timersRef.current.find(
@@ -405,12 +415,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             if (!existingTimer) {
               console.log('[TimerContext] SSE: Iniciando timer remoto:', codigo);
-              
+
               // Calcular tiempo restante basándose en startTime
               const now = new Date();
               const start = new Date(startTime);
               const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-              const remainingSeconds = Math.max(0, (duration * 60) - elapsedSeconds);
+              const remainingSeconds = Math.max(0, duration * 60 - elapsedSeconds);
 
               const newTimer: Timer = {
                 id: `${servicioId}-${roomId}-${Date.now()}`,
@@ -428,8 +438,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 anfitrionas: anfitrionas || ''
               };
 
-              setTimers(prev => [...prev.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)), newTimer]);
-              saveTimersToStorage([...timersRef.current.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)), newTimer]);
+              setTimers(prev => [
+                ...prev.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)),
+                newTimer
+              ]);
+              saveTimersToStorage([
+                ...timersRef.current.filter(
+                  t => !(t.servicioId === servicioId && t.roomId === roomId)
+                ),
+                newTimer
+              ]);
             }
           }
 
@@ -472,19 +490,19 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!roomResponse.ok) {
         throw new Error('Error al obtener datos de habitación');
       }
-      
+
       const roomData = await roomResponse.json();
       if (!roomData.success) {
         throw new Error('No se pudo obtener datos de habitación');
       }
 
       const room = roomData.data;
-      
+
       // Verificar si la habitación tiene precio, tiempo o comisión
       const hasPrice = room.price != null && room.price > 0;
       const hasTime = room.time != null && room.time > 0;
       const hasCommission = room.comision_anfitriona != null && room.comision_anfitriona > 0;
-      
+
       // Si la habitación NO tiene precio, tiempo ni comisión, no cambiar su estado
       if (!hasPrice && !hasTime && !hasCommission) {
         console.log(`ℹ️ Habitación ${roomId} sin precio/tiempo/comisión - no se cambia el estado`);
@@ -613,6 +631,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // PRIMERO: Eliminar el timer del estado local inmediatamente para evitar que se vuelva a mostrar
         setTimers(prev => prev.filter(t => t.id !== timerId));
+
+        // Guardar inmediatamente en localStorage para asegurar que el timer se elimine de "roomTimers" sin esperar al efecto
+        try {
+          const newTimers = timersRef.current.filter(t => t.id !== timerId);
+          saveTimersToStorage(newTimers);
+        } catch (e) {
+          console.warn('[TimerContext] No se pudo limpiar inmediatamente localStorage:', e);
+        }
 
         // Determinar qué actualizaciones realizar
         const otherTimersInSameRoom = timersRef.current.filter(

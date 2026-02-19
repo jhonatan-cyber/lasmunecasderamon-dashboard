@@ -1,7 +1,7 @@
 // Hooks de autenticación y permisos
-export { default as useCurrentUser } from './useCurrentUser';
-export { default as usePermissions } from './usePermissions';
-export { default as usePermissionsSSE } from './usePermissionsSSE';
-export { default as useUserPermissions } from './useUserPermissions';
-export { default as useSessionCheck } from './useSessionCheck';
-export { default as useLogins } from './useLogins';
+export { useCurrentUser } from './useCurrentUser';
+export { usePermissions } from './usePermissions';
+export { usePermissionsSSE } from './usePermissionsSSE';
+export { useUserPermissions } from './useUserPermissions';
+export { useSessionCheck } from './useSessionCheck';
+export { useLogins } from './useLogins';

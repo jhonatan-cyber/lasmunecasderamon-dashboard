@@ -59,117 +59,119 @@ export default function CommissionsPage() {
   );
 
   return (
-    <PermissionGuard module="comisiones" action="listar">
+    <PermissionGuard module='commissions' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
-        <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900'>
-            Comisiones
-          </h1>
-          <p className='text-sm sm:text-base text-gray-500'>
-            Gestiona las comisiones de las anfitrionas por ventas y servicios
-          </p>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-        <Card className='bg-white shadow-sm border-slate-100'>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium text-gray-500'>Total Comisiones</CardTitle>
-            <DollarSign className='h-4 w-4 text-blue-600' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-gray-900'>
-              {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.total_comisiones || 0)}
-            </div>
-            <p className='text-xs text-gray-400 mt-1'>Acumulado en caja activa</p>
-          </CardContent>
-        </Card>
-
-        <Card className='bg-white shadow-sm border-slate-100'>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium text-gray-500'>Por Ventas</CardTitle>
-            <TrendingUp className='h-4 w-4 text-green-600' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-gray-900'>
-              {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.comision_ventas || 0)}
-            </div>
-            <p className='text-xs text-gray-400 mt-1'>{stats?.porcentaje_ventas || 0}% del total</p>
-          </CardContent>
-        </Card>
-
-        <Card className='bg-white shadow-sm border-slate-100'>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium text-gray-500'>Por Servicios</CardTitle>
-            <Clock className='h-4 w-4 text-purple-600' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-gray-900'>
-              {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.comision_servicios || 0)}
-            </div>
-            <p className='text-xs text-gray-400 mt-1'>
-              {stats?.porcentaje_servicios || 0}% del total
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+          <div>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900'>
+              Comisiones
+            </h1>
+            <p className='text-sm sm:text-base text-gray-500'>
+              Gestiona las comisiones de las anfitrionas por ventas y servicios
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className='bg-white shadow-sm border-slate-100'>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium text-gray-500'>Anfitrionas</CardTitle>
-            <CheckCircle2 className='h-4 w-4 text-orange-600' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-gray-900'>
-              {isLoadingStats ? '...' : stats?.cantidad_comisiones || 0}
-            </div>
-            <p className='text-xs text-gray-400 mt-1'>Con comisiones registradas</p>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Estadísticas */}
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+          <Card className='bg-white shadow-sm border-slate-100'>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-gray-500'>Total Comisiones</CardTitle>
+              <DollarSign className='h-4 w-4 text-blue-600' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-gray-900'>
+                {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.total_comisiones || 0)}
+              </div>
+              <p className='text-xs text-gray-400 mt-1'>Acumulado en caja activa</p>
+            </CardContent>
+          </Card>
 
-      {/* Filtros y búsqueda */}
-      <CommissionsFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        onClearFilters={handleClearFilters}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        setPage={setPage}
-      />
+          <Card className='bg-white shadow-sm border-slate-100'>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-gray-500'>Por Ventas</CardTitle>
+              <TrendingUp className='h-4 w-4 text-green-600' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-gray-900'>
+                {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.comision_ventas || 0)}
+              </div>
+              <p className='text-xs text-gray-400 mt-1'>
+                {stats?.porcentaje_ventas || 0}% del total
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* Lista de comisiones */}
-      <div className='overflow-x-auto'>
-        <CommissionsList
-          loading={isLoading}
-          paginatedCommissions={paginatedCommissions}
-          getStatusColor={getStatusColor}
-          page={page}
+          <Card className='bg-white shadow-sm border-slate-100'>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-gray-500'>Por Servicios</CardTitle>
+              <Clock className='h-4 w-4 text-purple-600' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-gray-900'>
+                {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.comision_servicios || 0)}
+              </div>
+              <p className='text-xs text-gray-400 mt-1'>
+                {stats?.porcentaje_servicios || 0}% del total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className='bg-white shadow-sm border-slate-100'>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-gray-500'>Anfitrionas</CardTitle>
+              <CheckCircle2 className='h-4 w-4 text-orange-600' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-gray-900'>
+                {isLoadingStats ? '...' : stats?.cantidad_comisiones || 0}
+              </div>
+              <p className='text-xs text-gray-400 mt-1'>Con comisiones registradas</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros y búsqueda */}
+        <CommissionsFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onClearFilters={handleClearFilters}
+          rowsPerPage={rowsPerPage}
+          setRowsPerPage={setRowsPerPage}
           setPage={setPage}
-          totalPages={totalPages}
-          onViewDetails={handleViewDetails}
+        />
+
+        {/* Lista de comisiones */}
+        <div className='overflow-x-auto'>
+          <CommissionsList
+            loading={isLoading}
+            paginatedCommissions={paginatedCommissions}
+            getStatusColor={getStatusColor}
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+            onViewDetails={handleViewDetails}
+          />
+        </div>
+
+        {/* Modal de detalles */}
+        <CommissionsDetalleModal
+          open={showDetailModal}
+          onClose={handleCloseDetailModal}
+          usuario={
+            selectedCommission
+              ? {
+                  id_usuario: parseInt(selectedCommission.employeeId),
+                  nombre_completo: selectedCommission.employeeName,
+                  nick: selectedCommission.nick,
+                  total_comisiones: selectedCommission.total,
+                  total_ventas: selectedCommission.venta,
+                  total_servicios: selectedCommission.servicio
+                }
+              : null
+          }
         />
       </div>
-
-      {/* Modal de detalles */}
-      <CommissionsDetalleModal
-        open={showDetailModal}
-        onClose={handleCloseDetailModal}
-        usuario={
-          selectedCommission
-            ? {
-                id_usuario: parseInt(selectedCommission.employeeId),
-                nombre_completo: selectedCommission.employeeName,
-                nick: selectedCommission.nick,
-                total_comisiones: selectedCommission.total,
-                total_ventas: selectedCommission.venta,
-                total_servicios: selectedCommission.servicio
-              }
-            : null
-        }
-      />
-    </div>
     </PermissionGuard>
   );
 }

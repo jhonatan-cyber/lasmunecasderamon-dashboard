@@ -1,10 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-/**
- * Hook genérico para operaciones CRUD (Create, Update, Delete)
- * Consolida la lógica repetida de mutaciones en múltiples hooks
- */
 export function useGenericMutations<T>(
   endpoint: string,
   options?: {
@@ -19,135 +15,157 @@ export function useGenericMutations<T>(
   const showToasts = options?.showToasts !== false;
   const entityName = options?.entityName || 'registro';
 
-  const create = useCallback(async (data: Partial<T> | FormData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      let body: BodyInit;
-      let headers: Record<string, string> = {};
-      
-      if (data instanceof FormData) {
-        body = data;
-      } else {
-        body = JSON.stringify(data);
-        headers['Content-Type'] = 'application/json';
-      }
+  const create = useCallback(
+    async (data: Partial<T> | FormData) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        let body: BodyInit;
+        let headers: Record<string, string> = {};
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body,
-      });
+        if (data instanceof FormData) {
+          body = data;
+        } else {
+          body = JSON.stringify(data);
+          headers['Content-Type'] = 'application/json';
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error al crear ${entityName}`);
-      }
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body
+        });
 
-      if (showToasts) {
-        toast.success(`${entityName} creado correctamente`);
-      }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Error al crear ${entityName}`);
+        }
 
-      if (options?.onSuccess) {
-        await options.onSuccess();
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Error al crear ${entityName}`;
-      setError(errorMessage);
-      if (showToasts) {
-        toast.error(errorMessage);
-      }
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [endpoint, entityName, showToasts, options]);
+        const resultBody = await response.json().catch(() => null);
 
-  const update = useCallback(async (data: Partial<T> & { id: number } | FormData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      let body: BodyInit;
-      let headers: Record<string, string> = {};
-      let id: number;
+        if (showToasts) {
+          toast.success(`${entityName} creado correctamente`);
+        }
 
-      if (data instanceof FormData) {
-        body = data;
-        id = Number(data.get('id'));
-      } else {
-        body = JSON.stringify(data);
-        headers['Content-Type'] = 'application/json';
-        id = data.id;
-      }
+        if (options?.onSuccess) {
+          await options.onSuccess();
+        }
 
-      const response = await fetch(`${endpoint}?id=${id}`, {
-        method: 'PUT',
-        headers,
-        body,
-      });
+        return resultBody;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : `Error al crear ${entityName}`;
+        setError(errorMessage);
+        if (showToasts) {
+          toast.error(errorMessage);
+        }
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [endpoint, entityName, showToasts, options]
+  );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error al actualizar ${entityName}`);
-      }
+  const update = useCallback(
+    async (data: (Partial<T> & { id: number }) | FormData) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        let body: BodyInit;
+        let headers: Record<string, string> = {};
+        let id: number;
 
-      if (showToasts) {
-        toast.success(`${entityName} actualizado correctamente`);
-      }
+        if (data instanceof FormData) {
+          body = data;
+          id = Number(data.get('id'));
+        } else {
+          body = JSON.stringify(data);
+          headers['Content-Type'] = 'application/json';
+          id = data.id;
+        }
 
-      if (options?.onSuccess) {
-        await options.onSuccess();
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Error al actualizar ${entityName}`;
-      setError(errorMessage);
-      if (showToasts) {
-        toast.error(errorMessage);
-      }
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [endpoint, entityName, showToasts, options]);
+        const response = await fetch(`${endpoint}?id=${id}`, {
+          method: 'PUT',
+          headers,
+          body
+        });
 
-  const remove = useCallback(async (id: number) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${endpoint}?id=${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Error al actualizar ${entityName}`);
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error al eliminar ${entityName}`);
-      }
+        const resultBody = await response.json().catch(() => null);
 
-      if (showToasts) {
-        toast.success(`${entityName} eliminado correctamente`);
-      }
+        if (showToasts) {
+          toast.success(`${entityName} actualizado correctamente`);
+        }
 
-      if (options?.onSuccess) {
-        await options.onSuccess();
+        if (options?.onSuccess) {
+          await options.onSuccess();
+        }
+
+        return resultBody;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : `Error al actualizar ${entityName}`;
+        setError(errorMessage);
+        if (showToasts) {
+          toast.error(errorMessage);
+        }
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Error al eliminar ${entityName}`;
-      setError(errorMessage);
-      if (showToasts) {
-        toast.error(errorMessage);
+    },
+    [endpoint, entityName, showToasts, options]
+  );
+
+  const remove = useCallback(
+    async (id: number) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${endpoint}?id=${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Error al eliminar ${entityName}`);
+        }
+
+        const resultBody = await response.json().catch(() => null);
+
+        if (showToasts) {
+          toast.success(`${entityName} eliminado correctamente`);
+        }
+
+        if (options?.onSuccess) {
+          await options.onSuccess();
+        }
+
+        return resultBody;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : `Error al eliminar ${entityName}`;
+        setError(errorMessage);
+        if (showToasts) {
+          toast.error(errorMessage);
+        }
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [endpoint, entityName, showToasts, options]);
+    },
+    [endpoint, entityName, showToasts, options]
+  );
 
   return {
     create,
     update,
     remove,
     isLoading,
-    error,
+    error
   };
 }

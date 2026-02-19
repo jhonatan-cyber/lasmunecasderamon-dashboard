@@ -52,7 +52,6 @@ export default function useAsistencias(): UseAsistenciasReturn {
         throw new Error(errorData.error || 'Error al registrar asistencia')
       }
       
-      // Actualizar la lista de asistencias después de registrar una nueva
       await refetch()
       return true
     } catch (error) {

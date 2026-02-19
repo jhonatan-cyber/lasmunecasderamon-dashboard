@@ -26,6 +26,6 @@ export function useAnfitrionasDisponibles() {
     loading,
     error,
     getAnfitrionasDisponibles,
-    refetch: getAnfitrionasDisponibles, // Alias para refrescar
+    refetch: getAnfitrionasDisponibles, 
   };
 }

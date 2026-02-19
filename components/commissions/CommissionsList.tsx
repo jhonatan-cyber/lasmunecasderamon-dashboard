@@ -38,7 +38,7 @@ export function CommissionsList({
   const { hasPermission } = useUserPermissions();
   
   // Verificar permiso para ver detalles
-  const canViewDetail = hasPermission('comisiones', 'ver_detalles');
+  const canViewDetail = hasPermission('commissions', 'view_details');
   if (loading) {
     return (
       <Card>

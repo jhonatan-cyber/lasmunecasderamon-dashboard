@@ -38,7 +38,7 @@ export function useLandingState() {
       try {
         setReviews(JSON.parse(saved));
       } catch (e) {
-        console.error('Error loading reviews', e);
+        throw new Error('Error parsing reviews from localStorage');
       }
     }
   }, []);
@@ -48,7 +48,7 @@ export function useLandingState() {
     { name: 'Nosotros', href: '#about' },
     { name: 'Servicios', href: '#services' },
     { name: 'Ubicación', href: '#location' },
-    { name: 'Trabaja con Nosotros', href: '#careers' },
+    { name: 'Trabaja con Nosotros', href: '#careers' }
   ];
 
   const handlePositionClick = (position: string) => setSelectedPosition(position);
@@ -128,4 +128,3 @@ export function useLandingState() {
     menuItems
   };
 }
-

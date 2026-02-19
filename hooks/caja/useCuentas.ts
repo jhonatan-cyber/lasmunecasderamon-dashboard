@@ -9,18 +9,18 @@ import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
 export const useCuentas = () => {
-  const { data: cuentas, loading, error, refetch } = useGenericFetch<CuentaWithDetails[]>('/api/cuentas');
-  
+  const { data: cuentas, isLoading, error, refetch } = useGenericFetch<CuentaWithDetails[]>('/api/cuentas');
+
   const { create, update, remove } = useGenericMutations<CuentaWithDetails>('/api/cuentas', {
     onSuccess: refetch
   });
 
   const createCuenta = useCallback(async (cuentaData: CreateCuentaRequest) => {
-    return await create(cuentaData);
+    return await create(cuentaData as any);
   }, [create]);
 
   const updateCuenta = useCallback(async (cuentaData: UpdateCuentaRequest) => {
-    return await update(cuentaData.id_cuenta, cuentaData);
+    return await update(cuentaData as any);
   }, [update]);
 
   const deleteCuenta = useCallback(async (id: number) => {
@@ -45,7 +45,7 @@ export const useCuentas = () => {
 
   return {
     cuentas: cuentas || [],
-    loading,
+    isLoading,
     error,
     getCuentas: refetch,
     createCuenta,

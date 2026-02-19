@@ -8,10 +8,6 @@ export interface UserPermission {
   action: string;
 }
 
-/**
- * Hook optimizado que usa el contexto de autenticación
- * Evita múltiples llamadas al API y cachea los permisos
- */
 export function useUserPermissions() {
   const {
     userPermissions,
