@@ -1,21 +1,17 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "next/typescript"
-  ],
-  "plugins": [
-    "@typescript-eslint",
-    "react-hooks",
-    "prefer-arrow"
-  ],
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "plugins": ["@typescript-eslint", "react-hooks", "prefer-arrow"],
   "rules": {
     // TypeScript rules
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_" }
+    ],
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-non-null-assertion": "warn",
-    
+
     // React rules
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
@@ -34,7 +30,7 @@
     "react/no-unknown-property": "error",
     "react/no-unsafe": "warn",
     "react/self-closing-comp": "error",
-    
+
     // General rules
     "no-console": ["warn", { "allow": ["warn", "error"] }],
     "no-debugger": "error",
@@ -75,7 +71,10 @@
     "space-infix-ops": "error",
     "space-unary-ops": ["error", { "words": true, "nonwords": false }],
     "spaced-comment": ["error", "always"],
-    "max-len": ["warn", { "code": 100, "ignoreUrls": true, "ignoreStrings": true }],
+    "max-len": [
+      "warn",
+      { "code": 100, "ignoreUrls": true, "ignoreStrings": true }
+    ],
     "complexity": ["warn", 10],
     "max-depth": ["warn", 4],
     "max-lines": ["warn", 300],
@@ -84,7 +83,12 @@
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx"
+      ],
       "rules": {
         "no-console": "off",
         "@typescript-eslint/no-explicit-any": "off"
@@ -114,4 +118,4 @@
       "version": "detect"
     }
   }
-} 
+}
