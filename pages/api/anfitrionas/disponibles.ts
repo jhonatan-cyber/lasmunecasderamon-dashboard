@@ -33,14 +33,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `SELECT u.*, r.nombre as rol_nombre, r.id_rol 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
-       WHERE u.estado = 1 
+       WHERE (u.estado = 1 OR u.estado = 2)
        AND r.nombre = 'anfitriona'
        AND u.id_usuario NOT IN (
-         -- Anfitrionas en servicios activos
+         -- Anfitrionas en servicios activos (no pausados) que NO sean en una habitación con comisión
          SELECT DISTINCT ds.usuario_id 
          FROM detalle_servicios ds
          INNER JOIN servicios s ON ds.servicio_id = s.id_servicio
-         WHERE s.estado = 1
+         LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
+         WHERE s.estado = 1 
+           AND (h.id_habitacion IS NULL OR (h.precio = 0 AND h.comision_anfitriona = 0 AND h.tiempo = 0))
        )
        ORDER BY u.nick ASC`
     )) as any[];
@@ -50,7 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: anfitrionasDisponibles.map(mapUserFromDB)
     });
   } catch (error) {
-    console.error('Error al obtener anfitrionas disponibles:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener anfitrionas disponibles'

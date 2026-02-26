@@ -59,7 +59,20 @@ export default async function handler(
         let newStatus;
         if (action === "activate") newStatus = 1;
         else if (action === "deactivate") newStatus = 0;
-        else if (action === "occupy") newStatus = 2;
+        else if (action === "occupy") {
+          const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [id])) as any[];
+          if (roomInfo.length > 0) {
+            const room = roomInfo[0];
+            const isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+            if (isFreeRoom) {
+              return res.status(200).json({
+                success: true,
+                message: "Ignorado por ser área libre"
+              });
+            }
+          }
+          newStatus = 2;
+        }
         else {
           return res.status(400).json({
             success: false,

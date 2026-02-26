@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../../notifications/sse';
+import { withTransaction } from '@/lib/transactionUtils';
 
 // Función para generar código único
 function generateUniqueCode(): string {
@@ -18,225 +19,253 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ success: false, message: 'Método no permitido' });
   }
 
+  const { id } = req.query;
+  const { habitacion_id: habitacionIdOverride } = req.body || {};
+  // @ts-ignore
+  const userId = req.user?.id;
+  // @ts-ignore
+  const userRole = req.user?.role;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+  }
+
+  // Verificar que el usuario sea cajero o administrador
+  const roleLower = (userRole || '').toLowerCase();
+  if (roleLower !== 'cajero' && roleLower !== 'administrador') {
+    return res.status(403).json({
+      success: false,
+      message: 'No tienes permisos para aprobar solicitudes'
+    });
+  }
+
   try {
-    const { id } = req.query;
-    const { habitacion_id: habitacionIdOverride } = req.body || {};
-    // @ts-ignore
-    const userId = req.user?.id;
-    // @ts-ignore
-    const userRole = req.user?.role;
+    const result = await withTransaction(async (connection) => {
+      // 1. Obtener la solicitud
+      const solicitudes = await query(
+        'SELECT * FROM solicitudes_servicios WHERE id_solicitud = ? FOR UPDATE',
+        [id]
+      ) as any[];
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-    }
+      if (solicitudes.length === 0) {
+        throw new Error('Solicitud no encontrada');
+      }
 
-    // Verificar que el usuario sea cajero o administrador
-    const roleLower = (userRole || '').toLowerCase();
-    if (roleLower !== 'cajero' && roleLower !== 'administrador') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'No tienes permisos para aprobar solicitudes' 
-      });
-    }
+      const solicitud = solicitudes[0];
+      if (solicitud.estado !== 'pendiente') {
+        throw new Error('Esta solicitud ya ha sido procesada');
+      }
 
-    // Obtener la solicitud
-    const solicitudes = await query(
-      'SELECT * FROM solicitudes_servicios WHERE id_solicitud = ?',
-      [id]
-    ) as any[];
+      const habitacionIdFinal = habitacionIdOverride || solicitud.habitacion_id;
+      const anfitrionasIds = typeof solicitud.anfitrionas_ids === 'string'
+        ? JSON.parse(solicitud.anfitrionas_ids)
+        : solicitud.anfitrionas_ids;
 
-    if (solicitudes.length === 0) {
-      return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
-    }
+      const codigo = solicitud.codigo || generateUniqueCode();
 
-    const solicitud = solicitudes[0];
-    const habitacionIdFinal = habitacionIdOverride || solicitud.habitacion_id;
+      // 2. Obtener caja abierta
+      const cajaAbiertaResult = (await query(
+        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+      )) as any[];
+      const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
 
-    if (solicitud.estado !== 'pendiente') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Esta solicitud ya ha sido procesada' 
-      });
-    }
+      if (!cajaId) {
+        throw new Error('No hay una caja abierta para procesar este servicio.');
+      }
 
-    // Parsear anfitrionas_ids
-    const anfitrionasIds = typeof solicitud.anfitrionas_ids === 'string' 
-      ? JSON.parse(solicitud.anfitrionas_ids) 
-      : solicitud.anfitrionas_ids;
+      // 3. Cálculos de precios y comisiones
+      const numAnfitrionas = anfitrionasIds.length;
+      const numClientes = Math.max(1, solicitud.num_clientes || 1);
+      const tiempo = Number(solicitud.tiempo || 0);
+      const multiplicador = tiempo === 60 ? 2 : 1;
+      const tieneComision = (solicitud.comision_anfitriona || 0) > 0;
 
-    // Generar código único
-    const codigo = generateUniqueCode();
+      const precioServicioBase = tieneComision ? 0 : (solicitud.precio_servicio || 0);
+      const precioServicioIndividual = precioServicioBase * multiplicador;
+      const precioHabitacionBase = solicitud.precio_habitacion || 0;
 
-    // Obtener caja abierta
-    const cajaAbiertaResult = (await query(
-      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
-    )) as any[];
-    const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
+      let precioHabitacionTotal;
+      if (tieneComision) {
+        precioHabitacionTotal = precioHabitacionBase * numClientes * multiplicador;
+      } else {
+        precioHabitacionTotal = precioHabitacionBase * numAnfitrionas * multiplicador;
+      }
 
-    // Calcular sub_total, iva y total con las nuevas reglas
-    const numAnfitrionas = anfitrionasIds.length;
-    const numClientes = solicitud.num_clientes || 1;
-    const tiempo = Number(solicitud.tiempo || 0);
-    const multiplicador = tiempo === 60 ? 2 : 1;
-    const tieneComision = (solicitud.comision_anfitriona || 0) > 0;
-    
-    // REGLA: Si tiene comisión, precio_servicio es 0
-    const precioServicioBase = tieneComision ? 0 : (solicitud.precio_servicio || 0);
-    const precioServicio = precioServicioBase * multiplicador;
-    const precioHabitacionBase = solicitud.precio_habitacion || 0;
-    
-    // REGLA: Calcular precio habitación según reglas de comisión
-    let precioHabitacionTotal;
-    if (tieneComision) {
-      // REGLA: Siempre multiplicar por número de clientes (sin importar anfitrionas)
-      precioHabitacionTotal = precioHabitacionBase * Math.max(1, numClientes) * multiplicador;
-    } else {
-      // Lógica normal sin comisión
-      precioHabitacionTotal = precioHabitacionBase * numAnfitrionas * multiplicador;
-    }
+      const subTotal = precioServicioIndividual * numAnfitrionas;
+      let ivaFinal = 0;
+      let totalFinal = subTotal + precioHabitacionTotal;
 
-    const subTotal = precioServicio * numAnfitrionas;
+      if (!tieneComision && solicitud.metodo_pago?.toLowerCase() === 'tarjeta') {
+        ivaFinal = Math.floor(subTotal * 0.2);
+        totalFinal = subTotal + precioHabitacionTotal + ivaFinal;
+        const totalRedondeado = Math.ceil(totalFinal / 5000) * 5000;
+        const excedente = totalRedondeado - totalFinal;
+        ivaFinal += excedente;
+        totalFinal = totalRedondeado;
+      }
 
-    // REGLA: Si tiene comisión, IVA es 0
-    let ivaFinal = 0;
-    let totalFinal = subTotal + precioHabitacionTotal;
+      let comisionPorAnfitriona = 0;
+      if (tieneComision && numAnfitrionas > 0) {
+        comisionPorAnfitriona = Math.floor(solicitud.comision_anfitriona / numAnfitrionas);
+      }
 
-    if (!tieneComision && solicitud.metodo_pago?.toLowerCase() === 'tarjeta') {
-      ivaFinal = Math.floor(subTotal * 0.2);
-      totalFinal = subTotal + precioHabitacionTotal + ivaFinal;
-      const totalRedondeado = Math.ceil(totalFinal / 5000) * 5000;
-      const excedente = totalRedondeado - totalFinal;
-      ivaFinal = ivaFinal + excedente;
-      totalFinal = totalRedondeado;
-    }
+      const fechaActual = new Date();
+      const fechaActualSql = fechaActual.toISOString().slice(0, 19).replace('T', ' ');
 
-    // REGLA: Calcular comisión dividida por anfitriona
-    let comisionPorAnfitriona = 0;
-    if (tieneComision && numAnfitrionas > 0) {
-      // REGLA: La comisión SIEMPRE se divide entre el número de anfitrionas y se redondea hacia abajo
-      comisionPorAnfitriona = Math.floor(solicitud.comision_anfitriona / numAnfitrionas);
-    }
-
-    // Crear el servicio
-    const resultServicio = await query(
-      `INSERT INTO servicios 
+      // 4. Crear el servicio
+      const resultServicio: any = await query(
+        `INSERT INTO servicios 
         (codigo, cliente_id, habitacion_id, precio_servicio, precio_habitacion, 
          iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado, fecha_crea) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())`,
-      [
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, ?)`,
+        [
+          codigo,
+          solicitud.cliente_id || null,
+          habitacionIdFinal,
+          precioServicioIndividual * numAnfitrionas, // Guardar total de servicio
+          precioHabitacionBase,
+          ivaFinal,
+          subTotal,
+          totalFinal,
+          tiempo, // Usar la variable numérica
+          solicitud.metodo_pago,
+          cajaId,
+          userId,
+          fechaActualSql // Usar la misma fecha que devolveremos
+        ]
+      );
+
+      const servicioId = resultServicio.insertId;
+
+      // 5. Detalles de clientes y anfitrionas
+      if (solicitud.cliente_id) {
+        await query(
+          'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
+          [servicioId, solicitud.cliente_id]
+        );
+      }
+
+      for (const anfitrionaId of anfitrionasIds) {
+        await query(
+          'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
+          [anfitrionaId, servicioId, comisionPorAnfitriona]
+        );
+        // Ocupar anfitriona
+        await query('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [anfitrionaId]);
+      }
+
+      // 6. Pausar otros servicios si es necesario
+      if (anfitrionasIds.length > 0) {
+        const placeholders = anfitrionasIds.map(() => '?').join(',');
+        const queryServiciosToPause = `
+          SELECT DISTINCT s.id_servicio
+          FROM servicios s
+          JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+          JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
+          WHERE s.estado = 1 
+            AND s.id_servicio != ? 
+            AND s.paused_at IS NULL 
+            AND ds.usuario_id IN (${placeholders})
+            AND (h.precio > 0 OR h.comision_anfitriona > 0 OR h.tiempo > 0)
+        `;
+        const params = [servicioId, ...anfitrionasIds];
+        const serviciosToPause = await query(queryServiciosToPause, params) as any[];
+
+        for (const sToPause of serviciosToPause) {
+          await query('UPDATE servicios SET paused_at = ? WHERE id_servicio = ?', [fechaActualSql, sToPause.id_servicio]);
+          sendNotificationToAll('timer_paused', {
+            servicioId: sToPause.id_servicio,
+            tipoTransaccion: 'servicio'
+          });
+        }
+      }
+
+      // 7. Ocupar habitación
+      const roomInfo = (await query('SELECT nombre, precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacionIdFinal])) as any[];
+      let habitacionNombre = `Habitación ${habitacionIdFinal}`;
+      if (roomInfo.length > 0) {
+        const room = roomInfo[0];
+        habitacionNombre = room.nombre;
+        const isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        if (!isFreeRoom) {
+          await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [habitacionIdFinal]);
+        }
+      }
+
+      // 8. Actualizar solicitud
+      await query(
+        `UPDATE solicitudes_servicios 
+         SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = ?, habitacion_id = ? 
+         WHERE id_solicitud = ?`,
+        [userId, fechaActualSql, habitacionIdFinal, id]
+      );
+
+      // 9. Obtener nombres de anfitrionas para la respuesta
+      const anfitrionasData = (await query(
+        `SELECT nick, nombre FROM usuarios WHERE id_usuario IN (${anfitrionasIds.map(() => '?').join(',')})`,
+        anfitrionasIds
+      )) as any[];
+      const anfitrionasNicks = anfitrionasData.map(u => u.nick || u.nombre).join(', ');
+
+      // 10. Obtener nombre del cliente
+      let clienteNombre = 'Cliente sin registrar';
+      if (solicitud.cliente_id) {
+        const clienteData = (await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [solicitud.cliente_id])) as any[];
+        if (clienteData.length > 0) {
+          clienteNombre = `${clienteData[0].nombre} ${clienteData[0].apellido}`;
+        }
+      }
+
+      return {
+        servicioId,
         codigo,
-        numClientes > 0 ? (solicitud.cliente_id || null) : null,
-        habitacionIdFinal,
-        precioServicio,
-        precioHabitacionBase,
-        ivaFinal,
-        subTotal,
-        totalFinal,
-        solicitud.tiempo,
-        solicitud.metodo_pago,
-        cajaId,
-        userId
-      ]
-    ) as any;
+        habitacionId: habitacionIdFinal,
+        habitacionNombre,
+        tiempo: tiempo,
+        clienteNombre,
+        anfitrionasNicks,
+        startTime: fechaActual.toISOString()
+      };
+    });
 
-    const servicioId = resultServicio.insertId;
-
-    // Insertar cliente en detalle_servicios_clientes si existe
-    if (numClientes > 0 && solicitud.cliente_id) {
-      await query(
-        'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
-        [servicioId, solicitud.cliente_id]
-      );
-    }
-
-    // Insertar anfitrionas en detalle_servicios con su comisión
-    for (const anfitrionaId of anfitrionasIds) {
-      await query(
-        'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
-        [anfitrionaId, servicioId, comisionPorAnfitriona]
-      );
-    }
-
-    // Actualizar el precio_servicio multiplicado por número de anfitrionas
-    const nuevoPrecioServicio = precioServicio * numAnfitrionas;
-    await query(
-      'UPDATE servicios SET precio_servicio = ? WHERE id_servicio = ?',
-      [nuevoPrecioServicio, servicioId]
-    );
-
-    // Actualizar la habitación como ocupada (estado = 2)
-    await query(
-      'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?',
-      [habitacionIdFinal]
-    );
-
-    // Actualizar la solicitud como aprobada
-    await query(
-      `UPDATE solicitudes_servicios 
-       SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = NOW(), habitacion_id = ? 
-       WHERE id_solicitud = ?`,
-      [userId, habitacionIdFinal, id]
-    );
-
-    // Log de notificación al usuario que creó la solicitud
-    console.log(`Solicitud #${id} aprobada. Usuario solicitante: ${solicitud.solicitado_por}`);
-
-    // Obtener información completa del servicio para la notificación de timer
-    const servicioCompleto = await query(
-      `SELECT 
-        s.id_servicio,
-        s.codigo,
-        s.habitacion_id,
-        h.nombre as habitacion_nombre,
-        s.tiempo,
-        s.fecha_crea,
-        s.cliente_id,
-        c.nombre as cliente_nombre,
-        GROUP_CONCAT(DISTINCT CONCAT(u.nombre, ' ', u.apellido) SEPARATOR ', ') as anfitrionas
-      FROM servicios s
-      LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
-      LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
-      LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
-      LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id AND u.rol_id = 3
-      WHERE s.id_servicio = ?
-      GROUP BY s.id_servicio`,
-      [servicioId]
-    ) as any[];
-
-    // Enviar notificación SSE de actualización
-    console.log('[APROBAR SOLICITUD] Enviando notificación SSE...');
+    // Enviar notificaciones fuera de la transacción para no bloquear
     sendNotificationToAll('service_request_approved', {
       id_solicitud: id,
-      servicio_id: servicioId,
+      servicio_id: result.servicioId,
       timestamp: new Date().toISOString()
     });
 
-    // Enviar notificación de timer iniciado para sincronización
-    if (servicioCompleto.length > 0) {
-      const service = servicioCompleto[0];
-      sendNotificationToAll('timer_started', {
-        servicioId: service.id_servicio,
-        codigo: service.codigo,
-        roomId: service.habitacion_id,
-        roomName: service.habitacion_nombre || `Habitación ${service.habitacion_id}`,
-        duration: service.tiempo,
-        startTime: service.fecha_crea,
-        clienteNombre: numClientes > 0 ? (service.cliente_nombre || 'Cliente') : 'Cliente sin registrar',
-        anfitrionas: service.anfitrionas || '',
-        tipoTransaccion: 'servicio'
-      });
-      console.log('[APROBAR SOLICITUD] Notificación de timer_started enviada');
-    }
-    console.log('[APROBAR SOLICITUD] Notificación SSE enviada');
+    sendNotificationToAll('timer_started', {
+      servicioId: result.servicioId,
+      codigo: result.codigo,
+      roomId: result.habitacionId,
+      roomName: result.habitacionNombre,
+      duration: result.tiempo,
+      startTime: result.startTime,
+      clienteNombre: result.clienteNombre,
+      anfitrionas: result.anfitrionasNicks,
+      tipoTransaccion: 'servicio'
+    });
 
     return res.status(200).json({
       success: true,
-      message: 'Solicitud aprobada y servicio creado exitosamente',
-      data: { servicio_id: servicioId, codigo }
+      message: 'Solicitud aprobada exitosamente',
+      data: {
+        servicio_id: result.servicioId,
+        codigo: result.codigo,
+        habitacion_nombre: result.habitacionNombre,
+        cliente_nombre: result.clienteNombre,
+        anfitrionas: result.anfitrionasNicks,
+        tiempo: result.tiempo
+      }
     });
-  } catch (error) {
+
+  } catch (error: any) {
     console.error('Error al aprobar solicitud:', error);
-    return res.status(500).json({ success: false, message: 'Error al aprobar solicitud' });
+    return res.status(error.message === 'Solicitud no encontrada' ? 404 : 500).json({
+      success: false,
+      message: error.message || 'Error al aprobar solicitud'
+    });
   }
 };
 

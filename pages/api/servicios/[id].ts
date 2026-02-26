@@ -2,9 +2,12 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 import { sendNotificationToAll } from '../notifications/sse';
+import { addServicioLog } from '@/lib/logUtils';
+import { getCurrentUser } from '@/lib/middleware/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
+  const currentUser = getCurrentUser(req);
 
   if (!id || Array.isArray(id)) {
     return res.status(400).json({
@@ -218,27 +221,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (![0, 1, 2, 3].includes(estado)) {
           return res.status(400).json({
             success: false,
-            message: 'Estado debe ser 0 (finalizado), 1 (activo), 2 (pendiente) o 3 (devuelto)'
+            message: 'Estado inválido. (0: Finalizado, 1: Activo, 2: En Proceso, 3: Pausado)'
           });
         }
 
-        // Actualizar estado del servicio
-        await query('UPDATE servicios SET estado = ? WHERE id_servicio = ?', [estado, servicioId]);
+        // Obtener estado anterior para el log
+        const [prevService] = await query('SELECT estado FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
+        const estadoAnterior = prevService?.estado;
 
-        // Si se está finalizando el servicio (estado = 0), liberar la habitación
+        // Liberar habitación si se finaliza (0)
         if (estado === 0) {
           // Obtener el habitacion_id primero para asegurar que tenemos el ID correcto
           const [servicio] = await query('SELECT habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
           if (servicio && servicio.habitacion_id) {
             await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [servicio.habitacion_id]);
-            console.log(`✅ Habitación ${servicio.habitacion_id} liberada por finalización de servicio ${servicioId}`);
-            
+
             // Enviar notificación SSE para sincronizar detención de timer
             sendNotificationToAll('timer_stopped', {
               servicioId: servicioId,
               roomId: servicio.habitacion_id
             });
-            console.log(`📢 Notificación timer_stopped enviada para servicio ${servicioId}`);
           } else {
             // Intento alternativo por si el join directo fallaba antes
             await query(
@@ -248,10 +250,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
+        // Registrar logs de cambios de estado
+        if (estado === 0 && estadoAnterior !== 0) {
+          await addServicioLog(servicioId, 'FINALIZADO', 'Servicio finalizado manualmente.', currentUser?.id);
+        } else if (estado === 3 && estadoAnterior !== 3) {
+          await addServicioLog(servicioId, 'PAUSA', 'Servicio pausado manualmente.', currentUser?.id);
+        } else if (estado === 2 && estadoAnterior === 3) {
+          await addServicioLog(servicioId, 'REANUDACION', 'Servicio reanudado manualmente.', currentUser?.id);
+        }
+
+        // Actualizar estado del servicio
+        await query('UPDATE servicios SET estado = ? WHERE id_servicio = ?', [estado, servicioId]);
+
         return res.status(200).json({
           success: true,
           message:
-            estado === 0 ? 'Servicio finalizado exitosamente' : 'Servicio activado exitosamente'
+            estado === 0 ? 'Servicio finalizado exitosamente' : 'Servicio actualizado exitosamente'
         });
       }
 

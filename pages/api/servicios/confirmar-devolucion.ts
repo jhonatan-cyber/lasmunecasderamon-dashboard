@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `;
 
     const solicitudes = await query(solicitudSql, [token]) as any[];
-    
+
     if (!Array.isArray(solicitudes) || solicitudes.length === 0) {
       return res.status(404).json({ error: 'Solicitud no encontrada o ya procesada' });
     }
@@ -54,7 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Actualizar estado del servicio
-    const nuevoEstadoServicio = action === 'confirmar' ? 3 : 1; // 3 = devuelto, 1 = activo
+    // 0 = Anulado, 1 = Finalizado, 2 = En proceso, 3 = Pausado
+    const nuevoEstadoServicio = action === 'confirmar' ? 0 : 2;
     await query(
       "UPDATE servicios SET estado = ?, fecha_mod = NOW() WHERE id_servicio = ?",
       [nuevoEstadoServicio, servicioId]
@@ -62,11 +63,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Si se confirma la devolución, realizar operaciones adicionales
     if (action === 'confirmar') {
-      // 1. Cambiar estado de la habitación de 2 (ocupada) a 1 (disponible)
-      await query(
-        "UPDATE habitaciones SET estado = 1 WHERE id_habitacion = (SELECT habitacion_id FROM servicios WHERE id_servicio = ?)",
-        [servicioId]
-      );
+      // 1. Cambiar estado de la habitación de 2 (ocupada) a 1 (disponible) si no es área libre
+      const roomIdObj = await query("SELECT habitacion_id FROM servicios WHERE id_servicio = ?", [servicioId]) as any[];
+      if (roomIdObj.length > 0) {
+        const roomId = roomIdObj[0].habitacion_id;
+        const roomInfo = await query("SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?", [roomId]) as any[];
+        let isFreeRoom = false;
+        if (roomInfo.length > 0) {
+          const room = roomInfo[0];
+          isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        }
+        if (!isFreeRoom) {
+          await query(
+            "UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?",
+            [roomId]
+          );
+        } else {
+          console.info("[CONFIRMAR DEVOLUCION] Habitación ignorada al liberar por ser área libre:", roomId);
+        }
+      }
 
       // 2. Actualizar caja activa (estado = 1)
       const cajaActiva = await query(
@@ -75,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (cajaActiva && cajaActiva.length > 0) {
         const caja = cajaActiva[0];
-        
+
         // Obtener información del servicio para los cálculos
         const servicioInfo = await query(
           "SELECT total, iva FROM servicios WHERE id_servicio = ?",
@@ -118,15 +133,15 @@ El servicio con código *${solicitud.codigo}* ha sido ${action === 'confirmar' ?
 • Cliente: ${solicitud.cliente_nombre || 'Sin cliente'}
 • Total: $${solicitud.total?.toLocaleString() || 0}
 
-${action === 'confirmar' ? 
-  '✅ *Acciones realizadas:*\n• Servicio marcado como devuelto\n• Habitación liberada\n• Temporizador finalizado\n• Caja actualizada' : 
-  '❌ *Acciones realizadas:*\n• Servicio mantenido activo\n• Temporizador reanudado'}`;
+${action === 'confirmar' ?
+        '✅ *Acciones realizadas:*\n• Servicio marcado como devuelto\n• Habitación liberada\n• Temporizador finalizado\n• Caja actualizada' :
+        '❌ *Acciones realizadas:*\n• Servicio mantenido activo\n• Temporizador reanudado'}`;
 
     const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || "59172419112";
     await enviarWhatsApp(adminWhatsApp, mensajeConfirmacion);
 
     // Respuesta JSON simple
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
       message: `Servicio ${action === 'confirmar' ? 'devuelto' : 'mantenido activo'} correctamente`,
       servicio: {
@@ -137,7 +152,7 @@ ${action === 'confirmar' ?
     });
 
   } catch (error) {
-    
+
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

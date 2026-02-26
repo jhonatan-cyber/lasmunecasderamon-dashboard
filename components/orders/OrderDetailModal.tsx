@@ -125,7 +125,7 @@ export default function OrderDetailModal({
       console.log('🔔 [ORDER MODAL] Evento closeOrderModal recibido:', processedOrderId);
       console.log('🔔 [ORDER MODAL] Modal abierto:', open);
       console.log('🔔 [ORDER MODAL] Order ID actual:', orderId);
-      
+
       // Si el modal está abierto y es el pedido que se procesó, cerrarlo
       if (open && orderId === processedOrderId) {
         console.log('✅ [ORDER MODAL] Cerrando modal automáticamente...');
@@ -186,14 +186,14 @@ export default function OrderDetailModal({
 
     try {
       console.log('[ORDER MODAL] 📋 Detalles del pedido:', detail);
-      
+
       // Obtener IDs de todas las anfitrionas del pedido
       const anfitrionasIds: number[] = [];
-      
+
       // Obtener anfitrionas del primer detalle (anfitrionas generales del pedido)
       const anfitrionaIdsStr = detail[0]?.anfitrionaIds;
       console.log('[ORDER MODAL] 📝 anfitrionaIds del detalle[0]:', anfitrionaIdsStr);
-      
+
       if (anfitrionaIdsStr) {
         const ids = anfitrionaIdsStr.split(',').map((id: string) => parseInt(id.trim())).filter((id: number) => !isNaN(id));
         anfitrionasIds.push(...ids);
@@ -204,7 +204,7 @@ export default function OrderDetailModal({
       detail.forEach((d, index) => {
         console.log(`[ORDER MODAL] 📝 Detalle[${index}] hostess_id:`, d.hostess_id);
         console.log(`[ORDER MODAL] 📝 Detalle[${index}] anfitrionas_asignadas_ids:`, d.anfitrionas_asignadas_ids);
-        
+
         if (d.hostess_id) {
           anfitrionasIds.push(d.hostess_id);
         }
@@ -380,7 +380,8 @@ export default function OrderDetailModal({
     }
   }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, cantidadAnfitrionas, detail]);
 
-  const handleRegistrarVenta = async () => {
+  const handleRegistrarVenta = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
     setShowMetodoPagoError(true);
 
     if (!metodoPago) {
@@ -414,7 +415,8 @@ export default function OrderDetailModal({
     setConfirmVentaModalOpen(true);
   };
 
-  const handleConfirmRegistrarVenta = async () => {
+  const handleConfirmRegistrarVenta = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
     setIsRegistering(true);
     try {
       const pedido = detail[0];
@@ -464,7 +466,7 @@ export default function OrderDetailModal({
         metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
         propina: propina,
         sub_total: sub_total,
-        total: (pedido.total || 0) + propina + recargoAnfitrionas,
+        total: sub_total + propina + recargoAnfitrionas,
         detalles: detail.map((item: any) => ({
           producto_id: item.id_producto || item.producto_id,
           precio: item.precio || 0,
@@ -474,8 +476,8 @@ export default function OrderDetailModal({
           hostess_id: item.hostess_id || null
         })),
         usuarios: usuariosIds,
-        habitacion_id: habitacionId ? parseInt(habitacionId) : undefined,
-        tiempo: habitacionId ? tiempoHabitacion : 0
+        habitacion_id: (shouldShowRoomSelector && habitacionId) ? parseInt(habitacionId) : undefined,
+        tiempo: (shouldShowRoomSelector && habitacionId) ? tiempoHabitacion : 0
       };
 
       const resultado = await createVenta(ventaData);
@@ -523,7 +525,9 @@ export default function OrderDetailModal({
         await actualizarEstadoPedido(0);
 
         onOrderStatusChange?.();
-        window.dispatchEvent(new CustomEvent('updatePendingOrders'));
+        window.dispatchEvent(new CustomEvent('updatePendingOrders', {
+          detail: { type: 'order-processed', orderId: orderId }
+        }));
         window.dispatchEvent(new CustomEvent('refreshNotifications'));
 
         if (habitacionId) {
@@ -590,7 +594,11 @@ export default function OrderDetailModal({
   const handleRechazarPedido = async () => {
     try {
       await actualizarEstadoPedido(2);
-      window.dispatchEvent(new CustomEvent('updatePendingOrders'));
+      window.dispatchEvent(
+        new CustomEvent('updatePendingOrders', {
+          detail: { type: 'order-deleted', orderId: orderId }
+        })
+      );
       window.dispatchEvent(new CustomEvent('refreshNotifications'));
       toast.success('Pedido rechazado exitosamente');
       onClose();
@@ -600,7 +608,8 @@ export default function OrderDetailModal({
     }
   };
 
-  const handleRegistrarCuenta = async () => {
+  const handleRegistrarCuenta = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
     setIsRegistering(true);
     try {
       const pedido = detail[0];
@@ -626,8 +635,8 @@ export default function OrderDetailModal({
         cliente_id: pedido.cliente_id || null,
         total_comision: total_comision,
         sub_total: sub_total,
-        total: (pedido.total || 0) + recargoAnfitrionas, // Sin propina para cuentas
-        habitacion_id: habitacionId ? parseInt(habitacionId) : null,
+        total: sub_total + recargoAnfitrionas, // Sin propina para cuentas
+        habitacion_id: (shouldShowRoomSelector && habitacionId) ? parseInt(habitacionId) : null,
         detalles: detail.map((item: any) => ({
           producto_id: item.id_producto || 1,
           precio: item.precio || 0,
@@ -656,6 +665,20 @@ export default function OrderDetailModal({
 
       if (result.success) {
         toast.success('Cuenta registrada exitosamente');
+
+        try {
+          // Marcar el pedido como procesado porque se convirtió en una cuenta
+          await actualizarEstadoPedido(0);
+          window.dispatchEvent(
+            new CustomEvent('updatePendingOrders', {
+              detail: { type: 'order-processed', orderId: orderId }
+            })
+          );
+          window.dispatchEvent(new CustomEvent('refreshNotifications'));
+        } catch (estadoError) {
+          console.error('[ORDER MODAL] Error al actualizar estado del pedido a procesado:', estadoError);
+        }
+
         onClose();
         onVentaRegistrada?.();
         onOrderStatusChange?.();
@@ -699,16 +722,16 @@ export default function OrderDetailModal({
   const habitacionesActivas = rooms.filter(room => {
     // Incluir habitaciones disponibles (status = 1)
     if (room.status === 1) return true;
-    
+
     // También incluir la habitación pre-seleccionada aunque esté ocupada
     if (habitacionId && room.id_habitacion === parseInt(habitacionId)) {
       console.log('[ORDER MODAL] 📍 Incluyendo habitación ocupada pre-seleccionada:', room.nombre);
       return true;
     }
-    
+
     return false;
   });
-  
+
   const hasChampagne = detail.some((item: any) => {
     const cat = (item.categoria || '').toLowerCase();
     return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
@@ -1005,6 +1028,7 @@ export default function OrderDetailModal({
                   className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
                   onClick={handleRegistrarVenta}
                   disabled={isRegistering}
+                  type="button"
                 >
                   {isRegistering ? 'Registrando...' : 'Registrar Venta'}
                 </Button>
@@ -1015,6 +1039,7 @@ export default function OrderDetailModal({
                     className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
                     onClick={handleRegistrarCuenta}
                     disabled={isRegistering}
+                    type="button"
                   >
                     {isRegistering ? 'Registrando...' : 'Registrar Cuenta'}
                   </Button>
@@ -1024,7 +1049,8 @@ export default function OrderDetailModal({
                   size='sm'
                   variant='outline'
                   className='rounded-full px-4 sm:px-6 bg-gray-500 text-white hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
-                  onClick={onClose}
+                  onClick={(e) => { e.preventDefault(); onClose(); }}
+                  type="button"
                 >
                   Cerrar
                 </Button>
@@ -1062,7 +1088,7 @@ export default function OrderDetailModal({
                   <strong>Propina:</strong> ${propina.toLocaleString('es-CL')}
                 </div>
               )}
-              {habitacionId && (
+              {shouldShowRoomSelector && habitacionId && (
                 <>
                   <div>
                     <strong>Habitación:</strong>{' '}
@@ -1078,9 +1104,10 @@ export default function OrderDetailModal({
           <DialogFooter className='flex justify-center items-center gap-3 sm:justify-center'>
             <Button
               variant='outline'
-              onClick={handleCancelRegistrarVenta}
+              onClick={(e) => { e.preventDefault(); handleCancelRegistrarVenta(); }}
               disabled={isRegistering}
               className='rounded-full'
+              type="button"
             >
               Cancelar
             </Button>
@@ -1088,7 +1115,8 @@ export default function OrderDetailModal({
               variant='outline'
               onClick={handleConfirmRegistrarVenta}
               disabled={isRegistering}
-              className='rounded-full bg-green-600 hover:bg-green-700'
+              className='rounded-full bg-green-600 hover:bg-green-700 text-white'
+              type="button"
             >
               {isRegistering ? (
                 <>

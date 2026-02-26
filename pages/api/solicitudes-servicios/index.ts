@@ -92,15 +92,16 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       tiempo,
       total,
       iva,
-      num_clientes
+      num_clientes,
+      codigo
     } = req.body;
 
     // @ts-ignore
     const userId = req.user?.id;
 
-    logger.info('Solicitud de servicio recibida', { 
-      userId, 
-      body: req.body 
+    logger.info('Solicitud de servicio recibida', {
+      userId,
+      body: req.body
     });
 
     if (!userId) {
@@ -143,8 +144,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const result = (await query(
       `INSERT INTO solicitudes_servicios 
         (cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids, 
-         num_clientes, metodo_pago, tiempo, total, iva, solicitado_por) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         cliente_id || null,
         habitacion_id,
@@ -157,7 +158,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         tiempoParsed,
         totalParsed,
         ivaParsed,
-        userId
+        userId,
+        codigo || null
       ]
     )) as any;
 
@@ -187,7 +189,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Enviar notificación SSE a todos los clientes conectados
     sendNotificationToAll('new_service_request', {
       id: result.insertId,
-      id_solicitud: result.insertId, // Agregar también id_solicitud para compatibilidad
+      id_solicitud: result.insertId,
+      codigo: codigo || null,
       tipo: 'servicio',
       total: total,
       createdBy: userId,
@@ -212,32 +215,32 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       data: { id_solicitud: result.insertId }
     });
   } catch (error: any) {
-    logger.error('Error al crear solicitud de servicio', { 
+    logger.error('Error al crear solicitud de servicio', {
       error: error.message,
       stack: error.stack,
       code: error.code,
       sqlMessage: error.sqlMessage,
       sql: error.sql
     });
-    
+
     // Si la tabla no existe
     if (error?.code === 'ER_NO_SUCH_TABLE' || error?.message?.includes("doesn't exist")) {
-      return res.status(500).json({ 
-        success: false, 
-        message: 'La tabla solicitudes_servicios no existe. Ejecuta la migración.' 
+      return res.status(500).json({
+        success: false,
+        message: 'La tabla solicitudes_servicios no existe. Ejecuta la migración.'
       });
     }
 
     // Error de foreign key
     if (error?.code === 'ER_NO_REFERENCED_ROW_2') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Datos inválidos: cliente, habitación o usuario no existe' 
+      return res.status(400).json({
+        success: false,
+        message: 'Datos inválidos: cliente, habitación o usuario no existe'
       });
     }
 
-    return res.status(500).json({ 
-      success: false, 
+    return res.status(500).json({
+      success: false,
       message: 'Error al crear solicitud',
       error: process.env.NODE_ENV === 'development' ? error?.message : undefined
     });

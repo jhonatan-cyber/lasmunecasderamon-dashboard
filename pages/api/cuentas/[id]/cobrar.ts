@@ -70,15 +70,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Tabla cobros_cuentas no existe, solo se actualizó el estado de la cuenta');
     }
 
-    // Si hay habitación seleccionada, actualizar su estado a "Ocupada" (estado = 2)
+    // Si hay habitación seleccionada, actualizar su estado a "Ocupada" (estado = 2) si no es área libre
     if (habitacion_id) {
       try {
-        const updateHabitacionSql = `
-          UPDATE habitaciones 
-          SET estado = 2 
-          WHERE id_habitacion = ?
-        `;
-        await query(updateHabitacionSql, [habitacion_id]);
+        const checkFreeRoom = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+        let isFreeRoom = false;
+        if (checkFreeRoom.length > 0) {
+          const room = checkFreeRoom[0];
+          isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        }
+
+        if (!isFreeRoom) {
+          const updateHabitacionSql = `
+            UPDATE habitaciones 
+            SET estado = 2 
+            WHERE id_habitacion = ?
+          `;
+          await query(updateHabitacionSql, [habitacion_id]);
+        } else {
+          console.info('Habitación ignorada al cobrar por ser área libre:', habitacion_id);
+        }
       } catch (error) {
         console.error('Error al actualizar habitación:', error);
       }

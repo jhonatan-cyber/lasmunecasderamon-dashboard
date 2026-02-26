@@ -12,12 +12,9 @@ import { useSessionCheck } from '@/hooks/auth/useSessionCheck';
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-function MainLayout({ children }: { children: React.ReactNode }) {
-  const { isCollapsed } = useSidebar();
-  
-  // NOTA: usePermissionsSSE ya se ejecuta globalmente en app/layout.tsx
-  // No es necesario llamarlo aquí
-  
+function MainLayout({ children, user }: { children: React.ReactNode, user: any }) {
+  const isAdminOrCajero = user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
+
   return (
     <div className='flex h-screen bg-background'>
       <Sidebar />
@@ -33,7 +30,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
-      <TimerDisplay />
+      {isAdminOrCajero && <TimerDisplay />}
     </div>
   );
 }
@@ -56,15 +53,15 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
 
   // Solo usar useCurrentUser si no es una página pública
   const { user } = useCurrentUser();
-  
+
   // Verificar sesión periódicamente (solo en páginas protegidas)
   useSessionCheck();
-  
+
   return (
     <RouteGuard>
       <UserImageProvider>
         <SidebarProvider>
-          <MainLayout>{children}</MainLayout>
+          <MainLayout user={user}>{children}</MainLayout>
         </SidebarProvider>
       </UserImageProvider>
     </RouteGuard>

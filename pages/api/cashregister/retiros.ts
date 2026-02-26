@@ -57,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
 
-        console.error('Error al obtener retiros:', error);
+   
         return res.status(500).json({
             success: false,
             message: 'Error interno del servidor',

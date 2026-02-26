@@ -23,6 +23,20 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         });
       }
 
+      // Si se intenta procesar el pedido (estado = 0), validar que haya caja abierta
+      if (req.body.estado === 0) {
+        const cajaAbiertaResult = (await query(
+          'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+        )) as any[];
+
+        if (!cajaAbiertaResult || cajaAbiertaResult.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'No hay una caja abierta para procesar este pedido.'
+          });
+        }
+      }
+
       await query('UPDATE pedidos SET estado = ? WHERE id_pedido = ?', [req.body.estado, id]);
 
       // Notificar a todos los clientes para actualizar contador en tiempo real
@@ -44,13 +58,23 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
             const roomId = row.habitacion_id;
             if (!roomId) continue;
 
-            // Marcar habitación como ocupada en la base de datos
+            // Marcar habitación como ocupada en la base de datos si no es área libre
             try {
-              await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [roomId]);
-              console.info(
-                '[ORDERS PUT] Habitación marcada como ocupada (pedido procesado):',
-                roomId
-              );
+              const checkFreeRoom = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [roomId])) as any[];
+              let isFreeRoom = false;
+              if (checkFreeRoom.length > 0) {
+                const room = checkFreeRoom[0];
+                isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+              }
+              if (!isFreeRoom) {
+                await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [roomId]);
+                console.info(
+                  '[ORDERS PUT] Habitación marcada como ocupada (pedido procesado):',
+                  roomId
+                );
+              } else {
+                console.info('[ORDERS PUT] Habitación no ocupada porque es área libre:', roomId);
+              }
             } catch (roomErr) {
               console.error('[ORDERS PUT] Error marcando habitación ocupada:', roomErr);
             }

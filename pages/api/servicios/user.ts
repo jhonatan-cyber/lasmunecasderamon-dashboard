@@ -24,6 +24,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         S.tiempo, 
         S.fecha_crea, 
         S.precio_servicio, 
+        COALESCE(USER_COM.comision, 0) as comision_usuario,
         H.nombre AS habitacion, 
         GROUP_CONCAT(DISTINCT 
           CASE 
@@ -33,20 +34,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           SEPARATOR ', '
         ) AS anfitriona,
         CONCAT(CL.nombre, ' ', CL.apellido) AS cliente, 
-        GROUP_CONCAT(DISTINCT U.id_usuario SEPARATOR ', ') AS anfitrionaId,
         S.estado
     FROM servicios S
     INNER JOIN habitaciones H ON H.id_habitacion = S.habitacion_id
     LEFT JOIN clientes CL ON CL.id_cliente = S.cliente_id
     INNER JOIN detalle_servicios DS ON DS.servicio_id = S.id_servicio
-    INNER JOIN usuarios U ON U.id_usuario = DS.usuario_id AND U.estado = 1
+    INNER JOIN usuarios U ON U.id_usuario = DS.usuario_id
+    LEFT JOIN (
+        SELECT C.servicio_id, DC.comision 
+        FROM comisiones C 
+        INNER JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision 
+        WHERE DC.usuario_id = ?
+    ) AS USER_COM ON USER_COM.servicio_id = S.id_servicio
     WHERE S.id_servicio IN (
         SELECT servicio_id FROM detalle_servicios WHERE usuario_id = ?
     )
     GROUP BY S.id_servicio
     ORDER BY S.fecha_crea DESC
       `,
-      [userId]
+      [userId, userId]
     )) as any[];
 
     return res.status(200).json({
@@ -54,7 +60,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: servicios
     });
   } catch (error) {
- 
+
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

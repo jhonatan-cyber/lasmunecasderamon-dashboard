@@ -44,23 +44,23 @@ export function getServiceStatusBadge(estado: number) {
   switch (estadoNum) {
     case 0:
       return {
-        text: "Terminado",
-        className: "bg-gray-100 text-gray-800",
+        text: "Anulado",
+        className: "bg-red-100 text-red-800",
       };
     case 1:
+      return {
+        text: "Finalizado",
+        className: "bg-gray-100 text-gray-800",
+      };
+    case 2:
       return {
         text: "En Proceso",
         className: "bg-green-100 text-green-800",
       };
-    case 2:
-      return {
-        text: "Pendiente Anulación",
-        className: "bg-yellow-100 text-yellow-800",
-      };
     case 3:
       return {
-        text: "Anulado",
-        className: "bg-red-100 text-red-800",
+        text: "Pausado",
+        className: "bg-orange-100 text-orange-800",
       };
     default:
       return {
@@ -103,21 +103,23 @@ export function validateServiceData(data: {
 // Calcular estadísticas de servicios
 export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   const totalServicios = servicios.length;
-  const serviciosActivos = servicios.filter((s) => s.estado === 1).length;
-  const serviciosTerminados = servicios.filter((s) => s.estado === 0).length;
-  
-  // Ingresos totales de servicios terminados (estado 0) - los que ya generaron ingresos reales
+  // Activos = En Proceso (2) o Pausado (3)
+  const serviciosActivos = servicios.filter((s) => s.estado === 2 || s.estado === 3).length;
+  // Terminados = Finalizado (1) o Anulado (0)
+  const serviciosTerminados = servicios.filter((s) => s.estado === 1 || s.estado === 0).length;
+
+  // Ingresos totales de servicios finalizados (estado 1)
   const ingresosTotales = servicios
-    .filter((s) => s.estado === 0) // Solo servicios terminados
+    .filter((s) => s.estado === 1) // Solo servicios finalizados
     .reduce((sum, s) => sum + (s.total || 0), 0);
-  
+
   // Promedio de tiempo de servicios activos
-  const serviciosActivosArray = servicios.filter((s) => s.estado === 1);
+  const serviciosActivosArray = servicios.filter((s) => s.estado === 2 || s.estado === 3);
   const promedioTiempo = serviciosActivosArray.length > 0
     ? Math.round(
-        serviciosActivosArray.reduce((sum, s) => sum + (s.tiempo || 0), 0) /
-        serviciosActivosArray.length
-      )
+      serviciosActivosArray.reduce((sum, s) => sum + (s.tiempo || 0), 0) /
+      serviciosActivosArray.length
+    )
     : 0;
 
   return {

@@ -44,9 +44,9 @@ export default function TimerExpiredModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} modal={true}>
+    <Dialog open={open} onOpenChange={() => { }} modal={true}>
       <DialogContent
-        className='timer-expired-modal w-[95vw] max-w-md mx-auto p-0 bg-white dark:bg-gray-800 border-2 border-red-200 dark:border-red-800'
+        className='timer-expired-modal w-[95vw] max-w-md mx-auto p-0 bg-white dark:bg-gray-800 border-2 border-red-200 dark:border-red-800 flex flex-col max-h-[90vh]'
         onPointerDownOutside={e => e.preventDefault()}
         onEscapeKeyDown={e => e.preventDefault()}
       >
@@ -55,8 +55,8 @@ export default function TimerExpiredModal({
           {isTemporary ? 'Timer temporal finalizado' : `Tiempo de ${tipoTransaccion} terminado`}
         </DialogTitle>
 
-        {/* Header sin animación */}
-        <div className='bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-t-lg'>
+        {/* Header (Fijo) */}
+        <div className='bg-gradient-to-r from-red-500 to-red-600 text-white p-4 flex-shrink-0'>
           <div className='flex items-center justify-center gap-3'>
             <Clock className='w-8 h-8' />
             <div className='text-center'>
@@ -70,8 +70,8 @@ export default function TimerExpiredModal({
           </div>
         </div>
 
-        {/* Contenido */}
-        <div className='p-6 space-y-4'>
+        {/* Contenido (Scrollable) */}
+        <div className='flex-1 overflow-y-auto p-6 space-y-4'>
           {/* Información del servicio */}
           <div className='bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3'>
             <div className='flex items-center gap-3'>
@@ -163,11 +163,10 @@ export default function TimerExpiredModal({
 
           {/* Mensaje de estado */}
           <div
-            className={`text-center p-3 rounded-lg ${
-              isTemporary
+            className={`text-center p-3 rounded-lg ${isTemporary
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                 : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-            }`}
+              }`}
           >
             <p className='font-medium'>
               {isTemporary
@@ -175,16 +174,16 @@ export default function TimerExpiredModal({
                 : `${tipoTransaccion === 'servicio' ? 'Servicio' : 'Venta'} finalizado - Habitación liberada automáticamente`}
             </p>
           </div>
+        </div>
 
-          {/* Botones */}
-          <div className='flex justify-center pt-2'>
-            <Button
-              className='px-8 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium'
-              onClick={handleClose}
-            >
-              Entendido
-            </Button>
-          </div>
+        {/* Footer (Fijo) */}
+        <div className='p-4 border-t flex justify-center flex-shrink-0'>
+          <Button
+            className='px-8 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium w-full sm:w-auto'
+            onClick={handleClose}
+          >
+            Entendido
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
