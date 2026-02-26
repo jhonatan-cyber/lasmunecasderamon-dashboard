@@ -92,11 +92,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     paymentMethods.forEach(method => {
       if (method.metodo_pago === 'efectivo') {
-        ventasPorMetodo.efectivo = method.total;
+        ventasPorMetodo.efectivo = parseFloat(method.total) || 0;
       } else if (method.metodo_pago === 'tarjeta') {
-        ventasPorMetodo.tarjeta = method.total;
+        ventasPorMetodo.tarjeta = parseFloat(method.total) || 0;
       } else if (method.metodo_pago === 'transferencia') {
-        ventasPorMetodo.transferencia = method.total;
+        ventasPorMetodo.transferencia = parseFloat(method.total) || 0;
       }
     });
 

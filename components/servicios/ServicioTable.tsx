@@ -14,7 +14,7 @@ import { ServicioWithDetails } from "@/types/servicio";
 import { formatCurrencyNoDecimals } from "@/lib/formatters";
 import {
   Eye,
-  PencilSimple,
+  Pencil,
   Trash,
   MoreVertical,
   Clock,
@@ -44,11 +44,16 @@ export default function ServicioTable({
   const [selectedServicioId, setSelectedServicioId] = useState<number | null>(null);
 
   const getEstadoBadge = (estado: number) => {
-    switch (estado) {
-      case 1:
-        return <Badge className="bg-green-100 text-green-800">Activo</Badge>;
+    const estadoNum = Number(estado);
+    switch (estadoNum) {
       case 0:
-        return <Badge className="bg-gray-100 text-gray-800">Finalizado</Badge>;
+        return <Badge variant="destructive">Anulado</Badge>;
+      case 1:
+        return <Badge variant="secondary">Finalizado</Badge>;
+      case 2:
+        return <Badge className="bg-green-100 text-green-800">En Proceso</Badge>;
+      case 3:
+        return <Badge className="bg-orange-100 text-orange-800">Pausado</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">Desconocido</Badge>;
     }
@@ -197,16 +202,16 @@ export default function ServicioTable({
                           <Eye />
                           Ver detalles
                         </DropdownMenuItem>
-                        {servicio.estado === 1 && (
+                        {(servicio.estado === 2 || servicio.estado === 3) && (
                           <>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="cursor-pointer hover:text-green-700 hover:bg-green-50"
                               onClick={() => handleEditar(servicio.id_servicio!)}
                             >
-                              <PencilSimple />
+                              <Pencil />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="cursor-pointer hover:text-red-700 hover:bg-red-50"
                               onClick={() => handleEliminar(servicio.id_servicio!)}
                             >

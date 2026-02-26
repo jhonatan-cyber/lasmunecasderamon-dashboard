@@ -13,8 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'caja_id es requerido' });
     }
 
-    console.log('🍸 Obteniendo ventas tragos chicas (con comisión, sin champagne) para caja:', caja_id);
-
     // Primero intentar consulta completa
     let ventasTragosChicas;
     try {
@@ -95,9 +93,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `, [caja_id, caja_id]);
 
       // Calcular monto_productos neto (productos - propinas - comisiones)
-      const montoProductosNeto = ((montoProductos as any[])[0]?.monto_productos || 0) - 
-                                 ((ventasBasicas as any[])[0]?.propinas || 0) - 
-                                 ((comisiones as any[])[0]?.comisiones || 0);
+      const montoProductosNeto = ((montoProductos as any[])[0]?.monto_productos || 0) -
+        ((ventasBasicas as any[])[0]?.propinas || 0) -
+        ((comisiones as any[])[0]?.comisiones || 0);
 
       ventasTragosChicas = [{
         total_venta: (ventasBasicas as any[])[0]?.total_venta || 0,
@@ -106,8 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         propinas: (ventasBasicas as any[])[0]?.propinas || 0
       }];
     } catch (queryError) {
-      console.warn('Error en consulta compleja, intentando consulta básica:', queryError);
-      // Fallback: consulta más simple
+
       ventasTragosChicas = await query(`
         SELECT 
           COALESCE(SUM(v.total), 0) as total_venta,
@@ -121,8 +118,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const resultado = (ventasTragosChicas as any[])[0] || { total_venta: 0, monto_productos: 0, comisiones: 0, propinas: 0 };
 
-    console.log('🍸 Ventas tragos chicas obtenidas:', resultado);
-
     return res.status(200).json({
       success: true,
       total_venta: resultado.total_venta,
@@ -132,9 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('❌ Error obteniendo ventas tragos chicas:', error);
-    
-    // Si hay error en la consulta, devolver valores por defecto
+
     return res.status(200).json({
       success: true,
       total_venta: 0,

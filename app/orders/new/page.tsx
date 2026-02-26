@@ -34,16 +34,17 @@ export default function NewOrder() {
       });
   }, []);
 
-  const clientesFiltrados = searchCliente 
+  const clientesFiltrados = searchCliente
     ? clientes.filter((c) => {
-        const texto = `${c.name || c.nombre || ""} ${c.lastName || ""} ${
-          c.run || ""
+      const texto = `${c.name || ""} ${c.lastName || ""} ${c.run || ""
         }`.toLowerCase();
-        return texto.includes(searchCliente.toLowerCase());
-      })
-    : clientes; // Si no hay término de búsqueda, mostrar todos los clientes
+      return texto.includes(searchCliente.toLowerCase());
+    })
+    : clientes; 
 
   const anfitrionasFiltradas = anfitrionas.filter((a) => {
+    const estado = a.estado || a.status;
+    if (estado !== 1 && estado !== 2) return false;
     const texto = `${a.nick || a.nombre || ""}`.toLowerCase();
     return texto.includes(searchAnfitriona.toLowerCase());
   });
@@ -64,15 +65,15 @@ export default function NewOrder() {
 
   // Handler para actualizar cantidad de producto
   const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
-    setProductos((prev: any[]) => 
+    setProductos((prev: any[]) =>
       prev.map((producto, i) => {
         if (i !== index) return producto;
-        
+
         // Obtener la comisión unitaria
         // Si ya existe comisionUnitaria, usarla; si no, calcularla desde la comisión actual
-        const comisionUnitaria = producto.comisionUnitaria ?? 
+        const comisionUnitaria = producto.comisionUnitaria ??
           (producto.cantidad > 0 ? (producto.comision || 0) / producto.cantidad : 0);
-        
+
         return {
           ...producto,
           cantidad: nuevaCantidad,
@@ -92,14 +93,14 @@ export default function NewOrder() {
 
   // Handler para toggle de comisión
   const handleToggleComision = (index: number) => {
-    setProductos((prev: any[]) => 
-      prev.map((producto, i) => 
-        i === index 
+    setProductos((prev: any[]) =>
+      prev.map((producto, i) =>
+        i === index
           ? {
-              ...producto,
-              generaComision: producto.generaComision === 1 ? 0 : 1,
-              hostessId: producto.generaComision === 1 ? "" : producto.hostessId,
-            }
+            ...producto,
+            generaComision: producto.generaComision === 1 ? 0 : 1,
+            hostessId: producto.generaComision === 1 ? "" : producto.hostessId,
+          }
           : producto
       )
     );
@@ -109,7 +110,7 @@ export default function NewOrder() {
   const handleSubmit = () => {
     // Si no hay cliente seleccionado, usar cliente ID 1 por defecto
     const clienteId = selectedCliente || "1";
-    
+
   };
 
   const hasChampagne = productos.some((item: any) => {

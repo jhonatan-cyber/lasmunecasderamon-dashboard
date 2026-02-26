@@ -72,8 +72,9 @@ export function SalesFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="1">Vendido</SelectItem>
-                  <SelectItem value="2">Pendiente</SelectItem>
+                  <SelectItem value="1">Completado</SelectItem>
+                  <SelectItem value="2">En Proceso</SelectItem>
+                  <SelectItem value="3">Pdte. Anulación</SelectItem>
                   <SelectItem value="0">Anulado</SelectItem>
                 </SelectContent>
               </Select>

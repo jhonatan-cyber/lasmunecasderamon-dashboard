@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/ui/skeletons';
+import { SupervisorMap } from '@/components/dashboard/SupervisorMap';
 
 // Lazy load de componentes pesados
 const LoggedUsersCards = dynamic(
@@ -87,6 +88,11 @@ export default function Dashboard() {
       </div>
 
       <LoggedUsersCards />
+
+      {/* Mapa de Habitaciones (Nuevo) */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <SupervisorMap />
+      </div>
 
       {/* Cards de estadísticas del dashboard */}
       <DashboardStatsCards />

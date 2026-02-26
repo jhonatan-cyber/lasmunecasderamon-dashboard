@@ -194,7 +194,7 @@ export default function OrdersPage() {
         if ('type' in detail && typeof detail.type === 'string') {
           eventType = detail.type;
         }
-        
+
         // Buscar ID del pedido
         if ('orderId' in detail && typeof detail.orderId === 'number') {
           orderId = detail.orderId;
@@ -255,7 +255,14 @@ export default function OrdersPage() {
     };
   }, [fetchOrders, fetchServicios, selectedOrderId]);
 
-  const hasProcessPermission = () => hasPermission('orders', 'process');
+  const hasProcessPermission = () => {
+    return hasPermission('orders', 'process') ||
+      hasPermission('orders', 'registar_venta') ||
+      hasPermission('orders', 'registar_cuenta') ||
+      hasPermission('pedidos', 'registar_venta') ||
+      hasPermission('pedidos', 'registar_cuenta') ||
+      hasPermission('pedidos', 'ventas');
+  };
 
   const fetchOrderDetail = async (orderId: number) => {
     try {
@@ -431,14 +438,7 @@ export default function OrdersPage() {
 
   const handleOrderClick = (orderId: number, orderCode: string) => {
     if (!hasProcessPermission()) {
-      toast.error('No tienes permisos para procesar pedidos');
-      return;
-    }
-
-    if (!hasOpenCaja) {
-      toast.error(
-        'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
-      );
+      toast.error('No tienes permisos para interactuar con pedidos');
       return;
     }
 
@@ -541,11 +541,10 @@ export default function OrdersPage() {
               <Button
                 onClick={handleCreateOrder}
                 disabled={cajaLoading || !hasOpenCaja}
-                className={`rounded-full transition-all duration-200 ${
-                  hasOpenCaja
-                    ? 'bg-black text-white hover:scale-105'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`rounded-full transition-all duration-200 ${hasOpenCaja
+                  ? 'bg-black text-white hover:scale-105'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 {cajaLoading ? (
                   <>
@@ -718,15 +717,14 @@ export default function OrdersPage() {
                 ) : (
                   <div className='space-y-4'>
                     {filteredOrders.map(order => {
-                      const canProcess = hasProcessPermission() && hasOpenCaja;
+                      const canProcess = hasProcessPermission();
                       return (
                         <div
                           key={order.id_pedido}
-                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors ${
-                            canProcess
-                              ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
-                              : 'cursor-not-allowed opacity-60 pointer-events-none'
-                          }`}
+                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors ${canProcess
+                            ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+                            : 'cursor-not-allowed opacity-60 pointer-events-none'
+                            }`}
                           onClick={
                             canProcess
                               ? () => handleOrderClick(order.id_pedido, order.codigo)
@@ -774,19 +772,18 @@ export default function OrdersPage() {
                                     {order.nicks.split(',').map((nick, index) => (
                                       <Badge
                                         key={index}
-                                        className={`text-xs font-medium ${
-                                          index % 6 === 0
-                                            ? 'bg-blue-500 text-white'
-                                            : index % 6 === 1
-                                              ? 'bg-green-500 text-white'
-                                              : index % 6 === 2
-                                                ? 'bg-purple-500 text-white'
-                                                : index % 6 === 3
-                                                  ? 'bg-orange-500 text-white'
-                                                  : index % 6 === 4
-                                                    ? 'bg-pink-500 text-white'
-                                                    : 'bg-red-500 text-white'
-                                        }`}
+                                        className={`text-xs font-medium ${index % 6 === 0
+                                          ? 'bg-blue-500 text-white'
+                                          : index % 6 === 1
+                                            ? 'bg-green-500 text-white'
+                                            : index % 6 === 2
+                                              ? 'bg-purple-500 text-white'
+                                              : index % 6 === 3
+                                                ? 'bg-orange-500 text-white'
+                                                : index % 6 === 4
+                                                  ? 'bg-pink-500 text-white'
+                                                  : 'bg-red-500 text-white'
+                                          }`}
                                       >
                                         {nick.trim()}
                                       </Badge>

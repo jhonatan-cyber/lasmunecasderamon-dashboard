@@ -24,18 +24,14 @@ export interface WhatsAppMessage {
 
 export async function enviarWhatsApp(numero: string, mensaje: string): Promise<boolean> {
   try {
-    // Si no hay configuración de Twilio, solo log
     if (!client || !whatsappNumber) {
       return true;
     }
-
-    // Formatear número para WhatsApp (agregar código de país si no lo tiene)
     let numeroFormateado = numero;
     if (!numero.startsWith('+')) {
       numeroFormateado = `+${numero}`;
     }
 
-    // Enviar mensaje con Twilio
     const message = await client.messages.create({
       body: mensaje,
       from: `whatsapp:${whatsappNumber}`,
@@ -44,7 +40,6 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
 
     return true;
   } catch (error) {
-    // Si es un error de Twilio, mostrar detalles
     if (error instanceof Error) {
       console.error('Detalles del error:', error.message);
     }
@@ -84,18 +79,17 @@ ${datos.motivo}
 
 👤 *Solicitado por:* ${datos.solicitadoPor}
 
-${
-  datos.token && datos.baseUrl
-    ? `
+${datos.token && datos.baseUrl
+      ? `
 ✅ *Para confirmar o rechazar:* ${datos.baseUrl}/confirmar-anulacion?token=${datos.token}
 
 _Haz clic en el link para revisar y confirmar o rechazar esta solicitud_`
-    : `
+      : `
 ✅ *Para confirmar:* Responde "SI" o "CONFIRMAR"
 ❌ *Para rechazar:* Responde "NO" o "RECHAZAR"
 
 _El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`
-}`;
+    }`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
 }
@@ -143,18 +137,37 @@ ${datos.motivo}
 
 👤 *Solicitado por:* ${datos.solicitadoPor}
 
-${
-  datos.token && datos.baseUrl
-    ? `
+${datos.token && datos.baseUrl
+      ? `
 ✅ *Para confirmar o rechazar:* ${datos.baseUrl}/confirmar-anulacion-servicio?token=${datos.token}
 
 _Haz clic en el link para revisar y confirmar o rechazar esta solicitud_`
-    : `
+      : `
 ✅ *Para confirmar:* Responde "SI" o "CONFIRMAR"
 ❌ *Para rechazar:* Responde "NO" o "RECHAZAR"
 
 _El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`
-}`;
+    }`;
+
+  return await enviarWhatsApp(datos.numeroAdmin, mensaje);
+}
+
+export async function enviarMensajeTerminoServicio(datos: {
+  numeroAdmin: string;
+  codigoServicio: string;
+  habitacion: string;
+  tiempoEfectivo: string;
+  anfitrionas: string[];
+}): Promise<boolean> {
+  const mensaje = `✅ *SERVICIO FINALIZADO*
+
+📋 *Detalles:*
+• Código: ${datos.codigoServicio}
+• Habitación: ${datos.habitacion}
+• Duración: ${datos.tiempoEfectivo}
+• Anfitrionas: ${datos.anfitrionas.join(', ')}
+
+_El servicio ha terminado y la habitación ha sido liberada._`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
 }

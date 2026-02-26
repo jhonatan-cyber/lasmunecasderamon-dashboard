@@ -96,8 +96,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 [validatedData.id_caja, validatedData.monto, validatedData.motivo, validatedData.usuario_id]
             );
         } catch (error) {
-            // Si la tabla no existe, continuar sin registrar el historial
-            console.warn('Tabla retiros_caja no existe, continuando sin registrar historial');
+            return res.status(500).json({
+                success: false,
+                message: 'Error al registrar retiro',
+                error: error instanceof Error ? error.message : String(error)
+            });
         }
 
         // Actualizar el efectivo de la caja (restar el monto retirado)
@@ -130,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         });
     } catch (error) {
-        console.error('Error en retiro de caja:', error);
+       
         return res.status(500).json({
             success: false,
             message: 'Error interno del servidor',

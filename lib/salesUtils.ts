@@ -1,15 +1,14 @@
-// Constantes para el módulo de ventas
 export const statusColors: Record<number, string> = {
-  1: "bg-green-100 text-green-800", // Vendido
-  2: "bg-yellow-100 text-yellow-800", // Pendiente de anulación
-  3: "bg-green-100 text-green-800", // Vendido
+  1: "bg-green-100 text-green-800", // Completado
+  2: "bg-blue-100 text-blue-800", // En proceso
+  3: "bg-yellow-100 text-yellow-800", // Pendiente de anulación
   0: "bg-red-100 text-red-800", // Anulado
 };
 
 export const statusLabels: Record<number, string> = {
-  1: "Vendido",
-  2: "Pendiente de anulación",
-  3: "Vendido",
+  1: "Completado",
+  2: "En proceso",
+  3: "Pdte. Anulación",
   0: "Anulado",
 };
 
@@ -94,8 +93,8 @@ export const solicitarAnulacionVenta = async (ventaId: number, motivo?: string):
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ 
-        estado: 2, // 2 = Pendiente de aprobación
+      body: JSON.stringify({
+        estado: 3, // 3 = Pendiente de anulación
         motivo: motivo || "Solicitud de anulación"
       }),
     });
@@ -103,7 +102,7 @@ export const solicitarAnulacionVenta = async (ventaId: number, motivo?: string):
     if (!response.ok) {
       // Intentar leer la respuesta como JSON primero
       let errorMessage = `Error ${response.status}: ${response.statusText}`;
-      
+
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
@@ -111,26 +110,26 @@ export const solicitarAnulacionVenta = async (ventaId: number, motivo?: string):
         // Si no es JSON válido, intentar leer como texto
         try {
           const textResponse = await response.text();
-  
+
           errorMessage = `Error del servidor: ${response.status}`;
         } catch (textError) {
-       
+
           errorMessage = `Error de conexión: ${response.status}`;
         }
       }
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         error: errorMessage
       };
     }
 
     return { success: true };
   } catch (error) {
-   
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Error desconocido" 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido"
     };
   }
 };
@@ -148,7 +147,7 @@ export const getVentaDetails = async (ventaId: number, ventas: any[]) => {
         venta = await response.json();
       }
     } catch (error) {
-   
+
       return null;
     }
   }

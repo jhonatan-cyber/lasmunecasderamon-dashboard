@@ -33,20 +33,20 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home, module: 'dashboard', action: 'view' },
-  { name: 'Usuarios', href: '/users', icon: Users, module: 'users', action: 'view' },
-  { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clients', action: 'view' },
-  { name: 'Productos', href: '/products', icon: Package, module: 'products', action: 'view' },
-  { name: 'Categorías', href: '/categories', icon: Tag, module: 'categories', action: 'view' },
-  { name: 'Pedidos', href: '/orders', icon: ShoppingCart, module: 'orders', action: 'view' },
-  { name: 'Reportes', href: '/reports', icon: FileText, module: 'reports', action: 'view' },
-  { name: 'Ventas', href: '/sales', icon: TrendingUp, module: 'sales', action: 'view' }
+  { name: 'Dashboard', href: '/dashboard', icon: Home, module: 'dashboard', action: 'ver_dashboard', fallbackModule: 'dashboard', fallbackAction: 'view' },
+  { name: 'Usuarios', href: '/users', icon: Users, module: 'usuarios', action: 'listar_usuarios', fallbackModule: 'users', fallbackAction: 'view' },
+  { name: 'Clientes', href: '/clients', icon: UserCheck, module: 'clientes', action: 'listar_clientes', fallbackModule: 'clients', fallbackAction: 'view' },
+  { name: 'Productos', href: '/products', icon: Package, module: 'productos', action: 'listar_categoria_productos', fallbackModule: 'products', fallbackAction: 'view' },
+  { name: 'Categorías', href: '/categories', icon: Tag, module: 'categorias', action: 'listar_categorias', fallbackModule: 'categories', fallbackAction: 'view' },
+  { name: 'Pedidos', href: '/orders', icon: ShoppingCart, module: 'pedidos', action: 'listar_pedidos', fallbackModule: 'orders', fallbackAction: 'view' },
+  { name: 'Reportes', href: '/reports', icon: FileText, module: 'reportes', action: 'listar_reportes', fallbackModule: 'reports', fallbackAction: 'view' },
+  { name: 'Ventas', href: '/sales', icon: TrendingUp, module: 'ventas', action: 'listar_ventas', fallbackModule: 'sales', fallbackAction: 'view' }
 ];
 
 const hrNavigation = [
-  { name: 'Roles', href: '/roles', icon: Shield, module: 'roles', action: 'view' },
-  { name: 'Asistencias', href: '/attendance', icon: Clock, module: 'attendance', action: 'view' },
-  { name: 'Horas Extras', href: '/overtime', icon: Clock, module: 'overtime', action: 'view' }
+  { name: 'Roles', href: '/roles', icon: Shield, module: 'roles', action: 'listar_roles', fallbackModule: 'roles', fallbackAction: 'view' },
+  { name: 'Asistencias', href: '/attendance', icon: Clock, module: 'asistencias', action: 'listar_asistencias', fallbackModule: 'attendance', fallbackAction: 'view' },
+  { name: 'Horas Extras', href: '/overtime', icon: Clock, module: 'horas_extras', action: 'listar_horas_extras', fallbackModule: 'overtime', fallbackAction: 'view' }
 ];
 
 const financeNavigation = [
@@ -54,62 +54,78 @@ const financeNavigation = [
     name: 'Cajas',
     href: '/cash-register',
     icon: CreditCard,
-    module: 'cash_register',
-    action: 'view'
+    module: 'caja',
+    action: 'listar_caja',
+    fallbackModule: 'cash_register',
+    fallbackAction: 'view'
   },
   {
     name: 'Cuentas',
     href: '/accounts',
     icon: Calculator,
-    module: 'accounts',
-    action: 'view'
+    module: 'cuentas',
+    action: 'listar_cuentas',
+    fallbackModule: 'accounts',
+    fallbackAction: 'view'
   },
-  { name: 'Propinas', href: '/tips', icon: Gift, module: 'tips', action: 'view' },
+  { name: 'Propinas', href: '/tips', icon: Gift, module: 'propinas', action: 'listar_propinas', fallbackModule: 'tips', fallbackAction: 'view' },
   {
     name: 'Comisiones',
     href: '/commissions',
     icon: Percent,
-    module: 'commissions',
-    action: 'view'
+    module: 'comisiones',
+    action: 'listar_comisiones',
+    fallbackModule: 'commissions',
+    fallbackAction: 'view'
   },
   {
     name: 'Pagos a Trabajadores',
     href: '/payroll',
     icon: DollarSign,
-    module: 'payroll',
-    action: 'view'
+    module: 'pagos_trabajadores',
+    action: 'listar_pagos',
+    fallbackModule: 'payroll',
+    fallbackAction: 'view'
   },
   {
     name: 'Detalle Planillas',
     href: '/payroll/calendar',
     icon: CalendarIcon,
     module: 'payroll_details',
-    action: 'view'
+    action: 'listar_detalles',
+    fallbackModule: 'payroll_details',
+    fallbackAction: 'view'
   },
   {
     name: 'Anticipos',
     href: '/advances',
     icon: DollarSign,
-    module: 'advances',
-    action: 'view'
+    module: 'anticipos',
+    action: 'listar_anticipos',
+    fallbackModule: 'advances',
+    fallbackAction: 'view'
   },
   {
     name: 'Devoluciones',
     href: '/returns',
     icon: RotateCcw,
-    module: 'returns',
-    action: 'view'
+    module: 'devoluciones',
+    action: 'listar_devoluciones',
+    fallbackModule: 'returns',
+    fallbackAction: 'view'
   }
 ];
 
 const serviceNavigation = [
-  { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'rooms', action: 'create' },
+  { name: 'Crear Privado', href: '/rooms', icon: Bed, module: 'rooms', action: 'crear', fallbackModule: 'rooms', fallbackAction: 'create' },
   {
     name: 'Vender Privado',
     href: '/private-rooms',
     icon: Lock,
     module: 'private_rooms',
-    action: 'view'
+    action: 'listar_privados',
+    fallbackModule: 'private_rooms',
+    fallbackAction: 'view'
   }
 ];
 
@@ -122,7 +138,7 @@ export function Sidebar() {
   const [mounted, setMounted] = React.useState(false);
   const { isSidebarOpen, isCollapsed, closeSidebar } = useSidebar();
   const { user, loading: userLoading } = useCurrentUser();
-  const { userPermissions: permissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { userPermissions: permissions, isLoading: permissionsLoading, hasPermission: contextHasPermission } = useUserPermissions();
 
   // Estado para forzar re-render cuando cambien permisos
   const [permissionsVersion, setPermissionsVersion] = React.useState(0);
@@ -177,49 +193,80 @@ export function Sidebar() {
   }, [user, userLoading]);
 
   const hasModulePermission = React.useCallback(
-    (module: string, action: string = 'listar') => {
-      // Dashboard siempre accesible
-      if (module === 'dashboard') return true;
-
+    (module: string, action: string = 'listar', fallbackModule?: string, fallbackAction?: string) => {
       // Administrador tiene acceso a todo
       const isAdminFromStorage =
         typeof window !== 'undefined'
           ? localStorage.getItem('userRole')?.toLowerCase() === 'administrador'
           : false;
 
-      if (user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage) return true;
+      const isAdmin = user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage;
+
+      console.log(`🔍 [Sidebar] Verificando permisos:`, {
+        userRole: user?.role,
+        isAdminFromStorage,
+        isAdmin,
+        module,
+        action,
+        fallbackModule,
+        fallbackAction,
+        permissionsCount: permissions.length
+      });
+
+      if (isAdmin) {
+        console.log(`✅ [Sidebar] Acceso concedido a ${module}.${action} (Administrador)`);
+        return true;
+      }
 
       // Si no hay permisos cargados, no tiene acceso
       if (!permissions.length) {
+        console.log(`🔍 [Sidebar] Sin permisos cargados para ${module}.${action}`);
         return false;
       }
 
-      return permissions.some(
-        permission => permission.module === module && permission.action === action
-      );
+      // Utilizar la lógica del contexto que mapea español/inglés
+      let hasPermission = contextHasPermission(module, action);
+
+      if (!hasPermission && fallbackModule && fallbackAction) {
+        hasPermission = contextHasPermission(fallbackModule, fallbackAction);
+      }
+
+      console.log(`🔍 [Sidebar] Verificando ${module}.${action}: ${hasPermission ? '✅' : '❌'}`);
+
+      return hasPermission;
     },
-    [user?.role, permissions]
+    [user?.role, permissions, contextHasPermission]
   );
 
   // Recalcular listas filtradas cuando cambien permisos
   const allowedPrincipal = React.useMemo(() => {
-    return navigation.filter(item => hasModulePermission(item.module, item.action));
+    const filtered = navigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
+    console.log('📋 [Sidebar] Principal permitidos:', filtered.map(f => f.name));
+    return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedHR = React.useMemo(() => {
-    return hrNavigation.filter(item => hasModulePermission(item.module, item.action));
+    const filtered = hrNavigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
+    console.log('📋 [Sidebar] HR permitidos:', filtered.map(f => f.name));
+    return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedFinance = React.useMemo(() => {
-    return financeNavigation.filter(item => hasModulePermission(item.module, item.action));
+    const filtered = financeNavigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
+    console.log('📋 [Sidebar] Finanzas permitidos:', filtered.map(f => f.name));
+    return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedService = React.useMemo(() => {
-    return serviceNavigation.filter(item => hasModulePermission(item.module, item.action));
+    const filtered = serviceNavigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
+    console.log('📋 [Sidebar] Servicios permitidos:', filtered.map(f => f.name));
+    return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedSecondary = React.useMemo(() => {
-    return secondaryNavigation.filter(item => hasModulePermission(item.module, item.action));
+    const filtered = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action, (item as any).fallbackModule, (item as any).fallbackAction));
+    console.log('📋 [Sidebar] Configuración permitidos:', filtered.map(f => f.name));
+    return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   React.useEffect(() => {

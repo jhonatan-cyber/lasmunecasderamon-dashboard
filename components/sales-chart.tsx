@@ -1,9 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Target, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, BarChart3, DollarSign, ShoppingCart, Target, Calendar } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  Legend,
+} from 'recharts';
 
 interface SalesData {
   mes: string;
@@ -26,23 +37,89 @@ interface SalesResponse {
   summary: SalesSummary;
 }
 
+const MONTH_COLORS = [
+  '#EF4444', '#3B82F6', '#10B981', '#F59E0B',
+  '#8B5CF6', '#EC4899', '#6366F1', '#F97316',
+  '#14B8A6', '#06B6D4', '#84CC16', '#F43F5E',
+];
+
+const MONTH_GRADIENTS = MONTH_COLORS.map((color, i) => ({
+  id: `monthGrad${i}`,
+  start: color,
+  end: `${color}99`,
+}));
+
+const formatNumber = (amount: number) => {
+  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+const formatCompact = (value: number) => {
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
+  return `$${value}`;
+};
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: SalesData }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-700/50 rounded-xl px-4 py-3 shadow-2xl">
+        <p className="text-white font-semibold text-sm mb-2">{data.mes}</p>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+            <span className="text-gray-300 text-xs">Ventas:</span>
+            <span className="text-white font-bold text-sm ml-auto">
+              $ {formatNumber(data.total)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+            <span className="text-gray-300 text-xs">Cantidad:</span>
+            <span className="text-emerald-300 font-bold text-sm ml-auto">
+              {data.cantidad_ventas}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomLegend = () => (
+  <div className="flex items-center justify-center mt-2 gap-4">
+    <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-gray-200/50 dark:border-gray-700/50">
+      <div className="w-4 h-3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-sm" />
+      <span className="text-gray-700 dark:text-gray-300 text-xs font-medium">Ventas Mensuales</span>
+    </div>
+  </div>
+);
+
 export function SalesChart() {
   const [salesData, setSalesData] = useState<SalesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentYearOffset, setCurrentYearOffset] = useState(0);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const fetchSalesData = async (offset: number) => {
+  const fetchSalesData = useCallback(async (offset: number) => {
     try {
       setLoading(true);
       const response = await fetch(`/api/stats/sales-by-month?offset=${offset}`);
-      
+
       if (!response.ok) {
         throw new Error('Error al obtener datos de ventas');
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setSalesData(result.data);
       } else {
@@ -53,71 +130,32 @@ export function SalesChart() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSalesData(currentYearOffset);
-  }, [currentYearOffset]);
+  }, [currentYearOffset, fetchSalesData]);
 
-  const handleYearChange = (direction: 'prev' | 'next') => {
+  const handleYearChange = useCallback((direction: 'prev' | 'next') => {
     if (direction === 'prev') {
-      setCurrentYearOffset(currentYearOffset + 1);
+      setCurrentYearOffset(prev => prev + 1);
     } else {
-      setCurrentYearOffset(Math.max(0, currentYearOffset - 1));
+      setCurrentYearOffset(prev => Math.max(0, prev - 1));
     }
-  };
+  }, []);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CR', {
-      style: 'currency',
-      currency: 'CRC',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatNumber = (amount: number) => {
-    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
-
-  const getMaxValue = () => {
-    if (!salesData?.data) return 0;
-    const maxValue = Math.max(...salesData.data.map(item => item.total));
-    // Redondear hacia arriba al siguiente múltiplo de 100,000
-    return Math.ceil(maxValue / 100000) * 100000;
-  };
-
-  const getBarHeight = (value: number) => {
-    // Calcular altura basada en el máximo dinámico
-    const maxValue = getMaxValue();
-    const height = (value / maxValue) * 100;
-    return Math.max(height, 1); // Mínimo 1% de altura para barras muy pequeñas
-  };
-
-  const getBarColor = (monthIndex: number) => {
-    // Array de colores diferentes para cada mes
-    const colors = [
-      'bg-red-500',      // Enero
-      'bg-blue-500',     // Febrero
-      'bg-green-500',    // Marzo
-      'bg-yellow-500',   // Abril
-      'bg-purple-500',   // Mayo
-      'bg-pink-500',     // Junio
-      'bg-indigo-500',   // Julio
-      'bg-orange-500',   // Agosto
-      'bg-teal-500',     // Septiembre
-      'bg-cyan-500',     // Octubre
-      'bg-lime-500',     // Noviembre
-      'bg-rose-500'      // Diciembre
-    ];
-    
-    return colors[monthIndex] || 'bg-gray-500';
-  };
+  const chartData = useMemo(() => {
+    if (!salesData?.data) return [];
+    return salesData.data.map(item => ({
+      ...item,
+      mesCorto: item.mes.substring(0, 3),
+    }));
+  }, [salesData]);
 
   if (loading) {
     return (
       <Card className="dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             Ventas por Mes
@@ -159,13 +197,9 @@ export function SalesChart() {
     return null;
   }
 
-
-
-  const maxValue = getMaxValue();
-
   return (
     <Card className="dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+      <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -197,7 +231,7 @@ export function SalesChart() {
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        {/* Resumen mejorado */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="text-center p-4 dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-blue-800/10 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm">
             <div className="flex items-center justify-center mb-2">
@@ -237,77 +271,77 @@ export function SalesChart() {
           </div>
         </div>
 
-        {/* Gráfico de barras mejorado */}
-        <div className="space-y-6">
-          <div className="relative dark:bg-gray-800 bg-white rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            {/* Eje Y con valores dinámicos */}
-            <div className="absolute left-0 top-6 bottom-6 w-20 flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 font-medium">
-              <span>${formatNumber(maxValue)}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.875))}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.75))}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.625))}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.5))}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.375))}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.25))}</span>
-              <span>${formatNumber(Math.round(maxValue * 0.125))}</span>
-              <span>$0</span>
-            </div>
-            
-            {/* Líneas de cuadrícula horizontales */}
-            <div className="absolute left-20 right-6 top-6 bottom-6 flex flex-col justify-between">
-              {Array.from({ length: 9 }, (_, i) => (
-                <div key={i} className="border-t border-gray-100 dark:border-gray-600"></div>
-              ))}
-            </div>
-            
-            {/* Barras mejoradas */}
-            <div className="ml-20 mr-6 grid grid-cols-12 gap-2 h-64 items-end">
-              {salesData.data.map((month, index) => {
-                // Calcular la altura exacta basada en el valor monetario
-                const chartHeight = 256; // Altura del contenedor en píxeles (h-64 = 256px)
-                const barHeightPx = (month.total / maxValue) * chartHeight;
-                
-
-                
-                return (
-                  <div key={month.mes_num} className="flex flex-col items-center group">
-                    <div className="w-full relative">
-                      {month.total > 0 && (
-                        <div
-                          className={`${getBarColor(month.mes_num - 1)} rounded-t-lg transition-all duration-500 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md group-hover:opacity-90`}
-                          style={{
-                            height: `${barHeightPx}px`,
-                            minHeight: '2px'
-                          }}
-                        >
-                          {/* Tooltip */}
-                          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                            $ {formatNumber(month.total)}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-600 dark:text-gray-300 mt-3 text-center font-medium transform -rotate-45 origin-left">
-                      {month.mes}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* Recharts Bar Chart */}
+        <div className="dark:bg-gray-800/50 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+              onMouseMove={(state) => {
+                if (state?.activeTooltipIndex !== undefined) {
+                  setActiveIndex(state.activeTooltipIndex as number);
+                }
+              }}
+              onMouseLeave={() => setActiveIndex(null)}
+            >
+              <defs>
+                {MONTH_GRADIENTS.map((grad, index) => (
+                  <linearGradient key={grad.id} id={grad.id} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={grad.start} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={grad.end} stopOpacity={0.6} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                className="text-gray-200 dark:text-gray-700"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="mesCorto"
+                tick={{ fill: 'currentColor', fontSize: 12 }}
+                className="text-gray-600 dark:text-gray-400"
+                tickLine={false}
+                axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
+              />
+              <YAxis
+                tickFormatter={formatCompact}
+                tick={{ fill: 'currentColor', fontSize: 11 }}
+                className="text-gray-500 dark:text-gray-400"
+                tickLine={false}
+                axisLine={false}
+                width={55}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'rgba(0,0,0,0.04)', radius: 4 }}
+              />
+              <Legend content={<CustomLegend />} />
+              <Bar
+                dataKey="total"
+                radius={[6, 6, 0, 0]}
+                animationDuration={800}
+                animationEasing="ease-out"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={`url(#monthGrad${index % 12})`}
+                    opacity={activeIndex === null || activeIndex === index ? 1 : 0.4}
+                    style={{ transition: 'opacity 0.2s ease', cursor: 'pointer' }}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Leyenda mejorada */}
-        <div className="mt-6 flex items-center justify-center">
-          <div className="flex items-center gap-3 text-sm dark:bg-gray-800 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-gradient-to-r from-red-500 via-blue-500 to-green-500 rounded"></div>
-              <span className="text-gray-700 dark:text-gray-200 font-medium">Ventas Mensuales</span>
-            </div>
-            <div className="w-px h-4 bg-gray-200 dark:bg-gray-600"></div>
+        {/* Footer Legend */}
+        <div className="mt-4 flex items-center justify-center">
+          <div className="flex items-center gap-3 text-sm dark:bg-gray-800/80 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
             <span className="text-gray-500 dark:text-gray-400 text-xs">
-              {salesData.data.filter(m => m.total > 0).length} meses con ventas
+              {salesData.data.filter(m => m.total > 0).length} meses con ventas en {salesData.year}
             </span>
           </div>
         </div>

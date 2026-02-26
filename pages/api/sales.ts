@@ -30,7 +30,7 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
       WHERE vu.usuario_id = ?
         AND v.habitacion_id IS NOT NULL
         AND v.tiempo > 0
-        AND v.estado = 1
+        AND v.estado = 2
       ORDER BY v.fecha_crea DESC
       LIMIT 1
     `,
@@ -339,7 +339,7 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
     const cajaActualResult = (await query(cajaActualSql)) as any[];
     const cajaActual = cajaActualResult[0];
 
-    let whereClause = 'WHERE v.estado = 1';
+    let whereClause = 'WHERE v.estado IN (1, 2, 3)';
     const params: any[] = [];
 
     if (cajaActual && cajaActual.fecha_apertura) {
@@ -530,13 +530,19 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       return acc + comision; // La comisión ya viene calculada desde el frontend
     }, 0);
 
+    // Determinar el estado de la venta:
+    // - Si tiene habitación y tiempo > 0: estado = 2 (en proceso/con temporizador)
+    // - En caso contrario: estado = 1 (completada)
+    const estadoVenta = habitacion_id && tiempo && tiempo > 0 ? 2 : 1;
+
     console.log('[SALES POST] Total comision:', totalComision);
     console.log('[SALES POST] Inserting venta into DB...');
+    console.log('[SALES POST] Estado de venta:', estadoVenta, '(2=en proceso, 1=completada)');
 
     const insertVentaSql = `
       INSERT INTO ventas (
-        codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const ventaResult = (await query(insertVentaSql, [
@@ -551,7 +557,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       totalComision,
       tiempo || 0,
       cajaId,
-      1 // Por ahora usar ID 1 como created_by, después se puede obtener del token de autenticación
+      1, // Por ahora usar ID 1 como created_by, después se puede obtener del token de autenticación
+      estadoVenta
     ])) as any;
 
     const ventaId = ventaResult.insertId;
@@ -681,7 +688,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           comision = comision + ?
         WHERE id_caja = ?`,
         [
-          total, // ventas incluyendo propina
+          total - (propina || 0), // ventas excluyendo propina
           propina || 0, // propina por separado
           montoEfectivo,
           montoTarjeta,
@@ -732,10 +739,20 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
         // Marcar la habitación como ocupada en la base de datos (asegurar consistencia)
         try {
-          await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
-            habitacion_id
-          ]);
-          console.info('[SALES POST] Habitación marcada como ocupada (venta):', habitacion_id);
+          const roomInfoDb = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+          let isFreeRoom = false;
+          if (roomInfoDb.length > 0) {
+            const room = roomInfoDb[0];
+            isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+          }
+          if (!isFreeRoom) {
+            await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
+              habitacion_id
+            ]);
+            console.info('[SALES POST] Habitación marcada como ocupada (venta):', habitacion_id);
+          } else {
+            console.info('[SALES POST] Habitación ignorada por ser área libre (venta):', habitacion_id);
+          }
         } catch (roomUpdateErr) {
           console.error('[SALES POST] Error marcando habitación como ocupada:', roomUpdateErr);
         }
@@ -750,14 +767,14 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           console.error('[SALES POST] Error notificando room_occupied:', roomNotifyErr);
         }
 
-        // Verificar si hay un temporizador activo para esta habitación
+        // Verificar si hay un temporizador activo para esta habitación (estado = 2 = en proceso)
         const ventasActivasEnHabitacion = (await query(
           `
           SELECT COUNT(*) as count
           FROM ventas
           WHERE habitacion_id = ?
             AND tiempo > 0
-            AND estado = 1
+            AND estado = 2
             AND id_venta != ?
         `,
           [habitacion_id, ventaId]
@@ -780,7 +797,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             FROM ventas
             WHERE habitacion_id = ?
               AND tiempo > 0
-              AND estado = 1
+              AND estado = 2
               AND id_venta != ?
             ORDER BY fecha_crea DESC
             LIMIT 1

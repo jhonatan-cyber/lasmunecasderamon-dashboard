@@ -69,7 +69,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const venta = ventaResult[0] as any;
 
     // Verificar que la venta no esté ya anulada o pendiente
-    if (venta.estado === 0 || venta.estado === 2) {
+    // Verificar que la venta no esté ya anulada o pendiente de anulación (estado 3)
+    if (venta.estado === 0 || venta.estado === 3) {
       return res.status(400).json({
         error:
           venta.estado === 0
