@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const cajaActualResult = await query(cajaActualSql);
     const cajaActual = Array.isArray(cajaActualResult) ? cajaActualResult[0] : cajaActualResult as any;
 
-    let whereClause = "WHERE v.estado = 1"; // Solo ventas completadas
+    let whereClause = "WHERE v.estado IN (1, 2, 3)"; // Incluir completadas, en proceso y pdte. anulación
     const params: any[] = [];
 
     // Si hay una caja abierta, usar su fecha de apertura como filtro
@@ -52,10 +52,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json(responseData);
 
   } catch (error) {
-   
-    res.status(500).json({ 
-      success: false, 
-      error: "Error interno del servidor" 
+
+    res.status(500).json({
+      success: false,
+      error: "Error interno del servidor"
     });
   }
 }

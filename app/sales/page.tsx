@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSales } from '@/hooks/caja/useSales';
+import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
+import { useTimer } from '@/contexts/TimerContext';
 import { VentaWithDetails } from '@/types/venta';
 import { showErrorToast, showSuccessToast } from '@/lib/toastUtils';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
@@ -33,6 +35,8 @@ import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 export default function Sales() {
   const { ventas, loading, error, getVentas, getResumen } = useSales();
   const { setRefreshCallback } = useAnulacionContext();
+  const { setRefreshCallback: setTimerRefreshCallback } = useTimer();
+  const { getHabitaciones } = useHabitaciones();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -45,7 +49,8 @@ export default function Sales() {
   const handleRefresh = useCallback(async () => {
     await getVentas();
     await getResumen();
-  }, [getVentas, getResumen]);
+    await getHabitaciones();
+  }, [getVentas, getResumen, getHabitaciones]);
 
   useEffect(() => {
     handleRefresh();
@@ -68,6 +73,10 @@ export default function Sales() {
   useEffect(() => {
     setRefreshCallback(() => handleRefresh);
   }, [setRefreshCallback]);
+
+  useEffect(() => {
+    setTimerRefreshCallback(() => handleRefresh);
+  }, [setTimerRefreshCallback, handleRefresh]);
 
   const filteredVentas = filterVentas(ventas, searchTerm, statusFilter, paymentFilter);
 

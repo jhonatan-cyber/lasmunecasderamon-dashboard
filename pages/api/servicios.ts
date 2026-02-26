@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -11,11 +12,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const params: any[] = [];
 
       if (all === 'true') {
-        // Mostrar servicios no activos (estado != 1)
-        whereClause = 'WHERE s.estado != 1';
+        // Mostrar servicios no activos (estado != 2 y estado != 3)
+        whereClause = 'WHERE s.estado NOT IN (2, 3)';
       } else if (all === 'false') {
-        // Mostrar solo servicios activos (estado = 1)
-        whereClause = 'WHERE s.estado = 1';
+        // Mostrar solo servicios en proceso (estado = 2). Los pausados (3) se ocultan.
+        whereClause = 'WHERE s.estado = 2';
       }
 
       // Filtrar directamente por caja_id si se proporciona
@@ -61,7 +62,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         LEFT JOIN clientes c_multi ON c_multi.id_cliente = dsc.cliente_id
         LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
-        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id AND u.estado = 1
+        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
         ${whereClause}
         GROUP BY s.id_servicio
@@ -164,8 +165,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         const servicioResult: any = await query(
           `INSERT INTO servicios (
              codigo, cliente_id, habitacion_id, precio_habitacion, 
-             precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)`,
           [
             codigo,
             clienteIdFinal,
@@ -184,8 +185,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         const servicioId = servicioResult.insertId;
 
-        // Actualizar estado de la habitación a ocupada (estado = 2)
-        await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [habitacion_id]);
+        // Verificar si es área libre
+        const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+        let isFreeRoom = false;
+        if (roomInfo.length > 0) {
+          const room = roomInfo[0];
+          isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        }
+
+        // Actualizar estado de la habitación a ocupada (estado = 2) si no es libre
+        if (!isFreeRoom) {
+          await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [habitacion_id]);
+        } else {
+          console.info('[SERVICIOS POST] Habitación ignorada al ocupar por ser área libre:', habitacion_id);
+        }
 
         // Insertar detalles de clientes (si hay múltiples)
         if (clientesArray && Array.isArray(clientesArray) && clientesArray.length > 0) {
@@ -210,6 +223,38 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               usuarioId,
               servicioId
             ]);
+            // Ocupar anfitriona
+            await query('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [usuarioId]);
+          }
+
+          // Pausar servicios activos (con habitación de comisión) donde participen estas anfitrionas
+          try {
+            const placeholders = usuarios.map(() => '?').join(',');
+            const queryServiciosToPause = `
+              SELECT DISTINCT s.id_servicio
+              FROM servicios s
+              JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+              JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
+              WHERE s.estado = 2 
+                AND s.id_servicio != ? 
+                AND s.paused_at IS NULL 
+                AND ds.usuario_id IN (${placeholders})
+                AND (h.precio > 0 OR h.comision_anfitriona > 0 OR h.tiempo > 0)
+            `;
+            const params = [servicioId, ...usuarios];
+            const serviciosToPause = await query(queryServiciosToPause, params) as any[];
+            if (serviciosToPause && serviciosToPause.length > 0) {
+              for (const sToPause of serviciosToPause) {
+                await query('UPDATE servicios SET estado = 3, paused_at = NOW() WHERE id_servicio = ?', [sToPause.id_servicio]);
+                console.log(`[SERVICIOS POST] Servicio previo ${sToPause.id_servicio} pausado debido al nuevo servicio ${servicioId}`);
+                sendNotificationToAll('timer_paused', {
+                  servicioId: sToPause.id_servicio,
+                  tipoTransaccion: 'servicio'
+                });
+              }
+            }
+          } catch (pauseErr) {
+            console.error('[SERVICIOS POST] Error al pausar servicios previos relacionados:', pauseErr);
           }
         }
 

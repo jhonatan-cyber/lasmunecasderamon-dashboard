@@ -65,11 +65,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     ]);
 
     if (action === 'confirmar') {
-      // Si se confirma, cambiar el estado del servicio a anulado (3)
+      // Si se confirma, cambiar el estado del servicio a anulado (0)
 
-      await query('UPDATE servicios SET estado = 3, fecha_mod = NOW() WHERE id_servicio = ?', [
+      await query('UPDATE servicios SET estado = 0, fecha_mod = NOW() WHERE id_servicio = ?', [
         servicioId
       ]);
+
+      // Liberar habitación y anfitrionas
+      const [servicio] = await query('SELECT habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
+      if (servicio && servicio.habitacion_id) {
+        const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [servicio.habitacion_id])) as any[];
+        let isFreeRoom = false;
+        if (roomInfo.length > 0) {
+          const room = roomInfo[0];
+          isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        }
+
+        if (!isFreeRoom) {
+          await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [servicio.habitacion_id]);
+          console.log(`✅ Habitación ${servicio.habitacion_id} liberada por anulación de servicio ${servicioId}`);
+
+          sendNotificationToAll('timer_stopped', {
+            servicioId: servicioId,
+            roomId: servicio.habitacion_id
+          });
+        }
+      }
+
+      // Liberar anfitrionas asociadas
+      const anfitrionas = await query('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [servicioId]) as any[];
+      if (Array.isArray(anfitrionas) && anfitrionas.length > 0) {
+        for (const anfitriona of anfitrionas) {
+          await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
+        }
+        console.log(`✅ ${anfitrionas.length} anfitrionas liberadas por anulación de servicio ${servicioId}`);
+      }
 
       // Cambiar estado de comisiones asociadas al servicio
 
@@ -182,9 +212,9 @@ El servicio ya no está activo en el sistema.`;
         // No fallar la operación si las notificaciones fallan
       }
     } else {
-      // Si se rechaza, cambiar el estado del servicio de vuelta a activo (1)
+      // Si se rechaza, cambiar el estado del servicio de vuelta a en proceso (2)
 
-      await query('UPDATE servicios SET estado = 1, fecha_mod = NOW() WHERE id_servicio = ?', [
+      await query('UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE id_servicio = ?', [
         servicioId
       ]);
 
@@ -261,7 +291,7 @@ El servicio permanece activo en el sistema.`;
         tiempo: tiempo,
         total: totalServicio,
         anfitrionas: anfitrionas,
-        estado: action === 'confirmar' ? 3 : 1
+        estado: action === 'confirmar' ? 0 : 2
       }
     });
   } catch (error) {

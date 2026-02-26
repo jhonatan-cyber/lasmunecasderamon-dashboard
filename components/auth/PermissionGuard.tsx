@@ -21,7 +21,16 @@ export function PermissionGuard({
   requireAll = false,
   actions = []
 }: PermissionGuardProps) {
-  const { user, userLoading, hasPermission, hasAnyPermission, hasAllPermissions } = useAuth();
+  const {
+    user,
+    userLoading,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    userPermissions,
+    permissionsLoading,
+    permissionsLoaded
+  } = useAuth();
 
   // Evitar hydration mismatch: renderizar solo tras montar en el cliente
   const [mounted, setMounted] = useState(false);
@@ -33,8 +42,15 @@ export function PermissionGuard({
     return null;
   }
 
-  // Mostrar loading mientras se carga el usuario
-  if (userLoading) {
+  // Mostrar loading mientras se carga el usuario o durante el gap antes de cargar permisos
+  const isSuperAdmin = user?.role?.toLowerCase() === 'administrador';
+  const isDashboardModule = module === 'dashboard' || module === 'Dashboard';
+
+  // Si no es admin ni dashboard, y el usuario existe pero aún no se empiezan a cargar los permisos 
+  // o los permisos están cargando, mostramos loading
+  const waitingForPermissions = user && !isSuperAdmin && !isDashboardModule && !permissionsLoaded;
+
+  if (userLoading || waitingForPermissions) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <div className='text-center'>
@@ -47,9 +63,6 @@ export function PermissionGuard({
 
   // El administrador siempre tiene acceso a todo
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
-
-  // El dashboard es accesible para todos los usuarios autenticados
-  const isDashboardModule = module === 'dashboard' || module === 'Dashboard';
 
   // Si es administrador o es el módulo dashboard, mostrar contenido inmediatamente
   if (isAdmin || isDashboardModule) {

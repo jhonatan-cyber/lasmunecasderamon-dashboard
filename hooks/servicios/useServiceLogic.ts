@@ -63,19 +63,17 @@ export function useServiceLogic() {
       await getServicios(true);
       setCurrentPage(prev => prev);
     } catch (error) {
-    throw new Error('Error al actualizar servicios');
+      throw new Error('Error al actualizar servicios');
     }
   }, [getServicios, setCurrentPage]);
 
   const serviciosByStatus = useMemo(() => {
     if (showAllServices) {
-      const serviciosTerminados = servicios.filter(servicio => servicio.estado === 0);
-
-      return serviciosTerminados;
+      // Mostrar servicios terminados (1) o anulados (0)
+      return servicios.filter(servicio => servicio.estado === 1 || servicio.estado === 0);
     } else {
-      const serviciosActivos = servicios.filter(servicio => servicio.estado === 1);
-
-      return serviciosActivos;
+      // Mostrar servicios en proceso (2) o pausados (3)
+      return servicios.filter(servicio => servicio.estado === 2 || servicio.estado === 3);
     }
   }, [servicios, showAllServices]);
 

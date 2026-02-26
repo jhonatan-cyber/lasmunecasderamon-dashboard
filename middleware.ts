@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   '/confirmar-anulacion',
   '/confirmar-anulacion-servicio',
   '/api/auth/login',
+  '/api/auth/reset-password',
   '/api/login',
   '/api/auth/me',
   '/api/logout',
@@ -55,7 +56,7 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/users', // Lista de usuarios (permisos verificados en frontend)
   '/api/asistencias/user', // Asistencias del usuario
   '/api/anticipos/user', // Anticipos del usuario
-  '/api/tips/user', // Propinas del usuario
+  '/api/tips', // Propinas (necesario para ventas/pedidos)
   '/api/overtime/user', // Horas extras del usuario
   '/api/orders/user', // Pedidos del usuario
   '/api/commissions/user', // Comisiones del usuario
@@ -68,7 +69,8 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/clients', // Lista de clientes (necesario para pedidos/servicios)
   '/api/rooms', // Lista de habitaciones
   '/api/servicios', // Servicios
-  '/api/cashregister/status' // Estado de caja abierta (necesario para usar módulos)
+  '/api/cashregister/status', // Estado de caja abierta (necesario para usar módulos)
+  '/api/cashregister' // Permitir operaciones de caja y delegar validación a la ruta
 ];
 
 // Mapeo de rutas a módulos y acciones requeridas
@@ -190,24 +192,38 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const searchParams = request.nextUrl.searchParams;
 
-  // 1. Configurar CORS global para todas las rutas API
-  if (pathname.startsWith('/api/')) {
-    const response = NextResponse.next();
+  // 1. Manejo de CORS
+  const origin = request.headers.get('origin');
+  const isApi = pathname.startsWith('/api/');
 
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Vary', 'Origin');
+  if (isApi && request.method === 'OPTIONS') {
+    const response = new NextResponse(null, { status: 200 });
+    if (origin) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      response.headers.set('Access-Control-Allow-Origin', '*');
+    }
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    response.headers.set(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN'
-    );
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
     response.headers.set('Access-Control-Max-Age', '86400');
-
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, { status: 200, headers: response.headers });
-    }
+    return response;
   }
+
+  // Función auxiliar para añadir headers a cualquier respuesta de API
+  const addApiHeaders = (res: NextResponse) => {
+    if (isApi) {
+      if (origin) {
+        res.headers.set('Access-Control-Allow-Origin', origin);
+      } else {
+        res.headers.set('Access-Control-Allow-Origin', '*');
+      }
+      res.headers.set('Access-Control-Allow-Credentials', 'true');
+      res.headers.set('Vary', 'Origin');
+    }
+    return res;
+  };
+
 
   // 2. Permitir acceso a rutas públicas
   const isPublicPath = PUBLIC_PATHS.some((path: string) => {
@@ -225,7 +241,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    return NextResponse.next();
+    return addApiHeaders(NextResponse.next());
   }
 
   // 3. Obtener y verificar token
@@ -290,7 +306,7 @@ export async function proxy(request: NextRequest) {
       const hasPermission = await checkUserPermission(userId, module, action, request);
 
       if (!hasPermission) {
-        return NextResponse.redirect(new URL('/access-denied', request.url));
+        return NextResponse.redirect(new URL(`/access-denied?module=${module}&action=${action}`, request.url));
       }
     }
   }
@@ -308,7 +324,10 @@ export async function proxy(request: NextRequest) {
     // pathname nunca incluye query params, así que solo verificamos la ruta base
     const isUsersApi = pathname === '/api/users';
 
-    if (isAuthenticatedOnlyApi || isUsersApi) {
+    // Permitir obtener los propios permisos del usuario
+    const isOwnPermissionsApi = /^\/api\/users\/\d+\/permissions$/.test(pathname);
+
+    if (isAuthenticatedOnlyApi || isUsersApi || isOwnPermissionsApi) {
       // Solo requiere autenticación, no permisos específicos
       return NextResponse.next();
     }
@@ -340,7 +359,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return addApiHeaders(NextResponse.next());
 }
 
 export { proxy as middleware };

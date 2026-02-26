@@ -31,7 +31,7 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
       WHERE vu.usuario_id = ?
         AND v.habitacion_id IS NOT NULL
         AND v.tiempo > 0
-        AND v.estado = 1
+        AND v.estado = 2
       ORDER BY v.fecha_crea DESC
       LIMIT 1
     `,
@@ -334,17 +334,27 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       if (roomIds.length > 0) {
         for (const rid of roomIds) {
           try {
-            await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [rid]);
-            console.info('[ORDERS POST] Habitación marcada como ocupada (id):', rid);
+            const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [rid])) as any[];
+            let isFreeRoom = false;
+            if (roomInfo.length > 0) {
+              const room = roomInfo[0];
+              isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+            }
+            if (!isFreeRoom) {
+              await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [rid]);
+              console.info('[ORDERS POST] Habitación marcada como ocupada (id):', rid);
 
-            // Notificar a clientes conectados que la habitación cambió de estado
-            try {
-              sendNotificationToAll('room_occupied', {
-                roomId: Number(rid),
-                timestamp: new Date().toISOString()
-              });
-            } catch (notifyRoomErr) {
-              console.error('[ORDERS POST] Error notificando room_occupied:', notifyRoomErr);
+              // Notificar a clientes conectados que la habitación cambió de estado
+              try {
+                sendNotificationToAll('room_occupied', {
+                  roomId: Number(rid),
+                  timestamp: new Date().toISOString()
+                });
+              } catch (notifyRoomErr) {
+                console.error('[ORDERS POST] Error notificando room_occupied:', notifyRoomErr);
+              }
+            } else {
+              console.info('[ORDERS POST] Habitación ignorada por ser área libre (id):', rid);
             }
           } catch (roomUpdateErr) {
             console.error(
@@ -405,7 +415,10 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       timestamp: new Date().toISOString(),
       createdBy: meseroId // Añadir el ID del usuario que creó el pedido
     };
-    console.log('[ORDERS API POST] 📤 ENVIANDO notificación new_order a todos los clientes SSE:', notificationData);
+    console.log(
+      '[ORDERS API POST] 📤 ENVIANDO notificación new_order a todos los clientes SSE:',
+      notificationData
+    );
     sendNotificationToAll('new_order', notificationData);
 
     // Notificar a través de SSE para actualizar lista de pedidos

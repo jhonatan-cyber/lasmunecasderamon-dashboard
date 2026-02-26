@@ -5,12 +5,34 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Clock, Users, Home, User, CreditCard, Edit2, Save, X, Square } from 'lucide-react';
+import {
+  Clock,
+  Users,
+  Home,
+  User,
+  CreditCard,
+  Edit2,
+  Save,
+  X,
+  Square,
+  History,
+  Trash2,
+  Settings2
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { ServiceTimeline } from './ServiceTimeline';
 import { ServicioWithDetails } from '@/types/servicio';
 import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
-import { useTimer } from '@/contexts/TimerContext';
+import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useServicioAnfitrionas } from '@/contexts/ServicioAnfitrionasContext';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import EditServiceModal from './EditServiceModal';
 
 interface ServicioCardProps {
@@ -38,6 +60,9 @@ export default function ServicioCard({
 
   const { actualizarAnfitrionas, obtenerAnfitrionas } = useServicioAnfitrionas();
 
+  const { user } = useCurrentUser();
+  const isAdminOrCajero = user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
+
   const globalTimer = getTimerByServicioId(servicio.id_servicio!);
   const temporaryTimer = getTemporaryTimerByServicioId(servicio.id_servicio!);
 
@@ -45,8 +70,8 @@ export default function ServicioCard({
   const isTemporaryActive = !!temporaryTimer;
 
   // Obtener el ID del servicio original cuando hay timer temporal
-  const servicioIdOriginal = isTemporaryActive && temporaryTimer?.datosTemporales?.servicio_original_id 
-    ? temporaryTimer.datosTemporales.servicio_original_id 
+  const servicioIdOriginal = isTemporaryActive && temporaryTimer?.datosTemporales?.servicio_original_id
+    ? temporaryTimer.datosTemporales.servicio_original_id
     : servicio.id_servicio;
 
   const anfitrionasDelContexto = obtenerAnfitrionas(servicioIdOriginal);
@@ -67,7 +92,7 @@ export default function ServicioCard({
   };
 
   const handleTemporaryTimerComplete = useCallback((nuevasAnfitrionas: string) => {
-  
+
 
     if (servicio?.id_servicio) {
       // Usar el contexto global para mantener las anfitrionas actualizadas
@@ -146,7 +171,7 @@ export default function ServicioCard({
         toast.error(result.message || 'Error al actualizar servicio');
       }
     } catch (error) {
-   
+
       toast.error('Error de conexión al actualizar');
     } finally {
       setIsSaving(false);
@@ -157,13 +182,13 @@ export default function ServicioCard({
     const estadoNum = Number(estado);
     switch (estadoNum) {
       case 0:
-        return <Badge variant="secondary" className="text-xs">Terminado</Badge>;
-      case 1:
-        return <Badge className="bg-green-100 text-green-800 text-xs">En Proceso</Badge>;
-      case 2:
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">Pendiente</Badge>;
-      case 3:
         return <Badge variant="destructive" className="text-xs">Anulado</Badge>;
+      case 1:
+        return <Badge variant="secondary" className="text-xs">Finalizado</Badge>;
+      case 2:
+        return <Badge className="bg-green-100 text-green-800 text-xs">En Proceso</Badge>;
+      case 3:
+        return <Badge className="bg-orange-100 text-orange-800 text-xs">Pausado</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">Desconocido</Badge>;
     }
@@ -181,7 +206,7 @@ export default function ServicioCard({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ estado: 0 })
+        body: JSON.stringify({ estado: 1 }) // 1 = Finalizado
       });
 
       if (response.ok) {
@@ -217,10 +242,20 @@ export default function ServicioCard({
     }
   }, [servicio.id_servicio, resumeTimerByServicioId]);
 
-  const isLowTime = displayTimer && displayTimer.isActive && displayTimer.remainingTime <= 300;
+  // Hook de alto rendimiento para el conteo regresivo
+  const remainingTime = useCountdown(displayTimer);
+  const mainRemainingTime = useCountdown(globalTimer); // Para mostrar el principal mientras hay uno temporal
+
+  const isLowTime = isAdminOrCajero && displayTimer && displayTimer.isActive && remainingTime <= 300;
+  const isCriticalTime = isAdminOrCajero && displayTimer && displayTimer.isActive && remainingTime <= 60;
 
   return (
-    <Card className={`w-full transition-all duration-200 hover:shadow-md ${isLowTime ? 'border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-900/20' : ''}`}>
+    <Card className={`w-full transition-all duration-200 hover:shadow-md 
+      ${isCriticalTime ? 'animate-pulse-red border-red-500 shadow-red-100 shadow-lg' :
+        isLowTime ? 'animate-pulse-yellow border-yellow-400 shadow-yellow-50 shadow-md' :
+          ''} 
+      ${isLowTime && !isCriticalTime ? 'bg-yellow-50/30' : ''} 
+      ${isCriticalTime ? 'bg-red-50/30 dark:border-red-800 dark:bg-red-900/20' : ''}`}>
       <div className="p-4 space-y-4">
         {/* Header Row */}
         <div className="flex items-center justify-between">
@@ -249,50 +284,51 @@ export default function ServicioCard({
           </div>
         </div>
 
-        {/* Timer Section */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className={`w-4 h-4 ${isLowTime ? 'text-red-500' : displayTimer?.isPaused ? 'text-orange-500' : isTemporaryActive ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400'}`} />
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {isEditing ? 'Editando tiempo' :
-                isTemporaryActive ? 'Timer temporal' :
-                  displayTimer?.isPaused ? 'Pausado (editando)' :
-                    'Tiempo restante'}
-            </span>
-          </div>
-          <div className="text-right">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={editTiempo}
-                  onChange={(e) => setEditTiempo(Number(e.target.value))}
-                  className="h-8 w-16 text-center text-sm"
-                  min={1}
-                  disabled={isSaving}
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-400">min</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className={`font-mono text-lg font-semibold ${isLowTime ? 'text-red-600' : displayTimer?.isPaused ? 'text-orange-600' : isTemporaryActive ? 'text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}>
-                  {showAllServices ? `${servicio.tiempo}:00` : displayTimer ? formatTime(displayTimer.remainingTime) : '00:00'}
-                </span>
-                {isTemporaryActive && (
-                  <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                    TEMPORAL
+        {/* Timer Section - Solo para Admin y Cajero */}
+        {isAdminOrCajero && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className={`w-4 h-4 ${isLowTime ? 'text-red-500' : displayTimer?.isPaused ? 'text-orange-500' : isTemporaryActive ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400'}`} />
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                {isEditing ? 'Editando tiempo' :
+                  isTemporaryActive ? 'Timer temporal' :
+                    displayTimer?.isPaused ? 'Pausado (editando)' :
+                      'Tiempo restante'}
+              </span>
+            </div>
+            <div className="text-right">
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={editTiempo}
+                    onChange={(e) => setEditTiempo(Number(e.target.value))}
+                    className="h-8 w-16 text-center text-sm"
+                    min={1}
+                    disabled={isSaving}
+                  />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">min</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono text-lg font-semibold ${isLowTime ? 'text-red-600' : displayTimer?.isPaused ? 'text-orange-600' : isTemporaryActive ? 'text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}>
+                    {showAllServices ? `${servicio.tiempo}:00` : displayTimer ? formatTime(remainingTime) : '00:00'}
                   </span>
-                )}
-                {displayTimer?.isPaused && !isTemporaryActive && (
-                  <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded-full">
-                    PAUSADO
-                  </span>
-                )}
-
-              </div>
-            )}
+                  {isTemporaryActive && (
+                    <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
+                      TEMPORAL
+                    </span>
+                  )}
+                  {displayTimer?.isPaused && !isTemporaryActive && (
+                    <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded-full">
+                      PAUSADO
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Información adicional cuando hay timer temporal */}
         {isTemporaryActive && mainTimer && (
@@ -300,7 +336,7 @@ export default function ServicioCard({
             <div className="flex items-center justify-between mb-2">
               <span className="text-blue-700 dark:text-blue-300 font-medium">Timer Principal:</span>
               <div className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400 font-mono">{formatTime(mainTimer.totalSeconds)}</span>
+                <span className="text-blue-600 dark:text-blue-400 font-mono">{formatTime(mainRemainingTime)}</span>
                 <span className={`px-2 py-1 rounded-full text-xs ${mainTimer.isPaused ? 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
                   }`}>
                   {mainTimer.isPaused ? 'PAUSADO' : 'ACTIVO'}
@@ -431,7 +467,27 @@ export default function ServicioCard({
                 </Button>
               </>
             )}
-            {displayTimer && displayTimer.isActive && !showAllServices && !isEditing && (
+            {isAdminOrCajero && displayTimer && displayTimer.isActive && !showAllServices && !isEditing && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-800 dark:hover:bg-gray-800">
+                    <History className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                  <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
+                    <DialogTitle className="flex items-center gap-2">
+                      <History className="w-5 h-5 text-primary" />
+                      Historial del Servicio {servicio.codigo}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <ServiceTimeline servicioId={servicio.id_servicio} />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            {isAdminOrCajero && displayTimer && displayTimer.isActive && !showAllServices && !isEditing && (
               <Button size="sm" variant="outline" onClick={handleStopTimer} className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20">
                 <Square className="w-3 h-3 mr-1" />
                 Finalizar
@@ -454,11 +510,20 @@ export default function ServicioCard({
 
       {showConfirm && (
         <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4'>
-          <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full'>
-            <div className="text-center">
-              <Clock className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">¿Finalizar sesión?</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">Se liberará la habitación y se guardará el registro.</p>
+          <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full flex flex-col max-h-[90vh] overflow-hidden'>
+            {/* Header (Fijo) */}
+            <div className="p-6 border-b text-center flex-shrink-0">
+              <Clock className="w-12 h-12 text-red-500 mx-auto mb-2" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">¿Finalizar sesión?</h3>
+            </div>
+
+            {/* Contenido (Scrollable) */}
+            <div className="p-6 flex-1 overflow-y-auto text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-300">Se liberará la habitación y se guardará el registro.</p>
+            </div>
+
+            {/* Footer (Fijo) */}
+            <div className="p-6 border-t flex-shrink-0">
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 rounded-full" onClick={() => setShowConfirm(false)}>
                   Cancelar

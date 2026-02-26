@@ -9,7 +9,7 @@ export function RecentActivity() {
       id: 1,
       type: 'venta',
       description: 'Nueva venta registrada',
-      amount: '₡25,000',
+      amount: '$25,000',
       time: '2 min ago',
       icon: DollarSign,
       color: 'text-green-600'

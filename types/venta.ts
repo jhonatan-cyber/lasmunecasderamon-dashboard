@@ -10,7 +10,7 @@ export interface Venta {
   total: number;
   fecha_crea: string;
   fecha_mod?: string;
-  estado: number; // 0 = Anulada, 1 = Activa, 2 = Pendiente de aprobación
+  estado: number; // 0 = Anulada, 1 = Completada/Finalizada, 2 = En proceso (con temporizador)
   tiempo?: number; // Tiempo de habitación en minutos
 }
 

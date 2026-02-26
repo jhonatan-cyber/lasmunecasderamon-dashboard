@@ -7,9 +7,9 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== "GET") {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: "Método no permitido" 
+      message: "Método no permitido"
     });
   }
 
@@ -53,7 +53,7 @@ export default async function handler(
     // Calcular balance total de cajas abiertas
     const balanceStats = await query(`
       SELECT 
-        COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - COALESCE(devoluciones, 0)), 0) as balance_total
+        COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - COALESCE(devolucion, 0)), 0) as balance_total
       FROM cajas
       WHERE estado = 1
     `) as RowDataPacket[];
@@ -103,13 +103,13 @@ export default async function handler(
       },
 
       // Información de tiempo
-      tiempo_abierta: cajaInfo.length > 0 
+      tiempo_abierta: cajaInfo.length > 0
         ? `${cajaInfo[0].horas_abierta}h ${cajaInfo[0].minutos_abierta}m`
         : "0h 0m",
-      fecha_apertura: cajaInfo.length > 0 
+      fecha_apertura: cajaInfo.length > 0
         ? new Date(cajaInfo[0].fecha_apertura).toLocaleDateString('es-ES')
         : "N/A",
-      usuario_apertura: cajaInfo.length > 0 
+      usuario_apertura: cajaInfo.length > 0
         ? (cajaInfo[0].usuario_id_apertura ? cajaInfo[0].usuario_id_apertura.toString() : "N/A")
         : "N/A",
 
@@ -119,7 +119,7 @@ export default async function handler(
 
     return res.status(200).json(stats);
   } catch (error) {
- 
+
     return res.status(500).json({
       success: false,
       message: "Error interno del servidor",

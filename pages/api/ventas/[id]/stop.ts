@@ -25,9 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const venta = ventaExistente[0];
     if (venta.habitacion_id) {
-      await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
-        venta.habitacion_id
-      ]);
+      const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [venta.habitacion_id])) as any[];
+      if (roomInfo.length > 0) {
+        const room = roomInfo[0];
+        const isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        if (!isFreeRoom) {
+          await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
+            venta.habitacion_id
+          ]);
+        }
+      }
     }
 
     const anfitrionasLiberadas = (await query(
@@ -49,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
+    await query('UPDATE ventas SET estado = 1, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
 
     if (venta.habitacion_id) {
       const habitacionInfo = (await query(
@@ -73,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       success: true,
-      message: 'Venta finalizada, habitación y anfitrionas liberadas',
+      message: 'Venta finalizada, habitación liberada',
       ventaId,
       habitacionLiberada: !!venta.habitacion_id,
       anfitrionasLiberadas: anfitrionasLiberadas.length

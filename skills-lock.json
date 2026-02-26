@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "recharts": {
+      "source": "ansanabria/skills",
+      "sourceType": "github",
+      "computedHash": "7837f15d0abac0f5199eba9417bd8950e4f01c58731c81884e82e58b0c474404"
+    }
+  }
+}

@@ -12,13 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!caja_id) {
       return res.status(400).json({ error: 'caja_id es requerido' });
     }
-
-    console.log('🍺 Obteniendo ventas en barras (sin comisión) para caja:', caja_id);
-
-    // Primero intentar consulta simple sin filtros complejos
     let ventasBarras;
     try {
-      // Query para ventas en barras: sin comisiones, sin champagne
       ventasBarras = await query(`
         SELECT 
           COALESCE(SUM(v.total), 0) as total_venta,
@@ -50,8 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           )
       `, [caja_id, caja_id]);
     } catch (queryError) {
-      console.warn('Error en consulta compleja, intentando consulta básica:', queryError);
-      // Fallback: consulta básica excluyendo ventas con comisiones
+ 
       ventasBarras = await query(`
         SELECT 
           COALESCE(SUM(v.total), 0) as total_venta,
@@ -70,8 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const resultado = ventasBarras[0] || { total_venta: 0, monto_productos: 0, propinas: 0 };
 
-    console.log('🍺 Ventas en barras obtenidas:', resultado);
-
     return res.status(200).json({
       success: true,
       total_venta: resultado.total_venta,
@@ -80,9 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('❌ Error obteniendo ventas en barras:', error);
     
-    // Si hay error en la consulta, devolver valores por defecto
     return res.status(200).json({
       success: true,
       total_venta: 0,
