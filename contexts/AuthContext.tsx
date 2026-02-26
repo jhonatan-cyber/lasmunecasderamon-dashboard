@@ -41,6 +41,7 @@ interface AuthContextType {
   userLoading: boolean;
   userPermissions: UserPermission[];
   permissionsLoading: boolean;
+  permissionsLoaded: boolean;
   hasPermission: (module: string, action: string) => boolean;
   hasAnyPermission: (module: string) => boolean;
   hasAllPermissions: (module: string, actions: string[]) => boolean;
@@ -50,6 +51,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Modulos equivalentes en ingles (como usa la app) vs español (como están en la BD)
+const moduleMap: Record<string, string[]> = {
+  'users': ['usuarios', 'users'],
+  'clients': ['clientes', 'clients'],
+  'products': ['productos', 'products'],
+  'categories': ['categorias', 'categories'],
+  'orders': ['pedidos', 'orders'],
+  'reports': ['reportes', 'reports'],
+  'sales': ['ventas', 'sales'],
+  'attendance': ['asistencias', 'attendance'],
+  'overtime': ['horas_extras', 'overtime'],
+  'cash_register': ['caja', 'cash_register'],
+  'accounts': ['cuentas', 'accounts'],
+  'tips': ['propinas', 'tips'],
+  'commissions': ['comisiones', 'commissions'],
+  'payroll': ['pagos_trabajadores', 'payroll'],
+  'payroll_details': ['payroll_details'],
+  'advances': ['anticipos', 'advances'],
+  'returns': ['devoluciones', 'returns'],
+  'roles': ['roles'],
+  'rooms': ['rooms'],
+  'private_rooms': ['private_rooms']
+};
+
+const actionMap: Record<string, string[]> = {
+  'view': ['view', 'listar_usuarios', 'listar_clientes', 'listar_categoria_productos', 'listar_productos_categoria', 'listar_categorias', 'listar_pedidos', 'listar_reportes', 'listar_ventas', 'listar_roles', 'listar_asistencias', 'listar_horas_extras', 'listar_caja', 'listar_cuentas', 'listar_propinas', 'listar_comisiones', 'listar_pagos', 'listar_detalles', 'listar_anticipos', 'listar_devoluciones', 'listar_habitaciones', 'listar_privados', 'ver_detalles', 'ver_dashboard'],
+  'create': ['create', 'crear', 'agregar_productos'],
+  'process': ['process', 'registar_venta', 'registar_cuenta'],
+  'edit': ['edit', 'editar', 'registar_venta', 'registar_cuenta', 'process'],
+  'delete': ['delete', 'eliminar', 'anular']
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -57,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userLoading, setUserLoading] = useState(true);
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
   const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
   const userFetchedRef = useRef(false);
   const permissionsFetchedRef = useRef(false);
@@ -86,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Limpiar estado
     setUser(null);
     setUserPermissions([]);
+    setPermissionsLoaded(false);
     userFetchedRef.current = false;
     permissionsFetchedRef.current = false;
 
@@ -190,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('❌ [AuthContext] Error fetching permissions:', error);
       } finally {
+        setPermissionsLoaded(true);
         setPermissionsLoading(false);
         isFetchingPermissionsRef.current = false;
 
@@ -203,14 +239,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user?.id, user?.role, handleSessionExpired]
   );
 
-  // Verificar si tiene un permiso específico
   const hasPermission = useCallback(
     (module: string, action: string): boolean => {
+      console.log(`[PermissionCheck] Checking ${module}.${action} for user ${user?.role}`);
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
-      if (!userPermissions || userPermissions.length === 0) return false;
+      if (!userPermissions || userPermissions.length === 0) {
+        console.log(`[PermissionCheck] User has no permissions`);
+        return false;
+      }
 
-      return userPermissions.some(p => p.module === module && p.action === action);
+      // Match exacto primero
+      let match = userPermissions.some(p => p.module === module && p.action === action);
+      if (match) {
+        console.log(`[PermissionCheck] Exact match found for ${module}.${action}`);
+        return true;
+      }
+
+      // Buscar alias si no hay match
+      const allowedModules = moduleMap[module] || [module];
+      const allowedActions = actionMap[action] || [action];
+
+      const aliasMatch = userPermissions.some(p =>
+        allowedModules.includes(p.module) &&
+        allowedActions.includes(p.action)
+      );
+
+      console.log(`[PermissionCheck] Alias match for ${module}.${action}: ${aliasMatch}`);
+
+      return aliasMatch;
     },
     [userPermissions, user?.role]
   );
@@ -222,7 +279,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user?.role?.toLowerCase() === 'administrador') return true;
       if (!userPermissions || userPermissions.length === 0) return false;
 
-      return userPermissions.some(p => p.module === module);
+      const allowedModules = moduleMap[module] || [module];
+      const match = userPermissions.some(p => allowedModules.includes(p.module));
+      console.log(`[PermissionCheck] Any check for ${module}: ${match}`);
+      return match;
     },
     [userPermissions, user?.role]
   );
@@ -234,9 +294,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user?.role?.toLowerCase() === 'administrador') return true;
       if (!userPermissions || userPermissions.length === 0) return false;
 
-      return actions.every(action =>
-        userPermissions.some(p => p.module === module && p.action === action)
-      );
+      const allowedModules = moduleMap[module] || [module];
+
+      return actions.every(action => {
+        const allowedActions = actionMap[action] || [action];
+        return userPermissions.some(p =>
+          allowedModules.includes(p.module) &&
+          allowedActions.includes(p.action)
+        );
+      });
     },
     [userPermissions, user?.role]
   );
@@ -264,6 +330,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userLoading,
     userPermissions,
     permissionsLoading,
+    permissionsLoaded,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,

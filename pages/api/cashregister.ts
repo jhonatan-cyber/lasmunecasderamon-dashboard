@@ -217,7 +217,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       const cantidadServicios = Number((serviciosStats as any)?.cantidad || 0);
       const promedioServicio = Number((serviciosStats as any)?.promedio || 0);
 
-      // Obtener totales de la caja abierta
+      const montoApertura = Number((cajaAbiertaRow as any)?.monto_apertura || 0);
       const totalVentas = Number((cajaAbiertaRow as any)?.venta || 0);
       const totalEfectivo = Number((cajaAbiertaRow as any)?.efectivo || 0);
       const totalTarjeta = Number((cajaAbiertaRow as any)?.tarjeta || 0);
@@ -228,11 +228,14 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       const totalPropina = Number((cajaAbiertaRow as any)?.propina || 0);
       const totalAnticipo = Number((cajaAbiertaRow as any)?.anticipo || 0);
 
-      const balanceTotal = totalEfectivo + totalTarjeta + totalTransferencia - totalDevoluciones;
+      // Calcular balance sumando efectivo + monto base + otros pagos - devoluciones 
+      const balanceTotal = totalEfectivo + totalTarjeta + totalTransferencia + montoApertura - totalDevoluciones;
+      // Efectivo real esperando en la caja fisica (ventas efectivo + base + propinas/otros ingresos en efectivo teoricos)
+      const efectivoEsperado = totalEfectivo + montoApertura;
 
       const resumenCompleto: CajaResumen = {
         total_ventas: totalVentas,
-        total_efectivo: totalEfectivo,
+        total_efectivo: efectivoEsperado, // Retornamos aqui el efectivo_esperado total para el componente
         total_tarjeta: totalTarjeta,
         total_transferencia: totalTransferencia,
         total_servicios: totalServicios,

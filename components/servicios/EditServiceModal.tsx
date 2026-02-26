@@ -226,7 +226,7 @@ export default function EditServiceModal({
 
   // Calcular totales con hook
   const numAnfitrionasSeleccionadas = formData.usuarios.length || 1;
-  
+
   const pricing = useServicePricing({
     precioServicio: formData.precio_servicio,
     precioHabitacion: formData.precio_habitacion,
@@ -387,9 +387,7 @@ export default function EditServiceModal({
 
         toast.success(`Nuevo servicio creado - Timer de ${formData.tiempo} minutos iniciado`);
         handleClose();
-        // NO llamar a onUpdate() inmediatamente para evitar que se recargue la lista
-        // y aparezca el servicio temporal como un nuevo card
-        // El timer temporal manejará la actualización cuando termine
+        if (onUpdate) onUpdate(); // Actualizar la vista para ocultar el anterior y mostrar el nuevo
       } else {
         toast.error('Debe seleccionar un tiempo mayor a 0 para crear el servicio temporal');
       }
@@ -435,8 +433,8 @@ export default function EditServiceModal({
               loadingAnfitrionas={loadingAnfitrionas}
               precioServicioDisplay={precioServicioFormatter.formattedValue}
               onPrecioServicioChange={handlePrecioServicioChange}
-              onPrecioServicioFocus={() => {}}
-              onPrecioServicioBlur={() => {}}
+              onPrecioServicioFocus={() => { }}
+              onPrecioServicioBlur={() => { }}
               precioServicioTotal={precioServicioTotal}
               numAnfitrionas={numAnfitrionasSeleccionadas}
               multiplicadorTiempo={multiplicadorTiempo}

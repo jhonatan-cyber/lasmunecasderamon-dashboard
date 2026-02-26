@@ -54,10 +54,10 @@ export default function NewSale() {
     return '';
   });
   const [enableTip, setEnableTip] = useState(false);
-  
+
   // Log para depurar
   console.log('🔍 Estado enableTip:', enableTip);
-  
+
   const [productos, setProductos] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('productos');
@@ -378,25 +378,25 @@ export default function NewSale() {
 
     const productoExistente = Array.isArray(productos)
       ? productos.find(
-          p =>
-            p?.id === productoNormalizado.id &&
-            areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
-        )
+        p =>
+          p?.id === productoNormalizado.id &&
+          areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
+      )
       : null;
 
     if (productoExistente) {
       setProductos(prev =>
         Array.isArray(prev)
           ? prev.map(p =>
-              p?.id === productoNormalizado.id &&
+            p?.id === productoNormalizado.id &&
               areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
-                ? {
-                    ...p,
-                    cantidad: (p?.cantidad || 0) + cantidad,
-                    subtotal: precio * ((p?.cantidad || 0) + cantidad)
-                  }
-                : p
-            )
+              ? {
+                ...p,
+                cantidad: (p?.cantidad || 0) + cantidad,
+                subtotal: precio * ((p?.cantidad || 0) + cantidad)
+              }
+              : p
+          )
           : []
       );
     } else {
@@ -447,14 +447,14 @@ export default function NewSale() {
     setProductos(prev => {
       const newProductos = Array.isArray(prev)
         ? prev.map((p, i) =>
-            i === index
-              ? {
-                  ...p,
-                  cantidad: nuevaCantidad,
-                  subtotal: (p?.precio || p?.price || 0) * nuevaCantidad
-                }
-              : p
-          )
+          i === index
+            ? {
+              ...p,
+              cantidad: nuevaCantidad,
+              subtotal: (p?.precio || p?.price || 0) * nuevaCantidad
+            }
+            : p
+        )
         : [];
 
       // Si no quedan productos, limpiar selectores
@@ -521,17 +521,17 @@ export default function NewSale() {
         total_comision: total_comision,
         detalles: Array.isArray(productos)
           ? productos.map(p => ({
-              producto_id: p?.id,
-              precio: p?.precio || 0,
-              comision: (p?.comision || 0) * (p?.cantidad || 1),
-              cantidad: p?.cantidad || 0,
-              sub_total: p?.subtotal || 0,
-              hostesses: p?.selectedHostesses || [],
-              hostess_id:
-                p?.selectedHostesses && p.selectedHostesses.length > 0
-                  ? parseInt(p.selectedHostesses[0])
-                  : null
-            }))
+            producto_id: p?.id,
+            precio: p?.precio || 0,
+            comision: (p?.comision || 0) * (p?.cantidad || 1),
+            cantidad: p?.cantidad || 0,
+            sub_total: p?.subtotal || 0,
+            hostesses: p?.selectedHostesses || [],
+            hostess_id:
+              p?.selectedHostesses && p.selectedHostesses.length > 0
+                ? parseInt(p.selectedHostesses[0])
+                : null
+          }))
           : [],
         usuarios: anfitrionasUnicas.map(id => parseInt(id)),
         tiempo:
@@ -568,8 +568,7 @@ export default function NewSale() {
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${
-                  dataPropina.data.usuarios_distribucion
+                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
@@ -761,6 +760,9 @@ export default function NewSale() {
                                     <HostessMultiSelect
                                       anfitrionas={anfitrionas.filter(h => {
                                         const hostessId = String(h.id || h.id_usuario);
+                                        const estado = h.estado || h.status;
+                                        if (estado !== 1 && estado !== 2) return false;
+
                                         const currentSelection =
                                           champagneHostessSelections[id] || [];
 
@@ -816,6 +818,9 @@ export default function NewSale() {
                                   <IndividualHostessSelect
                                     anfitrionas={anfitrionas.filter(h => {
                                       const hostessId = String(h.id || h.id_usuario);
+                                      const estado = h.estado || h.status;
+                                      if (estado !== 1 && estado !== 2) return false;
+
                                       const currentSelection =
                                         otherProductHostessSelections[id] || [];
 
@@ -1008,13 +1013,12 @@ export default function NewSale() {
         {false && Array.isArray(productos) && productos.length > 0 && (
           <div className='w-full flex justify-center mt-2 mb-2'>
             <div
-              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${
-                hasChampagneProducts && maxChampagnePrice >= 120000
+              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${hasChampagneProducts && maxChampagnePrice >= 120000
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : hasChampagneProducts
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : 'bg-orange-50 text-orange-700 border border-orange-200'
-              }`}
+                }`}
             >
               {hasChampagneProducts && maxChampagnePrice >= 240000
                 ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`

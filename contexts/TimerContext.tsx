@@ -5,8 +5,9 @@ import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
 import { TimerExpiredModal } from '@/components/notifications';
+import { playNotificationSound, announceVoice } from '@/lib/audioUtils';
 
-interface Timer {
+export interface Timer {
   id: string;
   servicioId: number;
   roomId: number;
@@ -15,6 +16,7 @@ interface Timer {
   remainingTime: number; // en segundos
   isActive: boolean;
   isPaused: boolean; // nuevo campo para pausar
+  pausedByTemp?: boolean; // nuevo campo para saber si fue pausado por timer temporal
   startTime: Date;
   servicioCode: string;
   clienteNombre: string;
@@ -24,9 +26,10 @@ interface Timer {
   tipoTransaccion?: 'servicio' | 'venta'; // tipo de transacción
   anfitrionas?: string; // nombres de anfitrionas
   waiterName?: string; // nombre del garzón/mesero que lo pidió
+  lastAnnouncedMinute?: number; // minutos en los que se anunció por última vez
 }
 
-interface TimerExpiredNotification {
+export interface TimerExpiredNotification {
   id: string;
   roomName: string;
   servicioCode: string;
@@ -60,6 +63,8 @@ interface TimerContextType {
   getTimerByServicioId: (servicioId: number) => Timer | undefined;
   getTemporaryTimerByServicioId: (servicioId: number) => Timer | undefined;
   formatTime: (seconds: number) => string;
+  serverOffset: number; // Diferencia en ms entre servidor y cliente
+  getAccurateNow: () => Date;
   setRefreshCallback: (callback: (servicioId?: number) => void) => void;
   updateTimerByServicioId: (servicioId: number, newDuration: number) => void;
   startTemporaryTimer: (
@@ -101,17 +106,16 @@ const loadTimersFromStorage = (): Timer[] => {
   return [];
 };
 
-// Función para calcular el tiempo restante basado en el tiempo de inicio
-const calculateRemainingTime = (timer: Timer): number => {
-  const now = new Date();
-  const elapsedSeconds = Math.floor((now.getTime() - timer.startTime.getTime()) / 1000);
-  const totalDurationSeconds = timer.duration * 60;
-  const remaining = totalDurationSeconds - elapsedSeconds;
-
-  // Si el timer estaba pausado, mantener el tiempo restante que tenía
+// Función para calcular el tiempo reste basado en el tiempo de inicio y el offset del servidor
+export const calculateRemainingTime = (timer: Timer, offset: number = 0): number => {
   if (timer.isPaused) {
     return timer.remainingTime;
   }
+
+  const now = new Date(Date.now() + offset);
+  const elapsedSeconds = Math.floor((now.getTime() - timer.startTime.getTime()) / 1000);
+  const totalDurationSeconds = timer.duration * 60;
+  const remaining = totalDurationSeconds - elapsedSeconds;
 
   return Math.max(0, remaining);
 };
@@ -137,6 +141,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [timerExpiredNotification, setTimerExpiredNotification] =
     useState<TimerExpiredNotification | null>(null);
   const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
+  const [serverOffset, setServerOffset] = useState(0);
+
+  // Función para obtener la hora exacta del servidor (estimada)
+  const getAccurateNow = useCallback(() => {
+    return new Date(Date.now() + serverOffset);
+  }, [serverOffset]);
 
   // Función para mostrar notificación de timer expirado
   const showTimerExpiredNotification = useCallback((timer: Timer) => {
@@ -157,14 +167,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTimerExpiredNotification(notification);
     setShowTimerExpiredModal(true);
 
-    // También reproducir sonido de notificación si está disponible
-    try {
-      const audio = new Audio('/notification.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log('No se pudo reproducir sonido de notificación:', e));
-    } catch (error) {
-      console.log('Audio de notificación no disponible');
-    }
+    setTimerExpiredNotification(notification);
+    setShowTimerExpiredModal(true);
+
+    // Reproducir sonido de notificación
+    playNotificationSound();
+
+    // Anuncio por voz
+    announceVoice(`Servicio terminado en ${timer.roomName}`);
   }, []);
 
   // Función para cerrar la notificación
@@ -228,33 +238,57 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       try {
-        // Obtener servicios activos de la base de datos
-        const response = await fetch('/api/servicios?all=false');
+        // Obtener servicios y ventas activos de la base de datos usando la API de timers activos
+        const response = await fetch('/api/timers/active');
         const data = await response.json();
 
-        if (data.success) {
-          const activeServicesMap = new Map(data.data.map((s: any) => [s.id_servicio, s]));
+        if (data.success && Array.isArray(data.data)) {
+          // Calcular offset del servidor
+          if (data.serverTime) {
+            const serverDate = new Date(data.serverTime);
+            const localDate = new Date();
+            const offset = serverDate.getTime() - localDate.getTime();
+            setServerOffset(offset);
+            console.log(`🕒 Sincronización de reloj: Offset de ${offset}ms con el servidor`);
+          }
 
-          // Filtrar y enriquecer timers:
-          // 1. Si es servicio, verificar que aún esté activo en la DB y enriquecer con datos frescos
-          // 2. Si es venta, mantenerlo (por ahora no filtramos ventas por DB en el inicio)
+          const activeTimersMap = new Map(data.data.map((t: any) => [t.servicioId, t]));
+
+          // Filtrar timers:
+          // 1. Si es servicio o venta, verificar que aún esté activo en la DB
           const validTimers = uniqueTimers
             .filter(timer => {
-              if (timer.tipoTransaccion === 'venta') return true;
-              return activeServicesMap.has(timer.servicioId);
+              return activeTimersMap.has(timer.servicioId);
             })
             .map(timer => {
-              if (timer.tipoTransaccion === 'venta') return timer;
-              const dbService = activeServicesMap.get(timer.servicioId);
-              if (!dbService) return timer;
+              const dbTimer = activeTimersMap.get(timer.servicioId);
+              if (!dbTimer) return timer;
 
               // Enriquecer con datos de la DB si faltan en el timer local
-              const service = dbService as any;
+              const dbTimerAny = dbTimer as any;
+
+              // Recalcular el tiempo restante correcto usando la hora del servidor
+              const dbStartTime = new Date(dbTimerAny.startTime);
+              const now = new Date();
+              const elapsedSeconds = Math.floor((now.getTime() - dbStartTime.getTime()) / 1000);
+
+              const durationMins = Number(dbTimerAny.duration || 0);
+              let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
+
+              // Si el tiempo es 0 pero el servicio es muy reciente (menos de 2 minutos), 
+              // es probable que sea un desfase de reloj. Mantener el tiempo total.
+              if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
+                remainingSeconds = durationMins * 60;
+              }
+
               return {
                 ...timer,
-                anfitrionas: timer.anfitrionas || service.anfitrionas_nombres || '',
-                clienteNombre: timer.clienteNombre || service.cliente_nombre || '',
-                roomName: timer.roomName || service.habitacion_numero || 'S/H'
+                roomName: timer.roomName || dbTimerAny.roomName || 'S/H',
+                clienteNombre: timer.clienteNombre || dbTimerAny.clienteNombre || '',
+                anfitrionas: timer.anfitrionas || dbTimerAny.anfitrionas || '',
+                isPaused: dbTimerAny.isPaused !== undefined ? dbTimerAny.isPaused : timer.isPaused,
+                startTime: dbStartTime,
+                remainingTime: remainingSeconds
               };
             });
 
@@ -312,7 +346,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const now = new Date();
               const start = new Date(serverTimer.startTime);
               const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-              const remainingSeconds = Math.max(0, serverTimer.duration * 60 - elapsedSeconds);
+
+              const durationMins = Number(serverTimer.duration || 0);
+              let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
+
+              // Grace period para desfase de reloj
+              if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
+                remainingSeconds = durationMins * 60;
+              }
 
               if (remainingSeconds > 0) {
                 const newTimer: Timer = {
@@ -323,7 +364,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   duration: serverTimer.duration,
                   remainingTime: remainingSeconds,
                   isActive: true,
-                  isPaused: false,
+                  isPaused: serverTimer.isPaused === true,
                   startTime: start,
                   servicioCode: serverTimer.codigo,
                   clienteNombre: serverTimer.clienteNombre,
@@ -333,6 +374,46 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
                 setTimers(prev => [...prev, newTimer]);
               }
+            } else {
+              // Si ya existe, nos aseguramos de que su estado de pausa, inicio y restante se actualicen si el servidor manda un start time diferente
+              setTimers(prev => prev.map(t => {
+                if (t.servicioId === serverTimer.servicioId) {
+                  const dbStartTime = new Date(serverTimer.startTime);
+                  const dbIsPaused = serverTimer.isPaused === true;
+
+                  // Si cambiaron datos clave, actualizamos
+                  if (
+                    t.startTime.getTime() !== dbStartTime.getTime() ||
+                    t.isPaused !== dbIsPaused ||
+                    t.roomId !== serverTimer.roomId ||
+                    t.duration !== serverTimer.duration ||
+                    t.anfitrionas !== (serverTimer.anfitrionas || '')
+                  ) {
+                    const now = new Date();
+                    const elapsedSeconds = Math.floor((now.getTime() - dbStartTime.getTime()) / 1000);
+
+                    const durationMins = Number(serverTimer.duration || 0);
+                    let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
+
+                    // Grace period para desfase de reloj
+                    if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
+                      remainingSeconds = durationMins * 60;
+                    }
+
+                    return {
+                      ...t,
+                      roomId: serverTimer.roomId,
+                      roomName: serverTimer.roomName,
+                      duration: durationMins,
+                      isPaused: dbIsPaused,
+                      startTime: dbStartTime,
+                      remainingTime: remainingSeconds,
+                      anfitrionas: serverTimer.anfitrionas || ''
+                    };
+                  }
+                }
+                return t;
+              }));
             }
           });
 
@@ -340,9 +421,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const serverTimerIds = new Set(serverTimers.map((t: any) => t.servicioId));
           setTimers(prev => {
             const filtered = prev.filter(timer => {
-              // Mantener timers temporales y de ventas
-              if (timer.isTemporary || timer.tipoTransaccion === 'venta') return true;
-              // Mantener timers de servicios que están en el servidor
+              // Mantener timers temporales
+              if (timer.isTemporary) return true;
+              // Para ventas y servicios, verificar que estén en el servidor
               return serverTimerIds.has(timer.servicioId);
             });
             return filtered;
@@ -356,8 +437,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Sincronizar inmediatamente al cargar
     syncActiveTimers();
 
-    // Sincronizar cada 30 segundos
-    const interval = setInterval(syncActiveTimers, 30000);
+    // Sincronizar cada 10 segundos para tiempo real
+    const interval = setInterval(syncActiveTimers, 10000);
 
     return () => clearInterval(interval);
   }, [isInitialized]);
@@ -410,7 +491,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // Verificar si ya existe este timer localmente
             const existingTimer = timersRef.current.find(
-              t => t.servicioId === servicioId && t.codigo === codigo
+              t => t.servicioId === servicioId && t.servicioCode === codigo
             );
 
             if (!existingTimer) {
@@ -420,7 +501,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const now = new Date();
               const start = new Date(startTime);
               const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-              const remainingSeconds = Math.max(0, duration * 60 - elapsedSeconds);
+
+              const durationMins = Number(duration || 0);
+              let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
+
+              // Grace period para desfase de reloj
+              if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
+                remainingSeconds = durationMins * 60;
+              }
 
               const newTimer: Timer = {
                 id: `${servicioId}-${roomId}-${Date.now()}`,
@@ -458,6 +546,71 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             setTimers(prev => {
               const updated = prev.filter(t => t.servicioId !== servicioId);
+              saveTimersToStorage(updated);
+              return updated;
+            });
+          }
+
+          // Evento: Se pausó un timer de venta o servicio
+          if (payload?.type === 'timer_paused' && payload?.data) {
+            const { servicioId, tipoTransaccion } = payload.data;
+            console.log(`[TimerContext] SSE: Pausando timer remoto (${tipoTransaccion}):`, servicioId);
+            setTimers(prev => {
+              const updated = prev.map(t =>
+                t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion
+                  ? { ...t, isPaused: true }
+                  : t
+              );
+              saveTimersToStorage(updated);
+              return updated;
+            });
+          }
+
+          // Evento: Se reanudó un timer de venta o servicio
+          if (payload?.type === 'timer_resumed' && payload?.data) {
+            const { servicioId, newStartTime, tipoTransaccion } = payload.data;
+            console.log(`[TimerContext] SSE: Reanudando timer remoto (${tipoTransaccion}):`, servicioId);
+            setTimers(prev => {
+              const updated = prev.map(t => {
+                if (t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion) {
+                  const start = new Date(newStartTime);
+                  const now = new Date();
+                  const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+                  const remainingSeconds = Math.max(0, t.duration * 60 - elapsedSeconds);
+                  return { ...t, isPaused: false, startTime: start, remainingTime: remainingSeconds };
+                }
+                return t;
+              });
+              saveTimersToStorage(updated);
+              return updated;
+            });
+          }
+
+          // Evento: Se actualizó un timer (tiempo o habitación)
+          if (payload?.type === 'timer_updated' && payload?.data) {
+            const { servicioId, duration, roomId, roomName, tipoTransaccion, startTime, anfitrionas } = payload.data;
+            console.log(`[TimerContext] SSE: Actualizando timer remoto (${tipoTransaccion}):`, servicioId);
+            setTimers(prev => {
+              const updated = prev.map(t => {
+                if (t.servicioId === servicioId && t.tipoTransaccion === (tipoTransaccion || 'servicio')) {
+                  const start = startTime ? new Date(startTime) : t.startTime;
+                  const now = new Date();
+                  const d = duration || t.duration;
+                  const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+                  const remainingSeconds = Math.max(0, d * 60 - elapsedSeconds);
+
+                  return {
+                    ...t,
+                    duration: d,
+                    roomId: roomId || t.roomId,
+                    roomName: roomName || t.roomName,
+                    startTime: start,
+                    remainingTime: remainingSeconds,
+                    anfitrionas: anfitrionas !== undefined ? anfitrionas : t.anfitrionas
+                  };
+                }
+                return t;
+              });
               saveTimersToStorage(updated);
               return updated;
             });
@@ -626,7 +779,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (timer) {
         console.log(
-          `🛑 Deteniendo timer: ${timer.id} (${timer.roomName}), manual: ${isManualStop}`
+          `🛑 Deteniendo timer: ${timer.id} (${timer.roomName}), manual: ${isManualStop}, tipo: ${timer.tipoTransaccion}`
         );
 
         // PRIMERO: Eliminar el timer del estado local inmediatamente para evitar que se vuelva a mostrar
@@ -640,8 +793,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           console.warn('[TimerContext] No se pudo limpiar inmediatamente localStorage:', e);
         }
 
-        // Determinar qué actualizaciones realizar
-        const otherTimersInSameRoom = timersRef.current.filter(
+        // Usar los timers actuales (sin el timer que se está deteniendo) para verificar si hay otros activos en la misma habitación
+        const currentTimers = timersRef.current;
+        const otherTimersInSameRoom = currentTimers.filter(
           t => t.roomId === timer.roomId && t.id !== timerId && t.isActive
         );
 
@@ -649,8 +803,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Actualizar estado según el tipo de transacción
         if (timer.tipoTransaccion === 'servicio') {
-          // Para servicios, actualizar el estado del servicio
-          updates.push(updateServiceStatus(timer.servicioId, 0));
+          // Para servicios, actualizar el estado del servicio a Finalizado (1)
+          updates.push(updateServiceStatus(timer.servicioId, 1));
         } else if (timer.tipoTransaccion === 'venta') {
           // Para ventas, finalizar la venta
           try {
@@ -725,7 +879,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     async (servicioId: number) => {
       const timerToStop = timers.find(timer => timer.servicioId === servicioId);
       if (timerToStop) {
-        await stopTimer(timerToStop.id, true); // true = es una parada manual
+        await stopTimer(timerToStop.id, true, timerToStop); // true = es una parada manual, pasar el objeto timer
       } else {
         toast.error(`No se encontró un temporizador activo para el servicio ${servicioId}.`);
       }
@@ -746,7 +900,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       return updatedTimers;
     });
-  }, []);
+
+    // Actualizar estado en DB a Pausado (3)
+    updateServiceStatus(servicioId, 3);
+  }, [updateServiceStatus]);
 
   // Función para reanudar el temporizador por ID de servicio (solo timers principales)
   const resumeTimerByServicioId = useCallback((servicioId: number) => {
@@ -758,7 +915,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           : timer
       )
     );
-  }, []);
+
+    // Actualizar estado en DB a En proceso (2)
+    updateServiceStatus(servicioId, 2);
+  }, [updateServiceStatus]);
 
   // Función para obtener temporizador por ID de habitación
   const getTimerByRoomId = useCallback(
@@ -796,141 +956,111 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  // Efecto para manejar el conteo regresivo
+  // Efecto para manejar el conteo regresivo (OPTIMIZADO)
+  // Este intervalo ya no actualiza el estado cada segundo a menos que un timer expire.
+  // Esto evita re-renders masivos de toda la aplicación.
   useEffect(() => {
     if (!isInitialized) return;
 
     const interval = setInterval(() => {
-      setTimers(prev => {
-        // Limpiar timers duplicados primero
-        const uniqueTimers = prev.filter(
-          (timer, index, self) =>
-            index ===
-            self.findIndex(t => t.roomId === timer.roomId && t.servicioCode === timer.servicioCode)
-        );
+      const currentTimers = timersRef.current;
+      const expiredTimerIds: string[] = [];
+      let stateNeedsUpdate = false;
+      const now = new Date(Date.now() + serverOffset);
 
-        const expiredTimerIds: string[] = [];
+      // SOLO buscar timers que acaban de expirar o que necesitan cambio de estado auto-pausa
+      currentTimers.forEach(timer => {
+        if (!timer.isActive) return;
 
-        const updatedTimers = uniqueTimers.map(timer => {
-          // Skip processing if timer is already stopped or expired
-          if (!timer.isActive || timer.remainingTime <= 0) {
+        // --- INICIO AVISOS POR VOZ ---
+        if (!timer.isPaused) {
+          const remSeconds = calculateRemainingTime(timer, serverOffset);
+          const remMinutes = Math.floor(remSeconds / 60);
+
+          if ((remMinutes === 5 || remMinutes === 1) && timer.lastAnnouncedMinute !== remMinutes && remSeconds > 0) {
+            announceVoice(`Atención: quedan ${remMinutes} minuto${remMinutes > 1 ? 's' : ''} en ${timer.roomName}`);
+            // Actualizar localmente el minuto anunciado para no repetir
+            timer.lastAnnouncedMinute = remMinutes;
+          }
+        }
+        // --- FIN AVISOS POR VOZ ---
+
+        // Lógica de auto-pausa/reanudación por timers temporales
+        if (!timer.isTemporary) {
+          const hasActiveTemporaryTimer = currentTimers.some(
+            t =>
+              t.servicioId === timer.servicioId &&
+              t.isTemporary &&
+              t.isActive &&
+              calculateRemainingTime(t, serverOffset) > 0
+          );
+
+          if (hasActiveTemporaryTimer && !timer.isPaused) {
+            stateNeedsUpdate = true;
+          } else if (!hasActiveTemporaryTimer && timer.isPaused && timer.pausedByTemp) {
+            stateNeedsUpdate = true;
+          }
+        }
+
+        // Lógica de expiración
+        if (!timer.isPaused) {
+          const remaining = calculateRemainingTime(timer, serverOffset);
+          if (remaining <= 0 && !expiredTimers.has(timer.id)) {
+            expiredTimerIds.push(timer.id);
+            stateNeedsUpdate = true;
+          }
+        }
+      });
+
+      if (stateNeedsUpdate) {
+        setTimers(prev => {
+          const updated = prev.map(timer => {
+            // Aplicar auto-pausa/reanudación si aplica
+            if (!timer.isTemporary) {
+              const hasActiveTemp = prev.some(
+                t => t.servicioId === timer.servicioId && t.isTemporary && t.isActive && calculateRemainingTime(t, serverOffset) > 0
+              );
+              if (hasActiveTemp && !timer.isPaused) {
+                return { ...timer, isPaused: true, pausedByTemp: true };
+              }
+              if (!hasActiveTemp && timer.isPaused && timer.pausedByTemp) {
+                return { ...timer, isPaused: false, pausedByTemp: false };
+              }
+            }
+
+            // Aplicar expiración
+            if (!timer.isPaused) {
+              const rem = calculateRemainingTime(timer, serverOffset);
+              if (rem <= 0) {
+                return { ...timer, isActive: false, remainingTime: 0 };
+              }
+            }
             return timer;
-          }
-
-          // Si es un timer principal (no temporal), verificar si hay un timer temporal activo para el mismo servicio
-          if (!timer.isTemporary) {
-            const hasActiveTemporaryTimer = uniqueTimers.some(
-              t =>
-                t.servicioId === timer.servicioId &&
-                t.isTemporary &&
-                t.isActive &&
-                t.remainingTime > 0
-            );
-
-            // Si hay un timer temporal activo, pausar el timer principal automáticamente
-            if (hasActiveTemporaryTimer && !timer.isPaused) {
-              console.log(`⏸️ Auto-pausando timer principal ${timer.id} - timer temporal activo`);
-              return { ...timer, isPaused: true };
-            }
-
-            // Si no hay timer temporal y estaba pausado por uno, reanudar automáticamente
-            if (!hasActiveTemporaryTimer && timer.isPaused) {
-              console.log(`▶️ Auto-reanudando timer principal ${timer.id} - no hay timer temporal`);
-              return { ...timer, isPaused: false };
-            }
-          }
-
-          // Skip processing if timer is paused
-          if (timer.isPaused) {
-            return timer;
-          }
-
-          const newRemainingTime = timer.remainingTime - 1;
-
-          // Si el temporizador llegó a cero
-          if (newRemainingTime <= 0) {
-            // Verificar si ya se mostró la notificación para este timer
-            if (!expiredTimers.has(timer.id)) {
-              expiredTimerIds.push(timer.id);
-            }
-
-            // Marcar como completado
-            return {
-              ...timer,
-              isActive: false,
-              remainingTime: 0
-            };
-          }
-
-          return { ...timer, remainingTime: newRemainingTime };
+          });
+          return updated;
         });
 
-        // Procesar timers expirados fuera del render
-        if (expiredTimerIds.length > 0) {
-          setTimeout(() => {
-            // Marcar timers como expirados
-            setExpiredTimers(prev => {
-              const newSet = new Set(prev);
-              expiredTimerIds.forEach(id => newSet.add(id));
-              return newSet;
-            });
-
-            // Procesar cada timer expirado
-            expiredTimerIds.forEach(timerId => {
-              const timer = updatedTimers.find(t => t.id === timerId);
-              if (timer) {
-                // Mostrar notificación modal para cualquier timer que expire
-                showTimerExpiredNotification(timer);
-
-                if (timer.isTemporary) {
-                  // Si es un timer temporal, ejecutar su callback y reanudar el timer principal
-                  console.log(
-                    `⏱️ Timer temporal ${timer.id} completado para servicio ${timer.servicioId}`
-                  );
-                  if (timer.onComplete) {
-                    timer.onComplete();
-                  }
-                  // Reanudar el timer principal después de un pequeño delay
-                  setTimeout(() => {
-                    resumeTimerByServicioId(timer.servicioId);
-                    console.log(
-                      `▶️ Timer principal reanudado automáticamente para servicio ${timer.servicioId}`
-                    );
-                    toast.success('Timer principal reanudado automáticamente');
-                  }, 200);
-                } else {
-                  // Timer normal, procesar como antes
-                  console.log(
-                    `⏱️ Timer principal ${timer.id} completado para servicio ${timer.servicioId}`
-                  );
-                  // Pasamos el objeto timer para evitar problemas de búsqueda en el ref si ya se filtró
-                  stopTimer(timerId, false, timer); // false = terminación automática
-                }
-              }
-            });
-          }, 100); // Pequeño delay para evitar conflictos de render
-        }
-
-        // Remover temporizadores inactivos y expirados
-        const activeTimers = updatedTimers.filter(
-          timer => timer.isActive && timer.remainingTime > 0
-        );
-
-        // Limpiar localStorage de timers expirados
-        if (activeTimers.length !== updatedTimers.length) {
-          setTimeout(() => {
-            saveTimersToStorage(activeTimers);
-          }, 0);
-        }
-
-        return activeTimers;
-      });
+        // Procesar expiraciones (notificaciones)
+        expiredTimerIds.forEach(timerId => {
+          const timer = currentTimers.find(t => t.id === timerId);
+          if (timer) {
+            showTimerExpiredNotification(timer);
+            if (timer.isTemporary) {
+              if (timer.onComplete) timer.onComplete();
+              setTimeout(() => resumeTimerByServicioId(timer.servicioId), 200);
+            } else {
+              stopTimer(timerId, false, timer);
+            }
+          }
+        });
+      }
     }, 1000);
 
     return () => clearInterval(interval);
   }, [
     isInitialized,
     expiredTimers,
+    serverOffset,
     resumeTimerByServicioId,
     stopTimer,
     showTimerExpiredNotification
@@ -1076,6 +1206,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       getTimerByServicioId,
       getTemporaryTimerByServicioId,
       formatTime,
+      serverOffset,
+      getAccurateNow,
       setRefreshCallback,
       updateTimerByServicioId,
       startTemporaryTimer,
@@ -1093,6 +1225,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       getTimerByServicioId,
       getTemporaryTimerByServicioId,
       formatTime,
+      serverOffset,
+      getAccurateNow,
       setRefreshCallback,
       updateTimerByServicioId,
       startTemporaryTimer,
@@ -1112,7 +1246,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cancelText={modalState.cancelText}
         hideCancel={modalState.hideCancel}
         type={modalState.type}
-        onConfirm={modalState.onConfirm || (() => {})}
+        onConfirm={modalState.onConfirm || (() => { })}
         onCancel={modalState.onCancel}
         confirmVariant={modalState.confirmVariant}
         cancelVariant={modalState.cancelVariant}
@@ -1135,4 +1269,41 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )}
     </TimerContext.Provider>
   );
+};
+
+// Hook de alto rendimiento para el conteo regresivo local
+export const useCountdown = (timer: Timer | undefined) => {
+  const { serverOffset } = useTimer();
+  const [remainingTime, setRemainingTime] = useState(
+    timer ? calculateRemainingTime(timer, serverOffset) : 0
+  );
+
+  useEffect(() => {
+    if (!timer || !timer.isActive) {
+      setRemainingTime(0);
+      return;
+    }
+
+    if (timer.isPaused) {
+      setRemainingTime(timer.remainingTime);
+      return;
+    }
+
+    // Inicializar el tiempo restante inmediatamente
+    setRemainingTime(calculateRemainingTime(timer, serverOffset));
+
+    // Tick local cada segundo
+    const interval = setInterval(() => {
+      const newRemaining = calculateRemainingTime(timer, serverOffset);
+      setRemainingTime(newRemaining);
+
+      if (newRemaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer, serverOffset]);
+
+  return remainingTime;
 };

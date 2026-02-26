@@ -1,4 +1,4 @@
-import { useTimer } from '@/contexts/TimerContext';
+import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ const getTipoTransaccionLabel = (timer: any): string => {
   if (timer.tipoTransaccion === 'servicio') {
     return 'Servicio';
   }
-  
+
   // Para ventas, intentar determinar si es champaña o tragos
   if (timer.tipoTransaccion === 'venta') {
     // Si el código contiene información sobre champaña
@@ -24,30 +24,30 @@ const getTipoTransaccionLabel = (timer: any): string => {
     // Por defecto, asumir que es venta de tragos
     return 'Venta - Tragos';
   }
-  
+
   return 'Venta';
 };
 
 // Componente memoizado para cada timer individual
-const TimerItem = memo(({ 
-  timer, 
-  onStop, 
-  formatTime 
-}: { 
-  timer: any; 
+const TimerItem = memo(({
+  timer,
+  onStop,
+  formatTime
+}: {
+  timer: any;
   onStop: (timerId: string, roomName: string) => void;
   formatTime: (time: number) => string;
 }) => {
   const tipoLabel = useMemo(() => getTipoTransaccionLabel(timer), [timer.tipoTransaccion, timer.servicioCode]);
-  
+  const remainingTime = useCountdown(timer);
+
   return (
     <div className='flex items-center justify-between p-1 bg-gray-50 rounded border'>
       <div className='flex-1 min-w-0'>
         <div className='flex flex-col'>
           <span
-            className={`font-semibold text-sm truncate ${
-              timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
-            }`}
+            className={`font-semibold text-sm truncate ${timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
+              }`}
           >
             Privado: {timer.roomName}
           </span>
@@ -63,11 +63,10 @@ const TimerItem = memo(({
       </div>
       <div className='flex items-center gap-1 ml-1'>
         <span
-          className={`font-mono text-xs font-bold ${
-            timer.isPaused ? 'text-yellow-600' : 'text-red-600'
-          }`}
+          className={`font-mono text-xs font-bold ${timer.isPaused ? 'text-yellow-600' : 'text-red-600'
+            }`}
         >
-          {formatTime(timer.remainingTime)}
+          {formatTime(remainingTime)}
           {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
         </span>
         {!timer.isPaused && (
@@ -85,10 +84,11 @@ const TimerItem = memo(({
   );
 }, (prevProps, nextProps) => {
   // Solo re-renderizar si cambian estos valores
+  // NOTA: remainingTime ya no se pasa como prop, se maneja internamente con useCountdown
   return (
     prevProps.timer.id === nextProps.timer.id &&
-    prevProps.timer.remainingTime === nextProps.timer.remainingTime &&
-    prevProps.timer.isPaused === nextProps.timer.isPaused
+    prevProps.timer.isPaused === nextProps.timer.isPaused &&
+    prevProps.timer.isActive === nextProps.timer.isActive
   );
 });
 
@@ -159,7 +159,7 @@ export function TimerDisplay() {
           cancelText={modalState.cancelText}
           hideCancel={modalState.hideCancel}
           type={modalState.type}
-          onConfirm={modalState.onConfirm || (() => {})}
+          onConfirm={modalState.onConfirm || (() => { })}
           onCancel={modalState.onCancel}
           confirmVariant={modalState.confirmVariant}
           cancelVariant={modalState.cancelVariant}
@@ -240,7 +240,7 @@ export function TimerDisplay() {
         cancelText={modalState.cancelText}
         hideCancel={modalState.hideCancel}
         type={modalState.type}
-        onConfirm={modalState.onConfirm || (() => {})}
+        onConfirm={modalState.onConfirm || (() => { })}
         onCancel={modalState.onCancel}
         confirmVariant={modalState.confirmVariant}
         cancelVariant={modalState.cancelVariant}

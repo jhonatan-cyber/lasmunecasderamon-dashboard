@@ -73,7 +73,7 @@ export function Header() {
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [serviceProcessing, setServiceProcessing] = useState(false);
-  const { anfitrionas } = useAnfitrionas();
+  const { anfitrionas } = useAnfitrionas(false);
   const { startTimer } = useTimer();
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [isRoomAvailable, setIsRoomAvailable] = useState(true);
@@ -89,19 +89,7 @@ export function Header() {
   const isCajero = user?.role?.toLowerCase() === 'cajero';
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
 
-  // Log para debugging de foto de perfil
-  useEffect(() => {
-    if (user) {
-      console.log('👤 [HEADER] Datos del usuario:', {
-        id: user.id,
-        name: user.name,
-        foto: user.foto,
-        fotoType: typeof user.foto,
-        fotoLength: user.foto?.length,
-        imageVersion
-      });
-    }
-  }, [user, imageVersion]);
+
 
   // Habilitar audio cuando el usuario interactúe
   const enableAudio = () => {
@@ -114,7 +102,7 @@ export function Header() {
           setAudioEnabled(true);
         })
         .catch(error => {
-          // Error silencioso para no saturar la consola
+          return;
         });
     }
   };
@@ -124,7 +112,6 @@ export function Header() {
     const handleUserInteraction = () => {
       if (!audioEnabled) {
         enableAudio();
-        // Remover los event listeners después de la primera interacción
         document.removeEventListener('click', handleUserInteraction);
         document.removeEventListener('keydown', handleUserInteraction);
         document.removeEventListener('touchstart', handleUserInteraction);
@@ -161,14 +148,11 @@ export function Header() {
   const pendingOrders = orders.filter((o: any) => String(o.estado) === '1');
 
   const handleOrderClick = (orderId: number) => {
-    // Verificar si tiene permiso para procesar pedidos
     if (!hasPermission('orders', 'process')) {
       toast.error('No tienes permisos para procesar pedidos');
       setShowDropdown(false);
       return;
     }
-
-    // Verificar si hay caja abierta para procesar pedidos
     if (hasOpenCaja === false) {
       toast.error(
         'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
@@ -184,17 +168,12 @@ export function Header() {
     setShowDropdown(false);
     fetchOrderDetail(orderId);
   };
-
-  // Escuchar evento para abrir modal desde notificación
   useEffect(() => {
     const handleOpenOrderModal = (event: CustomEvent) => {
-      // Verificar si tiene permiso para procesar pedidos
       if (!hasPermission('orders', 'process')) {
         toast.error('No tienes permisos para procesar pedidos');
         return;
       }
-
-      // Verificar si hay caja abierta para procesar pedidos
       if (hasOpenCaja === false) {
         toast.error(
           'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
@@ -217,22 +196,14 @@ export function Header() {
     };
   }, [fetchOrderDetail, orders, hasOpenCaja, hasPermission]);
 
-  // Escuchar evento para abrir modal de solicitudes de servicio desde la lista
+
   useEffect(() => {
     const handleOpenServiceRequestModal = async (event: CustomEvent) => {
       const solicitud = (event.detail && event.detail.solicitud) || event.detail;
       if (!solicitud) return;
-
-      console.log('🔍 Datos de solicitud recibida:', solicitud);
-      console.log('🔍 Anfitrionas IDs:', solicitud.anfitrionas_ids);
-      console.log('🔍 Anfitrionas disponibles:', anfitrionas);
-
-      // Esperar a que las anfitrionas carguen si es necesario
       if (anfitrionas.length === 0) {
-        console.log('⏳ Esperando carga de anfitrionas...');
-        // Esperar un poco y volver a intentar
         setTimeout(() => {
-          console.log('🔄 Reintentando con anfitrionas cargadas:', anfitrionas);
+
           setSelectedServiceRequest(solicitud);
           setRejectReason('');
           setServiceModalOpen(true);
@@ -262,28 +233,19 @@ export function Header() {
     };
   }, [anfitrionas]);
 
-  // Escuchar evento para actualizar contador de pedidos pendientes
   useEffect(() => {
     const handleUpdatePendingOrders = (event?: CustomEvent) => {
-      // Si viene con datos del evento SSE, actualizar el estado directamente
       if (event && event.detail) {
         const { type, orderId } = event.detail;
-        console.log('🔄 [HEADER] Actualizando pedidos por SSE:', { type, orderId });
-        
         if (type === 'order-processed' || type === 'order-deleted') {
-          // Eliminar el pedido de la lista sin recargar
           setOrders((prevOrders: any[]) => {
             const updated = prevOrders.filter((o: any) => o.id_pedido !== orderId);
-            console.log(`✅ [HEADER] Pedido ${orderId} eliminado de la lista`);
             return updated;
           });
         } else if (type === 'order-created') {
-          // Para pedidos nuevos, recargar la lista
-          console.log('🔄 [HEADER] Recargando lista para nuevo pedido...');
           refetch();
         }
       } else {
-        // Si no viene con datos, recargar (comportamiento legacy)
         refetch();
       }
     };
@@ -295,17 +257,10 @@ export function Header() {
     };
   }, [refetch, setOrders]);
 
-  // Escuchar evento para cerrar el modal cuando se procese un pedido
   useEffect(() => {
     const handleCloseOrderModal = (event: CustomEvent) => {
       const { orderId: processedOrderId } = event.detail;
-      console.log('🔔 [HEADER] Evento closeOrderModal recibido:', processedOrderId);
-      console.log('🔔 [HEADER] Modal abierto:', modalOpen);
-      console.log('🔔 [HEADER] Order ID actual:', selectedOrderId);
-      
-      // Si el modal está abierto y es el pedido que se procesó, cerrarlo
       if (modalOpen && selectedOrderId === processedOrderId) {
-        console.log('✅ [HEADER] Cerrando modal automáticamente...');
         handleCloseModal();
       }
     };
@@ -353,50 +308,55 @@ export function Header() {
     };
   }, []);
 
-  const getAnfitrionasNicks = (ids: number[] = []) => {
-    if (!ids || ids.length === 0) return 'N/A';
-    
+  const getAnfitrionasNicks = (ids: any) => {
+    let finalIds = ids;
+
+    // Parsear si viene como string (JSON o CSV)
+    if (typeof ids === 'string') {
+      try {
+        finalIds = JSON.parse(ids);
+      } catch (e) {
+        // Fallback para CSV
+        finalIds = ids.split(',').map(id => parseInt(id.trim())).filter(Boolean);
+      }
+    }
+
+    if (!finalIds || !Array.isArray(finalIds) || finalIds.length === 0) return 'N/A';
+
     const nickMap = new Map<number, string>();
     anfitrionas.forEach((a: any) => {
       const id = a.id_usuario || a.id;
       if (id) {
-        nickMap.set(id, a.nick || a.nombre || a.name || `#${id}`);
+        nickMap.set(Number(id), a.nick || a.nombre || a.name || `#${id}`);
       }
     });
-    
-    const nicks = ids.map((id: number) => nickMap.get(id) || `#${id}`);
+
+    const nicks = finalIds.map((id: number) => nickMap.get(Number(id)) || `#${id}`);
     const result = nicks.length > 0 ? nicks.join(', ') : 'N/A';
-    
-    console.log('🔍 getAnfitrionasNicks - IDs:', ids);
-    console.log('🔍 getAnfitrionasNicks - anfitrionas:', anfitrionas);
-    console.log('🔍 getAnfitrionasNicks - nickMap:', Array.from(nickMap.entries()));
-    console.log('🔍 getAnfitrionasNicks - resultado:', result);
-    
+
     return result;
   };
 
   const calculateIVA = (solicitud: any) => {
     let anfitrionasIds = solicitud.anfitrionas_ids;
-    
+
     // Parsear si viene como string JSON
     if (typeof anfitrionasIds === 'string') {
       try {
         anfitrionasIds = JSON.parse(anfitrionasIds);
-        console.log('🔍 calculateIVA - Parseado anfitrionas_ids:', anfitrionasIds);
-      } catch (e) {
-        console.error('❌ calculateIVA - Error parseando anfitrionas_ids:', e);
+
+      } catch {
+
         anfitrionasIds = [];
       }
     }
-    
+
     const metodoPago = (solicitud?.metodo_pago || '').toString().toLowerCase();
-    console.log('🔍 calculateIVA - Método pago:', metodoPago);
-    
     if (metodoPago !== 'tarjeta') {
-      console.log('🔍 calculateIVA - No es tarjeta, IVA = 0');
+
       return 0;
     }
-    
+
     const numAnfitrionas = Array.isArray(anfitrionasIds)
       ? anfitrionasIds.length
       : 0;
@@ -412,18 +372,9 @@ export function Header() {
     const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
     const excedente = totalRedondeado - nuevoTotal;
     nuevoIVA = nuevoIVA + excedente;
-    
-    console.log('🔍 calculateIVA - Cálculo:', {
-      numAnfitrionas,
-      tiempo,
-      multiplicador,
-      precioServicio,
-      precioHabitacion,
-      nuevoSubTotal,
-      precioHabitacionTotal,
-      nuevoIVA
-    });
-    
+
+
+
     return nuevoIVA;
   };
 
@@ -462,10 +413,6 @@ export function Header() {
 
   const handleApproveServiceRequest = async () => {
     if (!selectedServiceRequest) return;
-    
-    console.log('🔍 Aprobando solicitud:', selectedServiceRequest);
-    console.log('🔍 ID de solicitud:', selectedServiceRequest.id_solicitud);
-    
     if (!isRoomAvailable && !selectedRoomId) {
       showErrorToast('Selecciona una habitación disponible');
       return;
@@ -475,10 +422,9 @@ export function Header() {
       const habitacionIdFinal =
         (isRoomAvailable ? selectedServiceRequest.habitacion_id : selectedRoomId) ||
         selectedServiceRequest.habitacion_id;
-      
+
       const url = `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/aprobar`;
-      console.log('🔍 URL de aprobación:', url);
-      
+
       const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -486,58 +432,51 @@ export function Header() {
       });
       const data = await response.json();
 
-      console.log('🔍 Respuesta de aprobación:', data);
+      if (data.success && data.data) {
+        const {
+          servicio_id,
+          codigo,
+          habitacion_nombre,
+          cliente_nombre,
+          anfitrionas,
+          tiempo
+        } = data.data;
 
-      if (data.success) {
+        const habitacionId = habitacionIdFinal || selectedServiceRequest.habitacion_id;
+
+        const solicitante =
+          selectedServiceRequest.solicitado_por_nombre ||
+          selectedServiceRequest.solicitado_por_nick ||
+          undefined;
+
+        // Iniciar el temporizador inmediatamente con la data del servidor
+        if (servicio_id && habitacionId && tiempo > 0) {
+          startTimer(
+            servicio_id,
+            habitacionId,
+            habitacion_nombre,
+            tiempo,
+            codigo,
+            cliente_nombre,
+            anfitrionas,
+            'servicio',
+            solicitante
+          );
+        }
+
         showSuccessToast('Solicitud aprobada exitosamente');
         setServiceModalOpen(false);
         setSelectedServiceRequest(null);
+
+        // Actualizaciones en segundo plano
         fetchPendingServiceRequests();
         const updateEvent = new CustomEvent('updateServiceRequests');
         window.dispatchEvent(updateEvent);
-
-        const servicioId = data?.data?.servicio_id;
-        if (servicioId && selectedServiceRequest) {
-          const habitacionId = habitacionIdFinal || selectedServiceRequest.habitacion_id;
-          const roomMatch = availableRooms.find(
-            (r: any) => (r.id_habitacion || r.id) === habitacionId
-          );
-          const habitacionNombre =
-            roomMatch?.nombre ||
-            roomMatch?.name ||
-            selectedServiceRequest.habitacion_nombre ||
-            habitacionId ||
-            'N/A';
-          const tiempo = Number(selectedServiceRequest.tiempo || 0);
-          const codigo = data?.data?.codigo || `SERVICIO_${servicioId}`;
-          const clienteNombre = selectedServiceRequest.cliente_nombre || 'Sin cliente registrado';
-          const anfitrionasNicks = getAnfitrionasNicks(
-            selectedServiceRequest.anfitrionas_ids || []
-          );
-          const solicitante =
-            selectedServiceRequest.solicitado_por_nombre ||
-            selectedServiceRequest.solicitado_por_nick ||
-            undefined;
-
-          if (habitacionId && tiempo > 0) {
-            startTimer(
-              servicioId,
-              habitacionId,
-              habitacionNombre,
-              tiempo,
-              codigo,
-              clienteNombre,
-              anfitrionasNicks,
-              'servicio',
-              solicitante
-            );
-          }
-        }
       } else {
         showErrorToast(data.message || 'Error al aprobar solicitud');
       }
     } catch (error) {
-      console.error('❌ Error al aprobar solicitud:', error);
+
       showErrorToast('Error al aprobar solicitud');
     } finally {
       setServiceProcessing(false);
@@ -546,10 +485,8 @@ export function Header() {
 
   const handleRejectServiceRequest = async () => {
     if (!selectedServiceRequest) return;
-    
-    console.log('🔍 Rechazando solicitud:', selectedServiceRequest);
-    console.log('🔍 ID de solicitud:', selectedServiceRequest.id_solicitud);
-    
+
+
     if (!rejectReason.trim()) {
       showErrorToast('El motivo de rechazo es requerido');
       return;
@@ -558,17 +495,13 @@ export function Header() {
     setServiceProcessing(true);
     try {
       const url = `/api/solicitudes-servicios/${selectedServiceRequest.id_solicitud}/rechazar`;
-      console.log('🔍 URL de rechazo:', url);
-      
+
       const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ motivo_rechazo: rejectReason })
       });
       const data = await response.json();
-
-      console.log('🔍 Respuesta de rechazo:', data);
-
       if (data.success) {
         showSuccessToast('Solicitud rechazada exitosamente');
         setServiceModalOpen(false);
@@ -581,7 +514,6 @@ export function Header() {
         showErrorToast(data.message || 'Error al rechazar solicitud');
       }
     } catch (error) {
-      console.error('❌ Error al rechazar solicitud:', error);
       showErrorToast('Error al rechazar solicitud');
     } finally {
       setServiceProcessing(false);
@@ -738,42 +670,7 @@ export function Header() {
               <div className='space-y-3 text-sm'>
                 <div>
                   <span className='font-medium'>Anfitrionas:</span>{' '}
-                  {(() => {
-                    let anfitrionasIds = selectedServiceRequest.anfitrionas_ids;
-                    
-                    // Parsear si viene como string JSON
-                    if (typeof anfitrionasIds === 'string') {
-                      try {
-                        anfitrionasIds = JSON.parse(anfitrionasIds);
-                        console.log('🔍 Parseado anfitrionas_ids de string a array:', anfitrionasIds);
-                      } catch (e) {
-                        console.error('❌ Error parseando anfitrionas_ids:', e);
-                        anfitrionasIds = [];
-                      }
-                    }
-                    
-                    console.log('🔍 anfitrionas_ids final:', anfitrionasIds);
-                    console.log('🔍 Tipo:', typeof anfitrionasIds);
-                    console.log('🔍 Array.isArray:', Array.isArray(anfitrionasIds));
-                    console.log('🔍 anfitrionas disponibles:', anfitrionas);
-                    
-                    if (!anfitrionasIds || !Array.isArray(anfitrionasIds) || anfitrionasIds.length === 0) {
-                      return 'N/A';
-                    }
-                    
-                    const nickMap = new Map<number, string>();
-                    anfitrionas.forEach((a: any) => {
-                      const id = a.id_usuario || a.id;
-                      if (id) {
-                        nickMap.set(id, a.nick || a.nombre || a.name || `#${id}`);
-                      }
-                    });
-                    
-                    const nicks = anfitrionasIds.map((id: number) => nickMap.get(id) || `#${id}`);
-                    const result = nicks.length > 0 ? nicks.join(', ') : 'N/A';
-                    console.log('🔍 Resultado anfitrionas:', result);
-                    return result;
-                  })()}
+                  {getAnfitrionasNicks(selectedServiceRequest.anfitrionas_ids)}
                 </div>
                 <div>
                   <span className='font-medium'>Habitación:</span>{' '}
@@ -827,14 +724,7 @@ export function Header() {
                   <span className='font-medium'>IVA:</span> $
                   {(() => {
                     const ivaCalculado = calculateIVA(selectedServiceRequest);
-                    console.log('🔍 IVA calculado:', ivaCalculado);
-                    console.log('🔍 Datos para IVA:', {
-                      metodo_pago: selectedServiceRequest.metodo_pago,
-                      anfitrionas_ids: selectedServiceRequest.anfitrionas_ids,
-                      tiempo: selectedServiceRequest.tiempo,
-                      precio_servicio: selectedServiceRequest.precio_servicio,
-                      precio_habitacion: selectedServiceRequest.precio_habitacion
-                    });
+
                     return Math.round(ivaCalculado).toLocaleString('es-CL');
                   })()}
                 </div>
@@ -881,20 +771,10 @@ export function Header() {
                       alt={user ? `${user.name} ${user.lastName}` : 'Usuario'}
                       className="w-full h-full object-cover rounded-full"
                       onError={(e) => {
-                        console.error('❌ Error cargando imagen de perfil:', {
-                          foto: user?.foto,
-                          src: e.currentTarget.src,
-                          imageVersion
-                        });
+
                         e.currentTarget.src = '/img/users/default.png';
                       }}
-                      onLoad={() => {
-                        console.log('✅ Imagen de perfil cargada:', {
-                          foto: user?.foto,
-                          imageVersion,
-                          src: `/img/users/${user.foto}?v=${imageVersion}`
-                        });
-                      }}
+
                     />
                   ) : (
                     <AvatarImage src="/img/users/default.png" alt="Usuario" />

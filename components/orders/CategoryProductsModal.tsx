@@ -60,7 +60,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
   productosEnCarrito,
   habitaciones = [],
   roomSelections = {},
-  onRoomChange = () => {}
+  onRoomChange = () => { }
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
@@ -153,7 +153,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
       const hostessId = String(h.id || h.id_usuario);
       const estado = h.estado || h.status;
 
-      if (estado !== 1) {
+      if (estado !== 1 && estado !== 2) {
         return false;
       }
 
@@ -198,7 +198,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
       const hostessId = String(h.id || h.id_usuario);
       const estado = h.estado || h.status;
 
-      if (estado !== 1) {
+      if (estado !== 1 && estado !== 2) {
         return false;
       }
 
@@ -459,7 +459,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                               }}
                                               placeholder={
                                                 getAvailableHostessesForOtherProducts(id).length ===
-                                                0
+                                                  0
                                                   ? 'No hay anfitrionas disponibles'
                                                   : 'Seleccionar anfitriona'
                                               }

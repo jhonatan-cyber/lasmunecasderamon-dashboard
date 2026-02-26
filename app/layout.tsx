@@ -15,6 +15,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { FetchInterceptorInit } from '@/components/FetchInterceptorInit';
 import { PermissionsSSEListener } from '@/components/PermissionsSSEListener';
+import { SyncProvider } from '@/contexts/SyncContext';
 
 import './globals.css';
 import '@/styles/sidebar.css';
@@ -59,26 +60,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <PermissionsSSEListener />
               <QueryProvider>
-                <AnulacionProvider>
-                  <TimerProvider>
-                    <ServicioAnfitrionasProvider>
-                      <NotificationsProvider>
-                        <NotificationProvider>
-                          <LayoutContent>{children}</LayoutContent>
-                          <Toaster
-                            richColors
-                            position='top-right'
-                            expand={true}
-                            closeButton={true}
-                            duration={4000}
-                          />
-                          <AnulacionNotificationModal />
-                          <ServiceWorkerRegistration />
-                        </NotificationProvider>
-                      </NotificationsProvider>
-                    </ServicioAnfitrionasProvider>
-                  </TimerProvider>
-                </AnulacionProvider>
+                <SyncProvider>
+                  <AnulacionProvider>
+                    <TimerProvider>
+                      <ServicioAnfitrionasProvider>
+                        <NotificationsProvider>
+                          <NotificationProvider>
+                            <LayoutContent>{children}</LayoutContent>
+                            <Toaster
+                              richColors
+                              position='top-right'
+                              expand={true}
+                              closeButton={true}
+                              duration={4000}
+                            />
+                            <AnulacionNotificationModal />
+                            <ServiceWorkerRegistration />
+                          </NotificationProvider>
+                        </NotificationsProvider>
+                      </ServicioAnfitrionasProvider>
+                    </TimerProvider>
+                  </AnulacionProvider>
+                </SyncProvider>
               </QueryProvider>
             </AuthProvider>
           </ThemeProvider>

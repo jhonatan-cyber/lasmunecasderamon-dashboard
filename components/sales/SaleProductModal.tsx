@@ -82,7 +82,7 @@ export default function SaleProductModal({
     // Anfitrionas del modal actual
     const champagneAssigned = Object.values(champagneHostessSelections).flat();
     const otherProductsAssigned = Object.values(otherProductHostessSelections).flat();
-    
+
     // Anfitrionas de productos ya en el carrito
     const carritoAssigned = productosEnCarrito.flatMap(producto => {
       if (producto.selectedHostesses && Array.isArray(producto.selectedHostesses)) {
@@ -90,7 +90,7 @@ export default function SaleProductModal({
       }
       return [];
     });
-    
+
     return [...champagneAssigned, ...otherProductsAssigned, ...carritoAssigned];
   };
 
@@ -101,6 +101,11 @@ export default function SaleProductModal({
 
     return availableHostesses.filter(h => {
       const hostessId = String(h.id || h.id_usuario);
+      const estado = h.estado || h.status;
+
+      if (estado !== 1 && estado !== 2) {
+        return false;
+      }
 
       // Incluir si está en la selección actual del producto
       if (currentSelection.includes(hostessId)) {
@@ -123,6 +128,11 @@ export default function SaleProductModal({
 
     return availableHostesses.filter(h => {
       const hostessId = String(h.id || h.id_usuario);
+      const estado = h.estado || h.status;
+
+      if (estado !== 1 && estado !== 2) {
+        return false;
+      }
 
       // Incluir si está en la selección actual del producto
       if (currentSelection.includes(hostessId)) {
@@ -252,7 +262,7 @@ export default function SaleProductModal({
                                             else if (precio >= 200000) champagneLimit = 4;
                                             else if (precio >= 140000) champagneLimit = 3;
                                             else if (precio >= 120000) champagneLimit = 2;
-                                            
+
                                             // El componente ya maneja el límite internamente
                                             onChampagneHostessChange(id, selectedIds);
                                           }}
@@ -274,7 +284,7 @@ export default function SaleProductModal({
                                           })()}
                                         />
                                       </div>
-                                      
+
                                       <div className="text-xs text-gray-500">
                                         {(() => {
                                           const currentProduct = productos.find(p => String(p.id_producto || p.id) === id);
@@ -284,7 +294,7 @@ export default function SaleProductModal({
                                           else if (precio >= 200000) champagneLimit = 4;
                                           else if (precio >= 140000) champagneLimit = 3;
                                           else if (precio >= 120000) champagneLimit = 2;
-                                          
+
                                           const currentCount = champagneHostessSelections[id]?.length || 0;
                                           return `${currentCount} de ${champagneLimit} seleccionadas`;
                                         })()}

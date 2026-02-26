@@ -13,9 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'caja_id es requerido' });
     }
 
-    console.log('🔍 Obteniendo estadísticas de habitaciones para caja:', caja_id);
 
-    // Query simplificado para obtener estadísticas por habitación
     const habitacionesStats = await query(`
       SELECT 
         h.id_habitacion as habitacion_id,
@@ -66,7 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : 0
     }));
 
-    console.log('📊 Estadísticas obtenidas:', habitacionesConComisiones.length, 'habitaciones');
 
     return res.status(200).json({
       success: true,
@@ -74,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('❌ Error obteniendo estadísticas de habitaciones:', error);
+   
     return res.status(500).json({
       success: false,
       error: 'Error interno del servidor',

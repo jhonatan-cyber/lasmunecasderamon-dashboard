@@ -9,6 +9,7 @@ import { formatCurrencyNoDecimals } from '@/lib/formatters';
 import { useTimer } from '@/contexts/TimerContext';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 interface SaleCardProps {
   venta: VentaWithDetails;
@@ -19,6 +20,8 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
   const { getTimerByServicioId, formatTime, stopTimerByServicioId, timers } = useTimer();
   const [stopping, setStopping] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { user } = useCurrentUser();
+  const isAdminOrCajero = user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
   // Obtener el timer sincronizado con el contexto global
   const timer = getTimerByServicioId(venta.id);
@@ -44,7 +47,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
     }
   };
 
-  const isLowTime = timer && timer.isActive && timer.remainingTime <= 300;
+  const isLowTime = isAdminOrCajero && timer && timer.isActive && timer.remainingTime <= 300;
 
   // Filtrar nombres de anfitrionas únicos
   const hostesses = venta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) || [];
@@ -75,63 +78,65 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
           </span>
         </div>
 
-        {/* Timer Section */}
-        <div className='bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              <Clock
-                className={`w-4 h-4 ${isLowTime ? 'text-red-500 animate-pulse' : 'text-gray-500 dark:text-gray-400'}`}
-              />
-              <span className='text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight'>
-                Tiempo restante
-              </span>
+        {/* Timer Section - Solo para Admin y Cajero */}
+        {isAdminOrCajero && (
+          <div className='bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-2'>
+                <Clock
+                  className={`w-4 h-4 ${isLowTime ? 'text-red-500 animate-pulse' : 'text-gray-500 dark:text-gray-400'}`}
+                />
+                <span className='text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight'>
+                  Tiempo restante
+                </span>
+              </div>
+              <div className='text-right'>
+                <span
+                  className={`font-mono text-xl font-bold ${isLowTime ? 'text-red-600 dark:text-red-500' : 'text-gray-900 dark:text-gray-100'}`}
+                >
+                  {timer ? formatTime(timer.remainingTime) : '00:00'}
+                </span>
+              </div>
             </div>
-            <div className='text-right'>
-              <span
-                className={`font-mono text-xl font-bold ${isLowTime ? 'text-red-600 dark:text-red-500' : 'text-gray-900 dark:text-gray-100'}`}
-              >
-                {timer ? formatTime(timer.remainingTime) : '00:00'}
-              </span>
-            </div>
-          </div>
 
-          <div className='grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60'>
-            <div className='flex flex-col'>
-              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
-                Ingreso
-              </span>
-              <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-                {(() => {
-                  const date = new Date((venta.fecha_crea || '').replace(' ', 'T'));
-                  return isNaN(date.getTime())
-                    ? '-'
-                    : `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-                })()}
-              </span>
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
-                Salida
-              </span>
-              <span className='text-xs font-bold text-blue-600 dark:text-blue-400'>
-                {(() => {
-                  const entry = new Date((venta.fecha_crea || '').replace(' ', 'T'));
-                  if (isNaN(entry.getTime())) return '-';
-                  const exit = new Date(entry.getTime() + (venta.tiempo || 60) * 60000);
-                  return `${String(exit.getHours()).padStart(2, '0')}:${String(exit.getMinutes()).padStart(2, '0')}`;
-                })()}
-              </span>
-            </div>
-            <div className='flex flex-col items-end'>
-              <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
-                Uso
-              </span>
-              <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-                {venta.tiempo || 60} min
-              </span>
+            <div className='grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60'>
+              <div className='flex flex-col'>
+                <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
+                  Ingreso
+                </span>
+                <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
+                  {(() => {
+                    const date = new Date((venta.fecha_crea || '').replace(' ', 'T'));
+                    return isNaN(date.getTime())
+                      ? '-'
+                      : `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                  })()}
+                </span>
+              </div>
+              <div className='flex flex-col'>
+                <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
+                  Salida
+                </span>
+                <span className='text-xs font-bold text-blue-600 dark:text-blue-400'>
+                  {(() => {
+                    const entry = new Date((venta.fecha_crea || '').replace(' ', 'T'));
+                    if (isNaN(entry.getTime())) return '-';
+                    const exit = new Date(entry.getTime() + (venta.tiempo || 60) * 60000);
+                    return `${String(exit.getHours()).padStart(2, '0')}:${String(exit.getMinutes()).padStart(2, '0')}`;
+                  })()}
+                </span>
+              </div>
+              <div className='flex flex-col items-end'>
+                <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
+                  Uso
+                </span>
+                <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
+                  {venta.tiempo || 60} min
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Client and Details */}
         <div className='space-y-3'>

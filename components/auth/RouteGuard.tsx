@@ -48,7 +48,7 @@ const publicRoutes = [
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userLoading, userPermissions, permissionsLoading, hasPermission } = useAuth();
+  const { user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -87,7 +87,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       }
 
       // Si no hay permisos cargados aún, esperar
-      if (!userPermissions || userPermissions.length === 0) {
+      if (!permissionsLoaded) {
         console.log('[RouteGuard] ⏳ Permisos aún no cargados, esperando...');
         return;
       }
@@ -98,8 +98,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
       // IMPORTANTE: Buscar la coincidencia MÁS ESPECÍFICA primero
       // Ordenar las rutas por longitud descendente para que /payroll/calendar se verifique antes que /payroll
       const sortedRoutes = Object.entries(routePermissions).sort((a, b) => b[0].length - a[0].length);
-      
-      const requiredPermission = sortedRoutes.find(([route]) => 
+
+      const requiredPermission = sortedRoutes.find(([route]) =>
         pathname && (pathname === route || pathname.startsWith(route + '/'))
       );
 
@@ -122,7 +122,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       if (!hasAccess) {
         console.log('[RouteGuard] ❌ Acceso denegado, redirigiendo...');
         // Redirigir a página de acceso denegado
-        router.push('/access-denied');
+        router.push(`/access-denied?module=${module}&action=${action}`);
         return;
       }
 
@@ -131,7 +131,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [pathname, user, userLoading, userPermissions, permissionsLoading, hasPermission, router]);
+  }, [pathname, user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission, router]);
 
   // Mostrar loading mientras se verifica
   if (checking || userLoading || permissionsLoading) {

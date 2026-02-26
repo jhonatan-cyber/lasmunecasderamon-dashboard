@@ -14,6 +14,7 @@ import { CheckCircle2, XCircle, Clock, User, Users, Home, DollarSign, Trash2 } f
 
 interface Solicitud {
   id_solicitud: number;
+  codigo?: string;
   cliente_id?: number;
   habitacion_id: number;
   precio_servicio: number;
@@ -108,7 +109,7 @@ export function SolicitudesServiciosList() {
         setSelectedSolicitud(null);
         setMotivoRechazo('');
         fetchSolicitudes();
-        
+
         // Disparar evento para actualizar otras vistas
         const updateEvent = new CustomEvent('updateServiceRequests');
         window.dispatchEvent(updateEvent);
@@ -146,7 +147,7 @@ export function SolicitudesServiciosList() {
         setMotivoRechazo('');
         setSelectedSolicitud(null);
         fetchSolicitudes();
-        
+
         // Disparar evento para actualizar otras vistas
         const updateEvent = new CustomEvent('updateServiceRequests');
         window.dispatchEvent(updateEvent);
@@ -236,7 +237,7 @@ export function SolicitudesServiciosList() {
               <div className='flex justify-between items-start'>
                 <div>
                   <CardTitle className='text-lg font-semibold text-gray-900 dark:text-white'>
-                    Solicitud #{solicitud.id_solicitud}
+                    Solicitud {solicitud.codigo ? `#${solicitud.codigo}` : `#${solicitud.id_solicitud}`}
                   </CardTitle>
                   <div className='flex items-center gap-2 mt-1 text-sm text-gray-600 dark:text-gray-400'>
                     <Clock className='w-4 h-4' />

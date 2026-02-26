@@ -18,13 +18,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Buscar usuario por email con información del rol
+    // Buscar usuario por email o username con información del rol
     const users = (await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
-       WHERE u.email = ? AND u.estado = 1`,
-      [email]
+       WHERE (u.email = ? OR u.username = ?) AND u.estado = 1`,
+      [email, email]
     )) as any[];
 
     if (users.length === 0) {
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     try {
-   
+
       await query(
         `UPDATE logins 
          SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
-    
+
     try {
       await query(
         `INSERT INTO logins (
@@ -93,7 +93,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         role: user.rol_nombre || 'garzon',
         foto: user.foto || 'default.png',
         status: user.estado,
-        username: user.username || user.nombre || ''
+        username: user.username || user.nombre || '',
+        nick: user.nick || '',
+        phone: user.telefono || '',
+        address: user.direccion || '',
+        estado_civil: user.estado_civil || ''
       },
       token: token,
       estado: 'ok',

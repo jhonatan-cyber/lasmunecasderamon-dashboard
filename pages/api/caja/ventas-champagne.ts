@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'caja_id es requerido' });
     }
 
-    console.log('🍾 Obteniendo ventas de champaña para caja:', caja_id);
 
     // Primero obtener las ventas de champagne básicas (sin JOINs que multipliquen)
     const ventasChampagneBasicas = await query(`
@@ -97,7 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       propinas: (ventasChampagneBasicas as any[])[0]?.propinas || 0
     };
 
-    console.log('🍾 Ventas de champaña obtenidas:', resultado);
 
     return res.status(200).json({
       success: true,
@@ -108,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('❌ Error obteniendo ventas de champaña:', error);
+    
     return res.status(500).json({
       success: false,
       error: 'Error interno del servidor',

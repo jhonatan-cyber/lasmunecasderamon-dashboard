@@ -29,7 +29,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
-       WHERE u.id_usuario = ? AND u.estado = 1`,
+       WHERE u.id_usuario = ? AND u.estado IN (1, 2, 3) AND u.fecha_baja IS NULL`,
       [userData.id]
     ) as any[];
 
@@ -63,7 +63,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
   } catch (error) {
-  
+
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
