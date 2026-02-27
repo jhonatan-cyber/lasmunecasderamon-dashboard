@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export function useGenericMutations<T>(
@@ -9,163 +9,123 @@ export function useGenericMutations<T>(
     entityName?: string;
   }
 ) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const queryClient = useQueryClient();
   const showToasts = options?.showToasts !== false;
   const entityName = options?.entityName || 'registro';
 
-  const create = useCallback(
-    async (data: Partial<T> | FormData) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        let body: BodyInit;
-        let headers: Record<string, string> = {};
+  const mutationOptions = {
+    onSuccess: async () => {
+      // Invalidate queries that match the endpoint to trigger a refetch.
+      await queryClient.invalidateQueries({ queryKey: [endpoint] });
 
-        if (data instanceof FormData) {
-          body = data;
-        } else {
-          body = JSON.stringify(data);
-          headers['Content-Type'] = 'application/json';
-        }
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Error al crear ${entityName}`);
-        }
-
-        const resultBody = await response.json().catch(() => null);
-
-        if (showToasts) {
-          toast.success(`${entityName} creado correctamente`);
-        }
-
-        if (options?.onSuccess) {
-          await options.onSuccess();
-        }
-
-        return resultBody;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : `Error al crear ${entityName}`;
-        setError(errorMessage);
-        if (showToasts) {
-          toast.error(errorMessage);
-        }
-        throw err;
-      } finally {
-        setIsLoading(false);
+      if (options?.onSuccess) {
+        await options.onSuccess();
       }
-    },
-    [endpoint, entityName, showToasts, options]
-  );
+    }
+  };
 
-  const update = useCallback(
-    async (data: (Partial<T> & { id: number }) | FormData) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        let body: BodyInit;
-        let headers: Record<string, string> = {};
-        let id: number;
+  const createMutation = useMutation({
+    mutationFn: async (data: Partial<T> | FormData) => {
+      let body: BodyInit;
+      let headers: Record<string, string> = {};
 
-        if (data instanceof FormData) {
-          body = data;
-          id = Number(data.get('id'));
-        } else {
-          body = JSON.stringify(data);
-          headers['Content-Type'] = 'application/json';
-          id = data.id;
-        }
-
-        const response = await fetch(`${endpoint}?id=${id}`, {
-          method: 'PUT',
-          headers,
-          body
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Error al actualizar ${entityName}`);
-        }
-
-        const resultBody = await response.json().catch(() => null);
-
-        if (showToasts) {
-          toast.success(`${entityName} actualizado correctamente`);
-        }
-
-        if (options?.onSuccess) {
-          await options.onSuccess();
-        }
-
-        return resultBody;
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : `Error al actualizar ${entityName}`;
-        setError(errorMessage);
-        if (showToasts) {
-          toast.error(errorMessage);
-        }
-        throw err;
-      } finally {
-        setIsLoading(false);
+      if (data instanceof FormData) {
+        body = data;
+      } else {
+        body = JSON.stringify(data);
+        headers['Content-Type'] = 'application/json';
       }
-    },
-    [endpoint, entityName, showToasts, options]
-  );
 
-  const remove = useCallback(
-    async (id: number) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${endpoint}?id=${id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Error al eliminar ${entityName}`);
-        }
-
-        const resultBody = await response.json().catch(() => null);
-
-        if (showToasts) {
-          toast.success(`${entityName} eliminado correctamente`);
-        }
-
-        if (options?.onSuccess) {
-          await options.onSuccess();
-        }
-
-        return resultBody;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : `Error al eliminar ${entityName}`;
-        setError(errorMessage);
-        if (showToasts) {
-          toast.error(errorMessage);
-        }
-        throw err;
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al crear ${entityName}`);
       }
+
+      return response.json();
     },
-    [endpoint, entityName, showToasts, options]
-  );
+    ...mutationOptions,
+    onSuccess: async (data) => {
+      if (showToasts) toast.success(`${entityName} creado correctamente`);
+      await mutationOptions.onSuccess();
+    },
+    onError: (err: Error) => {
+      if (showToasts) toast.error(err.message);
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: (Partial<T> & { id: number }) | FormData) => {
+      let body: BodyInit;
+      let headers: Record<string, string> = {};
+      let id: number;
+
+      if (data instanceof FormData) {
+        body = data;
+        id = Number(data.get('id'));
+      } else {
+        body = JSON.stringify(data);
+        headers['Content-Type'] = 'application/json';
+        id = data.id;
+      }
+
+      const response = await fetch(`${endpoint}?id=${id}`, {
+        method: 'PUT',
+        headers,
+        body
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al actualizar ${entityName}`);
+      }
+
+      return response.json();
+    },
+    ...mutationOptions,
+    onSuccess: async (data) => {
+      if (showToasts) toast.success(`${entityName} actualizado correctamente`);
+      await mutationOptions.onSuccess();
+    },
+    onError: (err: Error) => {
+      if (showToasts) toast.error(err.message);
+    }
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`${endpoint}?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al eliminar ${entityName}`);
+      }
+
+      return response.json();
+    },
+    ...mutationOptions,
+    onSuccess: async (data) => {
+      if (showToasts) toast.success(`${entityName} eliminado correctamente`);
+      await mutationOptions.onSuccess();
+    },
+    onError: (err: Error) => {
+      if (showToasts) toast.error(err.message);
+    }
+  });
 
   return {
-    create,
-    update,
-    remove,
-    isLoading,
-    error
+    create: createMutation.mutateAsync,
+    update: updateMutation.mutateAsync,
+    remove: removeMutation.mutateAsync,
+    isLoading: createMutation.isPending || updateMutation.isPending || removeMutation.isPending,
+    error: (createMutation.error || updateMutation.error || removeMutation.error)?.message || null
   };
 }

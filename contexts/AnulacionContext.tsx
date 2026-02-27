@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 interface AnulacionContextType {
   showNotification: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
   setRefreshCallback: (callback: () => void) => void;
-  refreshCallback: (() => void) | null;
   // Nuevo estado para modal de servicios
   modalData: {
     tipo: 'confirmada' | 'rechazada';
@@ -33,17 +32,11 @@ interface AnulacionContextType {
 const AnulacionContext = createContext<AnulacionContextType | undefined>(undefined);
 
 export function AnulacionProvider({ children }: { children: React.ReactNode }) {
-  const [refreshCallback, setRefreshCallbackState] = useState<(() => void) | null>(null);
   const [modalData, setModalData] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Usar useRef para mantener una referencia estable al callback
   const refreshCallbackRef = useRef<(() => void) | null>(null);
-
-  // Actualizar la referencia cuando cambie el callback
-  useEffect(() => {
-    refreshCallbackRef.current = refreshCallback;
-  }, [refreshCallback]);
 
   const showNotification = useCallback(
     (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
@@ -66,7 +59,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setRefreshCallback = useCallback((callback: () => void) => {
-    setRefreshCallbackState(() => callback);
+    refreshCallbackRef.current = callback;
   }, []);
 
   const openModal = useCallback((data: any) => {
@@ -298,7 +291,6 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   const contextValue = useMemo(() => ({
     showNotification,
     setRefreshCallback,
-    refreshCallback,
     modalData,
     isModalOpen,
     openModal,
@@ -306,7 +298,6 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   }), [
     showNotification,
     setRefreshCallback,
-    refreshCallback,
     modalData,
     isModalOpen,
     openModal,

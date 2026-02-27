@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `;
 
     const servicios = await query(servicioSql, [servicioId]);
-    
+
     if (!Array.isArray(servicios) || servicios.length === 0) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
@@ -50,21 +50,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
 
-    
-    // Cambiar estado a 2 (pendiente de devolución)
+
+    // Cambiar estado a 4 (solicitud de anulación/devolución)
     await query(
-      "UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE id_servicio = ?",
+      "UPDATE servicios SET estado = 4, fecha_mod = NOW() WHERE id_servicio = ?",
       [servicioId]
     );
-    
 
 
-    // Pausar el temporizador del servicio (estado 2 = pausado)
+    // Pausar el temporizador del servicio (si estuviera activo)
     // Esto se maneja en el frontend con el contexto de temporizador
 
     // Generar token único para esta solicitud
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
+
     // Guardar token en la base de datos (crear tabla si no existe)
     try {
       await query(
@@ -76,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`
       );
-      
+
       await query(
         "INSERT INTO solicitudes_devolucion_servicios (servicio_id, token) VALUES (?, ?)",
         [servicioId, token]
@@ -91,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     // Preparar datos de anfitrionas
-    const anfitrionas = servicio.anfitrionas_nombres 
+    const anfitrionas = servicio.anfitrionas_nombres
       ? servicio.anfitrionas_nombres.split(', ').filter((nombre: string) => nombre.trim())
       : [];
 
@@ -116,18 +115,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // No fallar la operación si WhatsApp falla
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "Solicitud de devolución enviada correctamente",
       servicio: {
         id: servicioId,
         codigo: servicio.codigo,
-        estado: 2
+        estado: 4
       }
     });
 
   } catch (error) {
-  
-    return res.status(500).json({ 
+
+    return res.status(500).json({
       error: 'Error interno del servidor',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });

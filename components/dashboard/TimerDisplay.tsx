@@ -114,18 +114,18 @@ export function TimerDisplay() {
     }
   }, [showConfirm, stopTimer]);
 
-  // Memoizar el conteo de timers pausados
-  const pausedCount = useMemo(() => {
-    return timers.filter(t => t.isPaused).length;
+  // Filtrar solo timers activos (no pausados)
+  const activeTimers = useMemo(() => {
+    return timers.filter(t => !t.isPaused);
   }, [timers]);
 
-  if (timers.length === 0) {
+  if (activeTimers.length === 0) {
     return null; // No mostrar nada si no hay temporizadores activos
   }
 
   // Si solo hay un timer, mostrarlo directamente
-  if (timers.length === 1) {
-    const timer = timers[0];
+  if (activeTimers.length === 1) {
+    const timer = activeTimers[0];
     return (
       <>
         <div className='fixed bottom-4 right-4 z-50 max-w-xs'>
@@ -134,11 +134,6 @@ export function TimerDisplay() {
               <CardTitle className='text-xs font-semibold flex items-center gap-1'>
                 <Clock className='text-blue-600 text-xs' />
                 Temporizador
-                {timer.isPaused && (
-                  <Badge variant='outline' className='text-yellow-600 border-yellow-600 text-xs'>
-                    Pausado
-                  </Badge>
-                )}
               </CardTitle>
             </CardHeader>
             <CardContent className='pt-0'>
@@ -170,8 +165,8 @@ export function TimerDisplay() {
   }
 
   // Si hay múltiples timers, mostrar el primero y permitir expandir
-  const firstTimer = timers[0];
-  const remainingCount = timers.length - 1;
+  const firstTimer = activeTimers[0];
+  const remainingCount = activeTimers.length - 1;
 
   return (
     <>
@@ -182,13 +177,8 @@ export function TimerDisplay() {
               <Clock className='text-blue-600 text-xs' />
               Temporizadores
               <Badge variant='secondary' className='ml-auto text-xs'>
-                {timers.length}
+                {activeTimers.length}
               </Badge>
-              {pausedCount > 0 && (
-                <Badge variant='outline' className='text-yellow-600 border-yellow-600 text-xs'>
-                  {pausedCount} Pausado{pausedCount !== 1 ? 's' : ''}
-                </Badge>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className='pt-0'>
@@ -217,7 +207,7 @@ export function TimerDisplay() {
             {/* Timers adicionales (solo visibles cuando está expandido) */}
             {isExpanded && (
               <div className='space-y-1 mt-1 max-h-32 overflow-y-auto'>
-                {timers.slice(1).map(timer => (
+                {activeTimers.slice(1).map(timer => (
                   <TimerItem
                     key={timer.id}
                     timer={timer}

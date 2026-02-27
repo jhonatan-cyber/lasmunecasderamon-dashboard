@@ -2,6 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../../notifications/sse';
+import { sendPushNotification } from '@/lib/pushNotifications';
+
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'PATCH') {
@@ -23,16 +25,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     // Verificar que el usuario sea cajero o administrador
     const roleLower = (userRole || '').toLowerCase();
     if (roleLower !== 'cajero' && roleLower !== 'administrador') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'No tienes permisos para rechazar solicitudes' 
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para rechazar solicitudes'
       });
     }
 
     if (!motivo_rechazo || motivo_rechazo.trim() === '') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'El motivo de rechazo es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'El motivo de rechazo es requerido'
       });
     }
 
@@ -49,9 +51,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const solicitud = solicitudes[0];
 
     if (solicitud.estado !== 'pendiente') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Esta solicitud ya ha sido procesada' 
+      return res.status(400).json({
+        success: false,
+        message: 'Esta solicitud ya ha sido procesada'
       });
     }
 
@@ -73,6 +75,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       motivo_rechazo: motivo_rechazo,
       timestamp: new Date().toISOString()
     });
+
+    // Enviar notificación Push al solicitante
+    try {
+      if (solicitud.solicitado_por) {
+        sendPushNotification(
+          solicitud.solicitado_por,
+          'SOLICITUD RECHAZADA',
+          `Tu solicitud ha sido rechazada. Motivo: ${motivo_rechazo}`
+        );
+      }
+    } catch (pushErr) {
+      console.error('[RECHAZAR SOLICITUD] Error enviando notificación push:', pushErr);
+    }
     console.log('[RECHAZAR SOLICITUD] Notificación SSE enviada');
 
     return res.status(200).json({
