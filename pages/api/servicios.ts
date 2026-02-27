@@ -12,11 +12,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const params: any[] = [];
 
       if (all === 'true') {
-        // Mostrar servicios no activos (estado != 2 y estado != 3)
-        whereClause = 'WHERE s.estado NOT IN (2, 3)';
+        // Mostrar solo servicios finalizados (estado 1)
+        // TEMPORAL: También incluir estado 0 para servicios antiguos que aún no se han migrado
+        whereClause = 'WHERE (s.estado = 1 OR s.estado = 0)';
       } else if (all === 'false') {
-        // Mostrar solo servicios en proceso (estado = 2). Los pausados (3) se ocultan.
-        whereClause = 'WHERE s.estado = 2';
+        // Mostrar servicios activos (2: En Proceso, 3: Pausado, 4: Solicitud de Anulación)
+        whereClause = 'WHERE s.estado IN (2, 3, 4)';
       }
 
       // Filtrar directamente por caja_id si se proporciona
@@ -27,8 +28,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // Si no se especifica 'all', mostrar todos los servicios sin filtro
 
+      console.log('[API /servicios] Query params:', { all, caja_id });
+      console.log('[API /servicios] WHERE clause:', whereClause);
+      console.log('[API /servicios] Params:', params);
+
+      // Query de debug para ver todos los servicios
+      const todosServicios = await query('SELECT id_servicio, codigo, estado, caja_id FROM servicios ORDER BY id_servicio DESC LIMIT 10') as any[];
+      console.log('[API /servicios] DEBUG - Últimos 10 servicios:', JSON.stringify(todosServicios, null, 2));
+
+      // Query adicional para ver servicios con caja_id = 1
+      if (caja_id) {
+        const serviciosCaja = await query('SELECT id_servicio, codigo, estado, caja_id FROM servicios WHERE caja_id = ? ORDER BY id_servicio DESC LIMIT 10', [caja_id]) as any[];
+        console.log('[API /servicios] DEBUG - Servicios con caja_id =', caja_id, ':', JSON.stringify(serviciosCaja, null, 2));
+
+        // Contar servicios por estado en esta caja
+        const countByEstado = await query('SELECT estado, COUNT(*) as count FROM servicios WHERE caja_id = ? GROUP BY estado', [caja_id]) as any[];
+        console.log('[API /servicios] DEBUG - Count por estado en caja', caja_id, ':', JSON.stringify(countByEstado, null, 2));
+      }
+
       const servicios = await query(`
-        SELECT 
+        SELECT
           s.id_servicio,
           s.codigo,
           s.cliente_id,
@@ -47,11 +66,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           h.nombre as habitacion_numero,
           h.comision_anfitriona as habitacion_comision,
           COUNT(DISTINCT ds.usuario_id) as total_usuarios,
-          GROUP_CONCAT(DISTINCT 
-            CASE 
+          GROUP_CONCAT(DISTINCT
+            CASE
               WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
               ELSE CONCAT(u.nombre, ' ', u.apellido)
-            END 
+            END
             SEPARATOR ', '
           ) as anfitrionas_nombres,
           CONCAT(creator.nombre, ' ', creator.apellido) as creator_name,
@@ -67,7 +86,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ${whereClause}
         GROUP BY s.id_servicio
         ORDER BY s.fecha_crea DESC
-      `, params);
+      `, params) as any[];
+
+      console.log('[API /servicios] Servicios encontrados:', servicios.length);
+      if (servicios.length > 0) {
+        console.log('[API /servicios] Primer servicio:', JSON.stringify(servicios[0], null, 2));
+      }
 
       return res.status(200).json({
         success: true,
@@ -161,6 +185,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // Crear servicio usando transacción
       const result = await withTransaction(async connection => {
         let comisionTotalPorAnfitriona = 0;
+        let calPrecioServicio = precioServicioFinal;
+        let calPrecioHabitacion = precio_habitacion || 0;
+
         // Insertar servicio
         const servicioResult: any = await query(
           `INSERT INTO servicios (
@@ -276,9 +303,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           }
 
           // El precio de servicio siempre se multiplica por el número de anfitrionas
-          const nuevoPrecioServicio = (precioServicioFinal || 0) * usuarios.length;
+          calPrecioServicio = (precioServicioFinal || 0) * usuarios.length;
           await query('UPDATE servicios SET precio_servicio = ? WHERE id_servicio = ?', [
-            nuevoPrecioServicio,
+            calPrecioServicio,
             servicioId
           ]);
 
@@ -287,19 +314,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             // - La comisión se divide entre el número de chicas
             // - El valor de la habitación NO se multiplica por el número de chicas
             // - El total debe reflejar el precio de servicio multiplicado
-            const comisionServicioPorAnfitriona = Math.floor(nuevoPrecioServicio / usuarios.length);
+            const comisionServicioPorAnfitriona = Math.floor(calPrecioServicio / usuarios.length);
             const comisionHabitacionPorAnfitriona = Math.floor(comisionHabitacion / usuarios.length);
             comisionTotalPorAnfitriona = comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
 
             // Actualizar el total correctamente
-            const totalConComision = (precio_habitacion || 0) + nuevoPrecioServicio + (ivaFinal || 0);
+            const totalConComision = (precio_habitacion || 0) + calPrecioServicio + (ivaFinal || 0);
             await query('UPDATE servicios SET total = ? WHERE id_servicio = ?', [
               totalConComision,
               servicioId
             ]);
 
             console.log('[SERVICIOS POST] Comisiones calculadas (con comisión):', {
-              precioServicio: nuevoPrecioServicio,
+              precioServicio: calPrecioServicio,
               comisionHabitacion,
               cantidadAnfitrionas: usuarios.length,
               comisionServicioPorAnfitriona,
@@ -339,13 +366,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             // Si la habitación NO tiene comisión:
             // - El valor de la habitación se multiplica por el número de chicas
             // - No se reparte comisión
-            const nuevoPrecioHabitacion = (precio_habitacion || 0) * usuarios.length;
+            calPrecioHabitacion = (precio_habitacion || 0) * usuarios.length;
             await query('UPDATE servicios SET precio_habitacion = ?, total = ? WHERE id_servicio = ?', [
-              nuevoPrecioHabitacion,
-              (nuevoPrecioHabitacion + nuevoPrecioServicio + (ivaFinal || 0)),
+              calPrecioHabitacion,
+              (calPrecioHabitacion + calPrecioServicio + (ivaFinal || 0)),
               servicioId
             ]);
-            console.log('[SERVICIOS POST] Habitación sin comisión, precio_habitacion multiplicado:', nuevoPrecioHabitacion);
+            console.log('[SERVICIOS POST] Habitación sin comisión, precio_habitacion multiplicado:', calPrecioHabitacion);
           }
         }
 
@@ -400,10 +427,61 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           cajaActualizada = true;
         }
 
+        // Obtener nombres para la notificación
+        const roomNameData = (await query('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+        const roomName = roomNameData[0]?.nombre || `Habitación ${habitacion_id}`;
+
+        let clienteNombre = 'Cliente';
+        if (clienteIdFinal) {
+          const clienteData = (await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteIdFinal])) as any[];
+          if (clienteData[0]) clienteNombre = `${clienteData[0].nombre} ${clienteData[0].apellido}`;
+        }
+
+        let anfitrionasNicks = '';
+        if (usuarios && usuarios.length > 0) {
+          const usersData = (await query(`SELECT nick FROM usuarios WHERE id_usuario IN (${usuarios.map(() => '?').join(',')})`, usuarios)) as any[];
+          anfitrionasNicks = usersData.map((u: any) => u.nick).join(', ');
+        }
+
+        const waiterNick = currentUser?.username || 'Cajero';
+
         return {
           servicioId,
-          comisionTotalPorAnfitriona
+          comisionTotalPorAnfitriona,
+          roomName,
+          clienteNombre,
+          anfitrionasNicks,
+          anfitrionasIds: usuarios,
+          waiterNick,
+          codigo,
+          ivaFinal,
+          totalFinal,
+          precioServicio: calPrecioServicio,
+          precioHabitacion: calPrecioHabitacion,
+          habitacionComision: roomInfo[0]?.comision_anfitriona || 0
         };
+      });
+
+      // Enviar notificación SSE
+      sendNotificationToAll('timer_started', {
+        servicioId: result.servicioId,
+        codigo: result.codigo,
+        roomId: habitacion_id,
+        roomName: result.roomName,
+        duration: tiempo,
+        startTime: new Date().toISOString(),
+        clienteNombre: result.clienteNombre,
+        anfitrionas: result.anfitrionasNicks,
+        anfitrionas_ids: result.anfitrionasIds,
+        tipoTransaccion: 'servicio',
+        precio_servicio: result.precioServicio,
+        precio_habitacion: result.precioHabitacion,
+        iva: result.ivaFinal,
+        total: result.totalFinal,
+        metodo_pago: metodo_pago,
+        waiter_name: result.waiterNick,
+        habitacion_comision: result.habitacionComision,
+        created_at: new Date().toISOString()
       });
 
       return res.status(201).json({

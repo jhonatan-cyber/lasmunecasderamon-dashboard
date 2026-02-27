@@ -4,9 +4,10 @@ import { useState, useCallback, useMemo } from 'react';
 import { useServicios } from '@/hooks/servicios/useServicios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { ServicioWithDetails } from '@/types/servicio';
 
 export function useServiceLogic() {
-  const { servicios, loading, getServicios, removeServicioFromState } = useServicios();
+  const { servicios, loading, getServicios, removeServicioFromState, patchServicio } = useServicios();
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,32 +32,20 @@ export function useServiceLogic() {
   const handleStopTimer = useCallback(
     async (servicioId: number) => {
       try {
-        const response = await fetch(`/api/servicios/${servicioId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ estado: 0 })
-        });
-
-        if (response.ok) {
-          removeServicioFromState(servicioId);
-          await getServicios(true);
-          toast.success('Servicio finalizado exitosamente');
-        } else {
-          toast.error('Error al finalizar el servicio');
-        }
+        // Usar patchServicio que ya implementa actualizaciones optimistas
+        await patchServicio(servicioId, { estado: 1 }); // 1 = Terminado
+        toast.success('Servicio finalizado exitosamente');
       } catch (error) {
         toast.error('Error al finalizar el servicio');
       }
     },
-    [removeServicioFromState, getServicios]
+    [patchServicio]
   );
 
   const handleServiceFinalized = useCallback((servicioId: number) => {
-
     removeServicioFromState(servicioId);
   }, [removeServicioFromState]);
+
   const handleServiceAutoFinished = useCallback(async () => {
 
     try {
@@ -70,16 +59,16 @@ export function useServiceLogic() {
   const serviciosByStatus = useMemo(() => {
     if (showAllServices) {
       // Mostrar servicios terminados (1) o anulados (0)
-      return servicios.filter(servicio => servicio.estado === 1 || servicio.estado === 0);
+      return servicios.filter((servicio: ServicioWithDetails) => servicio.estado === 1 || servicio.estado === 0);
     } else {
       // Mostrar servicios en proceso (2) o pausados (3)
-      return servicios.filter(servicio => servicio.estado === 2 || servicio.estado === 3);
+      return servicios.filter((servicio: ServicioWithDetails) => servicio.estado === 2 || servicio.estado === 3);
     }
   }, [servicios, showAllServices]);
 
   const filteredServicios = useMemo(() => {
     return serviciosByStatus.filter(
-      servicio =>
+      (servicio: ServicioWithDetails) =>
         servicio.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         servicio.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         servicio.habitacion_numero?.toLowerCase().includes(searchTerm.toLowerCase())

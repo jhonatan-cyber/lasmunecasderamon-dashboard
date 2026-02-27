@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
 import {
   Dialog,
   DialogContent,
@@ -45,14 +43,7 @@ export function AnulacionConfirmModal({
   onAccept,
   data,
 }: AnulacionConfirmModalProps) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    setIsVisible(open && !!data);
-  }, [open, data]);
-
   const handleClose = () => {
-    setIsVisible(false);
     onOpenChange(false);
   };
 
@@ -71,7 +62,7 @@ export function AnulacionConfirmModal({
   const isServicio = tipo_operacion === "servicio";
 
   return (
-    <Dialog open={isVisible} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 mb-4">

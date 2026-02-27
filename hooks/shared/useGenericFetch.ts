@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 export function useGenericFetch<T>(
   endpoint: string,
@@ -8,50 +8,41 @@ export function useGenericFetch<T>(
     transform?: (data: any) => T[];
   }
 ) {
-  const [data, setData] = useState<T[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const transformRef = useRef(options?.transform);
-  transformRef.current = options?.transform;
+  const queryClient = useQueryClient();
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
+  // Use the endpoint as the query key.
+  const queryKey = useMemo(() => [endpoint], [endpoint]);
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey,
+    queryFn: async () => {
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         cache: 'no-store'
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error al obtener datos: ${response.statusText}`);
       }
-      
-      const result = await response.json();
-      const processedData = transformRef.current ? transformRef.current(result) : result;
-      setData(processedData);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [endpoint]);
 
-  useEffect(() => {
-    if (options?.initialFetch !== false) {
-      fetchData();
-    }
-  }, [fetchData, options?.initialFetch]);
+      const result = await response.json();
+      return options?.transform ? options.transform(result) : result;
+    },
+    enabled: options?.initialFetch !== false,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  const setData = useCallback((updater: any) => {
+    queryClient.setQueryData(queryKey, updater);
+  }, [queryClient, queryKey]);
 
   return {
-    data,
+    data: data || [],
     isLoading,
-    error,
-    refetch: fetchData,
+    error: error instanceof Error ? error.message : null,
+    refetch,
     setData,
   };
 }

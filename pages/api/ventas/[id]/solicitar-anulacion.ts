@@ -68,9 +68,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const venta = ventaResult[0] as any;
 
-    // Verificar que la venta no esté ya anulada o pendiente
-    // Verificar que la venta no esté ya anulada o pendiente de anulación (estado 3)
-    if (venta.estado === 0 || venta.estado === 3) {
+    // Verificar que la venta no esté ya anulada o con solicitud de anulación pendiente
+    if (venta.estado === 0 || venta.estado === 4) {
       return res.status(400).json({
         error:
           venta.estado === 0
@@ -96,9 +95,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Usar el nombre completo del usuario logueado
     const usuarioNombre = nombreCompleto;
 
-    // Actualizar estado a pendiente de aprobación
+    // Actualizar estado a solicitud de anulación (estado = 4)
+    const nuevoEstado = 4;
     await query('UPDATE ventas SET estado = ?, fecha_mod = NOW() WHERE id_venta = ?', [
-      estado,
+      nuevoEstado,
       ventaId
     ]);
 
@@ -106,7 +106,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     sendNotificationToAll('sale_cancelled', {
       ventaId,
       codigo: venta.codigo,
-      estado
+      estado: nuevoEstado
     });
 
     // Generar token único para esta solicitud
@@ -181,7 +181,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       venta: {
         id: ventaId,
         codigo: venta.codigo,
-        estado: estado
+        estado: 4
       }
     });
   } catch (error) {

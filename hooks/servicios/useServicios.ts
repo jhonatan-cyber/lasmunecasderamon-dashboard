@@ -1,14 +1,15 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
 export function useServicios() {
-  const [mutationLoading, setMutationLoading] = useState(false);
-  const [mutationError, setMutationError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [includeAll, setIncludeAll] = useState(true);
   const endpoint = useMemo(() => {
     return includeAll ? '/api/servicios' : '/api/servicios?all=false';
   }, [includeAll]);
+
   const {
     data: servicios,
     isLoading: fetchLoading,
@@ -19,17 +20,13 @@ export function useServicios() {
     initialFetch: true,
     transform: data => {
       if (data.success) {
-        const serviciosFiltrados = data.data.filter((servicio: any) => {
+        return data.data.filter((servicio: any) => {
           return !servicio.es_temporal && !servicio.servicio_original_id;
         });
-        return serviciosFiltrados;
       }
       return [];
     }
   });
-
-  const loading = fetchLoading || mutationLoading;
-  const error = fetchError || mutationError;
 
   const getServicios = useCallback(
     async (includeAllParam: boolean = true) => {
@@ -39,128 +36,81 @@ export function useServicios() {
     [refetch]
   );
 
-  const createServicio = useCallback(
-    async (servicioData: any) => {
-      setMutationLoading(true);
-      setMutationError(null);
-      try {
-        const response = await fetch('/api/servicios', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(servicioData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          await getServicios(true);
-          return { success: true, data: data.data };
-        } else {
-          setMutationError(data.message);
-          return { success: false, message: data.message };
-        }
-      } catch (err) {
-        setMutationError('Error de conexión');
-        return { success: false, message: 'Error de conexión' };
-      } finally {
-        setMutationLoading(false);
-      }
-    },
-    [getServicios]
-  );
-
-  const getServicioById = useCallback(async (id: number) => {
-    try {
-      const response = await fetch(`/api/servicios/${id}`);
+  const createMutation = useMutation({
+    mutationFn: async (servicioData: any) => {
+      const response = await fetch('/api/servicios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(servicioData)
+      });
       const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+      return data;
+    },
+    onSuccess: () => getServicios(true)
+  });
 
-      if (data.success) {
-        return { success: true, data: data.data };
-      } else {
-        return { success: false, message: data.message };
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await fetch(`/api/servicios/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message);
+      return result;
+    },
+    onSuccess: () => getServicios(true)
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/servicios/${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+      return data;
+    },
+    onSuccess: () => getServicios(true)
+  });
+
+  // Optimistic Mutation for PATCH (status changes)
+  const patchMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await fetch(`/api/servicios/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message);
+      return result;
+    },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: [endpoint] });
+      const previousServicios = queryClient.getQueryData<ServicioWithDetails[]>([endpoint]);
+
+      if (previousServicios) {
+        queryClient.setQueryData([endpoint], (old: ServicioWithDetails[] | undefined) =>
+          old?.map((s: ServicioWithDetails) => s.id_servicio === id ? { ...s, ...data } : s)
+        );
       }
-    } catch (err) {
-      return { success: false, message: 'Error de conexión' };
+      return { previousServicios };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousServicios) {
+        queryClient.setQueryData([endpoint], context.previousServicios);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
     }
-  }, []);
-
-  const updateServicio = useCallback(
-    async (id: number, servicioData: any) => {
-      setMutationLoading(true);
-      setMutationError(null);
-      try {
-        const response = await fetch(`/api/servicios/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(servicioData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          await getServicios(true);
-          return { success: true, data: data.data };
-        } else {
-          setMutationError(data.message);
-          return { success: false, message: data.message };
-        }
-      } catch (err) {
-        setMutationError('Error de conexión');
-        return { success: false, message: 'Error de conexión' };
-      } finally {
-        setMutationLoading(false);
-      }
-    },
-    [getServicios]
-  );
-
-  const deleteServicio = useCallback(
-    async (id: number) => {
-      setMutationLoading(true);
-      setMutationError(null);
-      try {
-        const response = await fetch(`/api/servicios/${id}`, {
-          method: 'DELETE'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          await getServicios(true);
-          return { success: true };
-        } else {
-          setMutationError(data.message);
-          return { success: false, message: data.message };
-        }
-      } catch (err) {
-        setMutationError('Error de conexión');
-        return { success: false, message: 'Error de conexión' };
-      } finally {
-        setMutationLoading(false);
-      }
-    },
-    [getServicios]
-  );
-
-  const removeServicioFromState = useCallback(
-    (id: number) => {
-      setServicios(prev => prev.filter(servicio => servicio.id_servicio !== id));
-    },
-    [setServicios]
-  );
+  });
 
   useEffect(() => {
-    const handleServiceUpdate = () => {
-      getServicios(true);
-    };
-
+    const handleServiceUpdate = () => { getServicios(true); };
     window.addEventListener('updateServiceRequests', handleServiceUpdate);
     window.addEventListener('serviceStatusChanged', handleServiceUpdate);
-
     return () => {
       window.removeEventListener('updateServiceRequests', handleServiceUpdate);
       window.removeEventListener('serviceStatusChanged', handleServiceUpdate);
@@ -169,13 +119,15 @@ export function useServicios() {
 
   return {
     servicios,
-    loading,
-    error,
+    loading: fetchLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || patchMutation.isPending,
+    error: fetchError || (createMutation.error as any)?.message || (updateMutation.error as any)?.message || (deleteMutation.error as any)?.message || (patchMutation.error as any)?.message,
     getServicios,
-    createServicio,
-    getServicioById,
-    updateServicio,
-    deleteServicio,
-    removeServicioFromState
+    createServicio: createMutation.mutateAsync,
+    updateServicio: (id: number, data: any) => updateMutation.mutateAsync({ id, data }),
+    deleteServicio: deleteMutation.mutateAsync,
+    patchServicio: (id: number, data: any) => patchMutation.mutateAsync({ id, data }),
+    removeServicioFromState: (id: number) => {
+      setServicios((prev: ServicioWithDetails[]) => prev.filter((s: ServicioWithDetails) => s.id_servicio !== id));
+    }
   };
 }

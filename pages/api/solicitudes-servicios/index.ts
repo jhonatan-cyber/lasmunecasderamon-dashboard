@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../notifications/sse';
 import { logger } from '@/lib/logger';
+import { sendPushByRole } from '@/lib/pushNotifications';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method } = req;
@@ -208,6 +209,18 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       iva: iva || 0,
       timestamp: new Date().toISOString()
     });
+
+    // Enviar notificación Push a Cajeros y Administradores
+    try {
+      const roomName = info?.habitacion_nombre || 'Habitación';
+      const formattedTotal = totalParsed.toLocaleString('es-ES');
+      const pushMsg = `Nueva solicitud de servicio en ${roomName} por $${formattedTotal}`;
+
+      sendPushByRole('cajero', '¡SOLICITUD DE SERVICIO!', pushMsg, { type: 'new_service_request' });
+      sendPushByRole('administrador', '¡SOLICITUD DE SERVICIO!', pushMsg, { type: 'new_service_request' });
+    } catch (pushErr) {
+      logger.error('[SERVICE REQUEST API] Error enviando notificaciones push:', pushErr);
+    }
 
     return res.status(201).json({
       success: true,

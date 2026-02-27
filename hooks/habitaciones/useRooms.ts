@@ -26,6 +26,8 @@ interface UseRooms {
   reorderRooms: (reorderedRooms: Room[]) => Promise<void>;
 }
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 export default function useRooms(): UseRooms {
   const {
     data: rooms,
@@ -38,7 +40,7 @@ export default function useRooms(): UseRooms {
 
   const [searchTerm, setSearchTerm] = useState('');
   const { create, update, remove } = useGenericMutations<Room>('/api/rooms', {
-    onSuccess: refetch,
+    onSuccess: () => { refetch(); },
     showToasts: true,
     entityName: 'Habitación'
   });
@@ -48,7 +50,7 @@ export default function useRooms(): UseRooms {
     if (!searchTerm.trim()) return rooms;
 
     const term = searchTerm.toLowerCase();
-    return rooms.filter(room => room.name.toLowerCase().includes(term));
+    return rooms.filter((room: Room) => room.name.toLowerCase().includes(term));
   }, [searchTerm, rooms]);
 
   const createRoom = useCallback(
@@ -75,59 +77,61 @@ export default function useRooms(): UseRooms {
     [remove]
   );
 
-  const activateRoom = useCallback(
-    async (id: number) => {
-      try {
-        const res = await fetch(`/api/rooms?id=${id}&action=activate`, { method: 'PATCH' });
-        const data = await res.json();
-        if (data.success) {
-          showSuccessToast(data.message || 'Habitación activada correctamente');
-          await refetch();
-        } else {
-          showErrorToast(data.message || 'Error al activar habitación');
-        }
-      } catch (err) {
-        showErrorToast('Error de red al activar habitación');
-      }
-    },
-    [refetch]
-  );
+  const queryClient = useQueryClient();
 
-  const deactivateRoom = useCallback(
-    async (id: number) => {
-      try {
-        const res = await fetch(`/api/rooms?id=${id}&action=deactivate`, { method: 'PATCH' });
-        const data = await res.json();
-        if (data.success) {
-          showSuccessToast(data.message || 'Habitación desactivada correctamente');
-          await refetch();
-        } else {
-          showErrorToast(data.message || 'Error al desactivar habitación');
-        }
-      } catch (err) {
-        showErrorToast('Error de red al desactivar habitación');
-      }
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: number; action: string }) => {
+      const res = await fetch(`/api/rooms?id=${id}&action=${action}`, { method: 'PATCH' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Error en la operación');
+      return data;
     },
-    [refetch]
-  );
+    onMutate: async ({ id, action }) => {
+      await queryClient.cancelQueries({ queryKey: ['/api/rooms'] });
+      const previousRooms = queryClient.getQueryData<Room[]>(['/api/rooms']);
 
-  const occupyRoom = useCallback(
-    async (id: number) => {
-      try {
-        const res = await fetch(`/api/rooms?id=${id}&action=occupy`, { method: 'PATCH' });
-        const data = await res.json();
-        if (data.success) {
-          showSuccessToast(data.message || 'Habitación ocupada correctamente');
-          await refetch();
-        } else {
-          showErrorToast(data.message || 'Error al ocupar habitación');
-        }
-      } catch (err) {
-        showErrorToast('Error de red al ocupar habitación');
+      if (previousRooms) {
+        queryClient.setQueryData(['/api/rooms'], (old: Room[]) =>
+          old.map(room => {
+            if (room.id === id) {
+              let newStatus = room.status;
+              if (action === 'occupy') newStatus = 2; // Ocupada
+              if (action === 'activate') newStatus = 1; // Activa/Disponible
+              if (action === 'deactivate') newStatus = 0; // Inactiva
+              return { ...room, status: newStatus };
+            }
+            return room;
+          })
+        );
       }
+
+      return { previousRooms };
     },
-    [refetch]
-  );
+    onError: (err, variables, context) => {
+      if (context?.previousRooms) {
+        queryClient.setQueryData(['/api/rooms'], context.previousRooms);
+      }
+      showErrorToast(err.message || 'Error al actualizar el estado de la habitación');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+    },
+    onSuccess: (data) => {
+      showSuccessToast(data.message || 'Habitación actualizada correctamente');
+    }
+  });
+
+  const activateRoom = useCallback(async (id: number) => {
+    await statusMutation.mutateAsync({ id, action: 'activate' });
+  }, [statusMutation]);
+
+  const deactivateRoom = useCallback(async (id: number) => {
+    await statusMutation.mutateAsync({ id, action: 'deactivate' });
+  }, [statusMutation]);
+
+  const occupyRoom = useCallback(async (id: number) => {
+    await statusMutation.mutateAsync({ id, action: 'occupy' });
+  }, [statusMutation]);
 
   const reorderRooms = useCallback(
     async (reorderedRooms: Room[]) => {
@@ -166,7 +170,7 @@ export default function useRooms(): UseRooms {
     error,
     searchTerm,
     setSearchTerm,
-    fetchRooms: refetch,
+    fetchRooms: async () => { await refetch(); },
     createRoom,
     updateRoom,
     deleteRoom,
