@@ -275,7 +275,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const durationMins = Number(dbTimerAny.duration || 0);
               let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
 
-              // Si el tiempo es 0 pero el servicio es muy reciente (menos de 2 minutos), 
+              // Si el tiempo es 0 pero el servicio es muy reciente (menos de 2 minutos),
               // es probable que sea un desfase de reloj. Mantener el tiempo total.
               if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
                 remainingSeconds = durationMins * 60;
@@ -376,44 +376,48 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               }
             } else {
               // Si ya existe, nos aseguramos de que su estado de pausa, inicio y restante se actualicen si el servidor manda un start time diferente
-              setTimers(prev => prev.map(t => {
-                if (t.servicioId === serverTimer.servicioId) {
-                  const dbStartTime = new Date(serverTimer.startTime);
-                  const dbIsPaused = serverTimer.isPaused === true;
+              setTimers(prev =>
+                prev.map(t => {
+                  if (t.servicioId === serverTimer.servicioId) {
+                    const dbStartTime = new Date(serverTimer.startTime);
+                    const dbIsPaused = serverTimer.isPaused === true;
 
-                  // Si cambiaron datos clave, actualizamos
-                  if (
-                    t.startTime.getTime() !== dbStartTime.getTime() ||
-                    t.isPaused !== dbIsPaused ||
-                    t.roomId !== serverTimer.roomId ||
-                    t.duration !== serverTimer.duration ||
-                    t.anfitrionas !== (serverTimer.anfitrionas || '')
-                  ) {
-                    const now = new Date();
-                    const elapsedSeconds = Math.floor((now.getTime() - dbStartTime.getTime()) / 1000);
+                    // Si cambiaron datos clave, actualizamos
+                    if (
+                      t.startTime.getTime() !== dbStartTime.getTime() ||
+                      t.isPaused !== dbIsPaused ||
+                      t.roomId !== serverTimer.roomId ||
+                      t.duration !== serverTimer.duration ||
+                      t.anfitrionas !== (serverTimer.anfitrionas || '')
+                    ) {
+                      const now = new Date();
+                      const elapsedSeconds = Math.floor(
+                        (now.getTime() - dbStartTime.getTime()) / 1000
+                      );
 
-                    const durationMins = Number(serverTimer.duration || 0);
-                    let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
+                      const durationMins = Number(serverTimer.duration || 0);
+                      let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
 
-                    // Grace period para desfase de reloj
-                    if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
-                      remainingSeconds = durationMins * 60;
+                      // Grace period para desfase de reloj
+                      if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
+                        remainingSeconds = durationMins * 60;
+                      }
+
+                      return {
+                        ...t,
+                        roomId: serverTimer.roomId,
+                        roomName: serverTimer.roomName,
+                        duration: durationMins,
+                        isPaused: dbIsPaused,
+                        startTime: dbStartTime,
+                        remainingTime: remainingSeconds,
+                        anfitrionas: serverTimer.anfitrionas || ''
+                      };
                     }
-
-                    return {
-                      ...t,
-                      roomId: serverTimer.roomId,
-                      roomName: serverTimer.roomName,
-                      duration: durationMins,
-                      isPaused: dbIsPaused,
-                      startTime: dbStartTime,
-                      remainingTime: remainingSeconds,
-                      anfitrionas: serverTimer.anfitrionas || ''
-                    };
                   }
-                }
-                return t;
-              }));
+                  return t;
+                })
+              );
             }
           });
 
@@ -551,16 +555,23 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
           }
 
-          // Evento: Se pausó un timer de venta o servicio
           if (payload?.type === 'timer_paused' && payload?.data) {
             const { servicioId, tipoTransaccion } = payload.data;
-            console.log(`[TimerContext] SSE: Pausando timer remoto (${tipoTransaccion}):`, servicioId);
+            console.log(
+              `[TimerContext] SSE: Pausando timer remoto (${tipoTransaccion}):`,
+              servicioId
+            );
             setTimers(prev => {
-              const updated = prev.map(t =>
-                t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion
-                  ? { ...t, isPaused: true }
-                  : t
-              );
+              const updated = prev.map(t => {
+                if (
+                  t.servicioId === servicioId &&
+                  t.tipoTransaccion === (tipoTransaccion || 'servicio')
+                ) {
+                  const currentRemaining = calculateRemainingTime(t, serverOffset);
+                  return { ...t, isPaused: true, remainingTime: currentRemaining };
+                }
+                return t;
+              });
               saveTimersToStorage(updated);
               return updated;
             });
@@ -569,7 +580,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Evento: Se reanudó un timer de venta o servicio
           if (payload?.type === 'timer_resumed' && payload?.data) {
             const { servicioId, newStartTime, tipoTransaccion } = payload.data;
-            console.log(`[TimerContext] SSE: Reanudando timer remoto (${tipoTransaccion}):`, servicioId);
+            console.log(
+              `[TimerContext] SSE: Reanudando timer remoto (${tipoTransaccion}):`,
+              servicioId
+            );
             setTimers(prev => {
               const updated = prev.map(t => {
                 if (t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion) {
@@ -577,7 +591,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   const now = new Date(Date.now() + serverOffset);
                   const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
                   const remainingSeconds = Math.max(0, t.duration * 60 - elapsedSeconds);
-                  return { ...t, isPaused: false, startTime: start, remainingTime: remainingSeconds };
+                  return {
+                    ...t,
+                    isPaused: false,
+                    startTime: start,
+                    remainingTime: remainingSeconds
+                  };
                 }
                 return t;
               });
@@ -588,11 +607,25 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           // Evento: Se actualizó un timer (tiempo o habitación)
           if (payload?.type === 'timer_updated' && payload?.data) {
-            const { servicioId, duration, roomId, roomName, tipoTransaccion, startTime, anfitrionas } = payload.data;
-            console.log(`[TimerContext] SSE: Actualizando timer remoto (${tipoTransaccion}):`, servicioId);
+            const {
+              servicioId,
+              duration,
+              roomId,
+              roomName,
+              tipoTransaccion,
+              startTime,
+              anfitrionas
+            } = payload.data;
+            console.log(
+              `[TimerContext] SSE: Actualizando timer remoto (${tipoTransaccion}):`,
+              servicioId
+            );
             setTimers(prev => {
               const updated = prev.map(t => {
-                if (t.servicioId === servicioId && t.tipoTransaccion === (tipoTransaccion || 'servicio')) {
+                if (
+                  t.servicioId === servicioId &&
+                  t.tipoTransaccion === (tipoTransaccion || 'servicio')
+                ) {
                   const start = startTime ? new Date(startTime) : t.startTime;
                   const now = new Date(Date.now() + serverOffset);
                   const d = duration || t.duration;
@@ -888,37 +921,47 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   // Función para pausar el temporizador por ID de servicio (solo timers principales)
-  const pauseTimerByServicioId = useCallback((servicioId: number) => {
-    setTimers(prev => {
-      const updatedTimers = prev.map(timer => {
-        // Solo pausar timers principales (no temporales) del servicio especificado
-        if (timer.servicioId === servicioId && !timer.isTemporary) {
-          return { ...timer, isPaused: true };
-        }
-        return timer;
+  const pauseTimerByServicioId = useCallback(
+    (servicioId: number) => {
+      setTimers(prev => {
+        const updatedTimers = prev.map(timer => {
+          // Solo pausar timers principales (no temporales) del servicio especificado
+          if (timer.servicioId === servicioId && !timer.isTemporary) {
+            const currentRemaining = calculateRemainingTime(timer, serverOffset);
+            return { ...timer, isPaused: true, remainingTime: currentRemaining };
+          }
+          return timer;
+        });
+
+        return updatedTimers;
       });
 
-      return updatedTimers;
-    });
-
-    // Actualizar estado en DB a Pausado (3)
-    updateServiceStatus(servicioId, 3);
-  }, [updateServiceStatus]);
+      // Actualizar estado en DB a Pausado (3)
+      updateServiceStatus(servicioId, 3);
+    },
+    [updateServiceStatus, serverOffset]
+  );
 
   // Función para reanudar el temporizador por ID de servicio (solo timers principales)
-  const resumeTimerByServicioId = useCallback((servicioId: number) => {
-    setTimers(prev =>
-      prev.map(timer =>
-        // Solo reanudar timers principales (no temporales) del servicio especificado
-        timer.servicioId === servicioId && !timer.isTemporary
-          ? { ...timer, isPaused: false }
-          : timer
-      )
-    );
+  const resumeTimerByServicioId = useCallback(
+    (servicioId: number) => {
+      setTimers(prev =>
+        prev.map(timer => {
+          if (timer.servicioId === servicioId && !timer.isTemporary) {
+            const now = new Date(Date.now() + serverOffset);
+            const elapsedSeconds = timer.duration * 60 - timer.remainingTime;
+            const newStartTime = new Date(now.getTime() - elapsedSeconds * 1000);
+            return { ...timer, isPaused: false, startTime: newStartTime };
+          }
+          return timer;
+        })
+      );
 
-    // Actualizar estado en DB a En proceso (2)
-    updateServiceStatus(servicioId, 2);
-  }, [updateServiceStatus]);
+      // Actualizar estado en DB a En proceso (2)
+      updateServiceStatus(servicioId, 2);
+    },
+    [updateServiceStatus, serverOffset]
+  );
 
   // Función para obtener temporizador por ID de habitación
   const getTimerByRoomId = useCallback(
@@ -977,8 +1020,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const remSeconds = calculateRemainingTime(timer, serverOffset);
           const remMinutes = Math.floor(remSeconds / 60);
 
-          if ((remMinutes === 5 || remMinutes === 1) && timer.lastAnnouncedMinute !== remMinutes && remSeconds > 0) {
-            announceVoice(`Atención: quedan ${remMinutes} minuto${remMinutes > 1 ? 's' : ''} en ${timer.roomName}`);
+          if (
+            (remMinutes === 5 || remMinutes === 1) &&
+            timer.lastAnnouncedMinute !== remMinutes &&
+            remSeconds > 0
+          ) {
+            announceVoice(
+              `Atención: quedan ${remMinutes} minuto${remMinutes > 1 ? 's' : ''} en ${timer.roomName}`
+            );
             // Actualizar localmente el minuto anunciado para no repetir
             timer.lastAnnouncedMinute = remMinutes;
           }
@@ -1018,13 +1067,26 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // Aplicar auto-pausa/reanudación si aplica
             if (!timer.isTemporary) {
               const hasActiveTemp = prev.some(
-                t => t.servicioId === timer.servicioId && t.isTemporary && t.isActive && calculateRemainingTime(t, serverOffset) > 0
+                t =>
+                  t.servicioId === timer.servicioId &&
+                  t.isTemporary &&
+                  t.isActive &&
+                  calculateRemainingTime(t, serverOffset) > 0
               );
               if (hasActiveTemp && !timer.isPaused) {
-                return { ...timer, isPaused: true, pausedByTemp: true };
+                const currentRemaining = calculateRemainingTime(timer, serverOffset);
+                return {
+                  ...timer,
+                  isPaused: true,
+                  pausedByTemp: true,
+                  remainingTime: currentRemaining
+                };
               }
               if (!hasActiveTemp && timer.isPaused && timer.pausedByTemp) {
-                return { ...timer, isPaused: false, pausedByTemp: false };
+                const now = new Date(Date.now() + serverOffset);
+                const elapsedSeconds = timer.duration * 60 - (timer.remainingTime || 0);
+                const newStartTime = new Date(now.getTime() - elapsedSeconds * 1000);
+                return { ...timer, isPaused: false, pausedByTemp: false, startTime: newStartTime };
               }
             }
 
@@ -1179,7 +1241,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // Pausar el timer principal del mismo servicio
             if (timer.servicioId === servicioId && !timer.isTemporary) {
               console.log(`⏸️ Pausando timer principal ${timer.id} por timer temporal`);
-              return { ...timer, isPaused: true };
+              const currentRemaining = calculateRemainingTime(timer, serverOffset);
+              return { ...timer, isPaused: true, remainingTime: currentRemaining };
             }
             return timer;
           })
@@ -1246,7 +1309,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cancelText={modalState.cancelText}
         hideCancel={modalState.hideCancel}
         type={modalState.type}
-        onConfirm={modalState.onConfirm || (() => { })}
+        onConfirm={modalState.onConfirm || (() => {})}
         onCancel={modalState.onCancel}
         confirmVariant={modalState.confirmVariant}
         cancelVariant={modalState.cancelVariant}

@@ -38,7 +38,10 @@ export function RoomFilters({
   showTableView
 }: RoomFiltersProps) {
   // Opciones diferentes según el modo de visualización
-  const pageSizeOptions = showTableView ? [5, 10, 20, 40] : [8, 16, 24, 48];
+  const pageSizeOptions = React.useMemo(
+    () => (showTableView ? [5, 10, 20, 40] : [8, 16, 24, 48]),
+    [showTableView]
+  );
 
   const handlePageSizeChange = (value: number) => {
     setPageSize(value);

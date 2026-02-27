@@ -33,58 +33,48 @@ export default function ServiceFilters({
   };
 
   // Verificar si hay filtros activos
-  const hasActiveFilters = searchTerm.trim() !== "";
+  const hasActiveFilters = searchTerm.trim() !== '';
 
   return (
-    <Card className="mb-4 sm:mb-6 shadow-sm">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-center">
-          {/* Búsqueda */}
-          <div className="flex-1">
-            <SearchInput
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder='Buscar servicios...'
-              className='w-full text-sm sm:text-base'
-            />
-          </div>
+    <div className='mb-6'>
+      <div className='flex flex-col md:flex-row gap-4 items-stretch md:items-center'>
+        {/* Búsqueda */}
+        <div className='flex-1 group'>
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder='Buscar servicios por código, cliente o anfitriona...'
+            className='w-full'
+          />
+        </div>
 
-          {/* Botón de filtro */}
-          <div className="flex-shrink-0">
-            <Button
-              onClick={showAllServices ? onShowActiveServices : onShowAllServices}
-              variant='outline'
-              className='w-full sm:w-auto whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
-            >
-              {showAllServices ? 'Mostrar Activos' : 'Mostrar Terminados'}
-            </Button>
-          </div>
-
-          {/* Elementos por página */}
-          <div className="flex-shrink-0">
+        {/* Controles de Vista de Página */}
+        <div className='flex flex-wrap items-center gap-3'>
+          <div className='flex items-center gap-2 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm'>
+            <span className='pl-2 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest'>
+              Mostrar
+            </span>
             <SelectElements
               value={itemsPerPage}
               onChange={handleItemsPerPageChange}
               options={[8, 16, 24, 48]}
-              label=""
+              label=''
             />
           </div>
 
-          {/* Botón limpiar filtros - Solo aparece cuando hay filtros activos */}
+          {/* Botón limpiar filtros */}
           {hasActiveFilters && (
-            <div className="flex-shrink-0">
-              <Button
-                onClick={() => setSearchTerm("")}
-                size="sm"
-                variant="outline"
-                className="w-full sm:w-auto rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
-              >
-                Limpiar
-              </Button>
-            </div>
+            <Button
+              onClick={() => setSearchTerm('')}
+              variant='outline'
+              className='h-10 px-4 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 gap-2 border-red-100 dark:border-red-900/30'
+            >
+              <div className='w-1.5 h-1.5 rounded-full bg-red-500' />
+              Limpiar
+            </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
