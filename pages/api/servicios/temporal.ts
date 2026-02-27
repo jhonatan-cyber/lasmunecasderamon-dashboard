@@ -30,8 +30,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       clientes: clientesArray
     } = req.body;
 
-
-
     // Validaciones
     if (precio_servicio === undefined || precio_servicio === null || !tiempo) {
       return res.status(400).json({
@@ -53,7 +51,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Validar si el cliente existe antes de insertar, permitir NULL si no existe
     let clienteIdFinal = null;
     if (cliente_id) {
-      const clienteExistsSql = 'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
+      const clienteExistsSql =
+        'SELECT id_cliente FROM clientes WHERE id_cliente = ? AND estado = 1';
       const clienteExistsResult = (await query(clienteExistsSql, [cliente_id])) as any[];
 
       if (clienteExistsResult && clienteExistsResult.length > 0) {
@@ -62,7 +61,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         clienteIdFinal = null;
       }
     } else {
-
       clienteIdFinal = null;
     }
 
@@ -78,7 +76,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     let totalFinal = totalNum;
     let ivaFinal = ivaNum;
 
-    if (metodo_pago === "tarjeta") {
+    if (metodo_pago === 'tarjeta') {
       if (!ivaFinal && subTotalNum) {
         ivaFinal = Math.floor(subTotalNum * 0.2);
       }
@@ -92,35 +90,35 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const cajaAbiertaResult = (await query(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     )) as any[];
-    const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
-
-    // Pausar el servicio original si se proporcionó
-    if (servicio_original_id) {
-      await query('UPDATE servicios SET estado = 3, paused_at = NOW() WHERE id_servicio = ?', [servicio_original_id]);
-      console.log(`[TEMPORAL] Servicio original ${servicio_original_id} pausado en BD`);
-
-      await addServicioLog(
-        Number(servicio_original_id),
-        'PAUSA',
-        'Servicio pausado automáticamente por inicio de servicio temporal (consumo/champaña).',
-        currentUser?.id
-      );
-
-      // Notificar pausa del servicio original vía SSE
-      sendNotificationToAll('timer_paused', {
-        servicioId: Number(servicio_original_id),
-        tipoTransaccion: 'servicio'
-      });
-    }
+    const cajaId =
+      cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
 
     let cajaActualizada = false;
 
     // Crear servicio nuevo usando transacción (igual que un servicio normal)
     const result = await withTransaction(async connection => {
+      // Pausar el servicio original si se proporcionó (dentro de la transacción)
+      if (servicio_original_id) {
+        await connection(
+          'UPDATE servicios SET estado = 3, paused_at = NOW() WHERE id_servicio = ?',
+          [servicio_original_id]
+        );
+        console.log(
+          `[TEMPORAL] Servicio original ${servicio_original_id} pausado en BD (transacción)`
+        );
+
+        await addServicioLog(
+          Number(servicio_original_id),
+          'PAUSA',
+          'Servicio pausado automáticamente por inicio de servicio temporal (consumo/champaña).',
+          currentUser?.id
+        );
+      }
+
       let comisionTotalPorAnfitriona = 0;
 
       // Insertar servicio nuevo (completamente normal en BD)
-      const servicioResult: any = await query(
+      const servicioResult: any = await connection(
         `INSERT INTO servicios (
            codigo, cliente_id, habitacion_id, precio_habitacion, 
            precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado
@@ -149,90 +147,92 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // Insertar detalles de clientes (si hay múltiples)
       if (clientesArray && Array.isArray(clientesArray) && clientesArray.length > 0) {
         for (const cId of clientesArray) {
-          await query('INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)', [
-            servicioId,
-            cId
-          ]);
+          await connection(
+            'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
+            [servicioId, cId]
+          );
         }
       } else if (clienteIdFinal) {
         // Si no hay array pero hay uno principal, insertarlo también en detalle para consistencia
-        await query('INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)', [
-          servicioId,
-          clienteIdFinal
-        ]);
+        await connection(
+          'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
+          [servicioId, clienteIdFinal]
+        );
       }
 
       for (const usuarioId of usuarios) {
-        await query('INSERT INTO detalle_servicios (usuario_id, servicio_id) VALUES (?, ?)', [
+        await connection('INSERT INTO detalle_servicios (usuario_id, servicio_id) VALUES (?, ?)', [
           usuarioId,
           servicioId
         ]);
 
-        await query('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [usuarioId]);
+        await connection('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [usuarioId]);
       }
-      let comisionHabitacion = 0;
-      let tieneComision = false;
-      if (habitacion_id) {
-        const habitacionResult = (await query(
-          'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
-          [habitacion_id]
-        )) as any[];
-        if (habitacionResult && habitacionResult.length > 0 && habitacionResult[0].comision_anfitriona) {
-          comisionHabitacion = habitacionResult[0].comision_anfitriona;
-          tieneComision = comisionHabitacion > 0;
-
+      // Registrar comisiones para cada anfitriona
+      if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
+        // Obtener la comisión de la habitación (comision_anfitriona)
+        let comisionHabitacionBase = 0;
+        if (habitacion_id) {
+          const habitacionResult = (await connection(
+            'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+            [habitacion_id]
+          )) as any[];
+          if (
+            habitacionResult &&
+            habitacionResult.length > 0 &&
+            habitacionResult[0].comision_anfitriona
+          ) {
+            comisionHabitacionBase = Number(habitacionResult[0].comision_anfitriona);
+          }
         }
-      }
-      const nuevoPrecioServicio = (precioServicioFinal || 0) * usuarios.length;
-      await query('UPDATE servicios SET precio_servicio = ? WHERE id_servicio = ?', [
-        nuevoPrecioServicio,
-        servicioId
-      ]);
 
-      if (tieneComision) {
-        const comisionServicioPorAnfitriona = Math.floor(nuevoPrecioServicio / usuarios.length);
-        const comisionHabitacionPorAnfitriona = Math.floor(comisionHabitacion / usuarios.length);
-        comisionTotalPorAnfitriona = comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
-        const totalConComision = (precio_habitacion || 0) + nuevoPrecioServicio + (ivaFinal || 0);
-        await query('UPDATE servicios SET total = ? WHERE id_servicio = ?', [
-          totalConComision,
-          servicioId
-        ]);
-        for (const usuarioId of usuarios) {
-          const comisionResult: any = await query(
-            `INSERT INTO comisiones (
-                    venta_id,
-                    servicio_id,
-                    monto
-                  ) VALUES (?, ?, ?)`,
+        // El precio de servicio siempre se multiplica por el número de anfitrionas en la base de datos
+        const nuevoPrecioServicio = (precioServicioFinal || 0) * usuarios.length;
+
+        if (comisionHabitacionBase > 0) {
+          // REGLA: Si la habitación tiene comisión
+          const precioHabitacionOriginal = precio_habitacion || 0;
+          const comisionServicioIndiv = Number(precioServicioFinal || 0);
+          const comisionHabitacionIndiv = Math.floor(comisionHabitacionBase / usuarios.length);
+          comisionTotalPorAnfitriona = comisionServicioIndiv + comisionHabitacionIndiv;
+
+          const totalConComision = precioHabitacionOriginal + nuevoPrecioServicio + (ivaFinal || 0);
+          await connection(
+            'UPDATE servicios SET precio_servicio = ?, precio_habitacion = ?, total = ? WHERE id_servicio = ?',
+            [nuevoPrecioServicio, precioHabitacionOriginal, totalConComision, servicioId]
+          );
+        } else {
+          // REGLA: Si la habitación NO tiene comisión
+          const nuevoPrecioHabitacion = (precio_habitacion || 0) * usuarios.length;
+          comisionTotalPorAnfitriona = Number(precioServicioFinal || 0);
+
+          await connection(
+            'UPDATE servicios SET precio_servicio = ?, precio_habitacion = ?, total = ? WHERE id_servicio = ?',
             [
-              null,
-              servicioId,
-              comisionTotalPorAnfitriona
+              nuevoPrecioServicio,
+              nuevoPrecioHabitacion,
+              nuevoPrecioHabitacion + nuevoPrecioServicio + (ivaFinal || 0),
+              servicioId
             ]
           );
-
-          const comisionId = comisionResult.insertId;
-          await query(
-            `INSERT INTO detalle_comisiones (
-                    comision_id,
-                    usuario_id,
-                    comision
-                  ) VALUES (?, ?, ?)`,
-            [comisionId, usuarioId, comisionTotalPorAnfitriona]
-          );
         }
-      } else {
-        const nuevoPrecioHabitacion = (precio_habitacion || 0) * usuarios.length;
-        await query('UPDATE servicios SET precio_habitacion = ?, total = ? WHERE id_servicio = ?', [
-          nuevoPrecioHabitacion,
-          (nuevoPrecioHabitacion + nuevoPrecioServicio + (ivaFinal || 0)),
-          servicioId
-        ]);
 
+        // Registrar las comisiones en BD siempre que el monto sea mayor a 0
+        if (comisionTotalPorAnfitriona > 0) {
+          for (const usuarioId of usuarios) {
+            const comisionResult: any = await connection(
+              `INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)`,
+              [0, servicioId, comisionTotalPorAnfitriona]
+            );
+            await connection(
+              `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)`,
+              [comisionResult.insertId, usuarioId, comisionTotalPorAnfitriona]
+            );
+          }
+        }
       }
 
-      const cajaActiva = (await query(
+      const cajaActiva = (await connection(
         'SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1'
       )) as any[];
 
@@ -257,8 +257,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             montoEfectivo = totalFinal;
         }
 
-
-        await query(
+        await connection(
           `UPDATE cajas SET 
                   servicio = servicio + ?,
                   efectivo = efectivo + ?,
@@ -288,23 +287,43 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
     // Obtener datos para la notificación del nuevo servicio
-    const roomNameData = (await query('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+    const roomNameData = (await query('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [
+      habitacion_id
+    ])) as any[];
     const roomName = roomNameData[0]?.nombre || `Habitación ${habitacion_id}`;
 
     let clienteNombreResult = 'Cliente';
     if (clienteIdFinal) {
-      const clienteData = (await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteIdFinal])) as any[];
-      if (clienteData[0]) clienteNombreResult = `${clienteData[0].nombre} ${clienteData[0].apellido}`;
+      const clienteData = (await query(
+        'SELECT nombre, apellido FROM clientes WHERE id_cliente = ?',
+        [clienteIdFinal]
+      )) as any[];
+      if (clienteData[0])
+        clienteNombreResult = `${clienteData[0].nombre} ${clienteData[0].apellido}`;
     }
 
     let anfitrionasNicksResult = '';
     if (usuarios && usuarios.length > 0) {
-      const usersData = (await query(`SELECT nick FROM usuarios WHERE id_usuario IN (${usuarios.map(() => '?').join(',')})`, usuarios)) as any[];
+      const usersData = (await query(
+        `SELECT nick FROM usuarios WHERE id_usuario IN (${usuarios.map(() => '?').join(',')})`,
+        usuarios
+      )) as any[];
       anfitrionasNicksResult = usersData.map((u: any) => u.nick).join(', ');
     }
 
     const waiterNickResult = currentUser?.username || 'Cajero';
-    const habitacionComisionResult = (await query('SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+    const habitacionComisionResult = (await query(
+      'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+      [habitacion_id]
+    )) as any[];
+
+    // Notificar si se pausó el servicio original
+    if (servicio_original_id) {
+      sendNotificationToAll('timer_paused', {
+        servicioId: Number(servicio_original_id),
+        tipoTransaccion: 'servicio'
+      });
+    }
 
     // Notificar inicio del servicio temporal vía SSE
     sendNotificationToAll('timer_started', {
@@ -341,7 +360,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: 'Error al crear servicio',

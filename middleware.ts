@@ -21,6 +21,7 @@ const PUBLIC_PATHS = [
   '/api/auth/check-users',
   '/api/auth/check-permission',
   '/api/auth/register-first-user',
+  '/api/test-auth',
   '/api/health',
   '/api/reviews/create',
   '/api/whatsapp/webhook',
@@ -239,12 +240,6 @@ export async function proxy(request: NextRequest) {
   });
 
   if (isPublicPath) {
-    const token = request.cookies.get('token');
-
-    if (pathname === '/login' && token) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
     return addApiHeaders(NextResponse.next());
   }
 
@@ -255,10 +250,10 @@ export async function proxy(request: NextRequest) {
 
   if (!token) {
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json(
+      return addApiHeaders(NextResponse.json(
         { success: false, message: 'No autenticado', code: 'NO_TOKEN' },
         { status: 401 }
-      );
+      ));
     }
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
@@ -269,10 +264,10 @@ export async function proxy(request: NextRequest) {
   const payload = await verifyToken(token);
   if (!payload) {
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json(
+      return addApiHeaders(NextResponse.json(
         { success: false, message: 'Token inválido', code: 'INVALID_TOKEN' },
         { status: 401 }
-      );
+      ));
     }
     return NextResponse.redirect(new URL('/login', request.url));
   }
@@ -282,7 +277,7 @@ export async function proxy(request: NextRequest) {
 
   // 5. Administrador tiene acceso a todo
   if (userRole === 'administrador') {
-    return NextResponse.next();
+    return addApiHeaders(NextResponse.next());
   }
 
   // 6. Verificar permisos para rutas de páginas
@@ -304,7 +299,7 @@ export async function proxy(request: NextRequest) {
 
       // El dashboard es accesible para todos los usuarios autenticados
       if (module === 'dashboard') {
-        return NextResponse.next();
+        return addApiHeaders(NextResponse.next());
       }
 
       const hasPermission = await checkUserPermission(userId, module, action, request);
@@ -333,7 +328,7 @@ export async function proxy(request: NextRequest) {
 
     if (isAuthenticatedOnlyApi || isUsersApi || isOwnPermissionsApi) {
       // Solo requiere autenticación, no permisos específicos
-      return NextResponse.next();
+      return addApiHeaders(NextResponse.next());
     }
 
     const requiredPermission = Object.entries(apiRoutePermissions).find(([route]) =>
@@ -351,14 +346,14 @@ export async function proxy(request: NextRequest) {
       const hasPermission = await checkUserPermission(userId, module, requiredAction, request);
 
       if (!hasPermission) {
-        return NextResponse.json(
+        return addApiHeaders(NextResponse.json(
           {
             success: false,
             message: 'No tienes permisos para esta acción',
             code: 'INSUFFICIENT_PERMISSIONS'
           },
           { status: 403 }
-        );
+        ));
       }
     }
   }

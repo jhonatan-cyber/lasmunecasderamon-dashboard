@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { sendNotificationToAll } from './notifications/sse';
 import { notifyOrderProcessed } from './orders/sse';
+import { withTransaction } from '@/lib/transactionUtils';
+import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
 /**
  * Busca si una anfitriona está actualmente en una venta con habitación y temporizador activo
@@ -42,12 +44,11 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
     }
     return null;
   } catch {
-
     return null;
   }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
 
   switch (method) {
@@ -64,10 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
+export default withAuth(handler);
+
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   try {
-
-
     const {
       tipo = 'lista',
       page = '1',
@@ -85,7 +86,6 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       return await handleGetLista(req, res);
     }
   } catch (error) {
-
     // Guardar error en base de datos
     try {
       await query(`
@@ -160,8 +160,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     const countResult = (await query(countSql, params)) as any[];
     const total = countResult[0]?.total || 0;
 
-
-
     const salesSql = `
       SELECT 
         v.id_venta, 
@@ -224,12 +222,8 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       LIMIT ${limitNum} OFFSET ${offset}
     `;
 
-
-
     const salesResult = (await query(salesSql, params)) as any[];
     const totalPages = Math.ceil(total / limitNum);
-
-
 
     const processedSales = await Promise.all(
       salesResult.map(async venta => {
@@ -283,8 +277,6 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-
-
     // Guardar error en base de datos
     try {
       await query(`
@@ -308,7 +300,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
         ]
       );
     } catch (logError) {
-      throw logError
+      throw logError;
     }
 
     return res.status(500).json({
@@ -410,6 +402,9 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const currentUser = getCurrentUser(req);
+    const createdBy = currentUser?.id || 1;
+
     let {
       total,
       detalles,
@@ -437,8 +432,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       return precio >= 30000 && tieneAnfitrionas;
     });
 
-
-
     if (tieneProductosEspeciales && usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
       for (const usuarioId of usuarios) {
         const ventaActiva = await buscarVentaActivaConHabitacion(usuarioId);
@@ -446,7 +439,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         if (ventaActiva) {
           if (!habitacion_id) {
             habitacion_id = ventaActiva.habitacion_id;
-
           }
           if (!tiempo || tiempo === 0) {
             tiempo = ventaActiva.tiempo;
@@ -455,7 +447,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         }
       }
     }
-
 
     const generateCode = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -476,7 +467,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
       if (clienteExistsResult && clienteExistsResult.length > 0) {
         clienteIdFinal = cliente_id;
-
       }
     }
 
@@ -493,157 +483,170 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const estadoVenta = habitacion_id && tiempo && tiempo > 0 ? 2 : 1;
 
-    const insertVentaSql = `
-      INSERT INTO ventas (
-        codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const ventaResult = (await query(insertVentaSql, [
-      codigoVenta,
-      clienteIdFinal,
-      pedido_id || null,
-      habitacion_id || null,
-      metodo_pago,
-      propina,
-      sub_total || 0,
-      total,
-      totalComision,
-      tiempo || 0,
-      cajaId,
-      1, // Por ahora usar ID 1 como created_by, después se puede obtener del token de autenticación
-      estadoVenta
-    ])) as any;
-
-    const ventaId = ventaResult.insertId;
-
-    for (const detalle of detalles) {
-      const insertDetalleVentaSql = `
-        INSERT INTO detalle_ventas (
-          venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    const result = await withTransaction(async connection => {
+      // 1. Insertar la venta
+      const insertVentaSql = `
+        INSERT INTO ventas (
+          codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      const comisionPorUnidad = (detalle.comision || 0) / (detalle.cantidad || 1);
-      const subTotalProducto = detalle.sub_total || detalle.precio * detalle.cantidad;
+      const ventaResult = (await connection(insertVentaSql, [
+        codigoVenta,
+        clienteIdFinal,
+        pedido_id || null,
+        habitacion_id || null,
+        metodo_pago,
+        propina,
+        sub_total || 0,
+        total,
+        totalComision,
+        tiempo || 0,
+        cajaId,
+        createdBy,
+        estadoVenta
+      ])) as any;
 
-      await query(insertDetalleVentaSql, [
-        ventaId,
-        detalle.producto_id,
-        detalle.precio,
-        comisionPorUnidad,
-        detalle.cantidad,
-        subTotalProducto,
-        detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 1
-          ? null
-          : detalle.hostess_id || null
-      ]);
-    }
+      const ventaId = ventaResult.insertId;
 
-    if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
-      for (const usuarioId of usuarios) {
-        const insertVentaUsuarioSql = `
-          INSERT INTO ventas_usuarios (venta_id, usuario_id) VALUES (?, ?)
-        `;
-        await query(insertVentaUsuarioSql, [ventaId, usuarioId]);
-      }
-    }
-
-    if (totalComision > 0) {
-      // Agrupar comisiones por anfitriona
-      const comisionesPorAnfitriona = new Map<number, number>();
-
+      // 2. Insertar detalles de venta
       for (const detalle of detalles) {
-        const comision = detalle.comision || 0;
-        if (comision <= 0) continue;
+        const insertDetalleVentaSql = `
+          INSERT INTO detalle_ventas (
+            venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
 
-        let hostessesParaEsteProducto: number[] = [];
+        const comisionPorUnidad = (detalle.comision || 0) / (detalle.cantidad || 1);
+        const subTotalProducto = detalle.sub_total || detalle.precio * detalle.cantidad;
 
-        if (detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 0) {
-          hostessesParaEsteProducto = detalle.hostesses.map((id: any) => parseInt(id));
-        } else if (detalle.hostess_id) {
-          hostessesParaEsteProducto = [parseInt(detalle.hostess_id)];
+        await connection(insertDetalleVentaSql, [
+          ventaId,
+          detalle.producto_id,
+          detalle.precio,
+          comisionPorUnidad,
+          detalle.cantidad,
+          subTotalProducto,
+          detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 1
+            ? null
+            : detalle.hostess_id || null
+        ]);
+      }
+
+      // 3. Insertar vinculación con usuarios (anfitrionas)
+      if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
+        for (const usuarioId of usuarios) {
+          const insertVentaUsuarioSql = `
+            INSERT INTO ventas_usuarios (venta_id, usuario_id) VALUES (?, ?)
+          `;
+          await connection(insertVentaUsuarioSql, [ventaId, usuarioId]);
+        }
+      }
+
+      // 4. Registrar comisiones
+      if (totalComision > 0) {
+        const comisionesPorAnfitriona = new Map<number, number>();
+
+        for (const detalle of detalles) {
+          const comision = detalle.comision || 0;
+          if (comision <= 0) continue;
+
+          let hostessesParaEsteProducto: number[] = [];
+
+          if (
+            detalle.hostesses &&
+            Array.isArray(detalle.hostesses) &&
+            detalle.hostesses.length > 0
+          ) {
+            hostessesParaEsteProducto = detalle.hostesses.map((id: any) => parseInt(id));
+          } else if (detalle.hostess_id) {
+            hostessesParaEsteProducto = [parseInt(detalle.hostess_id)];
+          }
+
+          if (hostessesParaEsteProducto.length > 0) {
+            const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
+            for (const hId of hostessesParaEsteProducto) {
+              const actual = comisionesPorAnfitriona.get(hId) || 0;
+              comisionesPorAnfitriona.set(hId, actual + montoPorAnfitriona);
+            }
+          }
         }
 
-        if (hostessesParaEsteProducto.length > 0) {
-          const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
-          for (const hId of hostessesParaEsteProducto) {
-            const actual = comisionesPorAnfitriona.get(hId) || 0;
-            comisionesPorAnfitriona.set(hId, actual + montoPorAnfitriona);
+        for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
+          if (monto > 0) {
+            const comisionResult: any = await connection(
+              `INSERT INTO comisiones (
+                venta_id,
+                servicio_id,
+                monto
+              ) VALUES (?, ?, ?)`,
+              [ventaId, 0, monto]
+            );
+
+            const comisionId = comisionResult.insertId;
+
+            await connection(
+              `INSERT INTO detalle_comisiones (
+                comision_id,
+                usuario_id,
+                comision
+              ) VALUES (?, ?, ?)`,
+              [comisionId, usuarioId, monto]
+            );
           }
         }
       }
 
-      for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
-        if (monto > 0) {
-          const comisionResult: any = await query(
-            `INSERT INTO comisiones (
-              venta_id,
-              servicio_id,
-              monto
-            ) VALUES (?, ?, ?)`,
-            [ventaId, null, monto]
-          );
+      // 5. Actualizar la caja activa
+      const cajaActiva = (await connection(
+        'SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1'
+      )) as any[];
 
-          const comisionId = comisionResult.insertId;
+      if (cajaActiva && cajaActiva.length > 0) {
+        const cajaId = cajaActiva[0].id_caja;
+        let montoEfectivo = 0;
+        let montoTarjeta = 0;
+        let montoTransferencia = 0;
 
-          await query(
-            `INSERT INTO detalle_comisiones (
-              comision_id,
-              usuario_id,
-              comision
-            ) VALUES (?, ?, ?)`,
-            [comisionId, usuarioId, monto]
-          );
+        switch (metodo_pago) {
+          case 'efectivo':
+            montoEfectivo = total;
+            break;
+          case 'tarjeta':
+            montoTarjeta = total;
+            break;
+          case 'transferencia':
+            montoTransferencia = total;
+            break;
+          default:
+            montoEfectivo = total;
         }
-      }
-    }
 
-    const cajaActiva = (await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1')) as any[];
-
-    if (cajaActiva && cajaActiva.length > 0) {
-      const cajaId = cajaActiva[0].id_caja;
-
-      // Calcular el monto según el método de pago (INCLUYENDO propina)
-      let montoEfectivo = 0;
-      let montoTarjeta = 0;
-      let montoTransferencia = 0;
-
-      switch (metodo_pago) {
-        case 'efectivo':
-          montoEfectivo = total;
-          break;
-        case 'tarjeta':
-          montoTarjeta = total;
-          break;
-        case 'transferencia':
-          montoTransferencia = total;
-          break;
-        default:
-          montoEfectivo = total; // Por defecto efectivo
+        await connection(
+          `UPDATE cajas SET 
+            venta = venta + ?,
+            propina = propina + ?,
+            efectivo = efectivo + ?,
+            tarjeta = tarjeta + ?,
+            transferencia = transferencia + ?,
+            comision = comision + ?
+          WHERE id_caja = ?`,
+          [
+            total - (propina || 0),
+            propina || 0,
+            montoEfectivo,
+            montoTarjeta,
+            montoTransferencia,
+            totalComision,
+            cajaId
+          ]
+        );
       }
 
-      // Actualizar la caja con los montos correspondientes (INCLUYENDO propina)
-      await query(
-        `UPDATE cajas SET 
-          venta = venta + ?,
-          propina = propina + ?,
-          efectivo = efectivo + ?,
-          tarjeta = tarjeta + ?,
-          transferencia = transferencia + ?,
-          comision = comision + ?
-        WHERE id_caja = ?`,
-        [
-          total - (propina || 0), // ventas excluyendo propina
-          propina || 0, // propina por separado
-          montoEfectivo,
-          montoTarjeta,
-          montoTransferencia,
-          totalComision, // comisión total
-          cajaId
-        ]
-      );
-    }
+      return { ventaId };
+    });
+
+    const ventaId = result.ventaId;
 
     const ventaCompletaSql = `
       SELECT 
@@ -683,11 +686,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             : `Habitación ${habitacion_id}`;
 
         try {
-          const roomInfoDb = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+          const roomInfoDb = (await query(
+            'SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?',
+            [habitacion_id]
+          )) as any[];
           let isFreeRoom = false;
           if (roomInfoDb.length > 0) {
             const room = roomInfoDb[0];
-            isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+            isFreeRoom =
+              !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
           }
           if (!isFreeRoom) {
             await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
@@ -723,7 +730,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         const hayTemporizadorActivo = ventasActivasEnHabitacion[0]?.count > 0;
 
         if (hayTemporizadorActivo) {
-
           const ventaAnterior = (await query(
             `
             SELECT id_venta, codigo
@@ -764,7 +770,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
                   await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [
                     anfitriona.usuario_id
                   ]);
-
                 }
               }
             }
@@ -776,10 +781,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
               reason: 'Nueva venta en la misma habitación',
               tipoTransaccion: 'venta'
             });
-
           }
         }
-
 
         sendNotificationToAll('timer_started', {
           servicioId: ventaId,
@@ -787,7 +790,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           roomId: habitacion_id,
           roomName: nombreHabitacion,
           duration: tiempo,
-          startTime: ventaCompleta?.fecha_crea ? new Date(ventaCompleta.fecha_crea).toISOString() : new Date().toISOString(),
+          startTime: ventaCompleta?.fecha_crea
+            ? new Date(ventaCompleta.fecha_crea).toISOString()
+            : new Date().toISOString(),
           clienteNombre: ventaCompleta?.cliente_nombre
             ? `${ventaCompleta.cliente_nombre} ${ventaCompleta.cliente_apellido}`
             : 'Cliente',
@@ -804,7 +809,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           waiter_name: ventaCompleta?.cajero_nick || 'Cajero',
           created_at: ventaCompleta?.fecha_crea
         });
-
       } catch (notificacionError) {
         throw notificacionError;
       }

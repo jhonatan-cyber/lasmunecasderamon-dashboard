@@ -115,10 +115,10 @@ function ConfirmarAnulacionContent() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
         <div className='text-center'>
-          <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4' />
-          <p>Cargando solicitud de anulación...</p>
+          <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100' />
+          <p className='text-gray-900 dark:text-gray-100'>Cargando solicitud de anulación...</p>
         </div>
       </div>
     );
@@ -126,10 +126,10 @@ function ConfirmarAnulacionContent() {
 
   if (error) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
         <Card className='w-full max-w-md'>
           <CardHeader>
-            <CardTitle className='text-red-600'>Error</CardTitle>
+            <CardTitle className='text-red-600 dark:text-red-400'>Error</CardTitle>
           </CardHeader>
           <CardContent>
             <Alert>
@@ -146,7 +146,7 @@ function ConfirmarAnulacionContent() {
 
   if (!solicitud) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
         <Card className='w-full max-w-md'>
           <CardHeader>
             <CardTitle>Solicitud no encontrada</CardTitle>
@@ -164,50 +164,50 @@ function ConfirmarAnulacionContent() {
 
   return (
     <>
-      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950'>
         <Card className='w-full max-w-lg'>
           <CardHeader className='text-center'>
-            <CardTitle className='text-2xl font-bold text-gray-900 mb-2'>
+            <CardTitle className='text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2'>
               Confirmar Anulación de Venta
             </CardTitle>
-            <p className='text-gray-600 text-md'>Revisa los detalles y confirma tu decisión</p>
+            <p className='text-gray-600 dark:text-gray-400 text-md'>Revisa los detalles y confirma tu decisión</p>
           </CardHeader>
 
           <CardContent className='space-y-6'>
             {/* Detalles de la venta */}
-            <div className='bg-blue-50 p-4 rounded-lg'>
-              <h4 className='font-semibold text-blue-900 mb-3'>Detalles de la Venta</h4>
+            <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
+              <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>Detalles de la Venta</h4>
               <div className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
-                  <span className='font-medium'>Código:</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Código:</span>
                   <Badge variant='outline'>{solicitud.codigo}</Badge>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium'>Cliente:</span>
-                  <span>{solicitud.cliente_nombre}</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Cliente:</span>
+                  <span className='text-gray-900 dark:text-gray-100'>{solicitud.cliente_nombre}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium'>Total:</span>
-                  <span className='font-bold text-green-600'>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Total:</span>
+                  <span className='font-bold text-green-600 dark:text-green-400'>
                     ${solicitud.total?.toLocaleString('es-ES')}
                   </span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium'>Solicitado por:</span>
-                  <span>{solicitud.solicitado_por}</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Solicitado por:</span>
+                  <span className='text-gray-900 dark:text-gray-100'>{solicitud.solicitado_por}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium'>Fecha:</span>
-                  <span>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-ES')}</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Fecha:</span>
+                  <span className='text-gray-900 dark:text-gray-100'>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-ES')}</span>
                 </div>
               </div>
             </div>
 
             {/* Motivo de anulación */}
             {solicitud.motivo && solicitud.motivo !== 'Motivo no especificado' && (
-              <div className='bg-yellow-50 p-4 rounded-lg'>
-                <h3 className='font-semibold text-yellow-900 mb-2'>Motivo de Anulación</h3>
-                <p className='text-sm text-yellow-800'>{solicitud.motivo}</p>
+              <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800'>
+                <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>Motivo de Anulación</h3>
+                <p className='text-sm text-yellow-800 dark:text-yellow-200'>{solicitud.motivo}</p>
               </div>
             )}
 
@@ -219,7 +219,7 @@ function ConfirmarAnulacionContent() {
                   disabled={processing}
                   variant='outline'
                   size='sm'
-                  className='rounded-full  hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
+                  className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white dark:hover:bg-red-500'
                 >
                   {processing ? <Loader2 className='animate-spin' /> : <XCircle />}
                   Rechazar
@@ -230,7 +230,7 @@ function ConfirmarAnulacionContent() {
                   disabled={processing}
                   size='sm'
                   variant='outline'
-                  className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
+                  className='bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 transition-all duration-200'
                 >
                   {processing ? <Loader2 className=' animate-spin ' /> : <CheckCircle />}
                   Aceptar
@@ -239,8 +239,8 @@ function ConfirmarAnulacionContent() {
             </div>
 
             {/* Información sobre cierre automático */}
-            <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
-              <p className='text-sm text-blue-800 text-center'>
+            <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
+              <p className='text-sm text-blue-800 dark:text-blue-200 text-center'>
                 <strong>ℹ️ Información:</strong> Después de procesar la anulación, esta ventana se
                 cerrará automáticamente.
               </p>
@@ -257,11 +257,11 @@ function ConfirmarAnulacionContent() {
 export default function ConfirmarAnulacionPage() {
   return (
     <Suspense fallback={
-      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950'>
         <Card className='w-full max-w-lg'>
           <CardContent className='text-center py-8'>
-            <Loader2 className='animate-spin mx-auto mb-4' />
-            <p>Cargando...</p>
+            <Loader2 className='animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100' />
+            <p className='text-gray-900 dark:text-gray-100'>Cargando...</p>
           </CardContent>
         </Card>
       </div>

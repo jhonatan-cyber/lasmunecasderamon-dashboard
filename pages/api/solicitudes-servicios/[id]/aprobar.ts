@@ -41,12 +41,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const result = await withTransaction(async (connection) => {
+    const result = await withTransaction(async connection => {
       // 1. Obtener la solicitud
-      const solicitudes = await query(
+      const solicitudes = (await connection(
         'SELECT * FROM solicitudes_servicios WHERE id_solicitud = ? FOR UPDATE',
         [id]
-      ) as any[];
+      )) as any[];
 
       if (solicitudes.length === 0) {
         throw new Error('Solicitud no encontrada');
@@ -58,17 +58,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       const habitacionIdFinal = habitacionIdOverride || solicitud.habitacion_id;
-      const anfitrionasIds = typeof solicitud.anfitrionas_ids === 'string'
-        ? JSON.parse(solicitud.anfitrionas_ids)
-        : solicitud.anfitrionas_ids;
+      const anfitrionasIds =
+        typeof solicitud.anfitrionas_ids === 'string'
+          ? JSON.parse(solicitud.anfitrionas_ids)
+          : solicitud.anfitrionas_ids;
 
       const codigo = solicitud.codigo || generateUniqueCode();
 
       // 2. Obtener caja abierta
-      const cajaAbiertaResult = (await query(
+      const cajaAbiertaResult = (await connection(
         'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
       )) as any[];
-      const cajaId = cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
+      const cajaId =
+        cajaAbiertaResult && cajaAbiertaResult.length > 0 ? cajaAbiertaResult[0].id_caja : null;
 
       if (!cajaId) {
         throw new Error('No hay una caja abierta para procesar este servicio.');
@@ -81,7 +83,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       const multiplicador = tiempo === 60 ? 2 : 1;
       const tieneComision = (solicitud.comision_anfitriona || 0) > 0;
 
-      const precioServicioBase = tieneComision ? 0 : (solicitud.precio_servicio || 0);
+      const precioServicioBase = tieneComision ? 0 : solicitud.precio_servicio || 0;
       const precioServicioIndividual = precioServicioBase * multiplicador;
       const precioHabitacionBase = solicitud.precio_habitacion || 0;
 
@@ -106,15 +108,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       let comisionPorAnfitriona = 0;
-      if (tieneComision && numAnfitrionas > 0) {
-        comisionPorAnfitriona = Math.floor(solicitud.comision_anfitriona / numAnfitrionas);
+      if (numAnfitrionas > 0) {
+        // REGLA: La comisión es el precio del servicio por chica + (si tiene comisión la habitación / chicas)
+        const comisionHabitacionIndiv = tieneComision
+          ? Math.floor(solicitud.comision_anfitriona / numAnfitrionas)
+          : 0;
+        comisionPorAnfitriona = precioServicioIndividual + comisionHabitacionIndiv;
       }
 
       const fechaActual = new Date();
       const fechaActualSql = fechaActual.toISOString().slice(0, 19).replace('T', ' ');
 
       // 4. Crear el servicio
-      const resultServicio: any = await query(
+      const resultServicio: any = await connection(
         `INSERT INTO servicios 
         (codigo, cliente_id, habitacion_id, precio_servicio, precio_habitacion, 
          iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado, fecha_crea) 
@@ -124,7 +130,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           solicitud.cliente_id || null,
           habitacionIdFinal,
           precioServicioIndividual * numAnfitrionas, // Guardar total de servicio
-          precioHabitacionBase,
+          precioHabitacionTotal, // Usar el calculado correctamente
           ivaFinal,
           subTotal,
           totalFinal,
@@ -140,19 +146,32 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       // 5. Detalles de clientes y anfitrionas
       if (solicitud.cliente_id) {
-        await query(
+        await connection(
           'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
           [servicioId, solicitud.cliente_id]
         );
       }
 
       for (const anfitrionaId of anfitrionasIds) {
-        await query(
+        await connection(
           'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
           [anfitrionaId, servicioId, comisionPorAnfitriona]
         );
+
+        // Registrar comisiones si son mayores a 0
+        if (comisionPorAnfitriona > 0) {
+          const comisionInsert: any = await connection(
+            'INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)',
+            [0, servicioId, comisionPorAnfitriona]
+          );
+          await connection(
+            'INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)',
+            [comisionInsert.insertId, anfitrionaId, comisionPorAnfitriona]
+          );
+        }
+
         // Ocupar anfitriona
-        await query('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [anfitrionaId]);
+        await connection('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [anfitrionaId]);
       }
 
       // 6. Pausar otros servicios si es necesario
@@ -170,10 +189,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             AND (h.precio > 0 OR h.comision_anfitriona > 0 OR h.tiempo > 0)
         `;
         const params = [servicioId, ...anfitrionasIds];
-        const serviciosToPause = await query(queryServiciosToPause, params) as any[];
+        const serviciosToPause = (await connection(queryServiciosToPause, params)) as any[];
 
         for (const sToPause of serviciosToPause) {
-          await query('UPDATE servicios SET paused_at = ? WHERE id_servicio = ?', [fechaActualSql, sToPause.id_servicio]);
+          await connection('UPDATE servicios SET paused_at = ? WHERE id_servicio = ?', [
+            fechaActualSql,
+            sToPause.id_servicio
+          ]);
           sendNotificationToAll('timer_paused', {
             servicioId: sToPause.id_servicio,
             tipoTransaccion: 'servicio'
@@ -182,36 +204,85 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       // 7. Ocupar habitación
-      const roomInfo = (await query('SELECT nombre, precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacionIdFinal])) as any[];
+      const roomInfo = (await connection(
+        'SELECT nombre, precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?',
+        [habitacionIdFinal]
+      )) as any[];
       let habitacionNombre = `Habitación ${habitacionIdFinal}`;
       if (roomInfo.length > 0) {
         const room = roomInfo[0];
         habitacionNombre = room.nombre;
-        const isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        const isFreeRoom =
+          !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
         if (!isFreeRoom) {
-          await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [habitacionIdFinal]);
+          await connection('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
+            habitacionIdFinal
+          ]);
         }
       }
 
       // 8. Actualizar solicitud
-      await query(
+      await connection(
         `UPDATE solicitudes_servicios 
          SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = ?, habitacion_id = ? 
          WHERE id_solicitud = ?`,
         [userId, fechaActualSql, habitacionIdFinal, id]
       );
 
-      // 9. Obtener nombres de anfitrionas para la respuesta
-      const anfitrionasData = (await query(
+      // 9. Actualizar Caja
+      let montoEfectivo = 0;
+      let montoTarjeta = 0;
+      let montoTransferencia = 0;
+
+      const metodoPago = (solicitud.metodo_pago || 'efectivo').toLowerCase();
+      switch (metodoPago) {
+        case 'efectivo':
+          montoEfectivo = totalFinal;
+          break;
+        case 'tarjeta':
+          montoTarjeta = totalFinal;
+          break;
+        case 'transferencia':
+          montoTransferencia = totalFinal;
+          break;
+        default:
+          montoEfectivo = totalFinal;
+      }
+
+      await connection(
+        `UPDATE cajas SET 
+          servicio = servicio + ?,
+          efectivo = efectivo + ?,
+          tarjeta = tarjeta + ?,
+          transferencia = transferencia + ?,
+          iva = iva + ?,
+          comision = comision + ?
+        WHERE id_caja = ?`,
+        [
+          totalFinal,
+          montoEfectivo,
+          montoTarjeta,
+          montoTransferencia,
+          ivaFinal,
+          comisionPorAnfitriona * numAnfitrionas,
+          cajaId
+        ]
+      );
+
+      // 10. Obtener nombres de anfitrionas para la respuesta
+      const anfitrionasData = (await connection(
         `SELECT nick, nombre FROM usuarios WHERE id_usuario IN (${anfitrionasIds.map(() => '?').join(',')})`,
         anfitrionasIds
       )) as any[];
       const anfitrionasNicks = anfitrionasData.map(u => u.nick || u.nombre).join(', ');
 
-      // 10. Obtener nombre del cliente
+      // 11. Obtener nombre del cliente
       let clienteNombre = 'Cliente sin registrar';
       if (solicitud.cliente_id) {
-        const clienteData = (await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [solicitud.cliente_id])) as any[];
+        const clienteData = (await connection(
+          'SELECT nombre, apellido FROM clientes WHERE id_cliente = ?',
+          [solicitud.cliente_id]
+        )) as any[];
         if (clienteData.length > 0) {
           clienteNombre = `${clienteData[0].nombre} ${clienteData[0].apellido}`;
         }
@@ -299,7 +370,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         tiempo: result.tiempo
       }
     });
-
   } catch (error: any) {
     console.error('Error al aprobar solicitud:', error);
     return res.status(error.message === 'Solicitud no encontrada' ? 404 : 500).json({

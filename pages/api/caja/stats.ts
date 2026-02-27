@@ -1,31 +1,27 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
-import { RowDataPacket } from "mysql2/promise";
+import { NextApiRequest, NextApiResponse } from 'next';
+import { query } from '@/lib/db';
+import { RowDataPacket } from 'mysql2/promise';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "GET") {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
     return res.status(405).json({
       success: false,
-      message: "Método no permitido"
+      message: 'Método no permitido'
     });
   }
 
   try {
     // Obtener estadísticas de cajas
-    const cajasStats = await query(`
+    const cajasStats = (await query(`
       SELECT 
         COUNT(CASE WHEN estado = 1 THEN 1 END) as cajas_abiertas,
         COUNT(CASE WHEN estado = 0 THEN 1 END) as cajas_cerradas,
         COUNT(*) as total_cajas
       FROM cajas
-      WHERE DATE(fecha_apertura) = CURDATE()
-    `) as RowDataPacket[];
+    `)) as RowDataPacket[];
 
     // Obtener estadísticas de ventas desde la apertura de caja
-    const ventasStats = await query(`
+    const ventasStats = (await query(`
       SELECT 
         COALESCE(SUM(total), 0) as total_ventas,
         COALESCE(COUNT(*), 0) as cantidad_ventas,
@@ -37,10 +33,10 @@ export default async function handler(
       FROM ventas v
       INNER JOIN cajas c ON c.estado = 1
       WHERE v.fecha_crea >= c.fecha_apertura
-    `) as RowDataPacket[];
+    `)) as RowDataPacket[];
 
     // Obtener estadísticas de servicios
-    const serviciosStats = await query(`
+    const serviciosStats = (await query(`
       SELECT 
         COALESCE(SUM(total), 0) as total_servicios,
         COALESCE(COUNT(*), 0) as cantidad_servicios,
@@ -48,18 +44,18 @@ export default async function handler(
       FROM servicios s
       INNER JOIN cajas c ON c.estado = 1
       WHERE s.fecha_crea >= c.fecha_apertura
-    `) as RowDataPacket[];
+    `)) as RowDataPacket[];
 
     // Calcular balance total de cajas abiertas
-    const balanceStats = await query(`
+    const balanceStats = (await query(`
       SELECT 
         COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - COALESCE(devolucion, 0)), 0) as balance_total
       FROM cajas
       WHERE estado = 1
-    `) as RowDataPacket[];
+    `)) as RowDataPacket[];
 
     // Obtener información de la caja abierta más reciente
-    const cajaInfo = await query(`
+    const cajaInfo = (await query(`
       SELECT 
         fecha_apertura,
         usuario_id_apertura,
@@ -69,7 +65,7 @@ export default async function handler(
       WHERE estado = 1
       ORDER BY fecha_apertura DESC
       LIMIT 1
-    `) as RowDataPacket[];
+    `)) as RowDataPacket[];
 
     const stats = {
       // Estadísticas de cajas
@@ -103,27 +99,33 @@ export default async function handler(
       },
 
       // Información de tiempo
-      tiempo_abierta: cajaInfo.length > 0
-        ? `${cajaInfo[0].horas_abierta}h ${cajaInfo[0].minutos_abierta}m`
-        : "0h 0m",
-      fecha_apertura: cajaInfo.length > 0
-        ? new Date(cajaInfo[0].fecha_apertura).toLocaleDateString('es-ES')
-        : "N/A",
-      usuario_apertura: cajaInfo.length > 0
-        ? (cajaInfo[0].usuario_id_apertura ? cajaInfo[0].usuario_id_apertura.toString() : "N/A")
-        : "N/A",
+      tiempo_abierta:
+        cajaInfo.length > 0
+          ? `${cajaInfo[0].horas_abierta}h ${cajaInfo[0].minutos_abierta}m`
+          : '0h 0m',
+      fecha_apertura:
+        cajaInfo.length > 0
+          ? new Date(cajaInfo[0].fecha_apertura).toLocaleDateString('es-ES')
+          : 'N/A',
+      usuario_apertura:
+        cajaInfo.length > 0
+          ? cajaInfo[0].usuario_id_apertura
+            ? cajaInfo[0].usuario_id_apertura.toString()
+            : 'N/A'
+          : 'N/A',
 
       // Total de ingresos (ventas + servicios)
-      total_ingresos: parseFloat(ventasStats[0]?.total_ventas || 0) + parseFloat(serviciosStats[0]?.total_servicios || 0)
+      total_ingresos:
+        parseFloat(ventasStats[0]?.total_ventas || 0) +
+        parseFloat(serviciosStats[0]?.total_servicios || 0)
     };
 
     return res.status(200).json(stats);
   } catch (error) {
-
     return res.status(500).json({
       success: false,
-      message: "Error interno del servidor",
+      message: 'Error interno del servidor',
       error: error instanceof Error ? error.message : String(error)
     });
   }
-} 
+}
