@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery } from '@/lib/db';
 import { sendNotificationToAll } from '../notifications/sse';
 import { notifyOrderDeleted, notifyOrderProcessed } from './sse';
+import { sendPushNotification } from '@/lib/pushNotifications';
 
 const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -68,18 +69,11 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
               }
               if (!isFreeRoom) {
                 await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [roomId]);
-                console.info(
-                  '[ORDERS PUT] Habitación marcada como ocupada (pedido procesado):',
-                  roomId
-                );
-              } else {
-                console.info('[ORDERS PUT] Habitación no ocupada porque es área libre:', roomId);
               }
             } catch (roomErr) {
               console.error('[ORDERS PUT] Error marcando habitación ocupada:', roomErr);
             }
 
-            // Obtener datos de la habitación (nombre, tiempo)
             const roomInfo = (await query(
               'SELECT nombre, tiempo FROM habitaciones WHERE id_habitacion = ?',
               [roomId]
@@ -87,7 +81,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
             const roomName = roomInfo?.[0]?.nombre || `Habitación ${roomId}`;
             const duration = Number(roomInfo?.[0]?.tiempo || 0);
 
-            // Obtener nombre del cliente (si existe)
             const pedidoInfo = (await query('SELECT cliente_id FROM pedidos WHERE id_pedido = ?', [
               id
             ])) as any[];
@@ -102,7 +95,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
               }
             }
 
-            // Obtener anfitrionas asociadas al pedido (si las hay)
             const anfitrionasRes = (await query(
               `SELECT GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas
                FROM pedidos_usuarios pu
@@ -112,7 +104,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
             )) as any[];
             const anfitrionas = anfitrionasRes?.[0]?.anfitrionas || '';
 
-            // Emitir evento timer_started si la habitación tiene tiempo > 0
             if (duration > 0) {
               try {
                 sendNotificationToAll('timer_started', {
@@ -126,12 +117,11 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
                   anfitrionas,
                   tipoTransaccion: 'pedido'
                 });
-                console.info('[ORDERS PUT] timer_started enviado para pedido', id, 'room', roomId);
+
               } catch (timerErr) {
                 console.error('[ORDERS PUT] Error enviando timer_started:', timerErr);
               }
             } else {
-              // Emitir evento room_occupied para sincronizar UI aunque no haya timer
               try {
                 sendNotificationToAll('room_occupied', {
                   roomId: Number(roomId),
@@ -143,11 +133,20 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
             }
           }
 
-          // Notificar por SSE que el pedido fue procesado para cerrar modales / actualizar listas
           try {
             notifyOrderProcessed(Number(id));
+
+            const orderHeader = (await query('SELECT mesero_id, codigo FROM pedidos WHERE id_pedido = ?', [id])) as any[];
+            if (orderHeader && orderHeader.length > 0 && orderHeader[0].mesero_id) {
+              sendPushNotification(
+                orderHeader[0].mesero_id,
+                'PEDIDO PROCESADO',
+                `Tu pedido #${orderHeader[0].codigo} ha sido confirmado por caja.`,
+                { type: 'order_processed', id_pedido: id }
+              );
+            }
           } catch (notifyErr) {
-            console.error('[ORDERS PUT] Error notificando pedido procesado por SSE:', notifyErr);
+            console.error('[ORDERS PUT] Error notificando pedido procesado:', notifyErr);
           }
         } catch (procErr) {
           console.error(
@@ -157,9 +156,9 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       }
 
-      // Si el pedido fue rechazado (estado = 2), notificar por SSE para actualizar la lista
+
       if (req.body.estado === 2) {
-        console.log(`[ORDERS] Pedido ${id} rechazado, notificando por SSE...`);
+
         try {
           notifyOrderDeleted(Number(id));
         } catch (sseError) {
@@ -203,7 +202,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     await rawQuery('START TRANSACTION');
 
     try {
-      // Eliminar registros de anfitrionas específicas de productos (si existen)
+
       await query(
         `
         DELETE dpa FROM detalle_pedidos_anfitrionas dpa
@@ -213,16 +212,11 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
         [id]
       );
 
-      // Eliminar detalles del pedido
       await query('DELETE FROM detalle_pedidos WHERE pedido_id = ?', [id]);
 
-      // Eliminar usuarios asociados al pedido
       await query('DELETE FROM pedidos_usuarios WHERE pedido_id = ?', [id]);
-
-      // Eliminar el pedido principal
       const result = await query('DELETE FROM pedidos WHERE id_pedido = ?', [id]);
 
-      // Verificar si se eliminó algún registro
       if ((result as any).affectedRows === 0) {
         await rawQuery('ROLLBACK');
         return res.status(404).json({
@@ -232,14 +226,9 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       await rawQuery('COMMIT');
-
-      // Notificar globalmente (channel /api/notifications/sse) para que clientes que solo escuchan el canal global se actualicen
       try {
         if (pedidoInfo && pedidoInfo.length > 0) {
-          console.info('[ORDERS] sending order_deleted notification (global)', {
-            id: Number(id),
-            meseroId: pedidoInfo[0].mesero_id
-          });
+
           sendNotificationToAll('order_deleted', {
             id: Number(id),
             meseroId: pedidoInfo[0].mesero_id,
@@ -255,8 +244,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
         console.error('[ORDERS] Error enviando notification global order_deleted:', notifyErr);
       }
 
-      // Notificar por SSE para actualizar la lista de pedidos (canal específico)
-      console.log(`[ORDERS] Pedido ${id} eliminado, notificando por SSE...`);
+
       try {
         notifyOrderDeleted(Number(id));
       } catch (sseError) {
@@ -272,7 +260,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       throw deleteError;
     }
   } catch (error) {
-    console.error('❌ Error al eliminar pedido:', error);
+
     return res.status(500).json({
       success: false,
       message: 'Error al eliminar el pedido',

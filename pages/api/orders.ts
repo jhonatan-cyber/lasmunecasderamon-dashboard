@@ -3,6 +3,7 @@ import { query, rawQuery } from '@/lib/db';
 import { z } from 'zod';
 import { sendNotificationToAll } from './notifications/sse';
 import { notifyOrderDeleted, notifyOrderCreated } from './orders/sse';
+import { sendPushByRole } from '@/lib/pushNotifications';
 
 /**
  * Busca si una anfitriona está actualmente en una venta con habitación y temporizador activo
@@ -19,22 +20,22 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
   try {
     const resultado = (await query(
       `
-      SELECT 
-        v.id_venta,
-        v.habitacion_id,
-        h.nombre as habitacion_nombre,
-        v.tiempo,
-        v.codigo
+SELECT
+v.id_venta,
+  v.habitacion_id,
+  h.nombre as habitacion_nombre,
+  v.tiempo,
+  v.codigo
       FROM ventas v
       INNER JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       INNER JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
       WHERE vu.usuario_id = ?
-        AND v.habitacion_id IS NOT NULL
+  AND v.habitacion_id IS NOT NULL
         AND v.tiempo > 0
         AND v.estado = 2
       ORDER BY v.fecha_crea DESC
       LIMIT 1
-    `,
+  `,
       [anfitrionaId]
     )) as any[];
 
@@ -43,7 +44,6 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
     }
     return null;
   } catch (error) {
-    console.error('[ORDERS] Error buscando venta activa con habitación:', error);
     return null;
   }
 }
@@ -85,25 +85,25 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     // Consulta directa para obtener todos los pedidos con detalles
     const orders = await query(
       `
-      SELECT
-        P.id_pedido,
-        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
-        P.codigo,
-        CONCAT(U.nombre, ' ', U.apellido) AS garzon,
-        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ')
+SELECT
+P.id_pedido,
+  COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
+    P.codigo,
+    CONCAT(U.nombre, ' ', U.apellido) AS garzon,
+      (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ')
          FROM pedidos_usuarios PU
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
-        P.subtotal,
-        P.total,
-        P.estado,
-        P.fecha_crea
+  P.subtotal,
+  P.total,
+  P.estado,
+  P.fecha_crea
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
       WHERE P.estado = 1
       ORDER BY P.fecha_crea DESC
-    `,
+  `,
       []
     );
 
@@ -177,13 +177,13 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
         if (ventaActiva) {
           console.log(
-            `[ORDERS POST] ✅ Anfitriona ${usuario.usuarioId} está en venta activa:`,
+            `[ORDERS POST] ✅ Anfitriona ${usuario.usuarioId} está en venta activa: `,
             ventaActiva
           );
           habitacionAutoSeleccionada = ventaActiva.habitacion_id;
           tiempoAutoSeleccionado = ventaActiva.tiempo;
           console.log(
-            `[ORDERS POST] 🏠 Auto-seleccionando habitación ${ventaActiva.habitacion_nombre} (ID: ${habitacionAutoSeleccionada})`
+            `[ORDERS POST] 🏠 Auto - seleccionando habitación ${ventaActiva.habitacion_nombre} (ID: ${habitacionAutoSeleccionada})`
           );
           console.log(`[ORDERS POST] ⏱️ Tiempo de venta activa: ${tiempoAutoSeleccionado} minutos`);
           break;
@@ -275,7 +275,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       );
 
       console.log(
-        `[ORDERS POST] 💾 Detalle insertado - Producto: ${d.productoId}, Habitación: ${d.roomId || 'ninguna'}, Precio: ${d.precio}`
+        `[ORDERS POST] 💾 Detalle insertado - Producto: ${d.productoId}, Habitación: ${d.roomId || 'ninguna'}, Precio: ${d.precio} `
       );
 
       // Si el producto tiene anfitrionas específicamente asignadas (champañas), crear registros individuales
@@ -291,15 +291,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           // Si la tabla no existe, crear la tabla y reintentar
           console.log('Tabla detalle_pedidos_anfitrionas no existe, creándola...');
           await query(`
-            CREATE TABLE IF NOT EXISTS detalle_pedidos_anfitrionas (
-              id_detalle_anfitriona INT AUTO_INCREMENT PRIMARY KEY,
-              detalle_pedido_id INT NOT NULL,
-              anfitriona_id INT NOT NULL,
-              fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-              FOREIGN KEY (detalle_pedido_id) REFERENCES detalle_pedidos(id_detalle_pedido) ON DELETE CASCADE,
-              FOREIGN KEY (anfitriona_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-              UNIQUE KEY unique_detalle_anfitriona (detalle_pedido_id, anfitriona_id)
-            )
+            CREATE TABLE IF NOT EXISTS detalle_pedidos_anfitrionas(
+    id_detalle_anfitriona INT AUTO_INCREMENT PRIMARY KEY,
+    detalle_pedido_id INT NOT NULL,
+    anfitriona_id INT NOT NULL,
+    fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(detalle_pedido_id) REFERENCES detalle_pedidos(id_detalle_pedido) ON DELETE CASCADE,
+    FOREIGN KEY(anfitriona_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    UNIQUE KEY unique_detalle_anfitriona(detalle_pedido_id, anfitriona_id)
+  )
           `);
 
           // Reintentar inserción
@@ -378,7 +378,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       )) as any[];
       const clienteResult = clienteResults[0];
       if (clienteResult) {
-        clienteNombre = `${clienteResult.nombre} ${clienteResult.apellido}`;
+        clienteNombre = `${clienteResult.nombre} ${clienteResult.apellido} `;
       }
     }
 
@@ -388,7 +388,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     )) as any[];
     const meseroResult = meseroResults[0];
     const meseroNombre = meseroResult
-      ? `${meseroResult.nombre} ${meseroResult.apellido || ''}`.trim()
+      ? `${meseroResult.nombre} ${meseroResult.apellido || ''} `.trim()
       : 'Mesero';
 
     // Obtener las anfitrionas asignadas al pedido
@@ -398,7 +398,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       FROM pedidos_usuarios pu
       INNER JOIN usuarios u ON pu.usuario_id = u.id_usuario
       WHERE pu.pedido_id = ?
-    `,
+  `,
       [pedidoId]
     )) as any[];
 
@@ -420,6 +420,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       notificationData
     );
     sendNotificationToAll('new_order', notificationData);
+
+    // Enviar notificación Push a Cajeros y Administradores
+    try {
+      const pushBody = `Pedido #${codigo} de ${clienteNombre} por $${total.toLocaleString('es-ES')}`;
+      sendPushByRole('cajero', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
+      sendPushByRole('administrador', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
+    } catch (pushErr) {
+      console.error('[ORDERS API POST] Error enviando notificaciones push:', pushErr);
+    }
 
     // Notificar a través de SSE para actualizar lista de pedidos
     try {

@@ -497,8 +497,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (!existingTimer) {
               console.log('[TimerContext] SSE: Iniciando timer remoto:', codigo);
 
-              // Calcular tiempo restante basándose en startTime
-              const now = new Date();
+              // Calcular tiempo restante basándose en startTime usando el offset del servidor
+              const now = new Date(Date.now() + serverOffset);
               const start = new Date(startTime);
               const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
 
@@ -574,7 +574,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const updated = prev.map(t => {
                 if (t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion) {
                   const start = new Date(newStartTime);
-                  const now = new Date();
+                  const now = new Date(Date.now() + serverOffset);
                   const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
                   const remainingSeconds = Math.max(0, t.duration * 60 - elapsedSeconds);
                   return { ...t, isPaused: false, startTime: start, remainingTime: remainingSeconds };
@@ -594,7 +594,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const updated = prev.map(t => {
                 if (t.servicioId === servicioId && t.tipoTransaccion === (tipoTransaccion || 'servicio')) {
                   const start = startTime ? new Date(startTime) : t.startTime;
-                  const now = new Date();
+                  const now = new Date(Date.now() + serverOffset);
                   const d = duration || t.duration;
                   const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
                   const remainingSeconds = Math.max(0, d * 60 - elapsedSeconds);

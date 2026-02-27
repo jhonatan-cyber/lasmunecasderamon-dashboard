@@ -11,20 +11,25 @@ import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { LayoutGrid, List } from 'lucide-react';
+import { RoomMapDashboard } from '@/components/rooms/RoomMapDashboard';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatsCardSkeleton, CardSkeleton } from '@/components/ui/skeletons';
 
 export default function ServiciosPage() {
-  const { habitaciones } = useHabitaciones();
+  const [view, setView] = useState<'grid' | 'map'>('map');
+  const { habitaciones, loading: habitacionLoading } = useHabitaciones();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
   const { hasPermission } = useUserPermissions();
-  
+
   const canCreate = hasPermission('private_rooms', 'create');
   const canEdit = hasPermission('private_rooms', 'edit');
   const canFinalize = hasPermission('private_rooms', 'finalize');
-  
+
   const {
     servicios,
     loading,
@@ -92,11 +97,10 @@ export default function ServiciosPage() {
               onClick={handleCreateServicioWithCheck}
               disabled={cajaLoading || !hasOpenCaja}
               variant='outline'
-              className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
-                hasOpenCaja
-                  ? 'bg-black text-white hover:scale-105'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${hasOpenCaja
+                ? 'bg-black text-white hover:scale-105'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               size='sm'
             >
               {cajaLoading ? (
@@ -119,84 +123,95 @@ export default function ServiciosPage() {
           )}
         </div>
 
-      {/* Estadísticas de servicios */}
-      <ServiceStats servicios={servicios} habitaciones={habitaciones} />
-
-      {/* Mensaje de advertencia cuando no hay caja abierta */}
-      {!cajaLoading && hasOpenCaja === false && (
-        <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-          <div className='flex items-center'>
-            <AlertCircle className='h-5 w-5 text-yellow-600 mr-2' />
-            <div>
-              <h3 className='text-sm font-medium text-yellow-800'>Caja cerrada</h3>
-              <p className='text-sm text-yellow-700 mt-1'>
-                No se pueden crear nuevos servicios sin una caja abierta. Por favor, abra una caja
-                en el módulo de caja primero.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Contenido principal */}
-      <div className='bg-white rounded-lg shadow-sm border p-4 sm:p-6'>
-        {/* Filtros */}
-        <ServiceFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          showAllServices={showAllServices}
-          onShowActiveServices={handleShowActiveServices}
-          onShowAllServices={handleShowAllServices}
-          itemsPerPage={itemsPerPage}
-          setItemsPerPage={setItemsPerPage}
-          setCurrentPage={setCurrentPage}
-        />
-
-        {/* Lista de servicios */}
-        {loading ? (
-          <div className='flex justify-center items-center h-32 sm:h-64'>
-            <div className='text-gray-500 text-sm sm:text-base'>Cargando servicios...</div>
+        {/* Estadísticas de servicios */}
+        {loading || habitacionLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
           </div>
         ) : (
-          <>
-            {showAllServices && (
-              <div className='mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg'>
-                <p className='text-blue-800 text-xs sm:text-sm'>
-                  <strong>Mostrando servicios terminados:</strong> Solo servicios con estado
-                  "Terminado"
-                </p>
+          <ServiceStats servicios={servicios} habitaciones={habitaciones} />
+        )}
+
+        {/* ... existing code for messages and switcher ... */}
+
+        {/* View: MAP */}
+        {view === 'map' && (
+          <div className="bg-white dark:bg-black/20 rounded-2xl shadow-sm border p-4 sm:p-6 mb-6">
+            {loading || habitacionLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
               </div>
+            ) : (
+              <RoomMapDashboard
+                habitaciones={habitaciones || []}
+                servicios={servicios || []}
+              />
             )}
+          </div>
+        )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
-              {currentServicios.map(servicio => (
-                <ServicioCard
-                  key={servicio.id_servicio}
-                  servicio={servicio}
-                  onStopTimer={handleStopTimer}
-                  onUpdate={() => getServicios(true)}
-                  showAllServices={showAllServices}
-                />
-              ))}
+        {/* List Content */}
+        <div className={`${view === 'map' ? 'hidden' : 'block'} bg-white dark:bg-black/10 rounded-lg shadow-sm border p-4 sm:p-6`}>
+          <ServiceFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            showAllServices={showAllServices}
+            onShowActiveServices={handleShowActiveServices}
+            onShowAllServices={handleShowAllServices}
+            itemsPerPage={itemsPerPage}
+            setItemsPerPage={setItemsPerPage}
+            setCurrentPage={setCurrentPage}
+          />
+
+          {loading ? (
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6'>
+              {[...Array(6)].map((_, i) => <CardSkeleton key={i} />)}
             </div>
+          ) : (
+            <>
+              {showAllServices && (
+                <div className='mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+                  <p className='text-blue-800 text-xs sm:text-sm'>
+                    <strong>Mostrando servicios terminados:</strong> Solo servicios con estado
+                    "Terminado"
+                  </p>
+                </div>
+              )}
 
-            {/* Paginación */}
-            {currentServicios.length > 0 && totalPages > 1 && (
-              <div className='mt-4 sm:mt-6'>
-                <div className='flex justify-between items-center text-xs sm:text-sm text-gray-600 mb-4'>
-                  <div>
-                    Mostrando {startIndex + 1} a {Math.min(endIndex, currentServicios.length)} de{' '}
-                    {currentServicios.length} servicios
+              <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
+                {currentServicios.map((servicio: any) => (
+                  <ServicioCard
+                    key={servicio.id_servicio}
+                    servicio={servicio}
+                    onStopTimer={handleStopTimer}
+                    onUpdate={() => getServicios(true)}
+                    showAllServices={showAllServices}
+                  />
+                ))}
+              </div>
+
+              {/* Paginación */}
+              {currentServicios.length > 0 && totalPages > 1 && (
+                <div className='mt-4 sm:mt-6'>
+                  <div className='flex justify-between items-center text-xs sm:text-sm text-gray-600 mb-4'>
+                    <div>
+                      Mostrando {startIndex + 1} a {Math.min(endIndex, currentServicios.length)} de{' '}
+                      {currentServicios.length} servicios
+                    </div>
+                  </div>
+                  <div className='flex justify-center'>
+                    <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
                   </div>
                 </div>
-                <div className='flex justify-center'>
-                  <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </PermissionGuard>
   );

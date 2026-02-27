@@ -69,6 +69,7 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/clients', // Lista de clientes (necesario para pedidos/servicios)
   '/api/rooms', // Lista de habitaciones
   '/api/servicios', // Servicios
+  '/api/sales', // Ventas
   '/api/cashregister/status', // Estado de caja abierta (necesario para usar módulos)
   '/api/cashregister' // Permitir operaciones de caja y delegar validación a la ruta
 ];
@@ -181,6 +182,9 @@ async function checkUserPermission(
     console.log(
       `[checkUserPermission] 🔐 ${module}.${action} para userId ${userId}: ${result.hasPermission ? '✅' : '❌'}`
     );
+    if (!result.hasPermission) {
+      console.warn(`[checkUserPermission] 🚫 Acceso DENEGADO para userId ${userId} en ${module}.${action}`);
+    }
     return result.hasPermission === true;
   } catch (error) {
     console.error('[checkUserPermission] Error:', error);

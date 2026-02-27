@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { addServicioLog } from '@/lib/logUtils';
+import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 import { withTransaction } from '@/lib/transactionUtils';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
@@ -104,6 +105,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         'Servicio pausado automáticamente por inicio de servicio temporal (consumo/champaña).',
         currentUser?.id
       );
+
+      // Notificar pausa del servicio original vía SSE
+      sendNotificationToAll('timer_paused', {
+        servicioId: Number(servicio_original_id),
+        tipoTransaccion: 'servicio'
+      });
     }
 
     let cajaActualizada = false;
@@ -278,6 +285,47 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         servicioId,
         comisionTotalPorAnfitriona
       };
+    });
+
+    // Obtener datos para la notificación del nuevo servicio
+    const roomNameData = (await query('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+    const roomName = roomNameData[0]?.nombre || `Habitación ${habitacion_id}`;
+
+    let clienteNombreResult = 'Cliente';
+    if (clienteIdFinal) {
+      const clienteData = (await query('SELECT nombre, apellido FROM clientes WHERE id_cliente = ?', [clienteIdFinal])) as any[];
+      if (clienteData[0]) clienteNombreResult = `${clienteData[0].nombre} ${clienteData[0].apellido}`;
+    }
+
+    let anfitrionasNicksResult = '';
+    if (usuarios && usuarios.length > 0) {
+      const usersData = (await query(`SELECT nick FROM usuarios WHERE id_usuario IN (${usuarios.map(() => '?').join(',')})`, usuarios)) as any[];
+      anfitrionasNicksResult = usersData.map((u: any) => u.nick).join(', ');
+    }
+
+    const waiterNickResult = currentUser?.username || 'Cajero';
+    const habitacionComisionResult = (await query('SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+
+    // Notificar inicio del servicio temporal vía SSE
+    sendNotificationToAll('timer_started', {
+      servicioId: result.servicioId,
+      codigo: codigo,
+      roomId: habitacion_id,
+      roomName: roomName,
+      duration: tiempo,
+      startTime: new Date().toISOString(),
+      clienteNombre: clienteNombreResult,
+      anfitrionas: anfitrionasNicksResult,
+      anfitrionas_ids: usuarios,
+      tipoTransaccion: 'servicio',
+      precio_servicio: precio_servicio,
+      precio_habitacion: precio_habitacion,
+      iva: ivaFinal,
+      total: totalFinal,
+      metodo_pago: metodo_pago,
+      waiter_name: waiterNickResult,
+      habitacion_comision: habitacionComisionResult[0]?.comision_anfitriona || 0,
+      created_at: new Date().toISOString()
     });
     return res.status(201).json({
       success: true,

@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../../notifications/sse';
 import { withTransaction } from '@/lib/transactionUtils';
+import { sendPushNotification } from '@/lib/pushNotifications';
 
 // Función para generar código único
 function generateUniqueCode(): string {
@@ -224,7 +225,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         tiempo: tiempo,
         clienteNombre,
         anfitrionasNicks,
-        startTime: fechaActual.toISOString()
+        startTime: fechaActual.toISOString(),
+        precio_servicio: precioServicioIndividual * numAnfitrionas,
+        precio_habitacion: precioHabitacionBase,
+        iva: ivaFinal,
+        total: totalFinal,
+        metodo_pago: solicitud.metodo_pago,
+        solicitado_por: solicitud.solicitado_por,
+        anfitrionas_ids: anfitrionasIds
       };
     });
 
@@ -244,8 +252,40 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       startTime: result.startTime,
       clienteNombre: result.clienteNombre,
       anfitrionas: result.anfitrionasNicks,
-      tipoTransaccion: 'servicio'
+      tipoTransaccion: 'servicio',
+      precio_servicio: result.precio_servicio,
+      precio_habitacion: result.precio_habitacion,
+      iva: result.iva,
+      total: result.total,
+      metodo_pago: result.metodo_pago,
+      waiter_name: roleLower === 'administrador' ? 'Admin' : 'Cajero',
+      created_at: result.startTime
     });
+
+    // Enviar notificaciones PUSH a los involucrados
+    try {
+      // 1. Al solicitante (Garzon/Anfitriona)
+      if (result.solicitado_por) {
+        sendPushNotification(
+          result.solicitado_por,
+          '¡SOLICITUD APROBADA!',
+          `Tu solicitud para ${result.habitacionNombre} ha sido aprobada. El tiempo ha comenzado.`,
+          { type: 'service_request_approved', id_solicitud: id }
+        );
+      }
+
+      // 2. A las anfitrionas asignadas
+      if (result.anfitrionas_ids && result.anfitrionas_ids.length > 0) {
+        sendPushNotification(
+          result.anfitrionas_ids,
+          '¡NUEVO SERVICIO!',
+          `Has sido asignada a un servicio en ${result.habitacionNombre}.`,
+          { type: 'service_request_approved', id_solicitud: id }
+        );
+      }
+    } catch (pushErr) {
+      console.error('[APROBAR SOLICITUD] Error enviando notificaciones push:', pushErr);
+    }
 
     return res.status(200).json({
       success: true,
