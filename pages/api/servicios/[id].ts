@@ -2,10 +2,20 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 import { sendNotificationToAll } from '../notifications/sse';
-import { addServicioLog } from '@/lib/logUtils';
+import { addServicioLog, initLogsTable } from '@/lib/logUtils';
 import { getCurrentUser } from '@/lib/middleware/auth';
 
+// Initialize logs table on module load
+let tableInitialized = false;
+const ensureTableExists = async () => {
+  if (!tableInitialized) {
+    await initLogsTable();
+    tableInitialized = true;
+  }
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  await ensureTableExists();
   const { id } = req.query;
   const currentUser = getCurrentUser(req);
 
@@ -20,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      // Obtener servicio con detalles
       const servicios = (await query(
         `
         SELECT 
@@ -69,8 +78,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const servicio = servicios[0] as any;
-
-      // Obtener usuarios asociados
       const usuarios = await query(
         `
         SELECT 
@@ -85,7 +92,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [servicioId]
       );
 
-      // Obtener detalles
       const detalles = await query(
         `
         SELECT 
@@ -130,7 +136,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         usuarios
       } = req.body;
 
-      // Validaciones
       if (!cliente_id || !precio_servicio || !tiempo) {
         return res.status(400).json({
           success: false,
@@ -138,7 +143,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      // Obtener IVA previo para calcular delta y ajustar caja
       const [servicioPrevio] = (await query(`SELECT iva FROM servicios WHERE id_servicio = ?`, [
         servicioId
       ])) as any[];
@@ -147,7 +151,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ivaNuevo = Number(iva || 0);
       const ivaDelta = ivaNuevo - ivaPrevio;
 
-      // Actualizar servicio
       await query(
         `
         UPDATE servicios SET
@@ -174,7 +177,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ]
       );
 
-      // Ajustar IVA en caja abierta con el delta
       if (ivaDelta !== 0) {
         const cajaActiva = (await query(
           `SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
@@ -189,10 +191,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      // Eliminar detalles existentes
       await query('DELETE FROM detalle_servicios WHERE servicio_id = ?', [servicioId]);
 
-      // Insertar nuevos detalles
       if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
         for (const usuarioId of usuarios) {
           await query('INSERT INTO detalle_servicios (usuario_id, servicio_id) VALUES (?, ?)', [
@@ -217,32 +217,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { estado, precio_servicio, tiempo, precio_habitacion, metodo_pago, iva, sub_total, total } = req.body;
 
       if (estado !== undefined) {
-        // Validar estado
-        if (![0, 1, 2, 3].includes(estado)) {
+        if (![0, 1, 2, 3, 4].includes(estado)) {
           return res.status(400).json({
             success: false,
-            message: 'Estado inválido. (0: Finalizado, 1: Activo, 2: En Proceso, 3: Pausado)'
+            message: 'Estado inválido. (0: Anulado, 1: Finalizado, 2: En Proceso, 3: Pausado, 4: Solicitud de anulación)'
           });
         }
-
-        // Obtener estado anterior para el log
-        const [prevService] = await query('SELECT estado FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
+        const [prevService] = await query('SELECT estado, habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
         const estadoAnterior = prevService?.estado;
 
-        // Liberar habitación si se finaliza (0)
-        if (estado === 0) {
-          // Obtener el habitacion_id primero para asegurar que tenemos el ID correcto
+        if (estado === 1 || estado === 0) {
           const [servicio] = await query('SELECT habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
-          if (servicio && servicio.habitacion_id) {
-            await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [servicio.habitacion_id]);
 
-            // Enviar notificación SSE para sincronizar detención de timer
+          if (servicio && servicio.habitacion_id) {
+            const habitacionId = servicio.habitacion_id;
+            const serviciosPausados = await query(
+              'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 AND id_servicio != ? ORDER BY paused_at ASC LIMIT 1',
+              [habitacionId, servicioId]
+            ) as any[];
+
+            if (serviciosPausados && serviciosPausados.length > 0) {
+              const servicioPausado = serviciosPausados[0];
+
+              await query(
+                'UPDATE servicios SET estado = 2, paused_at = NULL, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND) WHERE id_servicio = ?',
+                [servicioPausado.id_servicio]
+              );
+              const [servicioReanudado] = await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [servicioPausado.id_servicio]) as any[];
+
+              await addServicioLog(
+                servicioPausado.id_servicio,
+                'REANUDACION',
+                `Servicio reanudado automáticamente tras ${estado === 1 ? 'finalizar' : 'anular'} servicio temporal ${servicioId}`,
+                currentUser?.id
+              );
+
+              sendNotificationToAll('timer_resumed', {
+                servicioId: servicioPausado.id_servicio,
+                tipoTransaccion: 'servicio',
+                newStartTime: servicioReanudado.fecha_crea
+              });
+            } else {
+              await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacionId]);
+            }
+
             sendNotificationToAll('timer_stopped', {
               servicioId: servicioId,
-              roomId: servicio.habitacion_id
+              roomId: habitacionId
             });
           } else {
-            // Intento alternativo por si el join directo fallaba antes
             await query(
               'UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?',
               [servicioId]
@@ -250,28 +273,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        // Registrar logs de cambios de estado
-        if (estado === 0 && estadoAnterior !== 0) {
+        if (estado === 1 && estadoAnterior !== 1) {
           await addServicioLog(servicioId, 'FINALIZADO', 'Servicio finalizado manualmente.', currentUser?.id);
+        } else if (estado === 0 && estadoAnterior !== 0) {
+          await addServicioLog(servicioId, 'ANULADO', 'Servicio anulado.', currentUser?.id);
         } else if (estado === 3 && estadoAnterior !== 3) {
           await addServicioLog(servicioId, 'PAUSA', 'Servicio pausado manualmente.', currentUser?.id);
-        } else if (estado === 2 && estadoAnterior === 3) {
-          await addServicioLog(servicioId, 'REANUDACION', 'Servicio reanudado manualmente.', currentUser?.id);
+          await query('UPDATE servicios SET paused_at = NOW() WHERE id_servicio = ?', [servicioId]);
+        } else if (estado === 4 && estadoAnterior !== 4) {
+          await addServicioLog(servicioId, 'SOLICITUD_ANULACION', 'Solicitud de anulación creada.', currentUser?.id);
+        } else if (estadoAnterior === 3 && estado === 2) {
+          const [pausedService] = await query('SELECT paused_at FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
+          if (pausedService?.paused_at) {
+            await query(
+              'UPDATE servicios SET fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?',
+              [servicioId]
+            );
+            await addServicioLog(servicioId, 'REANUDACION', 'Servicio reanudado manualmente.', currentUser?.id);
+          }
         }
 
-        // Actualizar estado del servicio
         await query('UPDATE servicios SET estado = ? WHERE id_servicio = ?', [estado, servicioId]);
+
+        if (estado === 1 || estado === 0) {
+          const anfitrionasServicio = (await query(
+            'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
+            [servicioId]
+          )) as any[];
+
+          if (Array.isArray(anfitrionasServicio) && anfitrionasServicio.length > 0) {
+            for (const anfitriona of anfitrionasServicio) {
+              await query(
+                `
+                UPDATE usuarios SET estado = 1 
+                WHERE id_usuario = ? 
+                AND id_usuario NOT IN (SELECT usuario_id FROM detalle_servicios ds JOIN servicios s ON ds.servicio_id = s.id_servicio WHERE s.estado IN (2, 4) AND s.id_servicio != ?)
+                AND id_usuario NOT IN (SELECT usuario_id FROM ventas_usuarios vu JOIN ventas v ON vu.venta_id = v.id_venta WHERE v.estado = 2)
+              `,
+                [anfitriona.usuario_id, servicioId]
+              );
+            }
+          }
+        }
 
         return res.status(200).json({
           success: true,
           message:
-            estado === 0 ? 'Servicio finalizado exitosamente' : 'Servicio actualizado exitosamente'
+            estado === 1 ? 'Servicio finalizado exitosamente' :
+              estado === 0 ? 'Servicio anulado exitosamente' :
+                estado === 3 ? 'Servicio pausado exitosamente' :
+                  estado === 2 ? 'Servicio en proceso' :
+                    'Servicio actualizado exitosamente'
         });
       }
 
-      // Lógica para actualización completa del servicio (nuevo)
       if (precio_servicio !== undefined && precio_habitacion !== undefined && metodo_pago !== undefined && tiempo !== undefined) {
-        // Obtener datos actuales del servicio
         const [curr] = (await query(
           'SELECT precio_servicio, precio_habitacion, iva, total, habitacion_id, caja_id, metodo_pago FROM servicios WHERE id_servicio = ?',
           [servicioId]
@@ -287,35 +343,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const newTotal = Number(total);
         const newTime = Number(tiempo);
 
-        // Calcular diferencias para actualizar caja
         const totalDiff = newTotal - Number(curr.total);
         const ivaDiff = newIva - Number(curr.iva);
 
         await withTransaction(async (connection) => {
-          // 1. Actualizar servicio
           await query(
             'UPDATE servicios SET precio_servicio = ?, precio_habitacion = ?, iva = ?, sub_total = ?, total = ?, tiempo = ?, metodo_pago = ? WHERE id_servicio = ?',
             [newPrice, newHabPrice, newIva, sub_total, newTotal, newTime, metodo_pago, servicioId]
           );
 
-          // 2. Actualizar comisiones si el precio del servicio cambió
           const priceDiff = newPrice - Number(curr.precio_servicio);
           if (priceDiff !== 0) {
-            // Obtener anfitrionas del servicio
             const anfitrionas = (await query(
               'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
               [servicioId]
             )) as any[];
 
             if (anfitrionas.length > 0) {
-              // Obtener comision de habitacion
               const [habitacion] = (await query('SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [curr.habitacion_id])) as any[];
               const comisionHab = Number(habitacion?.comision_anfitriona || 0);
 
               const comisionServicioBase = Math.floor(newPrice / anfitrionas.length);
               const comisionTotalIndiv = comisionServicioBase + Math.floor(comisionHab / anfitrionas.length);
 
-              // Actualizar comisiones existentes
               const comisionesExistentes = (await query('SELECT id_comision FROM comisiones WHERE servicio_id = ?', [servicioId])) as any[];
 
               for (let i = 0; i < anfitrionas.length; i++) {
@@ -334,20 +384,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           }
 
-          // 3. Actualizar caja si hay diferencias y cambió el método de pago
           if (curr.caja_id && (totalDiff !== 0 || curr.metodo_pago !== metodo_pago)) {
-            // Restar del método anterior
             let oldPayCol = 'efectivo';
             if (curr.metodo_pago === 'tarjeta') oldPayCol = 'tarjeta';
             else if (curr.metodo_pago === 'transferencia') oldPayCol = 'transferencia';
-
-            // Sumar al método nuevo
             let newPayCol = 'efectivo';
             if (metodo_pago === 'tarjeta') newPayCol = 'tarjeta';
             else if (metodo_pago === 'transferencia') newPayCol = 'transferencia';
 
             if (curr.metodo_pago !== metodo_pago) {
-              // Cambió el método de pago: restar del anterior y sumar al nuevo
               await query(
                 `UPDATE cajas SET 
                   servicio = servicio + ?, 
@@ -359,7 +404,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 [totalDiff, Number(curr.total), newTotal, ivaDiff, priceDiff, curr.caja_id]
               );
             } else {
-              // Mismo método de pago: solo actualizar diferencias
               await query(
                 `UPDATE cajas SET 
                   servicio = servicio + ?, 
@@ -388,9 +432,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      // Lógica para actualizar precio y tiempo solamente (existente)
+    
       if (precio_servicio !== undefined || tiempo !== undefined) {
-        // Obtener datos actuales del servicio para cálculos
+
         const [curr] = (await query(
           'SELECT precio_servicio, precio_habitacion, iva, total, habitacion_id, caja_id FROM servicios WHERE id_servicio = ?',
           [servicioId]

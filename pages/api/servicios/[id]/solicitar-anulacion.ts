@@ -8,14 +8,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
- 
+
 
   // Obtener usuario logueado
   // @ts-ignore
   const usuarioLogueado = req.user;
-  
- 
-  
+
+
+
   // Obtener nombre completo del usuario desde la base de datos
   let nombreCompleto = "Usuario del Sistema";
   if (usuarioLogueado && usuarioLogueado.id) {
@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         nombreCompleto = (usuarioResult[0] as any).nombre_completo || "Usuario del Sistema";
       }
     } catch (error) {
-      
+
       nombreCompleto = usuarioLogueado.nick || "Usuario del Sistema";
     }
   }
@@ -60,7 +60,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       WHERE s.id_servicio = ?
       GROUP BY s.id_servicio
     `;
-    
+
     const servicioResult = await query(servicioSql, [servicioId]);
     if (!Array.isArray(servicioResult) || servicioResult.length === 0) {
       return res.status(404).json({ error: "Servicio no encontrado" });
@@ -68,32 +68,32 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const servicio = servicioResult[0] as any;
 
-    // Verificar que el servicio no esté ya anulado o pendiente
-    if (servicio.estado === 3 || servicio.estado === 2) {
-      return res.status(400).json({ 
-        error: servicio.estado === 3 
-          ? "El servicio ya está anulado" 
-          : "El servicio ya tiene una solicitud de anulación pendiente" 
+    // Verificar que el servicio no esté ya anulado o con solicitud pendiente
+    if (servicio.estado === 0 || servicio.estado === 4) {
+      return res.status(400).json({
+        error: servicio.estado === 0
+          ? "El servicio ya está anulado"
+          : "El servicio ya tiene una solicitud de anulación pendiente"
       });
     }
 
     // Preparar datos de anfitrionas
-    const anfitrionas = servicio.anfitrionas_nombres 
+    const anfitrionas = servicio.anfitrionas_nombres
       ? servicio.anfitrionas_nombres.split(', ').filter((nombre: string) => nombre.trim())
       : [];
 
     // Usar el nombre completo del usuario logueado
     const usuarioNombre = nombreCompleto;
 
-    // Actualizar estado a pendiente de anulación
+    // Actualizar estado a solicitud de anulación (estado = 4)
     await query(
-      "UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE id_servicio = ?",
+      "UPDATE servicios SET estado = 4, fecha_mod = NOW() WHERE id_servicio = ?",
       [servicioId]
     );
 
     // Generar token único para esta solicitud
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
+
     // Guardar token en la base de datos (crear tabla si no existe)
     try {
       // Crear tabla si no existe
@@ -107,20 +107,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           FOREIGN KEY (servicio_id) REFERENCES servicios(id_servicio) ON DELETE CASCADE
         )`
       );
-      
+
       // Agregar columnas si no existen
       try {
         await query("ALTER TABLE solicitudes_anulacion_servicios ADD COLUMN solicitado_por VARCHAR(255) DEFAULT 'Usuario del Sistema'");
       } catch (error) {
         // La columna ya existe, ignorar error
       }
-      
+
       try {
         await query("ALTER TABLE solicitudes_anulacion_servicios ADD COLUMN motivo VARCHAR(500) DEFAULT 'Motivo no especificado'");
       } catch (error) {
         // La columna ya existe, ignorar error
       }
-      
+
       await query(
         "INSERT INTO solicitudes_anulacion_servicios (servicio_id, token, solicitado_por, motivo) VALUES (?, ?, ?, ?)",
         [servicioId, token, usuarioNombre, motivo]
@@ -160,7 +160,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       servicio: {
         id: servicioId,
         codigo: servicio.codigo,
-        estado: 2
+        estado: 4
       }
     });
 

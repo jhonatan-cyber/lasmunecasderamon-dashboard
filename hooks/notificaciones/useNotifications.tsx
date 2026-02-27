@@ -4,6 +4,8 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
 import { th } from 'date-fns/locale';
 
+import { playNotificationSound, announcePriority } from '@/lib/audioUtils';
+
 interface NotificationData {
   id: number;
   codigo: string;
@@ -62,35 +64,18 @@ export function useNotifications() {
     };
   }, [refetchCounts]);
 
-  const playNotificationSound = useCallback(() => {
-    try {
-      const audio = new Audio('/notification.mp3');
-      audio.play().catch(() => {});
-    } catch (_) {}
-  }, []);
-
   const showNotification = useCallback(
     (data: NotificationData) => {
-      console.log('[useNotifications] 📥 showNotification llamado con:', {
-        createdBy: data.createdBy,
-        userId: user?.id,
-        isCreator: user && data.createdBy && user.id === data.createdBy
-      });
+
 
       if (user && data.createdBy && user.id === data.createdBy) {
-        // Si el usuario es quien creó el pedido, refrescar lista
-        console.log(
-          '[useNotifications] ✅ El usuario creó el pedido - Disparando evento de actualización'
-        );
+
         const event = new CustomEvent('updatePendingOrders', {
           detail: { type: 'order-created', orderId: data.id }
         });
         window.dispatchEvent(event);
         return;
       }
-
-      // Solo mostrar modal automáticamente a Admin y Cajero (roles que procesan pedidos)
-      // Anfitriona no recibe notificación de pedidos
       if (user?.role?.toLowerCase() === 'anfitriona') {
         return;
       }
@@ -129,22 +114,18 @@ export function useNotifications() {
         duration: 5000
       });
 
-      // Refrescar lista de pedidos para todos que no sean el creador
-      console.log(
-        '[useNotifications] 🎯 Disparando updatePendingOrders para refrescar lista (usuario no es creador)'
-      );
+
       const event = new CustomEvent('updatePendingOrders', {
         detail: { type: 'order-created', orderId: data.id }
       });
       window.dispatchEvent(event);
 
-      // Solo abrir modal automáticamente si el usuario tiene permiso para procesar pedidos
       if (shouldShowModal) {
         const openModalEvent = new CustomEvent('openOrderModal', { detail: { orderId: data.id } });
         window.dispatchEvent(openModalEvent);
       }
     },
-    [user, playNotificationSound]
+    [user]
   );
 
   const showServiceNotification = useCallback(
@@ -185,14 +166,14 @@ export function useNotifications() {
       const openModalEvent = new CustomEvent('openServiceRequestModal', { detail: data });
       window.dispatchEvent(openModalEvent);
     },
-    [user, playNotificationSound]
+    [user]
   );
 
   const cleanup = useCallback(() => {
     if (eventSourceRef.current) {
       try {
         eventSourceRef.current.close();
-      } catch (_) {}
+      } catch (_) { }
       eventSourceRef.current = null;
     }
     setIsConnected(false);
@@ -217,14 +198,10 @@ export function useNotifications() {
     es.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
-        console.log('[useNotifications] 📨 Mensaje SSE recibido:', {
-          type: payload?.type,
-          hasData: !!payload?.data,
-          payload
-        });
+        const userRole = (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
 
         if (payload?.type === 'new_order' && payload?.data) {
-          console.log('[useNotifications] 🆕 Nuevo pedido SSE:', payload.data);
+
           showNotification(payload.data as NotificationData);
 
           setPendingOrdersCount(prev => {
@@ -284,6 +261,42 @@ export function useNotifications() {
         if (payload?.type === 'sale_cancelled' && payload?.data) {
           const ventaEvent = new CustomEvent('ventaRegistrada');
           window.dispatchEvent(ventaEvent);
+        }
+
+        if (payload?.type === 'timer_warning_5m' && payload?.data) {
+          const { room_name } = payload.data;
+          toast.warning(`⚠️ 5 MINUTOS RESTANTES`, {
+            description: `El tiempo en ${room_name} está por terminar.`
+          });
+          playNotificationSound();
+          if (userRole === 'cajero' || userRole === 'administrador') {
+            announcePriority(`Atención. Quedan 5 minutos en ${room_name}.`);
+          }
+        }
+
+        if (payload?.type === 'timer_ended_event' && payload?.data) {
+          const { room_name } = payload.data;
+          toast.error(`⌛ TIEMPO AGOTADO`, {
+            description: `El tiempo en ${room_name} ha finalizado.`
+          });
+          playNotificationSound();
+          if (userRole === 'cajero' || userRole === 'administrador') {
+            announcePriority(`Atención. Tiempo agotado en ${room_name}.`);
+          }
+          // Forzar refresco de habitaciones
+          window.dispatchEvent(new CustomEvent('updateServiceRequests'));
+        }
+
+        if (payload?.type === 'service_assistance' && payload?.data) {
+          const { roomName, assistanceType } = payload.data;
+          toast.warning(`⚠️ SOLICITUD DE ASISTENCIA`, {
+            description: `Habitación ${roomName} solicita: ${assistanceType}`,
+            duration: 10000
+          });
+          playNotificationSound();
+          if (userRole === 'cajero' || userRole === 'administrador') {
+            announcePriority(`Atención. Solicitud de ${assistanceType} en habitación ${roomName}.`);
+          }
         }
 
         if (payload?.type === 'anulacion_confirmada' && payload?.data) {
