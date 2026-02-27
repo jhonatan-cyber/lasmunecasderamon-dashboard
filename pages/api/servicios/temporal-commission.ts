@@ -29,9 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const result = await withTransaction(async (connection) => {
+    const result = await withTransaction(async connection => {
       // Obtener información del servicio y sus anfitrionas
-      const servicioInfo = (await query(`
+      const servicioInfo = (await connection(
+        `
         SELECT 
           s.habitacion_id,
           s.codigo,
@@ -40,7 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
         WHERE s.id_servicio = ?
         GROUP BY s.id_servicio
-      `, [servicio_id])) as any[];
+      `,
+        [servicio_id]
+      )) as any[];
 
       if (!servicioInfo || servicioInfo.length === 0) {
         throw new Error('Servicio no encontrado');
@@ -50,11 +53,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const numAnfitrionas = parseInt(num_anfitrionas) || 1;
 
       // Obtener las anfitrionas del servicio
-      const anfitrionas = (await query(`
+      const anfitrionas = (await connection(
+        `
         SELECT usuario_id 
         FROM detalle_servicios 
         WHERE servicio_id = ?
-      `, [servicio_id])) as any[];
+      `,
+        [servicio_id]
+      )) as any[];
 
       if (anfitrionas.length === 0) {
         throw new Error('No se encontraron anfitrionas para el servicio');
@@ -65,13 +71,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let tieneComision = false;
 
       if (habitacion_id) {
-        const habitacionResult = (await query(
+        const habitacionResult = (await connection(
           'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
           [habitacion_id]
         )) as any[];
 
-        if (habitacionResult && habitacionResult.length > 0 && habitacionResult[0].comision_anfitriona) {
-          comisionHabitacion = habitacionResult[0].comision_anfitriona;
+        if (
+          habitacionResult &&
+          habitacionResult.length > 0 &&
+          habitacionResult[0].comision_anfitriona
+        ) {
+          comisionHabitacion = Number(habitacionResult[0].comision_anfitriona);
           tieneComision = comisionHabitacion > 0;
         }
       }
@@ -79,26 +89,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let comisionTotalPorAnfitriona = 0;
 
       if (tieneComision) {
-        // Calcular comisiones igual que en servicio normal
         const comisionServicioPorAnfitriona = Math.floor(precio_servicio_temporal / numAnfitrionas);
         const comisionHabitacionPorAnfitriona = Math.floor(comisionHabitacion / numAnfitrionas);
-        comisionTotalPorAnfitriona = comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
+        comisionTotalPorAnfitriona =
+          comisionServicioPorAnfitriona + comisionHabitacionPorAnfitriona;
       } else {
-        // Sin comisión de habitación, solo servicio
         comisionTotalPorAnfitriona = Math.floor(precio_servicio_temporal / numAnfitrionas);
       }
 
       // Crear comisiones para cada anfitriona
       for (const anfitriona of anfitrionas) {
-        // Crear comisión temporal
-        const comisionResult: any = await query(
+        const comisionResult: any = await connection(
           `INSERT INTO comisiones (
             venta_id,
             servicio_id,
             monto
           ) VALUES (?, ?, ?)`,
           [
-            null, // venta_id es null para servicios
+            0, // venta_id es 0 para servicios (según nuevo estándar)
             servicio_id,
             comisionTotalPorAnfitriona
           ]
@@ -106,8 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const comisionId = comisionResult.insertId;
 
-        // Insertar detalle de comisión
-        await query(
+        await connection(
           `INSERT INTO detalle_comisiones (
             comision_id,
             usuario_id,
@@ -118,14 +125,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Actualizar caja con los ingresos del servicio temporal
-      const cajaActiva = (await query(
+      const cajaActiva = (await connection(
         `SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
       )) as any[];
 
       if (cajaActiva && cajaActiva.length > 0) {
         const cajaId = cajaActiva[0].id_caja;
 
-        // Determinar qué columna actualizar según método de pago
         let montoEfectivo = 0;
         let montoTarjeta = 0;
         let montoTransferencia = 0;
@@ -141,8 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             montoEfectivo = total_temporal;
         }
 
-        // Actualizar caja
-        await query(
+        await connection(
           `UPDATE cajas SET 
             servicio = servicio + ?,
             efectivo = efectivo + ?,
@@ -176,7 +181,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Comisiones temporales generadas exitosamente',
       data: result
     });
-
   } catch (error) {
     console.error('Error generating temporal commissions:', error);
     return res.status(500).json({

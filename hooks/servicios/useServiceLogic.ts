@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { ServicioWithDetails } from '@/types/servicio';
 
 export function useServiceLogic() {
-  const { servicios, loading, getServicios, removeServicioFromState, patchServicio } = useServicios();
+  const { servicios, loading, getServicios, removeServicioFromState, patchServicio } =
+    useServicios();
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,12 +43,14 @@ export function useServiceLogic() {
     [patchServicio]
   );
 
-  const handleServiceFinalized = useCallback((servicioId: number) => {
-    removeServicioFromState(servicioId);
-  }, [removeServicioFromState]);
+  const handleServiceFinalized = useCallback(
+    (servicioId: number) => {
+      removeServicioFromState(servicioId);
+    },
+    [removeServicioFromState]
+  );
 
   const handleServiceAutoFinished = useCallback(async () => {
-
     try {
       await getServicios(true);
       setCurrentPage(prev => prev);
@@ -58,11 +61,16 @@ export function useServiceLogic() {
 
   const serviciosByStatus = useMemo(() => {
     if (showAllServices) {
-      // Mostrar servicios terminados (1) o anulados (0)
-      return servicios.filter((servicio: ServicioWithDetails) => servicio.estado === 1 || servicio.estado === 0);
+      // Mostrar servicios finalizados (1) o anulados (0)
+      return servicios.filter(
+        (servicio: ServicioWithDetails) => servicio.estado === 1 || servicio.estado === 0
+      );
     } else {
-      // Mostrar servicios en proceso (2) o pausados (3)
-      return servicios.filter((servicio: ServicioWithDetails) => servicio.estado === 2 || servicio.estado === 3);
+      // Mostrar servicios en proceso (2), pausados (3) o solicitud de anulación (4)
+      return servicios.filter(
+        (servicio: ServicioWithDetails) =>
+          servicio.estado === 2 || servicio.estado === 3 || servicio.estado === 4
+      );
     }
   }, [servicios, showAllServices]);
 
@@ -80,7 +88,6 @@ export function useServiceLogic() {
   const currentServicios = filteredServicios.slice(startIndex, endIndex);
 
   return {
-
     servicios,
     loading,
     searchTerm,

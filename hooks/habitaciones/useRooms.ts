@@ -28,6 +28,8 @@ interface UseRooms {
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+const EMPTY_ARRAY: any[] = [];
+
 export default function useRooms(): UseRooms {
   const {
     data: rooms,
@@ -35,18 +37,20 @@ export default function useRooms(): UseRooms {
     error,
     refetch
   } = useGenericFetch<Room>('/api/rooms', {
-    transform: result => (result.success ? result.data : [])
+    transform: result => (result.success ? result.data : EMPTY_ARRAY)
   });
 
   const [searchTerm, setSearchTerm] = useState('');
   const { create, update, remove } = useGenericMutations<Room>('/api/rooms', {
-    onSuccess: () => { refetch(); },
+    onSuccess: () => {
+      refetch();
+    },
     showToasts: true,
     entityName: 'Habitación'
   });
 
   const filteredRooms = useMemo(() => {
-    if (!rooms || rooms.length === 0) return [];
+    if (!rooms || rooms.length === 0) return EMPTY_ARRAY as Room[];
     if (!searchTerm.trim()) return rooms;
 
     const term = searchTerm.toLowerCase();
@@ -116,22 +120,31 @@ export default function useRooms(): UseRooms {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       showSuccessToast(data.message || 'Habitación actualizada correctamente');
     }
   });
 
-  const activateRoom = useCallback(async (id: number) => {
-    await statusMutation.mutateAsync({ id, action: 'activate' });
-  }, [statusMutation]);
+  const activateRoom = useCallback(
+    async (id: number) => {
+      await statusMutation.mutateAsync({ id, action: 'activate' });
+    },
+    [statusMutation]
+  );
 
-  const deactivateRoom = useCallback(async (id: number) => {
-    await statusMutation.mutateAsync({ id, action: 'deactivate' });
-  }, [statusMutation]);
+  const deactivateRoom = useCallback(
+    async (id: number) => {
+      await statusMutation.mutateAsync({ id, action: 'deactivate' });
+    },
+    [statusMutation]
+  );
 
-  const occupyRoom = useCallback(async (id: number) => {
-    await statusMutation.mutateAsync({ id, action: 'occupy' });
-  }, [statusMutation]);
+  const occupyRoom = useCallback(
+    async (id: number) => {
+      await statusMutation.mutateAsync({ id, action: 'occupy' });
+    },
+    [statusMutation]
+  );
 
   const reorderRooms = useCallback(
     async (reorderedRooms: Room[]) => {
@@ -164,13 +177,15 @@ export default function useRooms(): UseRooms {
   );
 
   return {
-    rooms: rooms || [],
+    rooms: rooms || (EMPTY_ARRAY as Room[]),
     filteredRooms,
     isLoading,
     error,
     searchTerm,
     setSearchTerm,
-    fetchRooms: async () => { await refetch(); },
+    fetchRooms: async () => {
+      await refetch();
+    },
     createRoom,
     updateRoom,
     deleteRoom,

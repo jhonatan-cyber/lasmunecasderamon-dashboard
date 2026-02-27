@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
+const EMPTY_ARRAY: any[] = [];
+
 export function useGenericFetch<T>(
   endpoint: string,
   options?: {
@@ -31,18 +33,21 @@ export function useGenericFetch<T>(
       return options?.transform ? options.transform(result) : result;
     },
     enabled: options?.initialFetch !== false,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 60 // 1 minute
   });
 
-  const setData = useCallback((updater: any) => {
-    queryClient.setQueryData(queryKey, updater);
-  }, [queryClient, queryKey]);
+  const setData = useCallback(
+    (updater: any) => {
+      queryClient.setQueryData(queryKey, updater);
+    },
+    [queryClient, queryKey]
+  );
 
   return {
-    data: data || [],
+    data: (data || EMPTY_ARRAY) as T[],
     isLoading,
     error: error instanceof Error ? error.message : null,
     refetch,
-    setData,
+    setData
   };
 }

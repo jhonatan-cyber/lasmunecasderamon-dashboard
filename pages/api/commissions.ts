@@ -21,12 +21,12 @@ import { RowDataPacket } from 'mysql2/promise';
 const STATS_QUERY = `
 SELECT 
   COALESCE(SUM(CASE 
-    WHEN C.venta_id != 0 THEN DC.comision 
+    WHEN C.venta_id != 0 AND C.venta_id IS NOT NULL THEN DC.comision 
     ELSE 0 
   END), 0) AS total_ventas,
   
   COALESCE(SUM(CASE 
-    WHEN C.servicio_id != 0 THEN DC.comision 
+    WHEN C.servicio_id != 0 AND C.servicio_id IS NOT NULL THEN DC.comision 
     ELSE 0 
   END), 0) AS total_servicios,
 
@@ -37,12 +37,12 @@ SELECT
   COALESCE(MAX(DC.comision), 0) AS comision_maxima,
   
   COALESCE(ROUND(
-    (SUM(CASE WHEN C.venta_id != 0 THEN DC.comision ELSE 0 END) * 100.0) / 
+    (SUM(CASE WHEN C.venta_id != 0 AND C.venta_id IS NOT NULL THEN DC.comision ELSE 0 END) * 100.0) / 
     NULLIF(SUM(DC.comision), 0)
   ), 0) AS porcentaje_ventas,
   
   COALESCE(ROUND(
-    (SUM(CASE WHEN C.servicio_id != 0 THEN DC.comision ELSE 0 END) * 100.0) / 
+    (SUM(CASE WHEN C.servicio_id != 0 AND C.servicio_id IS NOT NULL THEN DC.comision ELSE 0 END) * 100.0) / 
     NULLIF(SUM(DC.comision), 0)
   ), 0) AS porcentaje_servicios
 
@@ -273,8 +273,8 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         U.id_usuario,
         U.nick,
         CONCAT(U.nombre, ' ', U.apellido) AS anfitriona,
-        COALESCE(SUM(CASE WHEN C.venta_id != 0 THEN DC.comision ELSE 0 END), 0) AS venta,
-        COALESCE(SUM(CASE WHEN C.servicio_id != 0 THEN DC.comision ELSE 0 END), 0) AS servicio,
+        COALESCE(SUM(CASE WHEN C.venta_id != 0 AND C.venta_id IS NOT NULL THEN DC.comision ELSE 0 END), 0) AS venta,
+        COALESCE(SUM(CASE WHEN C.servicio_id != 0 AND C.servicio_id IS NOT NULL THEN DC.comision ELSE 0 END), 0) AS servicio,
         SUM(DC.comision) AS total,
         C.estado
       FROM comisiones C
@@ -373,7 +373,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
               monto
             ) VALUES (?, ?, ?)
           `,
-            [validatedData.venta_id, validatedData.servicio_id, validatedData.monto]
+            [validatedData.venta_id || 0, validatedData.servicio_id || 0, validatedData.monto]
           );
 
           const comisionId = comisionResult.insertId;

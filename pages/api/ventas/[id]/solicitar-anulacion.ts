@@ -69,8 +69,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const venta = ventaResult[0] as any;
 
     // Verificar que la venta no esté ya anulada o con solicitud de anulación pendiente
-    if (venta.estado === 0 || venta.estado === 4) {
+    if (venta.estado === 0 || venta.estado === 3) {
       return res.status(400).json({
+        success: false,
         error:
           venta.estado === 0
             ? 'La venta ya está anulada'
@@ -95,8 +96,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Usar el nombre completo del usuario logueado
     const usuarioNombre = nombreCompleto;
 
-    // Actualizar estado a solicitud de anulación (estado = 4)
-    const nuevoEstado = 4;
+    // Actualizar estado a solicitud de anulación (estado = 3)
+    const nuevoEstado = 3;
     await query('UPDATE ventas SET estado = ?, fecha_mod = NOW() WHERE id_venta = ?', [
       nuevoEstado,
       ventaId
@@ -177,16 +178,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     return res.status(200).json({
+      success: true,
       message: 'Solicitud de anulación enviada correctamente',
       venta: {
         id: ventaId,
         codigo: venta.codigo,
-        estado: 4
+        estado: nuevoEstado
       }
     });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('❌ [SOLICITAR ANULACION] Error:', error);
     return res.status(500).json({
-      error: 'Error interno del servidor'
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message
     });
   }
 }

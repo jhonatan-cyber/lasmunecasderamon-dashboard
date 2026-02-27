@@ -14,13 +14,10 @@ import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { LayoutGrid, List } from 'lucide-react';
-import { RoomMapDashboard } from '@/components/rooms/RoomMapDashboard';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatsCardSkeleton, CardSkeleton } from '@/components/ui/skeletons';
 
 export default function ServiciosPage() {
-  const [view, setView] = useState<'grid' | 'map'>('map');
   const { habitaciones, loading: habitacionLoading } = useHabitaciones();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
@@ -80,28 +77,27 @@ export default function ServiciosPage() {
   };
 
   return (
-    <PermissionGuard module="private_rooms" action="view">
+    <PermissionGuard module='private_rooms' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        {/* Header */}
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+        {/* Header estándar del sistema */}
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6'>
           <div>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
               Servicios Privados
             </h1>
             <p className='text-sm sm:text-base text-gray-600 mt-2'>
-              Gestiona los servicios privados y habitaciones VIP
+              Gestiona los registros de servicios del sistema
             </p>
           </div>
           {canCreate && (
             <Button
               onClick={handleCreateServicioWithCheck}
               disabled={cajaLoading || !hasOpenCaja}
-              variant='outline'
-              className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${hasOpenCaja
-                ? 'bg-black text-white hover:scale-105'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              size='sm'
+              className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+                hasOpenCaja
+                  ? 'bg-black text-white hover:scale-105 shadow-md dark:hover:bg-zinc-800'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               {cajaLoading ? (
                 <>
@@ -111,12 +107,12 @@ export default function ServiciosPage() {
               ) : hasOpenCaja ? (
                 <>
                   <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                  Nuevo
+                  Nuevo Registro
                 </>
               ) : (
                 <>
                   <AlertCircle className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                  Sin Caja
+                  Caja Cerrada
                 </>
               )}
             </Button>
@@ -124,39 +120,18 @@ export default function ServiciosPage() {
         </div>
 
         {/* Estadísticas de servicios */}
-        {loading || habitacionLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
+        {loading ? (
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
+            {[...Array(4)].map((_, i) => (
+              <StatsCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
-          <ServiceStats servicios={servicios} habitaciones={habitaciones} />
-        )}
-
-        {/* ... existing code for messages and switcher ... */}
-
-        {/* View: MAP */}
-        {view === 'map' && (
-          <div className="bg-white dark:bg-black/20 rounded-2xl shadow-sm border p-4 sm:p-6 mb-6">
-            {loading || habitacionLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
-              </div>
-            ) : (
-              <RoomMapDashboard
-                habitaciones={habitaciones || []}
-                servicios={servicios || []}
-              />
-            )}
-          </div>
+          <ServiceStats servicios={servicios} />
         )}
 
         {/* List Content */}
-        <div className={`${view === 'map' ? 'hidden' : 'block'} bg-white dark:bg-black/10 rounded-lg shadow-sm border p-4 sm:p-6`}>
+        <div className='bg-transparent p-0'>
           <ServiceFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -168,17 +143,46 @@ export default function ServiciosPage() {
             setCurrentPage={setCurrentPage}
           />
 
+          {/* Pestañas de estado - Centradas */}
+          <div className='flex justify-center mb-10'>
+            <Tabs
+              value={showAllServices ? 'finished' : 'active'}
+              onValueChange={value => {
+                if (value === 'active') handleShowActiveServices();
+                else handleShowAllServices();
+              }}
+              className='w-full sm:w-auto'
+            >
+              <TabsList className='grid w-full grid-cols-2 bg-gray-100/80 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-gray-200 dark:border-zinc-700 shadow-md h-14'>
+                <TabsTrigger
+                  value='active'
+                  className='rounded-xl px-10 sm:px-16 py-3 text-sm sm:text-base font-bold data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black transition-all duration-300 shadow-sm'
+                >
+                  En Proceso
+                </TabsTrigger>
+                <TabsTrigger
+                  value='finished'
+                  className='rounded-xl px-10 sm:px-16 py-3 text-sm sm:text-base font-bold data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black transition-all duration-300 shadow-sm'
+                >
+                  Finalizados
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           {loading ? (
             <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6'>
-              {[...Array(6)].map((_, i) => <CardSkeleton key={i} />)}
+              {[...Array(6)].map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
             </div>
           ) : (
             <>
               {showAllServices && (
-                <div className='mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg'>
-                  <p className='text-blue-800 text-xs sm:text-sm'>
-                    <strong>Mostrando servicios terminados:</strong> Solo servicios con estado
-                    "Terminado"
+                <div className='mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl flex items-center gap-3'>
+                  <div className='w-2 h-2 rounded-full bg-blue-500 animate-pulse' />
+                  <p className='text-blue-800 dark:text-blue-300 text-xs sm:text-sm font-medium'>
+                    <strong>Historial:</strong> Mostrando únicamente servicios finalizados
                   </p>
                 </div>
               )}
