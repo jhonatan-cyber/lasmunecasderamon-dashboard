@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     try {
-
       await query(
         `UPDATE logins 
          SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
@@ -81,7 +80,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Configurar cookie
-    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`);
+    const isSecure = process.env.NEXT_PUBLIC_BASE_URL?.startsWith('https');
+    res.setHeader(
+      'Set-Cookie',
+      `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax${isSecure ? '; Secure' : ''}`
+    );
 
     return res.status(200).json({
       success: true,

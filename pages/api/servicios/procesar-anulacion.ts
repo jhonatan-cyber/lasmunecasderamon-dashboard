@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { withTransaction } from '@/lib/transactionUtils';
 import { enviarWhatsApp } from '@/lib/whatsappService';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 
@@ -15,289 +16,206 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    // Buscar la solicitud por token
-    const solicitudSql = `
-      SELECT 
-        sas.servicio_id,
-        sas.estado,
-        s.codigo,
-        s.estado as servicio_estado,
-        s.total,
-        CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre,
-        h.nombre as habitacion_numero,
-        s.tiempo,
-        GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas_nombres
-      FROM solicitudes_anulacion_servicios sas
-      LEFT JOIN servicios s ON sas.servicio_id = s.id_servicio
-      LEFT JOIN clientes c ON s.cliente_id = c.id_cliente
-      LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
-      LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
-      LEFT JOIN usuarios u ON ds.usuario_id = u.id_usuario
-      WHERE sas.token = ? AND sas.estado = 'pendiente'
-      GROUP BY sas.servicio_id
-    `;
+    const result = await withTransaction(async connection => {
+      // Buscar la solicitud por token
+      const solicitudSql = `
+        SELECT 
+          sas.servicio_id,
+          sas.estado,
+          s.codigo,
+          s.estado as servicio_estado,
+          s.total,
+          s.metodo_pago,
+          s.habitacion_id,
+          s.cliente_id,
+          CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre,
+          h.nombre as habitacion_numero,
+          s.tiempo,
+          GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas_nombres
+        FROM solicitudes_anulacion_servicios sas
+        LEFT JOIN servicios s ON sas.servicio_id = s.id_servicio
+        LEFT JOIN clientes c ON s.cliente_id = c.id_cliente
+        LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
+        LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+        LEFT JOIN usuarios u ON ds.usuario_id = u.id_usuario
+        WHERE sas.token = ? AND sas.estado = 'pendiente'
+        GROUP BY sas.servicio_id
+        FOR UPDATE
+      `;
 
-    const solicitudResult = await query(solicitudSql, [token]);
+      const solicitudResult = (await connection(solicitudSql, [token])) as any[];
 
-    if (!Array.isArray(solicitudResult) || solicitudResult.length === 0) {
-      return res.status(404).json({
-        error: 'Solicitud no encontrada o ya procesada',
-        message: 'La solicitud de anulación no existe o ya fue procesada'
-      });
-    }
-
-    const solicitud = solicitudResult[0] as any;
-
-    const servicioId = solicitud.servicio_id;
-    const codigoServicio = solicitud.codigo;
-    const clienteNombre = solicitud.cliente_nombre || 'Sin cliente';
-    const totalServicio = solicitud.total || 0;
-    const habitacion = solicitud.habitacion_numero;
-    const tiempo = solicitud.tiempo;
-    const anfitrionas = solicitud.anfitrionas_nombres || 'Sin anfitriones';
-
-    // Actualizar el estado de la solicitud
-    const nuevoEstado = action === 'confirmar' ? 'confirmada' : 'rechazada';
-
-    await query('UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE token = ?', [
-      nuevoEstado,
-      token
-    ]);
-
-    if (action === 'confirmar') {
-      // Si se confirma, cambiar el estado del servicio a anulado (0)
-
-      await query('UPDATE servicios SET estado = 0, fecha_mod = NOW() WHERE id_servicio = ?', [
-        servicioId
-      ]);
-
-      // Liberar habitación y anfitrionas
-      const [servicio] = await query('SELECT habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
-      if (servicio && servicio.habitacion_id) {
-        const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [servicio.habitacion_id])) as any[];
-        let isFreeRoom = false;
-        if (roomInfo.length > 0) {
-          const room = roomInfo[0];
-          isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
-        }
-
-        if (!isFreeRoom) {
-          await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [servicio.habitacion_id]);
-          console.log(`✅ Habitación ${servicio.habitacion_id} liberada por anulación de servicio ${servicioId}`);
-
-          sendNotificationToAll('timer_stopped', {
-            servicioId: servicioId,
-            roomId: servicio.habitacion_id
-          });
-        }
+      if (!Array.isArray(solicitudResult) || solicitudResult.length === 0) {
+        throw new Error('Solicitud no encontrada o ya procesada');
       }
 
-      // Liberar anfitrionas asociadas
-      const anfitrionas = await query('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [servicioId]) as any[];
-      if (Array.isArray(anfitrionas) && anfitrionas.length > 0) {
-        for (const anfitriona of anfitrionas) {
-          await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
-        }
-        console.log(`✅ ${anfitrionas.length} anfitrionas liberadas por anulación de servicio ${servicioId}`);
-      }
+      const solicitud = solicitudResult[0];
+      const servicioId = solicitud.servicio_id;
+      const codigoServicio = solicitud.codigo;
+      const clienteNombre = solicitud.cliente_nombre || 'Sin cliente';
+      const totalServicio = solicitud.total || 0;
+      const habitacionId = solicitud.habitacion_id;
+      const habitacionNombre = solicitud.habitacion_numero;
+      const tiempo = solicitud.tiempo;
+      const anfitrionasNombres = solicitud.anfitrionas_nombres || 'Sin anfitriones';
+      const metodoPago = solicitud.metodo_pago || 'efectivo';
 
-      // Cambiar estado de comisiones asociadas al servicio
-
-      try {
-        // Actualizar el estado de las comisiones a 2 (anulado)
-        await query(
-          `
-           UPDATE comisiones 
-           SET estado = 2, fecha_mod = NOW()
-           WHERE servicio_id = ?
-         `,
+      if (action === 'confirmar') {
+        // 1. Cambiar el estado del servicio a anulado (0)
+        await connection(
+          'UPDATE servicios SET estado = 0, fecha_mod = NOW() WHERE id_servicio = ?',
           [servicioId]
         );
-      } catch (comisionError) {
-        console.error('🔍 API: Error actualizando estado de comisiones:', comisionError);
-        // No fallar la operación si la actualización de comisiones falla
-      }
 
-      // Actualizar caja con los descuentos correspondientes
+        // 2. Registrar la DEVOLUCIÓN en las tablas específicas
+        const devServResult: any = await connection(
+          'INSERT INTO devoluciones_servicios (servicio_id, pieza_id, cliente_id, total, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
+          [servicioId, habitacionId || 0, solicitud.cliente_id || 0, totalServicio]
+        );
+        const devServId = devServResult.insertId;
 
-      try {
-        // Obtener la caja actual (estado = 1)
-        const cajaActualSql = `
-           SELECT id_caja, efectivo, servicio, devolucion
-           FROM cajas 
-           WHERE estado = 1 
-           ORDER BY fecha_apertura DESC 
-           LIMIT 1
-         `;
-        const cajaActualResult = await query(cajaActualSql);
-        const cajaActual = (
-          Array.isArray(cajaActualResult) ? cajaActualResult[0] : cajaActualResult
-        ) as any;
+        // Registrar detalles por anfitriona
+        const anfitrionas = (await connection(
+          'SELECT usuario_id, comision FROM detalle_servicios WHERE servicio_id = ?',
+          [servicioId]
+        )) as any[];
+        for (const anf of anfitrionas) {
+          await connection(
+            'INSERT INTO detalle_devoluciones_servicios (devolucion_servicio_id, usuario_id, monto) VALUES (?, ?, ?)',
+            [devServId, anf.usuario_id, anf.comision || 0]
+          );
+          // Liberar anfitriona
+          await connection('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anf.usuario_id]);
+        }
+
+        // 3. Liberar habitación si no es área libre
+        if (habitacionId) {
+          const roomInfo = (await connection(
+            'SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?',
+            [habitacionId]
+          )) as any[];
+          if (roomInfo.length > 0) {
+            const room = roomInfo[0];
+            const isFreeRoom =
+              !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+            if (!isFreeRoom) {
+              await connection('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
+                habitacionId
+              ]);
+            }
+          }
+        }
+
+        // 4. Anular comisiones
+        await connection(
+          'UPDATE comisiones SET estado = 2, fecha_mod = NOW() WHERE servicio_id = ?',
+          [servicioId]
+        );
+
+        // 5. Actualizar caja
+        const cajaActualResult = (await connection(`
+          SELECT id_caja, efectivo, tarjeta, transferencia, servicio, devolucion
+          FROM cajas 
+          WHERE estado = 1 
+          ORDER BY fecha_apertura DESC 
+          LIMIT 1
+        `)) as any[];
+        const cajaActual = cajaActualResult[0];
 
         if (cajaActual) {
-          // Descontar el total del servicio del efectivo
-          const nuevoEfectivo = Math.max(0, cajaActual.efectivo - totalServicio);
-          // Descontar el total del servicio de la columna servicio
-          const nuevoServicio = Math.max(0, cajaActual.servicio - totalServicio);
-          // Sumar el total del servicio a la columna devolucion
-          const nuevaDevolucion = (cajaActual.devolucion || 0) + totalServicio;
+          let columnToUpdate = 'efectivo';
+          if (metodoPago === 'tarjeta') columnToUpdate = 'tarjeta';
+          else if (metodoPago === 'transferencia') columnToUpdate = 'transferencia';
 
-          await query(
-            `UPDATE cajas 
-              SET efectivo = ?, servicio = ?, devolucion = ?
-              WHERE id_caja = ?`,
-            [nuevoEfectivo, nuevoServicio, nuevaDevolucion, cajaActual.id_caja]
+          await connection(
+            `UPDATE cajas SET ${columnToUpdate} = GREATEST(0, ${columnToUpdate} - ?), servicio = GREATEST(0, servicio - ?), devolucion = devolucion + ? WHERE id_caja = ?`,
+            [totalServicio, totalServicio, totalServicio, cajaActual.id_caja]
           );
         }
-      } catch (cajaError) {
-        console.error('🔍 API: Error actualizando caja:', cajaError);
-        // No fallar la operación si la actualización de caja falla
-      }
 
-      // Enviar mensaje de confirmación por WhatsApp
-      const mensajeConfirmacion = `✅ *ANULACIÓN DE SERVICIO CONFIRMADA*
-
-El servicio con código *${codigoServicio}* ha sido anulado exitosamente.
-
-📋 *Detalles:*
-• Código: ${codigoServicio}
-• Cliente: ${clienteNombre}
-• Habitación: ${habitacion || 'No especificada'}
-• Tiempo: ${tiempo || 'No especificado'} minutos
-• Total: $${totalServicio?.toLocaleString() || 0}
-• Anfitriones: ${anfitrionas}
-
-El servicio ya no está activo en el sistema.`;
-
-      const adminWhatsApp =
-        process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-
-      try {
-        await enviarWhatsApp(adminWhatsApp, mensajeConfirmacion);
-      } catch (whatsappError) {
-        console.error('🔍 API: Error enviando WhatsApp:', whatsappError);
-        // No fallar la operación si WhatsApp falla
-      }
-
-      // Enviar notificación al sistema
-      const notificationData = {
-        id: servicioId,
-        codigo: codigoServicio,
-        cliente: clienteNombre,
-        habitacion: habitacion,
-        tiempo: tiempo,
-        total: totalServicio,
-        anfitrionas: anfitrionas,
-        accion: 'anulacion_servicio_confirmada',
-        timestamp: new Date().toISOString()
-      };
-
-      // Guardar notificación en la base de datos
-      try {
-        await query(
-          `
-          INSERT INTO notificaciones_sistema (tipo, datos, leida, fecha_creacion)
-          VALUES (?, ?, 0, NOW())
-        `,
-          ['anulacion_servicio_confirmada', JSON.stringify(notificationData)]
+        await connection(
+          "UPDATE solicitudes_anulacion_servicios SET estado = 'confirmada' WHERE token = ?",
+          [token]
         );
-      } catch (dbError) {
-        console.error('🔔 Error guardando notificación en BD:', dbError);
-      }
 
-      try {
-        sendNotificationToAll('anulacion_servicio_confirmada', notificationData);
-      } catch (notificationError) {
-        console.error('🔔 Error enviando notificación:', notificationError);
-        // No fallar la operación si las notificaciones fallan
-      }
-    } else {
-      // Si se rechaza, cambiar el estado del servicio de vuelta a en proceso (2)
-
-      await query('UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE id_servicio = ?', [
-        servicioId
-      ]);
-
-      // Enviar mensaje de rechazo por WhatsApp
-      const mensajeRechazo = `❌ *ANULACIÓN DE SERVICIO RECHAZADA*
-
-La solicitud de anulación para el servicio con código *${codigoServicio}* ha sido rechazada.
-
-📋 *Detalles:*
-• Código: ${codigoServicio}
-• Cliente: ${clienteNombre}
-• Habitación: ${habitacion || 'No especificada'}
-• Tiempo: ${tiempo || 'No especificado'} minutos
-• Total: $${totalServicio?.toLocaleString() || 0}
-• Anfitriones: ${anfitrionas}
-
-El servicio permanece activo en el sistema.`;
-
-      const adminWhatsApp =
-        process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-
-      try {
-        await enviarWhatsApp(adminWhatsApp, mensajeRechazo);
-      } catch (whatsappError) {
-        console.error('🔍 API: Error enviando WhatsApp:', whatsappError);
-        // No fallar la operación si WhatsApp falla
-      }
-
-      // Enviar notificación al sistema
-      const notificationData = {
-        id: servicioId,
-        codigo: codigoServicio,
-        cliente: clienteNombre,
-        habitacion: habitacion,
-        tiempo: tiempo,
-        total: totalServicio,
-        anfitrionas: anfitrionas,
-        accion: 'anulacion_servicio_rechazada',
-        timestamp: new Date().toISOString()
-      };
-
-      // Guardar notificación en la base de datos
-      try {
-        await query(
-          `
-          INSERT INTO notificaciones_sistema (tipo, datos, leida, fecha_creacion)
-          VALUES (?, ?, 0, NOW())
-        `,
-          ['anulacion_servicio_rechazada', JSON.stringify(notificationData)]
+        return {
+          success: true,
+          message: 'Anulación de servicio confirmada exitosamente',
+          servicio: {
+            id: servicioId,
+            codigo: codigoServicio,
+            cliente: clienteNombre,
+            total: totalServicio,
+            habitacion: habitacionNombre,
+            habitacion_id: habitacionId,
+            anfitrionas: anfitrionasNombres
+          }
+        };
+      } else {
+        // Rechazar
+        await connection(
+          'UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE id_servicio = ?',
+          [servicioId]
         );
-      } catch (dbError) {
-        console.error('🔔 Error guardando notificación en BD:', dbError);
-      }
-
-      try {
-        sendNotificationToAll('anulacion_servicio_rechazada', notificationData);
-      } catch (notificationError) {
-        console.error('🔔 Error enviando notificación:', notificationError);
-        // No fallar la operación si las notificaciones fallan
-      }
-    }
-
-    return res.status(200).json({
-      success: true,
-      message:
-        action === 'confirmar'
-          ? 'Anulación de servicio confirmada exitosamente'
-          : 'Anulación de servicio rechazada exitosamente',
-      servicio: {
-        id: servicioId,
-        codigo: codigoServicio,
-        cliente: clienteNombre,
-        habitacion: habitacion,
-        tiempo: tiempo,
-        total: totalServicio,
-        anfitrionas: anfitrionas,
-        estado: action === 'confirmar' ? 0 : 2
+        await connection(
+          "UPDATE solicitudes_anulacion_servicios SET estado = 'rechazada' WHERE token = ?",
+          [token]
+        );
+        return {
+          success: true,
+          message: 'Anulación de servicio rechazada exitosamente',
+          servicio: {
+            id: servicioId,
+            codigo: codigoServicio,
+            cliente: clienteNombre,
+            total: totalServicio,
+            habitacion: habitacionNombre,
+            anfitrionas: anfitrionasNombres
+          }
+        };
       }
     });
-  } catch (error) {
-    return res.status(500).json({
-      error: 'Error interno del servidor',
-      message: 'Error al procesar la anulación'
+
+    // Notificaciones (fuera de la transacción)
+    if (result.success) {
+      const type =
+        action === 'confirmar' ? 'anulacion_servicio_confirmada' : 'anulacion_servicio_rechazada';
+      const notificationData = {
+        ...result.servicio,
+        accion: type,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await query(
+          `INSERT INTO notificaciones_sistema (tipo, datos, leida, fecha_creacion) VALUES (?, ?, 0, NOW())`,
+          [type, JSON.stringify(notificationData)]
+        );
+        sendNotificationToAll(type, notificationData);
+        if (action === 'confirmar') {
+          sendNotificationToAll('timer_stopped', {
+            servicioId: result.servicio.id,
+            roomId: result.servicio.habitacion_id
+          });
+        }
+      } catch (err) {
+        console.error('Error enviando notificaciones:', err);
+      }
+
+      const adminWhatsApp =
+        process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
+      const emoji = action === 'confirmar' ? '✅' : '❌';
+      const titulo = action === 'confirmar' ? 'SERVICIO ANULADO' : 'ANULACIÓN RECHAZADA';
+      const msg = `${emoji} *${titulo}*\n\nEl servicio con código *${result.servicio.codigo}* ha sido ${action === 'confirmar' ? 'anulado' : 'mantenido activo'}.\n\n📋 *Detalles:*\n• Cliente: ${result.servicio.cliente}\n• Habitación: ${result.servicio.habitacion}\n• Total: $${result.servicio.total?.toLocaleString()}`;
+      await enviarWhatsApp(adminWhatsApp, msg);
+    }
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Error en procesar-anulacion servicios:', error);
+    return res.status(error.message.includes('No encontrada') ? 404 : 500).json({
+      success: false,
+      error: error.message || 'Error interno del servidor'
     });
   }
 }

@@ -104,11 +104,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { usuario_id } = req.body || {};
       const userId = Number(usuario_id);
       if (!userId || Number.isNaN(userId)) {
-        return res.status(400).json({ success: false, message: 'usuario_id es requerido y debe ser numérico' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'usuario_id es requerido y debe ser numérico' });
       }
 
       try {
-        const result = await withTransaction(async (trx) => {
+        const result = await withTransaction(async trx => {
           // 1) Asistencias: estado 1 -> 0
           const asistencias = (await trx(
             'UPDATE asistencias SET estado = 0, fecha_pago = NOW() WHERE usuario_id = ? AND estado = 1',
@@ -133,11 +135,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [userId]
           )) as any;
 
-          // 4) Servicios del usuario (vía detalle_servicios): estado 0 -> 4
+          // 4) Servicios del usuario (vía detalle_servicios): estado 1 (Finalizado) -> 4 (Pagado/Planilla)
           const servicios = (await trx(
             `UPDATE servicios 
              SET estado = 4, fecha_mod = NOW()
-             WHERE estado = 0 AND id_servicio IN (
+             WHERE estado = 1 AND id_servicio IN (
                SELECT ds.servicio_id FROM detalle_servicios ds WHERE ds.usuario_id = ?
              )`,
             [userId]
@@ -193,9 +195,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           };
         });
 
-        return res.status(200).json({ success: true, message: 'Pago procesado correctamente', ...result });
+        return res
+          .status(200)
+          .json({ success: true, message: 'Pago procesado correctamente', ...result });
       } catch (err) {
-        return res.status(500).json({ success: false, message: 'Error al procesar el pago', error: err });
+        return res
+          .status(500)
+          .json({ success: false, message: 'Error al procesar el pago', error: err });
       }
     }
 
@@ -205,5 +211,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ success: false, message: 'Error en planilla', error });
   }
 }
-
-

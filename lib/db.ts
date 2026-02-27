@@ -11,7 +11,7 @@ export interface DatabaseConfig {
   queueLimit?: number;
 }
 
-const defaultConfig: DatabaseConfig = {
+const defaultConfig: DatabaseConfig & { timezone?: string } = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
@@ -19,7 +19,8 @@ const defaultConfig: DatabaseConfig = {
   port: parseInt(process.env.DB_PORT || '3307'),
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: '-04:00'
 };
 
 const pool = mysql.createPool(defaultConfig);
@@ -31,7 +32,8 @@ async function createConnection() {
       user: defaultConfig.user,
       password: defaultConfig.password,
       database: defaultConfig.database,
-      port: defaultConfig.port
+      port: defaultConfig.port,
+      timezone: '-04:00'
     });
     return connection;
   } catch (error) {

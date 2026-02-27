@@ -6,18 +6,21 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/ui/skeletons';
-import { SupervisorMap } from '@/components/dashboard/SupervisorMap';
 
 // Lazy load de componentes pesados
-const LoggedUsersCards = dynamic(
-  () => import('@/components/dashboard/LoggedUsersCards'),
-  { loading: () => <StatsCardSkeleton /> }
-);
+const LoggedUsersCards = dynamic(() => import('@/components/dashboard/LoggedUsersCards'), {
+  loading: () => <StatsCardSkeleton />
+});
 
-const DashboardStatsCards = dynamic(
-  () => import('@/components/dashboard/DashboardStatsCards'),
-  { loading: () => <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">{[...Array(4)].map((_, i) => <StatsCardSkeleton key={i} />)}</div> }
-);
+const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
+  loading: () => (
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+      {[...Array(4)].map((_, i) => (
+        <StatsCardSkeleton key={i} />
+      ))}
+    </div>
+  )
+});
 
 const SalesChart = dynamic(
   () => import('@/components/sales-chart').then(mod => ({ default: mod.SalesChart })),
@@ -88,11 +91,6 @@ export default function Dashboard() {
       </div>
 
       <LoggedUsersCards />
-
-      {/* Mapa de Habitaciones (Nuevo) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-        <SupervisorMap />
-      </div>
 
       {/* Cards de estadísticas del dashboard */}
       <DashboardStatsCards />
