@@ -146,7 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (anfitrionas.length > 0) {
           for (const anfitriona of anfitrionas) {
             if (anfitriona.rol === 'anfitriona') {
-              await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
+              await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
             }
           }
         }

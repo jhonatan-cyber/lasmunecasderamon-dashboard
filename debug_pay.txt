@@ -1,0 +1,68 @@
+[
+  {
+    "id_servicio": 5,
+    "codigo": "0YBQNF12",
+    "com_id": 5,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 6,
+    "codigo": "32DHHHC2",
+    "com_id": 6,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 8,
+    "codigo": "3GCPCM0B",
+    "com_id": 8,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 7,
+    "codigo": "3WL00G7A",
+    "com_id": 7,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 11,
+    "codigo": "5LV98UEX",
+    "com_id": 11,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 4,
+    "codigo": "AUYA0WNE",
+    "com_id": 4,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 13,
+    "codigo": "D1XGWS8M",
+    "com_id": 15,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 3,
+    "codigo": "EYVIGH94",
+    "com_id": 3,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 2,
+    "codigo": "LKEFIST8",
+    "com_id": 2,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 9,
+    "codigo": "ORRBYWLG",
+    "com_id": 9,
+    "dc_est": 1
+  },
+  {
+    "id_servicio": 10,
+    "codigo": "TG8RLR7Y",
+    "com_id": 10,
+    "dc_est": 1
+  }
+]

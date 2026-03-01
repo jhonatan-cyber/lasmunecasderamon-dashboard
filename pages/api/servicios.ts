@@ -7,14 +7,17 @@ import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      const { all, caja_id } = req.query;
+      const { all, caja_id, limit = '50', page = '1' } = req.query;
+      const limitNum = parseInt(limit as string);
+      const pageNum = parseInt(page as string);
+      const offset = (pageNum - 1) * limitNum;
+
       let whereClause = '';
       const params: any[] = [];
 
       if (all === 'true') {
         // Mostrar solo servicios finalizados (estado 1)
-        // TEMPORAL: También incluir estado 0 para servicios antiguos que aún no se han migrado
-        whereClause = 'WHERE (s.estado = 1 OR s.estado = 0)';
+        whereClause = 'WHERE s.estado = 1';
       } else if (all === 'false') {
         // Mostrar servicios activos (2: En Proceso, 3: Pausado, 4: Solicitud de Anulación)
         whereClause = 'WHERE s.estado IN (2, 3, 4)';
@@ -28,44 +31,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // Si no se especifica 'all', mostrar todos los servicios sin filtro
 
-      console.log('[API /servicios] Query params:', { all, caja_id });
-      console.log('[API /servicios] WHERE clause:', whereClause);
-      console.log('[API /servicios] Params:', params);
-
-      // Query de debug para ver todos los servicios
-      const todosServicios = (await query(
-        'SELECT id_servicio, codigo, estado, caja_id FROM servicios ORDER BY id_servicio DESC LIMIT 10'
-      )) as any[];
-      console.log(
-        '[API /servicios] DEBUG - Últimos 10 servicios:',
-        JSON.stringify(todosServicios, null, 2)
-      );
-
-      // Query adicional para ver servicios con caja_id = 1
-      if (caja_id) {
-        const serviciosCaja = (await query(
-          'SELECT id_servicio, codigo, estado, caja_id FROM servicios WHERE caja_id = ? ORDER BY id_servicio DESC LIMIT 10',
-          [caja_id]
-        )) as any[];
-        console.log(
-          '[API /servicios] DEBUG - Servicios con caja_id =',
-          caja_id,
-          ':',
-          JSON.stringify(serviciosCaja, null, 2)
-        );
-
-        // Contar servicios por estado en esta caja
-        const countByEstado = (await query(
-          'SELECT estado, COUNT(*) as count FROM servicios WHERE caja_id = ? GROUP BY estado',
-          [caja_id]
-        )) as any[];
-        console.log(
-          '[API /servicios] DEBUG - Count por estado en caja',
-          caja_id,
-          ':',
-          JSON.stringify(countByEstado, null, 2)
-        );
-      }
+      // Query params logged for reference without hitting DB extra times
+      // console.log('[API /servicios] Query params:', { all, caja_id, limit, page });
 
       const servicios = (await query(
         `
@@ -96,7 +63,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             SEPARATOR ', '
           ) as anfitrionas_nombres,
           CONCAT(creator.nombre, ' ', creator.apellido) as creator_name,
-          creator.nick as usuario_nick
+          creator.nick as usuario_nick,
+          (
+            SELECT IF(COUNT(dc_inner.id_detalle_comision) > 0 AND SUM(dc_inner.estado) = 0, 0, 1)
+            FROM comisiones c_inner 
+            JOIN detalle_comisiones dc_inner ON dc_inner.comision_id = c_inner.id_comision
+            WHERE c_inner.servicio_id = s.id_servicio
+          ) as pago_estado
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN detalle_servicios_clientes dsc ON dsc.servicio_id = s.id_servicio
@@ -108,8 +81,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ${whereClause}
         GROUP BY s.id_servicio
         ORDER BY s.fecha_crea DESC
+        LIMIT ? OFFSET ?
       `,
-        params
+        [...params, limitNum, offset]
       )) as any[];
 
       console.log('[API /servicios] Servicios encontrados:', servicios.length);
@@ -284,8 +258,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           const precioNetoServicio = subTotalNum - precioHabitacionOriginal;
           finalComision = Math.floor(precioNetoServicio / numAnfitrionas);
 
-          if (finalComision > 0) {
-            for (const uId of usuarios) {
+          for (const uId of usuarios) {
+            if (finalComision > 0) {
               const cRes: any = await connection(
                 `INSERT INTO comisiones (venta_id, servicio_id, monto, estado) VALUES (null, ?, ?, 1)`,
                 [servicioId, finalComision]
@@ -294,12 +268,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision, estado) VALUES (?, ?, ?, 1)`,
                 [cRes.insertId, uId, finalComision]
               );
-              await connection(
-                'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
-                [uId, servicioId, finalComision]
-              );
-              await connection('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [uId]);
             }
+            await connection(
+              'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
+              [uId, servicioId, Math.max(0, finalComision)]
+            );
+            await connection('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [uId]);
           }
         }
 

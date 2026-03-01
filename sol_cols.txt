@@ -1,0 +1,1 @@
+id_solicitud, codigo, cliente_id, habitacion_id, precio_servicio, iva, precio_habitacion, comision_anfitriona, anfitrionas_ids, num_clientes, metodo_pago, tiempo, total, solicitado_por, estado, motivo_rechazo, procesado_por, fecha_solicitud, fecha_procesamiento

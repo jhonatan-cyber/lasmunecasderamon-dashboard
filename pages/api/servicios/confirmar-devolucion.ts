@@ -81,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             'INSERT INTO detalle_devoluciones_servicios (devolucion_servicio_id, usuario_id, monto) VALUES (?, ?, ?)',
             [devServId, anf.usuario_id, anf.comision || 0]
           );
-          await connection('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anf.usuario_id]);
+          await connection('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anf.usuario_id]);
         }
 
         // 2. Liberar habitación si no es área libre

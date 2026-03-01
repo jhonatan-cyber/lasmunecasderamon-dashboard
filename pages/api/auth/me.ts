@@ -51,7 +51,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         email: user.email,
         role: user.rol_nombre || 'garzon',
         roleId: user.rol_id, // ← AGREGADO: ID del rol para SSE
-        status: user.estado,
+        status: user.estado_servicio || user.estado,
         foto: user.foto || '',
         nick: user.nick || '',
         run: user.run || '',

@@ -18,12 +18,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Buscar usuario por email o username con información del rol
     const users = (await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
-       WHERE (u.email = ? OR u.username = ?) AND u.estado = 1`,
+       WHERE (u.email = ? OR u.nick = ?) AND u.estado = 1`,
       [email, email]
     )) as any[];
 
