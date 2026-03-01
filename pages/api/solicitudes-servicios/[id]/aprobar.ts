@@ -83,7 +83,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       const multiplicador = tiempo === 60 ? 2 : 1;
       const tieneComision = (solicitud.comision_anfitriona || 0) > 0;
 
-      const precioServicioBase = tieneComision ? 0 : solicitud.precio_servicio || 0;
+      const precioServicioBase = solicitud.precio_servicio || 0;
       const precioServicioIndividual = precioServicioBase * multiplicador;
       const precioHabitacionBase = solicitud.precio_habitacion || 0;
 
@@ -94,13 +94,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         precioHabitacionTotal = precioHabitacionBase * numAnfitrionas * multiplicador;
       }
 
-      const subTotal = precioServicioIndividual * numAnfitrionas;
-      let ivaFinal = 0;
-      let totalFinal = subTotal + precioHabitacionTotal;
+      // subTotal Neto (Servicios + Habitación)
+      // precioServicioIndividual ya tiene multiplicado el tiempo (ej. 5k base * 2h = 10k)
+      // numAnfitrionas multiplica eso por la cantidad de chicas (ej. 10k individual * 1 chica = 10k total serv)
+      const subTotalNeto = (precioServicioIndividual * numAnfitrionas) + precioHabitacionTotal;
+      let ivaFinal = tieneComision ? 0 : Number(solicitud.iva || 0);
+      let totalFinal = subTotalNeto + ivaFinal;
 
       if (!tieneComision && solicitud.metodo_pago?.toLowerCase() === 'tarjeta') {
-        ivaFinal = Math.floor(subTotal * 0.2);
-        totalFinal = subTotal + precioHabitacionTotal + ivaFinal;
+        // Si es tarjeta y no venía el IVA, lo calculamos al 20% sobre el servicio neto
+        if (!ivaFinal) ivaFinal = Math.floor((precioServicioIndividual * numAnfitrionas) * 0.2);
+
+        totalFinal = subTotalNeto + ivaFinal;
         const totalRedondeado = Math.ceil(totalFinal / 5000) * 5000;
         const excedente = totalRedondeado - totalFinal;
         ivaFinal += excedente;
@@ -109,11 +114,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       let comisionPorAnfitriona = 0;
       if (numAnfitrionas > 0) {
-        // REGLA: La comisión es el precio del servicio por chica + (si tiene comisión la habitación / chicas)
-        const comisionHabitacionIndiv = tieneComision
-          ? Math.floor(solicitud.comision_anfitriona / numAnfitrionas)
-          : 0;
-        comisionPorAnfitriona = precioServicioIndividual + comisionHabitacionIndiv;
+        // REGLA: La comisión es solo el precio del servicio por chica
+        comisionPorAnfitriona = precioServicioIndividual;
       }
 
       const fechaActual = new Date();
@@ -129,10 +131,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           codigo,
           solicitud.cliente_id || null,
           habitacionIdFinal,
-          precioServicioIndividual * numAnfitrionas, // Guardar total de servicio
-          precioHabitacionTotal, // Usar el calculado correctamente
+          precioServicioIndividual * numAnfitrionas, // Guardar total de servicio (Neto)
+          precioHabitacionTotal, // Guardar total de habitación (Neto)
           ivaFinal,
-          subTotal,
+          subTotalNeto, // sub_total de la tabla es la suma de netos
           totalFinal,
           tiempo, // Usar la variable numérica
           solicitud.metodo_pago,
@@ -259,7 +261,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           comision = comision + ?
         WHERE id_caja = ?`,
         [
-          totalFinal,
+          totalFinal - ivaFinal,
           montoEfectivo,
           montoTarjeta,
           montoTransferencia,
@@ -333,30 +335,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       created_at: result.startTime
     });
 
-    // Enviar notificaciones PUSH a los involucrados
-    try {
-      // 1. Al solicitante (Garzon/Anfitriona)
-      if (result.solicitado_por) {
-        sendPushNotification(
-          result.solicitado_por,
-          '¡SOLICITUD APROBADA!',
-          `Tu solicitud para ${result.habitacionNombre} ha sido aprobada. El tiempo ha comenzado.`,
-          { type: 'service_request_approved', id_solicitud: id }
-        );
-      }
-
-      // 2. A las anfitrionas asignadas
-      if (result.anfitrionas_ids && result.anfitrionas_ids.length > 0) {
-        sendPushNotification(
-          result.anfitrionas_ids,
-          '¡NUEVO SERVICIO!',
-          `Has sido asignada a un servicio en ${result.habitacionNombre}.`,
-          { type: 'service_request_approved', id_solicitud: id }
-        );
-      }
-    } catch (pushErr) {
-      console.error('[APROBAR SOLICITUD] Error enviando notificaciones push:', pushErr);
-    }
 
     return res.status(200).json({
       success: true,

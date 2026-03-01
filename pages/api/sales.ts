@@ -548,8 +548,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         const comisionesPorAnfitriona = new Map<number, number>();
 
         for (const detalle of detalles) {
-          const comision = detalle.comision || 0;
-          if (comision <= 0) continue;
+          const comisionTotalDelProducto = Math.round(detalle.comision || 0);
+          if (comisionTotalDelProducto <= 0) continue;
 
           let hostessesParaEsteProducto: number[] = [];
 
@@ -564,23 +564,28 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           }
 
           if (hostessesParaEsteProducto.length > 0) {
-            const montoPorAnfitriona = Math.round(comision / hostessesParaEsteProducto.length);
-            for (const hId of hostessesParaEsteProducto) {
+            const montoBase = Math.floor(comisionTotalDelProducto / hostessesParaEsteProducto.length);
+            const residuoComm = comisionTotalDelProducto % hostessesParaEsteProducto.length;
+
+            for (let i = 0; i < hostessesParaEsteProducto.length; i++) {
+              const hId = hostessesParaEsteProducto[i];
+              const finalMonto = montoBase + (i < residuoComm ? 1 : 0);
               const actual = comisionesPorAnfitriona.get(hId) || 0;
-              comisionesPorAnfitriona.set(hId, actual + montoPorAnfitriona);
+              comisionesPorAnfitriona.set(hId, actual + finalMonto);
             }
           }
         }
 
         for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
-          if (monto > 0) {
+          const totalMonto = Math.round(monto);
+          if (totalMonto > 0) {
             const comisionResult: any = await connection(
               `INSERT INTO comisiones (
                 venta_id,
                 servicio_id,
                 monto
               ) VALUES (?, ?, ?)`,
-              [ventaId, 0, monto]
+              [ventaId, null, totalMonto]
             );
 
             const comisionId = comisionResult.insertId;
@@ -591,13 +596,51 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
                 usuario_id,
                 comision
               ) VALUES (?, ?, ?)`,
-              [comisionId, usuarioId, monto]
+              [comisionId, usuarioId, totalMonto]
             );
           }
         }
       }
+      // 5. Registrar propinas (solo para cajeros y garzones)
+      if (propina && propina > 0) {
+        let staffIds = (await connection(`
+          SELECT DISTINCT u.id_usuario
+          FROM logins l
+          INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
+          INNER JOIN roles r ON r.id_rol = u.rol_id
+          WHERE l.estado = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
+        `)) as any[];
 
-      // 5. Actualizar la caja activa
+        // Si no hay staff logueado, la propina queda para quien creó la venta como fallback
+        if (!staffIds || staffIds.length === 0) {
+          staffIds = [{ id_usuario: createdBy }];
+        }
+
+        if (staffIds.length > 0) {
+          const totalPropina = Math.round(propina);
+          const cuotaBase = Math.floor(totalPropina / staffIds.length);
+          const residuo = totalPropina % staffIds.length;
+
+          const resultPropina: any = await connection(
+            'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
+            [ventaId, totalPropina]
+          );
+          const propinaId = resultPropina.insertId;
+
+          for (let i = 0; i < staffIds.length; i++) {
+            const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
+            if (montoFinal > 0) {
+              await connection(
+                'INSERT INTO detalle_propinas (propina_id, usuario_id, monto) VALUES (?, ?, ?)',
+                [propinaId, staffIds[i].id_usuario, montoFinal]
+              );
+            }
+          }
+        }
+      }
+
+
+      // 6. Actualizar la caja activa
       const cajaActiva = (await connection(
         'SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1'
       )) as any[];
@@ -812,6 +855,26 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       } catch (notificacionError) {
         throw notificacionError;
       }
+    }
+
+    // Notificar por SSE a todos los clientes conectados
+    try {
+      await sendNotificationToAll({
+        type: 'sale_created',
+        data: {
+          id_venta: ventaId,
+          codigo: codigoVenta,
+          total: total,
+          habitacion_id: habitacion_id,
+          habitacion_nombre: ventaCompleta?.habitacion_nombre || null,
+          cliente_nombre: ventaCompleta?.cliente_nombre || null,
+          estado: estadoVenta,
+          created_at: ventaCompleta?.fecha_crea
+        }
+      });
+      console.log('[SALES] Notificación SSE sale_created enviada');
+    } catch (sseError) {
+      console.error('[SALES] Error enviando notificación SSE:', sseError);
     }
 
     return res.status(201).json({

@@ -310,8 +310,8 @@ export function WeeklySalesChart() {
         </div>
 
         {/* Recharts Area Chart */}
-        <div className="dark:bg-gray-800/50 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="h-[300px] sm:h-[400px] w-full dark:bg-gray-800/50 bg-white rounded-xl p-2 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={chartData}
               margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
@@ -331,18 +331,18 @@ export function WeeklySalesChart() {
               />
               <XAxis
                 dataKey="diaCorto"
-                tick={{ fill: 'currentColor', fontSize: 12 }}
+                tick={{ fill: 'currentColor', fontSize: 10 }}
                 className="text-gray-600 dark:text-gray-400"
                 tickLine={false}
                 axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
               />
               <YAxis
                 tickFormatter={formatCompact}
-                tick={{ fill: 'currentColor', fontSize: 11 }}
+                tick={{ fill: 'currentColor', fontSize: 10 }}
                 className="text-gray-500 dark:text-gray-400"
                 tickLine={false}
                 axisLine={false}
-                width={55}
+                width={45}
               />
               <Tooltip content={<CustomTooltip />} />
               {averageLine > 0 && (

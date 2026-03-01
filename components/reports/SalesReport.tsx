@@ -362,7 +362,7 @@ export function SalesReport() {
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Donut Chart */}
-          <div style={{ width: '100%', height: 280 }}>
+          <div className="h-[280px] sm:h-[350px] w-full">
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -438,73 +438,75 @@ export function SalesReport() {
         title={<><CalendarDays className="h-5 w-5" /> Ventas por Día</>}
         headerClassName="bg-gradient-to-r from-blue-600 to-cyan-600 text-white"
       >
-        {barData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart
-              data={barData}
-              margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
-            >
-              <defs>
-                <linearGradient id="salesBarGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.95} />
-                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.55} />
-                </linearGradient>
-                <linearGradient id="propinasBarGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.95} />
-                  <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.55} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="currentColor"
-                className="text-gray-200 dark:text-gray-700"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="fechaCorta"
-                tick={{ fill: 'currentColor', fontSize: 11 }}
-                className="text-gray-600 dark:text-gray-400"
-                tickLine={false}
-                axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
-              />
-              <YAxis
-                tickFormatter={formatCompact}
-                tick={{ fill: 'currentColor', fontSize: 11 }}
-                className="text-gray-500 dark:text-gray-400"
-                tickLine={false}
-                axisLine={false}
-                width={55}
-              />
-              <Tooltip content={<BarTooltip />} />
-              <Legend
-                wrapperStyle={{ paddingTop: '8px' }}
-                formatter={(value: string) => (
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{value}</span>
-                )}
-              />
-              <Bar
-                dataKey="ventas"
-                name="Ventas"
-                fill="url(#salesBarGrad)"
-                radius={[4, 4, 0, 0]}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-              <Bar
-                dataKey="propinas"
-                name="Propinas"
-                fill="url(#propinasBarGrad)"
-                radius={[4, 4, 0, 0]}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-48 text-gray-400">
-            <p className="text-sm">No hay datos para mostrar en este período</p>
-          </div>
-        )}
+        <div className="h-[300px] sm:h-[400px] w-full">
+          {barData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barData}
+                margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient id="salesBarGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.55} />
+                  </linearGradient>
+                  <linearGradient id="propinasBarGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.55} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="currentColor"
+                  className="text-gray-200 dark:text-gray-700"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="fechaCorta"
+                  tick={{ fill: 'currentColor', fontSize: 10 }}
+                  className="text-gray-600 dark:text-gray-400"
+                  tickLine={false}
+                  axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
+                />
+                <YAxis
+                  tickFormatter={formatCompact}
+                  tick={{ fill: 'currentColor', fontSize: 10 }}
+                  className="text-gray-500 dark:text-gray-400"
+                  tickLine={false}
+                  axisLine={false}
+                  width={45}
+                />
+                <Tooltip content={<BarTooltip />} />
+                <Legend
+                  wrapperStyle={{ paddingTop: '8px' }}
+                  formatter={(value: string) => (
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="ventas"
+                  name="Ventas"
+                  fill="url(#salesBarGrad)"
+                  radius={[4, 4, 0, 0]}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                />
+                <Bar
+                  dataKey="propinas"
+                  name="Propinas"
+                  fill="url(#propinasBarGrad)"
+                  radius={[4, 4, 0, 0]}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-gray-400">
+              <p className="text-sm">No hay datos para mostrar en este período</p>
+            </div>
+          )}
+        </div>
       </CollapsibleCard>
     </div>
   );

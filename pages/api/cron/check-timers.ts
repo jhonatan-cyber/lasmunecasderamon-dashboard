@@ -42,9 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const remainingMs = endTime.getTime() - now.getTime();
             const remainingMinutes = remainingMs / 60000;
 
-            const anfitrionaIds = service.anfitrionas_ids ?
-                service.anfitrionas_ids.split(',').map(Number) : [];
-            const usersToNotify = [...new Set([service.created_by, ...anfitrionaIds])].filter(Boolean);
+            const usersToNotify = [service.created_by].filter(Boolean);
 
             // A. ALERTA DE 5 MINUTOS (entre 4.5 y 6 minutos restantes)
             if (remainingMinutes <= 6 && remainingMinutes > 4.5 && !service.push_notified_5m) {

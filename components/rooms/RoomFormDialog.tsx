@@ -144,10 +144,11 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
           <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
             <div className='space-y-4'>
               <div>
-                <label className='block text-sm sm:text-base font-medium mb-2'>Nombre</label>
+                <label htmlFor="room-name" className='block text-sm sm:text-base font-medium mb-2'>Nombre</label>
                 <div className='relative'>
                   <Bed className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
                   <Input
+                    id='room-name'
                     name='name'
                     value={form.name}
                     onChange={handleChange}
@@ -162,10 +163,11 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                 )}
               </div>
               <div>
-                <label className='block text-sm sm:text-base font-medium mb-2'>Precio</label>
+                <label htmlFor="room-price" className='block text-sm sm:text-base font-medium mb-2'>Precio</label>
                 <div className='relative'>
                   <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
                   <Input
+                    id='room-price'
                     name='price'
                     value={form.price}
                     onChange={handleChange}
@@ -182,12 +184,13 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                 )}
               </div>
               <div>
-                <label className='block text-sm sm:text-base font-medium mb-2'>
+                <label htmlFor="room-time" className='block text-sm sm:text-base font-medium mb-2'>
                   Tiempo (minutos)
                 </label>
                 <div className='relative'>
                   <Clock className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
                   <Input
+                    id='room-time'
                     name='time'
                     value={form.time}
                     onChange={handleChange}
@@ -204,12 +207,13 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                 )}
               </div>
               <div>
-                <label className='block text-sm sm:text-base font-medium mb-2'>
+                <label htmlFor="room-comm" className='block text-sm sm:text-base font-medium mb-2'>
                   Comisión Anfitriona (Monto)
                 </label>
                 <div className='relative'>
                   <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
                   <Input
+                    id='room-comm'
                     name='comision_anfitriona'
                     value={form.comision_anfitriona}
                     onChange={handleChange}

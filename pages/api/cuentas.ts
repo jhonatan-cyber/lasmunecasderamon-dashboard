@@ -15,19 +15,19 @@ export default async function handler(
       return handlePost(req, res);
     default:
       res.setHeader("Allow", ["GET", "POST"]);
-      return res.status(405).json({ 
-        success: false, 
-        message: `Método ${method} no permitido` 
+      return res.status(405).json({
+        success: false,
+        message: `Método ${method} no permitido`
       });
   }
 }
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    
+
     // Verificar si las tablas existen
     const tablesExist = await checkTablesExist();
-    
+
     if (!tablesExist) {
       return res.status(200).json(getTestData());
     }
@@ -68,9 +68,9 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json(results);
   } catch (error) {
- 
-    return res.status(500).json({ 
-      success: false, 
+
+    return res.status(500).json({
+      success: false,
       message: "Error al obtener cuentas",
       error: error instanceof Error ? error.message : "Error desconocido"
     });
@@ -92,7 +92,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verificar si las tablas existen
     const tablesExist = await checkTablesExist();
-    
+
     if (!tablesExist) {
       return res.status(201).json({
         success: true,
@@ -122,23 +122,24 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
       // 2. Insertar detalles
       for (const detalle of detalles) {
-        
+
         // Validar que todos los campos requeridos estén presentes
         if (!detalle.producto_id || !detalle.precio || !detalle.cantidad || !detalle.sub_total) {
           throw new Error(`Detalle incompleto: ${JSON.stringify(detalle)}`);
         }
-        
+
         await trx(
           `INSERT INTO detalle_cuentas (
-            cuenta_id, producto_id, precio, cantidad, sub_total, comision
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
+            cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             cuentaId,
             detalle.producto_id,
             detalle.precio,
             detalle.cantidad,
             detalle.sub_total,
-            detalle.comision || 0
+            detalle.comision || 0,
+            detalle.hostess_id || (detalle.hostesses && detalle.hostesses[0]) || null
           ]
         );
       }
@@ -173,7 +174,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
   } catch (error) {
-   
+
     return res.status(500).json({
       success: false,
       message: "Error al crear la cuenta",

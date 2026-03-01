@@ -202,6 +202,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+      // -----------------------------------------------------------------
+      // SSE: Broadcast update
+      // -----------------------------------------------------------------
+      try {
+        const [updatedService] = (await query(`
+          SELECT 
+            s.id_servicio, s.codigo, s.habitacion_id as roomId, h.nombre as roomName,
+            s.tiempo as duration, s.precio_servicio, s.precio_habitacion, s.iva, s.total,
+            s.metodo_pago, s.fecha_crea as startTime, s.fecha_crea as created_at, s.estado,
+            COALESCE(GROUP_CONCAT(DISTINCT 
+              CASE 
+                WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
+                ELSE CONCAT(u.nombre, ' ', u.apellido)
+              END 
+              SEPARATOR ', '
+            ), 'Sin asignar') as anfitrionas,
+            COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente') as clienteNombre,
+            h.comision_anfitriona as habitacion_comision
+          FROM servicios s
+          LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
+          LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
+          LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
+          LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
+          WHERE s.id_servicio = ?
+          GROUP BY s.id_servicio
+        `, [servicioId])) as any[];
+
+        if (updatedService) {
+          sendNotificationToAll('timer_updated', {
+            ...updatedService,
+            servicioId: updatedService.id_servicio,
+            duration: Number(updatedService.duration),
+            anfitrionas_ids: usuarios
+          });
+        }
+      } catch (sseErr) {
+        console.error('[SSE UPDATE] Error:', sseErr);
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Servicio actualizado exitosamente'
@@ -347,15 +386,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           if (Array.isArray(anfitrionasServicio) && anfitrionasServicio.length > 0) {
             for (const anfitriona of anfitrionasServicio) {
-              await query(
-                `
-                UPDATE usuarios SET estado = 1 
-                WHERE id_usuario = ? 
-                AND id_usuario NOT IN (SELECT usuario_id FROM detalle_servicios ds JOIN servicios s ON ds.servicio_id = s.id_servicio WHERE s.estado IN (2, 4) AND s.id_servicio != ?)
-                AND id_usuario NOT IN (SELECT usuario_id FROM ventas_usuarios vu JOIN ventas v ON vu.venta_id = v.id_venta WHERE v.estado = 2)
-              `,
-                [anfitriona.usuario_id, servicioId]
-              );
+              // 1. Verificar si la anfitriona realmente queda libre (no tiene otros servicios activos)
+              const [otherServices] = (await query(`
+                SELECT COUNT(*) as count 
+                FROM detalle_servicios ds 
+                JOIN servicios s ON ds.servicio_id = s.id_servicio 
+                WHERE s.estado IN (2, 4) AND s.id_servicio != ? AND ds.usuario_id = ?
+              `, [servicioId, anfitriona.usuario_id])) as any[];
+
+              const [inVentas] = (await query(`
+                SELECT COUNT(*) as count 
+                FROM ventas_usuarios vu 
+                JOIN ventas v ON vu.venta_id = v.id_venta 
+                WHERE v.estado = 2 AND vu.usuario_id = ?
+              `, [anfitriona.usuario_id])) as any[];
+
+              const isFree = (otherServices?.count || 0) === 0 && (inVentas?.count || 0) === 0;
+
+              if (isFree) {
+                await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
+
+                // NOTIFICAR CAMBIO DE ESTADO
+                sendNotificationToAll('user_status_updated', {
+                  userId: anfitriona.usuario_id,
+                  status: 1 // Disponible
+                });
+              }
             }
           }
         }
