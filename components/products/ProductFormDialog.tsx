@@ -101,17 +101,17 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     const newErrors: Partial<Record<keyof ProductForm, string>> = {};
     if (!form.code.trim()) newErrors.code = 'El código es requerido';
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-    
+
     // Validar precio usando valor numérico
     const numericPrice = getNumericValue(form.price);
     if (!numericPrice || isNaN(Number(numericPrice)))
       newErrors.price = 'Precio válido requerido';
-    
+
     // Validar comisión usando valor numérico (opcional)
     const numericCommission = getNumericValue(form.commission);
     if (form.commission.trim() && isNaN(Number(numericCommission)))
       newErrors.commission = 'Comisión debe ser un número válido';
-      
+
     if (!form.description.trim()) newErrors.description = 'La descripción es requerida';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -251,12 +251,13 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium mb-1'>Código</label>
+                <label htmlFor="prod-code" className='block text-sm font-medium mb-1'>Código</label>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <Barcode className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <Input
+                    id='prod-code'
                     name='code'
                     value={form.code}
                     readOnly
@@ -268,12 +269,13 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 )}
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Nombre</label>
+                <label htmlFor="prod-name" className='block text-sm font-medium mb-1'>Nombre</label>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <Package className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <Input
+                    id='prod-name'
                     name='name'
                     value={form.name}
                     onChange={handleChange}
@@ -289,12 +291,13 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>Precio</label>
+                  <label htmlFor="prod-price" className='block text-sm font-medium mb-1'>Precio</label>
                   <div className='relative'>
                     <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm'>
                       <DollarSign />
                     </span>
                     <Input
+                      id='prod-price'
                       name='price'
                       value={form.price}
                       type='text'
@@ -313,12 +316,13 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>Comisión (opcional)</label>
+                  <label htmlFor="prod-commission" className='block text-sm font-medium mb-1'>Comisión (opcional)</label>
                   <div className='relative'>
                     <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm'>
                       <DollarSign />
                     </span>
                     <Input
+                      id='prod-commission'
                       name='commission'
                       type='text'
                       value={form.commission}
@@ -338,12 +342,13 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 </div>
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Descripción</label>
+                <label htmlFor="prod-desc" className='block text-sm font-medium mb-1'>Descripción</label>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <FileText className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <Input
+                    id='prod-desc'
                     name='description'
                     value={form.description}
                     onChange={handleChange}
@@ -357,12 +362,13 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 )}
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Imagen</label>
+                <label htmlFor="prod-foto" className='block text-sm font-medium mb-1'>Imagen</label>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <Image className='w-3 h-3 sm:w-4 sm:h-4' />
                   </span>
                   <Input
+                    id='prod-foto'
                     name='foto'
                     type='file'
                     accept='image/jpeg,image/jpg,image/png,image/gif'

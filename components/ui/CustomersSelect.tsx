@@ -3,7 +3,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 
 interface Customer {
     id_cliente?: number;
@@ -28,9 +28,12 @@ interface CustomersSelectProps {
     disabled?: boolean;
 }
 
-const CustomersSelect: React.FC<CustomersSelectProps> = ({
-    clientes = [],
-    value = [],
+const DEFAULT_CLIENTS: Customer[] = [];
+const DEFAULT_VALUES: string[] = [];
+
+const CustomersSelect = ({
+    clientes = DEFAULT_CLIENTS,
+    value = DEFAULT_VALUES,
     onChange,
     label = "Cliente(s)",
     placeholder = "Seleccione cliente(s)",
@@ -39,7 +42,7 @@ const CustomersSelect: React.FC<CustomersSelectProps> = ({
     required = false,
     maxSelection = 4,
     disabled = false,
-}) => {
+}: CustomersSelectProps) => {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -74,12 +77,14 @@ const CustomersSelect: React.FC<CustomersSelectProps> = ({
         .filter(c => value.includes(c.id))
         .map(c => c.name);
 
+    const uniqueId = React.useId();
+
     return (
         <div className={`flex flex-col ${className}`}>
-            <Label className="block text-xs font-medium text-gray-500 mb-1">
+            <Label htmlFor={uniqueId} className="block text-xs font-medium text-gray-500 mb-1 leading-none">
                 <Users className="inline mr-1 w-4 h-4" />
                 {label}
-                {required && <span className="text-red-500">*</span>}
+                {required && <span className="text-red-500 ml-0.5">*</span>}
             </Label>
 
             <div className="relative">
@@ -89,6 +94,7 @@ const CustomersSelect: React.FC<CustomersSelectProps> = ({
                 <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                         <button
+                            id={uniqueId}
                             type="button"
                             className="w-full pl-10 pr-8 border border-gray-300 focus:ring-1 focus:ring-black focus:border-black bg-transparent py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors"
                             onClick={() => !disabled && setOpen(!open)}
@@ -113,7 +119,9 @@ const CustomersSelect: React.FC<CustomersSelectProps> = ({
                     </PopoverTrigger>
                     <PopoverContent align="start" className="w-[280px] p-0 shadow-xl border border-gray-200 z-[9999]" sideOffset={5}>
                         <div className="p-2 border-b bg-gray-50">
+                            <label htmlFor={`${uniqueId}-search`} className="sr-only">Buscar cliente</label>
                             <Input
+                                id={`${uniqueId}-search`}
                                 placeholder={searchPlaceholder}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}

@@ -71,6 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           DC.cantidad, 
           DC.sub_total, 
           DC.comision, 
+          DC.hostess_id,
           DC.fecha_crea,
           PR.nombre AS producto, 
           PR.id_producto
@@ -179,8 +180,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await trx(
               `
               INSERT INTO detalle_cuentas (
-                cuenta_id, producto_id, precio, cantidad, sub_total, comision, fecha_crea
-              ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+                cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
             `,
               [
                 cuentaId,
@@ -188,7 +189,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 detalle.precio,
                 detalle.cantidad,
                 detalle.sub_total,
-                detalle.comision
+                detalle.comision,
+                detalle.hostess_id || (detalle.hostesses && detalle.hostesses[0]) || null
               ]
             );
           }

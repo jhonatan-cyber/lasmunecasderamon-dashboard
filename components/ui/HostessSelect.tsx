@@ -2,7 +2,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 
 interface Hostess {
   id_usuario?: number;
@@ -41,18 +41,17 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Filtrar anfitrionas basado en el término de búsqueda
   const filteredAnfitrionas = useMemo(() => {
     if (!searchTerm) return anfitrionas;
-    
+
     return anfitrionas.filter((anfitriona) => {
       const nombre = anfitriona?.nombre || anfitriona?.name || "";
       const apellido = anfitriona?.apellido || anfitriona?.lastName || "";
       const nick = anfitriona?.nick || "";
       const searchLower = searchTerm.toLowerCase();
-      
+
       return (
         nombre.toLowerCase().includes(searchLower) ||
         apellido.toLowerCase().includes(searchLower) ||
@@ -69,7 +68,7 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
     const nombre = anfitriona?.nombre || anfitriona?.name || "";
     const apellido = anfitriona?.apellido || anfitriona?.lastName || "";
     const nick = anfitriona?.nick || "";
-    
+
     if (nick) return nick;
     return `${nombre} ${apellido}`.trim();
   };
@@ -84,22 +83,24 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
     }
   };
 
-  const selectedHostesses = anfitrionas.filter((a) => 
+  const selectedHostesses = anfitrionas.filter((a) =>
     value.includes(String(getHostessId(a)))
   );
 
+  const uniqueId = React.useId();
+
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label className="block text-xs font-medium text-gray-500 mb-1">
+      <Label htmlFor={uniqueId} className="block text-xs font-medium text-gray-500 mb-1 leading-none">
         {label}
-        {required && <span className="text-red-500">*</span>}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>
-      
+
       <div className="relative">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
-              ref={triggerRef}
+              id={uniqueId}
               type="button"
               className="w-full pl-4 pr-8 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors"
               onClick={() => !disabled && setOpen((v) => !v)}
@@ -110,8 +111,8 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
               ) : (
                 <span className="flex flex-wrap gap-1">
                   {selectedHostesses.map((a, index) => (
-                    <span 
-                      key={`${getHostessId(a)}-${index}`} 
+                    <span
+                      key={`${getHostessId(a)}-${index}`}
                       className="bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs font-medium"
                     >
                       {getHostessName(a)}
@@ -126,7 +127,9 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
             <PopoverContent align="start" className="w-[280px] p-0">
               {/* Barra de búsqueda */}
               <div className="p-2 border-b">
+                <label htmlFor={`${uniqueId}-search`} className="sr-only">Buscar anfitriona</label>
                 <Input
+                  id={`${uniqueId}-search`}
                   placeholder={searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -146,11 +149,10 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                     const isSelected = value.includes(id);
                     const isDisabled = !isSelected && value.length >= maxSelection;
                     return (
-                      <label 
-                        key={`${id}-${index}`} 
-                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors ${
-                          isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                      <label
+                        key={`${id}-${index}`}
+                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                       >
                         <Checkbox
                           checked={isSelected}

@@ -76,18 +76,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       timestamp: new Date().toISOString()
     });
 
-    // Enviar notificación Push al solicitante
-    try {
-      if (solicitud.solicitado_por) {
-        sendPushNotification(
-          solicitud.solicitado_por,
-          'SOLICITUD RECHAZADA',
-          `Tu solicitud ha sido rechazada. Motivo: ${motivo_rechazo}`
-        );
-      }
-    } catch (pushErr) {
-      console.error('[RECHAZAR SOLICITUD] Error enviando notificación push:', pushErr);
-    }
     console.log('[RECHAZAR SOLICITUD] Notificación SSE enviada');
 
     return res.status(200).json({

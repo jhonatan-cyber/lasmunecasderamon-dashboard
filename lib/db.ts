@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 
-export interface DatabaseConfig {
+interface DatabaseConfig {
   host: string;
   user: string;
   password: string;
