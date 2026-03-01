@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useReducer } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from '@/components/ui/button';
@@ -79,6 +79,50 @@ interface ReportResponse {
   };
 }
 
+// REDUCER FOR STATE MANAGEMENT
+type ReportState = {
+  period: string;
+  startDate: string;
+  endDate: string;
+  data: ReportResponse['data'] | null;
+  loading: boolean;
+};
+
+type ReportAction =
+  | { type: 'SET_PERIOD'; payload: string }
+  | { type: 'SET_START_DATE'; payload: string }
+  | { type: 'SET_END_DATE'; payload: string }
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: ReportResponse['data'] }
+  | { type: 'FETCH_ERROR' };
+
+const initialReportState: ReportState = {
+  period: 'today',
+  startDate: '',
+  endDate: '',
+  data: null,
+  loading: true,
+};
+
+function reportReducer(state: ReportState, action: ReportAction): ReportState {
+  switch (action.type) {
+    case 'SET_PERIOD':
+      return { ...state, period: action.payload };
+    case 'SET_START_DATE':
+      return { ...state, startDate: action.payload };
+    case 'SET_END_DATE':
+      return { ...state, endDate: action.payload };
+    case 'FETCH_START':
+      return { ...state, loading: true };
+    case 'FETCH_SUCCESS':
+      return { ...state, loading: false, data: action.payload };
+    case 'FETCH_ERROR':
+      return { ...state, loading: false };
+    default:
+      return state;
+  }
+}
+
 const PAYMENT_COLORS = ['#10B981', '#3B82F6', '#8B5CF6'];
 const FLOW_COLORS = { entradas: '#10B981', salidas: '#EF4444', neto: '#3B82F6' };
 
@@ -153,18 +197,15 @@ const renderPieLabel = ({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRa
 };
 
 export function CashRegisterReport() {
-  const [period, setPeriod] = useState('today');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [data, setData] = useState<ReportResponse['data'] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, dispatch] = useReducer(reportReducer, initialReportState);
+  const { period, startDate, endDate, data, loading } = state;
 
   useEffect(() => {
     fetchData();
   }, [period, startDate, endDate]);
 
   const fetchData = async () => {
-    setLoading(true);
+    dispatch({ type: 'FETCH_START' });
     try {
       const params = new URLSearchParams();
       if (period === 'custom') {
@@ -176,11 +217,10 @@ export function CashRegisterReport() {
       }
       const res = await fetch(`/api/reports/cash-register?${params}`);
       const json: ReportResponse = await res.json();
-      if (json.success) setData(json.data);
+      if (json.success) dispatch({ type: 'FETCH_SUCCESS', payload: json.data });
     } catch (e) {
       console.error('Error fetching cash register data:', e);
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'FETCH_ERROR' });
     }
   };
 
@@ -260,23 +300,32 @@ export function CashRegisterReport() {
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <span className="text-sm font-medium">Período:</span>
               </div>
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Hoy</SelectItem>
-                  <SelectItem value="yesterday">Ayer</SelectItem>
-                  <SelectItem value="week">Esta Semana</SelectItem>
-                  <SelectItem value="month">Este Mes</SelectItem>
-                  <SelectItem value="custom">Personalizado</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <label htmlFor="period-select" className="sr-only">Seleccionar período</label>
+                <Select value={period} onValueChange={(v) => dispatch({ type: 'SET_PERIOD', payload: v })}>
+                  <SelectTrigger id="period-select" className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Hoy</SelectItem>
+                    <SelectItem value="yesterday">Ayer</SelectItem>
+                    <SelectItem value="week">Esta Semana</SelectItem>
+                    <SelectItem value="month">Este Mes</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               {period === 'custom' && (
                 <div className="flex items-center gap-2">
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                  <div className="flex items-center gap-1">
+                    <label htmlFor="start-date" className="sr-only">Fecha inicial</label>
+                    <input id="start-date" type="date" value={startDate} onChange={e => dispatch({ type: 'SET_START_DATE', payload: e.target.value })} className="px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                  </div>
                   <span className="text-gray-500">a</span>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                  <div className="flex items-center gap-1">
+                    <label htmlFor="end-date" className="sr-only">Fecha final</label>
+                    <input id="end-date" type="date" value={endDate} onChange={e => dispatch({ type: 'SET_END_DATE', payload: e.target.value })} className="px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                  </div>
                 </div>
               )}
             </div>
@@ -363,7 +412,7 @@ export function CashRegisterReport() {
           headerClassName="bg-gradient-to-r from-violet-600 to-purple-600 text-white"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div style={{ width: '100%', height: 240 }}>
+            <div className="h-[240px] sm:h-[300px] w-full">
               {paymentPieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -448,7 +497,7 @@ export function CashRegisterReport() {
               <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{formatCurrencyNoDecimals(data.flujoEfectivo.neto)}</p>
             </div>
           </div>
-          <div style={{ width: '100%', height: 200 }}>
+          <div className="h-[220px] sm:h-[300px] w-full">
             {flowBarData.length > 0 && (flowBarData[0].Entradas > 0 || flowBarData[0].Salidas > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={flowBarData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
@@ -467,8 +516,8 @@ export function CashRegisterReport() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 12 }} className="text-gray-600 dark:text-gray-400" tickLine={false} />
-                  <YAxis tickFormatter={formatCompact} tick={{ fill: 'currentColor', fontSize: 11 }} className="text-gray-500 dark:text-gray-400" tickLine={false} axisLine={false} width={55} />
+                  <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 10 }} className="text-gray-600 dark:text-gray-400" tickLine={false} />
+                  <YAxis tickFormatter={formatCompact} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-gray-500 dark:text-gray-400" tickLine={false} axisLine={false} width={45} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="Entradas" fill="url(#flowEntradas)" radius={[4, 4, 0, 0]} barSize={40} animationDuration={800} />
                   <Bar dataKey="Salidas" fill="url(#flowSalidas)" radius={[4, 4, 0, 0]} barSize={40} animationDuration={800} />
@@ -491,7 +540,7 @@ export function CashRegisterReport() {
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Chart */}
-          <div style={{ width: '100%', height: 250 }}>
+          <div className="h-[250px] sm:h-[350px] w-full">
             {movBarData.length > 0 && movBarData.some(d => d.valor > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={movBarData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
@@ -506,8 +555,8 @@ export function CashRegisterReport() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 12 }} className="text-gray-600 dark:text-gray-400" tickLine={false} />
-                  <YAxis tickFormatter={formatCompact} tick={{ fill: 'currentColor', fontSize: 11 }} className="text-gray-500 dark:text-gray-400" tickLine={false} axisLine={false} width={55} />
+                  <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 10 }} className="text-gray-600 dark:text-gray-400" tickLine={false} />
+                  <YAxis tickFormatter={formatCompact} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-gray-500 dark:text-gray-400" tickLine={false} axisLine={false} width={45} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="valor" radius={[6, 6, 0, 0]} barSize={60} animationDuration={800}>
                     {movBarData.map((entry, index) => (
@@ -560,7 +609,7 @@ export function CashRegisterReport() {
       >
         {/* Chart de Cajas */}
         {cajasBarData.length > 0 && (
-          <div className="mb-6" style={{ width: '100%', height: 260 }}>
+          <div className="mb-6 h-[260px] sm:h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cajasBarData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
                 <defs>
@@ -574,8 +623,8 @@ export function CashRegisterReport() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 12 }} className="text-gray-600 dark:text-gray-400" tickLine={false} />
-                <YAxis tickFormatter={formatCompact} tick={{ fill: 'currentColor', fontSize: 11 }} className="text-gray-500 dark:text-gray-400" tickLine={false} axisLine={false} width={55} />
+                <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 10 }} className="text-gray-600 dark:text-gray-400" tickLine={false} />
+                <YAxis tickFormatter={formatCompact} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-gray-500 dark:text-gray-400" tickLine={false} axisLine={false} width={45} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '8px' }}
