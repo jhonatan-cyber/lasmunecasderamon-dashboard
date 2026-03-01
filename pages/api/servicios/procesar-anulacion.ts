@@ -85,7 +85,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             [devServId, anf.usuario_id, anf.comision || 0]
           );
           // Liberar anfitriona
-          await connection('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anf.usuario_id]);
+          await connection('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anf.usuario_id]);
         }
 
         // 3. Liberar habitación si no es área libre

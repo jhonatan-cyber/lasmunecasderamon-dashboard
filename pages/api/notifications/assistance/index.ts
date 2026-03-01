@@ -76,7 +76,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
             const idSolicitud = insertResult.insertId;
 
-            const title = '⚠️ LLAMADO STAFF';
+            const title = '⚠️ Solicitud de Personal';
             const body = `[${anfitrionaNick}] ${finalRoomName ? `en Hab. ${finalRoomName} ` : ''}solicita: ${type}${message ? ` (${message})` : ''}`;
 
             // Notificar a Cajeros y Garzones por Push

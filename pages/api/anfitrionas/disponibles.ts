@@ -12,6 +12,7 @@ const mapUserFromDB = (row: any) => ({
   email: row.email,
   telefono: row.telefono,
   estado: row.estado,
+  estado_servicio: row.estado_servicio,
   rol_id: row.rol_id,
   rol_nombre: row.rol_nombre,
   fecha_crea: row.fecha_crea,

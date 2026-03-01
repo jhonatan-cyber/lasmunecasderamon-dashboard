@@ -15,8 +15,8 @@ const defaultConfig: DatabaseConfig & { timezone?: string } = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'nuwesoft',
-  port: parseInt(process.env.DB_PORT || '3307'),
+  database: process.env.DB_NAME || 'lasmunecasderamon',
+  port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -35,6 +35,8 @@ async function createConnection() {
       port: defaultConfig.port,
       timezone: '-04:00'
     });
+    // Fix VPS sql_mode issues with GROUP BY
+    await connection.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
     return connection;
   } catch (error) {
     throw error;
@@ -46,7 +48,7 @@ export async function query(sql: string, params: any[] = []) {
   let connection;
   try {
     connection = await createConnection();
-    const [rows] = await connection.execute(sql, params);
+    const [rows] = await connection.query(sql, params);
     return rows;
   } catch (error) {
     throw error;

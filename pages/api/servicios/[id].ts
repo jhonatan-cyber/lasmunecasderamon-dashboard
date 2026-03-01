@@ -404,7 +404,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               const isFree = (otherServices?.count || 0) === 0 && (inVentas?.count || 0) === 0;
 
               if (isFree) {
-                await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
+                await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
 
                 // NOTIFICAR CAMBIO DE ESTADO
                 sendNotificationToAll('user_status_updated', {
