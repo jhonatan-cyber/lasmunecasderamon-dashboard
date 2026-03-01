@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
-import { withTransaction } from '@/lib/transactionUtils';
+import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({
       success: false,
@@ -19,9 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const cuentaId = parseInt(id);
-
   try {
+    const currentUser = getCurrentUser(req);
     const { cuenta_id, metodo_pago, propina = 0, total_cobrado, habitacion_id = null } = req.body;
 
     // Validaciones
@@ -52,7 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await query(updateCuentaSql, [cuenta_id]);
 
     // Registrar el cobro en la tabla cobros_cuentas (si existe)
-    // Si no existe la tabla, solo actualizamos el estado de la cuenta
     try {
       const insertCobroSql = `
         INSERT INTO cobros_cuentas (
@@ -66,11 +64,94 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `;
 
       await query(insertCobroSql, [cuenta_id, metodo_pago, propina, total_cobrado, habitacion_id]);
+
+      // --- DISTRIBUCIÓN DE PROPINAS ---
+      if (propina && Number(propina) > 0) {
+        let staffIds = (await query(`
+          SELECT DISTINCT u.id_usuario
+          FROM logins l
+          INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
+          INNER JOIN roles r ON r.id_rol = u.rol_id
+          WHERE l.estado = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
+        `)) as any[];
+
+        // Fallback al usuario actual si no hay nadie más logueado
+        if ((!staffIds || staffIds.length === 0) && currentUser) {
+          staffIds = [{ id_usuario: currentUser.id }];
+        }
+
+        if (staffIds && staffIds.length > 0) {
+          const totalPropina = Math.round(Number(propina));
+          const cuotaBase = Math.floor(totalPropina / staffIds.length);
+          const residuo = totalPropina % staffIds.length;
+
+          const resultPropina: any = await query(
+            'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
+            [0, totalPropina]
+          );
+          const propinaId = resultPropina.insertId;
+
+          for (let i = 0; i < staffIds.length; i++) {
+            const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
+            if (montoFinal > 0) {
+              await query(
+                'INSERT INTO detalle_propinas (propina_id, usuario_id, monto) VALUES (?, ?, ?)',
+                [propinaId, staffIds[i].id_usuario, montoFinal]
+              );
+            }
+          }
+        }
+      }
+
+      // --- REGISTRO DE COMISIONES ---
+      const detallesParaComisiones = (await query(`
+        SELECT DC.comision, DC.hostess_id 
+        FROM detalle_cuentas DC
+        WHERE DC.cuenta_id = ? AND DC.comision > 0
+      `, [cuenta_id])) as any[];
+
+      if (detallesParaComisiones.length > 0) {
+        const comisionesPorAnfitriona = new Map<number, number>();
+        const usuariosGralesCuenta = (await query(`
+          SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?
+        `, [cuenta_id])) as any[];
+
+        for (const detalle of detallesParaComisiones) {
+          const montoComm = Math.round(Number(detalle.comision) || 0);
+          if (detalle.hostess_id) {
+            const hId = Number(detalle.hostess_id);
+            comisionesPorAnfitriona.set(hId, (comisionesPorAnfitriona.get(hId) || 0) + montoComm);
+          } else if (usuariosGralesCuenta.length > 0) {
+            const cuotaBase = Math.floor(montoComm / usuariosGralesCuenta.length);
+            const residuo = montoComm % usuariosGralesCuenta.length;
+            for (let i = 0; i < usuariosGralesCuenta.length; i++) {
+              const uId = Number(usuariosGralesCuenta[i].usuario_id);
+              const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
+              comisionesPorAnfitriona.set(uId, (comisionesPorAnfitriona.get(uId) || 0) + montoFinal);
+            }
+          }
+        }
+
+        for (const [uId, monto] of comisionesPorAnfitriona.entries()) {
+          if (monto > 0) {
+            const comisionResult: any = await query(
+              `INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)`,
+              [0, 0, monto]
+            );
+            const comisionId = comisionResult.insertId;
+            await query(
+              `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)`,
+              [comisionId, uId, monto]
+            );
+          }
+        }
+      }
+
     } catch (error) {
-      console.log('Tabla cobros_cuentas no existe, solo se actualizó el estado de la cuenta');
+      console.error('Error al registrar cobro o distribuir propinas/comisiones:', error);
     }
 
-    // Si hay habitación seleccionada, actualizar su estado a "Ocupada" (estado = 2) si no es área libre
+    // Actualizar estado de la habitación si no es área libre
     if (habitacion_id) {
       try {
         const checkFreeRoom = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
@@ -81,14 +162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (!isFreeRoom) {
-          const updateHabitacionSql = `
-            UPDATE habitaciones 
-            SET estado = 2 
-            WHERE id_habitacion = ?
-          `;
-          await query(updateHabitacionSql, [habitacion_id]);
-        } else {
-          console.info('Habitación ignorada al cobrar por ser área libre:', habitacion_id);
+          await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacion_id]);
         }
       } catch (error) {
         console.error('Error al actualizar habitación:', error);
@@ -107,10 +181,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fecha_cobro: new Date().toISOString()
       }
     });
+
   } catch (error) {
+    console.error('Error final en handler de cobro:', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor al cobrar la cuenta'
     });
   }
 }
+
+export default withAuth(handler);

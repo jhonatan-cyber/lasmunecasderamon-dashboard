@@ -184,16 +184,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // REGLA IVA
       let ivaFinal = tieneComisionRoom ? 0 : Number(iva || 0);
       let totalFinal = Number(total || 0);
+
       if (metodo_pago === 'tarjeta' && !tieneComisionRoom) {
-        if (!ivaFinal && subTotalNum) ivaFinal = Math.floor(subTotalNum * 0.2);
-        const currentTotal = subTotalNum + precioHabitacionOriginal + ivaFinal;
+        // Recalculamos basándonos en los componentes para asegurar precisión y evitar duplicados
+        const precioNetoParaIva = subTotalNum - precioHabitacionOriginal;
+        if (!ivaFinal && precioNetoParaIva > 0) ivaFinal = Math.floor(precioNetoParaIva * 0.2);
+
+        const currentTotal = subTotalNum + ivaFinal;
         const totalRedondeado = Math.ceil(currentTotal / 5000) * 5000;
         const excedente = totalRedondeado - currentTotal;
         totalFinal = totalRedondeado;
         ivaFinal += excedente;
-      } else if (tieneComisionRoom) {
-        totalFinal = subTotalNum + precioHabitacionOriginal;
-        ivaFinal = 0;
+      } else {
+        // En efectivo o con comisión room, el total es la suma de los componentes
+        ivaFinal = tieneComisionRoom ? 0 : Number(iva || 0);
+        totalFinal = subTotalNum + ivaFinal;
       }
 
       const cajaAbiertaResult = (await query(
@@ -275,18 +280,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // 5. Comisiones y usuarios
         let finalComision = 0;
         if (numAnfitrionas > 0) {
-          if (tieneComisionRoom) {
-            finalComision =
-              Math.floor(subTotalNum / numAnfitrionas) +
-              Math.floor(comisionHabitacionBase / numAnfitrionas);
-          } else {
-            finalComision = Math.floor(subTotalNum / numAnfitrionas);
-          }
+          // REGLA: La comisión es solo sobre el precio del servicio
+          const precioNetoServicio = subTotalNum - precioHabitacionOriginal;
+          finalComision = Math.floor(precioNetoServicio / numAnfitrionas);
 
           if (finalComision > 0) {
             for (const uId of usuarios) {
               const cRes: any = await connection(
-                `INSERT INTO comisiones (venta_id, servicio_id, monto, estado) VALUES (0, ?, ?, 1)`,
+                `INSERT INTO comisiones (venta_id, servicio_id, monto, estado) VALUES (null, ?, ?, 1)`,
                 [servicioId, finalComision]
               );
               await connection(
@@ -313,7 +314,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
           await connection(
             `UPDATE cajas SET servicio = servicio + ?, efectivo = efectivo + ?, tarjeta = tarjeta + ?, transferencia = transferencia + ?, iva = iva + ?, comision = comision + ? WHERE id_caja = ?`,
-            [totalFinal, mEf, mTa, mTr, ivaFinal, finalComision * numAnfitrionas, cajaId]
+            [totalFinal - ivaFinal, mEf, mTa, mTr, ivaFinal, finalComision * numAnfitrionas, cajaId]
           );
           cajaActualizada = true;
         }
@@ -324,22 +325,66 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           codigo,
           ivaFinal,
           totalFinal,
-          createdBy: currentUser?.username || 'Cajero'
+          createdBy: currentUser?.username || 'Cajero',
+          anfitrionasIds: usuarios
         };
       });
 
-      // SSE
-      sendNotificationToAll('timer_started', {
-        servicioId: result.servicioId,
-        codigo: result.codigo,
-        roomId: habitacion_id,
-        duration: tiempo,
-        total: result.totalFinal,
-        iva: result.ivaFinal,
-        metodo_pago,
-        waiter_name: result.createdBy,
-        tipoTransaccion: 'servicio'
-      });
+      // Fetch full details for SSE
+      const fullService = (await query(`
+        SELECT
+          s.id_servicio,
+          s.codigo,
+          s.habitacion_id as roomId,
+          h.nombre as roomName,
+          s.tiempo as duration,
+          s.precio_servicio,
+          s.precio_habitacion,
+          s.iva,
+          s.total,
+          s.metodo_pago,
+          s.fecha_crea as startTime,
+          s.fecha_crea as created_at,
+          s.estado,
+          COALESCE(GROUP_CONCAT(DISTINCT 
+            CASE 
+              WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
+              ELSE CONCAT(u.nombre, ' ', u.apellido)
+            END 
+            SEPARATOR ', '
+          ), 'Sin asignar') as anfitrionas,
+          COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente') as clienteNombre,
+          h.comision_anfitriona as habitacion_comision
+        FROM servicios s
+        LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
+        LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
+        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
+        LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
+        WHERE s.id_servicio = ?
+        GROUP BY s.id_servicio
+      `, [result.servicioId])) as any[];
+
+      if (fullService.length > 0) {
+        const s = fullService[0];
+        // SSE: Timer started with full data
+        sendNotificationToAll('timer_started', {
+          ...s,
+          duration: Number(s.duration),
+          waiter_name: result.createdBy,
+          tipoTransaccion: 'servicio',
+          anfitrionas_ids: result.anfitrionasIds
+        });
+
+        // SSE: User status updated for each anfitriona
+        if (result.anfitrionasIds?.length > 0) {
+          result.anfitrionasIds.forEach((uId: number) => {
+            sendNotificationToAll('user_status_updated', {
+              userId: uId,
+              status: 2 // Ocupado
+            });
+          });
+        }
+      }
 
       return res.status(201).json({
         success: true,

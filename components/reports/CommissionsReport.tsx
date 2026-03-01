@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useReducer } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,57 @@ interface CommissionResponse {
   dailyCommissions: DailyCommission[];
 }
 
+// REDUCER FOR STATE MANAGEMENT
+type ReportState = {
+  data: CommissionResponse | null;
+  loading: boolean;
+  error: string | null;
+  period: string;
+  startDate: string;
+  endDate: string;
+  tablePage: number;
+};
+
+type ReportAction =
+  | { type: 'SET_PERIOD'; payload: string }
+  | { type: 'SET_START_DATE'; payload: string }
+  | { type: 'SET_END_DATE'; payload: string }
+  | { type: 'SET_TABLE_PAGE'; payload: number }
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: CommissionResponse }
+  | { type: 'FETCH_ERROR'; payload: string };
+
+const initialReportState: ReportState = {
+  data: null,
+  loading: true,
+  error: null,
+  period: 'current_month',
+  startDate: '',
+  endDate: '',
+  tablePage: 0,
+};
+
+function reportReducer(state: ReportState, action: ReportAction): ReportState {
+  switch (action.type) {
+    case 'SET_PERIOD':
+      return { ...state, period: action.payload, tablePage: 0 };
+    case 'SET_START_DATE':
+      return { ...state, startDate: action.payload, tablePage: 0 };
+    case 'SET_END_DATE':
+      return { ...state, endDate: action.payload, tablePage: 0 };
+    case 'SET_TABLE_PAGE':
+      return { ...state, tablePage: action.payload };
+    case 'FETCH_START':
+      return { ...state, loading: true, error: null };
+    case 'FETCH_SUCCESS':
+      return { ...state, loading: false, data: action.payload, error: null };
+    case 'FETCH_ERROR':
+      return { ...state, loading: false, error: action.payload };
+    default:
+      return state;
+  }
+}
+
 const TOP_PERFORMER_COLORS = ['#F59E0B', '#9CA3AF', '#D97706', '#6366F1', '#EC4899'];
 
 const formatNumber = (amount: number) => {
@@ -185,13 +236,8 @@ const DailyTooltip = ({ active, payload }: DailyTooltipProps) => {
 const ITEMS_PER_PAGE = 5;
 
 export function CommissionsReport() {
-  const [data, setData] = useState<CommissionResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState('current_month');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [tablePage, setTablePage] = useState(0);
+  const [state, dispatch] = useReducer(reportReducer, initialReportState);
+  const { data, loading, error, period, startDate, endDate, tablePage } = state;
 
   const totalPages = useMemo(() => {
     if (!data?.commissions) return 0;
@@ -199,28 +245,20 @@ export function CommissionsReport() {
   }, [data]);
 
   const fetchData = async () => {
+    dispatch({ type: 'FETCH_START' });
     try {
-      setLoading(true);
-      setError(null);
-
-      let url = `/api/reports/commissions?period=${period}`;
+      const params = new URLSearchParams();
+      params.append('period', period);
       if (period === 'custom' && startDate && endDate) {
-        url += `&startDate=${startDate}&endDate=${endDate}`;
+        params.append('startDate', startDate);
+        params.append('endDate', endDate);
       }
-
-      const response = await fetch(url);
-      const result = await response.json();
-
-      if (result.success) {
-        setData(result.data);
-        setTablePage(0);
-      } else {
-        throw new Error(result.message || 'Error al obtener datos');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setLoading(false);
+      const res = await fetch(`/api/reports/commissions?${params.toString()}`);
+      if (!res.ok) throw new Error('Error al cargar datos');
+      const response: CommissionResponse = await res.json();
+      dispatch({ type: 'FETCH_SUCCESS', payload: response });
+    } catch (err: any) {
+      dispatch({ type: 'FETCH_ERROR', payload: err.message });
     }
   };
 
@@ -228,12 +266,8 @@ export function CommissionsReport() {
     fetchData();
   }, [period, startDate, endDate]);
 
-  const handlePeriodChange = (newPeriod: string) => {
-    setPeriod(newPeriod);
-    if (newPeriod !== 'custom') {
-      setStartDate('');
-      setEndDate('');
-    }
+  const handlePeriodChange = (val: string) => {
+    dispatch({ type: 'SET_PERIOD', payload: val });
   };
 
   const getPerformanceBadge = (comisiones: number, promedio: number) => {
@@ -306,11 +340,11 @@ export function CommissionsReport() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="period-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Período
               </label>
               <Select value={period} onValueChange={handlePeriodChange}>
-                <SelectTrigger>
+                <SelectTrigger id="period-select">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -326,23 +360,25 @@ export function CommissionsReport() {
             {period === 'custom' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Fecha Inicio
                   </label>
                   <Input
+                    id="start-date"
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => dispatch({ type: 'SET_START_DATE', payload: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Fecha Fin
                   </label>
                   <Input
+                    id="end-date"
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    onChange={(e) => dispatch({ type: 'SET_END_DATE', payload: e.target.value })}
                   />
                 </div>
               </>
@@ -454,67 +490,69 @@ export function CommissionsReport() {
         title={<><Award className="h-5 w-5" /> Top 5 Performers</>}
         headerClassName="bg-gradient-to-r from-amber-500 to-orange-500 text-white"
       >
-        {topPerformerChartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart
-              data={topPerformerChartData}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-            >
-              <defs>
-                {TOP_PERFORMER_COLORS.map((color, i) => (
-                  <linearGradient key={`perfGrad${i}`} id={`perfGrad${i}`} x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor={color} stopOpacity={0.85} />
-                    <stop offset="100%" stopColor={color} stopOpacity={0.5} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="currentColor"
-                className="text-gray-200 dark:text-gray-700"
-                horizontal={false}
-              />
-              <XAxis
-                type="number"
-                tickFormatter={formatCompact}
-                tick={{ fill: 'currentColor', fontSize: 11 }}
-                className="text-gray-500 dark:text-gray-400"
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="shortName"
-                width={100}
-                tick={{ fill: 'currentColor', fontSize: 12 }}
-                className="text-gray-700 dark:text-gray-300"
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip content={<PerformerTooltip />} />
-              <Bar
-                dataKey="total_comisiones"
-                radius={[0, 6, 6, 0]}
-                animationDuration={800}
-                animationEasing="ease-out"
-                barSize={32}
+        <div className="h-[300px] sm:h-[400px] w-full">
+          {topPerformerChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={topPerformerChartData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
               >
-                {topPerformerChartData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={`url(#perfGrad${index % TOP_PERFORMER_COLORS.length})`}
-                    style={{ cursor: 'pointer' }}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-48 text-gray-400">
-            <p className="text-sm">No hay datos de performers</p>
-          </div>
-        )}
+                <defs>
+                  {TOP_PERFORMER_COLORS.map((color, i) => (
+                    <linearGradient key={`perfGrad${i}`} id={`perfGrad${i}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor={color} stopOpacity={0.85} />
+                      <stop offset="100%" stopColor={color} stopOpacity={0.5} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="currentColor"
+                  className="text-gray-200 dark:text-gray-700"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  tickFormatter={formatCompact}
+                  tick={{ fill: 'currentColor', fontSize: 10 }}
+                  className="text-gray-500 dark:text-gray-400"
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="shortName"
+                  width={80}
+                  tick={{ fill: 'currentColor', fontSize: 10 }}
+                  className="text-gray-700 dark:text-gray-300"
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip content={<PerformerTooltip />} />
+                <Bar
+                  dataKey="total_comisiones"
+                  radius={[0, 6, 6, 0]}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                  barSize={32}
+                >
+                  {topPerformerChartData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={`url(#perfGrad${index % TOP_PERFORMER_COLORS.length})`}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-gray-400">
+              <p className="text-sm">No hay datos de performers</p>
+            </div>
+          )}
+        </div>
       </CollapsibleCard>
 
       {/* Tabla de Comisiones por Anfitriona */}
@@ -581,7 +619,7 @@ export function CommissionsReport() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setTablePage(p => Math.max(0, p - 1))}
+                onClick={() => dispatch({ type: 'SET_TABLE_PAGE', payload: Math.max(0, tablePage - 1) })}
                 disabled={tablePage === 0}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
@@ -594,7 +632,7 @@ export function CommissionsReport() {
                     variant={tablePage === i ? 'default' : 'outline'}
                     size="sm"
                     className="w-8 h-8 p-0"
-                    onClick={() => setTablePage(i)}
+                    onClick={() => dispatch({ type: 'SET_TABLE_PAGE', payload: i })}
                   >
                     {i + 1}
                   </Button>
@@ -603,7 +641,7 @@ export function CommissionsReport() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setTablePage(p => Math.min(totalPages - 1, p + 1))}
+                onClick={() => dispatch({ type: 'SET_TABLE_PAGE', payload: Math.min(totalPages - 1, tablePage + 1) })}
                 disabled={tablePage >= totalPages - 1}
               >
                 Siguiente
@@ -619,83 +657,85 @@ export function CommissionsReport() {
         title={<><BarChart3 className="h-5 w-5" /> Comisiones por Día de la Semana</>}
         headerClassName="bg-gradient-to-r from-indigo-600 to-blue-600 text-white"
       >
-        {dailyChartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart
-              data={dailyChartData}
-              margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
-            >
-              <defs>
-                <linearGradient id="ventasGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.5} />
-                </linearGradient>
-                <linearGradient id="serviciosGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.5} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="currentColor"
-                className="text-gray-200 dark:text-gray-700"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="diaCorto"
-                tick={{ fill: 'currentColor', fontSize: 12 }}
-                className="text-gray-600 dark:text-gray-400"
-                tickLine={false}
-                axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
-              />
-              <YAxis
-                tickFormatter={formatCompact}
-                tick={{ fill: 'currentColor', fontSize: 11 }}
-                className="text-gray-500 dark:text-gray-400"
-                tickLine={false}
-                axisLine={false}
-                width={55}
-              />
-              <Tooltip content={<DailyTooltip />} />
-              <Legend
-                wrapperStyle={{ paddingTop: '8px' }}
-                formatter={(value: string) => (
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{value}</span>
-                )}
-              />
-              <Bar
-                dataKey="total_ventas_monto"
-                name="Ventas"
-                fill="url(#ventasGrad)"
-                radius={[4, 4, 0, 0]}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-              <Bar
-                dataKey="total_servicios_monto"
-                name="Servicios"
-                fill="url(#serviciosGrad)"
-                radius={[4, 4, 0, 0]}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-              <Line
-                type="monotone"
-                dataKey="total_comisiones"
-                name="Comisiones"
-                stroke="#10B981"
-                strokeWidth={3}
-                dot={{ r: 4, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
-                activeDot={{ r: 6, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
-                animationDuration={1000}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-48 text-gray-400">
-            <p className="text-sm">No hay datos de comisiones diarias</p>
-          </div>
-        )}
+        <div className="h-[320px] sm:h-[450px] w-full">
+          {dailyChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={dailyChartData}
+                margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient id="ventasGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.5} />
+                  </linearGradient>
+                  <linearGradient id="serviciosGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="currentColor"
+                  className="text-gray-200 dark:text-gray-700"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="diaCorto"
+                  tick={{ fill: 'currentColor', fontSize: 10 }}
+                  className="text-gray-600 dark:text-gray-400"
+                  tickLine={false}
+                  axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
+                />
+                <YAxis
+                  tickFormatter={formatCompact}
+                  tick={{ fill: 'currentColor', fontSize: 10 }}
+                  className="text-gray-500 dark:text-gray-400"
+                  tickLine={false}
+                  axisLine={false}
+                  width={45}
+                />
+                <Tooltip content={<DailyTooltip />} />
+                <Legend
+                  wrapperStyle={{ paddingTop: '8px' }}
+                  formatter={(value: string) => (
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="total_ventas_monto"
+                  name="Ventas"
+                  fill="url(#ventasGrad)"
+                  radius={[4, 4, 0, 0]}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                />
+                <Bar
+                  dataKey="total_servicios_monto"
+                  name="Servicios"
+                  fill="url(#serviciosGrad)"
+                  radius={[4, 4, 0, 0]}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="total_comisiones"
+                  name="Comisiones"
+                  stroke="#10B981"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
+                  animationDuration={1000}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-gray-400">
+              <p className="text-sm">No hay datos de comisiones diarias</p>
+            </div>
+          )}
+        </div>
       </CollapsibleCard>
     </div>
   );
