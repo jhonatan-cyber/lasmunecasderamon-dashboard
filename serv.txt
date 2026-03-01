@@ -1,0 +1,1 @@
+id_servicio, codigo, cliente_id, habitacion_id, precio_habitacion, precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, fecha_crea, fecha_mod, estado, created_by, paused_at, push_notified_5m, push_notified_end

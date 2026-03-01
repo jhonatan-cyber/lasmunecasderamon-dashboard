@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       if (liberarIds.length > 0) {
         await query(
-          `UPDATE usuarios SET estado = 1 WHERE id_usuario IN (${liberarIds.map(() => '?').join(',')})`,
+          `UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario IN (${liberarIds.map(() => '?').join(',')})`,
           liberarIds
         );
       }
@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       if (ocuparIds.length > 0) {
         await query(
-          `UPDATE usuarios SET estado = 2 WHERE id_usuario IN (${ocuparIds.map(() => '?').join(',')})`,
+          `UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario IN (${ocuparIds.map(() => '?').join(',')})`,
           ocuparIds
         );
       }

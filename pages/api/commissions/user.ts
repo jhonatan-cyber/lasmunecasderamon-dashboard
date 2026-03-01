@@ -25,15 +25,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       DC.fecha_crea, 
       DC.fecha_mod,
       DC.estado,
+      COALESCE(V.total, S.total) as total_original,
       CASE 
         WHEN C.venta_id != 0 THEN 'venta'
         WHEN C.servicio_id != 0 THEN 'servicio'
         ELSE 'otro'
-      END as tipo
+      END as tipo,
+      CLI.nombre as cliente_nombre,
+      HAB.nombre as habitacion_nombre,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT('nombre', P.nombre, 'cantidad', DV.cantidad, 'precio', P.precio)
+        )
+        FROM detalle_ventas DV
+        JOIN productos P ON P.id_producto = DV.producto_id
+        WHERE DV.venta_id = V.id_venta
+      ) as productos
     FROM detalle_comisiones DC 
     INNER JOIN comisiones C ON C.id_comision = DC.comision_id
     LEFT JOIN ventas V ON V.id_venta = C.venta_id
     LEFT JOIN servicios S ON S.id_servicio = C.servicio_id
+    LEFT JOIN clientes CLI ON CLI.id_cliente = V.cliente_id
+    LEFT JOIN habitaciones HAB ON HAB.id_habitacion = V.habitacion_id
     WHERE DC.usuario_id = ?
     ORDER BY DC.fecha_crea DESC
     `,
@@ -45,7 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: commissions
     });
   } catch (error) {
-   
+
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

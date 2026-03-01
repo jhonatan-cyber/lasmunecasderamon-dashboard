@@ -166,7 +166,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           servicioId
         ]);
 
-        await connection('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [usuarioId]);
+        await connection('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [usuarioId]);
       }
       // Registrar comisiones para cada anfitriona
       if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {

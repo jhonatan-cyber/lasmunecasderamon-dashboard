@@ -75,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (anfitrionasLiberadas.length > 0) {
       for (const anfitriona of anfitrionasLiberadas) {
         await query(`
-          UPDATE usuarios SET estado = 1 
+          UPDATE usuarios SET estado_servicio = 1 
           WHERE id_usuario = ? 
           AND id_usuario NOT IN (SELECT usuario_id FROM detalle_servicios ds JOIN servicios s ON ds.servicio_id = s.id_servicio WHERE s.estado IN (2, 4))
           AND id_usuario NOT IN (SELECT usuario_id FROM ventas_usuarios vu JOIN ventas v ON vu.venta_id = v.id_venta WHERE v.estado = 2 AND v.id_venta != ?)

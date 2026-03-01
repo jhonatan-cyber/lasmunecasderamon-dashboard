@@ -173,7 +173,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         // Ocupar anfitriona
-        await connection('UPDATE usuarios SET estado = 2 WHERE id_usuario = ?', [anfitrionaId]);
+        await connection('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [anfitrionaId]);
       }
 
       // 6. Pausar otros servicios si es necesario

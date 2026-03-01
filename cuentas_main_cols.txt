@@ -1,0 +1,1 @@
+id_cuenta, codigo, cliente_id, total_comision, habitacion_id, sub_total, total, metodo_pago, pedido_id, servicio_id, fecha_crea, fecha_mod, estado
