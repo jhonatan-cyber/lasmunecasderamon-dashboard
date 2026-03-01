@@ -1,21 +1,18 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
-import { query } from '@/lib/db';
+const mysql = require('mysql2/promise');
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, message: 'Método no permitido' });
-  }
+async function test() {
+    const connection = await mysql.createConnection({
+        host: '195.200.4.245',
+        user: 'nuwesoft',
+        password: 'Ancasi96nuwe',
+        database: 'lasmunecasderamon'
+    });
 
-  try {
-    const userData = getCurrentUser(req);
-    if (!userData) {
-      return res.status(401).json({ success: false, message: 'No autorizado' });
-    }
-
-    const userId = userData.id;
-    const servicios = (await query(
-      `
+    try {
+        console.log("Testing Query for user 5...");
+        const userId = 5;
+        const start = Date.now();
+        const q = `
       SELECT
         S.id_servicio, 
         S.codigo, 
@@ -25,8 +22,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         S.precio_habitacion,
         S.total,
         S.metodo_pago,
-        MAX(COALESCE(DC_ME.comision, 0)) as comision_usuario,
-        MAX(COALESCE(DC_ME.estado, 1)) as pago_estado,
+        MAX(COALESCE(USER_COM.comision, 0)) as comision_usuario,
+        MAX(COALESCE(USER_COM.pago_estado, 1)) as pago_estado,
         H.nombre AS habitacion, 
         GROUP_CONCAT(DISTINCT 
           CASE 
@@ -54,29 +51,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     LEFT JOIN solicitudes_servicios SS ON SS.codigo = S.codigo
     LEFT JOIN usuarios U_SOL ON U_SOL.id_usuario = SS.solicitado_por
     LEFT JOIN usuarios U_PROC ON U_PROC.id_usuario = SS.procesado_por
-    LEFT JOIN comisiones C_ME ON C_ME.servicio_id = S.id_servicio
-    LEFT JOIN detalle_comisiones DC_ME ON DC_ME.comision_id = C_ME.id_comision AND DC_ME.usuario_id = ?
+    LEFT JOIN (
+        SELECT C.servicio_id, DC.comision, DC.estado as pago_estado
+        FROM comisiones C 
+        INNER JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision 
+        WHERE DC.usuario_id = 1
+    ) AS USER_COM ON USER_COM.servicio_id = S.id_servicio
     WHERE S.id_servicio IN (
-        SELECT servicio_id FROM detalle_servicios WHERE usuario_id = ?
+        SELECT servicio_id FROM detalle_servicios WHERE usuario_id = 1
     )
     GROUP BY S.id_servicio, S.codigo, S.tiempo, S.fecha_crea, S.precio_servicio, S.precio_habitacion, S.total, S.metodo_pago, H.nombre, CL.nombre, CL.apellido, S.estado
     ORDER BY S.fecha_crea DESC
-      `,
-      [userId, userId]
-    )) as any[];
-
-    return res.status(200).json({
-      success: true,
-      data: servicios
-    });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor'
-    });
-  }
+    LIMIT 10
+    `;
+        const [rows] = await connection.query(q);
+        const end = Date.now();
+        console.log(`Success! Rows: ${rows.length} Time: ${end - start}ms`);
+    } catch (err) {
+        console.error("Error detected:", err.message);
+    } finally {
+        await connection.end();
+    }
 }
 
-export default withAuth(handler);
+test();

@@ -1,0 +1,38 @@
+[
+  {
+    "id_rol": 1,
+    "nombre": "Administrador",
+    "descripcion": "Acceso a todos los modulos",
+    "estado": 1,
+    "fecha_crea": "2025-08-16T22:10:36.000Z",
+    "fecha_mod": null,
+    "fecha_baja": null
+  },
+  {
+    "id_rol": 2,
+    "nombre": "garzon",
+    "descripcion": "acceso a los pedidos",
+    "estado": 1,
+    "fecha_crea": "2025-08-16T22:31:01.000Z",
+    "fecha_mod": "2026-02-13T22:54:30.000Z",
+    "fecha_baja": null
+  },
+  {
+    "id_rol": 3,
+    "nombre": "anfitriona",
+    "descripcion": "sin acceso a los modulos",
+    "estado": 1,
+    "fecha_crea": "2025-08-16T22:39:45.000Z",
+    "fecha_mod": null,
+    "fecha_baja": null
+  },
+  {
+    "id_rol": 4,
+    "nombre": "cajero",
+    "descripcion": "acceso a multiples modulos del sistema",
+    "estado": 1,
+    "fecha_crea": "2025-08-16T22:43:08.000Z",
+    "fecha_mod": null,
+    "fecha_baja": null
+  }
+]

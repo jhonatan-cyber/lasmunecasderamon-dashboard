@@ -1,0 +1,47 @@
+[
+  {
+    "id_servicio": 13,
+    "precio_habitacion": 20000,
+    "ss_ph": null,
+    "metodo_pago": "efectivo",
+    "ss_mp": null,
+    "req_por": null,
+    "proc_por": null
+  },
+  {
+    "id_servicio": 12,
+    "precio_habitacion": 20000,
+    "ss_ph": null,
+    "metodo_pago": "tarjeta",
+    "ss_mp": null,
+    "req_por": null,
+    "proc_por": null
+  },
+  {
+    "id_servicio": 11,
+    "precio_habitacion": 50000,
+    "ss_ph": null,
+    "metodo_pago": "efectivo",
+    "ss_mp": null,
+    "req_por": null,
+    "proc_por": null
+  },
+  {
+    "id_servicio": 10,
+    "precio_habitacion": 50000,
+    "ss_ph": null,
+    "metodo_pago": "tarjeta",
+    "ss_mp": null,
+    "req_por": null,
+    "proc_por": null
+  },
+  {
+    "id_servicio": 9,
+    "precio_habitacion": 50000,
+    "ss_ph": null,
+    "metodo_pago": "tarjeta",
+    "ss_mp": null,
+    "req_por": null,
+    "proc_por": null
+  }
+]

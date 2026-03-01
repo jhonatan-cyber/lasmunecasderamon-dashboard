@@ -35,23 +35,8 @@ function MainLayout({ children, user }: { children: React.ReactNode, user: any }
   );
 }
 
-export default function LayoutContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isLogin = pathname === '/login';
-  const isApiDocs = pathname === '/api-docs';
-  const isConfirmarAnulacion = pathname === '/confirmar-anulacion';
-  const isConfirmarAnulacionServicio = pathname === '/confirmar-anulacion-servicio';
-  const isLanding = pathname === '/landing';
-  const isRoot = pathname === '/';
-  const isTerminos = pathname === '/terminos-y-condiciones';
-  const isPolitica = pathname === '/politica-de-privacidad';
-
-  // Si es una página pública, no usar useCurrentUser ni mostrar sidebar/header
-  if (isLogin || isApiDocs || isConfirmarAnulacion || isConfirmarAnulacionServicio || isLanding || isRoot || isTerminos || isPolitica) {
-    return <>{children}</>;
-  }
-
-  // Solo usar useCurrentUser si no es una página pública
+function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
+  // Solo usar hooks si es una página protegida
   const { user } = useCurrentUser();
 
   // Verificar sesión periódicamente (solo en páginas protegidas)
@@ -66,4 +51,26 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
       </UserImageProvider>
     </RouteGuard>
   );
+}
+
+export default function LayoutContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const isPublicRoute = [
+    '/login',
+    '/api-docs',
+    '/confirmar-anulacion',
+    '/confirmar-anulacion-servicio',
+    '/landing',
+    '/',
+    '/terminos-y-condiciones',
+    '/politica-de-privacidad'
+  ].includes(pathname || '');
+
+  // Si es una página pública, no llamar hooks adicionales y renderizar directamente
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
+
+  return <ProtectedLayoutContent>{children}</ProtectedLayoutContent>;
 }
