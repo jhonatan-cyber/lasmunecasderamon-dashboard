@@ -72,7 +72,8 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/servicios', // Servicios
   '/api/sales', // Ventas
   '/api/cashregister/status', // Estado de caja abierta (necesario para usar módulos)
-  '/api/cashregister' // Permitir operaciones de caja y delegar validación a la ruta
+  '/api/cashregister', // Permitir operaciones de caja y delegar validación a la ruta
+  '/api/cuentas' // Permitir editar/ver cuentas (delegando validación adicional si se requiere)
 ];
 
 // Mapeo de rutas a módulos y acciones requeridas
@@ -360,8 +361,6 @@ export async function proxy(request: NextRequest) {
 
   return addApiHeaders(NextResponse.next());
 }
-
-export { proxy as middleware };
 
 export const config = {
   matcher: [

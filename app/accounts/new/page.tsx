@@ -285,71 +285,28 @@ export default function NewCuentaPage() {
     ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio ?? p.price ?? 0)))
     : 0;
 
-  // Determinar el máximo de anfitrionas permitidas según las reglas
+  // Determinar el máximo de anfitrionas permitidas según las reglas (sin recargo)
   let maxAnfitrionas = 1; // Por defecto, máximo 1 anfitriona
-  let anfitrionasIncluidas = 0; // Anfitrionas sin recargo
-  let anfitrionasConRecargo = 0; // Anfitrionas con recargo de $40,000
 
   if (hasChampagneProducts) {
     if (maxChampagnePrice >= 240000) {
-      // $240,000: 7 anfitrionas (5 incluidas + 2 con recargo)
-      maxAnfitrionas = 7;
-      anfitrionasIncluidas = 5;
-      anfitrionasConRecargo = 2;
+      maxAnfitrionas = 5;
     } else if (maxChampagnePrice >= 200000) {
-      // $200,000: 6 anfitrionas (4 incluidas + 2 con recargo)
-      maxAnfitrionas = 6;
-      anfitrionasIncluidas = 4;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 160000) {
-      // $160,000: 5 anfitrionas (3 incluidas + 2 con recargo)
-      maxAnfitrionas = 5;
-      anfitrionasIncluidas = 3;
-      anfitrionasConRecargo = 2;
-    } else if (maxChampagnePrice >= 120000) {
-      // $120,000: 4 anfitrionas (2 incluidas + 2 con recargo)
       maxAnfitrionas = 4;
-      anfitrionasIncluidas = 2;
-      anfitrionasConRecargo = 2;
+    } else if (maxChampagnePrice >= 160000) {
+      maxAnfitrionas = 3;
+    } else if (maxChampagnePrice >= 120000) {
+      maxAnfitrionas = 2;
     } else {
-      // Champaña con precio menor a $120,000: máximo 5 anfitrionas (sin recargo)
-      maxAnfitrionas = 5;
-      anfitrionasIncluidas = 5;
-      anfitrionasConRecargo = 0;
+      maxAnfitrionas = 1;
     }
-  }
-  // Si no hay productos de champaña, se mantiene en 1
-
-  // Calcular recargo por anfitrionas extra según el precio de champaña
-  let anfitrionasExtra = 0;
-  let recargoAnfitrionas = 0;
-  if (hasChampagneProducts && selectedAnfitrionas.length > anfitrionasIncluidas) {
-    anfitrionasExtra = selectedAnfitrionas.length - anfitrionasIncluidas;
-    recargoAnfitrionas = anfitrionasExtra * 40000;
   }
 
   // Limpiar anfitrionas cuando se cambia la regla de champaña
   useEffect(() => {
-    // Validar y ajustar la selección de anfitrionas según las reglas
     if (selectedAnfitrionas.length > maxAnfitrionas) {
       setSelectedAnfitrionas(selectedAnfitrionas.slice(0, maxAnfitrionas));
-
-      // Mostrar mensaje específico según la regla aplicada
-      if (!hasChampagneProducts) {
-        toast.info('Se ha limitado la selección a 1 anfitriona por productos sin champaña');
-      } else if (maxChampagnePrice >= 240000) {
-        toast.info('Se ha limitado la selección a 7 anfitrionas para champaña de $240,000+');
-      } else if (maxChampagnePrice >= 200000) {
-        toast.info('Se ha limitado la selección a 6 anfitrionas para champaña de $200,000+');
-      } else if (maxChampagnePrice >= 160000) {
-        toast.info('Se ha limitado la selección a 5 anfitrionas para champaña de $160,000+');
-      } else if (maxChampagnePrice >= 120000) {
-        toast.info('Se ha limitado la selección a 4 anfitrionas para champaña de $120,000+');
-      } else {
-        toast.info(
-          'Se ha limitado la selección a 5 anfitrionas para champaña con precio menor a $120,000'
-        );
-      }
+      toast.info(`Se ha ajustado la selección al máximo permitido: ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''}`);
     }
   }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, selectedAnfitrionas]);
 
@@ -379,13 +336,9 @@ export default function NewCuentaPage() {
     try {
       // Calcular totales usando las funciones
       const subTotal = calculateSubTotal();
-      const totalComision = calculateTotalComision();
+      const totalComisionFinal = calculateTotalComision();
 
-      // Calcular comisión adicional por anfitrionas de recargo
-      const comisionAnfitrionasRecargo = anfitrionasExtra * 20000; // $20,000 por anfitriona de recargo
-      const totalComisionFinal = totalComision + comisionAnfitrionasRecargo;
-
-      const total = calculateTotal() + recargoAnfitrionas; // Incluir recargo por anfitrionas
+      const total = calculateTotal();
 
       // Preparar detalles de cuenta
       const detalles: CreateDetalleCuentaRequest[] = productos.map(producto => ({
@@ -400,7 +353,7 @@ export default function NewCuentaPage() {
       const cuentaData: CreateCuentaRequest = {
         codigo: generateCodigo(), // Código automático de 8 dígitos
         cliente_id: parseInt(selectedCliente),
-        total_comision: totalComisionFinal, // Incluir comisión adicional por anfitrionas de recargo
+        total_comision: totalComisionFinal,
         sub_total: subTotal,
         total: total,
         // Datos opcionales - solo incluir si tienen valor
@@ -606,26 +559,15 @@ export default function NewCuentaPage() {
         {Array.isArray(productos) && productos.length > 0 && (
           <div className='w-full flex justify-center mt-2 mb-2'>
             <div
-              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${
-                hasChampagneProducts && maxChampagnePrice >= 120000
+              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${hasChampagneProducts
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : hasChampagneProducts
-                    ? 'bg-green-50 text-green-700 border border-green-200'
-                    : 'bg-orange-50 text-orange-700 border border-orange-200'
-              }`}
+                  : 'bg-orange-50 text-orange-700 border border-orange-200'
+                }`}
             >
-              {hasChampagneProducts ? <Wine className='mr-1' /> : <Users className='mr-1' />}
-              {hasChampagneProducts && maxChampagnePrice >= 240000
-                ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`
-                : hasChampagneProducts && maxChampagnePrice >= 200000
-                  ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 6 anfitrionas. Las primeras 4 incluidas, la 5ta y 6ta suman $40,000 cada una.`
-                  : hasChampagneProducts && maxChampagnePrice >= 160000
-                    ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 5 anfitrionas. Las primeras 3 incluidas, la 4ta y 5ta suman $40,000 cada una.`
-                    : hasChampagneProducts && maxChampagnePrice >= 120000
-                      ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 4 anfitrionas. Las primeras 2 incluidas, la 3ra y 4ta suman $40,000 cada una.`
-                      : hasChampagneProducts
-                        ? 'Productos de champaña detectados: Puedes seleccionar hasta 5 anfitrionas'
-                        : 'Productos sin champaña: Solo puedes seleccionar 1 anfitriona máximo'}
+              {hasChampagneProducts ? <Wine className='mr-1 inline' /> : <Users className='mr-1 inline' />}
+              {hasChampagneProducts
+                ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''}`
+                : 'Productos sin champaña: Solo puedes seleccionar 1 anfitriona máximo'}
             </div>
           </div>
         )}
@@ -634,13 +576,7 @@ export default function NewCuentaPage() {
         <div className='flex flex-col items-center justify-center'>
           <div className='text-xs text-gray-400 font-semibold mb-1'>TOTAL</div>
           <div className='text-2xl font-bold text-gray-900 mb-2 text-center justify-center items-center'>
-            {formatCurrencyNoDecimals(calculateTotal() + recargoAnfitrionas)}
-            {recargoAnfitrionas > 0 && (
-              <span className='block text-xs text-blue-600 font-normal mt-1'>
-                Incluye recargo por anfitrionas extra:{' '}
-                {formatCurrencyNoDecimals(recargoAnfitrionas)}
-              </span>
-            )}
+            {formatCurrencyNoDecimals(calculateTotal())}
           </div>
           <Button
             onClick={handleSubmit}

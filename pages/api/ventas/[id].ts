@@ -25,12 +25,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
            CASE 
              WHEN v.pedido_id IS NOT NULL THEN g.nick
              ELSE NULL
-           END as garzon_nick
+           END as garzon_nick,
+           CONCAT(ca.nombre, " ", ca.apellido) as cajero_nombre,
+           ca.nick as cajero_nick
          FROM ventas v
          LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
          LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
          LEFT JOIN pedidos p ON v.pedido_id = p.id_pedido
          LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
+         LEFT JOIN usuarios ca ON v.created_by = ca.id_usuario
          WHERE v.id_venta = ?
        `;
 

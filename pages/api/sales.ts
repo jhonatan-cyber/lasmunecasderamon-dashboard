@@ -139,20 +139,19 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       whereClause += ' AND v.caja_id = ?';
       params.push(caja_id);
     } else {
-      // Intentar obtener la caja abierta actual
-      const cajaAbiertaSql = `
+      // Obtener la caja más reciente (abierta o cerrada) para no listar ventas de hace meses por error
+      const ultimaCajaSql = `
         SELECT id_caja 
         FROM cajas 
-        WHERE estado = 1 
         ORDER BY fecha_apertura DESC 
         LIMIT 1
       `;
-      const cajaAbiertaResult = (await query(cajaAbiertaSql)) as any[];
+      const ultimaCajaResult = (await query(ultimaCajaSql)) as any[];
 
-      if (cajaAbiertaResult && cajaAbiertaResult.length > 0) {
-        const cajaAbiertaId = cajaAbiertaResult[0].id_caja;
+      if (ultimaCajaResult && ultimaCajaResult.length > 0) {
+        const cajaId = ultimaCajaResult[0].id_caja;
         whereClause += ' AND v.caja_id = ?';
-        params.push(cajaAbiertaId);
+        params.push(cajaId);
       }
     }
 
@@ -204,20 +203,18 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           ) > 0 THEN 1
           ELSE 0
         END as tiene_comision,
-        (
-          SELECT u_cajero.nick 
-          FROM usuarios u_cajero 
-          WHERE u_cajero.id_usuario = v.created_by
-        ) as cajero_nick
+        CONCAT(ca.nombre, ' ', ca.apellido) as cajero_nombre,
+        ca.nick as cajero_nick
       FROM ventas v 
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
       LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
       LEFT JOIN pedidos p ON v.pedido_id = p.id_pedido
       LEFT JOIN usuarios g ON p.mesero_id = g.id_usuario
+      LEFT JOIN usuarios ca ON v.created_by = ca.id_usuario
       LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
       ${whereClause}
-      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.tiempo, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick
+      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.tiempo, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick, ca.nombre, ca.apellido, ca.nick
       ORDER BY v.fecha_crea DESC 
       LIMIT ${limitNum} OFFSET ${offset}
     `;
@@ -316,7 +313,7 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
     const { fecha_inicio, fecha_fin, usuario_id, cliente_id } = req.query;
 
     const cajaActualSql = `
-      SELECT fecha_apertura 
+      SELECT id_caja, fecha_apertura 
       FROM cajas 
       WHERE estado = 1 
       ORDER BY fecha_apertura DESC 
@@ -328,9 +325,9 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
     let whereClause = 'WHERE v.estado IN (1, 2, 3)';
     const params: any[] = [];
 
-    if (cajaActual && cajaActual.fecha_apertura) {
-      whereClause += ' AND v.fecha_crea >= ?';
-      params.push(cajaActual.fecha_apertura);
+    if (cajaActual && cajaActual.id_caja) {
+      whereClause += ' AND v.caja_id = ?';
+      params.push(cajaActual.id_caja);
     } else if (fecha_inicio) {
       whereClause += ' AND DATE(v.fecha_crea) >= ?';
       params.push(fecha_inicio);
@@ -483,7 +480,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const estadoVenta = habitacion_id && tiempo && tiempo > 0 ? 2 : 1;
 
-    const result = await withTransaction(async connection => {
+    const result = await withTransaction(async trx => {
       // 1. Insertar la venta
       const insertVentaSql = `
         INSERT INTO ventas (
@@ -491,7 +488,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      const ventaResult = (await connection(insertVentaSql, [
+      const ventaResult = (await trx(insertVentaSql, [
         codigoVenta,
         clienteIdFinal,
         pedido_id || null,
@@ -520,7 +517,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         const comisionPorUnidad = (detalle.comision || 0) / (detalle.cantidad || 1);
         const subTotalProducto = detalle.sub_total || detalle.precio * detalle.cantidad;
 
-        await connection(insertDetalleVentaSql, [
+        await trx(insertDetalleVentaSql, [
           ventaId,
           detalle.producto_id,
           detalle.precio,
@@ -539,8 +536,18 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           const insertVentaUsuarioSql = `
             INSERT INTO ventas_usuarios (venta_id, usuario_id) VALUES (?, ?)
           `;
-          await connection(insertVentaUsuarioSql, [ventaId, usuarioId]);
+          await trx(insertVentaUsuarioSql, [ventaId, usuarioId]);
+
+          // Ocupar anfitriona si tiene tiempo
+          if (tiempo > 0) {
+            await trx('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [usuarioId]);
+          }
         }
+      }
+
+      // 3.5 Ocupar habitación si tiene tiempo y la habitación es de tipo "con servicio"
+      if (habitacion_id && tiempo > 0) {
+        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0 OR COALESCE(comision_anfitriona, 0) > 0)', [habitacion_id]);
       }
 
       // 4. Registrar comisiones
@@ -579,7 +586,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
           const totalMonto = Math.round(monto);
           if (totalMonto > 0) {
-            const comisionResult: any = await connection(
+            const comisionResult: any = await trx(
               `INSERT INTO comisiones (
                 venta_id,
                 servicio_id,
@@ -590,7 +597,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
             const comisionId = comisionResult.insertId;
 
-            await connection(
+            await trx(
               `INSERT INTO detalle_comisiones (
                 comision_id,
                 usuario_id,
@@ -603,7 +610,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
       // 5. Registrar propinas (solo para cajeros y garzones)
       if (propina && propina > 0) {
-        let staffIds = (await connection(`
+        let staffIds = (await trx(`
           SELECT DISTINCT u.id_usuario
           FROM logins l
           INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
@@ -621,7 +628,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           const cuotaBase = Math.floor(totalPropina / staffIds.length);
           const residuo = totalPropina % staffIds.length;
 
-          const resultPropina: any = await connection(
+          const resultPropina: any = await trx(
             'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
             [ventaId, totalPropina]
           );
@@ -630,7 +637,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           for (let i = 0; i < staffIds.length; i++) {
             const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
             if (montoFinal > 0) {
-              await connection(
+              await trx(
                 'INSERT INTO detalle_propinas (propina_id, usuario_id, monto) VALUES (?, ?, ?)',
                 [propinaId, staffIds[i].id_usuario, montoFinal]
               );
@@ -641,7 +648,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
 
       // 6. Actualizar la caja activa
-      const cajaActiva = (await connection(
+      const cajaActiva = (await trx(
         'SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1'
       )) as any[];
 
@@ -665,7 +672,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             montoEfectivo = total;
         }
 
-        await connection(
+        await trx(
           `UPDATE cajas SET 
             venta = venta + ?,
             propina = propina + ?,
@@ -859,18 +866,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     // Notificar por SSE a todos los clientes conectados
     try {
-      await sendNotificationToAll({
-        type: 'sale_created',
-        data: {
-          id_venta: ventaId,
-          codigo: codigoVenta,
-          total: total,
-          habitacion_id: habitacion_id,
-          habitacion_nombre: ventaCompleta?.habitacion_nombre || null,
-          cliente_nombre: ventaCompleta?.cliente_nombre || null,
-          estado: estadoVenta,
-          created_at: ventaCompleta?.fecha_crea
-        }
+      await sendNotificationToAll('sale_created', {
+        id_venta: ventaId,
+        codigo: codigoVenta,
+        total: total,
+        habitacion_id: habitacion_id,
+        habitacion_nombre: ventaCompleta?.habitacion_nombre || null,
+        cliente_nombre: ventaCompleta?.cliente_nombre || null,
+        estado: estadoVenta,
+        created_at: ventaCompleta?.fecha_crea
       });
       console.log('[SALES] Notificación SSE sale_created enviada');
     } catch (sseError) {

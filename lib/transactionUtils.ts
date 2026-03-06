@@ -4,13 +4,12 @@ export type TransactionCallback<T> = (trx: typeof db.query) => Promise<T>;
 
 export const withTransaction = async <T>(callback: TransactionCallback<T>): Promise<T> => {
   const connection = await db.pool.getConnection();
-  await connection.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
 
   try {
     await connection.beginTransaction();
 
     const trx = async (sql: string, values?: any[]) => {
-      const [rows] = await connection.execute(sql, values);
+      const [rows] = await connection.query(sql, values);
       return rows;
     };
 

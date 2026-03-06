@@ -1,1 +1,0 @@
-id_comision, venta_id, servicio_id, monto, estado, fecha_crea, fecha_mod
