@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { query } from "@/lib/db";
 import { withTransaction } from "@/lib/transactionUtils";
+import { sendNotificationToAll } from "@/pages/api/notifications/sse";
 
 export default async function handler(
   req: NextApiRequest,
@@ -27,9 +28,33 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verificar si las tablas existen
     const tablesExist = await checkTablesExist();
+    const { tipo, estado } = req.query;
 
     if (!tablesExist) {
+      if (tipo === 'resumen') {
+        return res.status(200).json({ total_por_cobrar: 48000 });
+      }
       return res.status(200).json(getTestData());
+    }
+
+    if (tipo === 'resumen') {
+      const sqlResumen = `
+            SELECT SUM(total) as total_por_cobrar
+            FROM cuentas
+            WHERE estado = 1
+        `;
+      const resultResumen = await query(sqlResumen) as any[];
+      return res.status(200).json({
+        total_por_cobrar: resultResumen[0]?.total_por_cobrar || 0
+      });
+    }
+
+    let whereClause = 'WHERE c.estado >= 0';
+    const params: any[] = [];
+
+    if (estado !== undefined) {
+      whereClause = 'WHERE c.estado = ?';
+      params.push(estado);
     }
 
     const sql = `
@@ -45,6 +70,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         c.servicio_id,
         c.fecha_crea,
         c.estado,
+        c.tiempo,
         CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
         h.nombre as habitacion_numero,
         (
@@ -60,11 +86,11 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       FROM cuentas c
       LEFT JOIN clientes cl ON c.cliente_id = cl.id_cliente
       LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
-      WHERE c.estado >= 0
+      ${whereClause}
       ORDER BY c.fecha_crea DESC
     `;
 
-    const results = await query(sql);
+    const results = await query(sql, params);
 
     return res.status(200).json(results);
   } catch (error) {
@@ -80,7 +106,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
 
-    const { codigo, cliente_id, total_comision, sub_total, total, habitacion_id, detalles, usuarios } = req.body;
+    const { codigo, cliente_id, total_comision, sub_total, total, habitacion_id, detalles, usuarios, tiempo } = req.body;
 
     // Validaciones
     if (!codigo || total_comision === undefined || sub_total === undefined || total === undefined || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
@@ -113,35 +139,84 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       const cuentaResult = await trx(
         `INSERT INTO cuentas (
           codigo, cliente_id, total_comision, habitacion_id, 
-          sub_total, total, pedido_id, servicio_id, fecha_crea, estado
-        ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NOW(), 1)`,
-        [codigo, cliente_id, total_comision, habitacion_id || null, sub_total, total]
+          sub_total, total, pedido_id, servicio_id, fecha_crea, estado, tiempo
+        ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NOW(), 1, ?)`,
+        [codigo, cliente_id, total_comision, habitacion_id || null, sub_total, total, tiempo || 0]
       );
 
       const cuentaId = (cuentaResult as any).insertId;
 
       // 2. Insertar detalles
       for (const detalle of detalles) {
-
-        // Validar que todos los campos requeridos estén presentes
         if (!detalle.producto_id || !detalle.precio || !detalle.cantidad || !detalle.sub_total) {
           throw new Error(`Detalle incompleto: ${JSON.stringify(detalle)}`);
         }
 
-        await trx(
-          `INSERT INTO detalle_cuentas (
-            cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            cuentaId,
-            detalle.producto_id,
-            detalle.precio,
-            detalle.cantidad,
-            detalle.sub_total,
-            detalle.comision || 0,
-            detalle.hostess_id || (detalle.hostesses && detalle.hostesses[0]) || null
-          ]
-        );
+        const selectedHostesses = (detalle.hostesses && Array.isArray(detalle.hostesses) && detalle.hostesses.length > 0)
+          ? detalle.hostesses
+          : [null];
+
+        // Determinar si es un producto que se comparte (champaña o >= 160k)
+        // O si el usuario simplemente quiere que no se multiplique
+        const precioTotal = detalle.precio || 0;
+        const totalQty = detalle.cantidad || 1;
+        const isChampagne = (detalle.isChampagne === true); // Pasado desde el frontend o detectado por nombre si lo pasáramos
+        const isHighPrice = precioTotal >= 160000;
+
+        if (isChampagne || isHighPrice) {
+          // PARA CHAMPAÑA O PRODUCTOS CAROS: SE DIVIDE LA COMISIÓN
+          const totalComm = Math.round(detalle.comision || 0);
+          const commBase = Math.floor(totalComm / selectedHostesses.length);
+          const remainder = totalComm % selectedHostesses.length;
+
+          for (let i = 0; i < selectedHostesses.length; i++) {
+            const hId = selectedHostesses[i];
+            const finalComm = commBase + (i === 0 ? remainder : 0);
+
+            await trx(
+              `INSERT INTO detalle_cuentas (
+                cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+              [
+                cuentaId,
+                detalle.producto_id,
+                detalle.precio,
+                i === 0 ? totalQty : 0,
+                i === 0 ? (detalle.sub_total || totalQty * detalle.precio) : 0,
+                finalComm, // Se guarda la parte proporcional de la comisión
+                hId
+              ]
+            );
+          }
+        } else {
+          // PARA OTROS PRODUCTOS: SE REPARTE LA CANTIDAD (si el usuario seleccionó 2, 1 para cada una)
+          const baseQty = Math.floor(totalQty / selectedHostesses.length);
+          let remainingQty = totalQty;
+
+          for (let i = 0; i < selectedHostesses.length; i++) {
+            const hId = selectedHostesses[i];
+            const isLast = i === selectedHostesses.length - 1;
+            const itemQty = isLast ? remainingQty : (baseQty === 0 ? 1 : baseQty);
+            remainingQty -= itemQty;
+
+            if (itemQty > 0 || selectedHostesses.length === 1) {
+              await trx(
+                `INSERT INTO detalle_cuentas (
+                  cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+                [
+                  cuentaId,
+                  detalle.producto_id,
+                  detalle.precio,
+                  itemQty,
+                  detalle.precio * itemQty,
+                  detalle.comision || 0,
+                  hId
+                ]
+              );
+            }
+          }
+        }
       }
 
       // 3. Insertar usuarios/anfitrionas si se proporcionan
@@ -151,10 +226,19 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
             `INSERT INTO cuentas_usuarios (cuenta_id, usuario_id) VALUES (?, ?)`,
             [cuentaId, usuarioId]
           );
+          // Ocupar anfitriona si la cuenta tiene tiempo
+          if (tiempo > 0) {
+            await trx('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [usuarioId]);
+          }
         }
       }
 
-      return {
+      // 4. Ocupar habitación si tiene tiempo
+      if (habitacion_id && tiempo > 0) {
+        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0 OR COALESCE(comision_anfitriona, 0) > 0)', [habitacion_id]);
+      }
+
+      const finalResult = {
         cuenta_id: cuentaId,
         codigo,
         cliente_id,
@@ -165,6 +249,43 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         detalles_count: detalles.length,
         usuarios_count: usuarios ? usuarios.length : 0
       };
+
+      // Si tiene habitación y tiempo, notificar inicio de timer
+      if (habitacion_id && tiempo > 0) {
+        try {
+          // Obtener nombre de cliente para la notificación
+          const clienteRow = await trx(`SELECT nombre FROM clientes WHERE id_cliente = ?`, [cliente_id]) as any[];
+          const cliente_nombre = clienteRow[0]?.nombre || 'Cliente';
+
+          await sendNotificationToAll('timer_started', {
+            type: 'timer_started',
+            data: {
+              servicioId: cuentaId,
+              roomId: habitacion_id,
+              duration: tiempo,
+              startTime: new Date().toISOString(),
+              codigo,
+              clienteNombre: cliente_nombre,
+              tipoTransaccion: 'cuenta',
+              status: 1
+            }
+          });
+
+          // Notificar estado de anfitrionas
+          if (usuarios && Array.isArray(usuarios)) {
+            for (const uId of usuarios) {
+              await sendNotificationToAll('user_status_updated', {
+                userId: uId,
+                status: 2 // Ocupado
+              });
+            }
+          }
+        } catch (sseError) {
+          console.error('[SSE] Error sending notifications for cuenta:', sseError);
+        }
+      }
+
+      return finalResult;
     });
 
     return res.status(201).json({

@@ -70,6 +70,7 @@ export interface CajaResumen {
   total_iva: number;
   total_propina: number;
   total_anticipo: number;
+  total_comisiones: number;
   cajas_abiertas: number;
   cajas_cerradas: number;
   // Campos calculados para compatibilidad con componentes

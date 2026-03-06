@@ -18,66 +18,36 @@ const defaultConfig: DatabaseConfig & { timezone?: string } = {
   database: process.env.DB_NAME || 'lasmunecasderamon',
   port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 20,  // Aumentado para soportar más concurrencia
   queueLimit: 0,
   timezone: '-04:00'
 };
 
+// Pool singleton — reutiliza conexiones, no crea una nueva por cada query
 const pool = mysql.createPool(defaultConfig);
 
-async function createConnection() {
-  try {
-    const connection = await mysql.createConnection({
-      host: defaultConfig.host,
-      user: defaultConfig.user,
-      password: defaultConfig.password,
-      database: defaultConfig.database,
-      port: defaultConfig.port,
-      timezone: '-04:00'
-    });
-    // Fix VPS sql_mode issues with GROUP BY
-    await connection.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    return connection;
-  } catch (error) {
-    throw error;
-  }
-}
-
-// Function to execute SQL queries
+// Function to execute SQL queries — usa pool (conexiones reutilizadas)
 export async function query(sql: string, params: any[] = []) {
-  let connection;
+  const conn = await pool.getConnection();
   try {
-    connection = await createConnection();
-    const [rows] = await connection.query(sql, params);
+    // conn.query() en lugar de conn.execute() — execute() usa prepared statements
+    // que NO soportan subqueries (ej: SET SESSION ... = (SELECT ...)) ni GROUP_CONCAT
+    await conn.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+    const [rows] = await conn.query(sql, params);
     return rows;
-  } catch (error) {
-    throw error;
   } finally {
-    if (connection) {
-      await connection.end();
-    }
+    conn.release();
   }
 }
 
 export async function rawQuery(sql: string) {
-  let connection;
-  try {
-    connection = await createConnection();
-    const [rows] = await connection.query(sql);
-    return rows;
-  } catch (error) {
-    throw error;
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
-  }
+  const [rows] = await pool.query(sql);
+  return rows;
 }
 
 export async function testConnection() {
   try {
-    const connection = await createConnection();
-    await connection.end();
+    const [rows] = await pool.query('SELECT 1');
     return true;
   } catch (error) {
     return false;

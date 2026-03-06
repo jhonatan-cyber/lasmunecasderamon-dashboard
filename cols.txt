@@ -1,1 +1,0 @@
-id_usuario,run,nick,nombre,apellido,direccion,telefono,estado_civil,afp,aporte,sueldo,descuento,email,password,rol_id,foto,estado,estado_servicio,fecha_crea,fecha_mod,fecha_baja,push_token
