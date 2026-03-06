@@ -1,1 +1,0 @@
-id_detalle_comision, comision_id, usuario_id, comision, fecha_crea, fecha_mod, estado

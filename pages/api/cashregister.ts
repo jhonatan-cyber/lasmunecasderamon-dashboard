@@ -111,24 +111,19 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     const canViewAllCajas = hasCajaPermission;
 
     if (resumen === '1') {
-      // Si no tiene permisos de caja, solo obtener datos de su caja abierta
-      let cajaAbiertaQuery = `
+      // El resumen siempre muestra la caja abierta actual (sin importar quien la abrió)
+      // Esto permite que cajeros/garzones vean el turno activo aunque no hayan sido ellos quien lo abrió
+      const cajaAbiertaQuery = `
         SELECT 
           c.*, 
           CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
         FROM cajas c
         LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
         WHERE c.estado = 1
+        ORDER BY c.fecha_apertura DESC LIMIT 1
       `;
 
       const cajaAbiertaParams: any[] = [];
-
-      if (!canViewAllCajas) {
-        cajaAbiertaQuery += ' AND c.usuario_id_apertura = ?';
-        cajaAbiertaParams.push(currentUser.id);
-      }
-
-      cajaAbiertaQuery += ' ORDER BY c.fecha_apertura DESC LIMIT 1';
 
       const cajaAbiertaResult = (await query(
         cajaAbiertaQuery,
@@ -140,7 +135,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
           ? cajaAbiertaResult[0]
           : null;
 
-      // Contadores de cajas (si no tiene permisos, solo contar su caja)
+      // Contadores de cajas — solo admin ve el historial completo
       let cajasCountQuery = `
         SELECT 
           COUNT(CASE WHEN estado = 1 THEN 1 END) AS cajas_abiertas,
@@ -151,10 +146,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const cajasCountParams: any[] = [];
 
-      if (!canViewAllCajas) {
-        cajasCountQuery += ' AND usuario_id_apertura = ?';
-        cajasCountParams.push(currentUser.id);
-      }
+      // No filtrar por usuario — todos ven el conteo global de la caja
 
       const [cajasCount] = (await query(cajasCountQuery, cajasCountParams)) as RowDataPacket[];
 
@@ -170,6 +162,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
           total_iva: 0,
           total_propina: 0,
           total_anticipo: 0,
+          total_comisiones: 0,
           cajas_abiertas: Number((cajasCount as any)?.cajas_abiertas || 0),
           cajas_cerradas: Number((cajasCount as any)?.cajas_cerradas || 0),
           balance_total: 0,
@@ -227,6 +220,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       const totalIva = Number((cajaAbiertaRow as any)?.iva || 0);
       const totalPropina = Number((cajaAbiertaRow as any)?.propina || 0);
       const totalAnticipo = Number((cajaAbiertaRow as any)?.anticipo || 0);
+      const totalComisiones = Number((cajaAbiertaRow as any)?.comision || 0);
 
       // Calcular balance sumando efectivo + monto base + otros pagos - devoluciones 
       const balanceTotal = totalEfectivo + totalTarjeta + totalTransferencia + montoApertura - totalDevoluciones;
@@ -235,7 +229,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const resumenCompleto: CajaResumen = {
         total_ventas: totalVentas,
-        total_efectivo: efectivoEsperado, // Retornamos aqui el efectivo_esperado total para el componente
+        total_efectivo: efectivoEsperado,
         total_tarjeta: totalTarjeta,
         total_transferencia: totalTransferencia,
         total_servicios: totalServicios,
@@ -243,6 +237,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         total_iva: totalIva,
         total_propina: totalPropina,
         total_anticipo: totalAnticipo,
+        total_comisiones: totalComisiones,
         cajas_abiertas: Number((cajasCount as any)?.cajas_abiertas || 0),
         cajas_cerradas: Number((cajasCount as any)?.cajas_cerradas || 0),
         balance_total: balanceTotal,

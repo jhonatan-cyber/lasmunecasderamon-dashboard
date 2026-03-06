@@ -1,1 +1,0 @@
-id_venta, codigo, cliente_id, pedido_id, caja_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, fecha_crea, fecha_mod, estado, created_by, paused_at
