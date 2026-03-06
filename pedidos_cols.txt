@@ -1,1 +1,0 @@
-id_pedido, codigo, mesero_id, cliente_id, subtotal, total, propina, total_comision, fecha_crea, fecha_mod, fecha_baja, estado

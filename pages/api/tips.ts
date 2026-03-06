@@ -130,19 +130,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         if (caja_activa === '1') {
           const cajaAbiertaResult = await query(
-            `SELECT fecha_apertura FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
+            `SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`
           );
           const cajaAbierta = Array.isArray(cajaAbiertaResult)
             ? cajaAbiertaResult[0]
             : (cajaAbiertaResult as any);
 
-          if (cajaAbierta?.fecha_apertura) {
+          if (cajaAbierta?.id_caja) {
+            // Unir con ventas para filtrar por la caja_id de la venta
             if (whereClause) {
-              whereClause += ' AND P.fecha_crea >= ?';
+              whereClause += ' AND V.caja_id = ?';
             } else {
-              whereClause = 'WHERE P.fecha_crea >= ?';
+              whereClause = 'WHERE V.caja_id = ?';
             }
-            params.push(cajaAbierta.fecha_apertura);
+            params.push(cajaAbierta.id_caja);
           } else {
             return res.status(200).json({
               success: true,
@@ -165,6 +166,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           FROM propinas P 
           INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
           INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
+          INNER JOIN ventas V ON V.id_venta = P.venta_id
           ${whereClause}
           GROUP BY 
             U.id_usuario, 

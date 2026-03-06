@@ -1,1 +1,0 @@
-id_cuenta_usuario, cuenta_id, usuario_id, fecha_crea

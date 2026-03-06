@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -147,6 +148,54 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       }
 
+      // --- ACTUALIZACIÓN DE CAJA ---
+      try {
+        const cajaActiva = (await query(
+          'SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1'
+        )) as any[];
+
+        if (cajaActiva && cajaActiva.length > 0) {
+          const cajaId = cajaActiva[0].id_caja;
+          let montoEfectivo = 0;
+          let montoTarjeta = 0;
+          let montoTransferencia = 0;
+
+          const totalVenta = Number(total_cobrado || 0);
+
+          switch (metodo_pago) {
+            case 'efectivo': montoEfectivo = totalVenta; break;
+            case 'tarjeta': montoTarjeta = totalVenta; break;
+            case 'transferencia': montoTransferencia = totalVenta; break;
+            default: montoEfectivo = totalVenta;
+          }
+
+          // Calcular comision total de la cuenta para actualizar la caja
+          const totalCommCuenta = detallesParaComisiones.reduce((acc, d) => acc + (Number(d.comision) || 0), 0);
+
+          await query(
+            `UPDATE cajas SET 
+              venta = venta + ?,
+              propina = propina + ?,
+              efectivo = efectivo + ?,
+              tarjeta = tarjeta + ?,
+              transferencia = transferencia + ?,
+              comision = comision + ?
+            WHERE id_caja = ?`,
+            [
+              totalVenta - Number(propina || 0),
+              Number(propina || 0),
+              montoEfectivo,
+              montoTarjeta,
+              montoTransferencia,
+              totalCommCuenta,
+              cajaId
+            ]
+          );
+        }
+      } catch (cajaError) {
+        console.error('Error al actualizar caja:', cajaError);
+      }
+
     } catch (error) {
       console.error('Error al registrar cobro o distribuir propinas/comisiones:', error);
     }
@@ -167,6 +216,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       } catch (error) {
         console.error('Error al actualizar habitación:', error);
       }
+    }
+
+    // --- LIBERAR ANFITRIONAS ---
+    try {
+      const usersToRelease = (await query(
+        'SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?',
+        [cuenta_id]
+      )) as any[];
+
+      for (const u of usersToRelease) {
+        const userId = Number(u.usuario_id);
+        // Actualizar estado en DB
+        await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [userId]);
+
+        // Notificar por SSE
+        await sendNotificationToAll('user_status_updated', {
+          userId: userId,
+          status: 1 // Disponible
+        });
+      }
+    } catch (userReleaseError) {
+      console.error('Error al liberar anfitrionas:', userReleaseError);
     }
 
     return res.status(200).json({
