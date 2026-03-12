@@ -9,14 +9,20 @@ import Paginate from '@/components/ui/paginate';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { AlertCircle } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { ReportSkeleton } from '@/components/ui/skeletons';
 
 export default function AccountsPage() {
-  const { cuentas, loading, error, getCuentas } = useCuentas();
+  const { cuentas, isLoading, error, getCuentas } = useCuentas();
   const { refetch: refetchOrders } = useOrders();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
+
+  if (isLoading || cajaLoading) {
+    return <ReportSkeleton />;
+  }
 
   // Asegurar que cuentas sea siempre un array
   const cuentasData = cuentas || [];
@@ -38,7 +44,7 @@ export default function AccountsPage() {
   return (
     <PermissionGuard module="accounts" action="view">
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <CuentaHeader loading={loading} onRefresh={handleRefresh} />
+      <CuentaHeader loading={isLoading} onRefresh={handleRefresh} />
 
       <CuentaStatsCards cuentas={cuentasData} formatCurrency={formatCurrencyNoDecimals} />
 
@@ -63,13 +69,13 @@ export default function AccountsPage() {
         rowsPerPage={rowsPerPage}
         setRowsPerPage={setRowsPerPage}
         setPage={setPage}
-        loading={loading}
+        loading={isLoading}
         onRefresh={handleRefresh}
       />
 
       <div className='overflow-x-auto'>
         <CuentaTable
-          loading={loading}
+          loading={isLoading}
           rows={paginatedCuentas}
           rowsPerPage={rowsPerPage}
           onRefresh={handleRefresh}

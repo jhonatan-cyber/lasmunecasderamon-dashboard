@@ -36,21 +36,21 @@ export default function TestimonialsSection({ reviews }: TestimonialsSectionProp
   const displayReviews = safeReviews.length > 0 ? safeReviews : defaultReviews;
 
   return (
-    <section className='relative py-20 overflow-hidden'>
+    <section className='relative py-16 sm:py-20 overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='text-center mb-16'>
-          <h2 className='text-5xl md:text-6xl font-bold mb-4'>
+          <h2 className='text-3xl sm:text-5xl md:text-6xl font-bold mb-4'>
             <span className='bg-gradient-to-r from-gold-300 via-gold-500 to-gold-700 bg-clip-text text-transparent'>
               Lo que dicen nuestros clientes
             </span>
           </h2>
         </div>
 
-        <div className='grid md:grid-cols-3 gap-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8'>
           {displayReviews.slice(0, 6).map((t, i) => (
             <div
               key={i}
-              className='group relative bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 hover:border-gold-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold-600/10 overflow-hidden'
+              className='group relative bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-8 hover:border-gold-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold-600/10 overflow-hidden'
             >
               <div className='absolute inset-0 bg-gradient-to-br from-gold-500/5 via-silver-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-3xl'></div>
               <div className='absolute top-4 right-4 flex gap-1'>
@@ -61,7 +61,7 @@ export default function TestimonialsSection({ reviews }: TestimonialsSectionProp
                   />
                 ))}
               </div>
-              <p className='text-silver-300 italic text-lg leading-relaxed mb-8 relative z-10 font-light'>
+              <p className='text-silver-300 italic text-base sm:text-lg leading-relaxed mb-8 relative z-10 font-light'>
                 "{t.comentario}"
               </p>
               <div className='flex items-center gap-4 pt-6 border-t border-white/10 group-hover:border-gold-500/20 transition-colors'>
@@ -82,3 +82,4 @@ export default function TestimonialsSection({ reviews }: TestimonialsSectionProp
     </section>
   );
 }
+

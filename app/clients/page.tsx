@@ -20,6 +20,7 @@ import { ClientFilters } from '@/components/clients/ClientFilters';
 import { ExportButtons } from '@/components/clients/ExportButtons';
 import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { ClientsSkeleton } from '@/components/ui/skeletons';
 
 export default function Clients() {
   const {
@@ -138,6 +139,8 @@ export default function Clients() {
     setIsDetailsOpen(false);
     handleEditClick(selectedClient);
   };
+
+  if (isLoading) return <ClientsSkeleton />;
 
   return (
     <PermissionGuard module='clients' action='view'>

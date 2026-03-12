@@ -59,30 +59,30 @@ export default function CareersSection({ handlePositionClick }: CareersSectionPr
   ];
 
   return (
-    <section id='careers' className='relative py-20 overflow-hidden'>
+    <section id='careers' className='relative py-16 sm:py-20 overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-20'>
+        <div className='text-center mb-14 sm:mb-20'>
           <div className='inline-block mb-4 px-6 py-2 bg-gold-600/10 border border-gold-500/40 rounded-full'>
             <span className='text-gold-500 text-sm font-semibold tracking-wider uppercase'>
               ÚNETE A NUESTRO EQUIPO
             </span>
           </div>
-          <h2 className='text-5xl md:text-6xl font-bold mb-6'>
+          <h2 className='text-3xl sm:text-5xl md:text-6xl font-bold mb-6'>
             <span className='bg-gradient-to-r from-gold-300 via-gold-500 to-gold-700 bg-clip-text text-transparent'>
               Trabaja con Nosotros
             </span>
           </h2>
-          <p className='text-silver-300 text-xl max-w-3xl mx-auto font-light'>
+          <p className='text-silver-300 text-base sm:text-xl max-w-3xl mx-auto font-light'>
             Buscamos profesionales apasionados para formar parte del mejor nightclub de Linares
           </p>
         </div>
 
-        <div className='flex flex-wrap justify-center gap-8 max-w-7xl mx-auto mb-16'>
+        <div className='flex flex-wrap justify-center gap-5 sm:gap-8 max-w-7xl mx-auto mb-12 sm:mb-16'>
           {positions.map((pos, i) => (
             <div
               key={i}
               onClick={() => handlePositionClick(pos.title)}
-              className={`group relative w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 hover:border-gold-500/30 transition-all duration-500 hover:scale-105 cursor-pointer overflow-hidden`}
+              className={`group relative w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-8 hover:border-gold-500/30 transition-all duration-500 hover:scale-105 cursor-pointer overflow-hidden`}
             >
               <div
                 className={`absolute inset-0 bg-gradient-to-br ${pos.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl`}
@@ -95,7 +95,7 @@ export default function CareersSection({ handlePositionClick }: CareersSectionPr
                     <pos.icon className='w-8 h-8 text-black' />
                   </div>
                   <div>
-                    <h3 className='text-2xl font-bold text-silver-100 mb-1 tracking-wide'>{pos.title}</h3>
+                    <h3 className='text-xl sm:text-2xl font-bold text-silver-100 mb-1 tracking-wide'>{pos.title}</h3>
                     <div className='flex items-center gap-2 text-sm text-silver-400 font-light'>
                       <Clock className='w-4 h-4' /> <span>{pos.schedule}</span>
                     </div>
@@ -145,12 +145,12 @@ export default function CareersSection({ handlePositionClick }: CareersSectionPr
           ))}
         </div>
 
-        <div className='max-w-4xl mx-auto bg-black/60 backdrop-blur-md border border-gold-500/30 rounded-3xl p-12 text-center shadow-2xl'>
+        <div className='max-w-4xl mx-auto bg-black/60 backdrop-blur-md border border-gold-500/30 rounded-3xl p-6 sm:p-10 lg:p-12 text-center shadow-2xl'>
           <Briefcase className='w-16 h-16 mx-auto mb-6 text-gold-500' />
-          <h3 className='text-3xl md:text-4xl font-bold text-white mb-4 tracking-wide'>
+          <h3 className='text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 tracking-wide'>
             ¿Te interesa trabajar con nosotros?
           </h3>
-          <p className='text-silver-300 text-lg mb-8 max-w-2xl mx-auto font-light'>
+          <p className='text-silver-300 text-base sm:text-lg mb-8 max-w-2xl mx-auto font-light'>
             Envía tu CV y carta de presentación a nuestro WhatsApp. Nos pondremos en contacto
             contigo a la brevedad.
           </p>
@@ -159,7 +159,7 @@ export default function CareersSection({ handlePositionClick }: CareersSectionPr
             target='_blank'
             rel='noopener noreferrer'
           >
-            <button className='bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-10 py-4 rounded-full text-lg transition-all duration-300 hover:scale-105 shadow-xl shadow-gold-600/40 inline-flex items-center gap-2 uppercase tracking-widest'>
+            <button className='w-full sm:w-auto bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-8 sm:px-10 py-4 rounded-full text-base sm:text-lg transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-gold-600/40 inline-flex items-center justify-center gap-2 uppercase tracking-widest min-h-11'>
               <Send className='w-5 h-5' /> Enviar CV por WhatsApp
             </button>
           </a>
@@ -168,3 +168,4 @@ export default function CareersSection({ handlePositionClick }: CareersSectionPr
     </section>
   );
 }
+

@@ -13,6 +13,7 @@ import Paginate from '@/components/ui/paginate';
 import { toast } from 'sonner';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { ReportSkeleton } from '@/components/ui/skeletons';
 
 export default function AdvancesPage() {
   const router = useRouter();
@@ -23,6 +24,10 @@ export default function AdvancesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
+
+  if (loading || cajaLoading) {
+    return <ReportSkeleton />;
+  }
 
   // Verificar permisos
   const canCreate = hasPermission('anticipos', 'crear');

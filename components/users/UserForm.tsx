@@ -154,6 +154,40 @@ export function UserForm({
   });
 
   const housingDiscount = form.watch('housing_discount');
+  const watchedNick = form.watch('nick');
+  const watchedNombre = form.watch('nombre');
+  const watchedApellido = form.watch('apellido');
+  const watchedDireccion = form.watch('direccion');
+
+  useEffect(() => {
+    const capitalized = capitalizeWords(watchedNick);
+    if (watchedNick && watchedNick !== capitalized) {
+      form.setValue('nick', capitalized);
+    }
+  }, [watchedNick, capitalizeWords, form]);
+
+  useEffect(() => {
+    const capitalized = capitalizeWords(watchedNombre);
+    if (watchedNombre && watchedNombre !== capitalized) {
+      form.setValue('nombre', capitalized);
+    }
+  }, [watchedNombre, capitalizeWords, form]);
+
+  useEffect(() => {
+    const capitalized = capitalizeWords(watchedApellido);
+    if (watchedApellido && watchedApellido !== capitalized) {
+      form.setValue('apellido', capitalized);
+    }
+  }, [watchedApellido, capitalizeWords, form]);
+
+  useEffect(() => {
+    if (watchedDireccion) {
+      const capitalized = watchedDireccion.charAt(0).toUpperCase() + watchedDireccion.slice(1);
+      if (watchedDireccion !== capitalized) {
+        form.setValue('direccion', capitalized);
+      }
+    }
+  }, [watchedDireccion, form]);
 
   const handleFormSubmit = useCallback(
     async (values: UserFormValues) => {
@@ -255,6 +289,7 @@ export function UserForm({
               label='Nick'
               placeholder='Nick del usuario'
               icon={UserCircle}
+              capitalize
             />
           </div>
 
@@ -275,6 +310,7 @@ export function UserForm({
             label='Nombre'
             placeholder='Nombre(s)'
             icon={User}
+            capitalize
           />
 
           {/* Apellido */}
@@ -284,6 +320,7 @@ export function UserForm({
             label='Apellido'
             placeholder='Apellido(s)'
             icon={FileSignature}
+            capitalize
           />
 
           {/* Dirección - ocupa 2 columnas */}
@@ -294,6 +331,7 @@ export function UserForm({
               label='Dirección'
               placeholder='Dirección completa'
               icon={MapPin}
+              capitalize
             />
           </div>
 
@@ -351,7 +389,15 @@ export function UserForm({
                     <Home />
                   </span>
                   <FormControl>
-                    <Input className='pl-12' placeholder='Establecimiento AFP' {...field} />
+                    <Input
+                      className='pl-12'
+                      placeholder='Establecimiento AFP'
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        field.onChange(value);
+                      }}
+                    />
                   </FormControl>
                 </div>
                 <FormMessage />

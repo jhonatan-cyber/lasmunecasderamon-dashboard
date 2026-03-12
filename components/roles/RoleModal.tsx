@@ -37,7 +37,9 @@ export function RoleModal({
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    watch,
+    setValue
   } = useForm({
     defaultValues: newRole
   });
@@ -45,6 +47,37 @@ export function RoleModal({
   React.useEffect(() => {
     reset(newRole);
   }, [newRole, reset]);
+
+  // Capitalizar en tiempo real
+  const capitalizeWords = (value?: string) => {
+    if (!value) return '';
+    return value
+      .split(/\s+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const capitalizeFirst = (value?: string) => {
+    if (!value) return '';
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  };
+
+  const watchedName = watch('name');
+  const watchedDescription = watch('description');
+
+  React.useEffect(() => {
+    const cap = capitalizeWords(watchedName);
+    if (watchedName !== undefined && cap !== watchedName) {
+      setValue('name', cap, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [watchedName, setValue]);
+
+  React.useEffect(() => {
+    const cap = capitalizeFirst(watchedDescription);
+    if (watchedDescription !== undefined && cap !== watchedDescription) {
+      setValue('description', cap, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [watchedDescription, setValue]);
 
   const handleFormSubmit = (data: { name: string; description: string }) => {
     console.log('🔵 [ROLEMODAL] Formulario enviado:', data);
