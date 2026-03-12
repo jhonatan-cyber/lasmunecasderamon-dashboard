@@ -4,10 +4,13 @@ import { useCategories, Category } from "@/hooks/productos/useCategories";
 import { useRouter } from "next/navigation";
 import CategoryCard from "@/components/products/CategoryCard";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { ProductsSkeleton } from "@/components/ui/skeletons";
 
 const ProductsPage = () => {
   const { filteredCategories, isLoading } = useCategories();
   const router = useRouter();
+
+  if (isLoading) return <ProductsSkeleton />;
 
   const activeCategories = (filteredCategories as Category[]).filter((cat) => cat.status === 1);
 
@@ -25,9 +28,7 @@ const ProductsPage = () => {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-center text-gray-500 text-sm sm:text-base">Cargando categorías...</div>
-        ) : activeCategories.length === 0 ? (
+        {activeCategories.length === 0 ? (
           <div className="text-center text-gray-500 text-sm sm:text-base">
             No hay categorías activas disponibles.
           </div>

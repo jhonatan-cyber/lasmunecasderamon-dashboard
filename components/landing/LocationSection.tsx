@@ -20,24 +20,24 @@ const transportOptions = [
 
 export default function LocationSection() {
   return (
-    <section id='location' className='relative py-20 overflow-hidden'>
+    <section id='location' className='relative py-16 sm:py-20 overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-20'>
+        <div className='text-center mb-14 sm:mb-20'>
           <div className='inline-block mb-4 px-6 py-2 bg-gold-600/10 border border-gold-500/40 rounded-full'>
             <span className='text-gold-500 text-sm font-semibold tracking-wider uppercase'>UBICACIÓN</span>
           </div>
-          <h2 className='text-5xl md:text-6xl font-bold mb-6'>
+          <h2 className='text-3xl sm:text-5xl md:text-6xl font-bold mb-6'>
             <span className='bg-gradient-to-r from-gold-300 via-gold-500 to-gold-700 bg-clip-text text-transparent'>
               Cómo Llegar
             </span>
           </h2>
-          <p className='text-silver-300 text-xl max-w-2xl mx-auto font-light'>
+          <p className='text-silver-300 text-base sm:text-xl max-w-2xl mx-auto font-light'>
             Ubicados en el corazón de Linares, fácil acceso y estacionamiento disponible
           </p>
         </div>
 
-        <div className='grid md:grid-cols-2 gap-12 items-start'>
-          <div className='relative h-[500px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl group'>
+        <div className='grid md:grid-cols-2 gap-8 lg:gap-12 items-start'>
+          <div className='relative h-[320px] sm:h-[420px] lg:h-[500px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl group'>
             <div className="absolute inset-0 bg-gold-500/5 z-10 pointer-events-none group-hover:bg-transparent transition-colors duration-500"></div>
             <iframe
               src='https://www.google.com/maps?q=Valentín+Letelier+182,+3581069+Linares,+Maule,+Chile&output=embed'
@@ -51,13 +51,13 @@ export default function LocationSection() {
           </div>
 
           <div className='space-y-6'>
-            <div className='bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 hover:border-gold-500/30 transition-all duration-500'>
+            <div className='bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-8 hover:border-gold-500/30 transition-all duration-500'>
               <div className='flex items-start gap-4 mb-8'>
                 <div className='w-12 h-12 bg-gradient-to-br from-gold-500 via-gold-600 to-gold-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-gold-500/20'>
                   <MapPin className='w-6 h-6 text-black' />
                 </div>
                 <div>
-                  <h3 className='text-2xl font-bold text-gold-400 mb-2 tracking-wide'>Dirección</h3>
+                  <h3 className='text-xl sm:text-2xl font-bold text-gold-400 mb-2 tracking-wide'>Dirección</h3>
                   <p className='text-silver-200 text-lg font-light'>Valentín Letelier 182</p>
                   <p className='text-silver-500 font-light'>3581069 Linares, Maule, Chile</p>
                   <p className='text-silver-400 text-sm mt-3 font-light leading-relaxed'>
@@ -82,14 +82,14 @@ export default function LocationSection() {
                 })}
               </div>
             </div>
-            <div className='flex flex-col sm:flex-row gap-4'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <a
                 href='https://maps.google.com/?q=Valentín+Letelier+182,+Linares,+Maule,+Chile'
                 target='_blank'
                 rel='noopener noreferrer'
                 className='flex-1 group'
               >
-                <button className='w-full bg-black border border-gold-500/50 text-gold-400 hover:text-gold-300 font-bold px-6 py-4 rounded-2xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-sm'>
+                <button className='w-full bg-black border border-gold-500/50 text-gold-400 hover:text-gold-300 font-bold px-6 py-4 rounded-2xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-sm min-h-11'>
                   <MapPin className='w-5 h-5 group-hover:scale-110 transition-transform' /> Google Maps
                 </button>
               </a>
@@ -99,7 +99,7 @@ export default function LocationSection() {
                 rel='noopener noreferrer'
                 className='flex-1 group'
               >
-                <button className='w-full bg-black border border-gold-500/50 text-gold-400 hover:text-gold-300 font-bold px-6 py-4 rounded-2xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-sm'>
+                <button className='w-full bg-black border border-gold-500/50 text-gold-400 hover:text-gold-300 font-bold px-6 py-4 rounded-2xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-sm min-h-11'>
                   <Navigation className='w-5 h-5 group-hover:scale-110 transition-transform' /> Waze
                 </button>
               </a>
@@ -110,3 +110,4 @@ export default function LocationSection() {
     </section>
   );
 }
+

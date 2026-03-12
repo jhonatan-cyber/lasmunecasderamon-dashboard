@@ -9,10 +9,12 @@ import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
 export const useCuentas = () => {
-  const { data: cuentas, isLoading, error, refetch } = useGenericFetch<CuentaWithDetails[]>('/api/cuentas');
+  const { data: cuentas, isLoading, error, refetch } = useGenericFetch<CuentaWithDetails>('/api/cuentas');
 
   const { create, update, remove } = useGenericMutations<CuentaWithDetails>('/api/cuentas', {
-    onSuccess: refetch
+    onSuccess: () => {
+      refetch();
+    }
   });
 
   const createCuenta = useCallback(async (cuentaData: CreateCuentaRequest) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 
 const menuItems = [
   { name: 'Inicio', href: '#home' },
@@ -12,17 +13,27 @@ const menuItems = [
 ];
 
 export default function Navigation({ scrollY }: { scrollY: number }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const showCompactLogo = scrollY > 80;
+
+  const handleMobileMenuClick = () => {
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
+  const handleMobileItemClick = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrollY > 50 ? 'bg-black/80 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]' : 'bg-gradient-to-b from-black/80 to-transparent'}`}
     >
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='grid grid-cols-3 items-center h-24'>
+        <div className='flex items-center justify-between h-24 lg:grid lg:grid-cols-3'>
           <div className='flex items-center space-x-3 group cursor-pointer'>
             <a
               href='#home'
-              className={`flex items-center gap-3 transition-all duration-700 ease-out ${scrollY > 200
+              className={`flex items-center gap-3 transition-all duration-700 ease-out ${showCompactLogo
                 ? 'opacity-100 visible translate-y-0 scale-100'
                 : 'opacity-0 invisible -translate-y-10 scale-90'
                 }`}
@@ -31,18 +42,18 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
               <img
                 src='/img/system/logo2.png'
                 alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'
-                className={`hidden md:block w-auto object-contain transform group-hover:scale-110 transition-all duration-500 ease-in-out mt-4 h-32 drop-shadow-md`}
+                className={`hidden lg:block w-auto object-contain transform group-hover:scale-110 transition-all duration-500 ease-in-out mt-4 h-32 drop-shadow-md`}
               />
               {/* Logo para mobile */}
               <img
                 src='/img/system/logo1.png'
                 alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'
-                className={`md:hidden w-auto object-contain transform group-hover:scale-110 transition-all duration-500 ease-in-out mt-4 h-16 drop-shadow-md`}
+                className={`lg:hidden w-auto object-contain transform group-hover:scale-110 transition-all duration-500 ease-in-out mt-4 h-16 drop-shadow-md`}
               />
             </a>
           </div>
 
-          <div className='hidden md:flex items-center justify-center gap-8'>
+          <div className='hidden lg:flex items-center justify-center gap-8'>
             {menuItems.map(item => (
               <a
                 key={item.name}
@@ -54,9 +65,40 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
               </a>
             ))}
           </div>
+
+          <div className='flex lg:hidden items-center justify-end'>
+            <button
+              type='button'
+              onClick={handleMobileMenuClick}
+              aria-label={isMobileMenuOpen ? 'Cerrar menu' : 'Abrir menu'}
+              aria-expanded={isMobileMenuOpen}
+              className='inline-flex items-center justify-center w-11 h-11 rounded-full border border-white/20 bg-black/40 text-white hover:bg-black/60 transition-colors min-h-11 min-w-11'
+            >
+              {isMobileMenuOpen ? <X className='w-5 h-5' /> : <Menu className='w-5 h-5' />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {isMobileMenuOpen && (
+        <div className='lg:hidden border-t border-white/10 bg-black/95 backdrop-blur-md shadow-2xl'>
+          <div className='px-4 py-3 flex flex-col gap-1'>
+            {menuItems.map(item => (
+              <a
+                key={`mobile-${item.name}`}
+                href={item.href}
+                onClick={handleMobileItemClick}
+                className='block rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-wide text-silver-300 hover:text-gold-400 hover:bg-white/5 transition-colors'
+              >
+                {item.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
+
+
 

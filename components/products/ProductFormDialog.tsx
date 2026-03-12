@@ -112,7 +112,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     if (form.commission.trim() && isNaN(Number(numericCommission)))
       newErrors.commission = 'Comisión debe ser un número válido';
 
-    if (!form.description.trim()) newErrors.description = 'La descripción es requerida';
+    // if (!form.description.trim()) newErrors.description = 'La descripción es requerida';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -342,7 +342,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 </div>
               </div>
               <div>
-                <label htmlFor="prod-desc" className='block text-sm font-medium mb-1'>Descripción</label>
+                <label htmlFor="prod-desc" className='block text-sm font-medium mb-1'>Descripción (opcional)</label>
                 <div className='relative'>
                   <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600'>
                     <FileText className='w-3 h-3 sm:w-4 sm:h-4' />

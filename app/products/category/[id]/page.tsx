@@ -34,6 +34,7 @@ import {
   rectSortingStrategy
 } from '@dnd-kit/sortable';
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { ProductsSkeleton } from "@/components/ui/skeletons";
 
 const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
@@ -134,14 +135,13 @@ const ProductCategoryPage = () => {
 
 
   // Si las categorías están cargando o no hay categorías cargadas, mostrar loading
-  if (categoriesLoading || filteredCategories.length === 0) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-        <div className="text-center text-gray-500 text-sm sm:text-base">
-          Cargando categoría...
-        </div>
-      </div>
-    );
+  if (categoriesLoading || (filteredCategories.length === 0 && categoriesLoading)) {
+    return <ProductsSkeleton />;
+  }
+
+  // Si los productos están cargando
+  if (isLoading) {
+    return <ProductsSkeleton />;
   }
 
   // Si no se encuentra la categoría, mostrar un mensaje

@@ -8,6 +8,7 @@ import AttendanceTable from '@/components/attendance/AttendanceTable';
 import AttendanceFilters from '@/components/attendance/AttendanceFilters';
 import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { ReportSkeleton } from '@/components/ui/skeletons';
 
 export default function AttendancePage() {
   const { data, loading, error } = useAsistencias();
@@ -17,6 +18,8 @@ export default function AttendancePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+
+  if (loading || statsLoading) return <ReportSkeleton />;
 
   // Filtrar y paginar datos
   const filteredData = useMemo(() => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ErrorLogsSkeleton } from '@/components/ui/skeletons';
 
 export default function ErrorLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -27,12 +28,7 @@ export default function ErrorLogsPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Error Logs</h1>
-        <p>Cargando...</p>
-      </div>
-    );
+    return <ErrorLogsSkeleton />;
   }
 
   return (

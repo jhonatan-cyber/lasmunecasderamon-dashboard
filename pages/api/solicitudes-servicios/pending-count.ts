@@ -37,9 +37,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({
       success: true,
-      count: solicitudesCount + pedidosCount,
-      solicitudesCount,
-      pedidosCount
+      count: Number(solicitudesCount) + Number(pedidosCount),
+      solicitudesCount: Number(solicitudesCount),
+      pedidosCount: Number(pedidosCount)
     });
   } catch (error: any) {
     if (error?.code === 'ER_NO_SUCH_TABLE' || error?.message?.includes("doesn't exist")) {

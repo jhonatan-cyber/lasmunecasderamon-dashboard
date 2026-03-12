@@ -6,6 +6,7 @@ import PayrollRoleButtons from '@/components/payroll/PayrollRoleButtons';
 import usePayroll from '@/hooks/personal/usePayroll';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { ReportSkeleton } from '@/components/ui/skeletons';
 
 export default function PayrollPage() {
   const {
@@ -28,6 +29,8 @@ export default function PayrollPage() {
   } = usePayroll();
 
   const { userPermissions } = useUserPermissions();
+
+  if (loading) return <ReportSkeleton />;
 
   return (
     <PermissionGuard module='payroll' action='view'>
@@ -57,7 +60,7 @@ export default function PayrollPage() {
           page={page}
           totalPages={totalPages}
           setPage={setPage}
-          onRefetch={fetchPayroll}
+          onRefetch={() => { fetchPayroll(); }}
         />
       </div>
     </PermissionGuard>

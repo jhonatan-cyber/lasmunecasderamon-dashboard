@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import useOrders from '@/hooks/servicios/useOrders';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useEffect, useState, useRef } from 'react';
@@ -55,6 +55,7 @@ const OrderDetailModal = dynamic(
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { orders, refetch, orderDetail, fetchOrderDetail, isDetailLoading, detailError, setOrders } =
     useOrders();
   const { user, loading: userLoading } = useCurrentUser();
@@ -181,13 +182,15 @@ export function Header() {
         return;
       }
 
-      const { orderId } = event.detail;
+      const { orderId, codigo } = event.detail;
       const order = orders.find((o: any) => o.id_pedido === orderId);
+      
       setSelectedOrderId(orderId);
-      setSelectedOrderCode(order?.codigo || '');
+      setSelectedOrderCode(codigo || order?.codigo || '');
       setModalOpen(true);
       fetchOrderDetail(orderId);
     };
+
 
     window.addEventListener('openOrderModal', handleOpenOrderModal as EventListener);
 
@@ -564,7 +567,7 @@ export function Header() {
                   className={`h-5 w-5 bell-icon ${totalNotifications > 0 ? 'bell-ring' : ''}`}
                 />
                 {totalNotifications > 0 && (
-                  <span className='absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center badge-blink'>
+                  <span className={`absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center badge-blink`}>
                     {totalNotifications}
                   </span>
                 )}

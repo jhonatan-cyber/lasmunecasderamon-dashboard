@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Key, Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ClientsSkeleton } from '@/components/ui/skeletons';
 
 interface Permission {
   id: number;
@@ -80,6 +81,8 @@ export default function Settings() {
       setPermissionsLoading(false);
     }
   };
+
+  if (permissionsLoading) return <ClientsSkeleton />;
 
   const handleCreatePermission = () => {
     setEditingPermission(null);

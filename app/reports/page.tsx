@@ -74,7 +74,7 @@ export default function ReportsPage() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return null;
+    return <ReportSkeleton />;
   }
 
   return (

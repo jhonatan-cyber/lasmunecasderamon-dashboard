@@ -277,6 +277,11 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
 
     await query('DELETE FROM solicitudes_servicios WHERE id_solicitud = ?', [id]);
 
+    sendNotificationToAll('service_request_deleted', {
+      id: Number(id),
+      timestamp: new Date().toISOString()
+    });
+
     return res.status(200).json({ success: true, message: 'Solicitud eliminada' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error al eliminar solicitud' });

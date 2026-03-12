@@ -236,8 +236,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     await rawQuery('START TRANSACTION');
     // Insertar pedido principal
     const result: any = await query(
-      'INSERT INTO pedidos (codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0]
+      'INSERT INTO pedidos (codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0, 1]
     );
     const pedidoId = result.insertId;
 

@@ -24,25 +24,25 @@ export default function ReviewsSection({ reviewData, setReviewData, handleReview
   };
 
   return (
-    <section id='reviews' className='relative py-20 overflow-hidden'>
+    <section id='reviews' className='relative py-16 sm:py-20 overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-20'>
+        <div className='text-center mb-14 sm:mb-20'>
           <div className='inline-block mb-4 px-6 py-2 bg-gold-600/10 border border-gold-500/40 rounded-full'>
             <span className='text-gold-500 text-sm font-semibold tracking-wider uppercase'>
               COMPARTE TU EXPERIENCIA
             </span>
           </div>
-          <h2 className='text-5xl md:text-6xl font-bold mb-6'>
+          <h2 className='text-3xl sm:text-5xl md:text-6xl font-bold mb-6'>
             <span className='bg-gradient-to-r from-gold-300 via-gold-500 to-gold-700 bg-clip-text text-transparent'>
               Deja tu Reseña
             </span>
           </h2>
-          <p className='text-silver-300 text-xl max-w-3xl mx-auto font-light'>
+          <p className='text-silver-300 text-base sm:text-xl max-w-3xl mx-auto font-light'>
             Comparte tu experiencia con otros clientes. Nos encantaría saber tu opinión.
           </p>
         </div>
 
-        <div className='max-w-2xl mx-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-10 shadow-2xl hover:border-gold-500/30 transition-all duration-500'>
+        <div className='max-w-2xl mx-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl hover:border-gold-500/30 transition-all duration-500'>
           <div className='mb-8'>
             <label className='block text-silver-200 mb-3 font-medium tracking-wide text-sm uppercase'>Tu Nombre *</label>
             <input
@@ -53,7 +53,7 @@ export default function ReviewsSection({ reviewData, setReviewData, handleReview
               placeholder='Juan Pérez'
             />
           </div>
-          <div className='grid md:grid-cols-2 gap-6 mb-8'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
             <div>
               <label className='block text-silver-200 mb-3 font-medium tracking-wide text-sm uppercase'>Email</label>
               <input
@@ -77,13 +77,13 @@ export default function ReviewsSection({ reviewData, setReviewData, handleReview
           </div>
           <div className='mb-8'>
             <label className='block text-silver-200 mb-4 font-medium tracking-wide text-sm uppercase'>Calificación *</label>
-            <div className='flex gap-4'>
+            <div className='flex flex-wrap gap-4'>
               {[1, 2, 3, 4, 5].map(s => (
                 <button
                   key={s}
                   type='button'
                   onClick={() => setReviewData({ ...safeReviewData, rating: s })}
-                  className='hover:scale-110 transition-transform duration-200 group'
+                  aria-label={`Calificar con ${s} estrellas`} className='min-h-11 min-w-11 inline-flex items-center justify-center hover:scale-110 transition-transform duration-200 group'
                 >
                   <Star
                     className={`w-8 h-8 ${s <= safeReviewData.rating ? 'text-gold-500 fill-gold-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'text-zinc-700 fill-zinc-700 group-hover:text-gold-500/50'}`}
@@ -104,7 +104,7 @@ export default function ReviewsSection({ reviewData, setReviewData, handleReview
           </div>
           <button
             onClick={handleReviewSubmit}
-            className='w-full bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-8 py-5 rounded-full transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-gold-600/30 inline-flex items-center justify-center gap-3 uppercase tracking-widest'
+            className='w-full bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-8 py-5 rounded-full transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-gold-600/30 inline-flex items-center justify-center gap-3 uppercase tracking-widest min-h-11'
           >
             <Star className='w-5 h-5' /> Publicar Reseña
           </button>
@@ -113,3 +113,8 @@ export default function ReviewsSection({ reviewData, setReviewData, handleReview
     </section>
   );
 }
+
+
+
+
+
