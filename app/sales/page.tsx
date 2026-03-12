@@ -31,6 +31,7 @@ import {
 } from '@/lib/salesUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
+import { SalesSkeleton } from '@/components/ui/skeletons';
 
 export default function Sales() {
   const { ventas, loading, error, getVentas, getResumen } = useSales();
@@ -134,6 +135,10 @@ export default function Sales() {
       showErrorToast('Error de conexión. Verifica tu conexión a internet.');
     }
   };
+
+  if (loading && ventas.length === 0) {
+    return <SalesSkeleton />;
+  }
 
   if (error) {
     return <SalesError error={error} onRetry={handleRefresh} />;

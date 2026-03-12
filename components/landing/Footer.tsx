@@ -23,11 +23,11 @@ export default function Footer({ menuItems }: FooterProps) {
 
   const safeMenuItems = Array.isArray(menuItems) ? menuItems : fallbackMenuItems;
   return (
-    <footer className='relative border-t border-white/10 bg-black pt-20 pb-10'>
+    <footer className='relative border-t border-white/10 bg-black pt-16 sm:pt-20 pb-10'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='grid md:grid-cols-4 gap-12 mb-16'>
-          <div className='md:col-span-2'>
-            <div className='flex items-center space-x-3 mb-8'>
+        <div className='grid md:grid-cols-4 gap-8 sm:gap-12 mb-12 sm:mb-16'>
+          <div className='md:col-span-2 text-center md:text-left'>
+            <div className='flex items-center justify-center md:justify-start space-x-3 mb-8'>
               {/* Logo para desktop */}
               <img
                 src='/img/system/logo2.png'
@@ -45,12 +45,12 @@ export default function Footer({ menuItems }: FooterProps) {
               El nightclub más exclusivo de Linares. Un lugar para caballeros que buscan
               experiencias únicas en un ambiente de lujo, sofisticación y discreción absoluta.
             </p>
-            <div className='flex gap-4'>
+            <div className='flex gap-4 justify-center md:justify-start'>
               <a
                 href='https://facebook.com'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-gold-500/50 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 group'
+                className='w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-gold-500/50 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 group min-h-11 min-w-11'
               >
                 <Facebook className='w-5 h-5 text-silver-400 group-hover:text-gold-400 transition-colors' />
               </a>
@@ -58,7 +58,7 @@ export default function Footer({ menuItems }: FooterProps) {
                 href='https://instagram.com'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-gold-500/50 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 group'
+                className='w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-gold-500/50 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 group min-h-11 min-w-11'
               >
                 <Instagram className='w-5 h-5 text-silver-400 group-hover:text-gold-400 transition-colors' />
               </a>
@@ -66,15 +66,15 @@ export default function Footer({ menuItems }: FooterProps) {
                 href='https://tiktok.com'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-gold-500/50 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 group'
+                className='w-12 h-12 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-gold-500/50 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 group min-h-11 min-w-11'
               >
                 <TikTokIcon className='w-5 h-5 text-silver-400 group-hover:text-gold-400 transition-colors' />
               </a>
             </div>
           </div>
           <div>
-            <h4 className='text-gold-400 font-medium mb-8 text-lg tracking-widest uppercase'>Enlaces Rápidos</h4>
-            <ul className='space-y-4'>
+            <h4 className='text-gold-400 font-medium mb-6 sm:mb-8 text-lg tracking-widest uppercase text-center md:text-left'>Enlaces Rápidos</h4>
+            <ul className='space-y-4 text-center md:text-left'>
               {safeMenuItems.map(item => (
                 <li key={item.name}>
                   <a
@@ -89,9 +89,9 @@ export default function Footer({ menuItems }: FooterProps) {
             </ul>
           </div>
           <div>
-            <h4 className='text-gold-400 font-medium mb-8 text-lg tracking-widest uppercase'>Horario</h4>
-            <div className='space-y-6'>
-              <div className='flex items-start gap-4'>
+            <h4 className='text-gold-400 font-medium mb-6 sm:mb-8 text-lg tracking-widest uppercase text-center md:text-left'>Horario</h4>
+            <div className='space-y-6 text-center md:text-left'>
+              <div className='flex items-start gap-4 justify-center md:justify-start'>
                 <div className="p-2 bg-zinc-900 rounded-full border border-white/5">
                   <Clock className='w-5 h-5 text-gold-500' />
                 </div>
@@ -100,7 +100,7 @@ export default function Footer({ menuItems }: FooterProps) {
                   <p className='text-silver-500 text-sm mt-1'>22:00 - 05:00 hrs</p>
                 </div>
               </div>
-              <div className='flex items-start gap-4'>
+              <div className='flex items-start gap-4 justify-center md:justify-start'>
                 <div className="p-2 bg-zinc-900 rounded-full border border-white/5">
                   <Phone className='w-5 h-5 text-gold-500' />
                 </div>
@@ -138,3 +138,4 @@ export default function Footer({ menuItems }: FooterProps) {
     </footer>
   );
 }
+

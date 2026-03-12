@@ -32,7 +32,7 @@ export default function EventsSection() {
     };
 
     return (
-        <section id='events' className='relative py-20 overflow-hidden'>
+        <section id='events' className='relative py-16 sm:py-20 overflow-hidden'>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
                 <div className='text-center mb-16'>
                     <div className='inline-block mb-4 px-6 py-2 bg-gold-600/10 border border-gold-500/40 rounded-full'>
@@ -40,25 +40,25 @@ export default function EventsSection() {
                             EVENTOS EXCLUSIVOS
                         </span>
                     </div>
-                    <h2 className='text-5xl md:text-6xl font-bold mb-6'>
+                    <h2 className='text-3xl sm:text-5xl md:text-6xl font-bold mb-6'>
                         <span className='bg-gradient-to-r from-gold-300 via-gold-500 to-gold-700 bg-clip-text text-transparent'>
                             Despedidas de Solteros y Fiestas Privadas
                         </span>
                     </h2>
                 </div>
 
-                <div className='grid md:grid-cols-2 gap-12 items-center'>
+                <div className='grid md:grid-cols-2 gap-8 lg:gap-12 items-center'>
                     {/* Text Content */}
                     <div className='order-2 md:order-1'>
-                        <div className='bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-10 shadow-2xl hover:border-gold-500/30 transition-all duration-500'>
-                            <p className='text-silver-300 text-lg leading-relaxed mb-8 font-light'>
+                        <div className='bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl hover:border-gold-500/30 transition-all duration-500'>
+                            <p className='text-silver-300 text-base sm:text-lg leading-relaxed mb-8 font-light'>
                                 Contamos con espacios únicos, totalmente remodelados y climatizados, que cuentan con servicios higiénicos privados. Diseñados para disfrutar de la sensualidad de nuestras hermosas chicas y para que vivas realmente la experiencia de la privacidad y exclusividad.
                             </p>
-                            <p className='text-gold-400 text-xl font-medium mb-8 tracking-wide'>
+                            <p className='text-gold-400 text-lg sm:text-xl font-medium mb-8 tracking-wide'>
                                 Llámanos y confíanos tu despedida de soltero.
                             </p>
 
-                            <div className='grid grid-cols-2 gap-4 mb-8'>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8'>
                                 <div className='flex items-center gap-3 p-4 bg-zinc-900/50 rounded-xl border border-white/5'>
                                     <PartyPopper className='w-6 h-6 text-gold-500' />
                                     <span className='text-silver-300 text-sm'>Eventos Personalizados</span>
@@ -83,7 +83,7 @@ export default function EventsSection() {
                                 rel='noopener noreferrer'
                                 className='inline-block w-full'
                             >
-                                <button className='w-full bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-8 py-4 rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-gold-500/20 uppercase tracking-widest'>
+                                <button className='w-full bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-8 py-4 rounded-full transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-gold-500/20 uppercase tracking-widest min-h-11'>
                                     Cotizar Evento
                                 </button>
                             </a>
@@ -91,7 +91,7 @@ export default function EventsSection() {
                     </div>
 
                     {/* Gallery Slider */}
-                    <div className='order-1 md:order-2 relative h-[500px] group'>
+                    <div className='order-1 md:order-2 relative h-[340px] sm:h-[420px] lg:h-[500px] group'>
                         <div className='absolute inset-0 bg-gradient-to-br from-gold-500/10 to-silver-400/10 rounded-3xl blur-3xl animate-pulse'></div>
                         <div className='relative h-full bg-zinc-900/50 rounded-3xl border border-white/10 overflow-hidden shadow-2xl'>
                             {galleryImages.map((img, index) => (
@@ -111,13 +111,13 @@ export default function EventsSection() {
                             {/* Navigation Controls */}
                             <button
                                 onClick={prevImage}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-0 group-hover:opacity-100 z-30"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30"
                             >
                                 <ChevronLeft className="w-6 h-6" />
                             </button>
                             <button
                                 onClick={nextImage}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-0 group-hover:opacity-100 z-30"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30"
                             >
                                 <ChevronRight className="w-6 h-6" />
                             </button>
@@ -140,3 +140,4 @@ export default function EventsSection() {
         </section>
     );
 }
+

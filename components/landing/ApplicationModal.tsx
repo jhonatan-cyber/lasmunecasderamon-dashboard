@@ -31,17 +31,17 @@ export default function ApplicationModal({
 
   return (
     <div className='fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-      <div className='bg-gradient-to-br from-zinc-900 to-black border-2 border-gold-600/50 rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+      <div className='bg-gradient-to-br from-zinc-900 to-black border-2 border-gold-600/50 rounded-3xl p-5 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
         <div className='flex items-center justify-between mb-6'>
           <div>
-            <h2 className='text-3xl font-bold text-gold-400 mb-2'>
+            <h2 className='text-2xl sm:text-3xl font-bold text-gold-400 mb-2'>
               Postular a {position}
             </h2>
             <p className='text-silver-400'>Completa el formulario y se abrirá WhatsApp</p>
           </div>
           <button
             onClick={onClose}
-            className='text-silver-400 hover:text-white transition-colors p-2 hover:bg-gold-600/10 rounded-full'
+            className='text-silver-400 hover:text-white transition-colors p-2 hover:bg-gold-600/10 rounded-full min-h-11 min-w-11 inline-flex items-center justify-center'
           >
             <X className='w-6 h-6' />
           </button>
@@ -119,11 +119,11 @@ export default function ApplicationModal({
             placeholder='Experiencia...'
             className='w-full bg-gray-800/50 border border-gold-500/40 rounded-lg px-4 py-3 text-white focus:border-gold-500 transition-colors resize-none'
           ></textarea>
-          <div className='flex gap-4 pt-4'>
+          <div className='flex flex-col sm:flex-row gap-4 pt-4'>
             <button
               type='submit'
               disabled={isSubmitting}
-              className='flex-1 bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-6 py-3 rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-gold-600/40 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-500 hover:to-gold-400 text-black font-bold px-6 py-3 rounded-full transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-gold-600/40 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-11'
             >
               {isSubmitting ? (
                 <>
@@ -138,7 +138,7 @@ export default function ApplicationModal({
             <button
               type='button'
               onClick={onClose}
-              className='px-6 py-3 border-2 border-silver-600 text-silver-300 hover:border-silver-500 hover:text-white rounded-full transition-all duration-300'
+              className='px-6 py-3 border-2 border-silver-600 text-silver-300 hover:border-silver-500 hover:text-white rounded-full transition-all duration-300 min-h-11'
             >
               Cancelar
             </button>
@@ -148,3 +148,4 @@ export default function ApplicationModal({
     </div>
   );
 }
+

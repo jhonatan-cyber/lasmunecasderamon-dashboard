@@ -197,6 +197,18 @@ export const CerrarCajaDialog = ({
                     </span>
                   </div>
                 )}
+                <div className="col-span-2 border-t pt-2 mt-1">
+                  <span className="text-gray-900 font-bold uppercase text-[10px] tracking-wider">Total a Cerrar:</span>
+                  <span className="ml-2 font-black text-lg text-red-600">
+                    ${Math.round(
+                      (caja.monto_apertura || 0) +
+                      (caja.efectivo || 0) +
+                      (caja.tarjeta || 0) +
+                      (caja.transferencia || 0) -
+                      (caja.devoluciones || 0)
+                    ).toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

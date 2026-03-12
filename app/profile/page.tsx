@@ -17,6 +17,7 @@ import { useState, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
+import { ProfileSkeleton } from '@/components/ui/skeletons';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -464,16 +465,7 @@ export default function ProfilePage() {
 
   // Mostrar loading mientras se carga el usuario
   if (userLoading || loadingUserData || loadingRoles) {
-    return (
-      <div className='container mx-auto p-6'>
-        <div className='flex items-center justify-center h-64'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto'></div>
-            <p className='mt-2 text-gray-600'>Cargando perfil...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   // Mostrar error si no hay datos de usuario

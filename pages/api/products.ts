@@ -17,7 +17,7 @@ const productSchema = z.object({
   category_id: z.preprocess(v => Number(v), z.number()),
   price: z.preprocess(v => Number(v), z.number()),
   commission: z.preprocess(v => Number(v), z.number()),
-  description: z.string().min(1, 'Descripción requerida'),
+  description: z.string().optional(),
   status: z.preprocess(v => Number(v), z.number()),
   foto: z.string().optional()
 });
@@ -177,7 +177,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     uploadedFile = files?.foto;
 
     // Validar que todos los campos requeridos estén presentes
-    const requiredFields = ['code', 'name', 'category_id', 'price', 'commission', 'description'];
+    const requiredFields = ['code', 'name', 'category_id', 'price', 'commission'];
     const missingFields = requiredFields.filter(field => !fields[field] || fields[field] === '');
 
     if (missingFields.length > 0) {
@@ -242,7 +242,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         fields.category_id,
         fields.price,
         fields.commission,
-        fields.description,
+        fields.description || '',
         fields.status ?? 1,
         foto
       ]
@@ -294,7 +294,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     uploadedFile = files?.foto;
 
     // Validar que todos los campos requeridos estén presentes
-    const requiredFields = ['code', 'name', 'category_id', 'price', 'commission', 'description'];
+    const requiredFields = ['code', 'name', 'category_id', 'price', 'commission'];
     const missingFields = requiredFields.filter(field => !fields[field] || fields[field] === '');
 
     if (missingFields.length > 0) {
@@ -381,7 +381,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         fields.category_id,
         fields.price,
         fields.commission,
-        fields.description,
+        fields.description || '',
         fields.status ?? 1,
         foto,
         id

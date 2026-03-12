@@ -73,6 +73,7 @@ export interface CajaResumen {
   total_comisiones: number;
   cajas_abiertas: number;
   cajas_cerradas: number;
+  monto_apertura?: number;
   // Campos calculados para compatibilidad con componentes
   balance_total?: number;
   cantidad_ventas?: number;

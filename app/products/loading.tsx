@@ -1,3 +1,5 @@
+import { ProductsSkeleton } from '@/components/ui/skeletons';
+
 export default function Loading() {
-  return null
+  return <ProductsSkeleton />;
 }

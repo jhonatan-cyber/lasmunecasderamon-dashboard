@@ -42,7 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           DP.comision,
           DP.genera_comision,
           DP.hostess_id,
-          DP.habitacion_id,
+          DP.habitacion_id as room_id,
+          R.nombre as room_name,
           CONCAT(G.nombre, ' ', G.apellido) AS garzon,
           PR.nombre AS producto,
           PR.id_producto,
@@ -72,6 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FROM detalle_pedidos DP
         INNER JOIN pedidos P ON P.id_pedido = DP.pedido_id
         LEFT JOIN productos PR ON PR.id_producto = DP.producto_id
+        LEFT JOIN habitaciones R ON R.id_habitacion = DP.habitacion_id
         LEFT JOIN categorias C ON C.id_categoria = PR.categoria_id
         LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
         LEFT JOIN usuarios G ON G.id_usuario = P.mesero_id
@@ -109,7 +111,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           DP.comision,
           DP.genera_comision,
           DP.hostess_id,
-          DP.habitacion_id,
+          DP.habitacion_id as room_id,
+          R.nombre as room_name,
           CONCAT(G.nombre, ' ', G.apellido) AS garzon,
           PR.nombre AS producto,
           PR.id_producto,
@@ -126,6 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FROM detalle_pedidos DP
         INNER JOIN pedidos P ON P.id_pedido = DP.pedido_id
         LEFT JOIN productos PR ON PR.id_producto = DP.producto_id
+        LEFT JOIN habitaciones R ON R.id_habitacion = DP.habitacion_id
         LEFT JOIN categorias C ON C.id_categoria = PR.categoria_id
         LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
         LEFT JOIN usuarios G ON G.id_usuario = P.mesero_id
