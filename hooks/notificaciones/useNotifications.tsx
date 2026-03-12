@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
-import { th } from 'date-fns/locale';
-
 import { playNotificationSound, announcePriority } from '@/lib/audioUtils';
 
 interface NotificationData {
@@ -26,6 +25,7 @@ export function useNotifications() {
   const isConnectingRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const { user } = useCurrentUser();
+  const pathname = usePathname();
 
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
     queryKey: ['notifications', 'pending-count'],
@@ -81,7 +81,19 @@ export function useNotifications() {
       }
 
       const userRole = user?.role?.toLowerCase();
-      const shouldShowModal = userRole === 'administrador' || userRole === 'cajero';
+      const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
+      const shouldShowAlert = isCajeroOrAdmin;
+
+      // Actualizar el estado de la aplicación siempre
+      const updateEvent = new CustomEvent('updatePendingOrders', {
+        detail: { type: 'order-created', orderId: data.id }
+      });
+      window.dispatchEvent(updateEvent);
+
+      // Solo mostrar alerta intrusiva si está en el dashboard
+      if (!shouldShowAlert) {
+        return;
+      }
 
       playNotificationSound();
       toast.success(`¡NUEVO PEDIDO! #${data.codigo}`, {
@@ -114,27 +126,36 @@ export function useNotifications() {
         duration: 5000
       });
 
-
-      const event = new CustomEvent('updatePendingOrders', {
-        detail: { type: 'order-created', orderId: data.id }
+      const openModalEvent = new CustomEvent('openOrderModal', {
+        detail: { orderId: data.id, codigo: data.codigo }
       });
-      window.dispatchEvent(event);
-
-      if (shouldShowModal) {
-        const openModalEvent = new CustomEvent('openOrderModal', { detail: { orderId: data.id } });
-        window.dispatchEvent(openModalEvent);
-      }
+      window.dispatchEvent(openModalEvent);
     },
-    [user]
+    [user, pathname]
   );
 
   const showServiceNotification = useCallback(
     (data: any) => {
+      const userRole = (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
+      const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
+      const shouldShowAlert = isCajeroOrAdmin;
+
+      const updateEvent = new CustomEvent('updateServiceRequests');
+      window.dispatchEvent(updateEvent);
+
       if (user && data.createdBy && user.id === data.createdBy) {
-        const event = new CustomEvent('updateServiceRequests');
-        window.dispatchEvent(event);
         return;
       }
+
+      if (userRole === 'anfitriona' || userRole === 'garzon') {
+        return;
+      }
+
+      // Solo mostrar alerta intrusiva si está en el dashboard
+      if (!shouldShowAlert) {
+        return;
+      }
+
       playNotificationSound();
       toast.success(`¡NUEVA SOLICITUD DE SERVICIO! #${data.id}`, {
         description: (
@@ -161,12 +182,11 @@ export function useNotifications() {
         ),
         duration: 5000
       });
-      const event = new CustomEvent('updateServiceRequests');
-      window.dispatchEvent(event);
+
       const openModalEvent = new CustomEvent('openServiceRequestModal', { detail: data });
       window.dispatchEvent(openModalEvent);
     },
-    [user]
+    [user, pathname]
   );
 
   const cleanup = useCallback(() => {
@@ -265,6 +285,7 @@ export function useNotifications() {
 
         if (payload?.type === 'timer_warning_5m' && payload?.data) {
           const { room_name } = payload.data;
+          
           toast.warning(`⚠️ 5 MINUTOS RESTANTES`, {
             description: `El tiempo en ${room_name} está por terminar.`
           });
@@ -276,6 +297,7 @@ export function useNotifications() {
 
         if (payload?.type === 'timer_ended_event' && payload?.data) {
           const { room_name } = payload.data;
+          
           toast.error(`⌛ TIEMPO AGOTADO`, {
             description: `El tiempo en ${room_name} ha finalizado.`
           });
@@ -283,12 +305,14 @@ export function useNotifications() {
           if (userRole === 'cajero' || userRole === 'administrador') {
             announcePriority(`Atención. Tiempo agotado en ${room_name}.`);
           }
-          // Forzar refresco de habitaciones
+          
+          // Forzar refresco de habitaciones siempre
           window.dispatchEvent(new CustomEvent('updateServiceRequests'));
         }
 
         if (payload?.type === 'service_assistance' && payload?.data) {
           const { roomName, assistanceType } = payload.data;
+          
           toast.warning(`⚠️ SOLICITUD DE ASISTENCIA`, {
             description: `Habitación ${roomName} solicita: ${assistanceType}`,
             duration: 10000

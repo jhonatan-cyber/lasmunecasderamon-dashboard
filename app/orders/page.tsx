@@ -21,6 +21,7 @@ import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
+import { ReportSkeleton } from '@/components/ui/skeletons';
 
 // Lazy load del modal de detalle de pedido
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
@@ -516,15 +517,8 @@ export default function OrdersPage() {
     router.push('/orders/new');
   };
 
-  if (loading) {
-    return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
-          <p className='text-gray-600'>Cargando órdenes...</p>
-        </div>
-      </div>
-    );
+  if ((loading || loadingServicios || cajaLoading) && orders.length === 0) {
+    return <ReportSkeleton />;
   }
 
   return (

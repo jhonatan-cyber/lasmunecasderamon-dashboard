@@ -240,6 +240,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         total_comisiones: totalComisiones,
         cajas_abiertas: Number((cajasCount as any)?.cajas_abiertas || 0),
         cajas_cerradas: Number((cajasCount as any)?.cajas_cerradas || 0),
+        monto_apertura: montoApertura,
         balance_total: balanceTotal,
         cantidad_ventas: cantidadVentas,
         cantidad_servicios: cantidadServicios,
@@ -650,9 +651,10 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
        SET 
            usuario_id_cierre = ?, 
            fecha_cierre = NOW(), 
+           monto_cierre = ?,
            estado = 0
        WHERE id_caja = ?`,
-      [validatedData.usuario_id_cierre, validatedData.id_caja]
+      [validatedData.usuario_id_cierre, validatedData.monto_cierre, validatedData.id_caja]
     )) as RowDataPacket[];
 
     // Obtener la caja cerrada

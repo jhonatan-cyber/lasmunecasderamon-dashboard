@@ -1,6 +1,6 @@
 'use client';
 
-
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import {
   Navigation,
@@ -12,7 +12,6 @@ import {
   LocationSection,
   CareersSection,
   ReviewsSection,
-
   ApplicationModal
 } from '@/components/landing';
 import Footer from '@/components/landing/Footer';
@@ -34,6 +33,31 @@ export default function LandingPage() {
     handleReviewSubmit,
     menuItems
   } = useLandingState();
+
+  const [snowCount, setSnowCount] = useState(50);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 640px)');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const updateSnowCount = () => {
+      if (reducedMotion.matches) {
+        setSnowCount(0);
+        return;
+      }
+
+      setSnowCount(media.matches ? 18 : 50);
+    };
+
+    updateSnowCount();
+    media.addEventListener('change', updateSnowCount);
+    reducedMotion.addEventListener('change', updateSnowCount);
+
+    return () => {
+      media.removeEventListener('change', updateSnowCount);
+      reducedMotion.removeEventListener('change', updateSnowCount);
+    };
+  }, []);
 
   return (
     <>
@@ -110,12 +134,10 @@ export default function LandingPage() {
             animation: blink 2s ease-in-out infinite;
           }
 
-          /* Smooth scroll */
           html {
             scroll-behavior: smooth;
           }
 
-          /* Hide scrollbar but keep functionality */
           ::-webkit-scrollbar {
             width: 8px;
           }
@@ -132,6 +154,20 @@ export default function LandingPage() {
           ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(to bottom, #e5c158, #d4af37);
           }
+
+          @media (prefers-reduced-motion: reduce) {
+            html {
+              scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
+          }
         `}</style>
 
         {/* Background Effects */}
@@ -144,7 +180,7 @@ export default function LandingPage() {
           ></div>
 
           {/* Falling Snow - Gold and Platinum */}
-          {[...Array(50)].map((_, i) => {
+          {[...Array(snowCount)].map((_, i) => {
             const isGold = i % 2 === 0;
             const left = (i * 5.3) % 100;
             const animationDuration = 8 + (i % 6) + ((i * 11) % 20) / 10;
@@ -162,7 +198,6 @@ export default function LandingPage() {
                   width: `${size}px`,
                   height: `${size}px`,
                   backgroundColor: isGold ? '#F59E0B' : '#E5E7EB',
-                  // Proteger contra cualquier valor no numérico en tiempo de ejecución
                   opacity: Number.isFinite(opacity) ? opacity : 0.5,
                   animation: `fall ${animationDuration}s linear infinite`,
                   animationDelay: `${animationDelay}s`,
@@ -196,9 +231,6 @@ export default function LandingPage() {
           />
           <Footer menuItems={menuItems} />
         </div>
-
-        {/* WhatsApp Widget */}
-        {/*              <WhatsAppWidget /> */}
 
         {/* Application Modal */}
         <ApplicationModal

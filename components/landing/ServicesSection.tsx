@@ -47,30 +47,30 @@ export default function ServicesSection() {
   ];
 
   return (
-    <section id='services' className='relative py-20 overflow-hidden'>
+    <section id='services' className='relative py-16 sm:py-20 overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-20'>
+        <div className='text-center mb-14 sm:mb-20'>
           <div className='inline-block mb-4 px-6 py-2 bg-gold-600/10 border border-gold-500/40 rounded-full'>
             <span className='text-gold-500 text-sm font-semibold tracking-wider uppercase'>
               SERVICIOS EXCLUSIVOS
             </span>
           </div>
-          <h2 className='text-5xl md:text-6xl font-bold mb-6'>
+          <h2 className='text-3xl sm:text-5xl md:text-6xl font-bold mb-6'>
             <span className='bg-gradient-to-r from-gold-300 via-gold-500 to-gold-700 bg-clip-text text-transparent'>
               Experiencias Premium
             </span>
           </h2>
-          <p className='text-silver-300 text-xl max-w-3xl mx-auto leading-relaxed font-light'>
+          <p className='text-silver-300 text-base sm:text-xl max-w-3xl mx-auto leading-relaxed font-light'>
             Cada detalle está cuidadosamente diseñado para ofrecerte una experiencia inolvidable de
             lujo y exclusividad
           </p>
         </div>
 
-        <div className='grid md:grid-cols-3 gap-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8'>
           {services.map((service, i) => (
             <div
               key={i}
-              className='group relative bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 hover:border-gold-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold-600/10 overflow-hidden'
+              className='group relative bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-8 hover:border-gold-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold-600/10 overflow-hidden'
             >
               <div
                 className={`absolute inset-0 bg-gradient-to-br ${service.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl`}
@@ -81,10 +81,10 @@ export default function ServicesSection() {
                   <div
                     className={`w-20 h-20 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-black/50`}
                   >
-                    <service.icon className='w-10 h-10 text-black' />
+                    <service.icon className='w-8 h-8 sm:w-10 sm:h-10 text-black' />
                   </div>
                 </div>
-                <h3 className='text-2xl font-bold text-silver-100 mb-4 group-hover:text-gold-400 transition-colors tracking-wide'>
+                <h3 className='text-xl sm:text-2xl font-bold text-silver-100 mb-4 group-hover:text-gold-400 transition-colors tracking-wide'>
                   {service.title}
                 </h3>
                 <p className='text-silver-400 mb-8 leading-relaxed group-hover:text-silver-300 transition-colors font-light'>
@@ -115,4 +115,5 @@ export default function ServicesSection() {
     </section>
   );
 }
+
 

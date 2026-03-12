@@ -57,28 +57,12 @@ export default function Dashboard() {
 
   // Si está cargando, mostrar loading
   if (loading) {
-    return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Cargando...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Si es anfitriona o garzon, no renderizar nada (ya se está redirigiendo)
   if (user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon') {
-    return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>
-            Redirigiendo a {user.role.toLowerCase()}-dashboard...
-          </p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Verificar si el usuario es cajero

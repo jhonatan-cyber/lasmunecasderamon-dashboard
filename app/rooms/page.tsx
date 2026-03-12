@@ -11,6 +11,7 @@ import { Room } from '@/types/room';
 import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { RoomsSkeleton } from '@/components/ui/skeletons';
 import {
   DndContext,
   closestCenter,
@@ -172,6 +173,8 @@ const RoomsPage = () => {
     setFilterStatus(null);
     setPage(1);
   };
+
+  if (isLoading) return <RoomsSkeleton />;
 
   return (
     <PermissionGuard module='rooms' action='view'>

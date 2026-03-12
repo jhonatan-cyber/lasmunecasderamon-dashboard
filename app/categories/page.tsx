@@ -10,6 +10,7 @@ import { Plus } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
 import { CategoryFilters } from '@/components/categories/CategoryFilters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { CategoriesSkeleton } from '@/components/ui/skeletons';
 import {
   DndContext,
   closestCenter,
@@ -98,6 +99,8 @@ export default function Categories() {
   function toTitleCase(str: string) {
     return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
   }
+
+  if (isLoading) return <CategoriesSkeleton />;
 
   const handleCreate = async (form: { name: string; description: string }) => {
     const result = await createCategory({

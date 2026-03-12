@@ -19,6 +19,7 @@ import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
+import { UsersSkeleton } from '@/components/ui/skeletons';
 
 export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -235,7 +236,7 @@ export default function Users() {
     return roleColors[normalizedRole] || roleColors['default'];
   }, []);
 
-  if (isLoading) return <div>Cargando usuarios...</div>;
+  if (isLoading) return <UsersSkeleton />;
   if (error) return <div>Error al cargar los usuarios: {error}</div>;
 
   return (

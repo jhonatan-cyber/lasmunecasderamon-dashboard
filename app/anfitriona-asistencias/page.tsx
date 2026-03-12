@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import SelectElements from "@/components/ui/select-elements";
 import Paginate from "@/components/ui/paginate";
+import { RoleTableSkeleton } from "@/components/ui/skeletons";
 
 interface Attendance {
   id_asistencia: number;
@@ -95,6 +96,9 @@ export default function AnfitrionaAsistenciasPage() {
         </div>
       </div>
     );
+  }
+  if (loading || userLoading) {
+    return <RoleTableSkeleton />;
   }
 
   if (user?.role?.toLowerCase() !== 'anfitriona') {

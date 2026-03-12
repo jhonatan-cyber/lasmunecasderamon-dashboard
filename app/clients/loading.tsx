@@ -1,3 +1,5 @@
+import { ClientsSkeleton } from '@/components/ui/skeletons';
+
 export default function Loading() {
-  return null
+  return <ClientsSkeleton />;
 }
