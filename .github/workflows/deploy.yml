@@ -86,9 +86,9 @@ jobs:
             # Limpiar logs anteriores
             pm2 flush
             
-            # Reiniciar con PM2 usando npm para evitar errores de intérprete con pnpm
+            # Reiniciar con PM2 usando un shell wrapper para evitar SyntaxError de pnpm
             pm2 delete lasmunecas || true
-            PORT=3000 pm2 start npm --name "lasmunecas" -- start
+            PORT=3000 pm2 start "pnpm start" --name "lasmunecas"
             pm2 save
             
             # Verificar estado
