@@ -780,58 +780,44 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         const hayTemporizadorActivo = ventasActivasEnHabitacion[0]?.count > 0;
 
         if (hayTemporizadorActivo) {
+          // Buscar si hay una VENTA activa con cronómetro
           const ventaAnterior = (await query(
-            `
-            SELECT id_venta, codigo
-            FROM ventas
-            WHERE habitacion_id = ?
-              AND tiempo > 0
-              AND estado = 2
-              AND id_venta != ?
-            ORDER BY fecha_crea DESC
-            LIMIT 1
-          `,
+            `SELECT id_venta, codigo FROM ventas WHERE habitacion_id = ? AND tiempo > 0 AND estado = 2 AND id_venta != ? ORDER BY fecha_crea DESC LIMIT 1`,
             [habitacion_id, ventaId]
           )) as any[];
 
           if (ventaAnterior && ventaAnterior.length > 0) {
             const ventaAnteriorId = ventaAnterior[0].id_venta;
-            const ventaAnteriorCodigo = ventaAnterior[0].codigo;
-
-            await query('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [
+            // PAUSAR VENTA ANTERIOR
+            await query('UPDATE ventas SET estado = 3, paused_at = NOW(), fecha_mod = NOW() WHERE id_venta = ?', [
               ventaAnteriorId
             ]);
 
-            // Liberar anfitrionas de la venta anterior
-            const anfitrionasAnteriores = (await query(
-              `
-              SELECT vu.usuario_id, r.nombre as rol 
-              FROM ventas_usuarios vu
-              INNER JOIN usuarios u ON vu.usuario_id = u.id_usuario
-              LEFT JOIN roles r ON u.rol_id = r.id_rol
-              WHERE vu.venta_id = ?
-            `,
-              [ventaAnteriorId]
-            )) as any[];
-
-            if (anfitrionasAnteriores.length > 0) {
-              for (const anfitriona of anfitrionasAnteriores) {
-                if (anfitriona.rol === 'anfitriona') {
-                  await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [
-                    anfitriona.usuario_id
-                  ]);
-                }
-              }
-            }
-
-            sendNotificationToAll('timer_stopped', {
+            sendNotificationToAll('timer_paused', {
               servicioId: ventaAnteriorId,
-              roomId: habitacion_id,
-              roomName: nombreHabitacion,
-              reason: 'Nueva venta en la misma habitación',
               tipoTransaccion: 'venta'
             });
           }
+
+          // Buscar si hay un SERVICIO activo con cronómetro
+          const servicioAnterior = (await query(
+            `SELECT id_servicio FROM servicios WHERE habitacion_id = ? AND tiempo > 0 AND estado = 2 ORDER BY fecha_crea DESC LIMIT 1`,
+            [habitacion_id]
+          )) as any[];
+
+          if (servicioAnterior && servicioAnterior.length > 0) {
+            const servicioAnteriorId = servicioAnterior[0].id_servicio;
+            // PAUSAR SERVICIO ANTERIOR
+            await query('UPDATE servicios SET estado = 3, paused_at = NOW() WHERE id_servicio = ?', [
+              servicioAnteriorId
+            ]);
+
+            sendNotificationToAll('timer_paused', {
+              servicioId: servicioAnteriorId,
+              tipoTransaccion: 'servicio'
+            });
+          }
+
         }
 
         sendNotificationToAll('timer_started', {
@@ -858,6 +844,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           metodo_pago: metodo_pago,
           waiter_name: ventaCompleta?.cajero_nick || 'Cajero',
           created_at: ventaCompleta?.fecha_crea
+            ? new Date(ventaCompleta.fecha_crea).toISOString()
+            : new Date().toISOString()
         });
       } catch (notificacionError) {
         throw notificacionError;
@@ -875,6 +863,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         cliente_nombre: ventaCompleta?.cliente_nombre || null,
         estado: estadoVenta,
         created_at: ventaCompleta?.fecha_crea
+          ? new Date(ventaCompleta.fecha_crea).toISOString()
+          : new Date().toISOString()
       });
       console.log('[SALES] Notificación SSE sale_created enviada');
     } catch (sseError) {

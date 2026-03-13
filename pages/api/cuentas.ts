@@ -257,18 +257,24 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           const clienteRow = await trx(`SELECT nombre FROM clientes WHERE id_cliente = ?`, [cliente_id]) as any[];
           const cliente_nombre = clienteRow[0]?.nombre || 'Cliente';
 
+          // Obtener información de la habitación
+          const habitacionRow = (await trx('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+
+          // Obtener la fecha real de creación desde el servidor DB para el timer
+          const [fechaCreaRow]: any = await trx(`SELECT fecha_crea FROM cuentas WHERE id_cuenta = ?`, [cuentaId]);
+          const dbFechaCrea = fechaCreaRow?.fecha_crea || new Date();
+          const startTimeIso = dbFechaCrea instanceof Date ? dbFechaCrea.toISOString() : dbFechaCrea;
+
           await sendNotificationToAll('timer_started', {
-            type: 'timer_started',
-            data: {
-              servicioId: cuentaId,
-              roomId: habitacion_id,
-              duration: tiempo,
-              startTime: new Date().toISOString(),
-              codigo,
-              clienteNombre: cliente_nombre,
-              tipoTransaccion: 'cuenta',
-              status: 1
-            }
+            servicioId: cuentaId,
+            roomId: habitacion_id,
+            roomName: habitacionRow[0]?.nombre || habitacion_id,
+            duration: tiempo,
+            startTime: startTimeIso,
+            codigo,
+            clienteNombre: cliente_nombre,
+            tipoTransaccion: 'cuenta',
+            status: 1
           });
 
           // Notificar estado de anfitrionas

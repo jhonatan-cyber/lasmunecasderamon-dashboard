@@ -251,12 +251,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           }
         }
 
-        // 5. Comisiones y usuarios
         let finalComision = 0;
         if (numAnfitrionas > 0) {
-          // REGLA: La comisión es solo sobre el precio del servicio
-          const precioNetoServicio = subTotalNum - precioHabitacionOriginal;
-          finalComision = Math.floor(precioNetoServicio / numAnfitrionas);
+          // REGLA: Si la habitación tiene comisión fija, se divide entre las anfitrionas.
+          // Si no, la comisión es el precio neto del servicio por cada anfitriona.
+          if (tieneComisionRoom) {
+            finalComision = Math.floor(comisionHabitacionBase / numAnfitrionas);
+          } else {
+            const precioNetoServicio = subTotalNum - precioHabitacionOriginal;
+            finalComision = Math.floor(precioNetoServicio / numAnfitrionas);
+          }
 
           for (const uId of usuarios) {
             if (finalComision > 0) {
@@ -288,7 +292,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
           await connection(
             `UPDATE cajas SET servicio = servicio + ?, efectivo = efectivo + ?, tarjeta = tarjeta + ?, transferencia = transferencia + ?, iva = iva + ?, comision = comision + ? WHERE id_caja = ?`,
-            [totalFinal - ivaFinal, mEf, mTa, mTr, ivaFinal, finalComision * numAnfitrionas, cajaId]
+            [totalFinal - ivaFinal, mEf, mTa, mTr, ivaFinal, tieneComisionRoom ? comisionHabitacionBase : (finalComision * numAnfitrionas), cajaId]
           );
           cajaActualizada = true;
         }
@@ -343,6 +347,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // SSE: Timer started with full data
         sendNotificationToAll('timer_started', {
           ...s,
+          startTime: s.startTime instanceof Date ? s.startTime.toISOString() : s.startTime,
+          created_at: s.created_at instanceof Date ? s.created_at.toISOString() : s.created_at,
           duration: Number(s.duration),
           waiter_name: result.createdBy,
           tipoTransaccion: 'servicio',

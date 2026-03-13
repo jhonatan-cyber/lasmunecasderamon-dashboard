@@ -202,7 +202,7 @@ export default function ServicioTable({
                           <Eye />
                           Ver detalles
                         </DropdownMenuItem>
-                        {(servicio.estado === 2 || servicio.estado === 3) && (
+                        {(servicio.estado === 2 || servicio.estado === 3) && Number(servicio.precio_servicio || 0) <= 0 && (
                           <>
                             <DropdownMenuItem
                               className="cursor-pointer hover:text-green-700 hover:bg-green-50"

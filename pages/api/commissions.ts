@@ -373,7 +373,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
               monto
             ) VALUES (?, ?, ?)
           `,
-            [validatedData.venta_id || 0, validatedData.servicio_id || 0, validatedData.monto]
+            [validatedData.venta_id || null, validatedData.servicio_id || null, validatedData.monto]
           );
 
           const comisionId = comisionResult.insertId;
