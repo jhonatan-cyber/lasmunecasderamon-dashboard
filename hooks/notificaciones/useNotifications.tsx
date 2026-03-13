@@ -30,13 +30,18 @@ export function useNotifications() {
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
     queryKey: ['notifications', 'pending-count'],
     queryFn: async () => {
+      // No pedir conteos si no hay usuario o es página pública
+      const isPublic = !pathname || pathname === '/' || pathname === '/landing' || pathname === '/login';
+      if (!user || isPublic) return { pedidosCount: 0, solicitudesCount: 0 };
+
       const res = await fetch('/api/notifications/pending-count');
       if (!res.ok) throw new Error('Failed to fetch pending counts');
       return res.json();
     },
     staleTime: 20000,
     refetchInterval: 30000,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    enabled: !!user // Solo habilitar si hay usuario
   });
 
   useEffect(() => {
@@ -200,7 +205,8 @@ export function useNotifications() {
   }, []);
 
   const connectSSE = useCallback(() => {
-    if (isConnectingRef.current || eventSourceRef.current) {
+    const isPublic = !pathname || pathname === '/' || pathname === '/landing' || pathname === '/login';
+    if (isConnectingRef.current || eventSourceRef.current || isPublic || !user) {
       return;
     }
 
