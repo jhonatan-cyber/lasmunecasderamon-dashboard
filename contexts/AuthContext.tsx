@@ -101,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Páginas públicas que no requieren autenticación
   const isPublicPage =
+    !pathname || // Si pathname es null, asumimos que puede ser pública para evitar flasheos o bloqueos
     pathname === '/' ||
     pathname === '/landing' ||
     pathname === '/terminos-y-condiciones' ||
