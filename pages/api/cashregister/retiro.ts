@@ -87,18 +87,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
 
-        // Registrar el retiro en una tabla de historial (opcional pero recomendado)
-        // Si no tienes esta tabla, puedes crearla o comentar esta parte
+        // Registrar el retiro en una tabla de historial
         try {
+            // Asegurar que la tabla existe
+            await query(`
+                CREATE TABLE IF NOT EXISTS retiros_caja (
+                    id_retiro INT AUTO_INCREMENT PRIMARY KEY,
+                    id_caja INT NOT NULL,
+                    monto DECIMAL(15,2) NOT NULL,
+                    motivo TEXT,
+                    usuario_id INT NOT NULL,
+                    fecha_retiro DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_caja (id_caja),
+                    INDEX idx_fecha (fecha_retiro)
+                )
+            `);
+
             await query(
                 `INSERT INTO retiros_caja (id_caja, monto, motivo, usuario_id, fecha_retiro) 
          VALUES (?, ?, ?, ?, NOW())`,
                 [validatedData.id_caja, validatedData.monto, validatedData.motivo, validatedData.usuario_id]
             );
         } catch (error) {
+            console.error('[API retiro POST] Error al registrar retiro:', error);
             return res.status(500).json({
                 success: false,
-                message: 'Error al registrar retiro',
+                message: 'Error al registrar retiro en la base de datos',
                 error: error instanceof Error ? error.message : String(error)
             });
         }

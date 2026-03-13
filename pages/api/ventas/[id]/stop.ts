@@ -30,30 +30,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await query('UPDATE ventas SET estado = 1, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
 
     // 2. Verificar si hay servicios pausados en la misma habitación
-    if (habitacionId) {
-      const serviciosPausados = await query(
-        'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at ASC LIMIT 1',
-        [habitacionId]
-      ) as any[];
+      if (habitacionId) {
+        // 2a. Buscar VENTA pausada
+        const ventasPausadas = await query(
+          'SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1',
+          [habitacionId]
+        ) as any[];
 
-      if (serviciosPausados && serviciosPausados.length > 0) {
-        // Hay un servicio pausado, reanudarlo
-        const servicioPausado = serviciosPausados[0];
-        console.log(`[STOP-VENTA] Venta ${ventaId} finalizada. Reanudando servicio pausado ${servicioPausado.id_servicio} en habitación ${habitacionId}`);
+        // 2b. Buscar SERVICIO pausado
+        const serviciosPausados = await query(
+          'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1',
+          [habitacionId]
+        ) as any[];
 
-        await query(
-          'UPDATE servicios SET estado = 2, paused_at = NULL, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND) WHERE id_servicio = ?',
-          [servicioPausado.id_servicio]
-        );
+        const vPausada = ventasPausadas.length > 0 ? ventasPausadas[0] : null;
+        const sPausado = serviciosPausados.length > 0 ? serviciosPausados[0] : null;
 
-        const [servicioReanudado] = await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [servicioPausado.id_servicio]) as any[];
+        if (vPausada || sPausado) {
+          // Reanudar el que se pausó más recientemente (o priorizar venta si tienen mismo tiempo)
+          const resumeVenta = vPausada && (!sPausado || new Date(vPausada.paused_at) >= new Date(sPausado.paused_at));
 
-        sendNotificationToAll('timer_resumed', {
-          servicioId: servicioPausado.id_servicio,
-          tipoTransaccion: 'servicio',
-          newStartTime: servicioReanudado.fecha_crea
-        });
-      } else {
+          if (resumeVenta && vPausada) {
+            console.log(`[STOP-VENTA] Reanudando VENTA pausada ${vPausada.id_venta}`);
+            await query(
+              'UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_venta = ?',
+              [vPausada.id_venta]
+            );
+            const [reanudada] = await query('SELECT fecha_crea FROM ventas WHERE id_venta = ?', [vPausada.id_venta]) as any[];
+            sendNotificationToAll('timer_resumed', { servicioId: vPausada.id_venta, tipoTransaccion: 'venta', newStartTime: reanudada.fecha_crea });
+          } else if (sPausado) {
+            console.log(`[STOP-VENTA] Reanudando SERVICIO pausado ${sPausado.id_servicio}`);
+            await query(
+              'UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?',
+              [sPausado.id_servicio]
+            );
+            const [reanudado] = await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [sPausado.id_servicio]) as any[];
+            sendNotificationToAll('timer_resumed', { servicioId: sPausado.id_servicio, tipoTransaccion: 'servicio', newStartTime: reanudado.fecha_crea });
+          }
+        } else {
         // No hay servicios pausados, liberar habitación
         const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacionId])) as any[];
         if (roomInfo.length > 0) {

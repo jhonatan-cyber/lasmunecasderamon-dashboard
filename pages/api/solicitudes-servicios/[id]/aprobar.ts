@@ -114,19 +114,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       let comisionPorAnfitriona = 0;
       if (numAnfitrionas > 0) {
-        // REGLA: La comisión es solo el precio del servicio por chica
-        comisionPorAnfitriona = precioServicioIndividual;
+        // REGLA: Si tiene comisión fija de habitación, se divide entre las anfitrionas. 
+        // Si es servicio manual (no tiene comisión de habitación), se usa el precio del servicio por chica.
+        if (tieneComision) {
+          comisionPorAnfitriona = Math.floor(Number(solicitud.comision_anfitriona || 0) / numAnfitrionas);
+        } else {
+          comisionPorAnfitriona = precioServicioIndividual;
+        }
       }
-
-      const fechaActual = new Date();
-      const fechaActualSql = fechaActual.toISOString().slice(0, 19).replace('T', ' ');
 
       // 4. Crear el servicio
       const resultServicio: any = await connection(
         `INSERT INTO servicios 
         (codigo, cliente_id, habitacion_id, precio_servicio, precio_habitacion, 
          iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado, fecha_crea) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, NOW())`,
         [
           codigo,
           solicitud.cliente_id || null,
@@ -139,12 +141,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           tiempo, // Usar la variable numérica
           solicitud.metodo_pago,
           cajaId,
-          userId,
-          fechaActualSql // Usar la misma fecha que devolveremos
+          userId
         ]
       );
 
       const servicioId = resultServicio.insertId;
+
+      // Obtener la fecha real de creación desde el servidor DB para el timer
+      const [fechaCreaResult]: any = await connection(
+        'SELECT fecha_crea FROM servicios WHERE id_servicio = ?',
+        [servicioId]
+      );
+      const dbFechaCrea = fechaCreaResult?.fecha_crea || new Date();
 
       // 5. Detalles de clientes y anfitrionas
       if (solicitud.cliente_id) {
@@ -164,7 +172,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         if (comisionPorAnfitriona > 0) {
           const comisionInsert: any = await connection(
             'INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)',
-            [0, servicioId, comisionPorAnfitriona]
+            [null, servicioId, comisionPorAnfitriona]
           );
           await connection(
             'INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)',
@@ -194,8 +202,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         const serviciosToPause = (await connection(queryServiciosToPause, params)) as any[];
 
         for (const sToPause of serviciosToPause) {
-          await connection('UPDATE servicios SET paused_at = ? WHERE id_servicio = ?', [
-            fechaActualSql,
+          await connection('UPDATE servicios SET paused_at = NOW() WHERE id_servicio = ?', [
             sToPause.id_servicio
           ]);
           sendNotificationToAll('timer_paused', {
@@ -226,9 +233,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       // 8. Actualizar solicitud
       await connection(
         `UPDATE solicitudes_servicios 
-         SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = ?, habitacion_id = ? 
+         SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = NOW(), habitacion_id = ? 
          WHERE id_solicitud = ?`,
-        [userId, fechaActualSql, habitacionIdFinal, id]
+        [userId, habitacionIdFinal, id]
       );
 
       // 9. Actualizar Caja
@@ -266,7 +273,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           montoTarjeta,
           montoTransferencia,
           ivaFinal,
-          comisionPorAnfitriona * numAnfitrionas,
+          Number(solicitud.comision_anfitriona || 0) + (tieneComision ? 0 : comisionPorAnfitriona * numAnfitrionas),
           cajaId
         ]
       );
@@ -298,7 +305,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         tiempo: tiempo,
         clienteNombre,
         anfitrionasNicks,
-        startTime: fechaActual.toISOString(),
+        startTime: dbFechaCrea instanceof Date ? dbFechaCrea.toISOString() : dbFechaCrea,
         precio_servicio: precioServicioIndividual * numAnfitrionas,
         precio_habitacion: precioHabitacionBase,
         iva: ivaFinal,
