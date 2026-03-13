@@ -40,8 +40,10 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs"
+          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,proxy.ts"
           target: "/var/www/lasmuñecasderamon"
+          rm: true
+          strip_components: 0
 
       - name: Execute remote commands via SSH
         uses: appleboy/ssh-action@v0.1.10
