@@ -11,6 +11,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set deploy directory
+        run: echo "DEPLOY_DIR=/var/www/lasmunecasderamon" >> $GITHUB_ENV
+
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -41,8 +44,8 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
           source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,middleware.ts"
-          target: "/var/www/lasmuñecasderamon"
-          rm: true
+          target: "${{ env.DEPLOY_DIR }}"
+          rm: false
           strip_components: 0
 
       - name: Execute remote commands via SSH
@@ -53,7 +56,9 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
           script: |
-            cd "/var/www/lasmuñecasderamon"
+            DEPLOY_DIR="${{ env.DEPLOY_DIR }}"
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
             
             # Crear/Actualizar archivo .env
             cat <<EOF > .env
@@ -80,15 +85,15 @@ jobs:
               npm install -g pnpm@latest
             fi
             
-            # Instalación limpia y completa
-            pnpm install --prod --no-frozen-lockfile
+            # Instalación limpia (incluye devDependencies porque next.config.mjs requiere plugins de build)
+            pnpm install --no-frozen-lockfile
             
             # Limpiar logs anteriores
             pm2 flush
             
             # Reiniciar con PM2 usando un shell wrapper para evitar SyntaxError de pnpm
             pm2 delete lasmunecas || true
-            PORT=3000 pm2 start "pnpm start" --name "lasmunecas"
+            PORT=3000 pm2 start "pnpm start" --name "lasmunecas" --cwd "$DEPLOY_DIR"
             pm2 save
             
             # Verificar estado
