@@ -13,8 +13,12 @@ export function setupFetchInterceptor() {
 
         const currentPath = window.location.pathname;
         const isPublicRoute =
+          currentPath === '/' ||
+          currentPath === '/landing' ||
           currentPath === '/login' ||
           currentPath === '/api-docs' ||
+          currentPath === '/terminos-y-condiciones' ||
+          currentPath === '/politica-de-privacidad' ||
           currentPath.startsWith('/confirmar-anulacion');
 
         if (!isPublicRoute && !url.includes('/login')) {
