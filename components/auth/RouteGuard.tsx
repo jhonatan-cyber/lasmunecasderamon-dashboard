@@ -38,6 +38,7 @@ const routePermissions: Record<string, { module: string; action: string }> = {
 
 // Rutas públicas que no requieren autenticación
 const publicRoutes = [
+  '/',
   '/login',
   '/landing',
   '/politica-de-privacidad',
