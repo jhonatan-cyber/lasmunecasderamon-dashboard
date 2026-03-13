@@ -65,7 +65,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     '/',
     '/terminos-y-condiciones',
     '/politica-de-privacidad'
-  ].includes(pathname || '');
+  ].includes(pathname || '/');
 
   // Si es una página pública, no llamar hooks adicionales y renderizar directamente
   if (isPublicRoute) {
