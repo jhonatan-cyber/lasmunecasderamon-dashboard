@@ -233,19 +233,21 @@ async function runAutoCleanup() {
     const habitacionId = venta.habitacion_id;
     await query('UPDATE ventas SET estado = 1, fecha_mod = NOW() WHERE id_venta = ?', [venta.id_venta]);
 
-    const serviciosPausados = (await query(
-      'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at ASC LIMIT 1',
-      [habitacionId]
-    )) as any[];
+    // Buscar timers pausados (servicios o ventas)
+    const [vPausada] = (await query('SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId])) as any[];
+    const [sPausado] = (await query('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId])) as any[];
 
-    if (serviciosPausados?.length > 0) {
-      const sp = serviciosPausados[0];
-      await query(
-        'UPDATE servicios SET estado = 2, paused_at = NULL, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND) WHERE id_servicio = ?',
-        [sp.id_servicio]
-      );
-      const [sr] = (await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [sp.id_servicio])) as any[];
-      sendNotificationToAll('timer_resumed', { servicioId: sp.id_servicio, tipoTransaccion: 'servicio', newStartTime: sr.fecha_crea });
+    if (vPausada || sPausado) {
+      const resumeVenta = vPausada && (!sPausado || new Date(vPausada.paused_at) >= new Date(sPausado.paused_at));
+      if (resumeVenta) {
+        await query('UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_venta = ?', [vPausada.id_venta]);
+        const [sr] = (await query('SELECT fecha_crea FROM ventas WHERE id_venta = ?', [vPausada.id_venta])) as any[];
+        sendNotificationToAll('timer_resumed', { servicioId: vPausada.id_venta, tipoTransaccion: 'venta', newStartTime: sr.fecha_crea });
+      } else {
+        await query('UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?', [sPausado.id_servicio]);
+        const [sr] = (await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [sPausado.id_servicio])) as any[];
+        sendNotificationToAll('timer_resumed', { servicioId: sPausado.id_servicio, tipoTransaccion: 'servicio', newStartTime: sr.fecha_crea });
+      }
     } else if (habitacionId) {
       const [room] = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacionId])) as any[];
       if (room && (Number(room.precio) || Number(room.comision_anfitriona) || Number(room.tiempo))) {
@@ -277,19 +279,21 @@ async function runAutoCleanup() {
     const habitacionId = servicio.habitacion_id;
     await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [servicio.id_servicio]);
 
-    const serviciosPausados = (await query(
-      'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 AND id_servicio != ? ORDER BY paused_at ASC LIMIT 1',
-      [habitacionId, servicio.id_servicio]
-    )) as any[];
+    // Buscar timers pausados (servicios o ventas)
+    const [vPausada] = (await query('SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId])) as any[];
+    const [sPausado] = (await query('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 AND id_servicio != ? ORDER BY paused_at DESC LIMIT 1', [habitacionId, servicio.id_servicio])) as any[];
 
-    if (serviciosPausados?.length > 0) {
-      const sp = serviciosPausados[0];
-      await query(
-        'UPDATE servicios SET estado = 2, paused_at = NULL, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND) WHERE id_servicio = ?',
-        [sp.id_servicio]
-      );
-      const [sr] = (await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [sp.id_servicio])) as any[];
-      sendNotificationToAll('timer_resumed', { servicioId: sp.id_servicio, tipoTransaccion: 'servicio', newStartTime: sr.fecha_crea });
+    if (vPausada || sPausado) {
+      const resumeVenta = vPausada && (!sPausado || new Date(vPausada.paused_at) >= new Date(sPausado.paused_at));
+      if (resumeVenta) {
+        await query('UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_venta = ?', [vPausada.id_venta]);
+        const [sr] = (await query('SELECT fecha_crea FROM ventas WHERE id_venta = ?', [vPausada.id_venta])) as any[];
+        sendNotificationToAll('timer_resumed', { servicioId: vPausada.id_venta, tipoTransaccion: 'venta', newStartTime: sr.fecha_crea });
+      } else {
+        await query('UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?', [sPausado.id_servicio]);
+        const [sr] = (await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [sPausado.id_servicio])) as any[];
+        sendNotificationToAll('timer_resumed', { servicioId: sPausado.id_servicio, tipoTransaccion: 'servicio', newStartTime: sr.fecha_crea });
+      }
     } else if (habitacionId) {
       const [room] = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacionId])) as any[];
       if (room && (Number(room.precio) || Number(room.comision_anfitriona) || Number(room.tiempo))) {

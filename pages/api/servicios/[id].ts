@@ -268,167 +268,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (![0, 1, 2, 3, 4].includes(estado)) {
           return res.status(400).json({
             success: false,
-            message:
-              'Estado inválido. (0: Anulado, 1: Finalizado, 2: En Proceso, 3: Pausado, 4: Solicitud de anulación)'
+            message: 'Estado inválido.'
           });
         }
-        const [prevService] = (await query(
-          'SELECT estado, habitacion_id FROM servicios WHERE id_servicio = ?',
-          [servicioId]
-        )) as any[];
+        const [prevService] = await query('SELECT estado, habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
         const estadoAnterior = prevService?.estado;
 
         if (estado === 1 || estado === 0) {
-          const [servicio] = (await query(
-            'SELECT habitacion_id FROM servicios WHERE id_servicio = ?',
-            [servicioId]
-          )) as any[];
+          const [servicio] = await query('SELECT habitacion_id FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
 
           if (servicio && servicio.habitacion_id) {
             const habitacionId = servicio.habitacion_id;
-            const serviciosPausados = (await query(
-              'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 AND id_servicio != ? ORDER BY paused_at ASC LIMIT 1',
-              [habitacionId, servicioId]
-            )) as any[];
 
-            if (serviciosPausados && serviciosPausados.length > 0) {
-              const servicioPausado = serviciosPausados[0];
+            // Buscar timers pausados
+            const [vPausada] = await query('SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId]) as any[];
+            const [sPausado] = await query('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 AND id_servicio != ? ORDER BY paused_at DESC LIMIT 1', [habitacionId, servicioId]) as any[];
 
-              await query(
-                'UPDATE servicios SET estado = 2, paused_at = NULL, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND) WHERE id_servicio = ?',
-                [servicioPausado.id_servicio]
-              );
-              const [servicioReanudado] = (await query(
-                'SELECT fecha_crea FROM servicios WHERE id_servicio = ?',
-                [servicioPausado.id_servicio]
-              )) as any[];
+            if (vPausada || sPausado) {
+              const resumeVenta = vPausada && (!sPausado || new Date(vPausada.paused_at) >= new Date(sPausado.paused_at));
 
-              await addServicioLog(
-                servicioPausado.id_servicio,
-                'REANUDACION',
-                `Servicio reanudado automáticamente tras ${estado === 1 ? 'finalizar' : 'anular'} servicio temporal ${servicioId}`,
-                currentUser?.id
-              );
-
-              sendNotificationToAll('timer_resumed', {
-                servicioId: servicioPausado.id_servicio,
-                tipoTransaccion: 'servicio',
-                newStartTime: servicioReanudado.fecha_crea
-              });
+              if (resumeVenta) {
+                await query('UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_venta = ?', [vPausada.id_venta]);
+                const [sr] = await query('SELECT fecha_crea FROM ventas WHERE id_venta = ?', [vPausada.id_venta]) as any[];
+                sendNotificationToAll('timer_resumed', { servicioId: vPausada.id_venta, tipoTransaccion: 'venta', newStartTime: sr.fecha_crea });
+              } else {
+                await query('UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?', [sPausado.id_servicio]);
+                const [sr] = await query('SELECT fecha_crea FROM servicios WHERE id_servicio = ?', [sPausado.id_servicio]) as any[];
+                sendNotificationToAll('timer_resumed', { servicioId: sPausado.id_servicio, tipoTransaccion: 'servicio', newStartTime: sr.fecha_crea });
+              }
             } else {
-              await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
-                habitacionId
-              ]);
+              await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacionId]);
             }
 
-            sendNotificationToAll('timer_stopped', {
-              servicioId: servicioId,
-              roomId: habitacionId
-            });
+            sendNotificationToAll('timer_stopped', { servicioId: servicioId, roomId: habitacionId });
           } else {
-            await query(
-              'UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?',
-              [servicioId]
-            );
+            await query('UPDATE habitaciones h INNER JOIN servicios s ON h.id_habitacion = s.habitacion_id SET h.estado = 1 WHERE s.id_servicio = ?', [servicioId]);
           }
         }
 
         if (estado === 1 && estadoAnterior !== 1) {
-          await addServicioLog(
-            servicioId,
-            'FINALIZADO',
-            'Servicio finalizado manualmente.',
-            currentUser?.id
-          );
+          await addServicioLog(servicioId, 'FINALIZADO', 'Servicio finalizado manualmente.', currentUser?.id);
         } else if (estado === 0 && estadoAnterior !== 0) {
           await addServicioLog(servicioId, 'ANULADO', 'Servicio anulado.', currentUser?.id);
         } else if (estado === 3 && estadoAnterior !== 3) {
-          await addServicioLog(
-            servicioId,
-            'PAUSA',
-            'Servicio pausado manualmente.',
-            currentUser?.id
-          );
+          await addServicioLog(servicioId, 'PAUSA', 'Servicio pausado manualmente.', currentUser?.id);
           await query('UPDATE servicios SET paused_at = NOW() WHERE id_servicio = ?', [servicioId]);
         } else if (estado === 4 && estadoAnterior !== 4) {
-          await addServicioLog(
-            servicioId,
-            'SOLICITUD_ANULACION',
-            'Solicitud de anulación creada.',
-            currentUser?.id
-          );
+          await addServicioLog(servicioId, 'SOLICITUD_ANULACION', 'Solicitud de anulación creada.', currentUser?.id);
         } else if (estadoAnterior === 3 && estado === 2) {
-          const [pausedService] = (await query(
-            'SELECT paused_at FROM servicios WHERE id_servicio = ?',
-            [servicioId]
-          )) as any[];
+          const [pausedService] = await query('SELECT paused_at FROM servicios WHERE id_servicio = ?', [servicioId]) as any[];
           if (pausedService?.paused_at) {
-            await query(
-              'UPDATE servicios SET fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?',
-              [servicioId]
-            );
-            await addServicioLog(
-              servicioId,
-              'REANUDACION',
-              'Servicio reanudado manualmente.',
-              currentUser?.id
-            );
+            await query('UPDATE servicios SET fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, NOW()) SECOND), paused_at = NULL WHERE id_servicio = ?', [servicioId]);
+            await addServicioLog(servicioId, 'REANUDACION', 'Servicio reanudado manualmente.', currentUser?.id);
           }
         }
 
         await query('UPDATE servicios SET estado = ? WHERE id_servicio = ?', [estado, servicioId]);
 
         if (estado === 1 || estado === 0) {
-          const anfitrionasServicio = (await query(
-            'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
-            [servicioId]
-          )) as any[];
-
-          if (Array.isArray(anfitrionasServicio) && anfitrionasServicio.length > 0) {
-            for (const anfitriona of anfitrionasServicio) {
-              // 1. Verificar si la anfitriona realmente queda libre (no tiene otros servicios activos)
-              const [otherServices] = (await query(`
-                SELECT COUNT(*) as count 
-                FROM detalle_servicios ds 
-                JOIN servicios s ON ds.servicio_id = s.id_servicio 
-                WHERE s.estado IN (2, 4) AND s.id_servicio != ? AND ds.usuario_id = ?
-              `, [servicioId, anfitriona.usuario_id])) as any[];
-
-              const [inVentas] = (await query(`
-                SELECT COUNT(*) as count 
-                FROM ventas_usuarios vu 
-                JOIN ventas v ON vu.venta_id = v.id_venta 
-                WHERE v.estado = 2 AND vu.usuario_id = ?
-              `, [anfitriona.usuario_id])) as any[];
-
-              const isFree = (otherServices?.count || 0) === 0 && (inVentas?.count || 0) === 0;
-
-              if (isFree) {
-                await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anfitriona.usuario_id]);
-
-                // NOTIFICAR CAMBIO DE ESTADO
-                sendNotificationToAll('user_status_updated', {
-                  userId: anfitriona.usuario_id,
-                  status: 1 // Disponible
-                });
-              }
+          const anfitrionas = await query('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [servicioId]) as any[];
+          for (const a of anfitrionas || []) {
+            const [other] = await query('SELECT COUNT(*) as count FROM detalle_servicios ds JOIN servicios s ON ds.servicio_id = s.id_servicio WHERE s.estado IN (2, 4) AND s.id_servicio != ? AND ds.usuario_id = ?', [servicioId, a.usuario_id]) as any[];
+            const [inV] = await query('SELECT COUNT(*) as count FROM ventas_usuarios vu JOIN ventas v ON vu.venta_id = v.id_venta WHERE v.estado = 2 AND vu.usuario_id = ?', [a.usuario_id]) as any[];
+            if ((other?.count || 0) === 0 && (inV?.count || 0) === 0) {
+              await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [a.usuario_id]);
+              sendNotificationToAll('user_status_updated', { userId: a.usuario_id, status: 1 });
             }
           }
         }
 
-        return res.status(200).json({
-          success: true,
-          message:
-            estado === 1
-              ? 'Servicio finalizado exitosamente'
-              : estado === 0
-                ? 'Servicio anulado exitosamente'
-                : estado === 3
-                  ? 'Servicio pausado exitosamente'
-                  : estado === 2
-                    ? 'Servicio en proceso'
-                    : 'Servicio actualizado exitosamente'
-        });
+        return res.status(200).json({ success: true, message: 'Estado actualizado' });
       }
 
       if (
@@ -444,6 +353,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (!curr) {
           return res.status(404).json({ success: false, message: 'Servicio no encontrado' });
+        }
+
+        // REGLA: No se puede editar si el precio de servicio ya es mayor a 0
+        if (Number(curr.precio_servicio) > 0) {
+          return res.status(403).json({
+            success: false,
+            message: 'No se puede editar un servicio que ya tiene un precio asignado.'
+          });
         }
 
         const newPrice = Number(precio_servicio);
@@ -580,6 +497,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (!curr) {
           return res.status(404).json({ success: false, message: 'Servicio no encontrado' });
+        }
+
+        // REGLA: No se puede editar si el precio de servicio ya es mayor a 0
+        if (Number(curr.precio_servicio) > 0) {
+          return res.status(403).json({
+            success: false,
+            message: 'No se puede editar un servicio que ya tiene un precio asignado.'
+          });
         }
 
         const newPrice =
