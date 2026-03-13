@@ -81,9 +81,17 @@ jobs:
             fi
             
             # Instalación limpia y completa
-            pnpm install --prod --no-frozen-lockfile --aggregate-output
+            pnpm install --prod --no-frozen-lockfile
             
-            # Reiniciar con PM2 asegurando que el proceso use la carpeta actual
+            # Limpiar logs anteriores
+            pm2 flush
+            
+            # Reiniciar con PM2 con logs habilitados y puerto explícito
             pm2 delete lasmunecas || true
-            pm2 start pnpm --name "lasmunecas" -- start
+            PORT=3000 pm2 start pnpm --name "lasmunecas" --log "logs/pm2.log" --error "logs/pm2-error.log" -- start
             pm2 save
+            
+            # Mostrar los últimos logs para verificar si arrancó bien (esto se verá en GitHub Actions)
+            sleep 5
+            pm2 status lasmunecas
+            tail -n 20 logs/pm2-error.log || true
