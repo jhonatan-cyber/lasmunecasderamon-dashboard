@@ -317,8 +317,20 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
 
+    // Si es una página pública o no hay usuario, no sincronizar
+    const isPublic =
+      !window.location.pathname ||
+      window.location.pathname === '/' ||
+      window.location.pathname === '/landing' ||
+      window.location.pathname === '/login';
+
+    if (isPublic) {
+      setIsInitialized(true);
+      return;
+    }
+
     syncWithDatabase();
-  }, []);
+  }, [isInitialized]);
 
   // Cargar timers activos del servidor periódicamente (sincronización multi-dispositivo)
   useEffect(() => {
@@ -438,6 +450,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
 
+    // Si es una página pública, no sincronizar periódicamente
+    const isPublic =
+      !window.location.pathname ||
+      window.location.pathname === '/' ||
+      window.location.pathname === '/landing' ||
+      window.location.pathname === '/login';
+    
+    if (isPublic) return;
+
     // Sincronizar inmediatamente al cargar
     syncActiveTimers();
 
@@ -472,6 +493,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let eventSource: EventSource | null = null;
 
     const connectSSE = () => {
+      // No conectar si es una página pública
+      const isPublic =
+        !window.location.pathname ||
+        window.location.pathname === '/' ||
+        window.location.pathname === '/landing' ||
+        window.location.pathname === '/login';
+
+      if (isPublic) return;
+
       console.log('[TimerContext] Conectando a SSE para sincronización de timers...');
       eventSource = new EventSource('/api/notifications/sse');
 
