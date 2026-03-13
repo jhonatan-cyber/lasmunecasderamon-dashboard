@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,proxy.ts"
+          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,middleware.ts"
           target: "/var/www/lasmuñecasderamon"
           rm: true
           strip_components: 0
@@ -72,15 +72,18 @@ jobs:
             TZ=America/La_Paz
             EOF
             
-            # Instalar dependencias de producción
-            # Si el VPS no tiene pnpm, lo instalamos o usamos npm
+            # Configurar pnpm
+            export PNPM_HOME="/root/.local/share/pnpm"
+            export PATH="$PNPM_HOME:$PATH"
+            
             if ! command -v pnpm &> /dev/null; then
-              npm install -g pnpm
+              npm install -g pnpm@latest
             fi
             
-            pnpm install --prod
+            # Instalación limpia y completa
+            pnpm install --prod --no-frozen-lockfile --aggregate-output
             
-            # Reiniciar con PM2
-            # Intentamos recargar si ya existe, si no lo iniciamos
-            pm2 reload lasmunecas || pm2 start pnpm --name "lasmunecas" -- start
+            # Reiniciar con PM2 asegurando que el proceso use la carpeta actual
+            pm2 delete lasmunecas || true
+            pm2 start pnpm --name "lasmunecas" -- start
             pm2 save
