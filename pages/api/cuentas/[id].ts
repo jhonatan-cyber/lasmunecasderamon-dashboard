@@ -301,13 +301,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           //   - Si había tiempo restante: duration = remainingMins + extraTiempo
           //   - Si no había tiempo (expirado o sin timer): duration = extraTiempo
           const nuevoTiempoTotal = remainingMins + Number(extraTiempo);
-          const nuevaFechaCrea = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-          // Actualizar tiempo y fecha_crea de la cuenta
+          // Actualizar tiempo y fecha_crea de la cuenta usando el tiempo del servidor DB
           await query(
-            'UPDATE cuentas SET tiempo = ?, fecha_crea = ? WHERE id_cuenta = ?',
-            [nuevoTiempoTotal, nuevaFechaCrea, cuentaId]
+            'UPDATE cuentas SET tiempo = ?, fecha_crea = NOW() WHERE id_cuenta = ?',
+            [nuevoTiempoTotal, cuentaId]
           );
+
+          // Obtener la fecha de creación actualizada desde la DB para el SSE
+          const [updatedCuenta]: any = await query(
+            'SELECT fecha_crea FROM cuentas WHERE id_cuenta = ?',
+            [cuentaId]
+          );
+          const dbNow = updatedCuenta?.fecha_crea || new Date();
+          const startTimeIso = dbNow instanceof Date ? dbNow.toISOString() : dbNow;
 
           // Marcar habitación como ocupada si tiene una
           if (habitacionId) {
@@ -332,7 +339,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               roomId: habitacionId,
               roomName: habitacionRow[0]?.nombre || '',
               duration: nuevoTiempoTotal,
-              startTime: nuevaFechaCrea,
+              startTime: startTimeIso,
               codigo: c.codigo,
               clienteNombre: clienteRow[0]?.nombre || 'Cliente',
               tipoTransaccion: 'cuenta',

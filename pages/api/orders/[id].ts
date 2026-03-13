@@ -106,13 +106,18 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
             if (duration > 0) {
               try {
+                // Obtener fecha actual del servidor DB para sincronizar timer
+                const [timeResult]: any = await query('SELECT NOW() as now');
+                const dbNow = timeResult?.now || new Date();
+                const startTimeIso = dbNow instanceof Date ? dbNow.toISOString() : dbNow;
+
                 sendNotificationToAll('timer_started', {
                   servicioId: Number(id),
                   codigo: `PEDIDO_${id}`,
                   roomId: Number(roomId),
                   roomName,
                   duration,
-                  startTime: new Date().toISOString(),
+                  startTime: startTimeIso,
                   clienteNombre,
                   anfitrionas,
                   tipoTransaccion: 'pedido'

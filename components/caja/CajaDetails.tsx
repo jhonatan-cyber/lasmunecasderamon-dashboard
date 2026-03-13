@@ -79,7 +79,6 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
   const { retiros, loading: retirosLoading, refetch: refetchRetiros } = useRetiros(caja?.id_caja || null);
   const [ventas, setVentas] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
-  const [comisionesSinChampagne, setComisionesSinChampagne] = useState(0);
   const [ventasChampagne, setVentasChampagne] = useState<{
     total_venta: number;
     monto_champagne: number;
@@ -104,7 +103,6 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
   }>({ total_iva: 0, total_habitacion: 0, total_servicio_neto: 0 });
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [loadingServicios, setLoadingServicios] = useState(false);
-  const [loadingComisiones, setLoadingComisiones] = useState(false);
   const [loadingChampagne, setLoadingChampagne] = useState(false);
   const [loadingBarras, setLoadingBarras] = useState(false);
   const [loadingTragosChicas, setLoadingTragosChicas] = useState(false);
@@ -123,7 +121,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
       // Cargar ventas
       setLoadingVentas(true);
       fetch(`/api/sales?caja_id=${caja.id_caja}`)
-        .then(res => res.json())
+        .then(res => res.ok ? res.json() : { success: false })
         .then(data => {
           if (data.success) {
             setVentas(data.data || []);
@@ -135,7 +133,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
       // Cargar servicios
       setLoadingServicios(true);
       fetch(`/api/servicios?caja_id=${caja.id_caja}`)
-        .then(res => res.json())
+        .then(res => res.ok ? res.json() : { success: false })
         .then(data => {
           if (data.success) {
             setServicios(data.data || []);
@@ -156,22 +154,10 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
         .catch(err => console.error('Error cargando servicios:', err))
         .finally(() => setLoadingServicios(false));
 
-      // Cargar comisiones de ventas sin champagne
-      setLoadingComisiones(true);
-      fetch(`/api/caja/comisiones-sin-champagne?caja_id=${caja.id_caja}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setComisionesSinChampagne(Number(data.total || 0));
-          }
-        })
-        .catch(err => console.error('Error cargando comisiones:', err))
-        .finally(() => setLoadingComisiones(false));
-
       // Cargar ventas de champaña
       setLoadingChampagne(true);
       fetch(`/api/caja/ventas-champagne?caja_id=${caja.id_caja}`)
-        .then(res => res.json())
+        .then(res => res.ok ? res.json() : { success: false })
         .then(data => {
           if (data.success) {
             setVentasChampagne({
@@ -188,12 +174,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
       // Cargar ventas en barras (sin comisión)
       setLoadingBarras(true);
       fetch(`/api/caja/ventas-barras?caja_id=${caja.id_caja}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        })
+        .then(res => res.ok ? res.json() : { success: false })
         .then(data => {
           if (data.success) {
             setVentasBarras({
@@ -202,13 +183,11 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               propinas: Number(data.propinas || 0)
             });
           } else {
-            console.warn('API devolvió success: false para ventas barras');
             setVentasBarras({ total_venta: 0, monto_productos: 0, propinas: 0 });
           }
         })
         .catch(err => {
           console.error('Error cargando ventas barras:', err);
-          // Establecer valores por defecto en caso de error
           setVentasBarras({ total_venta: 0, monto_productos: 0, propinas: 0 });
         })
         .finally(() => setLoadingBarras(false));
@@ -216,17 +195,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
       // Cargar ventas tragos chicas (con comisión, sin champagne)
       setLoadingTragosChicas(true);
       fetch(`/api/caja/ventas-tragos-chicas?caja_id=${caja.id_caja}`)
-        .then(res => {
-          if (!res.ok) {
-            // Si la API no está disponible (404), usar datos de fallback
-            if (res.status === 404) {
-              console.warn('API ventas-tragos-chicas no disponible, usando fallback');
-              return { success: true, total_venta: 0, monto_productos: 0, comisiones: 0, propinas: 0 };
-            }
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        })
+        .then(res => res.ok ? res.json() : { success: false })
         .then(data => {
           if (data.success) {
             setVentasTragosChicas({
@@ -236,13 +205,11 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
               propinas: Number(data.propinas || 0)
             });
           } else {
-            console.warn('API devolvió success: false para ventas tragos chicas');
             setVentasTragosChicas({ total_venta: 0, monto_productos: 0, comisiones: 0, propinas: 0 });
           }
         })
         .catch(err => {
           console.error('Error cargando ventas tragos chicas:', err);
-          // En caso de error, usar valores por defecto
           setVentasTragosChicas({ total_venta: 0, monto_productos: 0, comisiones: 0, propinas: 0 });
         })
         .finally(() => setLoadingTragosChicas(false));
@@ -260,7 +227,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
         // Recargar ventas
         setLoadingVentas(true);
         fetch(`/api/sales?caja_id=${caja.id_caja}`)
-          .then(res => res.json())
+          .then(res => res.ok ? res.json() : { success: false })
           .then(data => {
             if (data.success) {
               setVentas(data.data || []);
@@ -272,7 +239,7 @@ export const CajaDetails = ({ caja, open, onOpenChange }: CajaDetailsProps) => {
         // Recargar servicios
         setLoadingServicios(true);
         fetch(`/api/servicios?caja_id=${caja.id_caja}`)
-          .then(res => res.json())
+          .then(res => res.ok ? res.json() : { success: false })
           .then(data => {
             if (data.success) {
               setServicios(data.data || []);

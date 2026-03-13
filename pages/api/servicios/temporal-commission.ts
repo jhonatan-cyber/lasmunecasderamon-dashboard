@@ -106,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             monto
           ) VALUES (?, ?, ?)`,
           [
-            0, // venta_id es 0 para servicios (según nuevo estándar)
+            null, // venta_id es null para servicios
             servicio_id,
             comisionTotalPorAnfitriona
           ]

@@ -99,20 +99,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const result = await withTransaction(async connection => {
       // Pausar el servicio original si se proporcionó (dentro de la transacción)
       if (servicio_original_id) {
-        await connection(
+        // Intentar pausar en tabla servicios
+        const resS = await connection(
           'UPDATE servicios SET estado = 3, paused_at = NOW() WHERE id_servicio = ?',
           [servicio_original_id]
         );
-        console.log(
-          `[TEMPORAL] Servicio original ${servicio_original_id} pausado en BD (transacción)`
-        );
 
-        await addServicioLog(
-          Number(servicio_original_id),
-          'PAUSA',
-          'Servicio pausado automáticamente por inicio de servicio temporal (consumo/champaña).',
-          currentUser?.id
-        );
+        // Si no se afectó ninguna fila, intentar posar en tabla ventas
+        if ((resS as any).affectedRows === 0) {
+          await connection(
+            'UPDATE ventas SET estado = 3, paused_at = NOW() WHERE id_venta = ?',
+            [servicio_original_id]
+          );
+          console.log(`[TEMPORAL] Venta original ${servicio_original_id} pausada`);
+        } else {
+          console.log(`[TEMPORAL] Servicio original ${servicio_original_id} pausado`);
+          await addServicioLog(
+            Number(servicio_original_id),
+            'PAUSA',
+            'Servicio pausado automáticamente por inicio de servicio temporal (consumo/champaña).',
+            currentUser?.id
+          );
+        }
       }
 
       let comisionTotalPorAnfitriona = 0;
@@ -222,7 +230,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           for (const usuarioId of usuarios) {
             const comisionResult: any = await connection(
               `INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)`,
-              [0, servicioId, comisionTotalPorAnfitriona]
+              [null, servicioId, comisionTotalPorAnfitriona]
             );
             await connection(
               `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)`,
@@ -325,6 +333,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
+    // Obtener la fecha de creación real desde la DB para sincronizar el timer
+    const [serviceDetail]: any = await query(
+      'SELECT fecha_crea FROM servicios WHERE id_servicio = ?',
+      [result.servicioId]
+    );
+    const dbFechaCrea = serviceDetail?.fecha_crea || new Date();
+    const startTimeIso = dbFechaCrea instanceof Date ? dbFechaCrea.toISOString() : dbFechaCrea;
+
     // Notificar inicio del servicio temporal vía SSE
     sendNotificationToAll('timer_started', {
       servicioId: result.servicioId,
@@ -332,7 +348,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       roomId: habitacion_id,
       roomName: roomName,
       duration: tiempo,
-      startTime: new Date().toISOString(),
+      startTime: startTimeIso,
       clienteNombre: clienteNombreResult,
       anfitrionas: anfitrionasNicksResult,
       anfitrionas_ids: usuarios,
@@ -344,7 +360,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       metodo_pago: metodo_pago,
       waiter_name: waiterNickResult,
       habitacion_comision: habitacionComisionResult[0]?.comision_anfitriona || 0,
-      created_at: new Date().toISOString()
+      created_at: startTimeIso
     });
     return res.status(201).json({
       success: true,

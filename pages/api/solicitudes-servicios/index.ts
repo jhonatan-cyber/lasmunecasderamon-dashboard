@@ -206,6 +206,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       metodo_pago: metodo_pago,
       precio_servicio: precio_servicio || 0,
       precio_habitacion: precio_habitacion || 0,
+      comision_anfitriona: comisionAnfitriona,
       iva: iva || 0,
       timestamp: new Date().toISOString()
     });

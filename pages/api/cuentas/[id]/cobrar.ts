@@ -88,7 +88,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
           const resultPropina: any = await query(
             'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
-            [0, totalPropina]
+            [null, totalPropina]
           );
           const propinaId = resultPropina.insertId;
 
@@ -137,7 +137,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           if (monto > 0) {
             const comisionResult: any = await query(
               `INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)`,
-              [0, 0, monto]
+              [null, null, monto]
             );
             const comisionId = comisionResult.insertId;
             await query(
