@@ -5,7 +5,7 @@ import { z } from 'zod';
 const reorderSchema = z.object({
   category_orders: z.array(
     z.object({
-      id: z.number(),
+      id: z.string(),
       display_order: z.number()
     })
   )

@@ -14,7 +14,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const cuentaId = parseInt(id);
+  const cuentaId = id;
 
   if (req.method === 'GET') {
     try {

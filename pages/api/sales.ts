@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { sendNotificationToAll } from './notifications/sse';
 import { notifyOrderProcessed } from './orders/sse';
 import { withTransaction } from '@/lib/transactionUtils';
@@ -10,9 +10,9 @@ import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
  * @param anfitrionaId ID de la anfitriona
  * @returns Información de la venta activa con habitación, o null si no está en ninguna
  */
-async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
-  id_venta: number;
-  habitacion_id: number;
+async function buscarVentaActivaConHabitacion(anfitrionaId: string): Promise<{
+  id_venta: string;
+  habitacion_id: string;
   habitacion_nombre: string;
   tiempo: number;
   codigo: string;
@@ -400,7 +400,7 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   try {
     const currentUser = getCurrentUser(req);
-    const createdBy = currentUser?.id || 1;
+    const createdBy = currentUser?.id || "default-user";
 
     let {
       total,
@@ -481,14 +481,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     const estadoVenta = habitacion_id && tiempo && tiempo > 0 ? 2 : 1;
 
     const result = await withTransaction(async trx => {
-      // 1. Insertar la venta
+      const ventaId = generateUUID();
       const insertVentaSql = `
         INSERT INTO ventas (
-          codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id_venta, codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      const ventaResult = (await trx(insertVentaSql, [
+      await trx(insertVentaSql, [
+        ventaId,
         codigoVenta,
         clienteIdFinal,
         pedido_id || null,
@@ -502,22 +503,22 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         cajaId,
         createdBy,
         estadoVenta
-      ])) as any;
-
-      const ventaId = ventaResult.insertId;
+      ]);
 
       // 2. Insertar detalles de venta
       for (const detalle of detalles) {
+        const detalleVentaId = generateUUID();
         const insertDetalleVentaSql = `
           INSERT INTO detalle_ventas (
-            venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            id_detalle_venta, venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const comisionPorUnidad = (detalle.comision || 0) / (detalle.cantidad || 1);
         const subTotalProducto = detalle.sub_total || detalle.precio * detalle.cantidad;
 
         await trx(insertDetalleVentaSql, [
+          detalleVentaId,
           ventaId,
           detalle.producto_id,
           detalle.precio,
@@ -534,9 +535,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       if (usuarios && Array.isArray(usuarios) && usuarios.length > 0) {
         for (const usuarioId of usuarios) {
           const insertVentaUsuarioSql = `
-            INSERT INTO ventas_usuarios (venta_id, usuario_id) VALUES (?, ?)
+            INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id) VALUES (?, ?, ?)
           `;
-          await trx(insertVentaUsuarioSql, [ventaId, usuarioId]);
+          await trx(insertVentaUsuarioSql, [generateUUID(), ventaId, usuarioId]);
 
           // Ocupar anfitriona si tiene tiempo
           if (tiempo > 0) {
@@ -552,22 +553,22 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
       // 4. Registrar comisiones
       if (totalComision > 0) {
-        const comisionesPorAnfitriona = new Map<number, number>();
+        const comisionesPorAnfitriona = new Map<string, number>();
 
         for (const detalle of detalles) {
           const comisionTotalDelProducto = Math.round(detalle.comision || 0);
           if (comisionTotalDelProducto <= 0) continue;
 
-          let hostessesParaEsteProducto: number[] = [];
+          let hostessesParaEsteProducto: string[] = [];
 
           if (
             detalle.hostesses &&
             Array.isArray(detalle.hostesses) &&
             detalle.hostesses.length > 0
           ) {
-            hostessesParaEsteProducto = detalle.hostesses.map((id: any) => parseInt(id));
+            hostessesParaEsteProducto = detalle.hostesses.map((id: any) => String(id));
           } else if (detalle.hostess_id) {
-            hostessesParaEsteProducto = [parseInt(detalle.hostess_id)];
+            hostessesParaEsteProducto = [String(detalle.hostess_id)];
           }
 
           if (hostessesParaEsteProducto.length > 0) {
@@ -586,24 +587,25 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         for (const [usuarioId, monto] of comisionesPorAnfitriona.entries()) {
           const totalMonto = Math.round(monto);
           if (totalMonto > 0) {
-            const comisionResult: any = await trx(
+            const comisionId = generateUUID();
+            await trx(
               `INSERT INTO comisiones (
+                id_comision,
                 venta_id,
                 servicio_id,
                 monto
-              ) VALUES (?, ?, ?)`,
-              [ventaId, null, totalMonto]
+              ) VALUES (?, ?, ?, ?)`,
+              [comisionId, ventaId, null, totalMonto]
             );
-
-            const comisionId = comisionResult.insertId;
 
             await trx(
               `INSERT INTO detalle_comisiones (
+                id_detalle_comision,
                 comision_id,
                 usuario_id,
                 comision
-              ) VALUES (?, ?, ?)`,
-              [comisionId, usuarioId, totalMonto]
+              ) VALUES (?, ?, ?, ?)`,
+              [generateUUID(), comisionId, usuarioId, totalMonto]
             );
           }
         }
@@ -628,18 +630,18 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           const cuotaBase = Math.floor(totalPropina / staffIds.length);
           const residuo = totalPropina % staffIds.length;
 
-          const resultPropina: any = await trx(
-            'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
-            [ventaId, totalPropina]
+          const propinaId = generateUUID();
+          await trx(
+            'INSERT INTO propinas (id_propina, venta_id, propina) VALUES (?, ?, ?)',
+            [propinaId, ventaId, totalPropina]
           );
-          const propinaId = resultPropina.insertId;
 
           for (let i = 0; i < staffIds.length; i++) {
             const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
             if (montoFinal > 0) {
               await trx(
-                'INSERT INTO detalle_propinas (propina_id, usuario_id, monto) VALUES (?, ?, ?)',
-                [propinaId, staffIds[i].id_usuario, montoFinal]
+                'INSERT INTO detalle_propinas (id_detalle_propina, propina_id, usuario_id, monto) VALUES (?, ?, ?, ?)',
+                [generateUUID(), propinaId, staffIds[i].id_usuario, montoFinal]
               );
             }
           }
@@ -757,7 +759,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
         try {
           sendNotificationToAll('room_occupied', {
-            roomId: Number(habitacion_id),
+            roomId: habitacion_id,
             timestamp: new Date().toISOString()
           });
         } catch (roomNotifyErr) {

@@ -40,9 +40,9 @@ const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
 const ProductCategoryPage = () => {
   const params = useParams();
-  const categoryId = Number(params?.id ?? 0);
+  const categoryId = params?.id as string;
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
-  const category = filteredCategories.find((cat) => cat.id === categoryId);
+  const category = filteredCategories.find((cat) => String(cat.id) === categoryId);
 
   // Llamar a useProducts ANTES de cualquier return condicional
   const {
@@ -156,8 +156,7 @@ const ProductCategoryPage = () => {
   }
 
   // Si categoryId es 0, mostrar un mensaje
-  if (categoryId === 0) {
-    console.error('🔗 Category ID es 0');
+  if (!categoryId) {
     return (
       <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
         <div className="text-center text-gray-500 text-sm sm:text-base">

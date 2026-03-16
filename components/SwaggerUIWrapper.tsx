@@ -29,7 +29,7 @@ export const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({
     <div ref={swaggerRef} className={className}>
       <SwaggerUI
         url={url}
-        {...swaggerConfig}
+        {...(swaggerConfig as any)}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
+import { query, generateUUID } from "@/lib/db";
 import { withTransaction } from "@/lib/transactionUtils";
 import { sendNotificationToAll } from "@/pages/api/notifications/sse";
 
@@ -136,15 +136,14 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const result = await withTransaction(async (trx) => {
       // 1. Insertar cuenta principal usando los valores del frontend
-      const cuentaResult = await trx(
+      const cuentaId = generateUUID();
+      await trx(
         `INSERT INTO cuentas (
-          codigo, cliente_id, total_comision, habitacion_id, 
+          id_cuenta, codigo, cliente_id, total_comision, habitacion_id, 
           sub_total, total, pedido_id, servicio_id, fecha_crea, estado, tiempo
-        ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NOW(), 1, ?)`,
-        [codigo, cliente_id, total_comision, habitacion_id || null, sub_total, total, tiempo || 0]
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, NOW(), 1, ?)`,
+        [cuentaId, codigo, cliente_id, total_comision, habitacion_id || null, sub_total, total, tiempo || 0]
       );
-
-      const cuentaId = (cuentaResult as any).insertId;
 
       // 2. Insertar detalles
       for (const detalle of detalles) {

@@ -14,13 +14,14 @@ interface CurrentUser {
   phone?: string;
   address?: string;
   fecha_crea?: string;
+  qr_token?: string;
 }
 
 interface UseCurrentUserReturn {
   user: CurrentUser | null;
   loading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  refetch: (silent?: boolean) => Promise<void>;
 }
 
 /**

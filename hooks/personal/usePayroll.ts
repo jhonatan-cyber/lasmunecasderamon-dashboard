@@ -16,6 +16,7 @@ export interface PayrollRow {
   descuentos: number;
   total_horas: number;
   total_monto_horas: number;
+  gratificaciones: number;
   total: number;
 }
 

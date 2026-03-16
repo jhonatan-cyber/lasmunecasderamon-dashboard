@@ -51,7 +51,7 @@ export function useServicios() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const response = await fetch(`/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -65,7 +65,7 @@ export function useServicios() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string | number) => {
       const response = await fetch(`/api/servicios/${id}`, { method: 'DELETE' });
       const data = await response.json();
       if (!data.success) throw new Error(data.message);
@@ -76,7 +76,7 @@ export function useServicios() {
 
   // Optimistic Mutation for PATCH (status changes)
   const patchMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const response = await fetch(`/api/servicios/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -92,7 +92,7 @@ export function useServicios() {
 
       if (previousServicios) {
         queryClient.setQueryData([endpoint], (old: ServicioWithDetails[] | undefined) =>
-          old?.map((s: ServicioWithDetails) => s.id_servicio === id ? { ...s, ...data } : s)
+          old?.map((s: ServicioWithDetails) => String(s.id_servicio) === String(id) ? { ...s, ...data } : s)
         );
       }
       return { previousServicios };
@@ -123,11 +123,15 @@ export function useServicios() {
     error: fetchError || (createMutation.error as any)?.message || (updateMutation.error as any)?.message || (deleteMutation.error as any)?.message || (patchMutation.error as any)?.message,
     getServicios,
     createServicio: createMutation.mutateAsync,
-    updateServicio: (id: number, data: any) => updateMutation.mutateAsync({ id, data }),
-    deleteServicio: deleteMutation.mutateAsync,
-    patchServicio: (id: number, data: any) => patchMutation.mutateAsync({ id, data }),
-    removeServicioFromState: (id: number) => {
-      setServicios((prev: ServicioWithDetails[]) => prev.filter((s: ServicioWithDetails) => s.id_servicio !== id));
+    updateServicio: (id: string | number, data: any) => updateMutation.mutateAsync({ id, data }),
+    deleteServicio: (id: string | number) => deleteMutation.mutateAsync(id),
+    patchServicio: (id: string | number, data: any) => patchMutation.mutateAsync({ id, data }),
+    removeServicioFromState: (id: string | number) => {
+      if (setServicios) {
+        setServicios((prev: ServicioWithDetails[] | undefined) => 
+          (prev || []).filter((s: ServicioWithDetails) => String(s.id_servicio) !== String(id))
+        );
+      }
     }
   };
 }

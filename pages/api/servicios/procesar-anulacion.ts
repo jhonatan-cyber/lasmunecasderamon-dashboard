@@ -67,12 +67,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           [servicioId]
         );
 
+        const { generateUUID } = await import('@/lib/db');
         // 2. Registrar la DEVOLUCIÓN en las tablas específicas
-        const devServResult: any = await connection(
-          'INSERT INTO devoluciones_servicios (servicio_id, pieza_id, cliente_id, total, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
-          [servicioId, habitacionId || 0, solicitud.cliente_id || 0, totalServicio]
+        const devServId = generateUUID();
+        await connection(
+          'INSERT INTO devoluciones_servicios (id, servicio_id, pieza_id, cliente_id, total, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
+          [devServId, servicioId, habitacionId || 0, solicitud.cliente_id || 0, totalServicio]
         );
-        const devServId = devServResult.insertId;
 
         // Registrar detalles por anfitriona
         const anfitrionas = (await connection(
@@ -80,9 +81,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           [servicioId]
         )) as any[];
         for (const anf of anfitrionas) {
+          const detDevId = generateUUID();
           await connection(
-            'INSERT INTO detalle_devoluciones_servicios (devolucion_servicio_id, usuario_id, monto) VALUES (?, ?, ?)',
-            [devServId, anf.usuario_id, anf.comision || 0]
+            'INSERT INTO detalle_devoluciones_servicios (id, devolucion_servicio_id, usuario_id, monto) VALUES (?, ?, ?, ?)',
+            [detDevId, devServId, anf.usuario_id, anf.comision || 0]
           );
           // Liberar anfitriona
           await connection('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anf.usuario_id]);

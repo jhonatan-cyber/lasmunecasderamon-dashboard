@@ -16,13 +16,13 @@ interface UseRooms {
     room: Omit<Room, 'id' | 'status' | 'fecha_crea' | 'fecha_mod' | 'fecha_elim'>
   ) => Promise<void>;
   updateRoom: (
-    id: number,
+    id: string | number,
     room: Omit<Room, 'id' | 'status' | 'fecha_crea' | 'fecha_mod' | 'fecha_elim'>
   ) => Promise<void>;
-  deleteRoom: (id: number) => Promise<void>;
-  activateRoom: (id: number) => Promise<void>;
-  deactivateRoom: (id: number) => Promise<void>;
-  occupyRoom: (id: number) => Promise<void>;
+  deleteRoom: (id: string | number) => Promise<void>;
+  activateRoom: (id: string | number) => Promise<void>;
+  deactivateRoom: (id: string | number) => Promise<void>;
+  occupyRoom: (id: string | number) => Promise<void>;
   reorderRooms: (reorderedRooms: Room[]) => Promise<void>;
 }
 
@@ -66,7 +66,7 @@ export default function useRooms(): UseRooms {
 
   const updateRoom = useCallback(
     async (
-      id: number,
+      id: string | number,
       room: Omit<Room, 'id' | 'status' | 'fecha_crea' | 'fecha_mod' | 'fecha_elim'>
     ) => {
       await update({ id, ...room });
@@ -75,7 +75,7 @@ export default function useRooms(): UseRooms {
   );
 
   const deleteRoom = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       await remove(id);
     },
     [remove]
@@ -84,7 +84,7 @@ export default function useRooms(): UseRooms {
   const queryClient = useQueryClient();
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: number; action: string }) => {
+    mutationFn: async ({ id, action }: { id: string | number; action: string }) => {
       const res = await fetch(`/api/rooms?id=${id}&action=${action}`, { method: 'PATCH' });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Error en la operación');
@@ -95,9 +95,9 @@ export default function useRooms(): UseRooms {
       const previousRooms = queryClient.getQueryData<Room[]>(['/api/rooms']);
 
       if (previousRooms) {
-        queryClient.setQueryData(['/api/rooms'], (old: Room[]) =>
-          old.map(room => {
-            if (room.id === id) {
+        queryClient.setQueryData(['/api/rooms'], (old: Room[] | undefined) =>
+          (old || []).map(room => {
+            if (String(room.id) === String(id)) {
               let newStatus = room.status;
               if (action === 'occupy') newStatus = 2; // Ocupada
               if (action === 'activate') newStatus = 1; // Activa/Disponible
@@ -126,21 +126,21 @@ export default function useRooms(): UseRooms {
   });
 
   const activateRoom = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       await statusMutation.mutateAsync({ id, action: 'activate' });
     },
     [statusMutation]
   );
 
   const deactivateRoom = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       await statusMutation.mutateAsync({ id, action: 'deactivate' });
     },
     [statusMutation]
   );
 
   const occupyRoom = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       await statusMutation.mutateAsync({ id, action: 'occupy' });
     },
     [statusMutation]

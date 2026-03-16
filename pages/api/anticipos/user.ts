@@ -16,8 +16,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const userId = userData.id;
     const { startDate, endDate } = req.query;
 
-
-
     // Construir la consulta base
     let queryString = `
       SELECT
@@ -49,10 +47,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Mapear los estados para mejor legibilidad
     const anticiposWithStatus = anticipos.map(item => ({
       ...item,
-      estado_texto: item.estado === 0 ? 'PAGADO' : 'POR PAGAR'
+      estado_texto: item.estado === 0 ? 'PAGADO' : item.estado === 2 ? 'PENDIENTE' : 'POR PAGAR'
     }));
-
-
 
     return res.status(200).json({
       success: true,

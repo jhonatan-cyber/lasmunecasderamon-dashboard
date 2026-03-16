@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 
@@ -86,11 +86,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           const cuotaBase = Math.floor(totalPropina / staffIds.length);
           const residuo = totalPropina % staffIds.length;
 
-          const resultPropina: any = await query(
-            'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
-            [null, totalPropina]
+          const propinaId = generateUUID();
+          await query(
+            'INSERT INTO propinas (id_propina, venta_id, propina) VALUES (?, ?, ?)',
+            [propinaId, null, totalPropina]
           );
-          const propinaId = resultPropina.insertId;
 
           for (let i = 0; i < staffIds.length; i++) {
             const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
@@ -112,7 +112,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       `, [cuenta_id])) as any[];
 
       if (detallesParaComisiones.length > 0) {
-        const comisionesPorAnfitriona = new Map<number, number>();
+        const comisionesPorAnfitriona = new Map<string, number>();
         const usuariosGralesCuenta = (await query(`
           SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?
         `, [cuenta_id])) as any[];
@@ -120,13 +120,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         for (const detalle of detallesParaComisiones) {
           const montoComm = Math.round(Number(detalle.comision) || 0);
           if (detalle.hostess_id) {
-            const hId = Number(detalle.hostess_id);
+            const hId = detalle.hostess_id as string;
             comisionesPorAnfitriona.set(hId, (comisionesPorAnfitriona.get(hId) || 0) + montoComm);
           } else if (usuariosGralesCuenta.length > 0) {
             const cuotaBase = Math.floor(montoComm / usuariosGralesCuenta.length);
             const residuo = montoComm % usuariosGralesCuenta.length;
             for (let i = 0; i < usuariosGralesCuenta.length; i++) {
-              const uId = Number(usuariosGralesCuenta[i].usuario_id);
+              const uId = usuariosGralesCuenta[i].usuario_id as string;
               const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
               comisionesPorAnfitriona.set(uId, (comisionesPorAnfitriona.get(uId) || 0) + montoFinal);
             }
@@ -135,11 +135,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         for (const [uId, monto] of comisionesPorAnfitriona.entries()) {
           if (monto > 0) {
-            const comisionResult: any = await query(
-              `INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)`,
-              [null, null, monto]
+            const comisionId = generateUUID();
+            await query(
+              `INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto) VALUES (?, ?, ?, ?)`,
+              [comisionId, null, null, monto]
             );
-            const comisionId = comisionResult.insertId;
             await query(
               `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)`,
               [comisionId, uId, monto]
@@ -226,7 +226,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       )) as any[];
 
       for (const u of usersToRelease) {
-        const userId = Number(u.usuario_id);
+        const userId = u.usuario_id as string;
         // Actualizar estado en DB
         await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [userId]);
 

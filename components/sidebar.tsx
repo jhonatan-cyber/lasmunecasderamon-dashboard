@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import {
   Users,
   ShoppingCart,
@@ -25,7 +24,8 @@ import {
   DollarSign,
   RotateCcw,
   Calendar as CalendarIcon,
-  X
+  X,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -106,6 +106,15 @@ const financeNavigation = [
     fallbackAction: 'view'
   },
   {
+    name: 'Gratificaciones',
+    href: '/gratificaciones',
+    icon: Trophy,
+    module: 'gratificaciones',
+    action: 'listar_gratificaciones',
+    fallbackModule: 'gratificaciones',
+    fallbackAction: 'view'
+  },
+  {
     name: 'Devoluciones',
     href: '/returns',
     icon: RotateCcw,
@@ -148,20 +157,13 @@ export function Sidebar() {
   React.useEffect(() => {
     const prevPermissions = prevPermissionsRef.current;
 
-    // Si cambió la cantidad o el contenido de permisos
+ 
     if (
       permissions.length !== prevPermissions.length ||
       JSON.stringify(permissions) !== JSON.stringify(prevPermissions)
     ) {
-      console.log('🔄 [Sidebar] PERMISOS CAMBIARON!', {
-        antes: prevPermissions.length,
-        ahora: permissions.length,
-        permisosNuevos: permissions.map(p => `${p.module}.${p.action}`)
-      });
-
       setPermissionsVersion(prev => prev + 1);
 
-      // Actualizar referencia
       prevPermissionsRef.current = permissions;
     }
   }, [permissions]);
@@ -174,27 +176,12 @@ export function Sidebar() {
       .join('|')}`;
   }, [permissions]);
 
-  // Log inicial para debugging (solo en desarrollo)
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Sidebar] Estado:', {
-        user: user?.role,
-        permissionsCount: permissions.length,
-        permissionsVersion
-      });
-    }
-  }, [user, permissions, permissionsVersion]);
+ 
 
-  // Log del usuario y su rol (solo en desarrollo)
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && user && !userLoading) {
-      console.log('[Sidebar] Usuario:', user.name, user.role);
-    }
-  }, [user, userLoading]);
+ 
 
   const hasModulePermission = React.useCallback(
     (module: string, action: string = 'listar', fallbackModule?: string, fallbackAction?: string) => {
-      // Administrador tiene acceso a todo
       const isAdminFromStorage =
         typeof window !== 'undefined'
           ? localStorage.getItem('userRole')?.toLowerCase() === 'administrador'
@@ -202,70 +189,48 @@ export function Sidebar() {
 
       const isAdmin = user?.role?.toLowerCase() === 'administrador' || isAdminFromStorage;
 
-      console.log(`🔍 [Sidebar] Verificando permisos:`, {
-        userRole: user?.role,
-        isAdminFromStorage,
-        isAdmin,
-        module,
-        action,
-        fallbackModule,
-        fallbackAction,
-        permissionsCount: permissions.length
-      });
+   
 
       if (isAdmin) {
-        console.log(`✅ [Sidebar] Acceso concedido a ${module}.${action} (Administrador)`);
         return true;
       }
 
-      // Si no hay permisos cargados, no tiene acceso
       if (!permissions.length) {
-        console.log(`🔍 [Sidebar] Sin permisos cargados para ${module}.${action}`);
         return false;
       }
-
-      // Utilizar la lógica del contexto que mapea español/inglés
       let hasPermission = contextHasPermission(module, action);
 
       if (!hasPermission && fallbackModule && fallbackAction) {
         hasPermission = contextHasPermission(fallbackModule, fallbackAction);
       }
 
-      console.log(`🔍 [Sidebar] Verificando ${module}.${action}: ${hasPermission ? '✅' : '❌'}`);
-
       return hasPermission;
     },
     [user?.role, permissions, contextHasPermission]
   );
 
-  // Recalcular listas filtradas cuando cambien permisos
   const allowedPrincipal = React.useMemo(() => {
     const filtered = navigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
-    console.log('📋 [Sidebar] Principal permitidos:', filtered.map(f => f.name));
     return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedHR = React.useMemo(() => {
     const filtered = hrNavigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
-    console.log('📋 [Sidebar] HR permitidos:', filtered.map(f => f.name));
     return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedFinance = React.useMemo(() => {
     const filtered = financeNavigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
-    console.log('📋 [Sidebar] Finanzas permitidos:', filtered.map(f => f.name));
     return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedService = React.useMemo(() => {
     const filtered = serviceNavigation.filter(item => hasModulePermission(item.module, item.action, item.fallbackModule, item.fallbackAction));
-    console.log('📋 [Sidebar] Servicios permitidos:', filtered.map(f => f.name));
     return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
   const allowedSecondary = React.useMemo(() => {
     const filtered = secondaryNavigation.filter(item => hasModulePermission(item.module, item.action, (item as any).fallbackModule, (item as any).fallbackAction));
-    console.log('📋 [Sidebar] Configuración permitidos:', filtered.map(f => f.name));
     return filtered;
   }, [hasModulePermission, permissionsVersion, permissions]);
 
@@ -273,8 +238,7 @@ export function Sidebar() {
     setMounted(true);
   }, []);
 
-  // Mostrar skeleton mientras carga el usuario O mientras carga permisos por primera vez
-  // Solo si no es administrador (admin no necesita permisos)
+
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
   const needsPermissions = user && !isAdmin;
   const permissionsReady = !needsPermissions || permissions.length > 0;
@@ -302,7 +266,7 @@ export function Sidebar() {
             <img
               src='/img/system/logo1.png'
               alt='Las Muñecas de Ramón'
-              className={cn('w-auto transition-all duration-300', isCollapsed ? 'h-8' : 'h-10')}
+              style={{ height: isCollapsed ? '2rem' : '2.5rem', width: 'auto' }}
             />
             {!isCollapsed && (
               <span className='text-sm font-bold text-gray-900'>Panel Administrativo</span>
@@ -345,13 +309,11 @@ export function Sidebar() {
             isCollapsed ? 'justify-center' : 'flex-1 justify-center'
           )}
         >
-          <Image
+          <img
             src='/img/system/logo1.png'
             alt='Las Muñecas de Ramón'
-            width={isCollapsed ? 32 : 180}
-            height={isCollapsed ? 32 : 44}
-            className={cn('w-auto transition-all duration-300', isCollapsed ? 'h-8' : 'h-11')}
-            priority
+            style={{ height: isCollapsed ? '2rem' : '2.75rem', width: 'auto' }}
+            className='transition-all duration-300'
           />
           {!isCollapsed && (
             <span className='text-sm font-bold text-gray-900 dark:text-neutral-100 transition-opacity duration-300'>
@@ -385,13 +347,6 @@ export function Sidebar() {
                     <Link
                       href={item.href}
                       onClick={() => {
-                        if (item.name === 'Dashboard') {
-                          console.log('[Sidebar] Click en Dashboard - Usuario:', {
-                            nombre: user?.name,
-                            apellido: user?.lastName,
-                            rol: user?.role
-                          });
-                        }
                         closeSidebar();
                       }}
                       className={cn(

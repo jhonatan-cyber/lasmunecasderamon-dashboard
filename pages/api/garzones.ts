@@ -32,10 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ORDER BY U.nombre, U.apellido
       `)) as any[];
 
-      // Filtrar garzones y cajeros en JavaScript
+      // Filtrar garzones, cajeros, meseros y anfitrionas en JavaScript
       const garzones = results.filter((user: any) => {
         const roleLower = user.rol?.toLowerCase() || '';
-        return roleLower.includes('garzon') || roleLower.includes('mesero') || roleLower.includes('cajero');
+        return roleLower.includes('garzon') || roleLower.includes('mesero') || roleLower.includes('cajero') || roleLower.includes('anfitriona');
       });
 
       // Mapear los resultados al formato esperado

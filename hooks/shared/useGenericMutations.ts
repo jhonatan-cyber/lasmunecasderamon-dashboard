@@ -7,6 +7,7 @@ export function useGenericMutations<T>(
     onSuccess?: () => void | Promise<void>;
     showToasts?: boolean;
     entityName?: string;
+    invalidateKey?: string;
   }
 ) {
   const queryClient = useQueryClient();
@@ -15,8 +16,7 @@ export function useGenericMutations<T>(
 
   const mutationOptions = {
     onSuccess: async () => {
-      // Invalidate queries that match the endpoint to trigger a refetch.
-      await queryClient.invalidateQueries({ queryKey: [endpoint] });
+      await queryClient.invalidateQueries({ queryKey: [options?.invalidateKey ?? endpoint] });
 
       if (options?.onSuccess) {
         await options.onSuccess();
@@ -60,14 +60,14 @@ export function useGenericMutations<T>(
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: (Partial<T> & { id: number }) | FormData) => {
+    mutationFn: async (data: (Omit<Partial<T>, 'id'> & { id: number | string }) | FormData) => {
       let body: BodyInit;
       let headers: Record<string, string> = {};
-      let id: number;
+      let id: number | string;
 
       if (data instanceof FormData) {
         body = data;
-        id = Number(data.get('id'));
+        id = data.get('id') as string;
       } else {
         body = JSON.stringify(data);
         headers['Content-Type'] = 'application/json';
@@ -98,7 +98,7 @@ export function useGenericMutations<T>(
   });
 
   const removeMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: number | string) => {
       const response = await fetch(`${endpoint}?id=${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }

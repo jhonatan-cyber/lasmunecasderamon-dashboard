@@ -7,44 +7,14 @@ export const useServicioTimerSync = () => {
   const { timers, pauseTimerByServicioId, resumeTimerByServicioId } = useTimer();
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-       timers.forEach(timer => {
-       
-          const servicio = servicios.find(s => s.id_servicio === timer.servicioId);
-          if (servicio) {
+    if (!servicios) return;
 
-          } else {
-           
-          }
-          
-      });
-    }
-    
     timers.forEach(timer => {
-      const servicio = servicios.find(s => s.id_servicio === timer.servicioId);
+      const servicio = servicios.find(s => String(s.id_servicio) === String(timer.servicioId));
       
       if (servicio) {
-        if (process.env.NODE_ENV === 'development') {
-  
-        }
-        
         if (servicio.estado === 2 && !timer.isPaused) {
-         
-          if (process.env.NODE_ENV === 'development') {
-
-          }
           pauseTimerByServicioId(timer.servicioId);
-        } else if (servicio.estado === 3 && timer.isActive) {
-         
-          if (process.env.NODE_ENV === 'development') {
-
-          }
-      
-        }
-      
-      } else {
-        if (process.env.NODE_ENV === 'development') {
-  
         }
       }
     });

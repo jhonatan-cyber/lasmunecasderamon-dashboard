@@ -45,7 +45,7 @@ interface AuthContextType {
   hasPermission: (module: string, action: string) => boolean;
   hasAnyPermission: (module: string) => boolean;
   hasAllPermissions: (module: string, actions: string[]) => boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: (silent?: boolean) => Promise<void>;
   refreshPermissions: (forceRefresh?: boolean) => Promise<void>;
 }
 
@@ -62,6 +62,7 @@ const moduleMap: Record<string, string[]> = {
   'sales': ['ventas', 'sales'],
   'attendance': ['asistencias', 'attendance'],
   'overtime': ['horas_extras', 'overtime'],
+  'gratificaciones': ['gratificaciones', 'gratificaciones'],
   'cash_register': ['caja', 'cash_register'],
   'accounts': ['cuentas', 'accounts'],
   'tips': ['propinas', 'tips'],
@@ -76,7 +77,7 @@ const moduleMap: Record<string, string[]> = {
 };
 
 const actionMap: Record<string, string[]> = {
-  'view': ['view', 'listar_usuarios', 'listar_clientes', 'listar_categoria_productos', 'listar_productos_categoria', 'listar_categorias', 'listar_pedidos', 'listar_reportes', 'listar_ventas', 'listar_roles', 'listar_asistencias', 'listar_horas_extras', 'listar_caja', 'listar_cuentas', 'listar_propinas', 'listar_comisiones', 'listar_pagos', 'listar_detalles', 'listar_anticipos', 'listar_devoluciones', 'listar_habitaciones', 'listar_privados', 'ver_detalles', 'ver_dashboard'],
+  'view': ['view', 'listar_usuarios', 'listar_clientes', 'listar_categoria_productos', 'listar_productos_categoria', 'listar_categorias', 'listar_pedidos', 'listar_reportes', 'listar_ventas', 'listar_roles', 'listar_asistencias', 'listar_horas_extras', 'listar_gratificaciones', 'listar_caja', 'listar_cuentas', 'listar_propinas', 'listar_comisiones', 'listar_pagos', 'listar_detalles', 'listar_anticipos', 'listar_devoluciones', 'listar_habitaciones', 'listar_privados', 'ver_detalles', 'ver_dashboard'],
   'create': ['create', 'crear', 'agregar_productos'],
   'process': ['process', 'registar_venta', 'registar_cuenta'],
   'edit': ['edit', 'editar', 'registar_venta', 'registar_cuenta', 'process'],
@@ -139,11 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   // Fetch del usuario actual
-  const fetchUser = useCallback(async () => {
+  const fetchUser = useCallback(async (silent = false) => {
     if (isPublicPage || isFetchingUserRef.current) return;
 
     isFetchingUserRef.current = true;
-    setUserLoading(true);
+    if (!silent || !user) {
+      setUserLoading(true);
+    }
 
     try {
       // Agregar timestamp para evitar caché del navegador
@@ -242,18 +245,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = useCallback(
     (module: string, action: string): boolean => {
-      console.log(`[PermissionCheck] Checking ${module}.${action} for user ${user?.role}`);
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
       if (!userPermissions || userPermissions.length === 0) {
-        console.log(`[PermissionCheck] User has no permissions`);
         return false;
       }
 
       // Match exacto primero
       let match = userPermissions.some(p => p.module === module && p.action === action);
       if (match) {
-        console.log(`[PermissionCheck] Exact match found for ${module}.${action}`);
         return true;
       }
 
@@ -261,14 +261,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const allowedModules = moduleMap[module] || [module];
       const allowedActions = actionMap[action] || [action];
 
-      const aliasMatch = userPermissions.some(p =>
+      return userPermissions.some(p =>
         allowedModules.includes(p.module) &&
         allowedActions.includes(p.action)
       );
-
-      console.log(`[PermissionCheck] Alias match for ${module}.${action}: ${aliasMatch}`);
-
-      return aliasMatch;
     },
     [userPermissions, user?.role]
   );
@@ -282,7 +278,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const allowedModules = moduleMap[module] || [module];
       const match = userPermissions.some(p => allowedModules.includes(p.module));
-      console.log(`[PermissionCheck] Any check for ${module}: ${match}`);
       return match;
     },
     [userPermissions, user?.role]

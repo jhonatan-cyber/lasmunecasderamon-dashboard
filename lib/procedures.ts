@@ -1,4 +1,4 @@
-import { query } from './db';
+import { query, generateUUID } from './db';
 
 
 export const addClient = async (
@@ -7,9 +7,10 @@ export const addClient = async (
   lastName: string,
   phone: string
 ) => {
+  const id = generateUUID();
   return await query(
-    'INSERT INTO clientes (run, nombre, apellido, telefono) VALUES (?, ?, ?, ?)',
-    [run, name, lastName, phone]
+    'INSERT INTO clientes (id_cliente, run, nombre, apellido, telefono) VALUES (?, ?, ?, ?, ?)',
+    [id, run, name, lastName, phone]
   );
 };
 
@@ -25,7 +26,7 @@ export const getAllClients = async () => {
  * Obtener cliente por ID
  * Reemplaza: CALL get_client_by_id(id)
  */
-export const getClientById = async (id: number) => {
+export const getClientById = async (id: string) => {
   return await query('SELECT * FROM clientes WHERE id_cliente = ?', [id]);
 };
 
@@ -38,7 +39,7 @@ export const updateClient = async (
   name: string,
   lastName: string,
   phone: string,
-  id: number
+  id: string
 ) => {
   return await query(
     'UPDATE clientes SET run = ?, nombre = ?, apellido = ?, telefono = ?, fecha_mod = NOW() WHERE id_cliente = ?',
@@ -50,7 +51,7 @@ export const updateClient = async (
  * Eliminar cliente
  * Reemplaza: CALL delete_client(id)
  */
-export const deleteClient = async (id: number) => {
+export const deleteClient = async (id: string) => {
   return await query('DELETE FROM clientes WHERE id_cliente = ?', [id]);
 };
 

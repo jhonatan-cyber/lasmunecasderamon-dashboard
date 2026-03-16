@@ -55,7 +55,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 // Función para notificar a todos los clientes
-export function notifyPermissionsUpdate(roleId: number) {
+export function notifyPermissionsUpdate(roleId: string) {
   const message = JSON.stringify({
     type: 'permissions-updated',
     roleId,

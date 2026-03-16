@@ -44,7 +44,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export function notifyOrderProcessed(orderId: number) {
+export function notifyOrderProcessed(orderId: string) {
   const message = JSON.stringify({
     type: 'order-processed',
     orderId,
@@ -65,7 +65,7 @@ export function notifyOrderProcessed(orderId: number) {
   });
 }
 
-export function notifyOrderDeleted(orderId: number) {
+export function notifyOrderDeleted(orderId: string) {
   const message = JSON.stringify({
     type: 'order-deleted',
     orderId,
@@ -85,7 +85,7 @@ export function notifyOrderDeleted(orderId: number) {
   });
 }
 
-export function notifyOrderCreated(orderId: number) {
+export function notifyOrderCreated(orderId: string) {
   const message = JSON.stringify({
     type: 'order-created',
     orderId,

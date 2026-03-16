@@ -41,7 +41,7 @@ export default function ServicioTable({
   rowsPerPage,
   onRefresh,
 }: ServicioTableProps) {
-  const [selectedServicioId, setSelectedServicioId] = useState<number | null>(null);
+  const [selectedServicioId, setSelectedServicioId] = useState<string | number | null>(null);
 
   const getEstadoBadge = (estado: number) => {
     const estadoNum = Number(estado);
@@ -73,17 +73,17 @@ export default function ServicioTable({
     return `${hours}h ${mins}m`;
   };
 
-  const handleVerDetalles = (servicioId: number) => {
+  const handleVerDetalles = (servicioId: string | number) => {
     setSelectedServicioId(servicioId);
     // Aquí puedes abrir un modal de detalles
     console.log("Ver detalles del servicio:", servicioId);
   };
 
-  const handleEditar = (servicioId: number) => {
+  const handleEditar = (servicioId: string | number) => {
     console.log("Editar servicio:", servicioId);
   };
 
-  const handleEliminar = async (servicioId: number) => {
+  const handleEliminar = async (servicioId: string | number) => {
     if (confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
       try {
         const response = await fetch(`/api/servicios/${servicioId}`, {

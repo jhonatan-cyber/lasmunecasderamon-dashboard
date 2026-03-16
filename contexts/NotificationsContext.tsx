@@ -5,7 +5,6 @@ import { useNotifications } from '@/hooks/notificaciones/useNotifications';
 
 interface NotificationsContextType {
   isConnected: boolean;
-  connectionAttempts: number;
   lastNotification: any;
   pendingOrdersCount: number;
   pendingServiceRequestsCount: number;
@@ -20,7 +19,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   // Memoizar el valor del contexto
   const contextValue = useMemo(() => notifications, [
     notifications.isConnected,
-    notifications.connectionAttempts,
     notifications.lastNotification,
     notifications.pendingOrdersCount,
     notifications.pendingServiceRequestsCount,

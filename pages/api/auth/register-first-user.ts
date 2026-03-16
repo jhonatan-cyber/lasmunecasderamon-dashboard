@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -11,8 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verificar si ya hay usuarios registrados
-
+    // Verificar si ya hay usuarios activos registrados
     const users = (await query('SELECT COUNT(*) as count FROM usuarios WHERE estado = 1')) as any[];
     const userCount = users[0]?.count || 0;
     if (userCount > 0) {
@@ -53,56 +52,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Obtener el ID del rol administrador
+    // Verificar si existe al menos un rol
+    const roles = (await query('SELECT COUNT(*) as count FROM roles')) as any[];
+    const roleCount = roles[0]?.count || 0;
 
-    const adminRole = (await query(
-      'SELECT id_rol FROM roles WHERE nombre = "Administrador"'
-    )) as any[];
+    let rolId: string;
 
-    if (adminRole.length === 0) {
-      return res.status(500).json({
-        success: false,
-        message: 'No se encontró el rol de administrador'
-      });
+    if (roleCount === 0) {
+      // Si no hay roles, crear automáticamente el rol Administrador con un UUID
+      const adminRoleId = generateUUID();
+      await query(
+        'INSERT INTO roles (id_rol, nombre, descripcion, estado) VALUES (?, ?, ?, 1)',
+        [adminRoleId, 'Administrador', 'Rol administrador creado automáticamente', 1]
+      );
+      rolId = adminRoleId;
+    } else {
+      // Obtener el ID del rol administrador si ya existe
+      const adminRole = (await query(
+        'SELECT id_rol FROM roles WHERE nombre = "Administrador" LIMIT 1'
+      )) as any[];
+
+      if (adminRole.length === 0) {
+        const adminRoleId = generateUUID();
+        await query(
+          'INSERT INTO roles (id_rol, nombre, descripcion, estado) VALUES (?, ?, ?, 1)',
+          [adminRoleId, 'Administrador', 'Rol administrador creado automáticamente', 1]
+        );
+        rolId = adminRoleId;
+      } else {
+        rolId = adminRole[0].id_rol;
+      }
     }
-
-    const rolId = adminRole[0].id_rol;
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const result = (await query(
+    // Generar UUID explícito para el primer usuario
+    const userId = generateUUID();
+
+    await query(
       `INSERT INTO usuarios (
-        nombre, apellido, email, password, rol_id, estado,
+        id_usuario, nombre, apellido, email, password, rol_id, estado,
         run, direccion, telefono, estado_civil, afp, aporte, sueldo
-      ) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        userId,
         nombre,
         apellido,
         emailSinCodificar,
         hashedPassword,
         rolId,
-        '00000000-0', // run por defecto
-        'Dirección por defecto', // direccion por defecto
-        '00000000', // telefono por defecto
-        'Soltero', // estado_civil por defecto
-        'Afp', // afp por defecto
-        0, // aporte por defecto
-        0 // sueldo por defecto
+        '00000000-0', 
+        'Dirección por defecto', 
+        '00000000', 
+        'Soltero', 
+        'Afp', 
+        0, 
+        0 
       ]
-    )) as any;
-
-
-
+    );
     return res.status(201).json({
       success: true,
       message: 'Usuario administrador creado exitosamente',
-      userId: result.insertId
+      userId
     });
   } catch (error) {
-    
+    console.error('[register-first-user] Error al crear primer usuario:', error);
+
     return res.status(500).json({
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 }

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query, rawQuery } from '@/lib/db';
+import { query, rawQuery, generateUUID } from '@/lib/db';
 import { z } from 'zod';
 
 const categorySchema = z.object({
@@ -70,9 +70,10 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         .status(400)
         .json({ success: false, message: 'Ya existe una categoría con ese nombre' });
     }
+    const id_categoria = generateUUID();
     const result: any = await query(
-      'INSERT INTO categorias (nombre, descripcion, estado) VALUES (?, ?, 1)',
-      [parse.data.name, parse.data.description]
+      'INSERT INTO categorias (id_categoria, nombre, descripcion, estado) VALUES (?, ?, ?, 1)',
+      [id_categoria, parse.data.name, parse.data.description]
     );
 
     // Notificar a clientes conectados (tiempo real)
@@ -80,7 +81,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       const { sendNotificationToAll } = await import('./notifications/sse');
       sendNotificationToAll('categories_updated', {
         action: 'created',
-        id: (result as any).insertId,
+        id: id_categoria,
         name: parse.data.name
       });
     } catch (err) {
@@ -89,7 +90,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res
       .status(201)
-      .json({ success: true, message: 'Categoría creada correctamente', id: result.insertId });
+      .json({ success: true, message: 'Categoría creada correctamente', id: id_categoria });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error al crear categoría', error });
   }
@@ -132,7 +133,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       const { sendNotificationToAll } = await import('./notifications/sse');
       sendNotificationToAll('categories_updated', {
         action: 'updated',
-        id: Number(id),
+        id: id as string,
         name: parse.data.name
       });
     } catch (err) {
@@ -230,7 +231,7 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
       const { sendNotificationToAll } = await import('./notifications/sse');
       sendNotificationToAll('categories_updated', {
         action: action === 'activate' ? 'activated' : 'deactivated',
-        id: Number(id)
+        id: id as string
       });
     } catch (err) {
       console.warn('[SSE] No se pudo notificar cambio de estado de categoría:', err);
@@ -264,7 +265,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     // Notificar a clientes conectados (eliminación)
     try {
       const { sendNotificationToAll } = await import('./notifications/sse');
-      sendNotificationToAll('categories_updated', { action: 'deleted', id: Number(id) });
+      sendNotificationToAll('categories_updated', { action: 'deleted', id: id as string });
     } catch (err) {
       console.warn('[SSE] No se pudo notificar eliminación de categoría:', err);
     }

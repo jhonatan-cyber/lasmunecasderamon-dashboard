@@ -225,7 +225,6 @@ export default function Clients() {
             {selectedClient && (
               <ClientDetails
                 client={selectedClient}
-                onEdit={handleEditFromDetails}
                 onClose={() => setIsDetailsOpen(false)}
               />
             )}

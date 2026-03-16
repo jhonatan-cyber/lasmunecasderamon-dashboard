@@ -118,14 +118,7 @@ const validateAndProcessImage = async (imageFile: any): Promise<string | null> =
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
-  const userId = parseInt(id as string);
-
-  if (isNaN(userId)) {
-    return res.status(400).json({
-      success: false,
-      message: 'ID de usuario inválido'
-    });
-  }
+  const userId = id as string;
 
   if (req.method === 'GET') {
     try {
@@ -168,7 +161,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         role: user.role_name, // Nombre del rol para mostrar
         estado: user.estado,
         fecha_crea: user.fecha_crea,
-        fecha_mod: user.fecha_mod
+        fecha_mod: user.fecha_mod,
+        qr_token: user.qr_token
       };
 
       return res.status(200).json({

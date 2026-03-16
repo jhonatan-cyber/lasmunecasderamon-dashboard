@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+        error: process.env.NODE_ENV === 'development' ? (error as any).message : 'Error interno'
       },
       message: 'API no disponible'
     });

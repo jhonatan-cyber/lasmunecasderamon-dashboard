@@ -23,6 +23,7 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/roles': { module: 'roles', action: 'view' },
   '/attendance': { module: 'attendance', action: 'view' },
   '/overtime': { module: 'overtime', action: 'view' },
+  '/gratificaciones': { module: 'gratificaciones', action: 'view' },
   '/cash-register': { module: 'cash_register', action: 'view' },
   '/accounts': { module: 'accounts', action: 'view' },
   '/tips': { module: 'tips', action: 'view' },

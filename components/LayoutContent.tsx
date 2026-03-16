@@ -20,7 +20,7 @@ function MainLayout({ children, user }: { children: React.ReactNode, user: any }
       <Sidebar />
       <div className={cn(
         'flex-1 flex flex-col overflow-hidden transition-all duration-300',
-        // Ajustar margen izquierdo en desktop cuando el sidebar está colapsado
+    
         'lg:ml-0' // Reset default margin
       )}>
         <Header />

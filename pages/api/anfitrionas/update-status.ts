@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } = req.body;
 
     if (anfitrionas_liberar.length > 0) {
-      const liberarIds = anfitrionas_liberar.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
+      const liberarIds = anfitrionas_liberar.filter((id: string) => id);
       
       if (liberarIds.length > 0) {
         await query(
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (anfitrionas_ocupar.length > 0) {
-      const ocuparIds = anfitrionas_ocupar.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
+      const ocuparIds = anfitrionas_ocupar.filter((id: string) => id);
       
       if (ocuparIds.length > 0) {
         await query(
@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       if (anfitrionas_ocupar.length > 0) {
-        const ocuparIds = anfitrionas_ocupar.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
+        const ocuparIds = anfitrionas_ocupar.filter((id: string) => id);
         
         for (const userId of ocuparIds) {
           await query(

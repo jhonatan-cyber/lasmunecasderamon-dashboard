@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import useAsistencias from '@/hooks/personal/useAsistencias';
 import { useAttendanceStats } from '@/hooks/personal/useAttendanceStats';
@@ -9,17 +9,27 @@ import AttendanceFilters from '@/components/attendance/AttendanceFilters';
 import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ReportSkeleton } from '@/components/ui/skeletons';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUsers } from '@/hooks/personal/useUsers';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
+import { RefreshCw, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AttendancePage() {
   const { data, loading, error } = useAsistencias();
   const { stats: attendanceStats, loading: statsLoading, error: statsError } = useAttendanceStats();
+  const { users, isLoading: usersLoading } = useUsers();
 
   // Estados para filtros y paginación
   const [searchTerm, setSearchTerm] = useState('');
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
-
-  if (loading || statsLoading) return <ReportSkeleton />;
+  const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
 
   // Filtrar y paginar datos
   const filteredData = useMemo(() => {
@@ -43,66 +53,311 @@ export default function AttendancePage() {
     return filteredData.slice(startIndex, endIndex);
   }, [filteredData, page, pageSize]);
 
+  const activePersonnel = useMemo(() => {
+    if (!users) return [];
+    return users.filter(
+      user =>
+        user.status === 1 &&
+        user.role?.toLowerCase() !== 'administrador' &&
+        user.role?.toLowerCase() !== 'admin'
+    );
+  }, [users]);
+
+  // Polling para actualización del QR en tiempo real
+  useEffect(() => {
+    if (!selectedUserForQR) return;
+    
+    const checkQR = async () => {
+      try {
+        const res = await fetch(`/api/users/${selectedUserForQR.id}`);
+        const data = await res.json();
+        if (data.success && data.user && data.user.qr_token !== selectedUserForQR.qr_token) {
+          setSelectedUserForQR(data.user);
+        }
+      } catch (e) {
+        console.error("Error polling QR status:", e);
+      }
+    };
+
+    const interval = setInterval(checkQR, 15000); // Polling cada 15 segundos
+    
+    window.addEventListener('focus', checkQR);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkQR);
+    };
+  }, [selectedUserForQR?.id, selectedUserForQR?.qr_token]);
+
+  if (loading || statsLoading || usersLoading) return <ReportSkeleton />;
+
   const handleClearFilters = () => {
     setSearchTerm('');
     setPageSize(10);
     setPage(1);
   };
 
+  const handleGenerateQR = async (userId: number) => {
+    try {
+      setIsGeneratingToken(true);
+      const response = await fetch('/api/users/generate-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Token QR generado con éxito');
+        
+        // Actualizar el usuario seleccionado localmente
+        setSelectedUserForQR((prev: any) => 
+          prev && prev.id === userId ? { ...prev, qr_token: result.qr_token } : prev
+        );
+        
+        // Forzar actualización de la lista de usuarios
+        // Podríamos llamar a fetchUsers() aquí si el hook useUsers lo expone,
+        // pero useUsers ya maneja el estado de carga y datos.
+      } else {
+        toast.error(result.message || 'Error al generar el token');
+      }
+    } catch (err) {
+      toast.error('Ocurrió un error inesperado');
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
   // Usar estadísticas del hook basadas en el estado de la caja
   const stats = attendanceStats;
 
+
   return (
-    <PermissionGuard module="attendance" action="view">
+    <PermissionGuard module='attendance' action='view'>
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>Asistencias</h1>
-        </div>
+        <Tabs defaultValue='history' className='w-full'>
+          <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>Asistencias</h1>
+            <TabsList className='flex w-full sm:w-auto h-auto p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700'>
+              <TabsTrigger 
+                value='history' 
+                className='flex-1 sm:flex-none px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300 font-bold text-xs uppercase tracking-wider'
+              >
+                Historial de Asistencias
+              </TabsTrigger>
+              <TabsTrigger 
+                value='personnel'
+                className='flex-1 sm:flex-none px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300 font-bold text-xs uppercase tracking-wider'
+              >
+                Personal
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {error ? (
-          <Card className='shadow-sm'>
-            <CardHeader className='pb-4'>
-              <CardTitle className='text-lg sm:text-xl'>Error</CardTitle>
-              <CardDescription className='text-sm sm:text-base'>
-                Ocurrió un error al cargar los datos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className='p-4 sm:p-6'>
-              <p className='text-sm sm:text-base text-red-500'>{error}</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {/* Estadísticas */}
-            <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
-
-            {/* Filtros */}
-            <AttendanceFilters
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              pageSize={pageSize}
-              setPageSize={setPageSize}
-              page={page}
-              setPage={setPage}
-              totalItems={totalItems}
-              totalPages={totalPages}
-              onClearFilters={handleClearFilters}
-            />
-
-            {/* Tabla de asistencias */}
+          {error ? (
             <Card className='shadow-sm'>
               <CardHeader className='pb-4'>
-                <CardTitle className='text-lg sm:text-xl'>Listado de Asistencias</CardTitle>
+                <CardTitle className='text-lg sm:text-xl'>Error</CardTitle>
+                <CardDescription className='text-sm sm:text-base'>
+                  Ocurrió un error al cargar los datos
+                </CardDescription>
               </CardHeader>
               <CardContent className='p-4 sm:p-6'>
-                <div className='overflow-x-auto'>
-                  <AttendanceTable data={paginatedData} />
-                </div>
+                <p className='text-sm sm:text-base text-red-500'>{error}</p>
               </CardContent>
             </Card>
+          ) : (
+            <>
+
+            <TabsContent value='history' className='space-y-6'>
+              {/* Estadísticas */}
+              <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
+
+              {/* Filtros */}
+              <AttendanceFilters
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                pageSize={pageSize}
+                setPageSize={setPageSize}
+                page={page}
+                setPage={setPage}
+                totalItems={totalItems}
+                totalPages={totalPages}
+                onClearFilters={handleClearFilters}
+              />
+
+              {/* Tabla de asistencias */}
+              <Card className='shadow-sm'>
+                <CardHeader className='pb-4'>
+                  <CardTitle className='text-lg sm:text-xl'>Listado de Asistencias</CardTitle>
+                </CardHeader>
+                <CardContent className='p-4 sm:p-6'>
+                  <div className='overflow-x-auto'>
+                    <AttendanceTable data={paginatedData} />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value='personnel'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+                {activePersonnel.map(person => (
+                  <Card
+                    key={person.id}
+                    className='group relative h-[450px] overflow-hidden rounded-[2.5rem] border-none shadow-2xl hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] dark:hover:shadow-[0_20px_50px_-12px_rgba(255,255,255,0.1)] transition-all duration-700 cursor-pointer active:scale-95'
+                    onClick={() => setSelectedUserForQR(person)}
+                  >
+                    {/* Background Hero Image with Zoom and Filter */}
+                    <div className='absolute inset-0'>
+                      <img
+                        src={person.foto ? `/img/users/${person.foto}` : `/placeholder-user.jpg`}
+                        alt={`${person.name} ${person.lastName}`}
+                        className='h-full w-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1 desaturate-[0.3] group-hover:desaturate-0'
+                        onError={(e) => {
+                           e.currentTarget.src = '/placeholder-user.jpg';
+                        }}
+                      />
+                      {/* Premium Ultra-Dark Gradient Overlay */}
+                      <div className='absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-500' />
+                      
+                      {/* Shine Effect on Hover */}
+                      <div className='absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform [transition-duration:1500ms]' />
+                    </div>
+
+                    {/* Card Content Overlay */}
+                    <div className='absolute inset-0 flex flex-col justify-end p-8'>
+                      <div className='space-y-4 transform translate-y-6 group-hover:translate-y-0 transition-all duration-500 ease-out'>
+                        
+                        <div>
+                          <h3 className='text-3xl font-black text-white leading-tight tracking-tighter uppercase drop-shadow-2xl'>
+                            {person.name}
+                            <span className='block text-slate-300 opacity-80 group-hover:opacity-100 transition-opacity'>{person.lastName}</span>
+                          </h3>
+                        </div>
+
+                        <div className='flex items-center justify-between gap-6 pt-4 border-t border-white/10'>
+                          <div className='flex flex-col gap-1'>
+                            <span className='text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]'>Username</span>
+                            <span className='text-sm font-bold text-white antialiased tracking-wide'>@{person.nick}</span>
+                          </div>
+
+                          <Badge className='bg-white dark:bg-white text-black dark:text-black font-black text-[10px] px-4 py-2 rounded-xl border-none shadow-xl uppercase tracking-widest hover:scale-105 transition-transform'>
+                            {person.role}
+                          </Badge>
+                        </div>
+
+                        {/* Animated Visual Accent Bar */}
+                        <div className='overflow-hidden w-full h-[2px] bg-white/10 rounded-full'>
+                           <div className='w-full h-full bg-white transform -translate-x-full group-hover:translate-x-0 transition-transform duration-1000 ease-in-out' />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Employee ID Chip */}
+                    <div className='absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-10px] group-hover:translate-y-0'>
+                       <div className='h-12 w-12 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center shadow-2xl'>
+                          <span className='text-white font-black text-sm tracking-tighter'>#{person.id}</span>
+                       </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {activePersonnel.length === 0 && (
+                <div className='text-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200'>
+                  <p className='text-slate-500'>No se encontró personal activo registrado.</p>
+                </div>
+              )}
+            </TabsContent>
           </>
         )}
-      </div>
+      </Tabs>
+    </div>
+
+      <Dialog open={!!selectedUserForQR} onOpenChange={(open) => !open && setSelectedUserForQR(null)}>
+        <DialogContent className="sm:max-w-md bg-slate-950 border-slate-800 text-white">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-white mb-2">
+              Código QR de Asistencia
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 font-medium">
+              Muestra este código a la aplicación móvil para registrar la asistencia de {selectedUserForQR?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.3)] my-4">
+            {selectedUserForQR?.qr_token ? (
+              <QRCodeSVG 
+                value={selectedUserForQR.qr_token} 
+                size={240}
+                level="H"
+                includeMargin={true}
+                fgColor={
+                  selectedUserForQR.role?.toLowerCase().includes('anfitriona') ? '#E11D48' :
+                  selectedUserForQR.role?.toLowerCase().includes('garzon') ? '#F97316' :
+                  '#4F46E5'
+                }
+                imageSettings={selectedUserForQR.foto ? {
+                  src: `/img/users/${selectedUserForQR.foto}`,
+                  x: undefined,
+                  y: undefined,
+                  height: 50,
+                  width: 50,
+                  excavate: true,
+                } : undefined}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 space-y-6">
+                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
+                   <UserPlus className="h-10 w-10 text-slate-400" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-slate-900 font-black uppercase tracking-tight text-lg">
+                    Sin Token Asignado
+                  </p>
+                  <p className="text-slate-500 text-xs font-medium max-w-[200px]">
+                    Este usuario aún no tiene un código QR configurado para asistencia.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => handleGenerateQR(selectedUserForQR.id)}
+                  disabled={isGeneratingToken}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-6 px-10 rounded-2xl shadow-xl shadow-indigo-200 uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
+                >
+                  {isGeneratingToken ? (
+                    <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-5 w-5 mr-2" />
+                  )}
+                  Generar QR Ahora
+                </Button>
+              </div>
+            )}
+            
+            <div className="mt-8 flex flex-col items-center">
+               <Avatar className="h-16 w-16 border-2 border-indigo-600 mb-2">
+                 <AvatarImage 
+                   src={selectedUserForQR?.foto ? `/img/users/${selectedUserForQR.foto}` : `/placeholder-user.jpg`} 
+                 />
+                 <AvatarFallback className="bg-slate-200 text-slate-800 font-bold">
+                   {selectedUserForQR?.name?.[0]}{selectedUserForQR?.lastName?.[0]}
+                 </AvatarFallback>
+               </Avatar>
+               <span className="text-slate-900 font-extrabold text-lg uppercase tracking-tight">
+                 {selectedUserForQR?.name} {selectedUserForQR?.lastName}
+               </span>
+               <span className="text-indigo-600 font-bold text-sm">@{selectedUserForQR?.nick}</span>
+            </div>
+          </div>
+          
+          <div className="text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] pb-2">
+            El código se actualizará automáticamente tras el escaneo
+          </div>
+        </DialogContent>
+      </Dialog>
     </PermissionGuard>
   );
 }

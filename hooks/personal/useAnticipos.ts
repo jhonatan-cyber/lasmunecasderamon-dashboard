@@ -5,8 +5,8 @@ import { useCurrentUser } from '../auth/useCurrentUser'
 import { useGenericFetch } from '../shared/useGenericFetch'
 
 export interface Anticipo {
-  id_anticipo: number;
-  usuario_id: number;
+  id_anticipo: number | string;
+  usuario_id: number | string;
   fecha_crea: string;
   fecha_mod: string;
   monto: number;
@@ -37,10 +37,14 @@ export default function useAnticipos(): UseAnticiposReturn {
     }
   )
 
+  const fetchAnticipos = async () => {
+    await refetch()
+  }
+
   return {
     data: data || [],
     loading: isLoading,
     error,
-    fetchAnticipos: refetch
+    fetchAnticipos
   }
 }

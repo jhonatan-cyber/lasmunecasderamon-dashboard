@@ -98,29 +98,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Crear comisiones para cada anfitriona
+      const { generateUUID } = await import('@/lib/db');
       for (const anfitriona of anfitrionas) {
-        const comisionResult: any = await connection(
+        const comisionId = generateUUID();
+        await connection(
           `INSERT INTO comisiones (
+            id_comision,
             venta_id,
             servicio_id,
             monto
-          ) VALUES (?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?)`,
           [
+            comisionId,
             null, // venta_id es null para servicios
             servicio_id,
             comisionTotalPorAnfitriona
           ]
         );
 
-        const comisionId = comisionResult.insertId;
-
         await connection(
           `INSERT INTO detalle_comisiones (
+            id_detalle_comision,
             comision_id,
             usuario_id,
             comision
-          ) VALUES (?, ?, ?)`,
-          [comisionId, anfitriona.usuario_id, comisionTotalPorAnfitriona]
+          ) VALUES (?, ?, ?, ?)`,
+          [generateUUID(), comisionId, anfitriona.usuario_id, comisionTotalPorAnfitriona]
         );
       }
 

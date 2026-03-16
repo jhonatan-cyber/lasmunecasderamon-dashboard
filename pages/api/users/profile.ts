@@ -45,16 +45,47 @@ const parseFormData = (req: NextApiRequest): Promise<any> => {
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+    const userData = getCurrentUser(req);
+    if (!userData) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+
+    if (req.method === 'GET') {
+        try {
+            const users = await query(
+                'SELECT id_usuario, foto, telefono, direccion, estado_civil, nick, nombre, apellido, email, qr_token FROM usuarios WHERE id_usuario = ?',
+                [userData.id]
+            ) as any[];
+
+            if (users.length === 0) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+            }
+
+            const u = users[0];
+            return res.status(200).json({
+                success: true,
+                user: {
+                    id: u.id_usuario,
+                    name: u.nombre,
+                    lastName: u.apellido,
+                    email: u.email,
+                    foto: u.foto,
+                    phone: u.telefono,
+                    address: u.direccion,
+                    estado_civil: u.estado_civil,
+                    nick: u.nick,
+                    qr_token: u.qr_token
+                }
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, message: 'Error al obtener perfil' });
+        }
+    }
+
     if (req.method !== 'PUT') {
         return res.status(405).json({ success: false, message: 'Método no permitido' });
     }
-
     try {
-        const userData = getCurrentUser(req);
-        if (!userData) {
-            return res.status(401).json({ success: false, message: 'No autorizado' });
-        }
-
         const { fields, files } = await parseFormData(req);
         const { nick, telefono, direccion, estado_civil, password } = fields;
 

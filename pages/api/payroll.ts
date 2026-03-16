@@ -21,6 +21,9 @@ SELECT
   IFNULL(HR.total_horas,       0) AS total_horas,
   IFNULL(HR.total_monto_horas, 0) AS total_monto_horas,
 
+  -- Gratificaciones
+  IFNULL(GRAT.total_gratificaciones, 0) AS gratificaciones,
+
   -- Descuento semanal por alojamiento (descuento fijo por semana)
   IFNULL(SEM.semanas * U.descuento, 0) AS descuentos,
 
@@ -29,8 +32,9 @@ SELECT
     IFNULL(ASIS.asistencias * U.sueldo, 0) +
     IFNULL(VEN.total_venta,             0) +
     IFNULL(SERV.total_servicios,        0) +
-    IFNULL(PROP.total_propinas,         0) +
-    IFNULL(HR.total_monto_horas,        0) -
+    IFNULL(PROP.total_propinas,          0) +
+    IFNULL(HR.total_monto_horas,        0) +
+    IFNULL(GRAT.total_gratificaciones,  0) -
     IFNULL(ANT.total_anticipos,         0) -
     IFNULL(ASIS.asistencias * U.aporte, 0) -
     IFNULL(SEM.semanas * U.descuento,   0)
@@ -82,6 +86,13 @@ LEFT JOIN (
   GROUP BY usuario_id
 ) AS HR ON HR.usuario_id = U.id_usuario
 
+LEFT JOIN (
+  SELECT usuario_id, SUM(monto) AS total_gratificaciones
+  FROM gratificaciones
+  WHERE estado = 1 
+  GROUP BY usuario_id
+) AS GRAT ON GRAT.usuario_id = U.id_usuario
+
 -- Semanas trabajadas para aplicar descuento semanal por usuario
 LEFT JOIN (
   SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas
@@ -102,11 +113,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'POST') {
       const { usuario_id } = req.body || {};
-      const userId = Number(usuario_id);
-      if (!userId || Number.isNaN(userId)) {
+      const userId = usuario_id as string;
+      if (!userId) {
         return res
           .status(400)
-          .json({ success: false, message: 'usuario_id es requerido y debe ser numérico' });
+          .json({ success: false, message: 'usuario_id es requerido' });
       }
 
       try {
@@ -181,6 +192,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             [userId]
           )) as any;
 
+          // 8) Gratificaciones: estado 1 -> 0
+          const gratificaciones = (await trx(
+            'UPDATE gratificaciones SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
+            [userId]
+          )) as any;
+
           return {
             affected: {
               asistencias,
@@ -190,7 +207,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               detallePropinas,
               propinas,
               anticipos,
-              horasExtras
+              horasExtras,
+              gratificaciones
             }
           };
         });

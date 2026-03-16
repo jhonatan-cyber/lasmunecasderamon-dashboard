@@ -33,9 +33,9 @@
         "type": "object",
         "properties": {
           "id": { 
-            "type": "integer",
-            "description": "ID único del usuario",
-            "example": 1
+            "type": "string",
+            "description": "ID único del usuario (UUID)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "name": { 
             "type": "string",
@@ -97,18 +97,18 @@
       "Product": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
+          "id": { "type": "string", "example": "7c8b9a12-d4e5-4f6a-8b9c-0d1e2f3g4h5i" },
           "name": { "type": "string" },
           "description": { "type": "string" },
           "price": { "type": "number" },
-          "category_id": { "type": "integer" },
+          "category_id": { "type": "string", "example": "a1b2c3d4-e5f6-4a5b-6c7d-8e9f0a1b2c3d" },
           "status": { "type": "integer" }
         }
       },
       "Client": {
         "type": "object",
         "properties": {
-          "id_cliente": { "type": "integer" },
+          "id_cliente": { "type": "string", "example": "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e" },
           "nombre": { "type": "string" },
           "apellido": { "type": "string" },
           "telefono": { "type": "string" },
@@ -119,10 +119,10 @@
       "Service": {
         "type": "object",
         "properties": {
-          "id_servicio": { "type": "integer" },
+          "id_servicio": { "type": "string", "example": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f" },
           "codigo": { "type": "string" },
-          "cliente_id": { "type": "integer" },
-          "habitacion_id": { "type": "integer" },
+          "cliente_id": { "type": "string", "example": "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e" },
+          "habitacion_id": { "type": "string", "example": "d1e2f3a4-b5c6-4d7e-8f9a-0b1c2d3e4f5a" },
           "precio_habitacion": { "type": "number" },
           "precio_servicio": { "type": "number" },
           "total": { "type": "number" },
@@ -132,9 +132,9 @@
       "Commission": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
-          "user_id": { "type": "integer" },
-          "service_id": { "type": "integer" },
+          "id": { "type": "string", "example": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b" },
+          "user_id": { "type": "string", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "service_id": { "type": "string", "example": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f" },
           "amount": { "type": "number" },
           "percentage": { "type": "number" },
           "status": { "type": "string" }
@@ -257,7 +257,7 @@
                       "success": true,
                       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE2MzQ1Njc4OTAsImV4cCI6MTYzNDU3MTQ5MH0.example",
                       "user": {
-                        "id": 1,
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
                         "name": "Administrador",
                         "lastName": "Sistema",
                         "email": "admin@lasmuñecasderamon.com",
