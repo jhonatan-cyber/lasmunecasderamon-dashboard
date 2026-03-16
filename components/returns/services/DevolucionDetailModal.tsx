@@ -289,6 +289,7 @@ export function DevolucionDetailModal({
               className="border-red-200 focus:border-red-500"
             />
           </div>
+          </div>
         </div>
 
         <div className="flex-shrink-0 border-t px-6 py-4">

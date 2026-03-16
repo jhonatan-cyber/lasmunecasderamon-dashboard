@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `, [caja_id]);
     }
 
-    const resultado = ventasBarras[0] || { total_venta: 0, monto_productos: 0, propinas: 0 };
+    const resultado = (ventasBarras as any)[0] || { total_venta: 0, monto_productos: 0, propinas: 0 };
 
     return res.status(200).json({
       success: true,

@@ -13,7 +13,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Crear tabla de roles
     await query(`
       CREATE TABLE IF NOT EXISTS roles (
-        id_rol INT AUTO_INCREMENT PRIMARY KEY,
+        id_rol VARCHAR(36) PRIMARY KEY,
         nombre VARCHAR(100) NOT NULL UNIQUE,
         descripcion TEXT,
         estado TINYINT DEFAULT 1 COMMENT '1: Activo, 0: Inactivo',
@@ -27,23 +27,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Insertar roles básicos
     await query(`
-      INSERT IGNORE INTO roles (nombre, descripcion, estado) VALUES
-      ('Administrador', 'Acceso completo al sistema con todos los permisos', 1),
-      ('Gerente', 'Gestión de personal, reportes y configuraciones', 1),
-      ('Cajero', 'Gestión de caja, ventas y cobros', 1),
-      ('Mesero', 'Gestión de pedidos y servicios básicos', 1),
-      ('Anfitriona', 'Gestión de habitaciones y servicios especiales', 1),
-      ('Garzon', 'Servicios de mesa y atención al cliente', 1)
+      INSERT IGNORE INTO roles (id_rol, nombre, descripcion, estado) VALUES
+      ('admin-uuid-001', 'Administrador', 'Acceso completo al sistema con todos los permisos', 1),
+      ('gerente-uuid-002', 'Gerente', 'Gestión de personal, reportes y configuraciones', 1),
+      ('cajero-uuid-003', 'Cajero', 'Gestión de caja, ventas y cobros', 1),
+      ('mesero-uuid-004', 'Mesero', 'Gestión de pedidos y servicios básicos', 1),
+      ('anfitriona-uuid-005', 'Anfitriona', 'Gestión de habitaciones y servicios especiales', 1),
+      ('garzon-uuid-006', 'Garzon', 'Servicios de mesa y atención al cliente', 1)
     `);
 
     // Crear tabla de usuarios si no existe
     await query(`
       CREATE TABLE IF NOT EXISTS usuarios (
-        id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+        id_usuario VARCHAR(36) PRIMARY KEY,
         nombre VARCHAR(100) NOT NULL,
         email VARCHAR(100) UNIQUE,
         password VARCHAR(255),
-        rol_id INT,
+        rol_id VARCHAR(36),
         estado TINYINT DEFAULT 1,
         fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         fecha_mod TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

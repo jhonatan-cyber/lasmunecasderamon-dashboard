@@ -11,7 +11,7 @@ interface UseAsistenciasReturn {
   loading: boolean
   error: string | null
   fetchAsistencias: () => Promise<void>
-  registrarAsistencia: (usuarioId: number) => Promise<boolean>
+  registrarAsistencia: (usuarioId: string | number) => Promise<boolean>
 }
 
 export default function useAsistencias(): UseAsistenciasReturn {
@@ -31,7 +31,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
     }
   )
 
-  const registrarAsistencia = useCallback(async (usuarioId: number): Promise<boolean> => {
+  const registrarAsistencia = useCallback(async (usuarioId: string | number): Promise<boolean> => {
     try {
       setMutationError(null)
       const response = await fetch('/api/asistencias', {
@@ -60,11 +60,15 @@ export default function useAsistencias(): UseAsistenciasReturn {
     }
   }, [refetch])
 
+  const fetchAsistencias = useCallback(async () => {
+    await refetch()
+  }, [refetch])
+
   return {
     data: data || [],
     loading: isLoading,
     error: error || mutationError,
-    fetchAsistencias: refetch,
+    fetchAsistencias,
     registrarAsistencia
   }
 }

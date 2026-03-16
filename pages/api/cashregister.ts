@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { Caja, CajaWithUser, CajaResumen } from '@/types/caja';
 import { RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
 const createCajaSchema = z.object({
-  usuario_id_apertura: z.number().min(1, 'ID de usuario es requerido'),
+  usuario_id_apertura: z.string().min(1, 'ID de usuario es requerido'),
   monto_apertura: z.number().min(0, 'El monto de apertura debe ser mayor o igual a 0')
 });
 
@@ -24,9 +24,9 @@ const updateCajaSchema = z.object({
 });
 
 const cierreCajaSchema = z.object({
-  id_caja: z.number().min(1, 'ID de caja es requerido'),
+  id_caja: z.string().min(1, 'ID de caja es requerido'),
   monto_cierre: z.number().min(0, 'El monto de cierre debe ser mayor o igual a 0'),
-  usuario_id_cierre: z.number().min(1, 'ID de usuario de cierre es requerido')
+  usuario_id_cierre: z.string().min(1, 'ID de usuario de cierre es requerido')
 });
 
 // Mapeo de caja desde la base de datos
@@ -259,13 +259,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (id) {
       // Obtener una caja específica por ID
-      const cajaId = parseInt(id as string);
-      if (isNaN(cajaId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de caja inválido'
-        });
-      }
+      const cajaId = id as string;
 
       const results = (await query(
         `
@@ -307,7 +301,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         // Para usuarios con permisos de caja, solo mostrar cajas abiertas
         if (estado !== undefined) {
           whereClause += ' AND c.estado = ?';
-          params.push(parseInt(estado as string));
+          params.push(estado);
         } else {
           // Por defecto, solo mostrar cajas abiertas si tiene permisos
           whereClause += ' AND c.estado = 1';
@@ -396,33 +390,32 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Crear la caja
-    const result = (await query(
+    const cajaId = generateUUID();
+    await query(
       `INSERT INTO cajas (
-        fecha_apertura, 
-        usuario_id_apertura, 
-        monto_apertura, 
-        venta, 
-        efectivo, 
-        tarjeta, 
-        transferencia, 
-        servicio, 
-        devolucion, 
-        iva, 
-        propina, 
-        anticipo, 
+        id_caja,
+        fecha_apertura,
+        usuario_id_apertura,
+        monto_apertura,
+        venta,
+        efectivo,
+        tarjeta,
+        transferencia,
+        servicio,
+        devolucion,
+        iva,
+        propina,
+        anticipo,
         comision,
         estado
-      ) VALUES (NOW(), ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
-      [validatedData.usuario_id_apertura, validatedData.monto_apertura]
-    )) as RowDataPacket[];
-
-    const insertResult = result as any;
-    const cajaId = insertResult.insertId;
+      ) VALUES (?, NOW(), ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
+      [cajaId, validatedData.usuario_id_apertura, validatedData.monto_apertura]
+    );
 
     // Obtener la caja creada
     const result2 = (await query(
       `
-        SELECT 
+        SELECT
           c.*,
           CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre
         FROM cajas c
@@ -460,13 +453,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    const cajaId = parseInt(id);
-    if (isNaN(cajaId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID de caja inválido'
-      });
-    }
+    const cajaId = id;
 
     // Verificar si la caja existe
     const cajaResult = (await query('SELECT id_caja, estado FROM cajas WHERE id_caja = ?', [
@@ -696,13 +683,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     });
   }
 
-  const cajaId = parseInt(id as string);
-  if (isNaN(cajaId)) {
-    return res.status(400).json({
-      success: false,
-      message: 'ID de caja inválido'
-    });
-  }
+  const cajaId = id as string;
 
   try {
     // Verificar si la caja existe

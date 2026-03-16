@@ -178,10 +178,8 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
-    console.log('Preparando FormData...');
     const data = new FormData();
 
-    // Agregar campos de texto
     data.append('code', form.code);
     data.append('name', form.name);
     data.append('category_id', String(categoryId));
@@ -191,35 +189,12 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
     data.append('description', form.description);
     data.append('status', '1'); // Estado activo por defecto
 
-    // ✅ CORRECTO - Enviar el archivo completo, no solo el nombre
     if (form.foto) {
-      console.log('Agregando archivo:', form.foto.name, 'Tamaño:', form.foto.size);
-      data.append('foto', form.foto); // Envía el archivo completo
-    } else {
-      console.log('No hay archivo seleccionado, usando default.png');
-      // Para edición sin cambio de imagen, no enviar el campo foto
-      // El backend mantendrá la imagen existente
-      if (!initialValues) {
-        data.append('foto', 'default.png');
-      }
+      data.append('foto', form.foto);
     }
 
-    // Para edición, agregar el ID
-    if (initialValues && initialValues.id) {
+    if (initialValues?.id) {
       data.append('id', String(initialValues.id));
-      console.log('Modo edición, ID:', initialValues.id);
-    } else {
-      console.log('Modo creación');
-    }
-
-    // Debug: mostrar contenido del FormData
-    console.log('Contenido del FormData:');
-    for (let [key, value] of data.entries()) {
-      if (value instanceof File) {
-        console.log(key, ':', `File(${value.name}, ${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(key, ':', value);
-      }
     }
 
     onSubmit(data);

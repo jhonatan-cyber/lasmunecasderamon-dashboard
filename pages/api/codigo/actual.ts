@@ -6,12 +6,13 @@ import { auditLogger } from '@/lib/logger';
 
 async function getCodigoHandler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Verificar que el usuario sea administrador
+    // Verificar que el usuario sea administrador o cajero
     const userRole = req.headers['x-user-role'] as string;
-    if (!userRole || userRole.toLowerCase() !== 'administrador') {
+    const roleLower = userRole?.toLowerCase();
+    if (!roleLower || (roleLower !== 'administrador' && roleLower !== 'cajero')) {
       return res.status(403).json({
         success: false,
-        message: 'Acceso denegado. Solo administradores pueden ver el código.'
+        message: 'Acceso denegado. Solo administradores y cajeros pueden ver el código.'
       });
     }
 

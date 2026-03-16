@@ -10,7 +10,7 @@ export default async function handler(
   }
 
   try {
-    const userId = parseInt(req.query.userId as string) || 2; // Default: user pedro (cajero)
+    const userId = (req.query.userId as string) || 'admin'; // Fallback to 'admin' or similar if needed, but remove parseInt
     const module = (req.query.module as string) || 'clients';
     const action = (req.query.action as string) || 'view';
 

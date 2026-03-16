@@ -5,6 +5,7 @@ import { useCurrentUser } from "@/hooks/auth/useCurrentUser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { QRCodeSVG } from 'qrcode.react';
 
 interface DashboardData {
   totalAsistencias: number;
@@ -113,6 +114,34 @@ export default function GarzonDashboard() {
     }
   }, [user, loading]);
 
+  // Polling para actualización del QR en tiempo real sin parpadeo
+  const { refetch } = useCurrentUser();
+  useEffect(() => {
+    if (!user?.qr_token) return;
+    
+    const checkToken = async () => {
+      try {
+        const res = await fetch(`/api/users/${user.id}`);
+        const data = await res.json();
+        if (data.success && data.user && data.user.qr_token !== user.qr_token) {
+           refetch(true);
+        }
+      } catch (e) {
+        console.error("Error polling user status:", e);
+      }
+    };
+
+    const interval = setInterval(checkToken, 60000); // Polling cada 60 segundos
+    
+    // También verificar cuando el usuario vuelve a la pestaña
+    window.addEventListener('focus', checkToken);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkToken);
+    };
+  }, [user?.id, user?.qr_token, refetch]);
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
@@ -210,6 +239,34 @@ export default function GarzonDashboard() {
            </div>
          </div>
       </div>
+
+      {/* QR de Asistencia - New Section */}
+      {user?.qr_token && (
+        <Card className="max-w-md mx-auto border-2 border-orange-100 bg-orange-50/30 overflow-hidden">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-lg">Mi Registro de Asistencia</CardTitle>
+            <CardDescription>Escanea este código con tu celular para marcar entrada</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <div className="bg-white p-3 rounded-xl shadow-sm border border-orange-100">
+                <QRCodeSVG 
+                  value={user.qr_token} 
+                  size={160} 
+                  level="H" 
+                  includeMargin={true}
+                  fgColor="#F97316"
+                  imageSettings={user.foto ? {
+                    src: `/img/users/${user.foto}`,
+                    height: 35,
+                    width: 35,
+                    excavate: true,
+                  } : undefined}
+                />
+            </div>
+            <p className="text-[10px] mt-2 text-orange-400 font-mono select-all uppercase">ID: {user.qr_token}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dashboard Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

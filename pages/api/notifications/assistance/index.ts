@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { sendPushByRole } from '@/lib/pushNotifications';
 import { sendNotificationToAll } from '../sse';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -68,13 +68,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                 }
             }
 
-            const insertResult = await query(
-                `INSERT INTO solicitudes_atencion (anfitriona_id, habitacion_id, servicio_id, tipo, mensaje, estado) 
-                 VALUES (?, ?, ?, ?, ?, 0)`,
-                [anfitrionaId, hId, servicioId || null, type || 'Asistencia General', message || null]
-            ) as any;
-
-            const idSolicitud = insertResult.insertId;
+            const idSolicitud = generateUUID();
+            await query(
+                `INSERT INTO solicitudes_atencion (id, anfitriona_id, habitacion_id, servicio_id, tipo, mensaje, estado) 
+                 VALUES (?, ?, ?, ?, ?, ?, 0)`,
+                [idSolicitud, anfitrionaId, hId, servicioId || null, type || 'Asistencia General', message || null]
+            );
 
             const title = '⚠️ Solicitud de Personal';
             const body = `[${anfitrionaNick}] ${finalRoomName ? `en Hab. ${finalRoomName} ` : ''}solicita: ${type}${message ? ` (${message})` : ''}`;

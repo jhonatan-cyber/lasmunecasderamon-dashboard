@@ -46,22 +46,22 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
   };
 
   useEffect(() => {
-    // Solo ejecutar si es administrador
-    if (userRole && userRole.toLowerCase() === 'administrador') {
+    // Solo ejecutar si es administrador o cajero
+    const role = userRole?.toLowerCase();
+    if (role === 'administrador' || role === 'cajero') {
       fetchCodigo();
-
-      // Configurar intervalo para actualizar cada 60 segundos
-      const interval = setInterval(() => {
+      
+      const handleFocus = () => {
         fetchCodigo();
-      }, 60000); // 60 segundos
+      };
 
-      // Limpiar intervalo cuando el componente se desmonte o cambie el rol
-      return () => clearInterval(interval);
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
     }
   }, [userRole]);
 
-  // Solo mostrar para administradores
-  if (!userRole || userRole.toLowerCase() !== 'administrador') {
+  // Mostrar para administradores y cajeros
+  if (!userRole || (userRole.toLowerCase() !== 'administrador' && userRole.toLowerCase() !== 'cajero')) {
     return null;
   }
 
@@ -75,16 +75,6 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
           {codigo || '****'}
         </span>
       </div>
-      <Button
-        onClick={handleManualUpdate}
-        variant='ghost'
-        size='icon'
-        disabled={loading}
-        className='h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800'
-        title='Actualizar código'
-      >
-        <RotateCcw className={`${loading ? 'animate-spin' : ''} w-4 h-4 text-gray-500`} />
-      </Button>
     </div>
   );
 }

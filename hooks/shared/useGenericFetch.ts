@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
+import { z } from 'zod';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -8,11 +9,10 @@ export function useGenericFetch<T>(
   options?: {
     initialFetch?: boolean;
     transform?: (data: any) => T[];
+    schema?: z.ZodSchema<any>;
   }
 ) {
   const queryClient = useQueryClient();
-
-  // Use the endpoint as the query key.
   const queryKey = useMemo(() => [endpoint], [endpoint]);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -30,7 +30,24 @@ export function useGenericFetch<T>(
       }
 
       const result = await response.json();
-      return options?.transform ? options.transform(result) : result;
+      let rawData = options?.transform ? options.transform(result) : result;
+
+      // Validación con Zod
+      if (options?.schema && Array.isArray(rawData)) {
+        try {
+          z.array(options.schema).parse(rawData);
+        } catch (err) {
+          console.error(`[Validation Error] ${endpoint}:`, err);
+        }
+      } else if (options?.schema) {
+        try {
+          options.schema.parse(rawData);
+        } catch (err) {
+          console.error(`[Validation Error] ${endpoint}:`, err);
+        }
+      }
+
+      return rawData;
     },
     enabled: options?.initialFetch !== false,
     staleTime: 1000 * 60 // 1 minute

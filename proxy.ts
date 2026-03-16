@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Rutas públicas que no requieren autenticación
 const PUBLIC_PATHS = [
   '/',
   '/landing',
@@ -50,34 +49,32 @@ const PUBLIC_PATHS = [
   '/access-denied'
 ];
 
-// APIs que requieren autenticación pero no verificación de permisos específicos
-// (accesibles para todos los usuarios autenticados)
 const AUTHENTICATED_ONLY_APIS = [
-  '/api/users/user', // Datos del usuario actual
-  '/api/users', // Lista de usuarios (permisos verificados en frontend)
-  '/api/asistencias/user', // Asistencias del usuario
-  '/api/anticipos/user', // Anticipos del usuario
-  '/api/tips', // Propinas (necesario para ventas/pedidos)
-  '/api/overtime/user', // Horas extras del usuario
-  '/api/orders/user', // Pedidos del usuario
-  '/api/commissions/user', // Comisiones del usuario
-  '/api/stats/logged-users', // Estadísticas de usuarios logueados
-  '/api/anfitrionas', // Lista de anfitrionas (necesario para pedidos)
-  '/api/garzones', // Lista de garzones
-  '/api/habitaciones', // Lista de habitaciones (necesario para servicios)
-  '/api/products', // Lista de productos (necesario para pedidos)
-  '/api/categories', // Lista de categorías (necesario para pedidos)
-  '/api/clients', // Lista de clientes (necesario para pedidos/servicios)
-  '/api/rooms', // Lista de habitaciones
-  '/api/servicios', // Servicios
-  '/api/sales', // Ventas
-  '/api/cashregister/status', // Estado de caja abierta (necesario para usar módulos)
-  '/api/cashregister', // Permitir operaciones de caja y delegar validación a la ruta
-  '/api/cuentas' // Permitir editar/ver cuentas (delegando validación adicional si se requiere)
+  '/api/users/user',
+  '/api/users',
+  '/api/asistencias/user',
+  '/api/anticipos/user',
+  '/api/anticipos/aprobar',
+  '/api/anticipos/maximo',
+  '/api/tips',
+  '/api/overtime/user',
+  '/api/orders/user',
+  '/api/commissions/user',
+  '/api/stats/logged-users',
+  '/api/anfitrionas',
+  '/api/garzones',
+  '/api/habitaciones',
+  '/api/products',
+  '/api/categories',
+  '/api/clients',
+  '/api/rooms',
+  '/api/servicios',
+  '/api/sales',
+  '/api/cashregister/status',
+  '/api/cashregister',
+  '/api/cuentas'
 ];
 
-// Mapeo de rutas a módulos y acciones requeridas
-// IMPORTANTE: Los nombres de módulos y acciones deben coincidir con la tabla 'permissions' en la BD
 const routePermissions: Record<string, { module: string; action: string }> = {
   '/dashboard': { module: 'dashboard', action: 'view' },
   '/users': { module: 'users', action: 'view' },
@@ -90,6 +87,7 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/roles': { module: 'roles', action: 'view' },
   '/attendance': { module: 'attendance', action: 'view' },
   '/overtime': { module: 'overtime', action: 'view' },
+  '/gratificaciones': { module: 'gratificaciones', action: 'view' },
   '/cash-register': { module: 'cash_register', action: 'view' },
   '/accounts': { module: 'accounts', action: 'view' },
   '/tips': { module: 'tips', action: 'view' },
@@ -101,7 +99,6 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/rooms': { module: 'rooms', action: 'view' },
   '/private-rooms': { module: 'private_rooms', action: 'view' },
   '/settings': { module: 'settings', action: 'view' },
-  // Rutas de dashboard - accesibles para todos los usuarios autenticados
   '/garzon-dashboard': { module: 'dashboard', action: 'view' },
   '/garzon-calendar': { module: 'dashboard', action: 'view' },
   '/garzon-asistencias': { module: 'dashboard', action: 'view' },
@@ -122,8 +119,6 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/cajero-horas-extras': { module: 'overtime', action: 'view' }
 };
 
-// Mapeo de rutas API a módulos y acciones
-// IMPORTANTE: Los nombres de módulos y acciones deben coincidir con la tabla 'permissions' en la BD
 const apiRoutePermissions: Record<string, { module: string; action: string }> = {
   '/api/users': { module: 'users', action: 'view' },
   '/api/clients': { module: 'clients', action: 'view' },
@@ -134,6 +129,7 @@ const apiRoutePermissions: Record<string, { module: string; action: string }> = 
   '/api/roles': { module: 'roles', action: 'view' },
   '/api/asistencias': { module: 'attendance', action: 'view' },
   '/api/overtime': { module: 'overtime', action: 'view' },
+  '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
   '/api/cashregister': { module: 'cash_register', action: 'view' },
   '/api/cuentas': { module: 'accounts', action: 'view' },
   '/api/tips': { module: 'tips', action: 'view' },
@@ -162,7 +158,6 @@ async function checkUserPermission(
   request: NextRequest
 ): Promise<boolean> {
   try {
-    // Usar fetch para llamar a la API interna (Edge Runtime no soporta mysql2)
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
     const protocol = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
     const baseUrl = host ? `${protocol}://${host}` : request.nextUrl.origin;
@@ -194,11 +189,9 @@ async function checkUserPermission(
   }
 }
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const searchParams = request.nextUrl.searchParams;
 
-  // 1. Manejo de CORS
   const origin = request.headers.get('origin');
   const isApi = pathname.startsWith('/api/');
 
@@ -216,7 +209,6 @@ export default async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Función auxiliar para añadir headers a cualquier respuesta de API
   const addApiHeaders = (res: NextResponse) => {
     if (isApi) {
       if (origin) {
@@ -230,8 +222,6 @@ export default async function middleware(request: NextRequest) {
     return res;
   };
 
-
-  // 2. Permitir acceso a rutas públicas
   const isPublicPath = PUBLIC_PATHS.some((path: string) => {
     if (path === '/') return pathname === '/';
     if (path === '/_next' || path === '/img' || path === '/fonts') {
@@ -244,7 +234,6 @@ export default async function middleware(request: NextRequest) {
     return addApiHeaders(NextResponse.next());
   }
 
-  // 3. Obtener y verificar token
   const token =
     request.cookies.get('token')?.value ||
     request.headers.get('authorization')?.replace('Bearer ', '');
@@ -261,7 +250,6 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 4. Verificar token JWT
   const payload = await verifyToken(token);
   if (!payload) {
     if (pathname.startsWith('/api/')) {
@@ -276,12 +264,10 @@ export default async function middleware(request: NextRequest) {
   const userRole = (payload.role as string)?.toLowerCase();
   const userId = payload.id as number;
 
-  // 5. Administrador tiene acceso a todo
   if (userRole === 'administrador') {
     return addApiHeaders(NextResponse.next());
   }
 
-  // 6. Verificar permisos para rutas de páginas
   if (!pathname.startsWith('/api/')) {
     const requiredPermission = Object.entries(routePermissions).find(
       ([route]) => pathname === route || pathname.startsWith(route + '/')
@@ -290,7 +276,7 @@ export default async function middleware(request: NextRequest) {
     if (requiredPermission) {
       const [, { module, action }] = requiredPermission;
 
-      console.log('[Middleware] 🔍 Verificando ruta:', {
+      console.log('[Proxy] 🔍 Verificando ruta:', {
         pathname,
         module,
         action,
@@ -298,7 +284,6 @@ export default async function middleware(request: NextRequest) {
         userRole
       });
 
-      // El dashboard es accesible para todos los usuarios autenticados
       if (module === 'dashboard') {
         return addApiHeaders(NextResponse.next());
       }
@@ -311,24 +296,15 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // 7. Verificar permisos para rutas de API
   if (pathname.startsWith('/api/')) {
-    // Verificar si la API está en la lista de APIs que solo requieren autenticación
-    // Considerar tanto la ruta exacta como la ruta base (sin query params)
     const isAuthenticatedOnlyApi = AUTHENTICATED_ONLY_APIS.some(apiPath => {
-      // Verificar coincidencia exacta o si la ruta comienza con el path
       return pathname === apiPath || pathname.startsWith(apiPath + '/');
     });
 
-    // También permitir /api/users con cualquier query parameter (para anfitrionas, garzones, etc.)
-    // pathname nunca incluye query params, así que solo verificamos la ruta base
     const isUsersApi = pathname === '/api/users';
-
-    // Permitir obtener los propios permisos del usuario
     const isOwnPermissionsApi = /^\/api\/users\/\d+\/permissions$/.test(pathname);
 
     if (isAuthenticatedOnlyApi || isUsersApi || isOwnPermissionsApi) {
-      // Solo requiere autenticación, no permisos específicos
       return addApiHeaders(NextResponse.next());
     }
 
@@ -364,13 +340,7 @@ export default async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files
-     */
     '/((?!_next/static|_next/image|favicon.ico|public).*)'
   ]
 };
+

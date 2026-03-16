@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../notifications/sse';
 import { logger } from '@/lib/logger';
@@ -127,12 +127,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const tiempoParsed = parseInt(tiempo) || 0;
     const numClientesParsed = parseInt(num_clientes) || 1;
 
+    const id_solicitud = generateUUID();
+
     logger.info('Insertando solicitud en BD', {
+      id_solicitud,
       cliente_id,
       habitacion_id,
       precioServicio,
       precioHabitacion,
-      comisionAnfitriona,
+      comision_anfitriona,
       anfitrionas_ids,
       metodo_pago,
       tiempoParsed,
@@ -144,10 +147,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const result = (await query(
       `INSERT INTO solicitudes_servicios 
-        (cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids, 
+        (id_solicitud, cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids, 
          num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        id_solicitud,
         cliente_id || null,
         habitacion_id,
         precioServicio,
@@ -164,10 +168,10 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       ]
     )) as any;
 
-    logger.info('Solicitud insertada exitosamente', { insertId: result.insertId });
+    logger.info('Solicitud insertada exitosamente', { id_solicitud });
 
     // Enviar notificación a cajeros y administradores
-    await notificarCajeros(result.insertId);
+    await notificarCajeros(id_solicitud);
 
     // Obtener info adicional para la notificación
     const solicitudInfo = (await query(
@@ -182,15 +186,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
        LEFT JOIN usuarios u ON ss.solicitado_por = u.id_usuario
        WHERE ss.id_solicitud = ?
        LIMIT 1`,
-      [result.insertId]
+      [id_solicitud]
     )) as any[];
 
     const info = solicitudInfo && solicitudInfo.length > 0 ? solicitudInfo[0] : null;
 
     // Enviar notificación SSE a todos los clientes conectados
     sendNotificationToAll('new_service_request', {
-      id: result.insertId,
-      id_solicitud: result.insertId,
+      id: id_solicitud,
+      id_solicitud: id_solicitud,
       codigo: codigo || null,
       tipo: 'servicio',
       total: total,
@@ -226,7 +230,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(201).json({
       success: true,
       message: 'Solicitud de servicio creada exitosamente',
-      data: { id_solicitud: result.insertId }
+      data: { id_solicitud }
     });
   } catch (error: any) {
     logger.error('Error al crear solicitud de servicio', {
@@ -279,7 +283,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     await query('DELETE FROM solicitudes_servicios WHERE id_solicitud = ?', [id]);
 
     sendNotificationToAll('service_request_deleted', {
-      id: Number(id),
+      id: id as string,
       timestamp: new Date().toISOString()
     });
 
@@ -289,7 +293,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-const notificarCajeros = async (solicitudId: number) => {
+const notificarCajeros = async (solicitudId: string) => {
   try {
     // Obtener cajeros y administradores para logging
     const usuarios = (await query(

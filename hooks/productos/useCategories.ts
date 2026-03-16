@@ -44,10 +44,14 @@ export function useCategories(): UseCategoriesReturn {
     transform: result => (result.success ? result.data : [])
   });
 
+  const refetchCategories = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const { create, update, remove } = useGenericMutations<Category>('/api/categories', {
-    onSuccess: refetch,
+    onSuccess: refetchCategories,
     showToasts: false
   });
 
@@ -87,24 +91,24 @@ export function useCategories(): UseCategoriesReturn {
             created_at: new Date().toISOString(),
             display_order: (categories?.length || 0) + 1
           };
-          setData(prev => {
-            const merged = prev ? [newClient, ...prev] : [newClient];
+          setData((prev: Category[] | undefined) => {
+            const merged = [newClient, ...(prev || [])];
             const seen = new Set<number>();
-            return merged.filter(item => {
-              if (seen.has(item.id)) return false;
-              seen.add(item.id);
+            return merged.filter(i => {
+              if (seen.has(i.id)) return false;
+              seen.add(i.id);
               return true;
             });
           });
         } else {
-          await refetch();
+          await refetchCategories();
         }
         return { success: true, message: 'Categoría creada correctamente' };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [create, setData, categories, refetch]
+    [create, setData, categories, refetchCategories]
   );
 
   const updateCategory = useCallback(
@@ -112,20 +116,20 @@ export function useCategories(): UseCategoriesReturn {
       try {
         const res = await update({ id, ...category });
         if (setData) {
-          setData(prev =>
-            (prev || []).map(c =>
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) =>
               c.id === id ? { ...c, ...category, updated_at: new Date().toISOString() } : c
             )
           );
         } else {
-          await refetch();
+          await refetchCategories();
         }
         return { success: true, message: 'Categoría actualizada correctamente' };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [update, setData, refetch]
+    [update, setData, refetchCategories]
   );
 
   const deleteCategory = useCallback(
@@ -133,16 +137,16 @@ export function useCategories(): UseCategoriesReturn {
       try {
         const res = await remove(id);
         if (setData) {
-          setData(prev => (prev || []).filter(c => c.id !== id));
+          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => c.id !== id));
         } else {
-          await refetch();
+          await refetchCategories();
         }
         return { success: true, message: 'Categoría eliminada correctamente' };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [remove, setData, refetch]
+    [remove, setData, refetchCategories]
   );
 
   const activateCategory = useCallback(
@@ -150,7 +154,7 @@ export function useCategories(): UseCategoriesReturn {
       const previous = categories ? [...categories] : [];
       try {
         if (setData) {
-          setData(prev => (prev || []).map(c => (c.id === id ? { ...c, status: 1 } : c)));
+          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, status: 1 } : c)));
         }
 
         const res = await fetch(`/api/categories?id=${id}&action=activate`, { method: 'PATCH' });
@@ -164,9 +168,9 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (setData && data.category) {
-          setData(prev => (prev || []).map(c => (c.id === id ? { ...c, ...data.category } : c)));
+          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, ...data.category } : c)));
         } else {
-          await refetch();
+          await refetchCategories();
         }
 
         const { showSuccessToast } = await import('@/lib/toastUtils');
@@ -179,7 +183,7 @@ export function useCategories(): UseCategoriesReturn {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [categories, setData, refetch]
+    [categories, setData, refetchCategories]
   );
 
   const deactivateCategory = useCallback(
@@ -187,7 +191,7 @@ export function useCategories(): UseCategoriesReturn {
       const previous = categories ? [...categories] : [];
       try {
         if (setData) {
-          setData(prev => (prev || []).map(c => (c.id === id ? { ...c, status: 0 } : c)));
+          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, status: 0 } : c)));
         }
 
         const res = await fetch(`/api/categories?id=${id}&action=deactivate`, { method: 'PATCH' });
@@ -201,9 +205,9 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (setData && data.category) {
-          setData(prev => (prev || []).map(c => (c.id === id ? { ...c, ...data.category } : c)));
+          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, ...data.category } : c)));
         } else {
-          await refetch();
+          await refetchCategories();
         }
 
         const { showSuccessToast } = await import('@/lib/toastUtils');
@@ -216,7 +220,7 @@ export function useCategories(): UseCategoriesReturn {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [categories, setData, refetch]
+    [categories, setData, refetchCategories]
   );
 
   const reorderCategories = useCallback(
@@ -259,7 +263,7 @@ export function useCategories(): UseCategoriesReturn {
           const serverOrder = (newOrder || []).map((c, idx) => ({ ...c, display_order: idx }));
           setData(serverOrder);
         } else {
-          await refetch();
+          await refetchCategories();
         }
 
         const { showSuccessToast } = await import('@/lib/toastUtils');
@@ -274,14 +278,14 @@ export function useCategories(): UseCategoriesReturn {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [categories, setData, refetch]
+    [categories, setData, refetchCategories]
   );
 
   React.useEffect(() => {
     const handler = (e: any) => {
       const payload = e?.detail;
       if (!payload || !setData) {
-        refetch();
+        refetchCategories();
         return;
       }
 
@@ -298,7 +302,7 @@ export function useCategories(): UseCategoriesReturn {
             created_at: new Date().toISOString(),
             display_order: (categories?.length || 0) + 1
           };
-          setData(prev => {
+          setData((prev: Category[] | undefined) => {
             const merged = [newItem, ...(prev || [])];
             const seen = new Set<number>();
             return merged.filter(i => {
@@ -311,8 +315,8 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (action === 'updated') {
-          setData(prev =>
-            (prev || []).map(c =>
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) =>
               c.id === payload.id ? { ...c, name: payload.name ?? c.name } : c
             )
           );
@@ -320,13 +324,13 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (action === 'deleted') {
-          setData(prev => (prev || []).filter(c => c.id !== payload.id));
+          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => c.id !== payload.id));
           return;
         }
 
         if (action === 'reordered' && Array.isArray(payload.order)) {
-          setData(prev => {
-            const prevMap = new Map<number, Category>((prev || []).map(p => [p.id, p]));
+          setData((prev: Category[] | undefined) => {
+            const prevMap = new Map<number, Category>((prev || []).map((p: Category) => [p.id, p]));
             const reordered: Category[] = payload.order
               .map((id: number, idx: number) => {
                 const found = prevMap.get(id);
@@ -341,21 +345,21 @@ export function useCategories(): UseCategoriesReturn {
 
         if (action === 'activated' || action === 'deactivated') {
           const newStatus = action === 'activated' ? 1 : 0;
-          setData(prev =>
-            (prev || []).map(c => (c.id === payload.id ? { ...c, status: newStatus } : c))
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) => (c.id === payload.id ? { ...c, status: newStatus } : c))
           );
           return;
         }
 
-        refetch();
+        refetchCategories();
       } catch (err) {
-        refetch();
+        refetchCategories();
       }
     };
 
     window.addEventListener('categoriesUpdated', handler);
     return () => window.removeEventListener('categoriesUpdated', handler);
-  }, [refetch, setData, categories]);
+  }, [refetchCategories, setData, categories]);
 
   return {
     filteredCategories,

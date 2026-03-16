@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../../notifications/sse';
 import { withTransaction } from '@/lib/transactionUtils';
@@ -124,12 +124,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       // 4. Crear el servicio
-      const resultServicio: any = await connection(
+      const servicioId = generateUUID();
+      await connection(
         `INSERT INTO servicios 
-        (codigo, cliente_id, habitacion_id, precio_servicio, precio_habitacion, 
+        (id_servicio, codigo, cliente_id, habitacion_id, precio_servicio, precio_habitacion, 
          iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado, fecha_crea) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, NOW())`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, NOW())`,
         [
+          servicioId,
           codigo,
           solicitud.cliente_id || null,
           habitacionIdFinal,
@@ -144,8 +146,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           userId
         ]
       );
-
-      const servicioId = resultServicio.insertId;
 
       // Obtener la fecha real de creación desde el servidor DB para el timer
       const [fechaCreaResult]: any = await connection(
@@ -170,13 +170,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
         // Registrar comisiones si son mayores a 0
         if (comisionPorAnfitriona > 0) {
-          const comisionInsert: any = await connection(
-            'INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)',
-            [null, servicioId, comisionPorAnfitriona]
+          const comisionId = generateUUID();
+          await connection(
+            'INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto) VALUES (?, ?, ?, ?)',
+            [comisionId, null, servicioId, comisionPorAnfitriona]
           );
           await connection(
             'INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)',
-            [comisionInsert.insertId, anfitrionaId, comisionPorAnfitriona]
+            [comisionId, anfitrionaId, comisionPorAnfitriona]
           );
         }
 

@@ -41,7 +41,7 @@ export default function AsistenciaForm({ onSubmit, isOpen, onOpenChange }: Asist
     defaultValues: {
       usuario_id: '',
       fecha: new Date().toISOString().split('T')[0],
-      hora: new Date().toTimeString().slice(0, 5),
+      hora: new Date().toISOString().slice(11, 16),
       estado: 'presente',
     },
   })

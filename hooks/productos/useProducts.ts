@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
-export default function useProducts(categoryId?: number) {
+export default function useProducts(categoryId?: string) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
 
@@ -26,12 +26,13 @@ export default function useProducts(categoryId?: number) {
   });
 
   const { create, update, remove } = useGenericMutations<Product>('/api/products', {
-    onSuccess: refetch,
+    onSuccess: () => { refetch(); },
     showToasts: true,
-    entityName: 'Producto'
+    entityName: 'Producto',
+    invalidateKey: endpoint
   });
 
-  const activateProduct = async (id: number) => {
+  const activateProduct = async (id: string | number) => {
     try {
       const res = await fetch(`/api/products?id=${id}&action=activate`, {
         method: 'PATCH'
@@ -48,7 +49,7 @@ export default function useProducts(categoryId?: number) {
     }
   };
 
-  const deactivateProduct = async (id: number) => {
+  const deactivateProduct = async (id: string | number) => {
     try {
       const res = await fetch(`/api/products?id=${id}&action=deactivate`, {
         method: 'PATCH'
@@ -110,7 +111,9 @@ export default function useProducts(categoryId?: number) {
     setSearchTerm,
     filterStatus,
     setFilterStatus,
-    fetchProducts: refetch,
+    fetchProducts: async () => {
+      await refetch();
+    },
     createProduct: create,
     updateProduct: update,
     deleteProduct: remove,

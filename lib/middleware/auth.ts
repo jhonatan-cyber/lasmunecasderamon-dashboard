@@ -46,7 +46,7 @@ export interface UserPermissions {
 }
 
 export interface AuthenticatedUser {
-  id: number;
+  id: string;
   username: string;
   email: string;
   role: string;
@@ -99,7 +99,7 @@ const rolePermissions: Record<string, UserPermissions> = {
   }
 };
 
-async function getUserPermissionsFromDB(userId: number): Promise<UserPermissions> {
+async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions> {
   try {
     const { query } = await import('@/lib/db');
 

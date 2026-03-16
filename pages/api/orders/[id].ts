@@ -42,7 +42,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
       // Notificar a todos los clientes para actualizar contador en tiempo real
       sendNotificationToAll('order_updated', {
-        id: Number(id),
+        id: id as string,
         estado: req.body.estado
       });
 
@@ -112,9 +112,9 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
                 const startTimeIso = dbNow instanceof Date ? dbNow.toISOString() : dbNow;
 
                 sendNotificationToAll('timer_started', {
-                  servicioId: Number(id),
+                  servicioId: id as string,
                   codigo: `PEDIDO_${id}`,
-                  roomId: Number(roomId),
+                  roomId: roomId as string,
                   roomName,
                   duration,
                   startTime: startTimeIso,
@@ -129,7 +129,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
             } else {
               try {
                 sendNotificationToAll('room_occupied', {
-                  roomId: Number(roomId),
+                  roomId: roomId as string,
                   timestamp: new Date().toISOString()
                 });
               } catch (roomNotifyErr) {
@@ -139,7 +139,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
           }
 
           try {
-            notifyOrderProcessed(Number(id));
+            notifyOrderProcessed(id as string);
 
             const orderHeader = (await query('SELECT mesero_id, codigo FROM pedidos WHERE id_pedido = ?', [id])) as any[];
             if (orderHeader && orderHeader.length > 0 && orderHeader[0].mesero_id) {
@@ -165,7 +165,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       if (req.body.estado === 2) {
 
         try {
-          notifyOrderDeleted(Number(id));
+          notifyOrderDeleted(id as string);
         } catch (sseError) {
           console.error('[ORDERS] Error notificando rechazo por SSE:', sseError);
         }
@@ -235,13 +235,13 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
         if (pedidoInfo && pedidoInfo.length > 0) {
 
           sendNotificationToAll('order_deleted', {
-            id: Number(id),
+            id: id as string,
             meseroId: pedidoInfo[0].mesero_id,
             timestamp: new Date().toISOString()
           });
         } else {
           sendNotificationToAll('order_deleted', {
-            id: Number(id),
+            id: id as string,
             timestamp: new Date().toISOString()
           });
         }
@@ -251,7 +251,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
 
 
       try {
-        notifyOrderDeleted(Number(id));
+        notifyOrderDeleted(id as string);
       } catch (sseError) {
         console.error('[ORDERS] Error notificando eliminación por SSE:', sseError);
       }

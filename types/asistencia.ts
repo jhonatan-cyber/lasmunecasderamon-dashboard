@@ -1,6 +1,6 @@
 // types/asistencia.ts
 export interface AsistenciaResumen {
-  id_usuario: number;
+  id_usuario: string;
   nick: string;
   nombre_completo: string;
   total_asistencias: number;

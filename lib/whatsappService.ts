@@ -171,3 +171,60 @@ _El servicio ha terminado y la habitación ha sido liberada._`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
 }
+
+export async function enviarMensajeAnticipo(datos: {
+  numeroAdmin: string;
+  solicitudId: string;
+  usuarioNombre: string;
+  monto: number;
+  motivo: string;
+  token: string;
+  baseUrl: string;
+}): Promise<boolean> {
+  const confirmUrl = `${datos.baseUrl}/confirmar-anticipo?token=${datos.token}`;
+  const fechaActual = new Date().toLocaleDateString('es-ES');
+  
+  const mensaje = `💰 *SOLICITUD DE ANTICIPO*
+
+📋 *Detalles de la solicitud:*
+• ID Solicitud: #${datos.solicitudId}
+• Usuario: ${datos.usuarioNombre}
+• Monto: $${datos.monto.toLocaleString()}
+• Fecha: ${fechaActual}
+
+📝 *Motivo del anticipo:*
+${datos.motivo || 'No especificado'}
+
+👤 *Solicitado por:* ${datos.usuarioNombre}
+
+
+✅ *Para confirmar o rechazar:* ${confirmUrl}
+
+_Haz clic en el link para revisar y procesar esta solicitud desde el panel de administración_`;
+
+  return await enviarWhatsApp(datos.numeroAdmin, mensaje);
+}
+
+export async function enviarRespuestaAnticipo(datos: {
+  numeroUsuario: string;
+  solicitudId: string;
+  monto: number;
+  estado: 'aprobada' | 'rechazada';
+  motivoRechazo?: string;
+}): Promise<boolean> {
+  const emoji = datos.estado === 'aprobada' ? '✅' : '❌';
+  const titulo = datos.estado === 'aprobada' ? 'APROBADO' : 'RECHAZADO';
+  
+  let mensaje = `${emoji} *ANTICIPO ${titulo}*
+
+Hola, tu solicitud de anticipo #${datos.solicitudId} por $${datos.monto.toLocaleString()} ha sido *${datos.estado}*.`;
+
+  if (datos.estado === 'aprobada') {
+    mensaje += `\n\nYa puedes pasar por caja a retirar tu dinero.`;
+  } else if (datos.motivoRechazo) {
+    mensaje += `\n\n*Motivo:* ${datos.motivoRechazo}`;
+  }
+
+  return await enviarWhatsApp(datos.numeroUsuario, mensaje);
+}
+

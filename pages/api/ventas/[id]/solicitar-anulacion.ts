@@ -32,9 +32,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const { id } = req.query;
-  const ventaId = parseInt(id as string);
+  const ventaId = id as string;
 
-  if (isNaN(ventaId)) {
+  if (!ventaId) {
     return res.status(400).json({ error: 'ID de venta inválido' });
   }
 
@@ -116,11 +116,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Guardar token en la base de datos (crear tabla si no existe)
     try {
+      const { generateUUID } = await import('@/lib/db');
       // Crear tabla si no existe
       await query(
         `CREATE TABLE IF NOT EXISTS solicitudes_anulacion (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          venta_id INT NOT NULL,
+          id VARCHAR(36) PRIMARY KEY,
+          venta_id VARCHAR(36) NOT NULL,
           token VARCHAR(255) UNIQUE NOT NULL,
           estado ENUM('pendiente', 'confirmada', 'rechazada') DEFAULT 'pendiente',
           fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -146,8 +147,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
 
       await query(
-        'INSERT INTO solicitudes_anulacion (venta_id, token, solicitado_por, motivo) VALUES (?, ?, ?, ?)',
-        [ventaId, token, usuarioNombre, motivo]
+        'INSERT INTO solicitudes_anulacion (id, venta_id, token, solicitado_por, motivo) VALUES (?, ?, ?, ?, ?)',
+        [generateUUID(), ventaId, token, usuarioNombre, motivo]
       );
     } catch (error) {
       console.error('Error al guardar token:', error);

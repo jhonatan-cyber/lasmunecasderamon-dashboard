@@ -57,7 +57,7 @@ export const useSales = () => {
     await refetch();
   }, [refetch]);
 
-  const getVentaById = async (id: number): Promise<VentaWithDetails | null> => {
+  const getVentaById = async (id: string | number): Promise<VentaWithDetails | null> => {
     try {
       const response = await fetch(`/api/ventas/${id}`);
       if (!response.ok) {
@@ -94,7 +94,9 @@ export const useSales = () => {
       }
 
       const nuevaVenta = await response.json();
-      setVentas(prev => [nuevaVenta.data, ...prev]);
+      if (setVentas) {
+        setVentas((prev: VentaWithDetails[] | undefined) => [nuevaVenta.data, ...(prev || [])]);
+      }
       return nuevaVenta;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -110,7 +112,7 @@ export const useSales = () => {
     }
   }, [setVentas]);
 
-  const updateVenta = useCallback(async (id: number, ventaData: VentaUpdate): Promise<boolean> => {
+  const updateVenta = useCallback(async (id: string | number, ventaData: VentaUpdate): Promise<boolean> => {
     setMutationLoading(true);
     setError(null);
     try {
@@ -139,7 +141,7 @@ export const useSales = () => {
     }
   }, [getVentas, currentFilters]);
 
-  const deleteVenta = useCallback(async (id: number): Promise<boolean> => {
+  const deleteVenta = useCallback(async (id: string | number): Promise<boolean> => {
     setMutationLoading(true);
     setError(null);
     try {
@@ -152,7 +154,9 @@ export const useSales = () => {
         throw new Error(errorData.message || 'Error al eliminar venta');
       }
 
-      setVentas(prev => prev.filter(venta => venta.id !== id));
+      if (setVentas) {
+        setVentas((prev: VentaWithDetails[] | undefined) => (prev || []).filter((venta: VentaWithDetails) => String(venta.id) !== String(id)));
+      }
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -192,7 +196,7 @@ export const useSales = () => {
     }
   }, []);
 
-  const cancelarVenta = useCallback(async (id: number, motivo?: string): Promise<boolean> => {
+  const cancelarVenta = useCallback(async (id: string | number, motivo?: string): Promise<boolean> => {
     try {
       const response = await fetch(`/api/ventas/${id}/solicitar-anulacion`, {
         method: 'POST',
@@ -213,7 +217,7 @@ export const useSales = () => {
     }
   }, []);
 
-  const devolverVenta = useCallback(async (id: number, motivo?: string): Promise<boolean> => {
+  const devolverVenta = useCallback(async (id: string | number, motivo?: string): Promise<boolean> => {
     try {
       const response = await fetch(`/api/ventas/${id}/devolver`, {
         method: 'POST',

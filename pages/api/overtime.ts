@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -125,8 +125,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // Convertir los datos para asegurar tipos correctos
       const processedRows = rowsArray.map((row: any) => ({
-        id_hora_extra: Number(row.id_hora_extra),
-        id_usuario: Number(row.id_usuario),
+        id_hora_extra: row.id_hora_extra,
+        id_usuario: row.id_usuario,
         usuario: String(row.usuario),
         hora: Number(row.hora),
         monto: Number(row.monto),
@@ -188,20 +188,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
+      const id = generateUUID();
       // Insertar en la base de datos
-      const result = (await query(
+      await query(
         `
-        INSERT INTO horas_extras (usuario_id, hora, monto, total, estado)
-        VALUES (?, ?, ?, ?, 1)
+        INSERT INTO horas_extras (id_hora_extra, usuario_id, hora, monto, total, estado)
+        VALUES (?, ?, ?, ?, ?, 1)
       `,
-        [usuario_id, hora, monto, total]
-      )) as any;
+        [id, usuario_id, hora, monto, total]
+      );
 
       return res.status(201).json({
         success: true,
         message: 'Hora extra creada exitosamente',
         data: {
-          id: result.insertId,
+          id: id,
           usuario_id,
           hora,
           monto,

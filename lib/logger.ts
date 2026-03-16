@@ -19,39 +19,38 @@ export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: logFormat,
   transports: [
-
     new winston.transports.File({
       filename: path.join(process.cwd(), 'logs', 'error.log'),
       level: 'error',
       maxsize: 5242880,
-      maxFiles: 5,
+      maxFiles: 5
     }),
 
     new winston.transports.File({
       filename: path.join(process.cwd(), 'logs', 'combined.log'),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
+      maxsize: 5242880,
+      maxFiles: 5
     }),
-    // Logs de auditoría
+
     new winston.transports.File({
       filename: path.join(process.cwd(), 'logs', 'audit.log'),
       level: 'info',
-      maxsize: 5242880, // 5MB
-      maxFiles: 10,
-    }),
-  ],
+      maxsize: 5242880,
+      maxFiles: 10
+    })
+  ]
 });
 
-// Agregar transporte de consola en desarrollo
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: consoleFormat
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: consoleFormat
+    })
+  );
 }
 
-// Funciones helper para logging específico
 export const auditLogger = {
-  login: (userId: number, ip: string, success: boolean) => {
+  login: (userId: string, ip: string, success: boolean) => {
     if (process.env.NODE_ENV !== 'production') {
       logger.info('Login attempt', {
         userId,
@@ -63,7 +62,7 @@ export const auditLogger = {
     }
   },
 
-  logout: (userId: number, ip: string) => {
+  logout: (userId: string, ip: string) => {
     if (process.env.NODE_ENV !== 'production') {
       logger.info('Logout', {
         userId,
@@ -74,7 +73,7 @@ export const auditLogger = {
     }
   },
 
-  dataAccess: (userId: number, action: string, resource: string, details?: any) => {
+  dataAccess: (userId: string, action: string, resource: string, details?: any) => {
     if (process.env.NODE_ENV !== 'production') {
       logger.info('Data access', {
         userId,
@@ -87,7 +86,7 @@ export const auditLogger = {
     }
   },
 
-  securityEvent: (userId: number, event: string, details: any) => {
+  securityEvent: (userId: string, event: string, details: any) => {
     if (process.env.NODE_ENV !== 'production') {
       logger.warn('Security event', {
         userId,
@@ -110,4 +109,4 @@ export const auditLogger = {
   }
 };
 
-export default logger; 
+export default logger;

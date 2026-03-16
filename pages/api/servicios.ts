@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
@@ -184,10 +184,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       const result = await withTransaction(async connection => {
         // 1. Insertar servicio
-        const servicioResult: any = await connection(
-          `INSERT INTO servicios (codigo, cliente_id, habitacion_id, precio_habitacion, precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)`,
+        const servicioId = generateUUID();
+        await connection(
+          `INSERT INTO servicios (id_servicio, codigo, cliente_id, habitacion_id, precio_habitacion, precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)`,
           [
+            servicioId,
             codigo,
             clienteIdFinal,
             habitacion_id,
@@ -202,7 +204,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             createdBy
           ]
         );
-        const servicioId = servicioResult.insertId;
 
         // 2. Ocupar habitación si no es libre
         const roomInfo = (await connection(
@@ -264,13 +265,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
           for (const uId of usuarios) {
             if (finalComision > 0) {
-              const cRes: any = await connection(
-                `INSERT INTO comisiones (venta_id, servicio_id, monto, estado) VALUES (null, ?, ?, 1)`,
-                [servicioId, finalComision]
+              const comisionId = generateUUID();
+              await connection(
+                `INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto, estado) VALUES (?, null, ?, ?, 1)`,
+                [comisionId, servicioId, finalComision]
               );
               await connection(
                 `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision, estado) VALUES (?, ?, ?, 1)`,
-                [cRes.insertId, uId, finalComision]
+                [comisionId, uId, finalComision]
               );
             }
             await connection(
@@ -357,7 +359,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         // SSE: User status updated for each anfitriona
         if (result.anfitrionasIds?.length > 0) {
-          result.anfitrionasIds.forEach((uId: number) => {
+          result.anfitrionasIds.forEach((uId: string) => {
             sendNotificationToAll('user_status_updated', {
               userId: uId,
               status: 2 // Ocupado

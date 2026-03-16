@@ -1,9 +1,9 @@
 // Tipos para servicios
 export interface Servicio {
-  id_servicio?: number;
+  id_servicio?: string;
   codigo: string;
-  cliente_id: number;
-  habitacion_id: number;
+  cliente_id: string;
+  habitacion_id: string;
   precio_habitacion: number;
   precio_servicio: number;
   iva: number;
@@ -21,7 +21,7 @@ export interface ServicioWithDetails extends Servicio {
   habitacion_comision?: number;
   anfitrionas_nombres?: string;
   total_usuarios?: number;
-  created_by?: number;
+  created_by?: string;
   creator_name?: string;
 }
 
@@ -57,13 +57,13 @@ export interface PaginationData {
 
 // Tipos para formularios
 export interface ServiceFormData {
-  cliente_id: number;
-  habitacion_id: number | null;
+  cliente_id: string;
+  habitacion_id: string | null;
   precio_servicio: number;
   iva: number;
   tiempo: number;
   metodo_pago: string;
-  usuarios: number[];
+  usuarios: string[];
 }
 
 // Tipos para validación
@@ -77,5 +77,5 @@ export interface ServiceActions {
   handleCreateServicio: () => void;
   handleShowActiveServices: () => Promise<void>;
   handleShowAllServices: () => Promise<void>;
-  handleStopTimer: (servicioId: number) => Promise<void>;
+  handleStopTimer: (servicioId: string) => Promise<void>;
 } 
