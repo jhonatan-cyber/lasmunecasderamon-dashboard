@@ -162,19 +162,24 @@ export default function OrdersPage() {
     fetchServicios();
   }, [fetchOrders, fetchServicios]);
 
-  // Fallback: refetch cada 15 segundos para asegurar actualización en tiempo real
+  // Fallback: refetch cada 60 segundos o al recuperar el foco
   useEffect(() => {
-    console.log('[ORDERS PAGE] ⏰ Iniciando polling cada 15 segundos como fallback');
     const interval = setInterval(() => {
-      console.log('[ORDERS PAGE] 🔄 Refetch automático cada 15 segundos (fallback)');
       fetchOrders();
-    }, 15000);
+    }, 60000);
+
+    const handleFocus = () => {
+      fetchOrders();
+      fetchServicios();
+    };
+
+    window.addEventListener('focus', handleFocus);
 
     return () => {
-      console.log('[ORDERS PAGE] ⏰ Limpiando polling interval');
       clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, fetchServicios]);
 
   useEffect(() => {
     filterOrders();
@@ -211,17 +216,13 @@ export default function OrdersPage() {
         }
       }
 
-      console.log('[ORDERS PAGE] 📢 Listener updatePendingOrders EJECUTADO', { eventType, orderId, detail });
-
       // Manejar eventos específicos
       if (eventType === 'order-created') {
-        console.log('[ORDERS PAGE] ✅ NUEVO PEDIDO DETECTADO - Refrescando lista');
         fetchOrders();
         return;
       }
 
       if (orderId) {
-        console.log(`[ORDERS PAGE] 🗑️ Pedido ${orderId} eliminado - Actualizando lista`);
         setOrders(prev => prev.filter(o => o.id_pedido !== orderId));
         setFilteredOrders(prev => prev.filter(o => o.id_pedido !== orderId));
         if (selectedOrderId === orderId) {
@@ -236,12 +237,10 @@ export default function OrdersPage() {
       }
 
       // Si no hay detalles específicos, refetch completo
-      console.log('[ORDERS PAGE] 🔄 Refrescando lista sin detalles específicos');
       fetchOrders();
     };
 
     const handleUpdateServiceRequests = () => {
-      console.log('[ORDERS PAGE] 🔔 Actualizando solicitudes de servicio');
       fetchServicios();
     };
 

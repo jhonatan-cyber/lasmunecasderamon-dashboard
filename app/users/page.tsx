@@ -11,7 +11,7 @@ import { UserForm, UserFormValues } from '@/components/users/UserForm';
 import { DeleteUserConfirmModal } from '@/components/users/DeleteUserConfirmModal';
 import { ExportButtons } from '@/components/users/ExportButtons';
 import { Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate } from '@/lib/formatters';
@@ -311,6 +311,7 @@ export default function Users() {
           <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl max-h-[90vh] flex flex-col p-0'>
             <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
               <DialogTitle className='text-lg sm:text-xl'>Detalles del Usuario</DialogTitle>
+              <DialogDescription className='sr-only'>Información detallada del usuario</DialogDescription>
             </DialogHeader>
             <div className='flex-1 overflow-y-auto px-6 py-4'>
               {selectedUser && <UserDetails user={selectedUser} />}
@@ -324,6 +325,9 @@ export default function Users() {
               <DialogTitle className='text-lg sm:text-xl'>
                 {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
               </DialogTitle>
+              <DialogDescription className='sr-only'>
+                {isEditing ? 'Formulario para editar usuario' : 'Formulario para crear nuevo usuario'}
+              </DialogDescription>
             </DialogHeader>
             <div className='flex-1 overflow-y-auto px-6 py-4'>
               <UserForm

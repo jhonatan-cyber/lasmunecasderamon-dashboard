@@ -69,19 +69,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ])) as any[];
         const propinaVenta = Number(ventaData?.propina || 0);
 
+        const { generateUUID } = await import('@/lib/db');
         // 2. Registrar la DEVOLUCIÓN en las tablas específicas
-        const devVentaResult: any = await connection(
-          'INSERT INTO devoluciones_ventas (cliente_id, venta_id, total, fecha_crea, estado) VALUES (?, ?, ?, NOW(), 1)',
-          [solicitud.cliente_id || 0, ventaId, totalVenta]
+        const devVentaId = generateUUID();
+        await connection(
+          'INSERT INTO devoluciones_ventas (id, cliente_id, venta_id, total, fecha_crea, estado) VALUES (?, ?, ?, ?, NOW(), 1)',
+          [devVentaId, solicitud.cliente_id || 0, ventaId, totalVenta]
         );
-        const devVentaId = devVentaResult.insertId;
 
         for (const dv of detallesVenta) {
-          const detDevResult: any = await connection(
-            'INSERT INTO detalle_devoluciones_ventas (devolucion_venta_id, producto_id, cantidad, precio, comision, fecha_crea, estado) VALUES (?, ?, ?, ?, ?, NOW(), 1)',
-            [devVentaId, dv.producto_id, dv.cantidad, dv.precio, dv.comision]
+          const detDevId = generateUUID();
+          await connection(
+            'INSERT INTO detalle_devoluciones_ventas (id, devolucion_venta_id, producto_id, cantidad, precio, comision, fecha_crea, estado) VALUES (?, ?, ?, ?, ?, ?, NOW(), 1)',
+            [detDevId, devVentaId, dv.producto_id, dv.cantidad, dv.precio, dv.comision]
           );
-          const detDevId = detDevResult.insertId;
 
           for (const uv of usuariosVenta) {
             await connection(

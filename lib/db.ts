@@ -18,20 +18,16 @@ const defaultConfig: DatabaseConfig & { timezone?: string } = {
   database: process.env.DB_NAME || 'lasmunecasderamon',
   port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
-  connectionLimit: 20,  // Aumentado para soportar más concurrencia
+  connectionLimit: 50,
   queueLimit: 0,
-  timezone: '-04:00'
+  timezone: process.env.DB_TZ || 'Z'
 };
-
-// Pool singleton — reutiliza conexiones, no crea una nueva por cada query
 const pool = mysql.createPool(defaultConfig);
 
-// Function to execute SQL queries — usa pool (conexiones reutilizadas)
-export async function query(sql: string, params: any[] = []) {
+export async function query(sql: string, params: any[] = []): Promise<any> {
   const conn = await pool.getConnection();
   try {
-    // conn.query() en lugar de conn.execute() — execute() usa prepared statements
-    // que NO soportan subqueries (ej: SET SESSION ... = (SELECT ...)) ni GROUP_CONCAT
+    await conn.query("SET time_zone = '+00:00'");
     await conn.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
     const [rows] = await conn.query(sql, params);
     return rows;
@@ -54,8 +50,17 @@ export async function testConnection() {
   }
 }
 
+export function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export default {
   query,
   testConnection,
-  pool
+  pool,
+  generateUUID
 };

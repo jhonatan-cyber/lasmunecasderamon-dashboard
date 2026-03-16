@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withAuth } from "@/lib/middleware/auth";
-import { query } from "@/lib/db";
+import { query, generateUUID } from "@/lib/db";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
@@ -16,7 +16,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           fecha_mod,
           fecha_baja
         FROM roles 
-        WHERE estado = 1
         ORDER BY nombre`
       ) as any[];
 
@@ -46,15 +45,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
-      const result = await query(
-        "INSERT INTO roles (nombre, descripcion, estado) VALUES (?, ?, 1)",
-        [name, description]
-      ) as any;
+      const id = generateUUID();
+      await query(
+        "INSERT INTO roles (id_rol, nombre, descripcion, estado) VALUES (?, ?, ?, 1)",
+        [id, name, description]
+      );
 
       return res.status(201).json({
         success: true,
         message: "Rol creado correctamente",
-        data: { id: result.insertId }
+        data: { id: id }
       });
     } catch (error) {
       

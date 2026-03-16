@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -39,18 +39,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const result = await query(
+      const id = generateUUID();
+      await query(
         `
-        INSERT INTO permissions (name, description, module, action) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO permissions (id, name, description, module, action) 
+        VALUES (?, ?, ?, ?, ?)
       `,
-        [name, description, module, action]
+        [id, name, description, module, action]
       );
-
+ 
       res.status(201).json({
         success: true,
         message: 'Permiso creado correctamente',
-        data: { id: (result as any).insertId }
+        data: { id: id }
       });
     } catch (error) {
       res.status(500).json({

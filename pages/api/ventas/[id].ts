@@ -4,11 +4,7 @@ import { sendNotificationToAll } from "../notifications/sse";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
-  const ventaId = parseInt(id as string);
-
-  if (isNaN(ventaId)) {
-    return res.status(400).json({ error: "ID de venta inválido" });
-  }
+  const ventaId = id as string;
 
   if (req.method === "GET") {
     try {

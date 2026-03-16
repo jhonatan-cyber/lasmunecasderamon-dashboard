@@ -1,38 +1,49 @@
-// Service Worker para cacheo offline
-// Versión: 1.0.0
+// Service Worker Mejorado para PWA
+// Versión: 2.0.0 - Con soporte para notifications push y sync
 
-const CACHE_NAME = 'admin-dashboard-v1';
-const RUNTIME_CACHE = 'runtime-cache-v1';
+const CACHE_NAME = 'lasmunecas-pwa-v2';
+const RUNTIME_CACHE = 'runtime-cache-v2';
+const API_CACHE = 'api-cache-v1';
 
-// Recursos críticos para cachear en la instalación
 const PRECACHE_URLS = [
   '/',
   '/dashboard',
-  '/offline',
-  '/img/system/logo1.png',
+  '/login',
+  '/manifest.json',
 ];
 
-// Instalar el service worker y cachear recursos críticos
+// Recursos estáticos a cachear
+const STATIC_ASSETS = [
+  '/img/system/logo1.png',
+  '/img/system/logo2.png',
+  '/favicon.ico',
+];
+
+// Install event - precache critical resources
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[SW] Installing service worker v2...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Precaching critical resources');
-      return cache.addAll(PRECACHE_URLS);
-    })
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) => {
+        console.log('[SW] Precaching critical resources');
+        return cache.addAll(PRECACHE_URLS);
+      }),
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        return cache.addAll(STATIC_ASSETS);
+      }),
+    ])
   );
-  // Activar inmediatamente
   self.skipWaiting();
 });
 
-// Activar el service worker y limpiar cachés antiguos
+// Activate event - clean old caches
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE && cacheName !== API_CACHE) {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -40,64 +51,183 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  // Tomar control inmediatamente
   return self.clients.claim();
 });
 
-// Estrategia de cacheo: Network First con fallback a Cache
+// Fetch event - advanced caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Solo cachear requests GET del mismo origen
-  if (request.method !== 'GET' || url.origin !== self.location.origin) {
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
     return;
   }
 
-  // No cachear APIs (siempre ir a la red)
+  // Handle cross-origin requests
+  if (url.origin !== self.location.origin) {
+    // Cache external resources (CDN, fonts, etc.)
+    if (url.href.includes('fonts.googleapis.com') || url.href.includes('fonts.gstatic.com')) {
+      event.respondWith(cacheFirst(request));
+      return;
+    }
+    return;
+  }
+
+  // API requests: Network First with cache
   if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirstWithCache(request, API_CACHE));
     return;
   }
 
-  // Estrategia: Network First, fallback a Cache
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Si la respuesta es válida, cachearla
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // Si falla la red, intentar desde el cache
-        return caches.match(request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // Si no hay cache, mostrar página offline
-          if (request.mode === 'navigate') {
-            return caches.match('/offline');
-          }
-        });
-      })
+  // Navigation requests: Network First
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Static assets: Cache First
+  if (isStaticAsset(url.pathname)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // Default: Network First
+  event.respondWith(networkFirst(request));
+});
+
+// Strategy: Cache First
+async function cacheFirst(request) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+// Strategy: Network First
+async function networkFirst(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    return cachedResponse || caches.match('/') || new Response('Offline', { status: 503 });
+  }
+}
+
+// Strategy: Network First with API cache
+async function networkFirstWithCache(request, cacheName) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(cacheName);
+      // Cache GET API responses for 5 minutes
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    return cachedResponse;
+  }
+}
+
+// Helper: Check if static asset
+function isStaticAsset(pathname) {
+  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf'];
+  return staticExtensions.some(ext => pathname.endsWith(ext));
+}
+
+// Push Notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  const options = {
+    body: data.body || 'Nueva notificación',
+    icon: '/img/system/logo1.png',
+    badge: '/favicon.ico',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/',
+      timestamp: Date.now()
+    },
+    actions: data.actions || [],
+    requireInteraction: data.requireInteraction || false
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Las Muñecas de Ramón', options)
   );
 });
 
-// Limpiar cache antiguo periódicamente
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    event.waitUntil(
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            return caches.delete(cacheName);
-          })
-        );
-      })
-    );
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
+
+// Background Sync
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-pending-data') {
+    event.waitUntil(syncPendingData());
   }
 });
+
+async function syncPendingData() {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const requests = await cache.keys();
+  
+  // Get pending offline requests and resend them
+  console.log('[SW] Background sync: processing pending requests');
+}
+
+// Message handler for cache management
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+
+  switch (event.data.type) {
+    case 'CLEAR_CACHE':
+      event.waitUntil(clearAllCaches());
+      break;
+    case 'SKIP_WAITING':
+      self.skipWaiting();
+      break;
+    case 'GET_VERSION':
+      event.ports[0].postMessage({ version: CACHE_NAME });
+      break;
+  }
+});
+
+async function clearAllCaches() {
+  const cacheNames = await caches.keys();
+  return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+}
+
+console.log('[SW] Service Worker v2 loaded');

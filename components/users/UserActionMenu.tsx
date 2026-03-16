@@ -14,9 +14,9 @@ interface UserActionMenuProps {
   user: UserType;
   onViewDetails: (user: UserType) => void;
   onEdit: (user: UserType) => void;
-  onActivate: (userId: number) => void;
-  onDeactivate: (userId: number) => void;
-  onDelete: (userId: number) => void;
+  onActivate: (userId: string | number) => void;
+  onDeactivate: (userId: string | number) => void;
+  onDelete: (userId: string | number) => void;
   canViewDetails: boolean;
   canEdit: boolean;
   canActivate: boolean;

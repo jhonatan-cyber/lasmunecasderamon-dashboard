@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const servicioId = parseInt(id);
+  const servicioId = id;
 
   if (req.method === 'GET') {
     try {

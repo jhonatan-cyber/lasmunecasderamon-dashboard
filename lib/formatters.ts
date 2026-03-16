@@ -47,6 +47,8 @@ export const formatCurrencyNoDecimals = (value: number | string | undefined): st
   return `$${roundedValue.toLocaleString('es-CL')}`;
 };
 
+export const SYSTEM_TIMEZONE = 'America/La_Paz';
+
 export const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Sin fecha';
 
@@ -55,7 +57,8 @@ export const formatDate = (dateString: string | null | undefined): string => {
     return date.toLocaleDateString('es-CL', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: SYSTEM_TIMEZONE
     });
   } catch (error) {
     return 'Fecha inválida';
@@ -67,9 +70,13 @@ import { es } from 'date-fns/locale';
 
 export function formatFechaLarga(fecha: string | Date) {
   try {
-    return format(new Date(fecha), 'dd/MMMM/yyyy', { locale: es })
-      .replace(/\b([a-z])/g, l => l.toLowerCase())
-      .replace('/', '/');
+    const date = new Date(fecha);
+    return new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      timeZone: SYSTEM_TIMEZONE
+    }).format(date).toLowerCase();
   } catch {
     return 'Fecha no válida';
   }
@@ -77,9 +84,16 @@ export function formatFechaLarga(fecha: string | Date) {
 
 export function formatFechaConHora(fecha: string | Date) {
   try {
-    return format(new Date(fecha), 'dd/MMMM/yyyy HH:mm', { locale: es })
-      .replace(/\b([a-z])/g, l => l.toLowerCase())
-      .replace('/', '/');
+    const date = new Date(fecha);
+    return new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: SYSTEM_TIMEZONE
+    }).format(date).toLowerCase();
   } catch {
     return 'Fecha no válida';
   }
@@ -97,7 +111,13 @@ export function formatSoloFecha(fecha: string | Date) {
 
 export function formatSoloHora(fecha: string | Date) {
   try {
-    return format(new Date(fecha), 'HH:mm', { locale: es });
+    const date = new Date(fecha);
+    return new Intl.DateTimeFormat('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: SYSTEM_TIMEZONE
+    }).format(date);
   } catch {
     return 'Hora no válida';
   }

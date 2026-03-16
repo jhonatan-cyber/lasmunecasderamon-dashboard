@@ -18,6 +18,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
 import { ProfileSkeleton } from '@/components/ui/skeletons';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -463,6 +464,25 @@ export default function ProfilePage() {
     }
   };
 
+  // Polling para actualización del QR en tiempo real si el usuario tiene un token
+  useEffect(() => {
+    if (!userData?.qr_token || isAdmin) return; // No pollear si es admin (ya maneja su selector) o no tiene token
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/users/${userData.id}`);
+        const data = await res.json();
+        if (data.success && data.user && data.user.qr_token !== userData.qr_token) {
+          setUserData(data.user);
+        }
+      } catch (e) {
+        console.error("Error polling user QR status:", e);
+      }
+    }, 5000); // Polling cada 5 segundos para el perfil propio
+
+    return () => clearInterval(interval);
+  }, [userData?.id, userData?.qr_token, isAdmin]);
+
   // Mostrar loading mientras se carga el usuario
   if (userLoading || loadingUserData || loadingRoles) {
     return <ProfileSkeleton />;
@@ -582,6 +602,32 @@ export default function ProfilePage() {
                 )
               )}
             </div>
+
+            {userData?.qr_token && (
+              <div className="mt-8 p-6 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-center">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Mi QR de Asistencia</h3>
+                <p className="text-sm text-slate-600 mb-6">Escanea este código con tu aplicación móvil para registrar tu presencia.</p>
+                <div className="inline-block p-4 bg-white rounded-2xl shadow-sm border border-slate-100">
+                  <QRCodeSVG 
+                    value={userData.qr_token} 
+                    size={200}
+                    level="M"
+                    includeMargin={true}
+                  />
+                </div>
+                <div className="mt-4 flex flex-col items-center gap-2">
+                   <p className="text-[10px] font-mono text-slate-400 select-all">TOKEN: {userData.qr_token}</p>
+                   <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-blue-600 h-8 rounded-full"
+                    onClick={() => loadUserData(userData.id.toString())}
+                   >
+                     Actualizar Código
+                   </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     switch (method) {
       case 'GET': {
         if (queryParams.id) {
-          const id = parseInt(queryParams.id as string);
+          const id = queryParams.id as string;
           const clients = (await query('SELECT * FROM clientes WHERE id_cliente = ?', [
             id
           ])) as any[];
@@ -48,14 +48,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!name || !lastName) {
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
-        const result: any = await query(
-          'INSERT INTO clientes (run, nombre, apellido, telefono) VALUES (?, ?, ?, ?)',
-          [run, name, lastName, phone]
+        const id = generateUUID();
+        await query(
+          'INSERT INTO clientes (id_cliente, run, nombre, apellido, telefono) VALUES (?, ?, ?, ?, ?)',
+          [id, run || '', name, lastName, phone || '']
         );
-
+ 
         return res.status(201).json({
           message: 'Cliente creado correctamente',
-          id: result.insertId
+          id: id
         });
       }
 

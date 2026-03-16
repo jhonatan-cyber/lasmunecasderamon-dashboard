@@ -1,7 +1,7 @@
 export interface Caja {
-  id_caja: number;
+  id_caja: string;
   fecha_apertura: string;
-  usuario_id_apertura: number;
+  usuario_id_apertura: string;
   monto_apertura: number;
   ventas: number;
   efectivo: number;
@@ -14,7 +14,7 @@ export interface Caja {
   anticipo: number;
   comision: number;
   monto_cierre: number | null;
-  usuario_id_cierre: number | null;
+  usuario_id_cierre: string | null;
   fecha_cierre: string | null;
   estado: number;
 }
@@ -26,7 +26,7 @@ export interface CajaWithUser extends Caja {
 
 export interface CajaCreate {
   monto_apertura: number;
-  usuario_id_apertura: number;
+  usuario_id_apertura: string;
 }
 
 export interface CajaUpdate {
@@ -41,23 +41,23 @@ export interface CajaUpdate {
   anticipo?: number;
   comision?: number;
   monto_cierre?: number;
-  usuario_id_cierre?: number;
+  usuario_id_cierre?: string;
   fecha_cierre?: string;
   estado?: number;
 }
 
 export interface CajaCierre {
-  id_caja: number;
-  usuario_id_cierre: number;
+  id_caja: string;
+  usuario_id_cierre: string;
   fecha_cierre: string;
   monto_cierre: number;
 }
 
 export interface CajaRetiro {
-  id_caja: number;
+  id_caja: string;
   monto: number;
   motivo: string;
-  usuario_id: number;
+  usuario_id: string;
 }
 
 export interface CajaResumen {

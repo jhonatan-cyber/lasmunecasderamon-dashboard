@@ -1,9 +1,9 @@
 export interface Venta {
-  id: number;
+  id: string;
   codigo: string;
-  cliente_id: number | null;
-  pedido_id?: number | null;
-  habitacion_id: number;
+  cliente_id: string | null;
+  pedido_id?: string | null;
+  habitacion_id: string;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   propina: number;
   sub_total: number;
@@ -15,9 +15,9 @@ export interface Venta {
 }
 
 export interface VentaDetalle {
-  id?: number;
-  venta_id: number;
-  producto_id: number;
+  id?: string;
+  venta_id: string;
+  producto_id: string;
   precio: number;
   comision: number;
   cantidad: number;
@@ -27,9 +27,9 @@ export interface VentaDetalle {
 }
 
 export interface VentaUsuario {
-  id?: number;
-  usuario_id: number;
-  venta_id: number;
+  id?: string;
+  usuario_id: string;
+  venta_id: string;
   nick?: string;
   usuario_nombre?: string;
 }
@@ -46,20 +46,20 @@ export interface VentaWithDetails extends Venta {
 }
 
 export interface VentaCreate {
-  cliente_id?: number | null;
-  pedido_id?: number | null;
-  habitacion_id?: number;
+  cliente_id?: string | null;
+  pedido_id?: string | null;
+  habitacion_id?: string;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   propina: number;
   sub_total: number;
   total: number;
   detalles: VentaDetalleCreate[];
-  usuarios?: number[]; // Array de IDs de usuarios
+  usuarios?: string[]; // Array de IDs de usuarios
   tiempo?: number; // Tiempo de habitación en minutos
 }
 
 export interface VentaDetalleCreate {
-  producto_id: number;
+  producto_id: string;
   precio: number;
   comision: number;
   cantidad: number;
@@ -89,6 +89,6 @@ export interface VentaFiltros {
   fecha_fin?: string;
   estado?: string;
   metodo_pago?: string;
-  usuario_id?: number;
-  cliente_id?: number;
+  usuario_id?: string;
+  cliente_id?: string;
 }

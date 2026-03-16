@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserCheck, UserX } from 'lucide-react';
@@ -27,54 +27,24 @@ interface UserStats {
 }
 
 export default function LoggedUsersCards() {
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    data: stats, 
+    isLoading: loading, 
+    error: queryError 
+  } = useQuery<UserStats>({
+    queryKey: ['logged-users-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/stats/logged-users');
+      if (!response.ok) throw new Error('Error al obtener estadísticas');
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'Error en la respuesta');
+      return data.data;
+    },
+    staleTime: 60000, // Datos frescos por 1 min
+    refetchOnWindowFocus: true,
+  });
 
-  useEffect(() => {
-    const fetchStats = async (isInitial = false) => {
-      try {
-        // Solo mostrar loading en la carga inicial
-        if (isInitial) {
-          setLoading(true);
-        }
-        
-        const response = await fetch('/api/stats/logged-users');
-
-        if (!response.ok) {
-          throw new Error('Error al obtener estadísticas');
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-          setStats(data.data);
-          // Limpiar error si la actualización fue exitosa
-          if (error) {
-            setError(null);
-          }
-        } else {
-          throw new Error(data.message || 'Error en la respuesta');
-        }
-      } catch (err) {
-        // Solo mostrar error si no hay datos previos
-        if (!stats) {
-          setError(err instanceof Error ? err.message : 'Error desconocido');
-        }
-      } finally {
-        if (isInitial) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Carga inicial
-    fetchStats(true);
-
-    // Actualizar cada 30 segundos sin parpadeo visual
-    const interval = setInterval(() => fetchStats(false), 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const error = queryError instanceof Error ? queryError.message : null;
 
   if (loading) {
     return (

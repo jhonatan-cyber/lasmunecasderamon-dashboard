@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 
 import {
@@ -21,12 +21,12 @@ import { RowDataPacket } from 'mysql2/promise';
 const STATS_QUERY = `
 SELECT 
   COALESCE(SUM(CASE 
-    WHEN C.venta_id != 0 AND C.venta_id IS NOT NULL THEN DC.comision 
+    WHEN C.venta_id != '' AND C.venta_id IS NOT NULL THEN DC.comision 
     ELSE 0 
   END), 0) AS total_ventas,
   
   COALESCE(SUM(CASE 
-    WHEN C.servicio_id != 0 AND C.servicio_id IS NOT NULL THEN DC.comision 
+    WHEN C.servicio_id != '' AND C.servicio_id IS NOT NULL THEN DC.comision 
     ELSE 0 
   END), 0) AS total_servicios,
 
@@ -37,12 +37,12 @@ SELECT
   COALESCE(MAX(DC.comision), 0) AS comision_maxima,
   
   COALESCE(ROUND(
-    (SUM(CASE WHEN C.venta_id != 0 AND C.venta_id IS NOT NULL THEN DC.comision ELSE 0 END) * 100.0) / 
+    (SUM(CASE WHEN C.venta_id != '' AND C.venta_id IS NOT NULL THEN DC.comision ELSE 0 END) * 100.0) / 
     NULLIF(SUM(DC.comision), 0)
   ), 0) AS porcentaje_ventas,
   
   COALESCE(ROUND(
-    (SUM(CASE WHEN C.servicio_id != 0 AND C.servicio_id IS NOT NULL THEN DC.comision ELSE 0 END) * 100.0) / 
+    (SUM(CASE WHEN C.servicio_id != '' AND C.servicio_id IS NOT NULL THEN DC.comision ELSE 0 END) * 100.0) / 
     NULLIF(SUM(DC.comision), 0)
   ), 0) AS porcentaje_servicios
 
@@ -273,8 +273,8 @@ export async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         U.id_usuario,
         U.nick,
         CONCAT(U.nombre, ' ', U.apellido) AS anfitriona,
-        COALESCE(SUM(CASE WHEN C.venta_id != 0 AND C.venta_id IS NOT NULL THEN DC.comision ELSE 0 END), 0) AS venta,
-        COALESCE(SUM(CASE WHEN C.servicio_id != 0 AND C.servicio_id IS NOT NULL THEN DC.comision ELSE 0 END), 0) AS servicio,
+        COALESCE(SUM(CASE WHEN C.venta_id != '' AND C.venta_id IS NOT NULL THEN DC.comision ELSE 0 END), 0) AS venta,
+        COALESCE(SUM(CASE WHEN C.servicio_id != '' AND C.servicio_id IS NOT NULL THEN DC.comision ELSE 0 END), 0) AS servicio,
         SUM(DC.comision) AS total,
         C.estado
       FROM comisiones C
@@ -365,18 +365,18 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       const result = await withTransaction(async trx => {
         try {
           // 1. Insertar en la tabla comisiones
-          const comisionResult: any = await trx(
+          const comisionId = generateUUID();
+          await trx(
             `
             INSERT INTO comisiones (
+              id_comision,
               venta_id,
               servicio_id,
               monto
-            ) VALUES (?, ?, ?)
+            ) VALUES (?, ?, ?, ?)
           `,
-            [validatedData.venta_id || null, validatedData.servicio_id || null, validatedData.monto]
+            [comisionId, validatedData.venta_id || null, validatedData.servicio_id || null, validatedData.monto]
           );
-
-          const comisionId = comisionResult.insertId;
 
           // 2. Insertar en la tabla detalle_comisiones
           await trx(

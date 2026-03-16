@@ -6,8 +6,9 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/ui/skeletons';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { QRCodeSVG } from 'qrcode.react';
 
-// Lazy load de componentes pesados
 const LoggedUsersCards = dynamic(() => import('@/components/dashboard/LoggedUsersCards'), {
   loading: () => <StatsCardSkeleton />
 });
@@ -38,27 +39,50 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!loading && user) {
-      console.log('Dashboard - Usuario detectado:', user.role); // Debug
-
-      // Si el usuario es anfitriona, redirigir a la vista específica
+    
       if (user.role?.toLowerCase() === 'anfitriona') {
-        console.log('Redirigiendo a anfitriona-dashboard'); // Debug
         router.replace('/anfitriona-dashboard');
         return;
       }
-      // Si el usuario es garzon, redirigir a la vista específica
+   
       if (user.role?.toLowerCase() === 'garzon') {
-        console.log('Redirigiendo a garzon-dashboard'); // Debug
         router.replace('/garzon-dashboard');
         return;
       }
     }
   }, [user, loading, router]);
 
-  // Si está cargando, mostrar loading
+
   if (loading) {
     return <DashboardSkeleton />;
   }
+
+  const { refetch } = useCurrentUser();
+  useEffect(() => {
+    if (!user?.qr_token) return;
+    
+    const checkToken = async () => {
+      try {
+        const res = await fetch(`/api/users/${user.id}`);
+        const data = await res.json();
+        if (data.success && data.user && data.user.qr_token !== user.qr_token) {
+           refetch(true);
+        }
+      } catch (e) {
+        console.error("Error polling user status:", e);
+      }
+    };
+
+    const interval = setInterval(checkToken, 60000); // Polling cada 60 segundos
+    
+    // También verificar cuando el usuario vuelve a la pestaña
+    window.addEventListener('focus', checkToken);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkToken);
+    };
+  }, [user?.id, user?.qr_token, refetch]);
 
   // Si es anfitriona o garzon, no renderizar nada (ya se está redirigiendo)
   if (user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon') {
@@ -73,6 +97,33 @@ export default function Dashboard() {
         <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Dashboard</h1>
         <p className='text-gray-600 dark:text-gray-400'>Bienvenido al panel de administración</p>
       </div>
+
+      {user?.qr_token && (
+        <Card className="max-w-md border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-lg">Mi Registro de Asistencia</CardTitle>
+            <CardDescription>Escanea este código con tu celular para marcar entrada</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <div className="bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
+                <QRCodeSVG 
+                  value={user.qr_token} 
+                  size={160} 
+                  level="H" 
+                  includeMargin={true}
+                  fgColor="#4F46E5"
+                  imageSettings={user.foto ? {
+                    src: `/img/users/${user.foto}`,
+                    height: 35,
+                    width: 35,
+                    excavate: true,
+                  } : undefined}
+                />
+            </div>
+            <p className="text-[10px] mt-2 text-indigo-400 font-mono select-all uppercase">ID: {user.qr_token}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <LoggedUsersCards />
 

@@ -44,23 +44,7 @@ export function useClients() {
     setIsMutating(true);
     try {
       const res = await createMutation(payload);
-
-      if (res && (res as any).id) {
-        const newClient: Client = {
-          id: (res as any).id,
-          run: payload.run || '',
-          name: payload.name,
-          lastName: payload.lastName,
-          phone: payload.phone || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          status: 1
-        };
-        setData(prev => [newClient, ...(prev || [])]);
-      } else {
-        await refetch();
-      }
-
+      await refetch();
       return res;
     } finally {
       setIsMutating(false);
@@ -72,9 +56,9 @@ export function useClients() {
     try {
       const res = await updateMutation(payload);
 
-      setData(prev =>
-        (prev || []).map(c =>
-          c.id === payload.id ? { ...c, ...payload, updated_at: new Date().toISOString() } : c
+      setData((prev: Client[] | undefined) =>
+        (prev || []).map((c: Client) =>
+          String(c.id) === String(payload.id) ? { ...c, ...payload, updated_at: new Date().toISOString() } : c
         )
       );
 
@@ -84,12 +68,12 @@ export function useClients() {
     }
   };
 
-  const deleteClient = async (id: number) => {
+  const deleteClient = async (id: string | number) => {
     setIsMutating(true);
     try {
       const res = await removeMutation(id);
 
-      setData(prev => (prev || []).filter(c => c.id !== id));
+      setData((prev: Client[] | undefined) => (prev || []).filter((c: Client) => String(c.id) !== String(id)));
 
       return res;
     } finally {

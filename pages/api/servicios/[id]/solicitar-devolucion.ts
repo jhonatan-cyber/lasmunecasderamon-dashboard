@@ -15,8 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Motivo y solicitadoPor son requeridos' });
     }
 
-    const servicioId = parseInt(id as string);
-    if (isNaN(servicioId)) {
+    const servicioId = id as string;
+    if (!servicioId) {
       return res.status(400).json({ error: 'ID de servicio inválido' });
     }
 
@@ -66,10 +66,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Guardar token en la base de datos (crear tabla si no existe)
     try {
+      const { generateUUID } = await import('@/lib/db');
       await query(
         `CREATE TABLE IF NOT EXISTS solicitudes_devolucion_servicios (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          servicio_id INT NOT NULL,
+          id VARCHAR(36) PRIMARY KEY,
+          servicio_id VARCHAR(36) NOT NULL,
           token VARCHAR(255) UNIQUE NOT NULL,
           estado ENUM('pendiente', 'confirmada', 'rechazada') DEFAULT 'pendiente',
           fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -77,8 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       await query(
-        "INSERT INTO solicitudes_devolucion_servicios (servicio_id, token) VALUES (?, ?)",
-        [servicioId, token]
+        "INSERT INTO solicitudes_devolucion_servicios (id, servicio_id, token) VALUES (?, ?, ?)",
+        [generateUUID(), servicioId, token]
       );
     } catch (error) {
       console.error("Error al guardar token:", error);

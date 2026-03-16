@@ -50,6 +50,8 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
     stats,
     loading: loading && !silentRefreshing,
     error,
-    refetch: fetchStats
+    refetch: async () => {
+      await fetchStats();
+    }
   };
 };

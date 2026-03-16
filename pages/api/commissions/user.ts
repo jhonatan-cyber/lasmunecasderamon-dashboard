@@ -27,8 +27,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       DC.estado,
       COALESCE(V.total, S.total) as total_original,
       CASE 
-        WHEN C.venta_id != 0 THEN 'venta'
-        WHEN C.servicio_id != 0 THEN 'servicio'
+        WHEN C.venta_id IS NOT NULL THEN 'venta'
+        WHEN C.servicio_id IS NOT NULL THEN 'servicio'
         ELSE 'otro'
       END as tipo,
       CLI.nombre as cliente_nombre,

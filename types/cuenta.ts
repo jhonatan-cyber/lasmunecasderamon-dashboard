@@ -1,21 +1,21 @@
 export interface Cuenta {
-  id_cuenta: number;
+  id_cuenta: string;
   codigo: string;
-  cliente_id: number;
+  cliente_id: string;
   total_comision: number;
-  habitacion_id: number | null;
+  habitacion_id: string | null;
   sub_total: number;
   total: number;
-  pedido_id: number | null;
-  servicio_id: number | null;
+  pedido_id: string | null;
+  servicio_id: string | null;
   fecha_crea: string;
   estado: number;
 }
 
 export interface DetalleCuenta {
-  id_detalle_cuenta: number;
-  cuenta_id: number;
-  producto_id: number;
+  id_detalle_cuenta: string;
+  cuenta_id: string;
+  producto_id: string;
   precio: number;
   cantidad: number;
   sub_total: number;
@@ -23,9 +23,9 @@ export interface DetalleCuenta {
 }
 
 export interface CuentaUsuario {
-  id_cuenta_usuario: number;
-  cuenta_id: number;
-  usuario_id: number;
+  id_cuenta_usuario: string;
+  cuenta_id: string;
+  usuario_id: string;
 }
 
 export interface CuentaWithDetails extends Cuenta {
@@ -37,19 +37,19 @@ export interface CuentaWithDetails extends Cuenta {
 
 export interface CreateCuentaRequest {
   codigo: string;
-  cliente_id: number;
+  cliente_id: string;
   total_comision: number;
   sub_total: number;
   total: number;
-  habitacion_id?: number | null;
-  pedido_id?: number | null;
-  servicio_id?: number | null;
+  habitacion_id?: string | null;
+  pedido_id?: string | null;
+  servicio_id?: string | null;
   detalles: CreateDetalleCuentaRequest[];
-  usuarios?: number[];
+  usuarios?: string[];
 }
 
 export interface CreateDetalleCuentaRequest {
-  producto_id: number;
+  producto_id: string;
   precio: number;
   cantidad: number;
   sub_total: number;
@@ -57,8 +57,8 @@ export interface CreateDetalleCuentaRequest {
 }
 
 export interface UpdateCuentaRequest {
-  id_cuenta: number;
+  id_cuenta: string;
   estado?: number;
   detalles?: CreateDetalleCuentaRequest[];
-  usuarios?: number[];
+  usuarios?: string[];
 } 

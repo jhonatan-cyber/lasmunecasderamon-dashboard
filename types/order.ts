@@ -1,7 +1,7 @@
 export interface OrderDetail {
-  id: number;
-  pedidoId: number;
-  productoId: number;
+  id: string;
+  pedidoId: string;
+  productoId: string;
   precio: number;
   comision: number;
   cantidad: number;
@@ -10,16 +10,16 @@ export interface OrderDetail {
 }
 
 export interface OrderUser {
-  id: number;
-  usuarioId: number;
-  pedidoId: number;
+  id: string;
+  usuarioId: string;
+  pedidoId: string;
 }
 
 export interface Order {
-  id: number;
+  id: string;
   codigo: string;
-  meseroId: number;
-  clienteId: number;
+  meseroId: string;
+  clienteId: string;
   subtotal: number;
   total: number;
   totalComision: number;

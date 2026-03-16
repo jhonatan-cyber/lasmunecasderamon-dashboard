@@ -50,7 +50,9 @@ export const useLogins = (): UseLoginsReturn => {
     logins,
     loading,
     error,
-    refetch,
+    refetch: async () => {
+      await refetch();
+    },
     cerrarSesiones
   };
 };

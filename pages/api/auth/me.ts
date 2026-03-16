@@ -25,13 +25,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Obtener información completa del usuario desde la base de datos con rol
-    const users = await query(
+    const users = (await query(
       `SELECT u.*, r.nombre as rol_nombre 
        FROM usuarios u 
        LEFT JOIN roles r ON u.rol_id = r.id_rol 
        WHERE u.id_usuario = ? AND u.estado IN (1, 2, 3) AND u.fecha_baja IS NULL`,
       [userData.id]
-    ) as any[];
+    )) as any[];
 
     if (users.length === 0) {
       return res.status(404).json({
@@ -61,9 +61,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         fecha_crea: user.fecha_crea
       }
     });
-
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
@@ -71,4 +69,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withAuth(handler); 
+export default withAuth(handler);

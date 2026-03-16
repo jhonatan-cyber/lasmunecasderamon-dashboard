@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
+import { useSSE } from '@/hooks/shared/useSSE';
 
 interface AnulacionContextType {
   showNotification: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
@@ -73,101 +74,77 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Escuchar notificaciones SSE para servicios
-  useEffect(() => {
-    const eventSource = new EventSource('/api/notifications/sse');
-
-    eventSource.onopen = () => {};
-
-    eventSource.onmessage = event => {
-      try {
-        const data = JSON.parse(event.data);
-
-        // Manejar notificaciones de anulación de servicios
-        if (
-          data.type === 'anulacion_servicio_confirmada' ||
-          data.type === 'anulacion_servicio_rechazada'
-        ) {
-          const modalData = {
-            tipo: data.type === 'anulacion_servicio_confirmada' ? 'confirmada' : 'rechazada',
-            tipo_operacion: 'servicio',
-            servicio: {
-              codigo: data.data.codigo,
-              cliente: data.data.cliente,
-              habitacion: data.data.habitacion,
-              tiempo: data.data.tiempo,
-              total: data.data.total,
-              anfitrionas: data.data.anfitrionas
-            }
-          };
-
-          openModal(modalData);
-
-          // Ejecutar callback de actualización si existe
-          if (refreshCallbackRef.current) {
-            try {
-              refreshCallbackRef.current();
-            } catch (error) {
-              console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
-            }
-          } else {
-            // No hay callback de actualización configurado
-          }
-
-          // Mostrar toast
-          showNotification(
-            data.type === 'anulacion_servicio_confirmada'
-              ? '✅ Anulación de servicio confirmada'
-              : '❌ Anulación de servicio rechazada',
-            'success'
-          );
+  useSSE('/api/notifications/sse', (data) => {
+    // Manejar notificaciones de anulación de servicios
+    if (
+      data.type === 'anulacion_servicio_confirmada' ||
+      data.type === 'anulacion_servicio_rechazada'
+    ) {
+      const modalData = {
+        tipo: data.type === 'anulacion_servicio_confirmada' ? 'confirmada' : 'rechazada',
+        tipo_operacion: 'servicio',
+        servicio: {
+          codigo: data.data.codigo,
+          cliente: data.data.cliente,
+          habitacion: data.data.habitacion,
+          tiempo: data.data.tiempo,
+          total: data.data.total,
+          anfitrionas: data.data.anfitrionas
         }
+      };
 
-        // Manejar notificaciones de anulación de ventas (mantener compatibilidad)
-        if (data.type === 'anulacion_confirmada' || data.type === 'anulacion_rechazada') {
-          const modalData = {
-            tipo: data.type === 'anulacion_confirmada' ? 'confirmada' : 'rechazada',
-            tipo_operacion: 'venta',
-            venta: {
-              codigo: data.data.codigo,
-              cliente: data.data.cliente,
-              total: data.data.total
-            }
-          };
+      openModal(modalData);
 
-          openModal(modalData);
-
-          // Ejecutar callback de actualización si existe
-          if (refreshCallbackRef.current) {
-            try {
-              refreshCallbackRef.current();
-            } catch (error) {
-              console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
-            }
-          } else {
-            // No hay callback de actualización configurado
-          }
-
-          // Mostrar toast
-          showNotification(
-            data.type === 'anulacion_confirmada'
-              ? '✅ Anulación de venta confirmada'
-              : '❌ Anulación de venta rechazada',
-            'success'
-          );
+      // Ejecutar callback de actualización si existe
+      if (refreshCallbackRef.current) {
+        try {
+          refreshCallbackRef.current();
+        } catch (error) {
+          console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
         }
-      } catch (error) {
-        console.error('🔔 Contexto: Error procesando notificación:', error);
       }
-    };
 
-    eventSource.onerror = error => {
-      console.error('🔔 Contexto: Error en SSE:', error);
-    };
+      // Mostrar toast
+      showNotification(
+        data.type === 'anulacion_servicio_confirmada'
+          ? '✅ Anulación de servicio confirmada'
+          : '❌ Anulación de servicio rechazada',
+        'success'
+      );
+    }
 
-    return () => {
-      eventSource.close();
-    };
-  }, [openModal, showNotification]);
+    // Manejar notificaciones de anulación de ventas (mantener compatibilidad)
+    if (data.type === 'anulacion_confirmada' || data.type === 'anulacion_rechazada') {
+      const modalData = {
+        tipo: data.type === 'anulacion_confirmada' ? 'confirmada' : 'rechazada',
+        tipo_operacion: 'venta',
+        venta: {
+          codigo: data.data.codigo,
+          cliente: data.data.cliente,
+          total: data.data.total
+        }
+      };
+
+      openModal(modalData);
+
+      // Ejecutar callback de actualización si existe
+      if (refreshCallbackRef.current) {
+        try {
+          refreshCallbackRef.current();
+        } catch (error) {
+          console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
+        }
+      }
+
+      // Mostrar toast
+      showNotification(
+        data.type === 'anulacion_confirmada'
+          ? '✅ Anulación de venta confirmada'
+          : '❌ Anulación de venta rechazada',
+        'success'
+      );
+    }
+  });
 
   // Verificar notificaciones pendientes al cargar
   useEffect(() => {

@@ -52,6 +52,8 @@ export function useStats<T = any>({
     data,
     isLoading,
     error,
-    refetch
+    refetch: async () => {
+      await refetch();
+    }
   };
 }

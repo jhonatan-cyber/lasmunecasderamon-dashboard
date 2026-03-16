@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ success: false, message: 'ID de usuario requerido' });
     }
 
-    const userId = Number(id);
+    const userId = id;
 
     // Obtener detalles de asistencias con cálculo completo de descuentos
     const sql = `

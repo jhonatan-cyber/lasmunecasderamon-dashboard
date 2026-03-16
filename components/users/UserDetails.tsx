@@ -103,6 +103,16 @@ export function UserDetails({ user }: UserDetailsProps) {
               <div className='flex items-start'>
                 <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                 <div>
+                  <p className='text-xs sm:text-sm font-medium'>ID</p>
+                  <p className='text-xs sm:text-sm text-gray-600 font-mono'>
+                    {user.id || 'No especificado'}
+                  </p>
+                </div>
+              </div>
+
+              <div className='flex items-start'>
+                <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                <div>
                   <p className='text-xs sm:text-sm font-medium'>RUN</p>
                   <p className='text-xs sm:text-sm text-gray-600'>
                     {user.run || 'No especificado'}

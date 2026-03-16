@@ -35,13 +35,13 @@ interface UseUsersReturn {
     formData: FormData
   ) => Promise<{ success: boolean; message: string; errors?: string[] }>;
   updateUser: (
-    id: number,
+    id: string | number,
     userData: FormData | Partial<User>
   ) => Promise<{ success: boolean; message: string; errors?: string[] }>;
-  activateUser: (id: number) => Promise<{ success: boolean; message: string }>;
-  deactivateUser: (id: number) => Promise<{ success: boolean; message: string }>;
-  deleteUser: (id: number) => Promise<{ success: boolean; message: string }>;
-  getUserById: (id: number) => Promise<User | null>;
+  activateUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
+  deactivateUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
+  deleteUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
+  getUserById: (id: string | number) => Promise<User | null>;
   clearError: () => void;
 }
 
@@ -53,11 +53,15 @@ export function useUsers(): UseUsersReturn {
     data: users,
     isLoading,
     error: fetchError,
-    refetch: fetchUsers,
+    refetch,
     setData: setUsers
   } = useGenericFetch<User>('/api/users', {
     transform: result => result.data || []
   });
+
+  const fetchUsers = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filters = useGenericFilters(users || [], {
     searchFields: ['name', 'lastName', 'run', 'email', 'phone', 'nick', 'address'],
@@ -107,14 +111,14 @@ export function useUsers(): UseUsersReturn {
     phone: fields.telefono,
     address: fields.direccion,
     maritalStatus: fields.estado_civil,
-    roleId: fields.rol_id ? Number(fields.rol_id) : undefined,
+    roleId: fields.rol_id ? String(fields.rol_id) : undefined,
     afp: fields.afp,
     salary: fields.sueldo ? Number(fields.sueldo) : undefined,
     contributions: fields.aporte ? Number(fields.aporte) : undefined,
     discount: fields.descuento ? Number(fields.descuento) : undefined
   });
 
-  const getUserById = useCallback(async (id: number): Promise<User | null> => {
+  const getUserById = useCallback(async (id: string | number): Promise<User | null> => {
     try {
       setError(null);
 
@@ -214,7 +218,7 @@ export function useUsers(): UseUsersReturn {
   );
 
   const updateUser = useCallback(
-    async (id: number, userData: any) => {
+    async (id: string | number, userData: any) => {
       try {
         setError(null);
 
@@ -282,9 +286,9 @@ export function useUsers(): UseUsersReturn {
 
         const patch = isFormData ? mapFormToUserPatch(formDataToObject(userData)) : userData;
 
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user.id === id ? { ...user, ...patch, updated_at: new Date().toISOString() } : user
+        setUsers((prevUsers: User[] | undefined) =>
+          (prevUsers || []).map(user =>
+            String(user.id) === String(id) ? { ...user, ...patch, updated_at: new Date().toISOString() } : user
           )
         );
 
@@ -306,7 +310,7 @@ export function useUsers(): UseUsersReturn {
   );
 
   const activateUser = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       try {
         setError(null);
 
@@ -326,9 +330,9 @@ export function useUsers(): UseUsersReturn {
           };
         }
 
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user.id === id ? { ...user, status: 1, updated_at: new Date().toISOString() } : user
+        setUsers((prevUsers: User[] | undefined) =>
+          (prevUsers || []).map(user =>
+            String(user.id) === String(id) ? { ...user, status: 1, updated_at: new Date().toISOString() } : user
           )
         );
 
@@ -349,7 +353,7 @@ export function useUsers(): UseUsersReturn {
   );
 
   const deactivateUser = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       try {
         setError(null);
 
@@ -369,9 +373,9 @@ export function useUsers(): UseUsersReturn {
           };
         }
 
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user.id === id ? { ...user, status: 0, updated_at: new Date().toISOString() } : user
+        setUsers((prevUsers: User[] | undefined) =>
+          (prevUsers || []).map(user =>
+            String(user.id) === String(id) ? { ...user, status: 0, updated_at: new Date().toISOString() } : user
           )
         );
 
@@ -393,7 +397,7 @@ export function useUsers(): UseUsersReturn {
   );
 
   const deleteUser = useCallback(
-    async (id: number) => {
+    async (id: string | number) => {
       try {
         setError(null);
 
@@ -413,7 +417,7 @@ export function useUsers(): UseUsersReturn {
           };
         }
 
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== id));
+        setUsers((prevUsers: User[] | undefined) => (prevUsers || []).filter(user => user.id !== id));
 
         return {
           success: true,

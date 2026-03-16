@@ -4,6 +4,7 @@ import { addServicioLog } from '@/lib/logUtils';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
 import { withTransaction } from '@/lib/transactionUtils';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { generateUUID } from '@/lib/db';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -115,7 +116,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         } else {
           console.log(`[TEMPORAL] Servicio original ${servicio_original_id} pausado`);
           await addServicioLog(
-            Number(servicio_original_id),
+            servicio_original_id as string,
             'PAUSA',
             'Servicio pausado automáticamente por inicio de servicio temporal (consumo/champaña).',
             currentUser?.id
@@ -125,13 +126,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       let comisionTotalPorAnfitriona = 0;
 
+      const servicioId = generateUUID();
+
       // Insertar servicio nuevo (completamente normal en BD)
       const servicioResult: any = await connection(
         `INSERT INTO servicios (
-           codigo, cliente_id, habitacion_id, precio_habitacion, 
+           id_servicio, codigo, cliente_id, habitacion_id, precio_habitacion, 
            precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)`,
         [
+          servicioId,
           codigo,
           clienteIdFinal,
           habitacion_id,
@@ -146,8 +150,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           createdBy
         ]
       );
-
-      const servicioId = servicioResult.insertId;
 
       // NO actualizar estado de la habitación ya que está siendo usada por el servicio original
       // La habitación seguirá ocupada por el servicio original
@@ -228,13 +230,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Registrar las comisiones en BD siempre que el monto sea mayor a 0
         if (comisionTotalPorAnfitriona > 0) {
           for (const usuarioId of usuarios) {
-            const comisionResult: any = await connection(
-              `INSERT INTO comisiones (venta_id, servicio_id, monto) VALUES (?, ?, ?)`,
-              [null, servicioId, comisionTotalPorAnfitriona]
+            const comisionId = generateUUID();
+            await connection(
+              `INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto) VALUES (?, ?, ?, ?)`,
+              [comisionId, null, servicioId, comisionTotalPorAnfitriona]
             );
             await connection(
-              `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)`,
-              [comisionResult.insertId, usuarioId, comisionTotalPorAnfitriona]
+              `INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision) VALUES (?, ?, ?, ?)`,
+              [generateUUID(), comisionId, usuarioId, comisionTotalPorAnfitriona]
             );
           }
         }
@@ -328,7 +331,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Notificar si se pausó el servicio original
     if (servicio_original_id) {
       sendNotificationToAll('timer_paused', {
-        servicioId: Number(servicio_original_id),
+        servicioId: servicio_original_id as string,
         tipoTransaccion: 'servicio'
       });
     }
