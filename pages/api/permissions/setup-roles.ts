@@ -129,6 +129,12 @@ const rolePermissions: Record<string, { module: string; action: string }[]> = {
     { module: 'overtime', action: 'view' },
     { module: 'overtime', action: 'create' },
     { module: 'overtime', action: 'approve' },
+    // Gratificaciones
+    { module: 'gratificaciones', action: 'view' },
+    { module: 'gratificaciones', action: 'create' },
+    { module: 'gratificaciones', action: 'edit' },
+    { module: 'gratificaciones', action: 'delete' },
+    { module: 'gratificaciones', action: 'view_details' },
     // Caja
     { module: 'cash_register', action: 'view' },
     { module: 'cash_register', action: 'reports' },

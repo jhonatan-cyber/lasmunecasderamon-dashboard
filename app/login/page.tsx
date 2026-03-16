@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
   const [registerData, setRegisterData] = useState({
     nombre: '',
     apellido: '',
@@ -715,7 +717,21 @@ export default function LoginPage() {
                     id='nombre'
                     type='text'
                     value={registerData.nombre}
-                    onChange={e => setRegisterData({ ...registerData, nombre: e.target.value })}
+                    onChange={e =>
+                      setRegisterData({
+                        ...registerData,
+                        nombre: e.target.value
+                      })
+                    }
+                    onBlur={e =>
+                      setRegisterData({
+                        ...registerData,
+                        nombre: e.target.value
+                          .trim()
+                          .toLowerCase()
+                          .replace(/\b\w/g, c => c.toUpperCase())
+                      })
+                    }
                     className='mt-1'
                     required
                   />
@@ -731,7 +747,21 @@ export default function LoginPage() {
                     id='apellido'
                     type='text'
                     value={registerData.apellido}
-                    onChange={e => setRegisterData({ ...registerData, apellido: e.target.value })}
+                    onChange={e =>
+                      setRegisterData({
+                        ...registerData,
+                        apellido: e.target.value
+                      })
+                    }
+                    onBlur={e =>
+                      setRegisterData({
+                        ...registerData,
+                        apellido: e.target.value
+                          .trim()
+                          .toLowerCase()
+                          .replace(/\b\w/g, c => c.toUpperCase())
+                      })
+                    }
                     className='mt-1'
                     required
                   />
@@ -764,15 +794,25 @@ export default function LoginPage() {
                 >
                   Contraseña
                 </Label>
-                <Input
-                  id='password'
-                  type='password'
-                  value={registerData.password}
-                  onChange={e => setRegisterData({ ...registerData, password: e.target.value })}
-                  className='mt-1'
-                  required
-                  minLength={6}
-                />
+                <div className='relative'>
+                  <Input
+                    id='password'
+                    type={showRegisterPassword ? 'text' : 'password'}
+                    value={registerData.password}
+                    onChange={e => setRegisterData({ ...registerData, password: e.target.value })}
+                    className='mt-1 pr-10'
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setShowRegisterPassword(prev => !prev)}
+                    className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
+                    aria-label={showRegisterPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    <Eye className='w-4 h-4' />
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -782,17 +822,31 @@ export default function LoginPage() {
                 >
                   Confirmar Contraseña
                 </Label>
-                <Input
-                  id='confirmPassword'
-                  type='password'
-                  value={registerData.confirmPassword}
-                  onChange={e =>
-                    setRegisterData({ ...registerData, confirmPassword: e.target.value })
-                  }
-                  className='mt-1'
-                  required
-                  minLength={6}
-                />
+                <div className='relative'>
+                  <Input
+                    id='confirmPassword'
+                    type={showRegisterConfirmPassword ? 'text' : 'password'}
+                    value={registerData.confirmPassword}
+                    onChange={e =>
+                      setRegisterData({ ...registerData, confirmPassword: e.target.value })
+                    }
+                    className='mt-1 pr-10'
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setShowRegisterConfirmPassword(prev => !prev)}
+                    className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
+                    aria-label={
+                      showRegisterConfirmPassword
+                        ? 'Ocultar contraseña'
+                        : 'Mostrar contraseña'
+                    }
+                  >
+                    <Eye className='w-4 h-4' />
+                  </button>
+                </div>
               </div>
 
               <div className='flex gap-3 pt-4'>
@@ -800,14 +854,14 @@ export default function LoginPage() {
                   type='button'
                   variant='outline'
                   onClick={() => setShowRegisterModal(false)}
-                  className='flex-1'
+                  className='flex-1 rounded-full'
                   disabled={registerLoading}
                 >
                   Cancelar
                 </Button>
                 <Button
                   type='submit'
-                  className='flex-1 bg-green-600 hover:bg-green-700'
+                  className='flex-1 bg-green-600 hover:bg-green-700 rounded-full'
                   disabled={registerLoading}
                 >
                   {registerLoading ? 'Creando...' : 'Crear Administrador'}

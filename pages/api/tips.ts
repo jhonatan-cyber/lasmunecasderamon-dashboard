@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query, rawQuery } from '@/lib/db';
+import { query, rawQuery, generateUUID } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -42,13 +42,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       try {
         // Insertar la propina principal
-
-        const resultPropina: any = await query(
-          'INSERT INTO propinas (venta_id, propina) VALUES (?, ?)',
-          [venta_id, monto]
+ 
+        const propinaId = generateUUID();
+        await query(
+          'INSERT INTO propinas (id_propina, venta_id, propina) VALUES (?, ?, ?)',
+          [propinaId, venta_id, monto]
         );
-
-        const propinaId = resultPropina.insertId;
 
         for (const usuario of usuariosLogueados) {
           await query(

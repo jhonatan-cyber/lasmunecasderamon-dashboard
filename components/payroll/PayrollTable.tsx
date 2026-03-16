@@ -129,6 +129,7 @@ export default function PayrollTable({
                     Horas <br />
                     Extras
                   </TableHead>
+                  <TableHead className='text-right'>Gratificaciones</TableHead>
                   <TableHead className='text-right'>Anticipos</TableHead>
                   <TableHead className='text-right'>Total a Pagar</TableHead>
                   {canPay && <TableHead className='text-right'>Acciones</TableHead>}
@@ -159,6 +160,9 @@ export default function PayrollTable({
                     </TableCell>
                     <TableCell className='text-right'>
                       {formatCurrencyNoDecimals(r.total_monto_horas)}
+                    </TableCell>
+                    <TableCell className='text-right'>
+                      {formatCurrencyNoDecimals(r.gratificaciones)}
                     </TableCell>
                     <TableCell className='text-right'>
                       {formatCurrencyNoDecimals(r.anticipos)}

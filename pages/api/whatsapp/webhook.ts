@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { enviarWhatsApp } from '@/lib/whatsappService';
+import { sendNotificationToAll } from '../notifications/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -57,10 +59,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const serviciosPendientes = await query(serviciosPendientesSql) as any[];
 
+    // Buscar anticipos pendientes de aprobación (estado = 2)
+    const anticiposPendientesSql = `
+      SELECT 
+        a.id_anticipo as id,
+        a.monto,
+        CONCAT(u.nombre, ' ', u.apellido) as empleado_nombre,
+        u.nick as empleado_nick,
+        a.fecha_crea as fecha_mod
+      FROM anticipos a
+      INNER JOIN usuarios u ON a.usuario_id = u.id_usuario
+      WHERE a.estado = 2
+      ORDER BY a.fecha_crea DESC
+    `;
+
+    const anticiposPendientes = await query(anticiposPendientesSql) as any[];
+
     // Combinar todas las solicitudes pendientes
     const todasLasSolicitudes = [
       ...ventasPendientes.map((v: any) => ({ ...v, tipo: 'venta' })),
-      ...serviciosPendientes.map((s: any) => ({ ...s, tipo: 'servicio' }))
+      ...serviciosPendientes.map((s: any) => ({ ...s, tipo: 'servicio' })),
+      ...anticiposPendientes.map((a: any) => ({ ...a, tipo: 'anticipo' }))
     ].sort((a: any, b: any) => new Date(b.fecha_mod).getTime() - new Date(a.fecha_mod).getTime());
 
     if (todasLasSolicitudes.length === 0) {
@@ -192,28 +211,121 @@ ${accion === 'confirmar'
         }`;
     };
 
-    // Verificar si es una respuesta específica (ej: "1 SI", "2 NO")
+    // Verificar si es una respuesta específica (ej: "1 SI", "2 NO", "APROBAR 5", "RECHAZAR 5")
     const respuestaEspecifica = mensaje.match(
-      /^(\d+)\s+(si|no|confirmar|rechazar|confirmo|rechazo)$/i
+      /^(\d+)\s+(si|no|confirmar|rechazar|confirmo|rechazo|aprobar)$/i
     );
+    
+    // Verificar si es comando específico para anticipo (APROBAR X o RECHAZAR X), soporta UUIDs
+    const comandoAnticipo = mensaje.match(/^(aprobar|rechazar)\s+([a-f\d-]+)$/i);
+
+    if (comandoAnticipo) {
+      const anticipoId = comandoAnticipo[2];
+      const esAprobacion = comandoAnticipo[1].toLowerCase() === 'aprobar';
+      
+      // Buscar el anticipo específico
+      const anticipo = anticiposPendientes.find((a: any) => a.id === anticipoId);
+      
+      if (!anticipo) {
+        const mensajeError = `⚠️ No se encontró la solicitud de anticipo #${anticipoId}. Verifica el número e intenta de nuevo.`;
+        await enviarWhatsApp(adminWhatsApp, mensajeError);
+        return res.status(200).json({ message: 'Anticipo no encontrado' });
+      }
+      
+      if (esAprobacion) {
+        // Aprobar anticipo
+        await query('UPDATE anticipos SET estado = 1, fecha_mod = NOW() WHERE id_anticipo = ?', [anticipoId]);
+        
+        // Actualizar caja si hay efectivo disponible
+        const cajaActiva = (await query('SELECT * FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1')) as any[];
+        if (cajaActiva && cajaActiva.length > 0 && cajaActiva[0].efectivo >= anticipo.monto) {
+          await query(
+            `UPDATE cajas SET efectivo = efectivo - ?, anticipo = anticipo + ? WHERE estado = 1`,
+            [anticipo.monto, anticipo.monto]
+          );
+        }
+        
+        // Notificar al empleado
+        const mensajeEmpleado = `✅ *ANTICIPO APROBADO*
+
+Tu solicitud de anticipo ha sido aprobada.
+
+💵 *Monto:* $${anticipo.monto.toLocaleString()}
+📅 *Fecha:* ${new Date().toLocaleString()}
+
+El monto será descontado de tu próxima liquidación.`;
+        
+        await enviarWhatsApp(anticipo.telefono || '', mensajeEmpleado);
+        
+        const mensajeConfirmacion = `✅ *ANTICIPO APROBADO*
+
+👤 *Empleado:* ${anticipo.empleado_nombre}
+💵 *Monto:* $${anticipo.monto.toLocaleString()}
+
+_El empleado ha sido notificado._`;
+        
+        await enviarWhatsApp(adminWhatsApp, mensajeConfirmacion);
+
+        // Notificar al cajero en tiempo real
+        sendNotificationToAll('anticipo_processed', {
+          id: anticipoId,
+          status: 'approved',
+          monto: anticipo.monto,
+          empleado: anticipo.empleado_nombre
+        });
+        
+      } else {
+        // Rechazar anticipo
+        await query('UPDATE anticipos SET estado = 3, fecha_mod = NOW() WHERE id_anticipo = ?', [anticipoId]);
+        
+        // Notificar al empleado
+        const mensajeEmpleado = `❌ *ANTICIPO RECHAZADO*
+
+Tu solicitud de anticipo ha sido rechazada.
+
+💵 *Monto:* $${anticipo.monto.toLocaleString()}
+📅 *Fecha:* ${new Date().toLocaleString()}
+
+Por favor, contacta al administrador para más información.`;
+        
+        await enviarWhatsApp(anticipo.telefono || '', mensajeEmpleado);
+        
+        const mensajeConfirmacion = `❌ *ANTICIPO RECHAZADO*
+
+👤 *Empleado:* ${anticipo.empleado_nombre}
+💵 *Monto:* ${anticipo.monto.toLocaleString()}
+
+_El empleado ha sido notificado._`;
+        
+        await enviarWhatsApp(adminWhatsApp, mensajeConfirmacion);
+
+        // Notificar al cajero en tiempo real
+        sendNotificationToAll('anticipo_processed', {
+          id: anticipoId,
+          status: 'rejected',
+          monto: anticipo.monto,
+          empleado: anticipo.empleado_nombre
+        });
+      }
+      
+      return res.status(200).json({ message: 'Anticipo procesado' });
+    }
 
     if (respuestaEspecifica) {
-      const numeroSolicitud = parseInt(respuestaEspecifica[1]) - 1; // Convertir a índice
+      const numeroSolicitud = parseInt(respuestaEspecifica[1]) - 1;
       const accion = respuestaEspecifica[2].toLowerCase();
 
       if (numeroSolicitud >= 0 && numeroSolicitud < todasLasSolicitudes.length) {
         const solicitudSeleccionada = todasLasSolicitudes[numeroSolicitud] as any;
-        const esConfirmacion = accion === 'si' || accion === 'confirmar' || accion === 'confirmo';
+        const esConfirmacion = accion === 'si' || accion === 'confirmar' || accion === 'confirmo' || accion === 'aprobar';
 
         await procesarSolicitud(solicitudSeleccionada, esConfirmacion ? 'confirmar' : 'rechazar');
       } else {
         return res.status(200).json({ message: 'Número de solicitud inválido' });
       }
-    } else if (mensaje === 'si' || mensaje === 'confirmar' || mensaje === 'confirmo') {
-      // Confirmar solicitud más reciente
+    } else if (mensaje === 'si' || mensaje === 'confirmar' || mensaje === 'confirmo' || mensaje === 'aprobar') {
       await procesarSolicitud(solicitudPendiente, 'confirmar');
     } else if (mensaje === 'no' || mensaje === 'rechazar' || mensaje === 'rechazo') {
-      // Rechazar solicitud más reciente
       await procesarSolicitud(solicitudPendiente, 'rechazar');
     } else {
       return res.status(200).json({ message: 'Mensaje no reconocido' });

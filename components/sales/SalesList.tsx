@@ -26,8 +26,8 @@ interface SalesListProps {
   metodoPagoLabels: Record<string, string>;
   anfitrionaColors: string[];
   formatCurrency: (value: number) => string;
-  onVerDetalles: (ventaId: number) => void;
-  onAnularVenta: (ventaId: number, motivo?: string) => void;
+  onVerDetalles: (ventaId: string | number) => void;
+  onAnularVenta: (ventaId: string | number, motivo?: string) => void;
   page: number;
   setPage: (value: number) => void;
   totalPages: number;
@@ -52,7 +52,7 @@ export function SalesList({
 }: SalesListProps) {
   const [anulacionModal, setAnulacionModal] = useState<{
     open: boolean;
-    ventaId: number | null;
+    ventaId: string | number | null;
     ventaInfo: any;
   }>({
     open: false,

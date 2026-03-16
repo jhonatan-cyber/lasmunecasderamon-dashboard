@@ -15,7 +15,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const userId = userData.id;
     const comisiones = (await query(`
-      SELECT 'comision' as type, DC.id_detalle_comision as id, COALESCE(V.codigo, S.codigo) as codigo, DC.fecha_crea as date, DC.comision as amount, DC.estado
+      SELECT 
+        'comision' as type, 
+        DC.id_detalle_comision as id, 
+        COALESCE(V.codigo, S.codigo) as codigo, 
+        DC.fecha_crea as date, 
+        DC.comision as amount, 
+        DC.estado,
+        CASE 
+          WHEN C.venta_id IS NOT NULL THEN 'venta'
+          WHEN C.servicio_id IS NOT NULL THEN 'servicio'
+          ELSE 'general'
+        END as subType
       FROM detalle_comisiones DC
       INNER JOIN comisiones C ON C.id_comision = DC.comision_id
       LEFT JOIN ventas V ON V.id_venta = C.venta_id
@@ -36,7 +47,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     `, [userId])) as any[];
 
     const propinas = (await query(`
-      SELECT 'propina' as type, DP.id_detalle_propina as id, COALESCE(V.codigo, 'TIPS') as codigo, DP.fecha_crea as date, DP.monto as amount, DP.estado
+      SELECT 
+        'propina' as type, 
+        DP.id_detalle_propina as id, 
+        COALESCE(V.codigo, 'TIPS') as codigo, 
+        DP.fecha_crea as date, 
+        DP.monto as amount, 
+        DP.estado,
+        CASE 
+          WHEN P.venta_id IS NOT NULL THEN 'venta'
+          ELSE 'general'
+        END as subType
       FROM detalle_propinas DP
       INNER JOIN propinas P ON P.id_propina = DP.propina_id
       LEFT JOIN ventas V ON V.id_venta = P.venta_id

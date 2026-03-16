@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Crear tabla de permisos si no existe
     await query(`
       CREATE TABLE IF NOT EXISTS permissions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id VARCHAR(36) PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT,
         module VARCHAR(50) NOT NULL,
@@ -30,9 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Crear tabla de relación roles-permisos si no existe
     await query(`
       CREATE TABLE IF NOT EXISTS role_permissions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        role_id INT NOT NULL,
-        permission_id INT NOT NULL,
+        id VARCHAR(36) PRIMARY KEY,
+        role_id VARCHAR(36) NOT NULL,
+        permission_id VARCHAR(36) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (role_id) REFERENCES roles(id_rol) ON DELETE CASCADE,
@@ -321,6 +321,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description: 'Acceso para visualizar todos los registros de horas extras',
         module: 'overtime',
         action: 'view'
+      },
+
+      // Módulo de gratificaciones
+      {
+        name: 'Ver gratificaciones',
+        description: 'Acceso para visualizar todos los registros de gratificaciones',
+        module: 'gratificaciones',
+        action: 'view'
+      },
+      {
+        name: 'Crear gratificaciones',
+        description: 'Acceso para crear nuevos registros de gratificaciones',
+        module: 'gratificaciones',
+        action: 'create'
+      },
+      {
+        name: 'Editar gratificaciones',
+        description: 'Acceso para modificar información de gratificaciones',
+        module: 'gratificaciones',
+        action: 'edit'
+      },
+      {
+        name: 'Eliminar gratificaciones',
+        description: 'Acceso para eliminar registros de gratificaciones',
+        module: 'gratificaciones',
+        action: 'delete'
+      },
+      {
+        name: 'Ver detalles gratificaciones',
+        description: 'Acceso para ver detalles de gratificaciones por usuario',
+        module: 'gratificaciones',
+        action: 'view_details'
       },
 
       // Módulo de pagos trabajadores
@@ -709,10 +741,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const permission of basicPermissions) {
       await query(
         `
-        INSERT IGNORE INTO permissions (name, description, module, action) 
-        VALUES (?, ?, ?, ?)
+        INSERT IGNORE INTO permissions (id, name, description, module, action) 
+        VALUES (?, ?, ?, ?, ?)
       `,
-        [permission.name, permission.description, permission.module, permission.action]
+        [generateUUID(), permission.name, permission.description, permission.module, permission.action]
       );
     }
 
@@ -733,10 +765,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       for (const permission of allPermissions) {
         await query(
           `
-          INSERT IGNORE INTO role_permissions (role_id, permission_id) 
-          VALUES (?, ?)
+          INSERT IGNORE INTO role_permissions (id, role_id, permission_id) 
+          VALUES (?, ?, ?)
         `,
-          [adminRoleId, permission.id]
+          [generateUUID(), adminRoleId, permission.id]
         );
       }
     }

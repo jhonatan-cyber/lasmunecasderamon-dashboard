@@ -4,12 +4,41 @@ import jwt from 'jsonwebtoken';
 import Cookies from 'cookies';
 import bcrypt from 'bcryptjs';
 import { setSecureCookie } from '@/lib/middleware/cookieUtils';
+import { regenerateAttendanceCode } from '@/lib/codigoService';
+
+const SYSTEM_TIMEZONE = 'America/La_Paz';
+
+const getSystemTime = () => {
+  const ahora = new Date();
+  const options = { timeZone: SYSTEM_TIMEZONE, hour12: false };
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    ...options,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+  });
+  const parts = formatter.formatToParts(ahora);
+  
+  const getVal = (type: string) => parts.find(p => p.type === type)?.value || '0';
+  const h = parseInt(getVal('hour'));
+  const m = parseInt(getVal('minute'));
+  const s = parseInt(getVal('second'));
+  
+  return {
+    hora: h,
+    minutos: m,
+    segundos: s,
+    timeString: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`,
+    dateString: `${getVal('year')}-${getVal('month')}-${getVal('day')}`
+  };
+};
 
 // Función para verificar si la hora está en el rango permitido para asistencia
 const isHoraAsistencia = (): boolean => {
-  const ahora = new Date();
-  const hora = ahora.getHours();
-  const minutos = ahora.getMinutes();
+  const { hora, minutos } = getSystemTime();
   const horaActual = hora * 60 + minutos;
 
   // Hora límite: 20:00 (1200 minutos)
@@ -21,10 +50,8 @@ const isHoraAsistencia = (): boolean => {
 };
 
 // Función para verificar si requiere código de verificación
-const requiereCodigoVerificacion = async (rol: string, usuarioId: number): Promise<boolean> => {
-  const ahora = new Date();
-  const hora = ahora.getHours();
-  const minutos = ahora.getMinutes();
+const requiereCodigoVerificacion = async (rol: string, usuarioId: string): Promise<boolean> => {
+  const { hora, minutos } = getSystemTime();
   const horaActual = hora * 60 + minutos;
 
   // Hora inicio trabajo: 20:00 (1200 minutos)
@@ -64,9 +91,10 @@ const requiereCodigoVerificacion = async (rol: string, usuarioId: number): Promi
   // Si está en el horario de trabajo (20:00-23:00), verificar si ya tiene asistencia registrada
   if (horaActual >= horaInicio && horaActual <= horaFin) {
     try {
+      const { dateString } = getSystemTime();
       const asistenciaExistente = await query(
-        'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = CURDATE()',
-        [usuarioId]
+        'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+        [usuarioId, dateString]
       );
 
       // Si ya tiene asistencia registrada, no pedir código
@@ -87,10 +115,9 @@ const requiereCodigoVerificacion = async (rol: string, usuarioId: number): Promi
 };
 
 // Función para registrar asistencia
-const registrarAsistencia = async (usuarioId: number, rol: string): Promise<void> => {
+const registrarAsistencia = async (usuarioId: string, rol: string): Promise<void> => {
   try {
-    const ahora = new Date();
-    const horaActual = ahora.toTimeString().slice(0, 8);
+    const { timeString: horaActual, hora, minutos, dateString } = getSystemTime();
     const rolesAsistencia = ['cajero', 'garzon', 'anfitriona'];
     const rolLower = rol.toLowerCase();
     if (!rolesAsistencia.includes(rolLower)) {
@@ -98,16 +125,14 @@ const registrarAsistencia = async (usuarioId: number, rol: string): Promise<void
     }
     // Verificar si ya existe una asistencia para hoy
     const asistenciaExistente = await query(
-      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = CURDATE()',
-      [usuarioId]
+      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+      [usuarioId, dateString]
     );
     if (Array.isArray(asistenciaExistente) && asistenciaExistente.length > 0) {
       return; // Ya existe asistencia para hoy
     }
     // Determinar el estado basado en la hora
     let estado = 'presente';
-    const hora = ahora.getHours();
-    const minutos = ahora.getMinutes();
     const horaActualMinutos = hora * 60 + minutos;
 
     // Horario de madrugada (23:00-06:00) - no registrar asistencia
@@ -120,8 +145,9 @@ const registrarAsistencia = async (usuarioId: number, rol: string): Promise<void
     }
     // Solo registra usuario_id, fecha y hora
     // El estado lo pone la tabla automáticamente
-    await query('INSERT INTO asistencias (usuario_id, fecha, hora) VALUES (?, CURDATE(), ?)', [
+    await query('INSERT INTO asistencias (usuario_id, fecha, hora) VALUES (?, ?, ?)', [
       usuarioId,
+      dateString,
       horaActual
     ]);
   } catch (error) {
@@ -131,15 +157,13 @@ const registrarAsistencia = async (usuarioId: number, rol: string): Promise<void
 
 // Función para registrar login - maneja estado del login
 const registrarLogin = async (
-  usuarioId: number,
+  usuarioId: string,
   token: string,
   req: NextApiRequest,
   rol: string
 ): Promise<void> => {
   try {
-    const ahora = new Date();
-    const hora = ahora.getHours();
-    const minutos = ahora.getMinutes();
+    const { hora, minutos } = getSystemTime();
     const horaActual = hora * 60 + minutos;
 
     // Hora inicio madrugada: 23:00 (1380 minutos)
@@ -386,6 +410,12 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
     // Registrar login exitoso
     try {
       await registrarLogin(user.id_usuario, token, req, user.rol_nombre);
+      
+      // Si se requería código de verificación y se proporcionó con éxito, 
+      // regeneramos el código para que sea de un solo uso.
+      if (requiereCodigo && codigo) {
+        await regenerateAttendanceCode();
+      }
     } catch (loginError) {
       // Continuar sin registrar el login para debugging
     }
@@ -396,9 +426,7 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
     // 3. Se proporcionó código de verificación (si se requiere)
     // 4. NO está en horario de madrugada (23:00-06:00)
     // 5. NO está en horario libre diurno (07:00-20:00)
-    const ahora = new Date();
-    const hora = ahora.getHours();
-    const minutos = ahora.getMinutes();
+    const { hora, minutos } = getSystemTime();
     const horaActual = hora * 60 + minutos;
 
     // Hora inicio madrugada: 23:00 (1380 minutos)
@@ -445,7 +473,8 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
         role: user.rol_nombre,
         foto: user.foto || 'default.png',
         status: user.estado,
-        username: user.username || user.nombre || ''
+        username: user.username || user.nombre || '',
+        qr_token: user.qr_token
       }
     });
   } catch (error) {

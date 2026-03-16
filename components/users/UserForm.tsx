@@ -160,25 +160,40 @@ export function UserForm({
   const watchedDireccion = form.watch('direccion');
 
   useEffect(() => {
-    const capitalized = capitalizeWords(watchedNick);
-    if (watchedNick && watchedNick !== capitalized) {
-      form.setValue('nick', capitalized);
+    if (watchedNick && watchedNick.trim()) {
+      const words = watchedNick.split(' ');
+      const capitalized = words.map(word => 
+        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
+      ).join(' ');
+      if (watchedNick !== capitalized) {
+        form.setValue('nick', capitalized, { shouldValidate: false });
+      }
     }
-  }, [watchedNick, capitalizeWords, form]);
+  }, [watchedNick, form]);
 
   useEffect(() => {
-    const capitalized = capitalizeWords(watchedNombre);
-    if (watchedNombre && watchedNombre !== capitalized) {
-      form.setValue('nombre', capitalized);
+    if (watchedNombre && watchedNombre.trim()) {
+      const words = watchedNombre.split(' ');
+      const capitalized = words.map(word => 
+        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
+      ).join(' ');
+      if (watchedNombre !== capitalized) {
+        form.setValue('nombre', capitalized, { shouldValidate: false });
+      }
     }
-  }, [watchedNombre, capitalizeWords, form]);
+  }, [watchedNombre, form]);
 
   useEffect(() => {
-    const capitalized = capitalizeWords(watchedApellido);
-    if (watchedApellido && watchedApellido !== capitalized) {
-      form.setValue('apellido', capitalized);
+    if (watchedApellido && watchedApellido.trim()) {
+      const words = watchedApellido.split(' ');
+      const capitalized = words.map(word => 
+        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
+      ).join(' ');
+      if (watchedApellido !== capitalized) {
+        form.setValue('apellido', capitalized, { shouldValidate: false });
+      }
     }
-  }, [watchedApellido, capitalizeWords, form]);
+  }, [watchedApellido, form]);
 
   useEffect(() => {
     if (watchedDireccion) {
@@ -429,13 +444,19 @@ export function UserForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {(roles || [])
-                        .filter(role => role.status === 1)
-                        .map(role => (
-                          <SelectItem key={role.id} value={role.id.toString()}>
-                            {role.name}
-                          </SelectItem>
-                        ))}
+                      {!isLoadingRoles && roles && roles.length > 0 ? (
+                        roles
+                          .filter(role => role.status === 1)
+                          .map(role => (
+                            <SelectItem key={role.id} value={role.id.toString()}>
+                              {role.name}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="no-roles" disabled>
+                          {isLoadingRoles ? 'Cargando...' : 'No hay roles disponibles'}
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

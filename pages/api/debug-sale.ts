@@ -14,13 +14,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Test 2: Intentar insertar venta
     try {
+      const { generateUUID } = await import('@/lib/db');
+      const ventaId = generateUUID();
       const insertVentaSql = `
         INSERT INTO ventas (
-          codigo, cliente_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          id_venta, codigo, cliente_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
-      const ventaResult = await query(insertVentaSql, [
+      await query(insertVentaSql, [
+        ventaId,
         'TEST' + Date.now(),
         testData.cliente_id || 1,
         testData.habitacion_id || null,
@@ -29,17 +32,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         testData.sub_total || 0,
         testData.total || 0,
         testData.total_comision || 0
-      ]) as any;
+      ]);
       
-      const ventaId = ventaResult.insertId;
       console.log('[DEBUG] Venta inserted with ID:', ventaId);
       
       // Test 3: Insertar detalles
       if (testData.detalles && Array.isArray(testData.detalles)) {
         for (const detalle of testData.detalles) {
           await query(
-            `INSERT INTO detalle_ventas (venta_id, producto_id, precio, comision, cantidad, sub_total) VALUES (?, ?, ?, ?, ?, ?)`,
-            [ventaId, detalle.producto_id, detalle.precio, detalle.comision, detalle.cantidad, detalle.sub_total]
+            `INSERT INTO detalle_ventas (id_detalle_venta, venta_id, producto_id, precio, comision, cantidad, sub_total) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [generateUUID(), ventaId, detalle.producto_id, detalle.precio, detalle.comision, detalle.cantidad, detalle.sub_total]
           );
         }
         console.log('[DEBUG] Detalles inserted');
@@ -49,8 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (testData.usuarios && Array.isArray(testData.usuarios)) {
         for (const usuarioId of testData.usuarios) {
           await query(
-            `INSERT INTO ventas_usuarios (venta_id, usuario_id) VALUES (?, ?)`,
-            [ventaId, usuarioId]
+            `INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id) VALUES (?, ?, ?)`,
+            [generateUUID(), ventaId, usuarioId]
           );
         }
         console.log('[DEBUG] Usuarios inserted');

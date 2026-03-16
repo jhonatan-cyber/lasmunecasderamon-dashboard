@@ -21,7 +21,7 @@ interface UseTipsDetalleReturn {
   detalles: any[]
   loading: boolean
   error: string | null
-  fetchDetalles: (usuarioId: number) => Promise<void>
+  fetchDetalles: (usuarioId: string | number) => Promise<void>
 }
 
 export default function useTips(): UseTipsReturn {
@@ -34,11 +34,15 @@ export default function useTips(): UseTipsReturn {
     }
   )
 
+  const fetchTips = useCallback(async () => {
+    await refetch()
+  }, [refetch])
+
   return {
     data: data || [],
     loading: isLoading,
     error,
-    fetchTips: refetch
+    fetchTips
   }
 }
 
@@ -52,20 +56,24 @@ export function useTipsResumen(): UseTipsResumenReturn {
     }
   )
 
+  const fetchTipsResumen = useCallback(async () => {
+    await refetch()
+  }, [refetch])
+
   return {
     data: data || [],
     loading: isLoading,
     error,
-    fetchTipsResumen: refetch
+    fetchTipsResumen
   }
 }
 
-export function useTipsDetalle(usuarioId?: number): UseTipsDetalleReturn {
+export function useTipsDetalle(usuarioId?: string | number): UseTipsDetalleReturn {
   const [detalles, setDetalles] = useState<any[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchDetalles = useCallback(async (userId: number) => {
+  const fetchDetalles = useCallback(async (userId: string | number) => {
     try {
       setLoading(true)
       setError(null)

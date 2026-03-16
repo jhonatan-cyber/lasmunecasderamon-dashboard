@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { Client } from '@/types/client';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -6,11 +5,10 @@ import { es } from 'date-fns/locale';
 
 interface ClientDetailsProps {
   client: Client | null;
-  onEdit: () => void;
   onClose: () => void;
 }
 
-export function ClientDetails({ client, onEdit, onClose }: ClientDetailsProps) {
+export function ClientDetails({ client, onClose }: ClientDetailsProps) {
   if (!client) return null;
 
   const formatDate = (dateString: string | undefined) => {
@@ -20,20 +18,10 @@ export function ClientDetails({ client, onEdit, onClose }: ClientDetailsProps) {
 
   return (
     <div className='w-full max-w-xl mx-auto'>
-      <div className='flex justify-between items-start mb-6'>
+      <div className='mb-6'>
         <h2 className='text-2xl font-bold'>
           {client.name} {client.lastName}
         </h2>
-        <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={onEdit}
-            className='rounded-full  hover:scale-105 transition-all duration-200 bg-black text-white'
-          >
-            Editar
-          </Button>
-        </div>
       </div>
 
       <div className='space-y-6'>
@@ -41,6 +29,10 @@ export function ClientDetails({ client, onEdit, onClose }: ClientDetailsProps) {
           <div className='space-y-3'>
             <h3 className='font-semibold text-gray-700 text-md'>Información Personal</h3>
             <div className='space-y-3'>
+              <div>
+                <p className='text-xs text-gray-500 mb-1'>ID</p>
+                <p className='font-medium text-sm font-mono'>{client.id}</p>
+              </div>
               <div>
                 <p className='text-xs text-gray-500 mb-1'>RUN</p>
                 <p className='font-medium text-sm'>{client.run || 'No especificado'}</p>

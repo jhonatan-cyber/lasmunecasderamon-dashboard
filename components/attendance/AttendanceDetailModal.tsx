@@ -99,7 +99,7 @@ export default function AttendanceDetailModal({
   };
 
   const formatTime = (timeString: string) => {
-    return timeString.slice(0, 5);
+    return timeString.slice(0, 5) + ' UTC';
   };
 
   const getStatusBadge = (estado: number) => {

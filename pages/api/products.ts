@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
@@ -14,7 +14,7 @@ export const config = {
 const productSchema = z.object({
   code: z.string().min(1, 'Código requerido'),
   name: z.string().min(1, 'Nombre requerido'),
-  category_id: z.preprocess(v => Number(v), z.number()),
+  category_id: z.string().min(1, 'Categoría requerida'),
   price: z.preprocess(v => Number(v), z.number()),
   commission: z.preprocess(v => Number(v), z.number()),
   description: z.string().optional(),
@@ -116,9 +116,7 @@ async function parseFormData(
         simpleFields[key] = Array.isArray(value) ? value[0] : value || '';
       }
 
-      console.log('✅ Formulario parseado correctamente');
-      console.log('Campos:', Object.keys(simpleFields));
-      console.log('Archivos:', Object.keys(files));
+      console.log('Campos recibidos:', Object.keys(simpleFields));
 
       resolve({ fields: simpleFields, files });
     });
@@ -234,9 +232,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       console.error('Error al procesar imagen:', imageError);
     }
 
-    const result: any = await query(
-      'INSERT INTO productos (codigo, nombre, categoria_id, precio, comision, descripcion, estado, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    const id = generateUUID();
+    await query(
+      'INSERT INTO productos (id_producto, codigo, nombre, categoria_id, precio, comision, descripcion, estado, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
+        id,
         fields.code,
         fields.name,
         fields.category_id,
@@ -251,7 +251,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(201).json({
       success: true,
       message: 'Producto creado correctamente',
-      id: result.insertId
+      id: id
     });
   } catch (error) {
     console.error('❌ Error al crear producto:', error);

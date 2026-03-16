@@ -3,14 +3,14 @@ import { query } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
 interface ServicioData {
-  id_servicio: number;
+  id_servicio: string;
   codigo: string;
   tiempo: number;
   fecha_crea: string;
   precio_servicio: number;
   precio_habitacion: number;
   iva: number;
-  id_habitacion: number;
+  id_habitacion: string;
   sub_total: number;
   total: number;
   metodo_pago: string;
@@ -19,12 +19,12 @@ interface ServicioData {
   cliente: string;
   fecha_mod: string | null;
   anfitrionaId: string;
-  id_cliente: number;
+  id_cliente: string;
   estado: number;
 }
 
 interface VentaData {
-  id_venta: number;
+  id_venta: string;
   habitacion: string | null;
   codigo: string;
   metodo_pago: string;

@@ -59,7 +59,7 @@ export function useCommissions(): UseCommissionsReturn {
 
   // Mutaciones CRUD con toasts
   const { create, update, remove } = useGenericMutations<Commission>('/api/commissions', {
-    onSuccess: refetch,
+    onSuccess: () => { refetch(); },
     showToasts: true,
     entityName: 'Comisión'
   });
@@ -163,7 +163,7 @@ export function useCommissions(): UseCommissionsReturn {
       if (!id) {
         return { success: false, message: 'ID de comisión es requerido para actualización' };
       }
-      await update({ id, ...commissionData } as any);
+      await update({ id, ...commissionData });
       return { success: true, message: 'Comisión actualizada exitosamente' };
     } catch (err) {
       return {
@@ -178,7 +178,7 @@ export function useCommissions(): UseCommissionsReturn {
       if (!id) {
         return { success: false, message: 'ID de comisión es requerido' };
       }
-      await remove(Number(id));
+      await remove(id);
       return { success: true, message: 'Comisión eliminada exitosamente' };
     } catch (err) {
       return {
@@ -230,7 +230,9 @@ export function useCommissions(): UseCommissionsReturn {
     setStatusFilter,
     employeeFilter,
     setEmployeeFilter,
-    fetchCommissions: refetch,
+    fetchCommissions: async () => {
+      await refetch();
+    },
     createCommission,
     updateCommission,
     deleteCommission,

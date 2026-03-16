@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { query } from "@/lib/db";
+import { query, generateUUID } from "@/lib/db";
 import { z } from "zod";
 
 
@@ -90,16 +90,17 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           message: "Ya existe una habitación con ese nombre",
         });
     }
-    const result: any = await query(
-      "INSERT INTO habitaciones (nombre, precio, tiempo, comision_anfitriona) VALUES (?, ?, ?, ?)",
-      [parse.data.name, parse.data.price, parse.data.time, parse.data.comision_anfitriona]
+    const id = generateUUID();
+    await query(
+      "INSERT INTO habitaciones (id_habitacion, nombre, precio, tiempo, comision_anfitriona) VALUES (?, ?, ?, ?, ?)",
+      [id, parse.data.name, parse.data.price, parse.data.time, parse.data.comision_anfitriona]
     );
     return res
       .status(201)
       .json({
         success: true,
         message: "Habitación creada correctamente",
-        id: result.insertId,
+        id: id,
       });
   } catch (error) {
     return res

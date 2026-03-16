@@ -5,11 +5,11 @@ export const initLogsTable = async () => {
         const createTableQuery = `
       CREATE TABLE IF NOT EXISTS servicio_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        servicio_id INT NOT NULL,
+        servicio_id VARCHAR(36) NOT NULL,
         tipo_evento VARCHAR(50) NOT NULL,
         descripcion TEXT,
         fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        usuario_id INT,
+        usuario_id VARCHAR(36),
         INDEX (servicio_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `;
@@ -20,7 +20,7 @@ export const initLogsTable = async () => {
     }
 };
 
-export const addServicioLog = async (servicioId: number, tipoEvento: string, descripcion: string, usuarioId?: number) => {
+export const addServicioLog = async (servicioId: string | number, tipoEvento: string, descripcion: string, usuarioId?: string | number) => {
     try {
         await query(
             'INSERT INTO servicio_logs (servicio_id, tipo_evento, descripcion, usuario_id) VALUES (?, ?, ?, ?)',

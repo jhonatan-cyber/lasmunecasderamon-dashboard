@@ -4,7 +4,7 @@ import { notifyPermissionsUpdate } from '../../permissions/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
-  const roleId = parseInt(id as string);
+  const roleId = id as string;
 
   if (req.method === 'GET') {
     try {
@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Verificar que los permisos existen
       if (permissions.length > 0) {
-        const permissionIds = permissions.map(p => parseInt(p)).filter(p => !isNaN(p));
+        const permissionIds = permissions.map(p => String(p));
         
         // Crear placeholders para la consulta IN
         const placeholders = permissionIds.map(() => '?').join(',');
@@ -95,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Insertar los nuevos permisos
       if (permissions.length > 0) {
-        const values = permissions.map(permissionId => [roleId, parseInt(permissionId)]);
+        const values = permissions.map(permissionId => [roleId, String(permissionId)]);
         const placeholders = values.map(() => '(?, ?)').join(', ');
         
         await query(`

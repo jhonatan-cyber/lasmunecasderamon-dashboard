@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query, rawQuery } from '@/lib/db';
+import { query, rawQuery, generateUUID } from '@/lib/db';
 import { z } from 'zod';
 import { sendNotificationToAll } from './notifications/sse';
 import { notifyOrderDeleted, notifyOrderCreated } from './orders/sse';
@@ -10,9 +10,9 @@ import { sendPushByRole } from '@/lib/pushNotifications';
  * @param anfitrionaId ID de la anfitriona
  * @returns Información de la venta activa con habitación, o null si no está en ninguna
  */
-async function buscarVentaActivaConHabitacion(anfitrionaId: number): Promise<{
-  id_venta: number;
-  habitacion_id: number;
+async function buscarVentaActivaConHabitacion(anfitrionaId: string): Promise<{
+  id_venta: string;
+  habitacion_id: string;
   habitacion_nombre: string;
   tiempo: number;
   codigo: string;
@@ -51,25 +51,25 @@ v.id_venta,
 const url = process.env.CORS_ORIGINS;
 // Esquema de validación para crear/actualizar pedidos
 const orderDetailSchema = z.object({
-  productoId: z.number(),
+  productoId: z.string(),
   precio: z.number(),
   comision: z.number(),
   cantidad: z.number(),
   subtotal: z.number(),
   generaComision: z.number().optional().default(1), // 1 = genera comisión, 0 = no genera comisión
-  hostessId: z.number().nullable().optional(), // Anfitriona asignada a este producto (para bebidas individuales)
+  hostessId: z.string().nullable().optional(), // Anfitriona asignada a este producto (para bebidas individuales)
   selectedHostesses: z.array(z.string()).optional().default([]), // Para champañas con múltiples anfitrionas
-  roomId: z.number().nullable().optional() // Habitación asignada para bebidas > $30,000 con comisión
+  roomId: z.string().nullable().optional() // Habitación asignada para bebidas > $30,000 con comisión
 });
 
 const orderUserSchema = z.object({
-  usuarioId: z.number()
+  usuarioId: z.string()
 });
 
 const orderSchema = z.object({
   codigo: z.string().min(1),
-  meseroId: z.number(),
-  clienteId: z.number().nullable().optional(), // Permitir NULL
+  meseroId: z.string(),
+  clienteId: z.string().nullable().optional(), // Permitir NULL
   subtotal: z.number(),
   total: z.number(),
   totalComision: z.number(),
@@ -159,7 +159,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     );
 
     // Solo verificar ventas activas si hay productos especiales
-    let habitacionAutoSeleccionada: number | null = null;
+    let habitacionAutoSeleccionada: string | null = null;
     let tiempoAutoSeleccionado: number | null = null;
 
     if (tieneProductosEspeciales && usuarios && usuarios.length > 0) {
@@ -235,33 +235,40 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Iniciar transacción
     await rawQuery('START TRANSACTION');
     // Insertar pedido principal
-    const result: any = await query(
-      'INSERT INTO pedidos (codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0, 1]
+    const pedidoId = generateUUID();
+    await query(
+      'INSERT INTO pedidos (id_pedido, codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [pedidoId, codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0, 1]
     );
-    const pedidoId = result.insertId;
 
     // Insertar detalles
     for (const d of detalles) {
       // Verificar si la columna habitacion_id existe, si no, agregarla
       try {
         await query(
-          'ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS habitacion_id INT NULL AFTER hostess_id'
+          'ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS habitacion_id VARCHAR(36) NULL AFTER hostess_id'
         );
       } catch (alterError) {
         // Si falla, intentar sin IF NOT EXISTS (para MySQL más antiguo)
         try {
           await query(
-            'ALTER TABLE detalle_pedidos ADD COLUMN habitacion_id INT NULL AFTER hostess_id'
+            'ALTER TABLE detalle_pedidos ADD COLUMN habitacion_id VARCHAR(36) NULL AFTER hostess_id'
           );
         } catch (e) {
-          // La columna ya existe, continuar
+          // La columna ya existe o hay otro error, verificar tipo
+          try {
+             await query('ALTER TABLE detalle_pedidos MODIFY COLUMN habitacion_id VARCHAR(36) NULL');
+          } catch(modifyError) {
+             // Ignorar si ya está correcto o falla
+          }
         }
       }
 
+      const detallePedidoId = generateUUID();
       const detalleResult: any = await query(
-        'INSERT INTO detalle_pedidos (pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id, habitacion_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO detalle_pedidos (id_detalle_pedido, pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id, habitacion_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
+          detallePedidoId,
           pedidoId,
           d.productoId,
           d.precio,
@@ -283,8 +290,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         try {
           for (const hostessId of d.selectedHostesses) {
             await query(
-              'INSERT INTO detalle_pedidos_anfitrionas (detalle_pedido_id, anfitriona_id) VALUES (?, ?)',
-              [detalleResult.insertId, Number(hostessId)]
+              'INSERT INTO detalle_pedidos_anfitrionas (id_detalle_anfitriona, detalle_pedido_id, anfitriona_id) VALUES (?, ?, ?)',
+              [generateUUID(), detallePedidoId, hostessId]
             );
           }
         } catch (tableError) {
@@ -292,9 +299,9 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           console.log('Tabla detalle_pedidos_anfitrionas no existe, creándola...');
           await query(`
             CREATE TABLE IF NOT EXISTS detalle_pedidos_anfitrionas(
-    id_detalle_anfitriona INT AUTO_INCREMENT PRIMARY KEY,
-    detalle_pedido_id INT NOT NULL,
-    anfitriona_id INT NOT NULL,
+    id_detalle_anfitriona VARCHAR(36) PRIMARY KEY,
+    detalle_pedido_id VARCHAR(36) NOT NULL,
+    anfitriona_id VARCHAR(36) NOT NULL,
     fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(detalle_pedido_id) REFERENCES detalle_pedidos(id_detalle_pedido) ON DELETE CASCADE,
     FOREIGN KEY(anfitriona_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
@@ -305,8 +312,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           // Reintentar inserción
           for (const hostessId of d.selectedHostesses) {
             await query(
-              'INSERT INTO detalle_pedidos_anfitrionas (detalle_pedido_id, anfitriona_id) VALUES (?, ?)',
-              [detalleResult.insertId, Number(hostessId)]
+              'INSERT INTO detalle_pedidos_anfitrionas (id_detalle_anfitriona, detalle_pedido_id, anfitriona_id) VALUES (?, ?, ?)',
+              [generateUUID(), detallePedidoId, hostessId]
             );
           }
         }
@@ -314,7 +321,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     // Insertar usuarios
     for (const u of usuarios) {
-      await query('INSERT INTO pedidos_usuarios (usuario_id, pedido_id) VALUES (?, ?)', [
+      await query('INSERT INTO pedidos_usuarios (id_pedido_usuario, usuario_id, pedido_id) VALUES (?, ?, ?)', [
+        generateUUID(),
         u.usuarioId,
         pedidoId
       ]);
@@ -347,7 +355,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
               // Notificar a clientes conectados que la habitación cambió de estado
               try {
                 sendNotificationToAll('room_occupied', {
-                  roomId: Number(rid),
+                  roomId: rid,
                   timestamp: new Date().toISOString()
                 });
               } catch (notifyRoomErr) {
@@ -478,18 +486,18 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     // Enviar notificación en tiempo real de que el pedido fue eliminado
     if (pedidoInfo && pedidoInfo.length > 0) {
       console.info('[ORDERS] sending order_deleted notification', {
-        id: Number(id),
+        id: id,
         meseroId: pedidoInfo[0].mesero_id
       });
       sendNotificationToAll('order_deleted', {
-        id: Number(id),
+        id: id,
         meseroId: pedidoInfo[0].mesero_id,
         timestamp: new Date().toISOString()
       });
 
       // Notificar a través de SSE para actualizar lista de pedidos
       try {
-        notifyOrderDeleted(Number(id));
+        notifyOrderDeleted(id as string);
       } catch (sseError) {
         console.error('[ORDERS] Error notificando eliminación por SSE:', sseError);
       }

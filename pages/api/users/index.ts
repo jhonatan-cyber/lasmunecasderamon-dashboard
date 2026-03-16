@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/lib/middleware/auth';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -114,6 +114,7 @@ const mapUserFromDB = (row: any) => ({
   discount: row.descuento,
   status: row.estado,
   foto: row.foto,
+  qr_token: row.qr_token,
   created_at: row.fecha_crea,
   updated_at: row.fecha_mod,
   deleted_at: row.fecha_baja
@@ -249,7 +250,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       sueldo,
       aporte,
       descuento || null, // descuento es opcional
-      fotoFilename // agregar foto
+      fotoFilename || 'default.png' // usar foto por defecto si no hay foto
     ];
 
     // Verificar que no haya undefined en los parámetros (excepto foto que puede ser null)
@@ -268,19 +269,20 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const email = generateEmail(nick);
     const password = await generatePassword(run);
 
+    const id = generateUUID();
     // Insertar nuevo usuario con email, password y foto
-    const result = await query(
+    await query(
       `INSERT INTO usuarios (
-        run, nick, nombre, apellido, direccion, telefono, 
+        id_usuario, run, nick, nombre, apellido, direccion, telefono, 
         estado_civil, afp, rol_id, sueldo, aporte, descuento, foto, email, password, estado
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [...params, email, password]
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [id, ...params, email, password]
     );
 
     return res.status(201).json({
       success: true,
       message: 'Usuario creado exitosamente',
-      id: (result as any).insertId
+      id: id
     });
   } catch (error) {
     console.error('Error al crear usuario:', error);
@@ -344,23 +346,6 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       userId = req.query.id || req.body.id;
     }
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID de usuario es requerido'
-      });
-    }
-
-    // Convertir userId a número si es string
-    const userIdNumber = parseInt(userId as string, 10);
-
-    if (isNaN(userIdNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID de usuario debe ser un número válido'
-      });
-    }
-
     // Extraer campos del FormData o JSON
     const run = fields.run;
     const nick = fields.nick;
@@ -374,6 +359,13 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     const sueldo = fields.sueldo;
     const aporte = fields.aporte;
     const descuento = fields.descuento;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de usuario es requerido'
+      });
+    }
 
     // Validar que todos los campos requeridos estén presentes
     const requiredFields = {
@@ -407,7 +399,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verificar si el usuario existe
     const existingUser = (await query('SELECT id_usuario, foto FROM usuarios WHERE id_usuario = ?', [
-      userIdNumber
+      userId
     ])) as any[];
 
     if (existingUser.length === 0) {
@@ -417,8 +409,8 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    // Si no hay nueva foto, mantener la foto anterior
-    const finalFoto = fotoFilename || existingUser[0].foto;
+    // Si no hay nueva foto, mantener la foto anterior o usar default
+    const finalFoto = fotoFilename || existingUser[0].foto || 'default.png';
 
     // Actualizar usuario con email, password y foto
     await query(
@@ -444,7 +436,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
         finalFoto,
         email,
         password,
-        userIdNumber
+        userId
       ]
     );
 
@@ -596,7 +588,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 export default withAuth(handler);
 
 // Funciones exportadas para uso externo
-export const activateUser = async (userId: number) => {
+export const activateUser = async (userId: string) => {
   try {
     await query('UPDATE usuarios SET estado = 1 WHERE id_usuario = ?', [userId]);
     return { success: true, message: 'Usuario activado exitosamente' };
@@ -605,7 +597,7 @@ export const activateUser = async (userId: number) => {
   }
 };
 
-export const deactivateUser = async (userId: number) => {
+export const deactivateUser = async (userId: string) => {
   try {
     await query('UPDATE usuarios SET estado = 0 WHERE id_usuario = ?', [userId]);
     return { success: true, message: 'Usuario desactivado exitosamente' };
@@ -614,7 +606,7 @@ export const deactivateUser = async (userId: number) => {
   }
 };
 
-export const deleteUser = async (userId: number) => {
+export const deleteUser = async (userId: string) => {
   try {
     await query('DELETE FROM usuarios WHERE id_usuario = ?', [userId]);
     return { success: true, message: 'Usuario eliminado exitosamente' };
@@ -623,7 +615,7 @@ export const deleteUser = async (userId: number) => {
   }
 };
 
-export const getUserById = async (userId: number) => {
+export const getUserById = async (userId: string) => {
   try {
     const result = (await query(
       `

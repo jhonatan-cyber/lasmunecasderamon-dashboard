@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE v.caja_id = ?
     `, [caja_id]);
 
-    const totalComisionesVenta = comisionesVentas[0]?.total_comisiones_venta || 0;
+    const totalComisionesVenta = (comisionesVentas as any)[0]?.total_comisiones_venta || 0;
 
     // Distribuir las comisiones de venta proporcionalmente entre las habitaciones
     const totalServicios = habitacionesStats.reduce((sum: number, h: any) => sum + h.total_servicios, 0);

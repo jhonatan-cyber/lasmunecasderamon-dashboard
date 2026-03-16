@@ -1,5 +1,5 @@
 export interface User {
-    id: number;
+    id: string;
     run: string;
     nick: string;
     name: string;
@@ -9,7 +9,7 @@ export interface User {
     address: string;
     maritalStatus: string;
     role: string;
-    roleId?: number;
+    roleId?: string;
     afp: string;
     salary: number;
     contributions: number;

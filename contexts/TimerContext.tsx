@@ -4,8 +4,11 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
+import { useSSE } from '@/hooks/shared/useSSE';
 import { TimerExpiredModal } from '@/components/notifications';
 import { playNotificationSound, announceVoice } from '@/lib/audioUtils';
+
+import { parseDateSafe, calculateRemainingTime, formatTime } from '@/lib/timeUtils';
 
 export interface Timer {
   id: string;
@@ -99,25 +102,11 @@ const loadTimersFromStorage = (): Timer[] => {
       // Convertir las fechas de string a Date
       return timers.map((timer: any) => ({
         ...timer,
-        startTime: new Date(timer.startTime)
+        startTime: parseDateSafe(timer.startTime)
       }));
     }
   }
   return [];
-};
-
-// Función para calcular el tiempo reste basado en el tiempo de inicio y el offset del servidor
-export const calculateRemainingTime = (timer: Timer, offset: number = 0): number => {
-  if (timer.isPaused) {
-    return timer.remainingTime;
-  }
-
-  const now = new Date(Date.now() + offset);
-  const elapsedSeconds = Math.floor((now.getTime() - timer.startTime.getTime()) / 1000);
-  const totalDurationSeconds = timer.duration * 60;
-  const remaining = totalDurationSeconds - elapsedSeconds;
-
-  return Math.max(0, remaining);
 };
 
 export const useTimer = () => {
@@ -268,8 +257,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const dbTimerAny = dbTimer as any;
 
               // Recalcular el tiempo restante correcto usando la hora del servidor
-              const dbStartTime = new Date(dbTimerAny.startTime);
-              const now = new Date();
+              const dbStartTime = parseDateSafe(dbTimerAny.startTime);
+              const now = new Date(Date.now() + (data.serverTime ? (new Date(data.serverTime).getTime() - Date.now()) : 0));
               const elapsedSeconds = Math.floor((now.getTime() - dbStartTime.getTime()) / 1000);
 
               const durationMins = Number(dbTimerAny.duration || 0);
@@ -355,8 +344,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               console.log('[TimerContext] Sincronizando timer desde servidor:', serverTimer.codigo);
 
               // Calcular tiempo restante
-              const now = new Date();
-              const start = new Date(serverTimer.startTime);
+              const now = new Date(Date.now() + serverOffset);
+              const start = parseDateSafe(serverTimer.startTime);
               const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
 
               const durationMins = Number(serverTimer.duration || 0);
@@ -402,9 +391,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                       t.duration !== serverTimer.duration ||
                       t.anfitrionas !== (serverTimer.anfitrionas || '')
                     ) {
-                      const now = new Date();
+                      const dbStartTimeParsed = parseDateSafe(serverTimer.startTime);
+                      const now = new Date(Date.now() + serverOffset);
                       const elapsedSeconds = Math.floor(
-                        (now.getTime() - dbStartTime.getTime()) / 1000
+                        (now.getTime() - dbStartTimeParsed.getTime()) / 1000
                       );
 
                       const durationMins = Number(serverTimer.duration || 0);
@@ -421,7 +411,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         roomName: serverTimer.roomName,
                         duration: durationMins,
                         isPaused: dbIsPaused,
-                        startTime: dbStartTime,
+                        startTime: dbStartTimeParsed,
                         remainingTime: remainingSeconds,
                         anfitrionas: serverTimer.anfitrionas || ''
                       };
@@ -462,8 +452,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Sincronizar inmediatamente al cargar
     syncActiveTimers();
 
-    // Sincronizar cada 10 segundos para tiempo real
-    const interval = setInterval(syncActiveTimers, 10000);
+    // Sincronizar cada 60 segundos como respaldo (la sincronización principal es via SSE)
+    const interval = setInterval(syncActiveTimers, 60000);
 
     return () => clearInterval(interval);
   }, [isInitialized]);
@@ -489,214 +479,173 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [timers, isInitialized]);
 
   // Sincronización de timers via SSE para multi-dispositivo
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
+  const sseUrl = (typeof window !== 'undefined' && 
+    window.location.pathname !== '/' && 
+    window.location.pathname !== '/landing' && 
+    window.location.pathname !== '/login') 
+    ? '/api/notifications/sse' 
+    : null;
 
-    const connectSSE = () => {
-      // No conectar si es una página pública
-      const isPublic =
-        !window.location.pathname ||
-        window.location.pathname === '/' ||
-        window.location.pathname === '/landing' ||
-        window.location.pathname === '/login';
+  useSSE(sseUrl, (payload) => {
+    // Evento: Se inició un nuevo timer
+    if (payload?.type === 'timer_started' && payload?.data) {
+      const {
+        servicioId,
+        codigo,
+        roomId,
+        roomName,
+        duration,
+        startTime,
+        clienteNombre,
+        anfitrionas,
+        tipoTransaccion
+      } = payload.data;
 
-      if (isPublic) return;
+      // Verificar si ya existe este timer localmente
+      const existingTimer = timersRef.current.find(
+        t => t.servicioId === servicioId && t.servicioCode === codigo
+      );
 
-      console.log('[TimerContext] Conectando a SSE para sincronización de timers...');
-      eventSource = new EventSource('/api/notifications/sse');
+      if (!existingTimer) {
+        console.log('[TimerContext] SSE: Iniciando timer remoto:', codigo);
 
-      eventSource.addEventListener('message', event => {
-        try {
-          const payload = JSON.parse(event.data);
+        const now = new Date(Date.now() + serverOffset);
+        const start = parseDateSafe(startTime);
+        const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
 
-          // Evento: Se inició un nuevo timer
-          if (payload?.type === 'timer_started' && payload?.data) {
-            const {
-              servicioId,
-              codigo,
-              roomId,
-              roomName,
-              duration,
-              startTime,
-              clienteNombre,
-              anfitrionas,
-              tipoTransaccion
-            } = payload.data;
+        const durationMins = Number(duration || 0);
+        let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
 
-            // Verificar si ya existe este timer localmente
-            const existingTimer = timersRef.current.find(
-              t => t.servicioId === servicioId && t.servicioCode === codigo
-            );
-
-            if (!existingTimer) {
-              console.log('[TimerContext] SSE: Iniciando timer remoto:', codigo);
-
-              // Calcular tiempo restante basándose en startTime usando el offset del servidor
-              const now = new Date(Date.now() + serverOffset);
-              const start = new Date(startTime);
-              const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-
-              const durationMins = Number(duration || 0);
-              let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
-
-              // Grace period para desfase de reloj
-              if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
-                remainingSeconds = durationMins * 60;
-              }
-
-              const newTimer: Timer = {
-                id: `${servicioId}-${roomId}-${Date.now()}`,
-                servicioId,
-                roomId,
-                roomName,
-                duration,
-                remainingTime: remainingSeconds,
-                isActive: true,
-                isPaused: false,
-                startTime: start,
-                servicioCode: codigo,
-                clienteNombre,
-                tipoTransaccion: tipoTransaccion || 'servicio',
-                anfitrionas: anfitrionas || ''
-              };
-
-              setTimers(prev => [
-                ...prev.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)),
-                newTimer
-              ]);
-              saveTimersToStorage([
-                ...timersRef.current.filter(
-                  t => !(t.servicioId === servicioId && t.roomId === roomId)
-                ),
-                newTimer
-              ]);
-            }
-          }
-
-          // Evento: Se detuvo un timer
-          if (payload?.type === 'timer_stopped' && payload?.data) {
-            const { servicioId, roomId } = payload.data;
-            console.log('[TimerContext] SSE: Deteniendo timer remoto:', servicioId);
-
-            setTimers(prev => {
-              const updated = prev.filter(t => t.servicioId !== servicioId);
-              saveTimersToStorage(updated);
-              return updated;
-            });
-          }
-
-          if (payload?.type === 'timer_paused' && payload?.data) {
-            const { servicioId, tipoTransaccion } = payload.data;
-            console.log(
-              `[TimerContext] SSE: Pausando timer remoto (${tipoTransaccion}):`,
-              servicioId
-            );
-            setTimers(prev => {
-              const updated = prev.map(t => {
-                if (
-                  t.servicioId === servicioId &&
-                  t.tipoTransaccion === (tipoTransaccion || 'servicio')
-                ) {
-                  const currentRemaining = calculateRemainingTime(t, serverOffset);
-                  return { ...t, isPaused: true, remainingTime: currentRemaining };
-                }
-                return t;
-              });
-              saveTimersToStorage(updated);
-              return updated;
-            });
-          }
-
-          // Evento: Se reanudó un timer de venta o servicio
-          if (payload?.type === 'timer_resumed' && payload?.data) {
-            const { servicioId, newStartTime, tipoTransaccion } = payload.data;
-            console.log(
-              `[TimerContext] SSE: Reanudando timer remoto (${tipoTransaccion}):`,
-              servicioId
-            );
-            setTimers(prev => {
-              const updated = prev.map(t => {
-                if (t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion) {
-                  const start = new Date(newStartTime);
-                  const now = new Date(Date.now() + serverOffset);
-                  const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-                  const remainingSeconds = Math.max(0, t.duration * 60 - elapsedSeconds);
-                  return {
-                    ...t,
-                    isPaused: false,
-                    startTime: start,
-                    remainingTime: remainingSeconds
-                  };
-                }
-                return t;
-              });
-              saveTimersToStorage(updated);
-              return updated;
-            });
-          }
-
-          // Evento: Se actualizó un timer (tiempo o habitación)
-          if (payload?.type === 'timer_updated' && payload?.data) {
-            const {
-              servicioId,
-              duration,
-              roomId,
-              roomName,
-              tipoTransaccion,
-              startTime,
-              anfitrionas
-            } = payload.data;
-            console.log(
-              `[TimerContext] SSE: Actualizando timer remoto (${tipoTransaccion}):`,
-              servicioId
-            );
-            setTimers(prev => {
-              const updated = prev.map(t => {
-                if (
-                  t.servicioId === servicioId &&
-                  t.tipoTransaccion === (tipoTransaccion || 'servicio')
-                ) {
-                  const start = startTime ? new Date(startTime) : t.startTime;
-                  const now = new Date(Date.now() + serverOffset);
-                  const d = duration || t.duration;
-                  const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-                  const remainingSeconds = Math.max(0, d * 60 - elapsedSeconds);
-
-                  return {
-                    ...t,
-                    duration: d,
-                    roomId: roomId || t.roomId,
-                    roomName: roomName || t.roomName,
-                    startTime: start,
-                    remainingTime: remainingSeconds,
-                    anfitrionas: anfitrionas !== undefined ? anfitrionas : t.anfitrionas
-                  };
-                }
-                return t;
-              });
-              saveTimersToStorage(updated);
-              return updated;
-            });
-          }
-        } catch (error) {
-          console.error('[TimerContext] Error procesando evento SSE:', error);
+        if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
+          remainingSeconds = durationMins * 60;
         }
+
+        const newTimer: Timer = {
+          id: `${servicioId}-${roomId}-${Date.now()}`,
+          servicioId,
+          roomId,
+          roomName,
+          duration,
+          remainingTime: remainingSeconds,
+          isActive: true,
+          isPaused: false,
+          startTime: start,
+          servicioCode: codigo,
+          clienteNombre,
+          tipoTransaccion: tipoTransaccion || 'servicio',
+          anfitrionas: anfitrionas || ''
+        };
+
+        setTimers(prev => [
+          ...prev.filter(t => !(t.servicioId === servicioId && t.roomId === roomId)),
+          newTimer
+        ]);
+        saveTimersToStorage([
+          ...timersRef.current.filter(
+            t => !(t.servicioId === servicioId && t.roomId === roomId)
+          ),
+          newTimer
+        ]);
+      }
+    }
+
+    // Evento: Se detuvo un timer
+    if (payload?.type === 'timer_stopped' && payload?.data) {
+      const { servicioId } = payload.data;
+      console.log('[TimerContext] SSE: Deteniendo timer remoto:', servicioId);
+
+      setTimers(prev => {
+        const updated = prev.filter(t => t.servicioId !== servicioId);
+        saveTimersToStorage(updated);
+        return updated;
       });
+    }
 
-      eventSource.onerror = () => {
-        console.log('[TimerContext] SSE desconectado, reintentando...');
-        eventSource?.close();
-        setTimeout(connectSSE, 3000);
-      };
-    };
+    if (payload?.type === 'timer_paused' && payload?.data) {
+      const { servicioId, tipoTransaccion } = payload.data;
+      console.log(`[TimerContext] SSE: Pausando timer remoto (${tipoTransaccion}):`, servicioId);
+      setTimers(prev => {
+        const updated = prev.map(t => {
+          if (
+            t.servicioId === servicioId &&
+            t.tipoTransaccion === (tipoTransaccion || 'servicio')
+          ) {
+            const currentRemaining = calculateRemainingTime(t, serverOffset);
+            return { ...t, isPaused: true, remainingTime: currentRemaining };
+          }
+          return t;
+        });
+        saveTimersToStorage(updated);
+        return updated;
+      });
+    }
 
-    connectSSE();
+    // Evento: Se reanudó un timer de venta o servicio
+    if (payload?.type === 'timer_resumed' && payload?.data) {
+      const { servicioId, newStartTime, tipoTransaccion } = payload.data;
+      console.log(`[TimerContext] SSE: Reanudando timer remoto (${tipoTransaccion}):`, servicioId);
+      setTimers(prev => {
+        const updated = prev.map(t => {
+          if (t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion) {
+            const start = parseDateSafe(newStartTime);
+            const now = new Date(Date.now() + serverOffset);
+            const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+            const remainingSeconds = Math.max(0, t.duration * 60 - elapsedSeconds);
+            return {
+              ...t,
+              isPaused: false,
+              startTime: start,
+              remainingTime: remainingSeconds
+            };
+          }
+          return t;
+        });
+        saveTimersToStorage(updated);
+        return updated;
+      });
+    }
 
-    return () => {
-      console.log('[TimerContext] Desconectando SSE');
-      eventSource?.close();
-    };
-  }, []);
+    // Evento: Se actualizó un timer (tiempo o habitación)
+    if (payload?.type === 'timer_updated' && payload?.data) {
+      const {
+        servicioId,
+        duration,
+        roomId,
+        roomName,
+        tipoTransaccion,
+        startTime,
+        anfitrionas
+      } = payload.data;
+      console.log(`[TimerContext] SSE: Actualizando timer remoto (${tipoTransaccion}):`, servicioId);
+      setTimers(prev => {
+        const updated = prev.map(t => {
+          if (
+            t.servicioId === servicioId &&
+            t.tipoTransaccion === (tipoTransaccion || 'servicio')
+          ) {
+            const start = startTime ? parseDateSafe(startTime) : t.startTime;
+            const now = new Date(Date.now() + serverOffset);
+            const d = duration || t.duration;
+            const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+            const remainingSeconds = Math.max(0, d * 60 - elapsedSeconds);
+
+            return {
+              ...t,
+              duration: d,
+              roomId: roomId || t.roomId,
+              roomName: roomName || t.roomName,
+              startTime: start,
+              remainingTime: remainingSeconds,
+              anfitrionas: anfitrionas !== undefined ? anfitrionas : t.anfitrionas
+            };
+          }
+          return t;
+        });
+        saveTimersToStorage(updated);
+        return updated;
+      });
+    }
+  });
 
   // Función para actualizar el estado de la habitación
   const updateRoomStatus = useCallback(async (roomId: number, status: number) => {
@@ -1016,18 +965,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     },
     [timers]
   );
-
-  // Función para formatear tiempo
-  const formatTime = useCallback((seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  }, []);
 
   // Efecto para manejar el conteo regresivo (OPTIMIZADO)
   // Este intervalo ya no actualiza el estado cada segundo a menos que un timer expire.
