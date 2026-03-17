@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import { getSQLTimezoneOffset } from './timezoneService';
 
 interface DatabaseConfig {
   host: string;
@@ -27,7 +28,8 @@ const pool = mysql.createPool(defaultConfig);
 export async function query(sql: string, params: any[] = []): Promise<any> {
   const conn = await pool.getConnection();
   try {
-    await conn.query("SET time_zone = '+00:00'");
+    const dbTz = getSQLTimezoneOffset();
+    await conn.query(`SET time_zone = '${dbTz}'`);
     await conn.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
     const [rows] = await conn.query(sql, params);
     return rows;

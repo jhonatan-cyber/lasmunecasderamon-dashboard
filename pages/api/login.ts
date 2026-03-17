@@ -3,10 +3,12 @@ import { query } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import Cookies from 'cookies';
 import bcrypt from 'bcryptjs';
-import { setSecureCookie } from '@/lib/middleware/cookieUtils';
+import { registrarLogin } from '@/lib/auth';
 import { regenerateAttendanceCode } from '@/lib/codigoService';
+import { setSecureCookie } from '@/lib/middleware/cookieUtils';
+import { getSystemTimezone } from '@/lib/timezoneService';
 
-const SYSTEM_TIMEZONE = 'America/La_Paz';
+const SYSTEM_TIMEZONE = getSystemTimezone();
 
 const getSystemTime = () => {
   const ahora = new Date();
@@ -114,158 +116,16 @@ const requiereCodigoVerificacion = async (rol: string, usuarioId: string): Promi
   return false;
 };
 
-// Función para registrar asistencia
-const registrarAsistencia = async (usuarioId: string, rol: string): Promise<void> => {
-  try {
-    const { timeString: horaActual, hora, minutos, dateString } = getSystemTime();
-    const rolesAsistencia = ['cajero', 'garzon', 'anfitriona'];
-    const rolLower = rol.toLowerCase();
-    if (!rolesAsistencia.includes(rolLower)) {
-      return;
-    }
-    // Verificar si ya existe una asistencia para hoy
-    const asistenciaExistente = await query(
-      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-      [usuarioId, dateString]
-    );
-    if (Array.isArray(asistenciaExistente) && asistenciaExistente.length > 0) {
-      return; // Ya existe asistencia para hoy
-    }
-    // Determinar el estado basado en la hora
-    let estado = 'presente';
-    const horaActualMinutos = hora * 60 + minutos;
-
-    // Horario de madrugada (23:00-06:00) - no registrar asistencia
-    const esMadrugada = horaActualMinutos >= 23 * 60 || horaActualMinutos <= 6 * 60;
-    if (esMadrugada) {
-      return;
-    } else if (horaActualMinutos > 20 * 60) {
-      // Entre 20:00 y 23:00, es tardanza
-      estado = 'tardanza';
-    }
-    // Solo registra usuario_id, fecha y hora
-    // El estado lo pone la tabla automáticamente
-    await query('INSERT INTO asistencias (usuario_id, fecha, hora) VALUES (?, ?, ?)', [
-      usuarioId,
-      dateString,
-      horaActual
-    ]);
-  } catch (error) {
-    console.error('Error al registrar asistencia:', error);
-  }
-};
-
-// Función para registrar login - maneja estado del login
-const registrarLogin = async (
-  usuarioId: string,
-  token: string,
-  req: NextApiRequest,
-  rol: string
-): Promise<void> => {
-  try {
-    const { hora, minutos } = getSystemTime();
-    const horaActual = hora * 60 + minutos;
-
-    // Hora inicio madrugada: 23:00 (1380 minutos)
-    const horaMadrugadaInicio = 23 * 60;
-    // Hora fin madrugada: 06:00 (360 minutos)
-    const horaMadrugadaFin = 6 * 60;
-    // Hora inicio trabajo: 20:00 (1200 minutos)
-    const horaTrabajoInicio = 20 * 60;
-    // Hora fin trabajo: 23:00 (1380 minutos)
-    const horaTrabajoFin = 23 * 60;
-    // Hora inicio libre diurno: 06:00 (360 minutos)
-    const horaLibreInicio = 6 * 60;
-    // Hora fin libre diurno: 20:00 (1200 minutos)
-    const horaLibreFin = 20 * 60;
-
-    // Roles que requieren lógica especial de login
-    const rolesEspeciales = ['anfitriona', 'garzon'];
-    const rolLower = rol.toLowerCase();
-
-    // Verificar si está en horario libre diurno (06:00-20:00) - no registrar login
-    if (horaActual >= horaLibreInicio && horaActual < horaLibreFin) {
-      return; // No registrar login
-    }
-
-    // Verificar si está en horario de madrugada (23:00-06:00)
-    const esMadrugada = horaActual >= horaMadrugadaInicio || horaActual <= horaMadrugadaFin;
-
-    // Verificar si está en horario de trabajo (20:00-23:00)
-    const esHorarioTrabajo = horaActual >= horaTrabajoInicio && horaActual <= horaTrabajoFin;
-
-    if (esMadrugada) {
-      // En horario de madrugada, primero poner en estado 0 todos los logins anteriores del usuario
-      await query('UPDATE logins SET estado = 0 WHERE usuario_id = ?', [usuarioId]);
-
-      // Verificar si ya existe un login con estado 0
-      const loginExistente = await query(
-        'SELECT id_login FROM logins WHERE usuario_id = ? AND estado = 0 ORDER BY last_login DESC LIMIT 1',
-        [usuarioId]
-      );
-
-      if (Array.isArray(loginExistente) && loginExistente.length > 0) {
-        // Actualizar el login existente de estado 0 a 1
-        const login = loginExistente[0] as any;
-        await query('UPDATE logins SET estado = 1, last_login = NOW() WHERE id_login = ?', [
-          login.id_login
-        ]);
-      } else {
-        // Crear nuevo login con estado 1
-        await query('INSERT INTO logins (usuario_id,last_login, estado) VALUES (?, NOW(), 1)', [
-          usuarioId
-        ]);
-      }
-    } else if (rolesEspeciales.includes(rolLower) && esHorarioTrabajo) {
-      // Lógica especial para Anfitriona y Garzón en horario de trabajo (20:00-23:00)
-
-      // Verificar si ya existe un login para hoy (activo o inactivo)
-      const loginExistente = await query(
-        `SELECT id_login, estado FROM logins 
-         WHERE usuario_id = ? 
-         AND DATE(last_login) = CURDATE() 
-         AND HOUR(last_login) >= 20 
-         AND HOUR(last_login) <= 23 
-         ORDER BY last_login DESC LIMIT 1`,
-        [usuarioId]
-      );
-
-      if (Array.isArray(loginExistente) && loginExistente.length > 0) {
-        const login = loginExistente[0] as any;
-
-        if (login.estado === 1) {
-          return; // No hacer nada
-        } else {
-          await query('UPDATE logins SET estado = 1, last_login = NOW() WHERE id_login = ?', [
-            login.id_login
-          ]);
-        }
-      } else {
-        // Poner en estado 0 todos los demás logins del usuario
-        await query('UPDATE logins SET estado = 0 WHERE usuario_id = ?', [usuarioId]);
-
-        // Crear nuevo login
-        await query('INSERT INTO logins (usuario_id, estado, last_login) VALUES (?, 1, NOW())', [
-          usuarioId
-        ]);
-      }
-    } else if (horaActual > horaMadrugadaFin) {
-      // Horario libre (después de 06:00), no registrar login
-      return;
-    } else {
-      // Fuera de horario de madrugada pero antes de 06:00, crear login normal
-
-      // Primero poner en estado 0 todos los logins anteriores del usuario
-      await query('UPDATE logins SET estado = 0 WHERE usuario_id = ? ', [usuarioId]);
-
-      // Crear nuevo login
-      await query('INSERT INTO logins (usuario_id, estado, last_login) VALUES (?, 1, NOW())', [
-        usuarioId
-      ]);
-    }
-  } catch (error) {
-    console.error('❌ [LOGIN] Error al registrar login:', error);
-  }
+// Función para registrar asistencia del cajero al hacer login entre 21:00 y 23:00
+const registrarAsistenciaCajero = async (usuarioId: string, dateString: string, timeString: string): Promise<void> => {
+  const asistenciaExistente = await query(
+    'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+    [usuarioId, dateString]
+  ) as any[];
+  if (Array.isArray(asistenciaExistente) && asistenciaExistente.length > 0) return;
+  await query('INSERT INTO asistencias (usuario_id, fecha, hora) VALUES (?, ?, ?)', [
+    usuarioId, dateString, timeString
+  ]);
 };
 
 // Función principal del handler
@@ -407,58 +267,22 @@ async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
     // Configurar cookie usando las nuevas utilidades
     const cookieSet = setSecureCookie(req, res, 'token', token);
 
-    // Registrar login exitoso
-    try {
-      await registrarLogin(user.id_usuario, token, req, user.rol_nombre);
-      
-      // Si se requería código de verificación y se proporcionó con éxito, 
-      // regeneramos el código para que sea de un solo uso.
-      if (requiereCodigo && codigo) {
-        await regenerateAttendanceCode();
-      }
-    } catch (loginError) {
-      // Continuar sin registrar el login para debugging
+    const clientIP = (req.headers['x-forwarded-for'] as string) || req.socket?.remoteAddress || '';
+    const { hora, dateString, timeString } = getSystemTime();
+    const esCajero = user.rol_nombre?.toLowerCase() === 'cajero';
+
+    // Registrar login (en_local se maneja en registrarLogin según la hora)
+    await registrarLogin(user.id_usuario, clientIP);
+
+    // Cajero entre 21:00 y 23:00 → registrar asistencia + en_local = 1
+    if (esCajero && hora >= 21 && hora < 23) {
+      await registrarAsistenciaCajero(user.id_usuario, dateString, timeString);
+      await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [user.id_usuario]);
     }
+    // Cajero después de las 23:00 → en_local = 1 ya lo pone registrarLogin automáticamente
 
-    // Registrar asistencia solo si:
-    // 1. Está en horario de asistencia (20:00-23:00)
-    // 2. No tiene asistencia registrada para hoy
-    // 3. Se proporcionó código de verificación (si se requiere)
-    // 4. NO está en horario de madrugada (23:00-06:00)
-    // 5. NO está en horario libre diurno (07:00-20:00)
-    const { hora, minutos } = getSystemTime();
-    const horaActual = hora * 60 + minutos;
-
-    // Hora inicio madrugada: 23:00 (1380 minutos)
-    const horaMadrugadaInicio = 23 * 60;
-    // Hora fin madrugada: 06:00 (360 minutos)
-    const horaMadrugadaFin = 6 * 60;
-    // Hora inicio libre diurno: 06:00 (360 minutos)
-    const horaLibreInicio = 6 * 60;
-    // Hora fin libre diurno: 20:00 (1200 minutos)
-    const horaLibreFin = 20 * 60;
-
-    // Horario de madrugada (23:00-06:00) - no registrar asistencia
-    const esMadrugada = horaActual >= horaMadrugadaInicio || horaActual <= horaMadrugadaFin;
-    // Horario libre diurno (06:00-20:00) - no registrar asistencia
-    const esLibreDiurno = horaActual >= horaLibreInicio && horaActual < horaLibreFin;
-
-    if (esMadrugada) {
-    } else if (esLibreDiurno) {
-    } else if (isHoraAsistencia()) {
-      try {
-        const asistenciaExistente = await query(
-          'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = CURDATE()',
-          [user.id_usuario]
-        );
-
-        if (!Array.isArray(asistenciaExistente) || asistenciaExistente.length === 0) {
-          await registrarAsistencia(user.id_usuario, user.rol_nombre);
-        }
-      } catch (error) {
-        console.error('❌ [LOGIN] Error verificando/registrando asistencia:', error);
-      }
-    } else {
+    if (requiereCodigo && codigo) {
+      await regenerateAttendanceCode();
     }
 
     return res.status(200).json({

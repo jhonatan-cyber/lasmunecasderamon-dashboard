@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { query, generateUUID } from '@/lib/db';
+import { getSystemTimezone } from '@/lib/timezoneService';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -69,7 +70,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [newToken, userId]);
     }
 
-    // 4. Verificar si ya tiene asistencia hoy
+    // 4. Verificar hora actual — después de las 23:00 no se registra asistencia
+    const tz = getSystemTimezone();
+    const horaLocal = parseInt(
+      new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hour12: false }).format(new Date())
+    );
+
+    if (horaLocal >= 23) {
+      return res.status(200).json({
+        success: false,
+        message: 'El horario de registro de asistencia ya cerró (después de las 23:00).'
+      });
+    }
+
+    // 5. Verificar si ya tiene asistencia hoy
     const asistenciaExistente = await query(
       'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = CURDATE()',
       [userId]
@@ -86,7 +100,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // 5. Obtener fecha y hora actual (Chile/Bolivia)
     const ahora = new Date();
     const formatter = new Intl.DateTimeFormat('en-GB', { 
-      timeZone: 'America/La_Paz', 
+      timeZone: getSystemTimezone(), 
       hour12: false,
       year: 'numeric',
       month: '2-digit',
@@ -101,11 +115,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const fechaActual = `${getVal('year')}-${getVal('month')}-${getVal('day')}`;
     const horaActual = `${getVal('hour')}:${getVal('minute')}:${getVal('second')}`;
 
-    // 6. Registrar asistencia
-    const id_asistencia = generateUUID();
+    // 7. Marcar en_local = 1 en el login activo del usuario
     await query(
-      'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
-      [id_asistencia, userId, fechaActual, horaActual]
+      'UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1',
+      [userId]
     );
 
     return res.status(200).json({

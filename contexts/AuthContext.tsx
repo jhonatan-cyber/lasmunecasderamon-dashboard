@@ -317,9 +317,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, fetchPermissions]);
 
-  // NOTA: La escucha de eventos de permisos se maneja en usePermissionsSSE
-  // que recarga la página automáticamente cuando cambian los permisos.
-  // No necesitamos escuchar eventos aquí para evitar duplicación.
+  // Escuchar eventos SSE de sesión: force_logout y check_attendance
+  useEffect(() => {
+    if (isPublicPage || !user) return;
+
+    const rolesAfectados = ['cajero', 'garzon', 'anfitriona'];
+    const rolUsuario = user.role?.toLowerCase();
+
+    const doLogout = (message: string) => {
+      toast.warning('Sesión cerrada', { description: message, duration: 6000 });
+      document.cookie = 'token=; Max-Age=0; path=/';
+      setUser(null);
+      setUserPermissions([]);
+      setPermissionsLoaded(false);
+      userFetchedRef.current = false;
+      permissionsFetchedRef.current = false;
+      setTimeout(() => router.push('/login'), 2000);
+    };
+
+    const handleSSEMessage = async (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data);
+
+        // Forzar logout directo (admin lo dispara manualmente)
+        if (payload.type === 'force_logout' && payload.data?.userId === user.id) {
+          doLogout(payload.data.message || 'Ingresa nuevamente para registrar tu asistencia.');
+          return;
+        }
+
+        // Verificar asistencia a las 21:00 — solo roles afectados
+        if (payload.type === 'check_attendance' && rolesAfectados.includes(rolUsuario)) {
+          const res = await fetch('/api/asistencias/hoy', { credentials: 'include' });
+          const data = await res.json();
+          if (!data.registrada) {
+            doLogout('No registraste tu asistencia hoy. Ingresa nuevamente para registrarla.');
+          }
+        }
+      } catch {
+        // ignorar mensajes no JSON (ping, etc)
+      }
+    };
+
+    const evtSource = new EventSource('/api/notifications/sse');
+    evtSource.onmessage = handleSSEMessage;
+    evtSource.onerror = () => evtSource.close();
+
+    return () => evtSource.close();
+  }, [isPublicPage, user, router]);
 
   const value: AuthContextType = {
     user,

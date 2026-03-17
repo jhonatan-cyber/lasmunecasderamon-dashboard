@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import { notifyPermissionsUpdate } from '../../permissions/sse';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -95,11 +95,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Insertar los nuevos permisos
       if (permissions.length > 0) {
-        const values = permissions.map(permissionId => [roleId, String(permissionId)]);
-        const placeholders = values.map(() => '(?, ?)').join(', ');
+        const values = permissions.map(permissionId => [generateUUID(), roleId, String(permissionId)]);
+        const placeholders = values.map(() => '(?, ?, ?)').join(', ');
         
         await query(`
-          INSERT INTO role_permissions (role_id, permission_id) 
+          INSERT INTO role_permissions (id, role_id, permission_id) 
           VALUES ${placeholders}
         `, values.flat());
       }
