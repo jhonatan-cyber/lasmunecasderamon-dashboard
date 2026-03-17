@@ -115,6 +115,20 @@ export default function CashRegister() {
     getResumen();
   };
 
+  // Refrescar automáticamente cuando en otra parte se dispare el evento de cierre/apertura
+  useEffect(() => {
+    const refreshFromEvent = () => {
+      getCajas();
+      getResumen();
+    };
+    window.addEventListener('cajaClosed', refreshFromEvent);
+    window.addEventListener('cajaOpened', refreshFromEvent);
+    return () => {
+      window.removeEventListener('cajaClosed', refreshFromEvent);
+      window.removeEventListener('cajaOpened', refreshFromEvent);
+    };
+  }, [getCajas, getResumen]);
+
   if (error) {
     return (
       <div className='p-4 sm:p-6'>
