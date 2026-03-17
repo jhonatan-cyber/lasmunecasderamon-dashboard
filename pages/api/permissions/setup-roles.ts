@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 
 // Permisos por defecto para cada rol
 const rolePermissions: Record<string, { module: string; action: string }[]> = {
@@ -205,8 +205,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           // Insertar en role_permissions (ignorar si ya existe)
           await query(
-            'INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
-            [roleId, permissionId]
+            'INSERT IGNORE INTO role_permissions (id, role_id, permission_id) VALUES (?, ?, ?)',
+            [generateUUID(), roleId, permissionId]
           );
 
           results[roleName].assigned++;

@@ -26,24 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       if (decoded && decoded.id) {
         const userId = decoded.id;
-        const userRole = decoded.role?.toLowerCase() || '';
-        
-    
-        
-        // Solo desactivar logins para garzones y anfitrionas
-        const rolesConLogin = ['garzon', 'anfitriona'];
-        
-        if (rolesConLogin.includes(userRole)) {
-          
-          
-          // Desactivar el login activo del usuario (estado = 0)
-          await query(
-            'UPDATE logins SET estado = 0 WHERE usuario_id = ? AND estado = 1 AND DATE(last_login) = CURDATE()',
-            [userId]
-          );
-          
-      
-        } 
+        // Eliminar el login del usuario al cerrar sesión
+        await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
       }
     }
   } catch (error) {

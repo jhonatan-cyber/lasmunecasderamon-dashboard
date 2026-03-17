@@ -77,6 +77,25 @@ export default function RolesPage() {
     }
   };
 
+  // Función para inicializar todos los permisos del sistema
+  const initializePermissions = async () => {
+    try {
+      const r1 = await fetch('/api/permissions/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const res1 = await r1.json();
+      if (!res1.success) { showErrorToast(res1.message || 'Error al crear permisos'); return; }
+
+      const r2 = await fetch('/api/permissions/setup-roles', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const res2 = await r2.json();
+      if (res2.success) {
+        showSuccessToast(`Permisos inicializados: ${res1.data.permissionsCount} permisos, roles configurados`);
+      } else {
+        showErrorToast(res2.message || 'Error al asignar permisos a roles');
+      }
+    } catch (error) {
+      showErrorToast('Error al inicializar permisos');
+    }
+  };
+
   // Función para asignar todos los permisos al administrador
   const assignAllPermissionsToAdmin = async () => {
     try {
@@ -335,6 +354,13 @@ export default function RolesPage() {
                         <option value={1}>Activo</option>
                         <option value={0}>Inactivo</option>
                       </select>
+                      <button
+                        onClick={initializePermissions}
+                        className='inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
+                        title='Crear todos los permisos y asignarlos a cada rol'
+                      >
+                        Inicializar Permisos
+                      </button>
                       <button
                         onClick={assignAllPermissionsToAdmin}
                         className='inline-flex items-center px-2 py-1 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'

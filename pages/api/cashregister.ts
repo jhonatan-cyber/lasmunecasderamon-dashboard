@@ -24,9 +24,9 @@ const updateCajaSchema = z.object({
 });
 
 const cierreCajaSchema = z.object({
-  id_caja: z.string().min(1, 'ID de caja es requerido'),
+  id_caja: z.coerce.string().min(1, 'ID de caja es requerido'),
   monto_cierre: z.number().min(0, 'El monto de cierre debe ser mayor o igual a 0'),
-  usuario_id_cierre: z.string().min(1, 'ID de usuario de cierre es requerido')
+  usuario_id_cierre: z.coerce.string().min(1, 'ID de usuario de cierre es requerido')
 });
 
 // Mapeo de caja desde la base de datos
@@ -45,7 +45,15 @@ const mapCajaFromDB = (caja: any): Caja => ({
   propina: caja.propina || 0,
   anticipo: caja.anticipo || 0,
   comision: caja.comision || 0,
-  monto_cierre: caja.monto_cierre,
+  // Nota: en algunos esquemas `monto_cierre` no existe como columna.
+  // Si no viene desde SQL, lo calculamos con la misma fórmula usada en reportes.
+  monto_cierre:
+    caja.monto_cierre ??
+    (Number(caja.monto_apertura || 0) +
+      Number(caja.efectivo || 0) +
+      Number(caja.tarjeta || 0) +
+      Number(caja.transferencia || 0) -
+      Number(caja.devolucion || 0)),
   usuario_id_cierre: caja.usuario_id_cierre,
   fecha_cierre: caja.fecha_cierre,
   estado: caja.estado
@@ -575,9 +583,19 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Verificar si la caja existe y está abierta
-    const cajaExists = (await query('SELECT id_caja, estado FROM cajas WHERE id_caja = ?', [
-      validatedData.id_caja
-    ])) as RowDataPacket[];
+    const cajaExists = (await query(
+      `SELECT 
+         id_caja,
+         estado,
+         monto_apertura,
+         efectivo,
+         tarjeta,
+         transferencia,
+         devolucion
+       FROM cajas 
+       WHERE id_caja = ?`,
+      [validatedData.id_caja]
+    )) as RowDataPacket[];
 
     if (!cajaExists || (Array.isArray(cajaExists) && cajaExists.length === 0)) {
       return res.status(404).json({
@@ -608,6 +626,18 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
+    // Calcular monto de cierre siguiendo la regla de negocio:
+    // - Sin transacciones: monto_cierre = monto_apertura
+    // - Con transacciones: monto_cierre = monto_apertura + efectivo + tarjeta + transferencia - devoluciones
+    const montoApertura = Number((caja as any).monto_apertura || 0);
+    const efectivo = Number((caja as any).efectivo || 0);
+    const tarjeta = Number((caja as any).tarjeta || 0);
+    const transferencia = Number((caja as any).transferencia || 0);
+    const devoluciones = Number((caja as any).devolucion || 0);
+
+    const montoCierreCalculado =
+      montoApertura + efectivo + tarjeta + transferencia - devoluciones;
+
     // Obtener usuarios con logins activos que NO sean administradores ni cajeros
     const loginsActivos = (await query(`
       SELECT l.id_login, l.usuario_id, r.nombre as rol_nombre
@@ -633,7 +663,7 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Luego: cerrar la caja
-    (await query(
+    const cierreResult = (await query(
       `UPDATE cajas 
        SET 
            usuario_id_cierre = ?, 
@@ -641,14 +671,26 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
            monto_cierre = ?,
            estado = 0
        WHERE id_caja = ?`,
-      [validatedData.usuario_id_cierre, validatedData.monto_cierre, validatedData.id_caja]
-    )) as RowDataPacket[];
+      [validatedData.usuario_id_cierre, montoCierreCalculado, validatedData.id_caja]
+    )) as any;
+
+    // mysql2 devuelve ResultSetHeader para UPDATE
+    const affectedRows =
+      typeof cierreResult?.affectedRows === 'number' ? cierreResult.affectedRows : undefined;
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se pudo cerrar la caja (no encontrada o ya cerrada)'
+      });
+    }
 
     // Obtener la caja cerrada
-    const [cajaCerrada] = (await query(
+    const cajaCerradaRows = (await query(
       `
         SELECT 
           c.*,
+          (c.monto_apertura + c.efectivo + c.tarjeta + c.transferencia - c.devolucion) AS monto_cierre,
           CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
           CONCAT(u2.nombre, ' ', u2.apellido) as cajero_cierre_nombre
         FROM cajas c
@@ -659,12 +701,26 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
       [validatedData.id_caja]
     )) as RowDataPacket[];
 
+    const cajaCerrada =
+      Array.isArray(cajaCerradaRows) && cajaCerradaRows.length > 0
+        ? cajaCerradaRows[0]
+        : null;
+
+    if (!cajaCerrada) {
+      return res.status(404).json({
+        success: false,
+        message: 'Caja cerrada pero no se pudo recuperar el registro'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Caja cerrada exitosamente',
       data: mapCajaWithUserFromDB(cajaCerrada)
     });
   } catch (error) {
+    console.error('❌ Error en PATCH /api/cashregister:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
