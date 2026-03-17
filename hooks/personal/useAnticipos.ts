@@ -25,10 +25,11 @@ interface UseAnticiposReturn {
 export default function useAnticipos(): UseAnticiposReturn {
   const { user } = useCurrentUser()
 
-  const endpoint = useMemo(() => 
-    user?.role?.toLowerCase() === 'cajero' ? '/api/anticipos/user' : '/api/anticipos',
-    [user?.role]
-  )
+  const endpoint = useMemo(() => {
+    const role = user?.role?.toLowerCase();
+    const personalRoles = ['garzon', 'anfitriona', 'cajero'];
+    return personalRoles.includes(role || '') ? '/api/anticipos/user' : '/api/anticipos';
+  }, [user?.role]);
   
   const { data, isLoading, error, refetch } = useGenericFetch<Anticipo>(
     endpoint,

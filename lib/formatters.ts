@@ -1,3 +1,5 @@
+import { getSystemTimezone } from './timezoneService';
+
 export const formatCurrency = (
   value: number | string | undefined,
   type: 'sueldo' | 'aporte' | 'descuento' | 'general' = 'general'
@@ -47,7 +49,7 @@ export const formatCurrencyNoDecimals = (value: number | string | undefined): st
   return `$${roundedValue.toLocaleString('es-CL')}`;
 };
 
-export const SYSTEM_TIMEZONE = 'America/La_Paz';
+export const SYSTEM_TIMEZONE = getSystemTimezone();
 
 export const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Sin fecha';

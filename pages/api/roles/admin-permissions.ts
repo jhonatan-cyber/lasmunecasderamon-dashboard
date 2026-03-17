@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -53,14 +53,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     // Asignar todos los permisos al administrador
-    const values = allPermissions.map(permission => [adminRoleId, permission.id]);
-    const placeholders = values.map(() => '(?, ?)').join(', ');
+    const values = allPermissions.map(permission => [generateUUID(), adminRoleId, permission.id]);
+    const placeholders = values.map(() => '(?, ?, ?)').join(', ');
 
     await query(
-      `
-      INSERT INTO role_permissions (role_id, permission_id) 
-      VALUES ${placeholders}
-    `,
+      `INSERT INTO role_permissions (id, role_id, permission_id) VALUES ${placeholders}`,
       values.flat()
     );
 

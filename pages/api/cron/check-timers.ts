@@ -2,18 +2,27 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { sendPushNotification, sendPushByRole } from '@/lib/pushNotifications';
 import { sendNotificationToAll } from '../notifications/sse';
+import { getSystemTimezone } from '@/lib/timezoneService';
 
-/**
- * Endpoint de Cron HEARTBEAT (debe ser llamado cada minuto)
- * Se encarga de:
- * 1. Alertar 5 minutos antes de que acabe un servicio.
- * 2. Alertar cuando el tiempo de un servicio ha terminado por completo.
- */
+const globalForCron = globalThis as typeof globalThis & { __attendanceCheckDate?: string };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    // Si necesitas seguridad (p.ej. una KEY en el header), puedes añadirla aquí
-
     try {
-        // 1. Obtener todos los servicios activos (estado 2)
+        const now = new Date();
+        const tz = getSystemTimezone();
+        const localHour = parseInt(
+            new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hour12: false }).format(now)
+        );
+        const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(now); // YYYY-MM-DD
+
+        if (localHour === 21 && globalForCron.__attendanceCheckDate !== todayStr) {
+            globalForCron.__attendanceCheckDate = todayStr;
+            sendNotificationToAll('check_attendance', {
+                roles: ['cajero', 'garzon', 'anfitriona'],
+                message: 'Verifica tu asistencia del día'
+            });
+            console.log(`[cron] check_attendance enviado para ${todayStr}`);
+        }
         const activeServices = (await query(`
             SELECT 
                 s.id_servicio,
@@ -32,7 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             GROUP BY s.id_servicio
         `)) as any[];
 
-        const now = new Date();
         let notifiedCount = 0;
 
         for (const service of activeServices) {
@@ -44,24 +52,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const usersToNotify = [service.created_by].filter(Boolean);
 
-            // A. ALERTA DE 5 MINUTOS (entre 4.5 y 6 minutos restantes)
-            if (remainingMinutes <= 6 && remainingMinutes > 4.5 && !service.push_notified_5m) {
-
-                // Marcar como notificado PRIMERO para evitar duplicados en concurrencia
+            if (remainingMinutes <= 5 && remainingMinutes > 4.5 && !service.push_notified_5m) {
                 await query('UPDATE servicios SET push_notified_5m = 1 WHERE id_servicio = ?', [service.id_servicio]);
 
-                const title = '⚠️ 5 MINUTOS RESTANTES';
+                const title = '5 MINUTOS RESTANTES';
                 const body = `El tiempo en la ${service.room_name} está por terminar. (5 min)`;
 
                 if (usersToNotify.length > 0) {
                     await sendPushNotification(usersToNotify, title, body, {
-                        type: 'timer_warning',
+                        type: 'timer_warning_5m',
                         service_id: service.id_servicio,
                         room_name: service.room_name
                     });
                 }
 
-                // También notificar por SSE para actualizar UI
                 sendNotificationToAll('timer_warning_5m', {
                     service_id: service.id_servicio,
                     room_name: service.room_name
@@ -70,15 +74,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 notifiedCount++;
             }
 
-            // B. ALERTA DE TIEMPO AGOTADO (<= 0 minutos)
+            // B. ALERTA DE TIEMPO AGOTADO
             if (remainingMinutes <= 0 && !service.push_notified_end) {
-
                 await query('UPDATE servicios SET push_notified_end = 1 WHERE id_servicio = ?', [service.id_servicio]);
 
-                const title = '⌛ TIEMPO AGOTADO';
+                const title = 'TIEMPO AGOTADO';
                 const body = `El tiempo contratado para la ${service.room_name} ha finalizado.`;
 
-                // Notificar a los involucrados
                 if (usersToNotify.length > 0) {
                     await sendPushNotification(usersToNotify, title, body, {
                         type: 'timer_ended',
@@ -87,11 +89,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     });
                 }
 
-                // Notificar a Cajeros y Admins para que procedan al pago/finalización
-                await sendPushByRole('cajero', '⌛ TIEMPO AGOTADO', `Habitación ${service.room_name} lista para finalizar.`, { type: 'timer_ended', service_id: service.id_servicio });
-                await sendPushByRole('administrador', '⌛ TIEMPO AGOTADO', `Habitación ${service.room_name} lista para finalizar.`, { type: 'timer_ended', service_id: service.id_servicio });
+                await sendPushByRole('cajero', 'TIEMPO AGOTADO', `Habitación ${service.room_name} lista para finalizar.`, { type: 'timer_ended', service_id: service.id_servicio });
+                await sendPushByRole('administrador', 'TIEMPO AGOTADO', `Habitación ${service.room_name} lista para finalizar.`, { type: 'timer_ended', service_id: service.id_servicio });
 
-                // Notificar por SSE
                 sendNotificationToAll('timer_ended_event', {
                     service_id: service.id_servicio,
                     room_name: service.room_name
@@ -106,8 +106,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             message: `Heartbeat procesado. Notificaciones enviadas: ${notifiedCount}`,
             timestamp: new Date().toISOString()
         });
-    } catch (error: any) {
 
+    } catch (error: any) {
         return res.status(500).json({
             success: false,
             message: 'Error procesando cron de timers',

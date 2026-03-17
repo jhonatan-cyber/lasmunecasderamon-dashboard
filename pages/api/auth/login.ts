@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '@/lib/db';
+import { query, generateUUID } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -41,17 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Credenciales inválidas'
       });
     }
-    try {
-      await query(
-        `UPDATE logins 
-         SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
-        [user.id_usuario]
-      );
-    } catch (error) {
-      throw error instanceof Error
-        ? error
-        : new Error('Error al cerrar sesiones activas del usuario');
-    }
+    // Eliminar logins anteriores del usuario
+    await query('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
+
     const token = jwt.sign(
       {
         id: user.id_usuario,
@@ -63,20 +55,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { expiresIn: '24h' }
     );
 
-    try {
-      await query(
-        `INSERT INTO logins (
-          usuario_id, 
-          last_login,
-          estado 
-          ) VALUES (?, NOW(), 1)`,
-        [user.id_usuario]
-      );
-    } catch (error) {
-      throw error instanceof Error
-        ? error
-        : new Error('Error al registrar el nuevo login del usuario');
-    }
+    // Registrar nuevo login
+    const clientIP = (req.headers['x-forwarded-for'] as string) || req.socket?.remoteAddress || '';
+    const { registrarLogin } = await import('@/lib/auth');
+    await registrarLogin(user.id_usuario, clientIP);
 
     // Configurar cookie
     const isSecure = process.env.NEXT_PUBLIC_BASE_URL?.startsWith('https');

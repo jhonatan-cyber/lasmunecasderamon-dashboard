@@ -17,14 +17,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
-      // Obtener solo cajeros y garzones logueados
+      // Solo cajeros y garzones con en_local = 1
+      // (leyó QR/código antes 23:00, o inició sesión después de las 23:00)
       const usuariosLogueados = (await query(`
-      SELECT DISTINCT u.id_usuario, u.nombre, u.apellido
+        SELECT DISTINCT u.id_usuario, u.nombre, u.apellido
         FROM logins l
         INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
         INNER JOIN roles r ON r.id_rol = u.rol_id
-        WHERE l.estado = 1 AND u.estado = 1  
-        AND r.nombre IN ('cajero', 'garzon')
+        WHERE l.estado = 1 AND l.en_local = 1 AND u.estado = 1
+          AND r.nombre IN ('cajero', 'garzon')
       `)) as any[];
 
       if (!usuariosLogueados || usuariosLogueados.length === 0) {
