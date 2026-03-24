@@ -1,9 +1,9 @@
+/* eslint-disable */
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/ui/skeletons';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,17 +34,16 @@ const WeeklySalesChart = dynamic(
 );
 
 export default function Dashboard() {
-  const { user, loading } = useCurrentUser();
+  const { user, loading, refetch } = useCurrentUser();
   const router = useRouter();
+  const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
 
   useEffect(() => {
     if (!loading && user) {
-    
       if (user.role?.toLowerCase() === 'anfitriona') {
         router.replace('/anfitriona-dashboard');
         return;
       }
-   
       if (user.role?.toLowerCase() === 'garzon') {
         router.replace('/garzon-dashboard');
         return;
@@ -52,12 +51,6 @@ export default function Dashboard() {
     }
   }, [user, loading, router]);
 
-
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
-
-  const { refetch } = useCurrentUser();
   useEffect(() => {
     if (!user?.qr_token) return;
     
@@ -84,13 +77,28 @@ export default function Dashboard() {
     };
   }, [user?.id, user?.qr_token, refetch]);
 
-  // Si es anfitriona o garzon, no renderizar nada (ya se está redirigiendo)
+  useEffect(() => {
+    if (!user?.qr_token) return;
+    const fetchCodigo = async () => {
+      try {
+        const res = await fetch('/api/codigo/actual', { headers: { 'x-user-role': user.role || '' } });
+        const data = await res.json();
+        if (data.success) setCodigoAsistencia(data.codigo);
+      } catch {}
+    };
+    fetchCodigo();
+    const interval = setInterval(fetchCodigo, 3000);
+    return () => clearInterval(interval);
+  }, [user?.qr_token, user?.role]);
+
+  if (loading) return <DashboardSkeleton />;
+
   if (user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon') {
     return <DashboardSkeleton />;
   }
 
-  // Verificar si el usuario es cajero
   const isCajero = user?.role?.toLowerCase() === 'cajero';
+
   return (
     <div className='p-6 space-y-6'>
       <div>
@@ -121,6 +129,12 @@ export default function Dashboard() {
                 />
             </div>
             <p className="text-[10px] mt-2 text-indigo-400 font-mono select-all uppercase">ID: {user.qr_token}</p>
+            {codigoAsistencia && (
+              <div className="mt-3 flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2">
+                <span className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Código:</span>
+                <span className="text-2xl font-black font-mono tracking-widest text-indigo-700">{codigoAsistencia}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

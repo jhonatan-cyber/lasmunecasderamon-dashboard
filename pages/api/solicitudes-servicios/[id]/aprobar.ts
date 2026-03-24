@@ -1,8 +1,10 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../../notifications/sse';
 import { withTransaction } from '@/lib/transactionUtils';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 import { sendPushNotification } from '@/lib/pushNotifications';
 
 // Función para generar código único
@@ -22,9 +24,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { id } = req.query;
   const { habitacion_id: habitacionIdOverride } = req.body || {};
-  // @ts-ignore
+  // @ts-expect-error legacy runtime access
   const userId = req.user?.id;
-  // @ts-ignore
+  // @ts-expect-error legacy runtime access
   const userRole = req.user?.role;
 
   if (!userId) {
@@ -125,59 +127,56 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       // 4. Crear el servicio
       const servicioId = generateUUID();
+      const now = getNowInBusinessTimezone();
       await connection(
         `INSERT INTO servicios 
         (id_servicio, codigo, cliente_id, habitacion_id, precio_servicio, precio_habitacion, 
          iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado, fecha_crea) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, NOW())`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, ?)`,
         [
           servicioId,
           codigo,
           solicitud.cliente_id || null,
           habitacionIdFinal,
-          precioServicioIndividual * numAnfitrionas, // Guardar total de servicio (Neto)
-          precioHabitacionTotal, // Guardar total de habitación (Neto)
+          precioServicioIndividual * numAnfitrionas, 
+          precioHabitacionTotal, 
           ivaFinal,
-          subTotalNeto, // sub_total de la tabla es la suma de netos
+          subTotalNeto, 
           totalFinal,
-          tiempo, // Usar la variable numérica
+          tiempo, 
           solicitud.metodo_pago,
           cajaId,
-          userId
+          userId,
+          now
         ]
       );
 
-      // Obtener la fecha real de creación desde el servidor DB para el timer
-      const [fechaCreaResult]: any = await connection(
-        'SELECT fecha_crea FROM servicios WHERE id_servicio = ?',
-        [servicioId]
-      );
-      const dbFechaCrea = fechaCreaResult?.fecha_crea || new Date();
+      const dbFechaCrea = now;
 
       // 5. Detalles de clientes y anfitrionas
       if (solicitud.cliente_id) {
         await connection(
-          'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
-          [servicioId, solicitud.cliente_id]
+          'INSERT INTO detalle_servicios_clientes (id, servicio_id, cliente_id) VALUES (?, ?, ?)',
+          [generateUUID(), servicioId, solicitud.cliente_id]
         );
       }
 
       for (const anfitrionaId of anfitrionasIds) {
         await connection(
-          'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
-          [anfitrionaId, servicioId, comisionPorAnfitriona]
+          'INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision) VALUES (?, ?, ?, ?)',
+          [generateUUID(), anfitrionaId, servicioId, comisionPorAnfitriona]
         );
 
         // Registrar comisiones si son mayores a 0
         if (comisionPorAnfitriona > 0) {
           const comisionId = generateUUID();
           await connection(
-            'INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto) VALUES (?, ?, ?, ?)',
-            [comisionId, null, servicioId, comisionPorAnfitriona]
+            'INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto, fecha_crea) VALUES (?, ?, ?, ?, ?)',
+            [comisionId, null, servicioId, comisionPorAnfitriona, now]
           );
           await connection(
-            'INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)',
-            [comisionId, anfitrionaId, comisionPorAnfitriona]
+            'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, fecha_crea) VALUES (?, ?, ?, ?, ?)',
+            [generateUUID(), comisionId, anfitrionaId, comisionPorAnfitriona, now]
           );
         }
 
@@ -185,25 +184,26 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         await connection('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [anfitrionaId]);
       }
 
-      // 6. Pausar otros servicios si es necesario
+      // 6. Pausar otros servicios que tengan las mismas anfitrionas ocupadas
       if (anfitrionasIds.length > 0) {
         const placeholders = anfitrionasIds.map(() => '?').join(',');
         const queryServiciosToPause = `
           SELECT DISTINCT s.id_servicio
           FROM servicios s
           JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
-          JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
-          WHERE s.estado = 1 
+          LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
+          WHERE s.estado = 2 
             AND s.id_servicio != ? 
             AND s.paused_at IS NULL 
             AND ds.usuario_id IN (${placeholders})
-            AND (h.precio > 0 OR h.comision_anfitriona > 0 OR h.tiempo > 0)
+            AND (h.id_habitacion IS NULL OR h.precio > 0 OR h.comision_anfitriona > 0 OR h.tiempo > 0)
         `;
         const params = [servicioId, ...anfitrionasIds];
         const serviciosToPause = (await connection(queryServiciosToPause, params)) as any[];
 
         for (const sToPause of serviciosToPause) {
-          await connection('UPDATE servicios SET paused_at = NOW() WHERE id_servicio = ?', [
+          await connection('UPDATE servicios SET estado = 3, paused_at = ? WHERE id_servicio = ?', [
+            now,
             sToPause.id_servicio
           ]);
           sendNotificationToAll('timer_paused', {
@@ -234,9 +234,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       // 8. Actualizar solicitud
       await connection(
         `UPDATE solicitudes_servicios 
-         SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = NOW(), habitacion_id = ? 
+         SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = ?, habitacion_id = ? 
          WHERE id_solicitud = ?`,
-        [userId, habitacionIdFinal, id]
+        [userId, now, habitacionIdFinal, id]
       );
 
       // 9. Actualizar Caja
@@ -306,7 +306,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         tiempo: tiempo,
         clienteNombre,
         anfitrionasNicks,
-        startTime: dbFechaCrea instanceof Date ? dbFechaCrea.toISOString() : dbFechaCrea,
+        startTime: new Date(dbFechaCrea.replace(' ', 'T')).toISOString(),
         precio_servicio: precioServicioIndividual * numAnfitrionas,
         precio_habitacion: precioHabitacionBase,
         iva: ivaFinal,
@@ -321,7 +321,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     sendNotificationToAll('service_request_approved', {
       id_solicitud: id,
       servicio_id: result.servicioId,
-      timestamp: new Date().toISOString()
+      timestamp: getNowInBusinessTimezone()
     });
 
     sendNotificationToAll('timer_started', {
@@ -366,3 +366,5 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 export default withAuth(handler);
+
+

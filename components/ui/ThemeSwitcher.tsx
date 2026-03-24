@@ -17,7 +17,13 @@ export default function ThemeSwitcher() {
   const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setMounted(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const current = theme === "system" ? systemTheme : theme;
 
@@ -48,5 +54,6 @@ export default function ThemeSwitcher() {
     </DropdownMenu>
   );
 }
+
 
 

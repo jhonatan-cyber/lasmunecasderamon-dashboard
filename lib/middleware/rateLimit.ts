@@ -53,15 +53,18 @@ export const loginLimiter = createRateLimiter(15 * 60 * 1000, 5);
 export const generalLimiter = createRateLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiter = createRateLimiter(5 * 60 * 1000, 20);
 
-export function withRateLimit(limiter: any) {
-  return function (handler: any) {
+export function withRateLimit(limiter: (handler: NextApiHandler) => NextApiHandler) {
+  return function (handler: NextApiHandler) {
     return limiter(handler);
   };
 }
 
-export default {
+const rateLimitMiddleware = {
   loginLimiter,
   generalLimiter,
   sensitiveApiLimiter,
   withRateLimit
 };
+
+export default rateLimitMiddleware;
+

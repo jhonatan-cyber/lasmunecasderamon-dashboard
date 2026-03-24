@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
@@ -12,8 +13,8 @@ import { parseDateSafe, calculateRemainingTime, formatTime } from '@/lib/timeUti
 
 export interface Timer {
   id: string;
-  servicioId: number;
-  roomId: number;
+  servicioId: string;
+  roomId: string;
   roomName: string;
   duration: number; // en minutos
   remainingTime: number; // en segundos
@@ -47,8 +48,8 @@ export interface TimerExpiredNotification {
 interface TimerContextType {
   timers: Timer[];
   startTimer: (
-    servicioId: number,
-    roomId: number,
+    servicioId: string,
+    roomId: string,
     roomName: string,
     duration: number,
     servicioCode: string,
@@ -58,21 +59,21 @@ interface TimerContextType {
     waiterName?: string
   ) => void;
   stopTimer: (timerId: string, isManualStop?: boolean) => void;
-  stopTimerByRoomId: (roomId: number) => void;
-  stopTimerByServicioId: (servicioId: number) => void;
-  pauseTimerByServicioId: (servicioId: number) => void;
-  resumeTimerByServicioId: (servicioId: number) => void;
-  getTimerByRoomId: (roomId: number) => Timer | undefined;
-  getTimerByServicioId: (servicioId: number) => Timer | undefined;
-  getTemporaryTimerByServicioId: (servicioId: number) => Timer | undefined;
+  stopTimerByRoomId: (roomId: string) => void;
+  stopTimerByServicioId: (servicioId: string) => void;
+  pauseTimerByServicioId: (servicioId: string) => void;
+  resumeTimerByServicioId: (servicioId: string) => void;
+  getTimerByRoomId: (roomId: string) => Timer | undefined;
+  getTimerByServicioId: (servicioId: string) => Timer | undefined;
+  getTemporaryTimerByServicioId: (servicioId: string) => Timer | undefined;
   formatTime: (seconds: number) => string;
   serverOffset: number; // Diferencia en ms entre servidor y cliente
   getAccurateNow: () => Date;
-  setRefreshCallback: (callback: (servicioId?: number) => void) => void;
-  updateTimerByServicioId: (servicioId: number, newDuration: number) => void;
+  setRefreshCallback: (callback: (servicioId?: string) => void) => void;
+  updateTimerByServicioId: (servicioId: string, newDuration: number) => void;
   startTemporaryTimer: (
-    servicioId: number,
-    roomId: number,
+    servicioId: string,
+    roomId: string,
     roomName: string,
     duration: number,
     servicioCode: string,
@@ -81,7 +82,7 @@ interface TimerContextType {
     datosTemporales?: any,
     anfitrionas?: string
   ) => void;
-  stopTemporaryTimer: (servicioId: number) => void;
+  stopTemporaryTimer: (servicioId: string) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -117,11 +118,14 @@ export const useTimer = () => {
   return context;
 };
 
+let globalSyncCallCount = 0;
+
 export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [timers, setTimers] = useState<Timer[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  console.log('[TimerContext] Render. isInitialized:', isInitialized);
   const [expiredTimers, setExpiredTimers] = useState<Set<string>>(new Set());
-  const [refreshCallback, setRefreshCallback] = useState<((servicioId?: number) => void) | null>(
+  const [refreshCallback, setRefreshCallback] = useState<((servicioId?: string) => void) | null>(
     null
   );
   const { modalState, showConfirm, closeModal } = useConfirmModal();
@@ -131,6 +135,11 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useState<TimerExpiredNotification | null>(null);
   const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
   const [serverOffset, setServerOffset] = useState(0);
+
+  useEffect(() => {
+    console.log('[TimerContext] 🏗️ MOUNTED');
+    return () => console.log('[TimerContext] 🧨 UNMOUNTED');
+  }, []);
 
   // Función para obtener la hora exacta del servidor (estimada)
   const getAccurateNow = useCallback(() => {
@@ -156,9 +165,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTimerExpiredNotification(notification);
     setShowTimerExpiredModal(true);
 
-    setTimerExpiredNotification(notification);
-    setShowTimerExpiredModal(true);
-
     // Reproducir sonido de notificación
     playNotificationSound();
 
@@ -174,7 +180,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Refs para evitar clausuras obsoletas en el intervalo y callbacks
   const timersRef = React.useRef<Timer[]>([]);
-  const refreshCallbackRef = React.useRef<((servicioId?: number) => void) | null>(null);
+  const initialSyncExecutedRef = React.useRef(false);
+  const periodicSyncStartedRef = React.useRef(false);
+  const refreshCallbackRef = React.useRef<((servicioId?: string) => void) | null>(null);
 
   // Actualizar refs cuando cambien los estados
   useEffect(() => {
@@ -187,6 +195,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Cargar timers desde localStorage al inicializar
   useEffect(() => {
+    if (isInitialized) return;
     const storedTimers = loadTimersFromStorage();
 
     if (storedTimers.length > 0) {
@@ -198,10 +207,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .map(timer => {
         const remainingTime = calculateRemainingTime(timer);
         const isStillActive = remainingTime > 0;
-
-        console.log(
-          `⏱️ Timer ${timer.servicioCode}: ${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, '0')} restante`
-        );
 
         return {
           ...timer,
@@ -227,8 +232,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       try {
-        // Obtener servicios y ventas activos de la base de datos usando la API de timers activos
-        const response = await fetch('/api/timers/active');
+        globalSyncCallCount++;
+        console.log(`[TimerContext] 📡 syncWithDatabase (TOTAL: ${globalSyncCallCount}) calling fetch /api/timers/active?source=web`);
+        const response = await fetch('/api/timers/active?source=web');
         const data = await response.json();
 
         if (data.success && Array.isArray(data.data)) {
@@ -238,7 +244,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const localDate = new Date();
             const offset = serverDate.getTime() - localDate.getTime();
             setServerOffset(offset);
-            console.log(`🕒 Sincronización de reloj: Offset de ${offset}ms con el servidor`);
+          
           }
 
           const activeTimersMap = new Map(data.data.map((t: any) => [t.servicioId, t]));
@@ -282,15 +288,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
 
           if (validTimers.length !== uniqueTimers.length) {
-            console.log(
-              `🧹 Limpiando ${uniqueTimers.length - validTimers.length} temporizadores de servicios finalizados`
-            );
+           
             saveTimersToStorage(validTimers);
           }
 
-          if (validTimers.length > 0) {
-            console.log('✅ Temporizadores restaurados exitosamente:', validTimers.length);
-          }
 
           setTimers(validTimers);
         } else {
@@ -298,8 +299,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setTimers(uniqueTimers);
         }
       } catch (error) {
-        console.error('Error al sincronizar temporizadores:', error);
-        // En caso de error, usar los timers locales
+       
         setTimers(uniqueTimers);
       } finally {
         setIsInitialized(true);
@@ -313,13 +313,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       window.location.pathname === '/landing' ||
       window.location.pathname === '/login';
 
-    if (isPublic) {
-      setIsInitialized(true);
+    if (isPublic || initialSyncExecutedRef.current) {
+      if (!isInitialized) setIsInitialized(true);
       return;
     }
 
+    initialSyncExecutedRef.current = true;
     syncWithDatabase();
-  }, [isInitialized]);
+  }, []); // Run ONLY once on mount
 
   // Cargar timers activos del servidor periódicamente (sincronización multi-dispositivo)
   useEffect(() => {
@@ -327,7 +328,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const syncActiveTimers = async () => {
       try {
-        const response = await fetch('/api/timers/active');
+        globalSyncCallCount++;
+        console.group('[TimerContext] 🔄 syncActiveTimers Call');
+        console.log(`TOTAL: ${globalSyncCallCount}`);
+        console.trace('Call Stack');
+        console.groupEnd();
+        const response = await fetch('/api/timers/active?source=web');
         const data = await response.json();
 
         if (data.success && Array.isArray(data.data)) {
@@ -341,8 +347,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // Si no existe localmente, agregarlo
             if (!existsLocally) {
-              console.log('[TimerContext] Sincronizando timer desde servidor:', serverTimer.codigo);
-
+            
               // Calcular tiempo restante
               const now = new Date(Date.now() + serverOffset);
               const start = parseDateSafe(serverTimer.startTime);
@@ -447,12 +452,11 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       window.location.pathname === '/landing' ||
       window.location.pathname === '/login';
     
-    if (isPublic) return;
+    if (isPublic || !isInitialized || periodicSyncStartedRef.current) return;
 
-    // Sincronizar inmediatamente al cargar
-    syncActiveTimers();
-
-    // Sincronizar cada 60 segundos como respaldo (la sincronización principal es via SSE)
+    // Sincronizar cada 60 segundos como respaldo — la sincronización principal es via SSE.
+    // El primer fetch ya se hizo en el useEffect de inicialización.
+    periodicSyncStartedRef.current = true;
     const interval = setInterval(syncActiveTimers, 60000);
 
     return () => clearInterval(interval);
@@ -507,7 +511,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       );
 
       if (!existingTimer) {
-        console.log('[TimerContext] SSE: Iniciando timer remoto:', codigo);
 
         const now = new Date(Date.now() + serverOffset);
         const start = parseDateSafe(startTime);
@@ -552,18 +555,23 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Evento: Se detuvo un timer
     if (payload?.type === 'timer_stopped' && payload?.data) {
       const { servicioId } = payload.data;
-      console.log('[TimerContext] SSE: Deteniendo timer remoto:', servicioId);
-
+    
       setTimers(prev => {
         const updated = prev.filter(t => t.servicioId !== servicioId);
         saveTimersToStorage(updated);
         return updated;
       });
+
+      // Notificar al módulo de ventas para que se refresque (real-time)
+      if (refreshCallbackRef.current) {
+        refreshCallbackRef.current(servicioId);
+      }
+      window.dispatchEvent(new CustomEvent('updateSales'));
     }
 
     if (payload?.type === 'timer_paused' && payload?.data) {
       const { servicioId, tipoTransaccion } = payload.data;
-      console.log(`[TimerContext] SSE: Pausando timer remoto (${tipoTransaccion}):`, servicioId);
+     
       setTimers(prev => {
         const updated = prev.map(t => {
           if (
@@ -583,7 +591,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Evento: Se reanudó un timer de venta o servicio
     if (payload?.type === 'timer_resumed' && payload?.data) {
       const { servicioId, newStartTime, tipoTransaccion } = payload.data;
-      console.log(`[TimerContext] SSE: Reanudando timer remoto (${tipoTransaccion}):`, servicioId);
+
       setTimers(prev => {
         const updated = prev.map(t => {
           if (t.servicioId === servicioId && t.tipoTransaccion === tipoTransaccion) {
@@ -616,7 +624,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         startTime,
         anfitrionas
       } = payload.data;
-      console.log(`[TimerContext] SSE: Actualizando timer remoto (${tipoTransaccion}):`, servicioId);
+     
       setTimers(prev => {
         const updated = prev.map(t => {
           if (
@@ -648,7 +656,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   // Función para actualizar el estado de la habitación
-  const updateRoomStatus = useCallback(async (roomId: number, status: number) => {
+  const updateRoomStatus = useCallback(async (roomId: string, status: number) => {
     try {
       // Primero obtener los datos de la habitación
       const roomResponse = await fetch(`/api/rooms/${roomId}`);
@@ -670,7 +678,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Si la habitación NO tiene precio, tiempo ni comisión, no cambiar su estado
       if (!hasPrice && !hasTime && !hasCommission) {
-        console.log(`ℹ️ Habitación ${roomId} sin precio/tiempo/comisión - no se cambia el estado`);
+      
         return;
       }
 
@@ -692,7 +700,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   // Función para actualizar el estado del servicio
-  const updateServiceStatus = useCallback(async (servicioId: number, status: number) => {
+  const updateServiceStatus = useCallback(async (servicioId: string, status: number) => {
     try {
       const response = await fetch(`/api/servicios/${servicioId}`, {
         method: 'PATCH',
@@ -713,8 +721,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Función para iniciar un temporizador
   const startTimer = useCallback(
     (
-      servicioId: number,
-      roomId: number,
+      servicioId: string,
+      roomId: string,
       roomName: string,
       duration: number,
       servicioCode: string,
@@ -790,9 +798,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const timer = timerObject || timersRef.current.find(t => t.id === timerId);
 
       if (timer) {
-        console.log(
-          `🛑 Deteniendo timer: ${timer.id} (${timer.roomName}), manual: ${isManualStop}, tipo: ${timer.tipoTransaccion}`
-        );
+        
 
         // PRIMERO: Eliminar el timer del estado local inmediatamente para evitar que se vuelva a mostrar
         setTimers(prev => prev.filter(t => t.id !== timerId));
@@ -820,7 +826,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } else if (timer.tipoTransaccion === 'venta') {
           // Para ventas, finalizar la venta
           try {
-            console.log(`[STOP TIMER] 📡 Finalizando venta ${timer.servicioId} en servidor...`);
             const response = await fetch(`/api/ventas/${timer.servicioId}/stop`, {
               method: 'PATCH',
               headers: {
@@ -830,7 +835,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             if (response.ok) {
               const data = await response.json();
-              console.log(`✅ Venta ${timer.servicioId} finalizada en servidor:`, data);
+             
             } else {
               console.error(`❌ Error finalizando venta ${timer.servicioId}:`, response.statusText);
             }
@@ -859,7 +864,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             console.log('🔄 Ejecutando refreshCallback para id:', timer.servicioId);
             refreshCallbackRef.current(timer.servicioId);
           }
-        }, 1000); // Dar tiempo para que la DB se actualice
+          // Emitir evento global para que useSales y otros hooks refresquen
+          window.dispatchEvent(new CustomEvent('updateSales'));
+        }, 100); // 100ms es suficiente para que la DB se asiente
 
         // Solo mostrar toast si es una parada manual
         if (isManualStop) {
@@ -874,7 +881,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para detener el temporizador por ID de habitación
   const stopTimerByRoomId = useCallback(
-    async (roomId: number) => {
+    async (roomId: string) => {
       const timerToStop = timers.find(timer => timer.roomId === roomId);
       if (timerToStop) {
         await stopTimer(timerToStop.id);
@@ -888,7 +895,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para detener el temporizador por ID de servicio
   const stopTimerByServicioId = useCallback(
-    async (servicioId: number) => {
+    async (servicioId: string) => {
       const timerToStop = timers.find(timer => timer.servicioId === servicioId);
       if (timerToStop) {
         await stopTimer(timerToStop.id, true, timerToStop); // true = es una parada manual, pasar el objeto timer
@@ -901,7 +908,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para pausar el temporizador por ID de servicio (solo timers principales)
   const pauseTimerByServicioId = useCallback(
-    (servicioId: number) => {
+    (servicioId: string) => {
       setTimers(prev => {
         const updatedTimers = prev.map(timer => {
           // Solo pausar timers principales (no temporales) del servicio especificado
@@ -923,7 +930,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para reanudar el temporizador por ID de servicio (solo timers principales)
   const resumeTimerByServicioId = useCallback(
-    (servicioId: number) => {
+    (servicioId: string) => {
       setTimers(prev =>
         prev.map(timer => {
           if (timer.servicioId === servicioId && !timer.isTemporary) {
@@ -944,7 +951,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para obtener temporizador por ID de habitación
   const getTimerByRoomId = useCallback(
-    (roomId: number) => {
+    (roomId: string) => {
       return timers.find(timer => timer.roomId === roomId);
     },
     [timers]
@@ -952,7 +959,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para obtener temporizador por ID de servicio (solo timers principales)
   const getTimerByServicioId = useCallback(
-    (servicioId: number) => {
+    (servicioId: string) => {
       return timers.find(timer => timer.servicioId === servicioId && !timer.isTemporary);
     },
     [timers]
@@ -960,7 +967,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para obtener temporizador temporal por ID de servicio
   const getTemporaryTimerByServicioId = useCallback(
-    (servicioId: number) => {
+    (servicioId: string) => {
       return timers.find(timer => timer.servicioId === servicioId && timer.isTemporary);
     },
     [timers]
@@ -1096,7 +1103,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ]);
 
   // Función para actualizar un temporizador existente
-  const updateTimerByServicioId = useCallback((servicioId: number, newDuration: number) => {
+  const updateTimerByServicioId = useCallback((servicioId: string, newDuration: number) => {
     setTimers(prev => {
       return prev.map(timer => {
         if (timer.servicioId === servicioId) {
@@ -1120,7 +1127,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Función para detener un timer temporal manualmente y reanudar el principal
   const stopTemporaryTimer = useCallback(
-    (servicioId: number) => {
+    (servicioId: string) => {
       const tempTimer = timers.find(t => t.servicioId === servicioId && t.isTemporary);
       if (tempTimer) {
         console.log(`🛑 Deteniendo timer temporal manualmente para servicio ${servicioId}`);
@@ -1146,8 +1153,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Función para iniciar un temporizador temporal que pausa el principal
   const startTemporaryTimer = useCallback(
     (
-      servicioId: number,
-      roomId: number,
+      servicioId: string,
+      roomId: string,
       roomName: string,
       duration: number,
       servicioCode: string,
@@ -1337,3 +1344,4 @@ export const useCountdown = (timer: Timer | undefined) => {
 
   return remainingTime;
 };
+

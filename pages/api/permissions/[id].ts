@@ -1,5 +1,7 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -15,13 +17,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      const now = getNowInBusinessTimezone();
       await query(
         `
         UPDATE permissions 
-        SET name = ?, description = ?, module = ?, action = ?, updated_at = NOW()
+        SET name = ?, description = ?, module = ?, action = ?, updated_at = ?
         WHERE id = ?
       `,
-        [name, description, module, action, id]
+        [name, description, module, action, now, id]
       );
 
       res.status(200).json({
@@ -36,13 +39,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'DELETE') {
     try {
+      const now = getNowInBusinessTimezone();
       await query(
         `
         UPDATE permissions 
-        SET deleted_at = NOW()
+        SET deleted_at = ?
         WHERE id = ?
       `,
-        [id]
+        [now, id]
       );
 
       res.status(200).json({

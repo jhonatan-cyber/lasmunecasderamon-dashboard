@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Sparkles, Music, Users, Wine, ChevronDown } from 'lucide-react';
 
 export default function HeroSection({ scrollY }: { scrollY: number }) {

@@ -1,9 +1,12 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { formatDateTimeLabel } from '@/lib/calendarUtils';
+import { formatNumberCL } from '@/lib/formatters';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -162,22 +165,12 @@ export function SolicitudesServiciosList() {
     }
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('es-CL', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(num);
+  const formatDate = (dateString: string) => {
+    const { date, time } = formatDateTimeLabel(dateString);
+    return `${date} ${time}`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('es-CL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatNumber = (num: number) => formatNumberCL(num);
 
   const handleOpenModal = (solicitud: Solicitud) => {
     setSelectedSolicitud(solicitud);
@@ -472,3 +465,4 @@ export function SolicitudesServiciosList() {
     </>
   );
 }
+

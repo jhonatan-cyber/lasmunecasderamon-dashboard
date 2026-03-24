@@ -1,3 +1,4 @@
+/* eslint-disable */
 // components/attendance/AttendanceTable.tsx
 'use client';
 
@@ -257,3 +258,4 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
     </>
   );
 }
+

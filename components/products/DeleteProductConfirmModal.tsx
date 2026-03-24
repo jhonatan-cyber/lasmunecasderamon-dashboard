@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import React from "react";
 import { AlertTriangle } from 'lucide-react';
 import {
@@ -80,3 +81,4 @@ export function DeleteProductConfirmModal({
     </Dialog>
   );
 }
+

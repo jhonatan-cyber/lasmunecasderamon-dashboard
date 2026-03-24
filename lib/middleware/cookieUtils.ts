@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Cookies from 'cookies';
+import { logger } from '../logger';
 
 export interface CookieOptions {
   httpOnly?: boolean;
@@ -29,33 +30,36 @@ export function setSecureCookie(
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/',
-    ...options
+    ...options,
   };
 
   if (isBehindProxy && !hasHttpsHeader) {
     defaultOptions.secure = false;
-    console.log('🔧 Cookie config: Forzando secure: false en producción con proxy');
+    logger.warn('Cookie config: Forzando secure: false en producción con proxy', {
+      name,
+      isBehindProxy,
+      hasHttpsHeader,
+    });
   }
 
-  console.log('📊 Cookie configuration:', {
+  logger.info('Cookie configuration', {
     name,
     isBehindProxy,
     hasHttpsHeader,
     isHttps,
     secure: defaultOptions.secure,
     sameSite: defaultOptions.sameSite,
-    nodeEnv: process.env.NODE_ENV
+    nodeEnv: process.env.NODE_ENV,
   });
 
   try {
     cookies.set(name, value, defaultOptions);
     return true;
-  } catch (error) {
+  } catch {
     try {
       cookies.set(name, value, { ...defaultOptions, secure: false });
-
       return true;
-    } catch (retryError) {
+    } catch {
       return false;
     }
   }
@@ -77,6 +81,6 @@ export function clearCookie(req: NextApiRequest, res: NextApiResponse, name: str
     secure: false,
     sameSite: 'lax',
     maxAge: 0,
-    path: '/'
+    path: '/',
   });
 }

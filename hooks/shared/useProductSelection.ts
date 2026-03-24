@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback, useMemo } from 'react';
 
 interface UseProductSelectionParams {
@@ -6,6 +7,9 @@ interface UseProductSelectionParams {
   onCantidadChange: (id: string, value: string) => void;
   onAgregarProducto: (producto: any) => void;
 }
+
+const getProductId = (producto: any) => (producto.id_producto || producto.id).toString();
+const getProductPrice = (producto: any) => producto.precio || producto.price || 0;
 
 export function useProductSelection({
   productos,
@@ -16,7 +20,7 @@ export function useProductSelection({
   const [selectedProducts, setSelectedProducts] = useState<{[key: string]: number}>({});
 
   const handleAddToSelection = useCallback((producto: any) => {
-    const id = producto.id_producto || producto.id;
+    const id = getProductId(producto);
     const cantidad = cantidades[id] || 1;
     setSelectedProducts(prev => ({
       ...prev,
@@ -34,7 +38,7 @@ export function useProductSelection({
 
   const handleAddAllSelected = useCallback(() => {
     Object.entries(selectedProducts).forEach(([id, cantidad]) => {
-      const producto = productos?.find(p => (p.id_producto || p.id).toString() === id);
+      const producto = productos?.find(p => getProductId(p) === id);
       if (producto) {
         onCantidadChange(id, cantidad.toString());
         onAgregarProducto(producto);
@@ -53,9 +57,9 @@ export function useProductSelection({
 
   const totalValue = useMemo(() => {
     return Object.entries(selectedProducts).reduce((sum, [id, cantidad]) => {
-      const producto = productos?.find(p => (p.id_producto || p.id).toString() === id);
+      const producto = productos?.find(p => getProductId(p) === id);
       if (producto) {
-        return sum + (producto.precio || producto.price || 0) * cantidad;
+        return sum + getProductPrice(producto) * cantidad;
       }
       return sum;
     }, 0);
@@ -71,3 +75,4 @@ export function useProductSelection({
     totalValue
   };
 }
+

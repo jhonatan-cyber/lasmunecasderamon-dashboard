@@ -1,4 +1,10 @@
 import { ServicioWithDetails } from "@/types/servicio";
+import { formatDateTimeDmyLabel } from "@/lib/calendarUtils";
+
+type HabitacionStatsRow = {
+  estado?: number | string | null;
+  status?: number | string | null;
+};
 
 // Generar código único de 8 caracteres alfanuméricos
 export function generateServiceCode(): string {
@@ -27,14 +33,8 @@ export function calculateServiceTotals(
 
 // Formatear fecha de creación
 export function formatServiceDate(dateString: string): string {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const month = date.toLocaleDateString("es-ES", { month: "long" });
-  const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
+  const { date, time } = formatDateTimeDmyLabel(dateString);
+  return `${date} ${time}`;
 }
 
 // Obtener badge de estado
@@ -132,12 +132,12 @@ export function calculateServiceStats(servicios: ServicioWithDetails[]) {
 }
 
 // Calcular estadísticas de habitaciones
-export function calculateRoomStats(habitaciones: any[]) {
+export function calculateRoomStats(habitaciones: HabitacionStatsRow[]) {
   const habitacionesDisponibles = habitaciones.filter(
-    (h) => h.estado === 1 || h.status === 1
+    (h) => Number(h.estado) === 1 || Number(h.status) === 1
   ).length;
   const habitacionesOcupadas = habitaciones.filter(
-    (h) => h.estado === 2 || h.status === 2
+    (h) => Number(h.estado) === 2 || Number(h.status) === 2
   ).length;
 
   return {
@@ -145,3 +145,4 @@ export function calculateRoomStats(habitaciones: any[]) {
     habitacionesOcupadas,
   };
 }
+

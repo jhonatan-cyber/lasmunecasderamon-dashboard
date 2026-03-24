@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AsistenciaStats } from '@/types/asistencia'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Users, CheckCircle, XCircle } from 'lucide-react'
+import { formatLongDateEs, getTodayDateKey } from '@/lib/calendarUtils'
 
 interface AttendanceStatsCardProps {
   stats: AsistenciaStats
@@ -28,7 +29,7 @@ export default function AttendanceStatsCard({ stats, isLoading = false }: Attend
   }
 
   const isToday = stats.fechaApertura === stats.fechaCierre && 
-    stats.fechaApertura === new Date().toISOString().split('T')[0];
+    stats.fechaApertura === getTodayDateKey();
 
   return (
     <Card className='shadow-sm'>
@@ -44,9 +45,9 @@ export default function AttendanceStatsCard({ stats, isLoading = false }: Attend
         </div>
         {stats.fechaApertura && (
           <div className='text-sm text-muted-foreground'>
-            Período: {new Date(stats.fechaApertura).toLocaleDateString()}
+            Período: {formatLongDateEs(stats.fechaApertura)}
             {stats.fechaCierre && stats.fechaCierre !== stats.fechaApertura && 
-              ` - ${new Date(stats.fechaCierre).toLocaleDateString()}`
+              ` - ${formatLongDateEs(stats.fechaCierre)}`
             }
           </div>
         )}

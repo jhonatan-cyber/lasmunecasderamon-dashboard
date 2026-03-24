@@ -72,24 +72,27 @@ export function sanitizeInput(handler: NextApiHandler) {
     }
 
     if (req.body && typeof req.body === 'object') {
-      const sanitizeObject = (obj: any): any => {
-        if (typeof obj === 'string') {
-          return obj.replace(/[<>]/g, '');
+      const sanitizeValue = (value: unknown): unknown => {
+        if (typeof value === 'string') {
+          return value.replace(/[<>]/g, '');
         }
-        if (Array.isArray(obj)) {
-          return obj.map(sanitizeObject);
+
+        if (Array.isArray(value)) {
+          return value.map(item => sanitizeValue(item));
         }
-        if (typeof obj === 'object' && obj !== null) {
-          const sanitized: any = {};
-          Object.keys(obj).forEach(key => {
-            sanitized[key] = sanitizeObject(obj[key]);
+
+        if (value && typeof value === 'object') {
+          const sanitized: Record<string, unknown> = {};
+          Object.entries(value).forEach(([key, nestedValue]) => {
+            sanitized[key] = sanitizeValue(nestedValue);
           });
           return sanitized;
         }
-        return obj;
+
+        return value;
       };
 
-      req.body = sanitizeObject(req.body);
+      req.body = sanitizeValue(req.body);
     }
 
     return handler(req, res);
@@ -158,7 +161,7 @@ export function withSecurity(handler: NextApiHandler) {
   return withSecurityHeaders(validateInput(sanitizeInput(requestLogger(handler))));
 }
 
-export default {
+const securityMiddleware = {
   withSecurityHeaders,
   validateInput,
   sanitizeInput,
@@ -168,3 +171,6 @@ export default {
   withSecurity,
   securityHeaders
 };
+
+export default securityMiddleware;
+

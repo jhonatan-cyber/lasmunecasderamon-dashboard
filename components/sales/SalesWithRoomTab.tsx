@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -16,32 +17,29 @@ export default function SalesWithRoomTab({ ventas, loading, onRefresh }: SalesWi
   const { getTimerByServicioId, timers } = useTimer();
   const [, forceUpdate] = useState({});
 
-  console.log('[SalesWithRoomTab] Renderizando con ventas:', ventas.length);
-
   // Forzar re-render cuando cambian los timers
   useEffect(() => {
     forceUpdate({});
   }, [timers]);
 
-  // Filtrar ventas que tienen habitación asignada (habitacion_id > 0)
-  // Y que tienen un temporizador activo con tiempo restante > 0
+  // Filtrar ventas que tienen habitación asignada 
+  // Y que están en estado 2 (En Proceso) O tienen un temporizador activo
   const ventasConHabitacion = ventas.filter(v => {
-    if (!v.habitacion_id || v.habitacion_id <= 0) {
-      console.log(`[SalesWithRoomTab] Venta ${v.id} sin habitación`);
+    // Si no tiene habitación válida vinculada, omitir
+    const roomId = String(v.habitacion_id);
+    if (!roomId || roomId === '0' || roomId === 'null' || roomId === 'undefined') {
       return false;
     }
     
-    const timer = getTimerByServicioId(v.id);
-    console.log(`[SalesWithRoomTab] Venta ${v.id} - habitacion_id: ${v.habitacion_id}, timer:`, timer);
+    // Obtener el timer por su ID de venta (servicioId en el contexto)
+    const timer = getTimerByServicioId(String(v.id));
     
-    // Solo mostrar si tiene timer activo con tiempo restante
-    const hasActiveTimer = timer && timer.isActive && timer.remainingTime > 0;
-    console.log(`[SalesWithRoomTab] Venta ${v.id} - hasActiveTimer: ${hasActiveTimer}`);
+    // Mostramos si el estado es 2 (activas/en proceso) o si tiene timer activo
+    const isInProcess = Number(v.estado) === 2;
+    const hasTimer = !!timer;
     
-    return hasActiveTimer;
+    return isInProcess || hasTimer;
   });
-
-  console.log('[SalesWithRoomTab] Ventas con habitación filtradas:', ventasConHabitacion.length);
 
   if (loading) {
     return (

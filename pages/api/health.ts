@@ -3,14 +3,12 @@ import { query } from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Método no permitido' });
+    return res.status(405).json({ message: 'Metodo no permitido' });
   }
 
   try {
-    // Verificar conexión a la base de datos
     const dbCheck = await query('SELECT 1 as health_check');
-    
-    // Información del sistema
+
     const systemInfo = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -19,40 +17,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       version: process.env.npm_package_version || '1.0.0',
       database: {
         status: 'connected',
-        response: dbCheck
+        response: dbCheck,
       },
       memory: {
         used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-        external: Math.round(process.memoryUsage().external / 1024 / 1024)
+        external: Math.round(process.memoryUsage().external / 1024 / 1024),
       },
       services: {
         database: 'operational',
         api: 'operational',
-        authentication: 'operational'
-      }
+        authentication: 'operational',
+      },
     };
 
-    // Configurar headers
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: systemInfo,
-      message: 'API funcionando correctamente'
+      message: 'API funcionando correctamente',
     });
   } catch (error) {
-    console.error('Error en health check:', error);
-    
-    res.status(503).json({
+    return res.status(503).json({
       success: false,
       data: {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: process.env.NODE_ENV === 'development' ? (error as any).message : 'Error interno'
+        error: error instanceof Error ? error.message : 'Error interno',
       },
-      message: 'API no disponible'
+      message: 'API no disponible',
     });
   }
 }

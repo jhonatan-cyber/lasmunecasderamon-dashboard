@@ -1,9 +1,9 @@
 export interface Venta {
-  id: string;
+  id: string | number;
   codigo: string;
-  cliente_id: string | null;
-  pedido_id?: string | null;
-  habitacion_id: string;
+  cliente_id: string | number | null;
+  pedido_id?: string | number | null;
+  habitacion_id: string | number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   propina: number;
   sub_total: number;
@@ -15,9 +15,9 @@ export interface Venta {
 }
 
 export interface VentaDetalle {
-  id?: string;
-  venta_id: string;
-  producto_id: string;
+  id?: string | number;
+  venta_id: string | number;
+  producto_id: string | number;
   precio: number;
   comision: number;
   cantidad: number;
@@ -27,9 +27,9 @@ export interface VentaDetalle {
 }
 
 export interface VentaUsuario {
-  id?: string;
-  usuario_id: string;
-  venta_id: string;
+  id?: string | number;
+  usuario_id: string | number;
+  venta_id: string | number;
   nick?: string;
   usuario_nombre?: string;
 }
@@ -46,20 +46,20 @@ export interface VentaWithDetails extends Venta {
 }
 
 export interface VentaCreate {
-  cliente_id?: string | null;
-  pedido_id?: string | null;
-  habitacion_id?: string;
+  cliente_id?: string | number | null;
+  pedido_id?: string | number | null;
+  habitacion_id?: string | number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   propina: number;
   sub_total: number;
   total: number;
   detalles: VentaDetalleCreate[];
-  usuarios?: string[]; // Array de IDs de usuarios
+  usuarios?: Array<string | number>; // Array de IDs de usuarios
   tiempo?: number; // Tiempo de habitación en minutos
 }
 
 export interface VentaDetalleCreate {
-  producto_id: string;
+  producto_id: string | number;
   precio: number;
   comision: number;
   cantidad: number;

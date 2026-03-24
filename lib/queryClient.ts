@@ -1,5 +1,10 @@
 import { QueryClient } from '@tanstack/react-query';
 
+type QueryFilters = Record<string, unknown> | string | number;
+type RetryError = {
+  status?: number;
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -8,9 +13,10 @@ export const queryClient = new QueryClient({
       // Tiempo de caché en memoria (10 minutos)
       gcTime: 10 * 60 * 1000,
       // Reintentos en caso de error
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error: unknown) => {
         // No reintentar en errores 4xx (excepto 408, 429)
-        if (error?.status >= 400 && error?.status < 500 && error?.status !== 408 && error?.status !== 429) {
+        const status = (error as RetryError | undefined)?.status;
+        if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
           return false;
         }
         // Máximo 3 reintentos
@@ -40,7 +46,7 @@ export const queryKeys = {
   users: {
     all: ['users'] as const,
     lists: () => [...queryKeys.users.all, 'list'] as const,
-    list: (filters: any) => [...queryKeys.users.lists(), filters] as const,
+    list: (filters: QueryFilters) => [...queryKeys.users.lists(), filters] as const,
     details: () => [...queryKeys.users.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.users.details(), id] as const,
   },
@@ -49,7 +55,7 @@ export const queryKeys = {
   sales: {
     all: ['sales'] as const,
     lists: () => [...queryKeys.sales.all, 'list'] as const,
-    list: (filters: any) => [...queryKeys.sales.lists(), filters] as const,
+    list: (filters: QueryFilters) => [...queryKeys.sales.lists(), filters] as const,
     details: () => [...queryKeys.sales.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.sales.details(), id] as const,
     stats: () => [...queryKeys.sales.all, 'stats'] as const,
@@ -59,7 +65,7 @@ export const queryKeys = {
   products: {
     all: ['products'] as const,
     lists: () => [...queryKeys.products.all, 'list'] as const,
-    list: (filters: any) => [...queryKeys.products.lists(), filters] as const,
+    list: (filters: QueryFilters) => [...queryKeys.products.lists(), filters] as const,
     details: () => [...queryKeys.products.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.products.details(), id] as const,
     categories: () => [...queryKeys.products.all, 'categories'] as const,
@@ -69,7 +75,7 @@ export const queryKeys = {
   clients: {
     all: ['clients'] as const,
     lists: () => [...queryKeys.clients.all, 'list'] as const,
-    list: (filters: any) => [...queryKeys.clients.lists(), filters] as const,
+    list: (filters: QueryFilters) => [...queryKeys.clients.lists(), filters] as const,
     details: () => [...queryKeys.clients.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.clients.details(), id] as const,
   },
@@ -101,4 +107,4 @@ export const invalidateQueries = {
   reports: () => queryClient.invalidateQueries({ queryKey: queryKeys.reports.all }),
 };
 
-export default queryClient; 
+export default queryClient;

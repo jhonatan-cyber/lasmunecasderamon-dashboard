@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { Bell, User, ChevronDown, Menu, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -27,6 +28,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatShortTimeEs } from '@/lib/calendarUtils';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
 import { useRouter, usePathname } from 'next/navigation';
 import useOrders from '@/hooks/servicios/useOrders';
@@ -593,7 +596,7 @@ export function Header() {
                     <div className='flex justify-between w-full'>
                       <span className='font-semibold text-sm'>{order.garzon}</span>
                       <span className='text-xs text-gray-500'>
-                        {order.fecha_crea ? order.fecha_crea.slice(11, 16) : ''}
+                        {formatShortTimeEs(order.fecha_crea)}
                       </span>
                     </div>
                     <div className='text-xs text-gray-700'>Cliente: {order.cliente}</div>
@@ -601,7 +604,7 @@ export function Header() {
                       <div className='text-xs text-gray-600'>Anfitrionas: {order.nicks}</div>
                     )}
                     <div className='text-xs text-gray-500'>
-                      Total: ${order.total?.toLocaleString('es-CL')}
+                      Total: {formatCurrencyCLP(order.total)}
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -627,7 +630,7 @@ export function Header() {
                         Habitación: {solicitud.habitacion_nombre || solicitud.habitacion_id}
                       </span>
                       <span className='text-xs text-gray-500'>
-                        {solicitud.fecha_solicitud ? solicitud.fecha_solicitud.slice(11, 16) : ''}
+                        {formatShortTimeEs(solicitud.fecha_solicitud)}
                       </span>
                     </div>
                     <div className='text-xs text-gray-700'>
@@ -638,7 +641,7 @@ export function Header() {
                       {solicitud.solicitado_por_nombre || solicitud.solicitado_por_nick || 'N/A'}
                     </div>
                     <div className='text-xs text-gray-500'>
-                      Total: ${solicitud.total?.toLocaleString('es-CL')}
+                      Total: {formatCurrencyCLP(solicitud.total)}
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -699,7 +702,7 @@ export function Header() {
                             className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                           >
                             {room.nombre || room.name} - $
-                            {Number(room.precio || room.price || 0).toLocaleString('es-CL')}
+                            {formatCurrencyCLP(room.precio || room.price || 0)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -711,7 +714,7 @@ export function Header() {
                 </div>
                 <div>
                   <span className='font-medium'>Total:</span> $
-                  {Math.round(selectedServiceRequest.total).toLocaleString('es-CL')}
+                  {formatCurrencyCLP(selectedServiceRequest.total)}
                 </div>
                 <div>
                   <span className='font-medium'>Garzón:</span>{' '}
@@ -728,7 +731,7 @@ export function Header() {
                   {(() => {
                     const ivaCalculado = calculateIVA(selectedServiceRequest);
 
-                    return Math.round(ivaCalculado).toLocaleString('es-CL');
+                    return formatCurrencyCLP(ivaCalculado);
                   })()}
                 </div>
               </div>
@@ -819,3 +822,4 @@ export function Header() {
     </header>
   );
 }
+

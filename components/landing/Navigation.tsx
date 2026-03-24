@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
@@ -8,8 +9,8 @@ const menuItems = [
   { name: 'Nosotros', href: '#about' },
   { name: 'Servicios', href: '#services' },
   { name: 'Eventos', href: '#events' },
-  { name: 'Ubicación', href: '#location' },
-  { name: 'Trabaja con Nosotros', href: '#careers' },
+  { name: 'Ubicacion', href: '#location' },
+  { name: 'Trabaja con Nosotros', href: '#careers' }
 ];
 
 export default function Navigation({ scrollY }: { scrollY: number }) {
@@ -26,69 +27,85 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrollY > 50 ? 'bg-black/80 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]' : 'bg-gradient-to-b from-black/80 to-transparent'}`}
+      aria-label='Navegacion principal'
+      className={`fixed top-0 w-full z-50 transition-all duration-500 ${
+        scrollY > 50
+          ? 'border-b border-white/10 bg-black/80 shadow-[0_4px_30px_rgba(0,0,0,0.5)] backdrop-blur-md'
+          : 'bg-gradient-to-b from-black/80 to-transparent'
+      }`}
     >
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='flex items-center justify-between h-24 lg:grid lg:grid-cols-3'>
-          <div className='flex items-center space-x-3 group cursor-pointer'>
+      <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+        <div className='flex h-24 items-center justify-between lg:grid lg:grid-cols-3'>
+          <div className='group flex cursor-pointer items-center space-x-3'>
             <a
               href='#home'
-              className={`flex items-center gap-3 transition-all duration-700 ease-out ${showCompactLogo
-                ? 'opacity-100 visible translate-y-0 scale-100'
-                : 'opacity-0 invisible -translate-y-10 scale-90'
-                }`}
+              className={`flex items-center gap-3 transition-all duration-700 ease-out ${
+                showCompactLogo
+                  ? 'visible translate-y-0 scale-100 opacity-100'
+                  : 'invisible -translate-y-10 scale-90 opacity-0'
+              }`}
             >
-              {/* Logo para desktop */}
-              <img
+              <Image
                 src='/img/system/logo2.png'
-                alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'
-                className={`hidden lg:block w-auto object-contain transform group-hover:scale-110 transition-all duration-500 ease-in-out mt-4 h-32 drop-shadow-md`}
+                alt='Las Munecas de Ramon - Nightclub exclusivo en Linares'
+                width={384}
+                height={128}
+                sizes='(min-width: 1024px) 384px, 0px'
+                className='mt-4 hidden h-32 w-auto object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110 lg:block'
+                priority
               />
-              {/* Logo para mobile */}
-              <img
+              <Image
                 src='/img/system/logo1.png'
-                alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'
-                className={`lg:hidden w-auto object-contain transform group-hover:scale-110 transition-all duration-500 ease-in-out mt-4 h-16 drop-shadow-md`}
+                alt='Las Munecas de Ramon - Nightclub exclusivo en Linares'
+                width={128}
+                height={64}
+                sizes='(max-width: 1023px) 128px, 0px'
+                className='mt-4 h-16 w-auto object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110 lg:hidden'
+                priority
               />
             </a>
           </div>
 
-          <div className='hidden lg:flex items-center justify-center gap-8'>
+          <div className='hidden items-center justify-center gap-8 lg:flex'>
             {menuItems.map(item => (
               <a
                 key={item.name}
                 href={item.href}
-                className='relative font-bold text-silver-300 hover:text-gold-400 transition-all duration-300 tracking-wide group whitespace-nowrap text-md uppercase '
+                className='group relative whitespace-nowrap text-md font-bold uppercase tracking-wide text-silver-300 transition-all duration-300 hover:text-gold-400'
               >
                 {item.name}
-                <span className='absolute bottom-2 left-0 w-0 h-[1px] bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 group-hover:w-full transition-all duration-300'></span>
+                <span className='absolute bottom-2 left-0 h-[1px] w-0 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 transition-all duration-300 group-hover:w-full' />
               </a>
             ))}
           </div>
 
-          <div className='flex lg:hidden items-center justify-end'>
+          <div className='flex items-center justify-end lg:hidden'>
             <button
               type='button'
               onClick={handleMobileMenuClick}
               aria-label={isMobileMenuOpen ? 'Cerrar menu' : 'Abrir menu'}
+              aria-controls='landing-mobile-menu'
               aria-expanded={isMobileMenuOpen}
-              className='inline-flex items-center justify-center w-11 h-11 rounded-full border border-white/20 bg-black/40 text-white hover:bg-black/60 transition-colors min-h-11 min-w-11'
+              className='inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white transition-colors hover:bg-black/60'
             >
-              {isMobileMenuOpen ? <X className='w-5 h-5' /> : <Menu className='w-5 h-5' />}
+              {isMobileMenuOpen ? <X className='h-5 w-5' /> : <Menu className='h-5 w-5' />}
             </button>
           </div>
         </div>
       </div>
 
       {isMobileMenuOpen && (
-        <div className='lg:hidden border-t border-white/10 bg-black/95 backdrop-blur-md shadow-2xl'>
-          <div className='px-4 py-3 flex flex-col gap-1'>
+        <div
+          id='landing-mobile-menu'
+          className='border-t border-white/10 bg-black/95 shadow-2xl backdrop-blur-md lg:hidden'
+        >
+          <div className='flex flex-col gap-1 px-4 py-3'>
             {menuItems.map(item => (
               <a
                 key={`mobile-${item.name}`}
                 href={item.href}
                 onClick={handleMobileItemClick}
-                className='block rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-wide text-silver-300 hover:text-gold-400 hover:bg-white/5 transition-colors'
+                className='block rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-wide text-silver-300 transition-colors hover:bg-white/5 hover:text-gold-400'
               >
                 {item.name}
               </a>
@@ -99,6 +116,3 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
     </nav>
   );
 }
-
-
-

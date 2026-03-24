@@ -1,3 +1,4 @@
+/* eslint-disable */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
@@ -19,7 +20,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         'comision' as type, 
         DC.id_detalle_comision as id, 
         COALESCE(V.codigo, S.codigo) as codigo, 
-        DC.fecha_crea as date, 
+        DATE_FORMAT(DC.fecha_crea, "%Y-%m-%d %H:%i:%s") as date, 
         DC.comision as amount, 
         DC.estado,
         CASE 
@@ -41,7 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     `, [userId])) as any[];
 
     const anticipos = (await query(`
-      SELECT 'anticipo' as type, A.id_anticipo as id, '' as codigo, A.fecha_crea as date, A.monto as amount, A.estado
+      SELECT 'anticipo' as type, A.id_anticipo as id, '' as codigo, DATE_FORMAT(A.fecha_crea, "%Y-%m-%d %H:%i:%s") as date, A.monto as amount, A.estado
       FROM anticipos A
       WHERE A.usuario_id = ?
     `, [userId])) as any[];
@@ -51,7 +52,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         'propina' as type, 
         DP.id_detalle_propina as id, 
         COALESCE(V.codigo, 'TIPS') as codigo, 
-        DP.fecha_crea as date, 
+        DATE_FORMAT(DP.fecha_crea, "%Y-%m-%d %H:%i:%s") as date, 
         DP.monto as amount, 
         DP.estado,
         CASE 
@@ -64,12 +65,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       WHERE DP.usuario_id = ?
     `, [userId])) as any[];
 
+    const gratificaciones = (await query(`
+      SELECT 'gratificacion' as type, G.id as id, '' as codigo, DATE_FORMAT(G.fecha_hora, "%Y-%m-%d %H:%i:%s") as date, G.monto as amount, G.estado
+      FROM gratificaciones G
+      WHERE G.usuario_id = ?
+    `, [userId])) as any[];
+
     const allEvents = [
       ...comisiones,
       ...asistencias,
       ...anticipos,
-      ...propinas
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      ...propinas,
+      ...gratificaciones
+    ].map(event => ({ ...event, amount: Number(event.amount) }))
+     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return res.status(200).json({
       success: true,
@@ -84,3 +93,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

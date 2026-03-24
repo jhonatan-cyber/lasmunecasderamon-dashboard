@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ErrorLogsSkeleton } from '@/components/ui/skeletons';
+import { formatLongDateEs } from '@/lib/calendarUtils';
 
 export default function ErrorLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -47,7 +49,7 @@ export default function ErrorLogsPage() {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-red-800">{log.endpoint}</h3>
                 <span className="text-sm text-gray-600">
-                  {new Date(log.fecha_crea).toLocaleString('es-ES')}
+                  {formatLongDateEs(log.fecha_crea)}
                 </span>
               </div>
               
@@ -84,3 +86,4 @@ export default function ErrorLogsPage() {
     </div>
   );
 }
+

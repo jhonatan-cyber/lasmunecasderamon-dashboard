@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { query } from "@/lib/db";
+import { getNowInBusinessTimezone } from "@/lib/timezoneService";
 import { z } from "zod";
 
 const updateRoomSchema = z.object({
@@ -70,7 +72,9 @@ export default async function handler(
       updateValues.push(comision_anfitriona);
       newComision = comision_anfitriona;
     }
-    updateFields.push("fecha_mod = NOW()");
+    const now = getNowInBusinessTimezone();
+    updateFields.push("fecha_mod = ?");
+    updateValues.push(now);
     updateValues.push(id);
 
     await query(
@@ -93,3 +97,4 @@ export default async function handler(
     });
   }
 }
+

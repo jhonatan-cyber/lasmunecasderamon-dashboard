@@ -1,9 +1,43 @@
+/* eslint-disable prefer-const, @typescript-eslint/no-unused-vars, no-console */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery, generateUUID } from '@/lib/db';
+import { formatCurrencyCLP } from '@/lib/formatters';
 import { z } from 'zod';
-import { sendNotificationToAll } from './notifications/sse';
+import { sendNotificationToAll } from '@/lib/sseService';
 import { notifyOrderDeleted, notifyOrderCreated } from './orders/sse';
 import { sendPushByRole } from '@/lib/pushNotifications';
+import { buildOrderPushBody } from '@/lib/notificationMessages';
+import {
+  buildOrderDeletionNotificationData,
+  buildOrderNotificationData,
+} from '@/lib/orderNotificationUtils';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import {
+  applyAutoRoomToDetails,
+  hasSpecialHostessProducts,
+} from '@/lib/orderRoomAssignment';
+
+type VentaActivaRow = {
+  id_venta: string;
+  habitacion_id: string;
+  habitacion_nombre: string;
+  tiempo: number;
+  codigo: string;
+};
+
+type RoomInfoRow = {
+  precio: number | string | null;
+  comision_anfitriona: number | string | null;
+  tiempo: number | string | null;
+};
+
+type PedidoInfoRow = {
+  mesero_id: string | number;
+};
+
+type DetalleConHabitacion = {
+  roomId?: string | null;
+};
 
 /**
  * Busca si una anfitriona está actualmente en una venta con habitación y temporizador activo
@@ -20,24 +54,24 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: string): Promise<{
   try {
     const resultado = (await query(
       `
-SELECT
-v.id_venta,
-  v.habitacion_id,
-  h.nombre as habitacion_nombre,
-  v.tiempo,
-  v.codigo
+      SELECT 
+        v.id_venta, 
+        v.habitacion_id, 
+        h.nombre as habitacion_nombre, 
+        v.tiempo, 
+        v.codigo
       FROM ventas v
       INNER JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       INNER JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
-      WHERE vu.usuario_id = ?
-  AND v.habitacion_id IS NOT NULL
+      WHERE vu.usuario_id = ? 
+        AND v.habitacion_id IS NOT NULL 
         AND v.tiempo > 0
         AND v.estado = 2
       ORDER BY v.fecha_crea DESC
       LIMIT 1
   `,
       [anfitrionaId]
-    )) as any[];
+    )) as VentaActivaRow[];
 
     if (resultado && resultado.length > 0) {
       return resultado[0];
@@ -75,7 +109,8 @@ const orderSchema = z.object({
   totalComision: z.number(),
   propina: z.number().optional().default(0), // Agregar campo propina
   detalles: z.array(orderDetailSchema),
-  usuarios: z.array(orderUserSchema)
+  usuarios: z.array(orderUserSchema),
+  device_date: z.string().optional().nullable() // Fecha opcional del dispositivo
 });
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -85,19 +120,19 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     // Consulta directa para obtener todos los pedidos con detalles
     const orders = await query(
       `
-SELECT
-P.id_pedido,
-  COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
-    P.codigo,
-    CONCAT(U.nombre, ' ', U.apellido) AS garzon,
-      (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ')
-         FROM pedidos_usuarios PU
-         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
+      SELECT 
+        P.id_pedido, 
+        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, 
+        P.codigo, 
+        CONCAT(U.nombre, ' ', U.apellido) AS garzon,
+        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') 
+         FROM pedidos_usuarios PU 
+         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
-  P.subtotal,
-  P.total,
-  P.estado,
-  P.fecha_crea
+        P.subtotal, 
+        P.total, 
+        P.estado, 
+        P.fecha_crea
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
@@ -142,16 +177,12 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       totalComision,
       propina,
       detalles,
-      usuarios
+      usuarios,
+      device_date
     } = parse.data;
 
     // NUEVA LÓGICA: Verificar si hay productos >= 30,000 con anfitrionas
-    const tieneProductosEspeciales = detalles.some(d => {
-      const precio = d.precio || 0;
-      const tieneAnfitrionas =
-        (d.selectedHostesses && d.selectedHostesses.length > 0) || d.hostessId;
-      return precio >= 30000 && tieneAnfitrionas;
-    });
+    const tieneProductosEspeciales = hasSpecialHostessProducts(detalles);
 
     console.log(
       '[ORDERS POST] ¿Tiene productos >= 30,000 con anfitrionas?',
@@ -212,33 +243,19 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       console.log(
         '[ORDERS POST] 📝 Asignando habitación a detalles con productos >= 30,000 y anfitrionas...'
       );
-      detalles = detalles.map(detalle => {
-        const precio = detalle.precio || 0;
-        const tieneAnfitrionas =
-          detalle.hostessId || (detalle.selectedHostesses && detalle.selectedHostesses.length > 0);
-
-        // Solo asignar habitación a productos >= 30,000 con anfitrionas
-        if (precio >= 30000 && tieneAnfitrionas && !detalle.roomId) {
-          console.log(
-            `[ORDERS POST] ✅ Asignando habitación ${habitacionAutoSeleccionada} al producto ${detalle.productoId} (precio: ${precio})`
-          );
-          return {
-            ...detalle,
-            roomId: habitacionAutoSeleccionada
-          };
-        }
-        return detalle;
-      });
+      detalles = applyAutoRoomToDetails(detalles, habitacionAutoSeleccionada);
       console.log('[ORDERS POST] 📝 Detalles actualizados con habitación auto-seleccionada');
     }
 
     // Iniciar transacción
     await rawQuery('START TRANSACTION');
-    // Insertar pedido principal
+    
     const pedidoId = generateUUID();
+    const fechaCrea = getNowInBusinessTimezone(device_date || undefined);
+    
     await query(
-      'INSERT INTO pedidos (id_pedido, codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [pedidoId, codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0, 1]
+      'INSERT INTO pedidos (id_pedido, codigo, mesero_id, cliente_id, subtotal, total, total_comision, propina, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [pedidoId, codigo, meseroId, clienteId || null, subtotal, total, totalComision, propina || 0, 1, fechaCrea]
     );
 
     // Insertar detalles
@@ -265,8 +282,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       const detallePedidoId = generateUUID();
-      const detalleResult: any = await query(
-        'INSERT INTO detalle_pedidos (id_detalle_pedido, pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id, habitacion_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      await query(
+        'INSERT INTO detalle_pedidos (id_detalle_pedido, pedido_id, producto_id, precio, comision, genera_comision, cantidad, subtotal, hostess_id, habitacion_id, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           detallePedidoId,
           pedidoId,
@@ -277,7 +294,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           d.cantidad,
           d.subtotal,
           d.hostessId || null,
-          d.roomId || null
+          d.roomId || null,
+          fechaCrea
         ]
       );
 
@@ -298,15 +316,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
           // Si la tabla no existe, crear la tabla y reintentar
           console.log('Tabla detalle_pedidos_anfitrionas no existe, creándola...');
           await query(`
-            CREATE TABLE IF NOT EXISTS detalle_pedidos_anfitrionas(
-    id_detalle_anfitriona VARCHAR(36) PRIMARY KEY,
-    detalle_pedido_id VARCHAR(36) NOT NULL,
-    anfitriona_id VARCHAR(36) NOT NULL,
-    fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(detalle_pedido_id) REFERENCES detalle_pedidos(id_detalle_pedido) ON DELETE CASCADE,
-    FOREIGN KEY(anfitriona_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    UNIQUE KEY unique_detalle_anfitriona(detalle_pedido_id, anfitriona_id)
-  )
+            CREATE TABLE IF NOT EXISTS detalle_pedidos_anfitrionas (
+              id_detalle_anfitriona VARCHAR(36) PRIMARY KEY,
+              detalle_pedido_id VARCHAR(36) NOT NULL,
+              anfitriona_id VARCHAR(36) NOT NULL,
+              fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (detalle_pedido_id) REFERENCES detalle_pedidos(id_detalle_pedido) ON DELETE CASCADE,
+              FOREIGN KEY (anfitriona_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+              UNIQUE KEY unique_detalle_anfitriona (detalle_pedido_id, anfitriona_id)
+            )
           `);
 
           // Reintentar inserción
@@ -319,6 +337,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       }
     }
+
     // Insertar usuarios
     for (const u of usuarios) {
       await query('INSERT INTO pedidos_usuarios (id_pedido_usuario, usuario_id, pedido_id) VALUES (?, ?, ?)', [
@@ -333,16 +352,16 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const roomIds = Array.from(
         new Set(
-          (detalles || [])
-            .map((d: any) => d.roomId)
-            .filter((r: any) => r !== null && r !== undefined)
+          (detalles as DetalleConHabitacion[])
+            .map(d => d.roomId)
+            .filter((r): r is string => r !== null && r !== undefined)
         )
       );
 
       if (roomIds.length > 0) {
         for (const rid of roomIds) {
           try {
-            const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [rid])) as any[];
+            const roomInfo = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [rid])) as RoomInfoRow[];
             let isFreeRoom = false;
             if (roomInfo.length > 0) {
               const room = roomInfo[0];
@@ -377,52 +396,13 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       console.error('[ORDERS POST] Error procesando habitaciones del pedido:', roomIdsErr);
     }
 
-    // Obtener información del cliente, mesero y anfitrionas para la notificación
-    let clienteNombre = 'Sin cliente registrado';
-    if (clienteId) {
-      const clienteResults = (await query(
-        'SELECT nombre, apellido FROM clientes WHERE id_cliente = ?',
-        [clienteId]
-      )) as any[];
-      const clienteResult = clienteResults[0];
-      if (clienteResult) {
-        clienteNombre = `${clienteResult.nombre} ${clienteResult.apellido} `;
-      }
-    }
-
-    const meseroResults = (await query(
-      'SELECT nombre, apellido FROM usuarios WHERE id_usuario = ?',
-      [meseroId]
-    )) as any[];
-    const meseroResult = meseroResults[0];
-    const meseroNombre = meseroResult
-      ? `${meseroResult.nombre} ${meseroResult.apellido || ''} `.trim()
-      : 'Mesero';
-
-    // Obtener las anfitrionas asignadas al pedido
-    const anfitrionasResults = (await query(
-      `
-      SELECT GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas
-      FROM pedidos_usuarios pu
-      INNER JOIN usuarios u ON pu.usuario_id = u.id_usuario
-      WHERE pu.pedido_id = ?
-  `,
-      [pedidoId]
-    )) as any[];
-
-    const anfitrionasNombre = anfitrionasResults[0]?.anfitrionas || null;
-
-    // Enviar notificación en tiempo real
-    const notificationData = {
-      id: pedidoId,
+    const notificationData = await buildOrderNotificationData({
+      pedidoId,
       codigo,
-      cliente: clienteNombre,
-      mesero: meseroNombre,
-      anfitriona: anfitrionasNombre,
-      total: total,
-      timestamp: new Date().toISOString(),
-      createdBy: meseroId // Añadir el ID del usuario que creó el pedido
-    };
+      clienteId,
+      meseroId,
+      total,
+    });
     console.log(
       '[ORDERS API POST] 📤 ENVIANDO notificación new_order a todos los clientes SSE:',
       notificationData
@@ -431,7 +411,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Enviar notificación Push a Cajeros y Administradores
     try {
-      const pushBody = `Pedido #${codigo} de ${clienteNombre} por $${total.toLocaleString('es-ES')}`;
+      const pushBody = buildOrderPushBody({
+        codigo,
+        clienteNombre: notificationData.cliente,
+        total,
+      });
       sendPushByRole('cajero', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
       sendPushByRole('administrador', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
     } catch (pushErr) {
@@ -475,7 +459,7 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!id) return res.status(400).json({ success: false, message: 'Falta el id' });
 
     // Obtener información del pedido antes de eliminarlo
-    const pedidoInfo = (await query('SELECT * FROM pedidos WHERE id_pedido = ?', [id])) as any[];
+    const pedidoInfo = (await query('SELECT mesero_id FROM pedidos WHERE id_pedido = ?', [id])) as PedidoInfoRow[];
 
     await rawQuery('START TRANSACTION');
     await query('DELETE FROM detalle_pedidos WHERE pedido_id = ?', [id]);
@@ -489,11 +473,10 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
         id: id,
         meseroId: pedidoInfo[0].mesero_id
       });
-      sendNotificationToAll('order_deleted', {
-        id: id,
-        meseroId: pedidoInfo[0].mesero_id,
-        timestamp: new Date().toISOString()
-      });
+      sendNotificationToAll(
+        'order_deleted',
+        buildOrderDeletionNotificationData(id as string, String(pedidoInfo[0].mesero_id))
+      );
 
       // Notificar a través de SSE para actualizar lista de pedidos
       try {

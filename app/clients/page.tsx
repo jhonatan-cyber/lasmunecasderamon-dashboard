@@ -21,6 +21,7 @@ import { ExportButtons } from '@/components/clients/ExportButtons';
 import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ClientsSkeleton } from '@/components/ui/skeletons';
+import { PrepagoModal } from '@/components/clients/PrepagoModal';
 
 export default function Clients() {
   const {
@@ -38,7 +39,8 @@ export default function Clients() {
     setPage,
     pageSize,
     setPageSize,
-    totalPages
+    totalPages,
+    fetchClients
   } = useClients();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,16 +49,16 @@ export default function Clients() {
   const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
   const [modalClientData, setModalClientData] = useState(CLIENT_EMPTY);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [editClientId, setEditClientId] = useState<number | null>(null);
+  const [editClientId, setEditClientId] = useState<string | number | null>(null);
+  const [isPrepagoModalOpen, setIsPrepagoModalOpen] = useState(false);
+  const [prepagoClient, setPrepagoClient] = useState<Client | null>(null);
 
-  // Función para limpiar filtros
   const handleClearFilters = () => {
     setSearchTerm('');
     setFilterStatus(null);
     setPage(1);
   };
 
-  // Crear cliente
   const handleAddClient = async (data: {
     run: string;
     name: string;
@@ -73,7 +75,6 @@ export default function Clients() {
     }
   };
 
-  // Editar cliente
   const handleEditClient = async (data: {
     run: string;
     name: string;
@@ -96,7 +97,6 @@ export default function Clients() {
     }
   };
 
-  // Eliminar cliente
   const handleDeleteClient = async (client: Client) => {
     try {
       await deleteClient(client.id);
@@ -106,13 +106,11 @@ export default function Clients() {
     }
   };
 
-  // Ver detalles del cliente
   const handleViewDetails = (client: Client) => {
     setSelectedClient(client);
     setIsDetailsOpen(true);
   };
 
-  // Editar cliente
   const handleEditClick = (client: Client) => {
     setModalClientData({
       run: client.run || '',
@@ -125,7 +123,6 @@ export default function Clients() {
     setIsModalOpen(true);
   };
 
-  // Prepara el formulario para crear un nuevo cliente
   const handleAddClick = () => {
     setModalClientData(CLIENT_EMPTY);
     setEditClientId(null);
@@ -133,11 +130,15 @@ export default function Clients() {
     setIsModalOpen(true);
   };
 
-  // Manejar la acción de edición desde la vista de detalles
   const handleEditFromDetails = () => {
     if (!selectedClient) return;
     setIsDetailsOpen(false);
     handleEditClick(selectedClient);
+  };
+
+  const handleLoadPrepago = (client: Client) => {
+    setPrepagoClient(client);
+    setIsPrepagoModalOpen(true);
   };
 
   if (isLoading) return <ClientsSkeleton />;
@@ -204,6 +205,7 @@ export default function Clients() {
               onEdit={handleEditClick}
               onDelete={handleDeleteClient}
               onViewDetails={handleViewDetails}
+              onLoadPrepago={handleLoadPrepago}
               currentPage={page}
               pageSize={pageSize}
             />
@@ -230,6 +232,14 @@ export default function Clients() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Prepago */}
+        <PrepagoModal
+          open={isPrepagoModalOpen}
+          onOpenChange={setIsPrepagoModalOpen}
+          client={prepagoClient}
+          onSuccess={() => fetchClients()}
+        />
       </div>
     </PermissionGuard>
   );

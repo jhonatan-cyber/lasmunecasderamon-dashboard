@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle } from "lucide-react";
+import { formatCurrencyCLP } from "@/lib/formatters";
 
 interface AnulacionModalProps {
   open: boolean;
@@ -72,7 +73,7 @@ export function AnulacionModal({
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   <strong>Total:</strong> $
-                  {ventaInfo.total?.toLocaleString() || 0}
+                  {formatCurrencyCLP(ventaInfo.total || 0)}
                 </div>
               </div>
             )}

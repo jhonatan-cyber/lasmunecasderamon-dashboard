@@ -4,27 +4,58 @@ import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import fs from 'fs/promises';
-import formidable from 'formidable';
+import formidable, { type Fields, type Files, type File as FormidableFile } from 'formidable';
 
-// Deshabilitar el body parser automático de Next.js para este endpoint
+
+// Deshabilitar el body parser automÃ¡tico de Next.js para este endpoint
 export const config = {
   api: {
     bodyParser: false
   }
 };
 
-// Función para generar email automáticamente
-const generateEmail = (nick: string): string => {
-  return `${nick}@lasmuñecasderamon.com`;
+type UserRow = {
+  id_usuario: string;
+  run: string;
+  nick: string;
+  nombre: string;
+  apellido: string;
+  direccion: string;
+  telefono: string;
+  estado_civil: string;
+  afp: string;
+  aporte: number;
+  sueldo: number;
+  descuento: number | null;
+  email: string;
+  id_rol: number;
+  foto: string | null;
+  role_name: string;
+  estado: number;
+  fecha_crea: string;
+  fecha_mod: string | null;
+  qr_token: string | null;
 };
 
-// Función para generar password hash del RUN
+type UserFields = Record<string, string | string[] | undefined>;
+type ParsedFiles = {
+  foto?: FormidableFile;
+};
+
+// FunciÃ³n para generar email automÃ¡ticamente
+const generateEmail = (nick: string): string => {
+  return `${nick}@lasmuÃ±ecasderamon.com`;
+};
+
+// FunciÃ³n para generar password hash del RUN
 const generatePassword = async (run: string): Promise<string> => {
   return await bcrypt.hash(run, 10);
 };
 
-// Función para parsear FormData usando Formidable
-const parseFormData = async (req: NextApiRequest): Promise<any> => {
+// FunciÃ³n para parsear FormData usando Formidable
+const parseFormData = async (
+  req: NextApiRequest
+): Promise<{ fields: UserFields; files: ParsedFiles }> => {
   return new Promise((resolve, reject) => {
     // Crear directorio de uploads si no existe
     const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
@@ -32,10 +63,10 @@ const parseFormData = async (req: NextApiRequest): Promise<any> => {
 
     const form = formidable({
       maxFileSize: 10 * 1024 * 1024, // 10MB (aumentado)
-      maxFields: 20, // Aumentar límite de campos
+      maxFields: 20, // Aumentar lÃ­mite de campos
       keepExtensions: true,
       uploadDir: uploadDir,
-      filename: (name: string, ext: string, part: any) => {
+      filename: (_name: string, ext: string) => {
         const timestamp = Date.now();
         return `user_${timestamp}${ext}`;
       },
@@ -47,23 +78,18 @@ const parseFormData = async (req: NextApiRequest): Promise<any> => {
       minFileSize: 0
     });
 
-    form.parse(req, (err: any, fields: any, files: any) => {
+    form.parse(req, (err: Error | null, fields: Fields, files: Files) => {
       if (err) {
         reject(err);
         return;
       }
 
       // Convertir files a formato esperado
-      const processedFiles: any = {};
-      if (files.foto && files.foto[0]) {
-        const file = files.foto[0];
-        processedFiles.foto = {
-          originalFilename: file.originalFilename || file.newFilename,
-          mimetype: file.mimetype || 'application/octet-stream',
-          size: file.size,
-          filepath: file.filepath,
-          newFilename: file.newFilename
-        };
+      const processedFiles: ParsedFiles = {};
+      const fotoFile = files.foto;
+      const file = Array.isArray(fotoFile) ? fotoFile[0] : fotoFile;
+      if (file) {
+        processedFiles.foto = file;
       }
 
       resolve({ fields, files: processedFiles });
@@ -71,8 +97,10 @@ const parseFormData = async (req: NextApiRequest): Promise<any> => {
   });
 };
 
-// Función para validar y procesar imagen
-const validateAndProcessImage = async (imageFile: any): Promise<string | null> => {
+// FunciÃ³n para validar y procesar imagen
+const validateAndProcessImage = async (
+  imageFile: FormidableFile | null
+): Promise<string | null> => {
   try {
     if (!imageFile) {
       return null;
@@ -86,31 +114,17 @@ const validateAndProcessImage = async (imageFile: any): Promise<string | null> =
       throw new Error('Tipo de archivo no permitido. Solo se permiten JPG, PNG, GIF');
     }
 
-    // Validar tamaño (10MB máximo)
+    // Validar tamaÃ±o (10MB mÃ¡ximo)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (imageFile.size > maxSize) {
-      throw new Error('El archivo es demasiado grande. Máximo 10MB');
+      throw new Error('El archivo es demasiado grande. MÃ¡ximo 10MB');
     }
 
-    // Si ya tiene newFilename (procesado por formidable), usarlo
     if (imageFile.newFilename) {
       return imageFile.newFilename;
     }
 
-    // Si no, generar nombre único para el archivo
-    const timestamp = Date.now();
-    const extension = path.extname(imageFile.originalFilename || 'image.jpg');
-    const filename = `user_${timestamp}${extension}`;
-
-    // Crear directorio si no existe
-    const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    // Guardar archivo
-    const filepath = path.join(uploadDir, filename);
-    await fs.writeFile(filepath, imageFile.buffer);
-
-    return filename;
+    return path.basename(imageFile.filepath);
   } catch (error) {
     throw error;
   }
@@ -129,7 +143,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
          LEFT JOIN roles r ON u.rol_id = r.id_rol 
          WHERE u.id_usuario = ?`,
         [userId]
-      )) as any[];
+      )) as UserRow[];
 
       if (!Array.isArray(users) || users.length === 0) {
         return res.status(404).json({
@@ -155,7 +169,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         sueldo: user.sueldo,
         descuento: user.descuento,
         email: user.email,
-        password: '', // No devolver la contraseña por seguridad
+        password: '', // No devolver la contraseÃ±a por seguridad
         rol_id: user.id_rol, // Se mantiene internamente para la base de datos
         foto: user.foto,
         role: user.role_name, // Nombre del rol para mostrar
@@ -169,7 +183,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         success: true,
         user: userData
       });
-    } catch (error) {
+    } catch {
       return res.status(500).json({
         success: false,
         message: 'Error interno del servidor'
@@ -179,8 +193,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   if (req.method === 'PUT') {
     try {
-      let fields: any = {};
-      let uploadedFile: any = null;
+      let fields: UserFields = {};
+      let uploadedFile: FormidableFile | null = null;
 
       // Determinar si es FormData o JSON
       const contentType = req.headers['content-type'] || '';
@@ -196,7 +210,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           if (parsedData.files && parsedData.files.foto) {
             uploadedFile = parsedData.files.foto;
           }
-        } catch (formDataError) {
+        } catch {
           return res.status(400).json({
             success: false,
             message: 'Error al procesar los datos del formulario'
@@ -211,18 +225,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             body += chunk.toString();
           });
 
-          await new Promise((resolve, reject) => {
+          await new Promise<void>((resolve, reject) => {
             req.on('end', () => {
               try {
-                fields = JSON.parse(body);
-                resolve(true);
+                fields = JSON.parse(body) as UserFields;
+                resolve();
               } catch (parseError) {
                 reject(parseError);
               }
             });
             req.on('error', reject);
           });
-        } catch (jsonError) {
+        } catch {
           return res.status(400).json({
             success: false,
             message: 'Error al procesar los datos JSON'
@@ -260,11 +274,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
+      const safeRun = run!;
+      const safeNick = nick!;
+      const safeNombre = nombre!;
+      const safeApellido = apellido!;
+      const safeDireccion = direccion ?? null;
+      const safeTelefono = telefono ?? null;
+      const safeEstadoCivil = estado_civil ?? null;
+
       // Verificar si el usuario existe y obtener datos actuales
       const existingUser = (await query(
         'SELECT id_usuario, run, nick, foto FROM usuarios WHERE id_usuario = ?',
         [userId]
-      )) as any[];
+      )) as Array<Pick<UserRow, 'id_usuario' | 'run' | 'nick' | 'foto'>>;
 
       if (existingUser.length === 0) {
         return res.status(404).json({
@@ -277,41 +299,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       let newPassword = null;
       let newEmail = null;
 
-      // LÓGICA DE ACTUALIZACIÓN AUTOMÁTICA:
-      // - La contraseña SOLO se actualiza si cambia el RUN
-      // - El email se actualiza automáticamente si cambia el nick
-      // - Si no cambia el RUN, la contraseña se mantiene igual
+      // LÃ“GICA DE ACTUALIZACIÃ“N AUTOMÃTICA:
+      // - La contraseÃ±a SOLO se actualiza si cambia el RUN
+      // - El email se actualiza automÃ¡ticamente si cambia el nick
+      // - Si no cambia el RUN, la contraseÃ±a se mantiene igual
 
-      // Verificar si el RUN cambió para actualizar contraseña
-      if (run !== currentUser.run) {
-        newPassword = await generatePassword(run);
+      // Verificar si el RUN cambiÃ³ para actualizar contraseÃ±a
+      if (safeRun !== currentUser.run) {
+        newPassword = await generatePassword(safeRun);
       }
 
-      // Verificar si se proporcionó una nueva contraseña manualmente
+      // Verificar si se proporcionÃ³ una nueva contraseÃ±a manualmente
       if (password && confirmPassword) {
         if (password !== confirmPassword) {
           return res.status(400).json({
             success: false,
-            message: 'Las contraseñas no coinciden'
+            message: 'Las contraseÃ±as no coinciden'
           });
         }
         
         if (password.length < 6) {
           return res.status(400).json({
             success: false,
-            message: 'La contraseña debe tener al menos 6 caracteres'
+            message: 'La contraseÃ±a debe tener al menos 6 caracteres'
           });
         }
         
         newPassword = await bcrypt.hash(password, 10);
       }
 
-      // Verificar si el nick cambió para actualizar email
-      if (nick !== currentUser.nick) {
-        newEmail = generateEmail(nick);
+      // Verificar si el nick cambiÃ³ para actualizar email
+      if (safeNick !== currentUser.nick) {
+        newEmail = generateEmail(safeNick);
       }
 
-      // Procesar imagen si se subió una nueva
+      // Procesar imagen si se subiÃ³ una nueva
       let foto = currentUser.foto;
       if (uploadedFile) {
         try {
@@ -325,17 +347,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 await fs.unlink(oldPhotoPath);
               } catch (unlinkError) {
                 console.error(
-                  '🔵 [PROFILE UPDATE] Error al eliminar imagen anterior:',
+                  'ðŸ”µ [PROFILE UPDATE] Error al eliminar imagen anterior:',
                   unlinkError
                 );
-                // No fallar la actualización si no se puede eliminar la foto anterior
+                // No fallar la actualizaciÃ³n si no se puede eliminar la foto anterior
               }
             } else if (foto === 'default.png') {
-              console.log('🔵 [PROFILE UPDATE] Foto anterior es default.png, no se elimina');
+              console.warn('ðŸ”µ [PROFILE UPDATE] Foto anterior es default.png, no se elimina');
             } else if (foto === newFoto) {
-              console.log('🔵 [PROFILE UPDATE] Nueva foto es igual a la anterior, no se elimina');
+              console.warn('ðŸ”µ [PROFILE UPDATE] Nueva foto es igual a la anterior, no se elimina');
             } else {
-              console.log('🔵 [PROFILE UPDATE] No hay foto anterior para eliminar');
+              console.warn('ðŸ”µ [PROFILE UPDATE] No hay foto anterior para eliminar');
             }
 
             foto = newFoto;
@@ -347,10 +369,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           });
         }
       } else {
-        console.log('🔵 [PROFILE UPDATE] No se subió nueva imagen, manteniendo foto actual:', foto);
+        console.warn('ðŸ”µ [PROFILE UPDATE] No se subiÃ³ nueva imagen, manteniendo foto actual:', foto);
       }
 
-      // Preparar la consulta de actualización
+      // Preparar la consulta de actualizaciÃ³n
       let updateQuery = `
         UPDATE usuarios SET 
           run = ?, nick = ?, nombre = ?, apellido = ?, 
@@ -358,7 +380,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           foto = ?, fecha_mod = NOW()
       `;
 
-      let params = [run, nick, nombre, apellido, direccion, telefono, estado_civil, foto];
+      const params: Array<string | number | null> = [
+        safeRun,
+        safeNick,
+        safeNombre,
+        safeApellido,
+        safeDireccion,
+        safeTelefono,
+        safeEstadoCivil,
+        foto
+      ];
 
       // Agregar rol_id si se proporciona
       if (rol_id) {
@@ -381,14 +412,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       updateQuery += ' WHERE id_usuario = ?';
       params.push(userId);
 
-      await query(updateQuery, params);
-
-      // Preparar mensaje de respuesta
+      await query(updateQuery, params);      // Preparar mensaje de respuesta
       let message = 'Perfil actualizado exitosamente';
-      const changes = [];
+      const changes: string[] = [];
 
       if (newPassword) {
-        if (run !== currentUser.run) {
+        if (safeRun !== currentUser.run) {
           changes.push('contraseña actualizada (RUN cambió)');
         } else {
           changes.push('contraseña actualizada');
@@ -403,7 +432,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       return res.status(200).json({
         success: true,
-        message: message,
+        message,
         changes: {
           passwordUpdated: !!newPassword,
           emailUpdated: !!newEmail,
@@ -426,3 +455,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+
+

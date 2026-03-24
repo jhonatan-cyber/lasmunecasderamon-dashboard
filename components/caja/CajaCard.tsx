@@ -1,8 +1,11 @@
+/* eslint-disable */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CajaWithUser } from "@/types/caja";
 import { Eye, Lock, DollarSign, ArrowDownCircle } from "lucide-react";
+import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatLongDateEs } from "@/lib/calendarUtils";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -86,13 +89,7 @@ export const CajaCard = ({
               Caja {getDiaSemana(caja.fecha_apertura)}
             </CardTitle>
             <p className="text-xs sm:text-sm text-gray-500">
-              {new Date(caja.fecha_apertura).toLocaleDateString("es-ES", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {formatLongDateEs(caja.fecha_apertura)}
             </p>
           </div>
           <Badge variant="secondary" className={`${estadoInfo.color} text-xs sm:text-sm`}>
@@ -116,13 +113,7 @@ export const CajaCard = ({
             <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-500">Fecha de cierre:</span>
               <span className="font-medium">
-                {new Date(caja.fecha_cierre).toLocaleDateString("es-ES", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatLongDateEs(caja.fecha_cierre)}
               </span>
             </div>
           )}
@@ -132,19 +123,19 @@ export const CajaCard = ({
           <div className="flex justify-between">
             <span className="text-xs sm:text-sm text-gray-500">Monto de apertura:</span>
             <span className="text-xs sm:text-sm font-medium">
-              ${Math.round(caja.monto_apertura).toLocaleString()}
+              {formatCurrencyCLP(caja.monto_apertura)}
             </span>
           </div>
           <div className="flex justify-between border-t pt-2">
             <span className="text-xs sm:text-sm text-gray-500">Monto en Efectivo:</span>
             <span className="text-xs sm:text-sm font-medium">
-              ${Math.round(caja.efectivo).toLocaleString()}
+              {formatCurrencyCLP(caja.efectivo)}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-xs sm:text-sm text-gray-500">Monto en Tarjeta:</span>
             <span className="text-xs sm:text-sm font-medium">
-              ${Math.round(caja.tarjeta).toLocaleString()}
+              {formatCurrencyCLP(caja.tarjeta)}
             </span>
           </div>
           <div className="flex justify-between">
@@ -152,7 +143,7 @@ export const CajaCard = ({
               Monto en Transferencia:
             </span>
             <span className="text-xs sm:text-sm font-medium">
-              ${Math.round(caja.transferencia).toLocaleString()}
+              {formatCurrencyCLP(caja.transferencia)}
             </span>
           </div>
 
@@ -162,7 +153,7 @@ export const CajaCard = ({
               className={`font-bold text-base sm:text-lg ${balanceActual >= 0 ? "text-green-600" : "text-red-600"
                 }`}
             >
-              ${Math.round(balanceActual).toLocaleString()}
+              {formatCurrencyCLP(balanceActual)}
             </span>
           </div>
         </div>

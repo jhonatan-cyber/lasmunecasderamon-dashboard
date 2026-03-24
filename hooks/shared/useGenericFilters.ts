@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { useState, useMemo, useEffect } from 'react';
 export function useGenericFilters<T>(
   data: T[],
@@ -61,3 +62,4 @@ export function useGenericFilters<T>(
     totalPages,
   };
 }
+

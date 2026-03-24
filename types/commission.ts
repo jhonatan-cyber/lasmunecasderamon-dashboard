@@ -50,6 +50,6 @@ export interface ApiResponse<T> {
   }>;
 }
 
-export interface CommissionApiResponse extends ApiResponse<Commission[]> {}
+export type CommissionApiResponse = ApiResponse<Commission[]>;
 
-export interface SingleCommissionApiResponse extends ApiResponse<Commission> {}
+export type SingleCommissionApiResponse = ApiResponse<Commission>;

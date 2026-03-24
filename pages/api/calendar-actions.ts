@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { toDateKey } from '@/lib/calendarUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -154,16 +156,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const actionsByDate: { [key: string]: any[] } = {};
     
     actions.forEach(action => {
-      // Convertir fecha a string de manera segura
-      let dateKey: string;
-      if (action.fecha instanceof Date) {
-        dateKey = action.fecha.toISOString().split('T')[0];
-      } else if (typeof action.fecha === 'string') {
-        dateKey = action.fecha.split('T')[0];
-      } else {
-        // Fallback para otros formatos
-        dateKey = new Date(action.fecha).toISOString().split('T')[0];
-      }
+      const dateKey = toDateKey(action.fecha);
       
       if (!actionsByDate[dateKey]) {
         actionsByDate[dateKey] = [];

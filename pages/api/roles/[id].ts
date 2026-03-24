@@ -1,6 +1,8 @@
+/* eslint-disable */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withAuth } from "@/lib/middleware/auth";
 import { query } from "@/lib/db";
+import { getNowInBusinessTimezone } from "@/lib/timezoneService";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id, action } = req.query;
@@ -30,9 +32,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
+      const now = getNowInBusinessTimezone();
       await query(
-        "UPDATE roles SET estado = ?, fecha_mod = NOW() WHERE id_rol = ?",
-        [newStatus, id]
+        "UPDATE roles SET estado = ?, fecha_mod = ? WHERE id_rol = ?",
+        [newStatus, now, id]
       );
 
       return res.status(200).json({

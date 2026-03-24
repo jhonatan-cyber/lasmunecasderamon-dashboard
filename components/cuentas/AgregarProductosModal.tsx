@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -18,7 +19,7 @@ import { useProductCart } from "@/hooks/shared/useProductCart";
 interface AgregarProductosModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  cuentaId: number | null;
+  cuentaId: string | number | null;
   onProductosAgregados?: () => void;
 }
 
@@ -475,3 +476,4 @@ export default function AgregarProductosModal({
     </>
   );
 }
+

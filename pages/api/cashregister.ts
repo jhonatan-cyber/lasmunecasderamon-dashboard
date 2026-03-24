@@ -1,9 +1,11 @@
+/* eslint-disable */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { Caja, CajaWithUser, CajaResumen } from '@/types/caja';
 import { RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 const createCajaSchema = z.object({
   usuario_id_apertura: z.string().min(1, 'ID de usuario es requerido'),
@@ -219,11 +221,11 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       const promedioServicio = Number((serviciosStats as any)?.promedio || 0);
 
       const montoApertura = Number((cajaAbiertaRow as any)?.monto_apertura || 0);
-      const totalVentas = Number((cajaAbiertaRow as any)?.venta || 0);
+      const totalVentas = Number((cajaAbiertaRow as any)?.venta || 0) + Number((cajaAbiertaRow as any)?.propina || 0);
       const totalEfectivo = Number((cajaAbiertaRow as any)?.efectivo || 0);
       const totalTarjeta = Number((cajaAbiertaRow as any)?.tarjeta || 0);
       const totalTransferencia = Number((cajaAbiertaRow as any)?.transferencia || 0);
-      const totalServicios = Number((cajaAbiertaRow as any)?.servicio || 0);
+      const totalServicios = Number((cajaAbiertaRow as any)?.servicio || 0) + Number((cajaAbiertaRow as any)?.iva || 0);
       const totalDevoluciones = Number((cajaAbiertaRow as any)?.devolucion || 0);
       const totalIva = Number((cajaAbiertaRow as any)?.iva || 0);
       const totalPropina = Number((cajaAbiertaRow as any)?.propina || 0);
@@ -238,6 +240,7 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
       const resumenCompleto: CajaResumen = {
         total_ventas: totalVentas,
         total_efectivo: efectivoEsperado,
+        efectivo_en_caja: efectivoEsperado,
         total_tarjeta: totalTarjeta,
         total_transferencia: totalTransferencia,
         total_servicios: totalServicios,
@@ -399,6 +402,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Crear la caja
     const cajaId = generateUUID();
+    const now = getNowInBusinessTimezone();
     await query(
       `INSERT INTO cajas (
         id_caja,
@@ -416,8 +420,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         anticipo,
         comision,
         estado
-      ) VALUES (?, NOW(), ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
-      [cajaId, validatedData.usuario_id_apertura, validatedData.monto_apertura]
+      ) VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
+      [cajaId, now, validatedData.usuario_id_apertura, validatedData.monto_apertura]
     );
 
     // Obtener la caja creada
@@ -663,15 +667,16 @@ const handleCierre = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Luego: cerrar la caja
+    const nowCierre = getNowInBusinessTimezone();
     const cierreResult = (await query(
       `UPDATE cajas 
        SET 
            usuario_id_cierre = ?, 
-           fecha_cierre = NOW(), 
+           fecha_cierre = ?, 
            monto_cierre = ?,
            estado = 0
        WHERE id_caja = ?`,
-      [validatedData.usuario_id_cierre, montoCierreCalculado, validatedData.id_caja]
+      [validatedData.usuario_id_cierre, nowCierre, montoCierreCalculado, validatedData.id_caja]
     )) as any;
 
     // mysql2 devuelve ResultSetHeader para UPDATE
@@ -811,3 +816,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

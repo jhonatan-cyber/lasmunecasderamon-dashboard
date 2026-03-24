@@ -3,7 +3,7 @@ export class CommissionError extends Error {
     message: string,
     public readonly code: string,
     public readonly statusCode: number = 500,
-    public readonly details?: any
+    public readonly details?: unknown
   ) {
     super(message);
     this.name = 'CommissionError';
@@ -71,7 +71,7 @@ export class InvalidCommissionAmountError extends CommissionError {
 }
 
 export class DatabaseError extends CommissionError {
-  constructor(message: string, originalError: any) {
+  constructor(message: string, originalError: unknown) {
     super(
       `Error en la base de datos: ${message}`,
       'DATABASE_ERROR',
@@ -121,3 +121,4 @@ export const validateStatusTransition = (currentStatus: string, newStatus: strin
 
   return transitions[currentStatus]?.includes(newStatus) || false;
 };
+

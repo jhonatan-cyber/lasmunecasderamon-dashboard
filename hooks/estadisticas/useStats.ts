@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useMemo } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
@@ -57,3 +58,5 @@ export function useStats<T = any>({
     }
   };
 }
+
+

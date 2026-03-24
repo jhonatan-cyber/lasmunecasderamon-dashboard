@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import React, { useState, useMemo } from "react";
 
 interface Customer {
-    id_cliente?: number;
-    id?: number;
+    id_cliente?: string | number;
+    id?: string | number;
     nombre?: string;
     name?: string;
     apellido?: string;

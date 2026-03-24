@@ -3,6 +3,7 @@
 import { Tag, Package, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CardContainer, CardBody } from '@/components/ui/3d-card';
+import { formatLongDateEs } from '@/lib/calendarUtils';
 
 interface CategoryCardProps {
   category: {
@@ -48,16 +49,8 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
 
   // Formatear fecha de creación
   const createdAt = category.created_at
-    ? new Date(category.created_at).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      })
-    : new Date().toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      });
+    ? formatLongDateEs(category.created_at)
+    : formatLongDateEs(new Date());
 
   return (
     <CardContainer className='inter-var'>

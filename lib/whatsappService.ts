@@ -1,4 +1,6 @@
 import twilio from 'twilio';
+import { formatDateLabel } from './calendarUtils';
+import { formatCurrencyCLP } from './formatters';
 
 // Configuración de Twilio
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -10,17 +12,11 @@ const whatsappNumber =
 if (!accountSid || !authToken || !whatsappNumber) {
   console.warn('⚠️  Variables de entorno de Twilio no configuradas. WhatsApp no funcionará.');
 } else {
-  console.log('✅ Twilio configurado correctamente');
-  console.log('📱 Número de WhatsApp:', whatsappNumber);
+  console.warn('✅ Twilio configurado correctamente');
+  console.warn('📱 Número de WhatsApp:', whatsappNumber);
 }
 
-// Cliente de Twilio
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
-
-export interface WhatsAppMessage {
-  numero: string;
-  mensaje: string;
-}
 
 export async function enviarWhatsApp(numero: string, mensaje: string): Promise<boolean> {
   try {
@@ -32,7 +28,7 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
       numeroFormateado = `+${numero}`;
     }
 
-    const message = await client.messages.create({
+    await client.messages.create({
       body: mensaje,
       from: `whatsapp:${whatsappNumber}`,
       to: `whatsapp:${numeroFormateado}`
@@ -71,7 +67,7 @@ export async function enviarMensajeAnulacion(datos: {
 • Código: ${datos.codigoVenta}
 • Cliente: ${datos.clienteNombre}
 ${anfitrionasTexto}
-• Total: $${datos.total?.toLocaleString() || 0}
+• Total: ${formatCurrencyCLP(datos.total || 0)}
 • Fecha: ${datos.fechaVenta}
 
 📝 *Motivo de anulación:*
@@ -129,7 +125,7 @@ export async function enviarMensajeDevolucionServicio(datos: {
 ${habitacionTexto}
 ${tiempoTexto}
 ${anfitrionasTexto}
-• Total: $${datos.total?.toLocaleString() || 0}
+• Total: ${formatCurrencyCLP(datos.total || 0)}
 • Fecha: ${datos.fechaServicio}
 
 📝 *Motivo de anulación:*
@@ -182,14 +178,14 @@ export async function enviarMensajeAnticipo(datos: {
   baseUrl: string;
 }): Promise<boolean> {
   const confirmUrl = `${datos.baseUrl}/confirmar-anticipo?token=${datos.token}`;
-  const fechaActual = new Date().toLocaleDateString('es-ES');
+  const fechaActual = formatDateLabel(new Date(), 'es-ES');
   
   const mensaje = `💰 *SOLICITUD DE ANTICIPO*
 
 📋 *Detalles de la solicitud:*
 • ID Solicitud: #${datos.solicitudId}
 • Usuario: ${datos.usuarioNombre}
-• Monto: $${datos.monto.toLocaleString()}
+• Monto: ${formatCurrencyCLP(datos.monto)}
 • Fecha: ${fechaActual}
 
 📝 *Motivo del anticipo:*
@@ -217,7 +213,7 @@ export async function enviarRespuestaAnticipo(datos: {
   
   let mensaje = `${emoji} *ANTICIPO ${titulo}*
 
-Hola, tu solicitud de anticipo #${datos.solicitudId} por $${datos.monto.toLocaleString()} ha sido *${datos.estado}*.`;
+Hola, tu solicitud de anticipo #${datos.solicitudId} por ${formatCurrencyCLP(datos.monto)} ha sido *${datos.estado}*.`;
 
   if (datos.estado === 'aprobada') {
     mensaje += `\n\nYa puedes pasar por caja a retirar tu dinero.`;

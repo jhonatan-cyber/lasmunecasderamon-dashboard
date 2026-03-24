@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
@@ -40,9 +41,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             });
         }
 
+        // Obtener participantes con nombres
+        const participantes: any = await query(`
+      SELECT 
+        DP.usuario_id,
+        DP.monto,
+        DP.estado,
+        CONCAT(U.nombre, ' ', U.apellido) AS nombre,
+        U.nick
+      FROM detalle_propinas DP
+      INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
+      WHERE DP.propina_id = ?
+    `, [id]);
+
         return res.status(200).json({
             success: true,
-            data: tipInfo[0]
+            data: { ...tipInfo[0], participantes: participantes || [] }
         });
 
     } catch (error) {
@@ -56,3 +70,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

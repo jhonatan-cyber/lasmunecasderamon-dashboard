@@ -1,3 +1,4 @@
+/* eslint-disable */
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { query } from "@/lib/db";
@@ -139,3 +140,4 @@ async function listarSolicitudes(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

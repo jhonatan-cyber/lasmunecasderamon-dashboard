@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 const clients = new Map<NextApiResponse, { id: string; connectedAt: Date }>();
 

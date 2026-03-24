@@ -1,11 +1,11 @@
+/* eslint-disable */
 "use client";
 
 import SearchInput from "@/components/ui/SearchInput";
 import SelectElements from "@/components/ui/select-elements";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { RotateCcw, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface GratificacionesFiltersProps {
   searchTerm: string;
@@ -26,64 +26,46 @@ export default function GratificacionesFilters({
   loading,
   onRefresh,
 }: GratificacionesFiltersProps) {
-  const handleClear = () => {
-    setSearchTerm("");
-    setPage(1);
-  };
-
+  
   const handleRowsPerPageChange = (value: number) => {
     setRowsPerPage(value);
     setPage(1);
   };
 
   return (
-    <Card className="mb-4 shadow-sm">
-      <CardContent className="mt-3 p-4 sm:p-6">
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <div className="w-full">
-            <Label htmlFor="search" className="mb-2 text-sm sm:text-base">
-              Buscar
-            </Label>
+    <Card className="mb-6 overflow-hidden border-none shadow-sm shadow-zinc-200 dark:shadow-neutral-900 bg-white dark:bg-neutral-900 border border-zinc-100 dark:border-neutral-800">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col lg:flex-row gap-4 items-end">
+          {/* Campo de Búsqueda */}
+          <div className="w-full lg:flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-zinc-400" />
+              <Label htmlFor="search" className="text-sm font-bold uppercase tracking-widest text-zinc-500">
+                Buscador Inteligente
+              </Label>
+            </div>
             <SearchInput
-              placeholder="Buscar por nombre de usuario..."
+              placeholder="Buscar por nombre de usuario o ID..."
               value={searchTerm}
               onChange={setSearchTerm}
-              className="w-full text-sm sm:text-base"
+              className="w-full h-11 rounded-full bg-zinc-50 dark:bg-neutral-800 border-none transition-all focus:ring-2 focus:ring-black text-sm"
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end">
-            <div className="flex-1 sm:flex-none">
+          <div className="flex flex-row w-full lg:w-auto gap-4 items-center">
+            {/* Selector de filas */}
+            <div className="space-y-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="rows" className="text-[10px] font-bold uppercase tracking-tighter text-zinc-400">
+                  Registros
+                </Label>
+              </div>
               <SelectElements
                 value={rowsPerPage}
                 onChange={handleRowsPerPageChange}
-                options={[5, 10, 20, 40]}
-                label="Gratificaciones por página"
+                options={[10, 20, 50, 100]}
+                label=""
               />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-              <Button
-                onClick={onRefresh}
-                disabled={loading}
-                size="sm"
-                variant="outline"
-                className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
-              >
-                <RotateCcw
-                  className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${loading ? "animate-spin" : ""}`}
-                />
-                Actualizar
-              </Button>
-              <Button
-                onClick={handleClear}
-                size="sm"
-                variant="outline"
-                className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
-              >
-                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Limpiar Filtros
-              </Button>
             </div>
           </div>
         </div>

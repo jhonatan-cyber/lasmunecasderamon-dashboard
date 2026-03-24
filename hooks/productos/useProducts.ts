@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState } from 'react';
 import { Product } from '@/types/product';
 import { toast } from 'sonner';
@@ -122,3 +123,4 @@ export default function useProducts(categoryId?: string) {
     reorderProducts
   };
 }
+

@@ -4,13 +4,13 @@ interface QueuedRequest {
     id: string;
     url: string;
     method: string;
-    body: any;
+    body: unknown;
     timestamp: number;
 }
 
 const QUEUE_KEY = 'offline_request_queue';
 
-export const queueRequest = (url: string, method: string, body: any) => {
+export const queueRequest = (url: string, method: string, body: unknown) => {
     if (typeof window === 'undefined') return;
 
     const queue: QueuedRequest[] = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
@@ -47,8 +47,6 @@ export const syncOfflineRequests = async () => {
     const queue = getQueuedRequests();
     if (queue.length === 0) return;
 
-    console.log(`[OfflineSync] Attempting to sync ${queue.length} requests...`);
-
     for (const req of queue) {
         try {
             const response = await fetch(req.url, {
@@ -61,11 +59,10 @@ export const syncOfflineRequests = async () => {
 
             if (response.ok) {
                 clearQueuedRequest(req.id);
-                console.log(`[OfflineSync] Successfully synced request ${req.id}`);
             }
-        } catch (error) {
-            console.error(`[OfflineSync] Sync failed for ${req.id}:`, error);
+        } catch {
             // Keep in queue for next attempt
         }
     }
 };
+

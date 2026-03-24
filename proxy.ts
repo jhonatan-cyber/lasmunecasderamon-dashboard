@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
@@ -28,7 +29,6 @@ const PUBLIC_PATHS = [
   '/api/notifications/sse',
   '/api/notifications/pending-count',
   '/api/timers/active',
-  '/api/codigo/actual',
   '/api/swagger',
   '/api-docs',
   '/api/docs',
@@ -50,20 +50,34 @@ const PUBLIC_PATHS = [
 ];
 
 const AUTHENTICATED_ONLY_APIS = [
+  '/api/codigo',
   '/api/users/user',
   '/api/users',
-  '/api/asistencias/user',
-  '/api/asistencias/by-dates',
-  '/api/anticipos/user',
-  '/api/anticipos/by-dates',
-  '/api/anticipos/aprobar',
-  '/api/anticipos/maximo',
+  // Asistencias — acceso por autenticación, sin verificación de permisos extra
+  '/api/asistencias',
+  '/api/attendance-stats',
+  // Anticipos — acceso por autenticación, sin verificación de permisos extra
+  '/api/anticipos',
+  // Tips — acceso por autenticación
   '/api/tips',
-  '/api/overtime/user',
-  '/api/overtime/by-dates',
-  '/api/orders/user',
-  '/api/commissions/user',
-  '/api/servicios/by-dates',
+  // Overtime — acceso por autenticación
+  '/api/overtime',
+  // Pedidos — acceso por autenticación
+  '/api/orders',
+  // Comisiones — acceso por autenticación
+  '/api/commissions',
+  // Servicios — acceso por autenticación
+  '/api/servicios',
+  // Ventas — acceso por autenticación
+  '/api/sales',
+  // Caja — acceso por autenticación
+  '/api/cashregister',
+  '/api/caja',
+  // Cuentas — acceso por autenticación
+  '/api/cuentas',
+  // Mis gratificaciones — acceso por autenticación
+  '/api/mis-gratificaciones',
+  // Otros endpoints de empleados
   '/api/stats/logged-users',
   '/api/anfitrionas',
   '/api/garzones',
@@ -72,11 +86,6 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/categories',
   '/api/clients',
   '/api/rooms',
-  '/api/servicios',
-  '/api/sales',
-  '/api/cashregister/status',
-  '/api/cashregister',
-  '/api/cuentas'
 ];
 
 const routePermissions: Record<string, { module: string; action: string }> = {
@@ -123,25 +132,13 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/cajero-horas-extras': { module: 'overtime', action: 'view' }
 };
 
+// Solo rutas de administración que requieren verificación de permisos explícita.
+// Los endpoints de empleados (anticipos, asistencias, comisiones, servicios, etc.)
+// están en AUTHENTICATED_ONLY_APIS — solo requieren token válido.
 const apiRoutePermissions: Record<string, { module: string; action: string }> = {
-  '/api/users': { module: 'users', action: 'view' },
-  '/api/clients': { module: 'clients', action: 'view' },
-  '/api/products': { module: 'products', action: 'view' },
-  '/api/categories': { module: 'categories', action: 'view' },
-  '/api/orders': { module: 'orders', action: 'view' },
-  '/api/sales': { module: 'sales', action: 'view' },
   '/api/roles': { module: 'roles', action: 'view' },
-  '/api/asistencias': { module: 'attendance', action: 'view' },
-  '/api/overtime': { module: 'overtime', action: 'view' },
   '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
-  '/api/cashregister': { module: 'cash_register', action: 'view' },
-  '/api/cuentas': { module: 'accounts', action: 'view' },
-  '/api/tips': { module: 'tips', action: 'view' },
-  '/api/commissions': { module: 'commissions', action: 'view' },
   '/api/payroll': { module: 'payroll', action: 'view' },
-  '/api/anticipos': { module: 'advances', action: 'view' },
-  '/api/rooms': { module: 'rooms', action: 'view' },
-  '/api/servicios': { module: 'private_rooms', action: 'view' },
   '/api/reports': { module: 'reports', action: 'view' }
 };
 

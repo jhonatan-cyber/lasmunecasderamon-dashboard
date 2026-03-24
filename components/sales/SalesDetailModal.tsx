@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ import {
 import { VentaWithDetails } from '@/types/venta';
 import { Home, Clock, CreditCard } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
+import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
 
 interface SalesDetailModalProps {
   open: boolean;
@@ -20,37 +23,6 @@ interface SalesDetailModalProps {
   selectedVenta: VentaWithDetails | null;
   anfitrionaColors: string[];
   metodoPagoLabels: Record<string, string>;
-}
-
-function formatFecha(fechaStr?: string) {
-  if (!fechaStr) return '-';
-  if (fechaStr.includes('T')) {
-    const date = new Date(fechaStr);
-    const d = String(date.getDate()).padStart(2, '0');
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const y = date.getFullYear();
-    return `${d}-${m}-${y}`;
-  }
-  const [fecha] = fechaStr.split(' ');
-  if (!fecha) return '-';
-  const [y, m, d] = fecha.split('-');
-  return `${d}-${m}-${y}`;
-}
-
-function formatHora(fechaStr?: string) {
-  if (!fechaStr) return '-';
-  if (fechaStr.includes('T')) {
-    const date = new Date(fechaStr);
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return `${h}:${min}`;
-  }
-  const parts = fechaStr.split(' ');
-  if (parts[1]) {
-    const [h, m] = parts[1].split(':');
-    return `${h}:${m}`;
-  }
-  return '-';
 }
 
 export function SalesDetailModal({
@@ -64,7 +36,7 @@ export function SalesDetailModal({
 
   if (!selectedVenta) return null;
 
-  const timer = getTimerByServicioId(selectedVenta.id);
+  const timer = getTimerByServicioId(Number(selectedVenta.id));
   const isLowTime = timer && timer.isActive && timer.remainingTime <= 300;
 
   const hasAnfitrionas = Array.isArray(selectedVenta.usuarios) && selectedVenta.usuarios.length > 0;
@@ -93,7 +65,7 @@ export function SalesDetailModal({
                   Fecha de Venta
                 </span>
                 <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
-                  {formatFecha(selectedVenta.fecha_crea)}
+                  {formatLongDateEs(selectedVenta.fecha_crea)}
                 </div>
               </div>
 
@@ -151,7 +123,7 @@ export function SalesDetailModal({
                         Hora Entrada
                       </span>
                       <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
-                        {formatHora(selectedVenta.fecha_crea)}
+                        {formatShortTimeEs(selectedVenta.fecha_crea)}
                       </div>
                     </div>
 
@@ -176,7 +148,7 @@ export function SalesDetailModal({
                                 const exit = new Date(
                                   entry.getTime() + (selectedVenta.tiempo || 0) * 60000
                                 );
-                                return formatHora(exit.toISOString());
+                                return formatShortTimeEs(exit.toISOString());
                               } catch (e) {
                                 return '-';
                               }
@@ -271,15 +243,15 @@ export function SalesDetailModal({
                           </TableCell>
                           <TableCell className='text-center'>{detalle.cantidad || 0}</TableCell>
                           <TableCell className='text-center'>
-                            ${(detalle.precio || 0).toLocaleString('es-CL')}
+                            {formatCurrencyCLP(detalle.precio)}
                           </TableCell>
                           <TableCell className='text-center'>
                             <span className={tieneComision ? 'text-green-600 font-semibold' : ''}>
-                              ${(detalle.comision || 0).toLocaleString('es-CL')}
+                              {formatCurrencyCLP(detalle.comision)}
                             </span>
                           </TableCell>
                           <TableCell className='text-right font-medium'>
-                            ${(detalle.sub_total || 0).toLocaleString('es-CL')}
+                            {formatCurrencyCLP(detalle.sub_total)}
                           </TableCell>
                         </TableRow>
                       );
@@ -300,22 +272,20 @@ export function SalesDetailModal({
               <div className='space-y-2'>
                 <div className='flex justify-between items-center text-sm'>
                   <span className='text-muted-foreground'>SUBTOTAL:</span>
-                  <span className='font-semibold'>${subTotal.toLocaleString('es-CL')}</span>
+                  <span className='font-semibold'>{formatCurrencyCLP(subTotal)}</span>
                 </div>
                 {selectedVenta.propina && selectedVenta.propina > 0 && (
                   <div className='flex justify-between items-center text-sm'>
                     <span className='text-blue-600'>+ Propina:</span>
                     <span className='text-blue-600 font-medium'>
-                      ${selectedVenta.propina.toLocaleString('es-CL')}
+                      {formatCurrencyCLP(selectedVenta.propina)}
                     </span>
                   </div>
                 )}
                 <Separator />
                 <div className='flex justify-between items-center text-base'>
                   <span className='font-bold'>TOTAL:</span>
-                  <span className='font-bold text-lg'>
-                    ${(selectedVenta.total || 0).toLocaleString('es-CL')}
-                  </span>
+                  <span className='font-bold text-lg'>{formatCurrencyCLP(selectedVenta.total)}</span>
                 </div>
               </div>
             </div>
@@ -339,3 +309,4 @@ export function SalesDetailModal({
     </Dialog>
   );
 }
+

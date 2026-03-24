@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, @typescript-eslint/no-unused-vars, no-console */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { sendNotificationToAll } from './notifications/sse';
 import { notifyOrderProcessed } from './orders/sse';
 import { withTransaction } from '@/lib/transactionUtils';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 /**
  * Busca si una anfitriona está actualmente en una venta con habitación y temporizador activo
@@ -48,7 +50,28 @@ async function buscarVentaActivaConHabitacion(anfitrionaId: string): Promise<{
   }
 }
 
+async function checkTablesExist() {
+  try {
+    const columns = (await query("SHOW COLUMNS FROM ventas LIKE 'push_notified_5m'")) as any[];
+    if (columns.length === 0) {
+      await query("ALTER TABLE ventas ADD COLUMN push_notified_5m TINYINT DEFAULT 0");
+    }
+    const columnsEnd = (await query("SHOW COLUMNS FROM ventas LIKE 'push_notified_end'")) as any[];
+    if (columnsEnd.length === 0) {
+      await query("ALTER TABLE ventas ADD COLUMN push_notified_end TINYINT DEFAULT 0");
+    }
+
+    const columnsPaused = (await query("SHOW COLUMNS FROM ventas LIKE 'paused_at'")) as any[];
+    if (columnsPaused.length === 0) {
+      await query("ALTER TABLE ventas ADD COLUMN paused_at DATETIME DEFAULT NULL");
+    }
+  } catch (err) {
+    console.error("Error migrating ventas table:", err);
+  }
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
+  await checkTablesExist();
   const { method } = req;
 
   switch (method) {
@@ -204,7 +227,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
           ELSE 0
         END as tiene_comision,
         CONCAT(ca.nombre, ' ', ca.apellido) as cajero_nombre,
-        ca.nick as cajero_nick
+        ca.nick as cajero_nick, ca.foto as foto_cajero, ca.nombre as registrador_nombre
       FROM ventas v 
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
       LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
@@ -214,7 +237,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
       LEFT JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       LEFT JOIN usuarios u ON vu.usuario_id = u.id_usuario 
       ${whereClause}
-      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.tiempo, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick, ca.nombre, ca.apellido, ca.nick
+      GROUP BY v.id_venta, v.codigo, v.total, v.fecha_crea, v.estado, v.metodo_pago, v.propina, v.tiempo, v.cliente_id, c.nombre, c.apellido, v.habitacion_id, h.nombre, v.pedido_id, g.nombre, g.apellido, g.nick, ca.nombre, ca.apellido, ca.nick, ca.foto
       ORDER BY v.fecha_crea DESC 
       LIMIT ${limitNum} OFFSET ${offset}
     `;
@@ -225,7 +248,7 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
     const processedSales = await Promise.all(
       salesResult.map(async venta => {
         const usuariosSql = `
-          SELECT DISTINCT u.id_usuario, u.nick 
+          SELECT DISTINCT u.id_usuario, u.nick, u.foto 
           FROM ventas_usuarios vu 
           JOIN usuarios u ON vu.usuario_id = u.id_usuario 
           WHERE vu.venta_id = ?
@@ -245,9 +268,12 @@ async function handleGetLista(req: NextApiRequest, res: NextApiResponse) {
             dv.cantidad,
             dv.precio,
             dv.comision,
-            dv.sub_total
+            dv.sub_total,
+            dv.hostess_id,
+            u.nick as hostess_nick, u.foto as hostess_foto, p.foto as producto_foto
           FROM detalle_ventas dv
           LEFT JOIN productos p ON dv.producto_id = p.id_producto
+          LEFT JOIN usuarios u ON dv.hostess_id = u.id_usuario
           WHERE dv.venta_id = ?
         `;
         const detalles = await query(detallesSql, [venta.id_venta]);
@@ -359,6 +385,7 @@ async function handleGetResumen(req: NextApiRequest, res: NextApiResponse) {
         SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.total ELSE 0 END) as total_efectivo,
         SUM(CASE WHEN v.metodo_pago = 'tarjeta' THEN v.total ELSE 0 END) as total_tarjeta,
         SUM(CASE WHEN v.metodo_pago = 'transferencia' THEN v.total ELSE 0 END) as total_transferencia,
+        SUM(CASE WHEN v.metodo_pago = 'prepago' THEN v.total ELSE 0 END) as total_prepago,
         SUM(v.propina) as total_propinas,
         AVG(v.total) as promedio_venta
       FROM ventas v 
@@ -413,7 +440,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       habitacion_id,
       sub_total,
       total_comision,
-      tiempo
+      tiempo,
+      device_date
     } = req.body;
 
     if (!total || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
@@ -480,12 +508,62 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     const estadoVenta = habitacion_id && tiempo && tiempo > 0 ? 2 : 1;
 
-    const result = await withTransaction(async trx => {
+    const now = getNowInBusinessTimezone(device_date || undefined);
+    const result = await withTransaction(async (trx: any) => {
       const ventaId = generateUUID();
+
+      // 0. Si el método de pago es prepago, verificar y descontar saldo
+      if (metodo_pago === 'prepago') {
+        if (!clienteIdFinal) {
+          throw new Error('Se requiere seleccionar un cliente registrado para pagar con saldo prepago');
+        }
+
+        const clienteData = (await trx('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [clienteIdFinal])) as any[];
+        if (clienteData.length === 0) {
+          throw new Error('Cliente no encontrado');
+        }
+
+        const saldoActual = clienteData[0].saldo || 0;
+        if (saldoActual < total) {
+          throw new Error(`Saldo insuficiente. Saldo disponible: ${saldoActual.toLocaleString('es-CL')}, Total venta: ${total.toLocaleString('es-CL')}`);
+        }
+
+        // Descontar saldo
+        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [total, clienteIdFinal]);
+
+        // Buscar nombres de productos y nicks de anfitrionas para metadatos
+        const productoIds = detalles.map((d: any) => d.producto_id);
+        const productosRows = productoIds.length > 0 
+          ? (await trx(`SELECT id_producto, nombre FROM productos WHERE id_producto IN (${productoIds.map(() => '?').join(',')})`, productoIds)) as any[]
+          : [];
+        
+        const hostessesRows = usuarios && usuarios.length > 0 
+          ? (await trx(`SELECT nick FROM usuarios WHERE id_usuario IN (${usuarios.map(() => '?').join(',')})`, usuarios)) as any[]
+          : [];
+
+        const metadatos = JSON.stringify({
+          productos: detalles.map((d: any) => {
+            const p = productosRows.find(row => row.id_producto === d.producto_id);
+            return {
+              nombre: p?.nombre || 'Producto',
+              cantidad: d.cantidad || 1
+            };
+          }),
+          anfitrionas: hostessesRows.map(h => h.nick).filter(Boolean)
+        });
+
+        // Registrar movimiento de consumo con metadatos detallados
+        await trx(
+          `INSERT INTO clientes_prepago_movimientos 
+          (id_movimiento, cliente_id, tipo, monto, venta_id, usuario_id, fecha_crea, metadatos) 
+          VALUES (?, ?, 'CONSUMO', ?, ?, ?, ?, ?)`,
+          [generateUUID(), clienteIdFinal, total, ventaId, createdBy, now, metadatos]
+        );
+      }
       const insertVentaSql = `
         INSERT INTO ventas (
-          id_venta, codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id_venta, codigo, cliente_id, pedido_id, habitacion_id, metodo_pago, propina, sub_total, total, total_comision, tiempo, caja_id, created_by, estado, fecha_crea
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       await trx(insertVentaSql, [
@@ -502,7 +580,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         tiempo || 0,
         cajaId,
         createdBy,
-        estadoVenta
+        estadoVenta,
+        now
       ]);
 
       // 2. Insertar detalles de venta
@@ -670,6 +749,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
           case 'transferencia':
             montoTransferencia = total;
             break;
+          case 'prepago':
+            break;
           default:
             montoEfectivo = total;
         }
@@ -681,6 +762,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             efectivo = efectivo + ?,
             tarjeta = tarjeta + ?,
             transferencia = transferencia + ?,
+            prepago = prepago + ?,
             comision = comision + ?
           WHERE id_caja = ?`,
           [
@@ -689,6 +771,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
             montoEfectivo,
             montoTarjeta,
             montoTransferencia,
+            metodo_pago === 'prepago' ? total : 0,
             totalComision,
             cajaId
           ]
@@ -923,3 +1006,5 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 }
+
+

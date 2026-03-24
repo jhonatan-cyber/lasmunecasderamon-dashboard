@@ -14,7 +14,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
     const pedidosCount =
       Array.isArray(pedidosResult) && pedidosResult.length > 0
-        ? (pedidosResult[0] as any).count
+        ? Number((pedidosResult[0] as { count?: number | string }).count || 0)
         : 0;
 
     // Contar solicitudes de servicio pendientes (estado = 'pendiente')
@@ -24,7 +24,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
     const solicitudesCount =
       Array.isArray(solicitudesResult) && solicitudesResult.length > 0
-        ? (solicitudesResult[0] as any).count
+        ? Number((solicitudesResult[0] as { count?: number | string }).count || 0)
         : 0;
 
     const totalCount = pedidosCount + solicitudesCount;
@@ -39,9 +39,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener conteos de notificaciones',
-      error
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 }
 
 export default handler;
+

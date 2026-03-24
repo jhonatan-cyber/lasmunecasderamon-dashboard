@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, no-console */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/lib/middleware/auth';
 import { query, generateUUID } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import formidable from 'formidable';
+import formidable, { type Fields, type Files, type File as FormidableFile } from 'formidable';
 import fs from 'fs';
 import path from 'path';
 
@@ -13,11 +14,59 @@ export const config = {
   }
 };
 
+type AuthenticatedRequest = NextApiRequest & {
+  user?: {
+    id?: string;
+    role?: string;
+    roleId?: string | number;
+    nick?: string;
+  };
+};
+
+type PermissionRow = {
+  has_permission: number;
+};
+
+type UserRow = {
+  id_usuario: string;
+  run: string;
+  nick: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  direccion: string;
+  estado_civil: string;
+  rol_nombre: string;
+  id_rol: number;
+  afp: string;
+  sueldo: number;
+  aporte: number;
+  descuento: number | null;
+  estado: number;
+  foto: string | null;
+  qr_token: string | null;
+  fecha_crea: string;
+  fecha_mod: string | null;
+  fecha_baja: string | null;
+  en_servicio?: number;
+  habitacion_nombre?: string | null;
+};
+
+type UserFields = Record<string, string | undefined>;
+type ParsedFiles = {
+  foto?: FormidableFile;
+};
+
 // Función para verificar permisos
-const checkPermission = async (req: NextApiRequest, module: string, action: string): Promise<boolean> => {
+const checkPermission = async (
+  req: AuthenticatedRequest,
+  module: string,
+  action: string
+): Promise<boolean> => {
   try {
     // Obtener el usuario actual desde la sesión o token
-    const user = (req as any).user;
+    const user = req.user;
     
     // Si es administrador, tiene acceso a todo
     if (user?.role?.toLowerCase() === 'administrador') {
@@ -30,14 +79,14 @@ const checkPermission = async (req: NextApiRequest, module: string, action: stri
     }
 
     // Consultar si el usuario tiene el permiso específico
-    const [permissionCheck] = await query(`
+    const permissionCheck = (await query(`
       SELECT COUNT(*) as has_permission 
       FROM role_permissions rp
       INNER JOIN permissions p ON rp.permission_id = p.id
       WHERE rp.role_id = ? AND p.module = ? AND p.action = ?
-    `, [user.roleId, module, action]) as any[];
+    `, [user.roleId, module, action])) as PermissionRow[];
 
-    const hasPermission = permissionCheck[0].has_permission > 0;
+    const hasPermission = permissionCheck[0]?.has_permission > 0;
     
     return hasPermission;
   } catch (error) {
@@ -57,7 +106,9 @@ const generatePassword = async (run: string): Promise<string> => {
 };
 
 // Función para parsear FormData con archivos usando formidable
-const parseFormData = async (req: NextApiRequest): Promise<{ fields: any; files: any }> => {
+const parseFormData = async (
+  req: NextApiRequest
+): Promise<{ fields: UserFields; files: ParsedFiles }> => {
   return new Promise((resolve, reject) => {
     const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
     
@@ -70,14 +121,14 @@ const parseFormData = async (req: NextApiRequest): Promise<{ fields: any; files:
       uploadDir,
       keepExtensions: true,
       maxFileSize: 5 * 1024 * 1024, // 5MB
-      filename: (name, ext, part) => {
+      filename: (_name, ext) => {
         // Generar nombre único para el archivo
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         return `user-${uniqueSuffix}${ext}`;
       }
     });
 
-    form.parse(req, (err, fields, files) => {
+    form.parse(req, (err, fields: Fields, files: Files) => {
       if (err) {
         console.error('Error parsing form:', err);
         reject(err);
@@ -85,18 +136,24 @@ const parseFormData = async (req: NextApiRequest): Promise<{ fields: any; files:
       }
 
       // Convertir arrays de formidable a valores simples
-      const parsedFields: any = {};
+      const parsedFields: UserFields = {};
       Object.keys(fields).forEach(key => {
         const value = fields[key];
-        parsedFields[key] = Array.isArray(value) ? value[0] : value;
+        parsedFields[key] =
+          typeof value === 'string' ? value : Array.isArray(value) ? value[0] : undefined;
       });
 
-      resolve({ fields: parsedFields, files });
+      const parsedFiles: ParsedFiles = {};
+      if (files.foto) {
+        parsedFiles.foto = Array.isArray(files.foto) ? files.foto[0] : files.foto;
+      }
+
+      resolve({ fields: parsedFields, files: parsedFiles });
     });
   });
 };
 
-const mapUserFromDB = (row: any) => ({
+const mapUserFromDB = (row: UserRow) => ({
   id: row.id_usuario,
   run: row.run,
   nick: row.nick,
@@ -127,19 +184,19 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
     if (anfitrionas === '1') {
       // Obtener todas las anfitrionas (sin filtrar por estado)
       const anfitrionasData = (await query(
-        `SELECT u.*, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE r.nombre = 'anfitriona'`
-      )) as any[];
+        `SELECT u.*, r.nombre as rol_nombre, r.id_rol, (SELECT COUNT(*) FROM servicios s INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id WHERE ds.usuario_id = u.id_usuario AND s.estado = 2) as en_servicio, (SELECT h.nombre FROM servicios s INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id INNER JOIN habitaciones h ON s.habitacion_id = h.id_habitacion WHERE ds.usuario_id = u.id_usuario AND s.estado = 2 LIMIT 1) as habitacion_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE r.nombre = 'anfitriona'`
+      )) as UserRow[];
 
       return res.status(200).json({
         success: true,
-        data: anfitrionasData.map(mapUserFromDB)
+        data: anfitrionasData.map((row) => ({ ...mapUserFromDB(row), estado_servicio: (row.en_servicio || 0) > 0 ? 1 : 0, habitacion_nombre: row.habitacion_nombre || null }))
       });
     }
 
     // Obtener todos los usuarios (activos e inactivos)
     const usuarios = (await query(
       `SELECT u.*, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol`
-    )) as any[];
+    )) as UserRow[];
 
     return res.status(200).json({
       success: true,
@@ -165,7 +222,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    let fields: any = {};
+    let fields: UserFields = {};
     let fotoFilename: string | null = null;
 
     // Determinar si es FormData o JSON
@@ -227,7 +284,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Verificar si el RUN ya existe
     const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE run = ?', [
       run
-    ])) as any[];
+    ])) as Array<Pick<UserRow, 'id_usuario'>>;
 
     if (existingUser.length > 0) {
       return res.status(400).json({
@@ -266,8 +323,8 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Generar email y password automáticamente
-    const email = generateEmail(nick);
-    const password = await generatePassword(run);
+    const email = generateEmail(nick!);
+    const password = await generatePassword(run!);
 
     const id = generateUUID();
     // Insertar nuevo usuario con email, password y foto
@@ -305,7 +362,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    let fields: any = {};
+    let fields: UserFields = {};
     let userId: string | number | undefined;
     let fotoFilename: string | null = null;
 
@@ -383,7 +440,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     };
 
     const missingFields = Object.entries(requiredFields)
-      .filter(([key, value]) => !value || value === '')
+      .filter(([_key, value]) => !value || value === '')
       .map(([key]) => key);
 
     if (missingFields.length > 0) {
@@ -394,13 +451,13 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Generar email y password automáticamente
-    const email = generateEmail(nick);
-    const password = await generatePassword(run);
+    const email = generateEmail(nick!);
+    const password = await generatePassword(run!);
 
     // Verificar si el usuario existe
     const existingUser = (await query('SELECT id_usuario, foto FROM usuarios WHERE id_usuario = ?', [
       userId
-    ])) as any[];
+    ])) as Array<Pick<UserRow, 'id_usuario' | 'foto'>>;
 
     if (existingUser.length === 0) {
       return res.status(404).json({
@@ -502,7 +559,7 @@ const handlePatch = async (req: NextApiRequest, res: NextApiResponse) => {
     // Verificar si el usuario existe
     const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [
       id
-    ])) as any[];
+    ])) as Array<Pick<UserRow, 'id_usuario'>>;
 
     if (existingUser.length === 0) {
       return res.status(404).json({
@@ -546,7 +603,9 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
     // Verificar si el usuario existe
-    const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [id])) as any[];
+    const existingUser = (await query('SELECT id_usuario FROM usuarios WHERE id_usuario = ?', [
+      id
+    ])) as Array<Pick<UserRow, 'id_usuario'>>;
     if (existingUser.length === 0) {
       return res.status(404).json({
         success: false,
@@ -625,7 +684,7 @@ export const getUserById = async (userId: string) => {
       WHERE u.id_usuario = ?
     `,
       [userId]
-    )) as any[];
+    )) as UserRow[];
 
     if (result.length === 0) {
       return null;

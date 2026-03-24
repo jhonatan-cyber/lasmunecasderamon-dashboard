@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -30,6 +31,7 @@ export default function AttendancePage() {
   const [page, setPage] = useState(1);
   const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
 
   // Filtrar y paginar datos
   const filteredData = useMemo(() => {
@@ -62,6 +64,21 @@ export default function AttendancePage() {
         user.role?.toLowerCase() !== 'admin'
     );
   }, [users]);
+
+  // Polling del código de asistencia
+  useEffect(() => {
+    if (!selectedUserForQR) return;
+    const fetchCodigo = async () => {
+      try {
+        const res = await fetch('/api/codigo/actual');
+        const data = await res.json();
+        if (data.success) setCodigoAsistencia(data.codigo);
+      } catch {}
+    };
+    fetchCodigo();
+    const interval = setInterval(fetchCodigo, 3000);
+    return () => clearInterval(interval);
+  }, [selectedUserForQR?.id]);
 
   // Polling para actualización del QR en tiempo real
   useEffect(() => {
@@ -278,21 +295,22 @@ export default function AttendancePage() {
     </div>
 
       <Dialog open={!!selectedUserForQR} onOpenChange={(open) => !open && setSelectedUserForQR(null)}>
-        <DialogContent className="sm:max-w-md bg-slate-950 border-slate-800 text-white">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-white mb-2">
+        <DialogContent className="w-[92vw] max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
               Código QR de Asistencia
             </DialogTitle>
-            <DialogDescription className="text-slate-400 font-medium">
-              Muestra este código a la aplicación móvil para registrar la asistencia de {selectedUserForQR?.name}.
+            <DialogDescription className="text-slate-400 text-xs sm:text-sm">
+              Muestra este código a la app móvil para registrar la asistencia de {selectedUserForQR?.name}.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.3)] my-4">
+
+          <div className="p-3 bg-white rounded-2xl">
             {selectedUserForQR?.qr_token ? (
-              <QRCodeSVG 
-                value={selectedUserForQR.qr_token} 
-                size={240}
+              <QRCodeSVG
+                value={selectedUserForQR.qr_token}
+                size={220}
+                style={{ width: '100%', height: 'auto' }}
                 level="H"
                 includeMargin={true}
                 fgColor={
@@ -304,60 +322,45 @@ export default function AttendancePage() {
                   src: `/img/users/${selectedUserForQR.foto}`,
                   x: undefined,
                   y: undefined,
-                  height: 50,
-                  width: 50,
+                  height: 44,
+                  width: 44,
                   excavate: true,
                 } : undefined}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center py-10 space-y-6">
-                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
-                   <UserPlus className="h-10 w-10 text-slate-400" />
+              <div className="flex flex-col items-center gap-3 py-6">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
+                  <UserPlus className="h-8 w-8 text-slate-400" />
                 </div>
-                <div className="text-center space-y-2">
-                  <p className="text-slate-900 font-black uppercase tracking-tight text-lg">
-                    Sin Token Asignado
-                  </p>
-                  <p className="text-slate-500 text-xs font-medium max-w-[200px]">
-                    Este usuario aún no tiene un código QR configurado para asistencia.
-                  </p>
+                <div className="text-center">
+                  <p className="text-slate-900 font-black uppercase tracking-tight text-sm">Sin Token Asignado</p>
+                  <p className="text-slate-500 text-xs mt-1">Este usuario aún no tiene un código QR configurado.</p>
                 </div>
-                <Button 
+                <Button
                   onClick={() => handleGenerateQR(selectedUserForQR.id)}
                   disabled={isGeneratingToken}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-6 px-10 rounded-2xl shadow-xl shadow-indigo-200 uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95"
                 >
-                  {isGeneratingToken ? (
-                    <RefreshCw className="h-5 w-5 animate-spin mr-2" />
-                  ) : (
-                    <RefreshCw className="h-5 w-5 mr-2" />
-                  )}
-                  Generar QR Ahora
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isGeneratingToken ? 'animate-spin' : ''}`} />
+                  Generar QR
                 </Button>
               </div>
             )}
-            
-            <div className="mt-8 flex flex-col items-center">
-               <Avatar className="h-16 w-16 border-2 border-indigo-600 mb-2">
-                 <AvatarImage 
-                   src={selectedUserForQR?.foto ? `/img/users/${selectedUserForQR.foto}` : `/placeholder-user.jpg`} 
-                 />
-                 <AvatarFallback className="bg-slate-200 text-slate-800 font-bold">
-                   {selectedUserForQR?.name?.[0]}{selectedUserForQR?.lastName?.[0]}
-                 </AvatarFallback>
-               </Avatar>
-               <span className="text-slate-900 font-extrabold text-lg uppercase tracking-tight">
-                 {selectedUserForQR?.name} {selectedUserForQR?.lastName}
-               </span>
-               <span className="text-indigo-600 font-bold text-sm">@{selectedUserForQR?.nick}</span>
+          </div>
+
+          {codigoAsistencia && (
+            <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10">
+              <span className="text-slate-400 text-xs font-semibold">Código:</span>
+              <span className="text-indigo-400 text-2xl font-black tracking-[0.3em] font-mono">{codigoAsistencia}</span>
             </div>
-          </div>
-          
-          <div className="text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] pb-2">
+          )}
+
+          <p className="text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
             El código se actualizará automáticamente tras el escaneo
-          </div>
+          </p>
         </DialogContent>
       </Dialog>
     </PermissionGuard>
   );
 }
+

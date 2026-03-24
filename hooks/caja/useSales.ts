@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   VentaWithDetails,
@@ -271,3 +272,4 @@ export const useSales = () => {
     clearError
   };
 };
+

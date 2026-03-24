@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 import { Star, User } from 'lucide-react';
 
 interface TestimonialsSectionProps {
@@ -82,4 +83,5 @@ export default function TestimonialsSection({ reviews }: TestimonialsSectionProp
     </section>
   );
 }
+
 

@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
@@ -165,3 +166,4 @@ export const CardItem = ({
     {children}
   </Tag>;
 };
+

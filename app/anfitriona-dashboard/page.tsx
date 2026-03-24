@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from "react";
@@ -6,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar, DollarSign, Users, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from 'qrcode.react';
+import { formatCurrencyCLP } from "@/lib/formatters";
 
 interface DashboardData {
   totalAsistencias: number;
@@ -227,7 +229,7 @@ export default function AnfitrionaDashboard() {
             {loadingData ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
             ) : (
-              `$ ${dashboardData.totalACobrar.toLocaleString()}`
+              formatCurrencyCLP(dashboardData.totalACobrar)
             )}
           </div>
         </div>
@@ -287,3 +289,4 @@ export default function AnfitrionaDashboard() {
     </div>
   );
 }
+

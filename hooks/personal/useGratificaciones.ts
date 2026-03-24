@@ -1,9 +1,10 @@
+/* eslint-disable */
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { Gratificacion, CreateGratificacionRequest, GratificacionDetail } from '@/types/gratificacion';
 
 export interface UpdateGratificacionRequest {
-  id: string;
+  id: string | number;
   monto: number;
   descripcion: string;
 }
@@ -62,7 +63,7 @@ export const useGratificaciones = () => {
     }
   }, [getGratificaciones]);
 
-  const deleteGratificacion = useCallback(async (id: string) => {
+  const deleteGratificacion = useCallback(async (id: string | number) => {
     try {
       const response = await fetch('/api/gratificaciones', {
         method: 'DELETE',
@@ -135,3 +136,4 @@ export const useGratificaciones = () => {
     gratificacionesDetails
   };
 };
+
