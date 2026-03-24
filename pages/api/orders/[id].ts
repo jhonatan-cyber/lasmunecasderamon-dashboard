@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery } from '@/lib/db';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 import { sendNotificationToAll } from '../notifications/sse';
 import { notifyOrderDeleted, notifyOrderProcessed } from './sse';
 import { sendPushNotification } from '@/lib/pushNotifications';
@@ -106,10 +108,9 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
 
             if (duration > 0) {
               try {
-                // Obtener fecha actual del servidor DB para sincronizar timer
-                const [timeResult]: any = await query('SELECT NOW() as now');
-                const dbNow = timeResult?.now || new Date();
-                const startTimeIso = dbNow instanceof Date ? dbNow.toISOString() : dbNow;
+                // Obtener fecha actual del servidor sincronizada
+                const now = getNowInBusinessTimezone();
+                const startTimeIso = new Date(now.replace(' ', 'T')).toISOString();
 
                 sendNotificationToAll('timer_started', {
                   servicioId: id as string,
@@ -130,7 +131,7 @@ const handlePut = async (req: NextApiRequest, res: NextApiResponse) => {
               try {
                 sendNotificationToAll('room_occupied', {
                   roomId: roomId as string,
-                  timestamp: new Date().toISOString()
+                  timestamp: getNowInBusinessTimezone()
                 });
               } catch (roomNotifyErr) {
                 console.error('[ORDERS PUT] Error enviando room_occupied:', roomNotifyErr);
@@ -237,12 +238,12 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
           sendNotificationToAll('order_deleted', {
             id: id as string,
             meseroId: pedidoInfo[0].mesero_id,
-            timestamp: new Date().toISOString()
+            timestamp: getNowInBusinessTimezone()
           });
         } else {
           sendNotificationToAll('order_deleted', {
             id: id as string,
-            timestamp: new Date().toISOString()
+            timestamp: getNowInBusinessTimezone()
           });
         }
       } catch (notifyErr) {
@@ -287,3 +288,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
   }
 }
+

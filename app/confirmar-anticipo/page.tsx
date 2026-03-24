@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2, DollarSign, User, MessageSquare, Calendar } from 'lucide-react';
+import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatLongDateEs } from '@/lib/calendarUtils';
 
 interface SolicitudAnticipo {
   id: number;
@@ -174,7 +176,7 @@ function ConfirmarAnticipoContent() {
                 <div>
                   <p className='text-xs text-gray-400 font-bold uppercase tracking-wider'>Monto Solicitado</p>
                   <p className='text-3xl font-black text-green-600 dark:text-green-400'>
-                    ${solicitud.monto.toLocaleString()}
+                    {formatCurrencyCLP(solicitud.monto)}
                   </p>
                 </div>
               </div>
@@ -196,7 +198,7 @@ function ConfirmarAnticipoContent() {
               <div className='flex items-center gap-2 mt-2 pt-2 border-t border-gray-50 dark:border-gray-800'>
                 <Calendar className="h-3 w-3 text-gray-400" />
                 <p className="text-[10px] text-gray-400 font-medium">
-                  Fecha: {new Date(solicitud.fecha).toLocaleString('es-ES')}
+                  Fecha: {formatLongDateEs(solicitud.fecha)}
                 </p>
               </div>
             </div>

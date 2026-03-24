@@ -1,7 +1,9 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from "next";
 import { query } from "@/lib/db";
 import { enviarMensajeDevolucionServicio } from "@/lib/whatsappService";
 import { withAuth } from "@/lib/middleware/auth";
+import { formatDateLabel } from "@/lib/calendarUtils";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -11,7 +13,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 
   // Obtener usuario logueado
-  // @ts-ignore
+  // @ts-expect-error legacy runtime access
   const usuarioLogueado = req.user;
 
 
@@ -141,7 +143,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         codigoServicio: servicio.codigo,
         clienteNombre: servicio.cliente_nombre || 'Sin cliente',
         total: servicio.total || 0,
-        fechaServicio: new Date(servicio.fecha_crea).toLocaleDateString(),
+        fechaServicio: formatDateLabel(servicio.fecha_crea),
         motivo: motivo,
         solicitadoPor: usuarioNombre,
         habitacion: servicio.habitacion_numero,

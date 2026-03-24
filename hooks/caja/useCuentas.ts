@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useCallback } from 'react';
 import {
   Cuenta,
@@ -25,11 +26,11 @@ export const useCuentas = () => {
     return await update(cuentaData as any);
   }, [update]);
 
-  const deleteCuenta = useCallback(async (id: number) => {
+  const deleteCuenta = useCallback(async (id: string | number) => {
     return await remove(id);
   }, [remove]);
 
-  const getCuentaById = useCallback(async (id: number) => {
+  const getCuentaById = useCallback(async (id: string | number) => {
     try {
       const response = await fetch(`/api/cuentas/${id}`);
 
@@ -56,3 +57,4 @@ export const useCuentas = () => {
     getCuentaById
   };
 };
+

@@ -1,13 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { SwaggerUIWrapper } from '@/components/SwaggerUIWrapper';
 import { useSwaggerWarnings } from '@/hooks/docs/useSwaggerWarnings';
 import './swagger-styles.css';
 
 // Importar SwaggerUI dinámicamente para evitar problemas de SSR
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
+dynamic(() => import('swagger-ui-react'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center min-h-screen">
@@ -23,27 +23,7 @@ const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
 });
 
 export default function ApiDocsPage() {
-  const [mounted, setMounted] = useState(false);
-  
   useSwaggerWarnings();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin animate-reverse"></div>
-          </div>
-          <p className="text-slate-600 font-medium">Inicializando...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -287,15 +267,15 @@ export default function ApiDocsPage() {
             </div>
             
             <div className="flex flex-wrap justify-center gap-4">
-              <a 
-                href="/api/health" 
+              <Link
+                href="/api/health"
                 className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Estado del Sistema</span>
-              </a>
+              </Link>
               
               <a 
                 href="mailto:soporte@lasmuñecasderamon.com" 

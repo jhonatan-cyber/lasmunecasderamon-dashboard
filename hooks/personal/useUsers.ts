@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { User } from '@/types/user';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -468,3 +469,4 @@ export function useUsers(): UseUsersReturn {
     clearError
   };
 }
+

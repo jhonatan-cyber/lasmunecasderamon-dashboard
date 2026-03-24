@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-console */
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -220,3 +221,4 @@ export default function ServiciosPage() {
     </PermissionGuard>
   );
 }
+

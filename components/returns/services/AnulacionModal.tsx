@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ServicioWithDetails } from '@/types/servicio';
 import { solicitarAnulacionServicio } from '@/lib/serviciosUtils';
 import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { formatCurrencyCLP } from '@/lib/formatters';
 
 interface AnulacionModalProps {
   open: boolean;
@@ -34,7 +35,7 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
     setIsLoading(true);
 
     try {
-      const result = await solicitarAnulacionServicio(servicio.id_servicio!, motivo);
+      const result = await solicitarAnulacionServicio(Number(servicio.id_servicio!), motivo);
 
       if (result.success) {
         showSuccessToast('Solicitud de anulación enviada al administrador');
@@ -81,7 +82,7 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
                         <strong>Habitación:</strong> {servicio.habitacion_numero || 'N/A'}
                       </p>
                       <p>
-                        <strong>Total:</strong> ${servicio.total?.toLocaleString() || 0}
+                        <strong>Total:</strong> {formatCurrencyCLP(servicio.total || 0)}
                       </p>
                     </div>
                   </div>

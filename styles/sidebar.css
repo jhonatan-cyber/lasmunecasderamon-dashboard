@@ -209,17 +209,22 @@
   box-shadow: none;
 }
 
-/* Pill/Bar Indicator for Active Item */
-.nav-item-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 10%;
-  bottom: 10%;
-  width: 4px;
-  background: #2563eb; /* blue-600 */
-  border-radius: 0 4px 4px 0;
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5); /* Glow effect */
+/* Pill/Bar Indicator for Active Item - removed */
+
+/* Colapsado: sin fondo ni barra, solo icono tintado */
+.nav-item-active.nav-collapsed {
+  background: transparent;
+  box-shadow: none;
+  color: #2563eb;
+}
+
+.nav-item-active.nav-collapsed::before {
+  display: none;
+}
+
+.dark .nav-item-active.nav-collapsed {
+  background: transparent;
+  color: #60a5fa;
 }
 
 /* Hover Micro-interaction */

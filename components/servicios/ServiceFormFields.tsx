@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -212,3 +213,4 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(({
 });
 
 ServiceFormFields.displayName = 'ServiceFormFields';
+

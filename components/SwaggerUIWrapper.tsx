@@ -14,6 +14,7 @@ export const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({
   className = '' 
 }) => {
   const swaggerRef = useRef<HTMLDivElement>(null);
+  const swaggerProps = swaggerConfig as React.ComponentProps<typeof SwaggerUI>;
 
   useEffect(() => {
     // Limpiar cualquier instancia previa de Swagger UI
@@ -29,8 +30,9 @@ export const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({
     <div ref={swaggerRef} className={className}>
       <SwaggerUI
         url={url}
-        {...(swaggerConfig as any)}
+        {...swaggerProps}
       />
     </div>
   );
 };
+

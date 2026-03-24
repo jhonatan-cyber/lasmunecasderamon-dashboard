@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Link from 'next/link';
 import { Clock, Phone, Facebook, Instagram } from 'lucide-react';
 

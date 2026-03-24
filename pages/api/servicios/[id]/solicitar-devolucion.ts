@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { enviarMensajeDevolucionServicio } from '@/lib/whatsappService';
+import { formatDateLabel } from '@/lib/calendarUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -102,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         codigoServicio: servicio.codigo,
         clienteNombre: servicio.cliente_nombre || 'Sin cliente',
         total: servicio.total || 0,
-        fechaServicio: new Date(servicio.fecha_crea).toLocaleDateString(),
+        fechaServicio: formatDateLabel(servicio.fecha_crea),
         motivo: motivo,
         solicitadoPor: solicitadoPor,
         habitacion: servicio.habitacion_numero,

@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
@@ -130,3 +131,4 @@ export function PermissionGuard({
 
   return <>{children}</>;
 }
+

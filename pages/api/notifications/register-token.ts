@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method !== 'POST') {
@@ -13,7 +14,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             return res.status(401).json({ success: false, message: 'No autorizado' });
         }
 
-        const { token } = req.body;
+        const { token } = req.body as { token?: string };
         if (!token) {
             return res.status(400).json({ success: false, message: 'Token requerido' });
         }
@@ -26,14 +27,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             message: 'Push token registrado correctamente'
         });
 
-    } catch (error: any) {
-        console.error('Error al registrar push token:', error);
+    } catch (error) {
+        const exception = error instanceof Error ? error : new Error('Error desconocido al registrar push token');
+        logger.error('Error al registrar push token', {
+            error: exception.message,
+            stack: exception.stack,
+        });
         return res.status(500).json({
             success: false,
             message: 'Error al registrar el token',
-            error: error.message
+            error: exception.message
         });
     }
 };
 
 export default withAuth(handler);
+

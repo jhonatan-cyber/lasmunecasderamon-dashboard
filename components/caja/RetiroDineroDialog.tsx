@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CajaWithUser, CajaRetiro } from '@/types/caja';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Loader2 } from 'lucide-react';
+import { formatCurrencyCLP } from '@/lib/formatters';
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
@@ -105,7 +106,7 @@ export function RetiroDineroDialog({
 
         const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
         if (montoNum > montoDisponible) {
-            setErrors({ monto: `El monto no puede ser mayor al disponible ($${Math.round(montoDisponible).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')})` });
+            setErrors({ monto: `El monto no puede ser mayor al disponible (${formatCurrencyCLP(montoDisponible)})` });
             return;
         }
 
@@ -155,19 +156,19 @@ export function RetiroDineroDialog({
                             <div>
                                 <span className='text-gray-500'>Apertura:</span>
                                 <span className='ml-2 mr-2 font-medium'>
-                                    ${Math.round(caja.monto_apertura).toLocaleString()}
+                                    {formatCurrencyCLP(caja.monto_apertura)}
                                 </span>
                             </div>
                             <div>
                                 <span className='text-gray-500'>Efectivo:</span>
                                 <span className='ml-2 mr-2 font-medium'>
-                                    ${Math.round(caja.efectivo).toLocaleString()}
+                                    {formatCurrencyCLP(caja.efectivo)}
                                 </span>
                             </div>
                             <div>
                                 <span className='text-gray-500'>Disponible:</span>
                                 <span className='ml-2 mr-2 font-medium text-green-600'>
-                                    ${Math.round(montoDisponible).toLocaleString()}
+                                    {formatCurrencyCLP(montoDisponible)}
                                 </span>
                             </div>
                         </div>

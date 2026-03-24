@@ -2,11 +2,7 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true
-  },
   images: {
-    unoptimized: true,
     formats: ['image/avif', 'image/webp']
   },
   reactStrictMode: true,
@@ -15,6 +11,27 @@ const nextConfig = {
 
   async headers() {
     return [
+      {
+        source: '/api/notifications/sse',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-transform, no-store, must-revalidate'
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache'
+          },
+          {
+            key: 'Expires',
+            value: '0'
+          },
+          {
+             key: 'Connection',
+             value: 'keep-alive'
+          }
+        ]
+      },
       {
         source: '/api/:path*',
         headers: [
@@ -42,6 +59,11 @@ const nextConfig = {
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: ws: wss:; media-src 'self' blob: https:; frame-src 'self' https://www.google.com https://maps.google.com;"
           }
         ]
       }

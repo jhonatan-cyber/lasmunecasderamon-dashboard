@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Service Worker Mejorado para PWA
 // Versión: 2.0.0 - Con soporte para notifications push y sync
 

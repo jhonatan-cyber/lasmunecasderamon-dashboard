@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { getWeekDateRange } from '@/lib/calendarUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -10,20 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { offset = 0 } = req.query;
     const offsetWeeks = parseInt(offset as string) || 0;
 
-    // Calcular fechas usando la misma lógica que PHP
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-    const mondayThisWeek = new Date(today);
-    mondayThisWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // Lunes de esta semana
-    
-    const mondayTarget = new Date(mondayThisWeek);
-    mondayTarget.setDate(mondayThisWeek.getDate() - (offsetWeeks * 7)); // Retroceder semanas
-    
-    const sundayTarget = new Date(mondayTarget);
-    sundayTarget.setDate(mondayTarget.getDate() + 6); // Domingo de la semana objetivo
-
-    const startDate = mondayTarget.toISOString().split('T')[0];
-    const endDate = sundayTarget.toISOString().split('T')[0];
+    const { startDate, endDate } = getWeekDateRange(offsetWeeks);
 
          const salesData = await query(`
        SELECT
@@ -104,3 +93,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+
+

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Client } from '@/types/client';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';

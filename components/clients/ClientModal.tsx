@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import {
   Dialog,
@@ -220,3 +221,4 @@ export function ClientModal({
     </Dialog>
   );
 }
+

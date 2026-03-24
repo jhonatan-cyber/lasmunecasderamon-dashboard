@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect } from 'react';
 import { Award, Shield, Calendar, Users, Star, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 

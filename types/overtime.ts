@@ -11,7 +11,7 @@ export interface Overtime {
 }
 
 export interface CreateOvertimeRequest {
-  usuario_id: number;
+  usuario_id: string;
   hora: number;
   monto: number;
 }

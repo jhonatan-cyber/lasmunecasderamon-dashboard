@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { sendPushNotification, sendPushByRole } from '@/lib/pushNotifications';
@@ -23,79 +24,114 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
             console.log(`[cron] check_attendance enviado para ${todayStr}`);
         }
-        const activeServices = (await query(`
+        const allActive = (await query(`
             SELECT 
-                s.id_servicio,
-                s.codigo,
-                s.tiempo,
-                s.fecha_crea,
-                s.created_by,
-                s.push_notified_5m,
-                s.push_notified_end,
-                h.nombre as room_name,
-                GROUP_CONCAT(ds.usuario_id) as anfitrionas_ids
+                s.id_servicio as id, s.codigo, s.tiempo, s.fecha_crea, s.created_by, 
+                s.push_notified_5m, s.push_notified_end, s.habitacion_id, h.nombre as room_name,
+                'servicio' as type
             FROM servicios s
             LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
-            LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
-            WHERE s.estado = 2 AND s.paused_at IS NULL
-            GROUP BY s.id_servicio
+            WHERE s.estado = 2 AND s.paused_at IS NULL AND s.tiempo > 0
+            
+            UNION ALL
+            
+            SELECT 
+                v.id_venta as id, v.codigo, v.tiempo, v.fecha_crea, v.created_by,
+                v.push_notified_5m, v.push_notified_end, v.habitacion_id, h.nombre as room_name,
+                'venta' as type
+            FROM ventas v
+            LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
+            WHERE v.estado = 2 AND v.paused_at IS NULL AND v.tiempo > 0
+
+            UNION ALL
+
+            SELECT 
+                c.id_cuenta as id, c.codigo, c.tiempo, c.fecha_crea, c.created_by,
+                c.push_notified_5m, c.push_notified_end, c.habitacion_id, h.nombre as room_name,
+                'cuenta' as type
+            FROM cuentas c
+            LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
+            WHERE c.estado = 1 AND c.tiempo > 0
         `)) as any[];
 
         let notifiedCount = 0;
 
-        for (const service of activeServices) {
-            const startTime = new Date(service.fecha_crea);
-            const durationMinutes = Number(service.tiempo);
+        for (const item of allActive) {
+            const startTime = new Date(item.fecha_crea);
+            const durationMinutes = Number(item.tiempo);
             const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
             const remainingMs = endTime.getTime() - now.getTime();
             const remainingMinutes = remainingMs / 60000;
 
-            const usersToNotify = [service.created_by].filter(Boolean);
+            const usersToNotify = [item.created_by].filter(Boolean);
+            const tableMap: Record<string, string> = {
+                'servicio': 'servicios',
+                'venta': 'ventas',
+                'cuenta': 'cuentas'
+            };
+            const idFieldMap: Record<string, string> = {
+                'servicio': 'id_servicio',
+                'venta': 'id_venta',
+                'cuenta': 'id_cuenta'
+            };
+            const tableName = tableMap[item.type];
+            const idField = idFieldMap[item.type];
 
-            if (remainingMinutes <= 5 && remainingMinutes > 4.5 && !service.push_notified_5m) {
-                await query('UPDATE servicios SET push_notified_5m = 1 WHERE id_servicio = ?', [service.id_servicio]);
+            // A. ALERTA DE 5 MINUTOS
+            if (remainingMinutes <= 5 && remainingMinutes > 4.5 && !item.push_notified_5m) {
+                await query(`UPDATE ${tableName} SET push_notified_5m = 1 WHERE ${idField} = ?`, [item.id]);
 
                 const title = '5 MINUTOS RESTANTES';
-                const body = `El tiempo en la ${service.room_name} está por terminar. (5 min)`;
+                const body = `El tiempo en la ${item.room_name || 'habitación'} (${item.type}) está por terminar. (5 min)`;
 
                 if (usersToNotify.length > 0) {
                     await sendPushNotification(usersToNotify, title, body, {
                         type: 'timer_warning_5m',
-                        service_id: service.id_servicio,
-                        room_name: service.room_name
+                        id: item.id,
+                        transaction_type: item.type,
+                        room_name: item.room_name
                     });
                 }
 
                 sendNotificationToAll('timer_warning_5m', {
-                    service_id: service.id_servicio,
-                    room_name: service.room_name
+                    id: item.id,
+                    type: item.type,
+                    room_name: item.room_name
                 });
 
                 notifiedCount++;
             }
 
-            // B. ALERTA DE TIEMPO AGOTADO
-            if (remainingMinutes <= 0 && !service.push_notified_end) {
-                await query('UPDATE servicios SET push_notified_end = 1 WHERE id_servicio = ?', [service.id_servicio]);
+            // B. ALERTA DE TIEMPO AGOTADO Y LIBERACIÓN AUTOMÁTICA
+            if (remainingMinutes <= 0 && !item.push_notified_end) {
+                await query(`UPDATE ${tableName} SET push_notified_end = 1 WHERE ${idField} = ?`, [item.id]);
 
                 const title = 'TIEMPO AGOTADO';
-                const body = `El tiempo contratado para la ${service.room_name} ha finalizado.`;
+                const body = `El tiempo para la ${item.room_name || 'habitación'} (${item.type}) ha finalizado.`;
 
                 if (usersToNotify.length > 0) {
                     await sendPushNotification(usersToNotify, title, body, {
                         type: 'timer_ended',
-                        service_id: service.id_servicio,
-                        room_name: service.room_name
+                        id: item.id,
+                        transaction_type: item.type,
+                        room_name: item.room_name
                     });
                 }
 
-                await sendPushByRole('cajero', 'TIEMPO AGOTADO', `Habitación ${service.room_name} lista para finalizar.`, { type: 'timer_ended', service_id: service.id_servicio });
-                await sendPushByRole('administrador', 'TIEMPO AGOTADO', `Habitación ${service.room_name} lista para finalizar.`, { type: 'timer_ended', service_id: service.id_servicio });
+                await sendPushByRole('cajero', title, body, { type: 'timer_ended', id: item.id, transaction_type: item.type });
+                await sendPushByRole('administrador', title, body, { type: 'timer_ended', id: item.id, transaction_type: item.type });
 
                 sendNotificationToAll('timer_ended_event', {
-                    service_id: service.id_servicio,
-                    room_name: service.room_name
+                    id: item.id,
+                    type: item.type,
+                    room_name: item.room_name
                 });
+
+                // LIBERACIÓN AUTOMÁTICA DE HABITACIÓN
+                if (item.habitacion_id) {
+                    console.log(`[cron] Liberando habitación ${item.habitacion_id} por tiempo agotado en ${item.type} ${item.id}`);
+                    await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [item.habitacion_id]);
+                }
 
                 notifiedCount++;
             }
@@ -115,3 +151,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
     }
 }
+

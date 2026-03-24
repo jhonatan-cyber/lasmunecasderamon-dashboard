@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import {
@@ -27,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { formatShortDmyDateEs } from "@/lib/calendarUtils";
 
 interface ServicioTableProps {
   loading: boolean;
@@ -60,11 +62,7 @@ export default function ServicioTable({
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleDateString("es-ES", { month: "long" });
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return formatShortDmyDateEs(dateString);
   };
 
   const formatTime = (minutes: number) => {

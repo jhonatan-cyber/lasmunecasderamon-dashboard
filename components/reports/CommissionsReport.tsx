@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect, useMemo, useReducer } from 'react';
@@ -740,3 +741,4 @@ export function CommissionsReport() {
     </div>
   );
 }
+

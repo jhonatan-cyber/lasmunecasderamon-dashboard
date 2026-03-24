@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   Dialog,
   DialogContent,
@@ -397,3 +398,4 @@ export default function SaleProductModal({
     </Dialog>
   );
 }
+

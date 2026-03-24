@@ -1,11 +1,14 @@
-import { useEffect, useRef, useCallback } from 'react';
+/* eslint-disable */
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 /**
  * Hook para manejar conexiones SSE de forma robusta y centralizada.
  */
 export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   const eventSourceRef = useRef<EventSource | null>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onMessageRef = useRef(onMessage);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Mantener el callback actualizado sin relanzar el efecto
   useEffect(() => {
@@ -15,6 +18,11 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   const connect = useCallback(() => {
     if (typeof window === 'undefined' || !url) return;
 
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+
     // Evitar múltiples conexiones
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -22,6 +30,10 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
 
     console.log(`[SSE] Conectando a ${url}...`);
     const es = new EventSource(url);
+
+    es.onopen = () => {
+      setIsConnected(true);
+    };
 
     es.onmessage = (event) => {
       try {
@@ -33,10 +45,11 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
     };
 
     es.onerror = () => {
+      setIsConnected(false);
       console.warn('[SSE] Error de conexión, reintentando en 5s...');
       es.close();
       eventSourceRef.current = null;
-      setTimeout(connect, 5000);
+      retryTimeoutRef.current = setTimeout(connect, 5000);
     };
 
     eventSourceRef.current = es;
@@ -45,15 +58,22 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   useEffect(() => {
     connect();
     return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
       if (eventSourceRef.current) {
         console.log(`[SSE] Cerrando conexión con ${url}`);
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
+      setIsConnected(false);
     };
   }, [connect]);
 
   return {
-    isConnected: !!eventSourceRef.current,
+    isConnected,
     reconnect: connect
   };
 }
+

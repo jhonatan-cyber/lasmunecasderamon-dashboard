@@ -34,7 +34,7 @@ export default function CuentaFormDialog({
   const [clienteId, setClienteId] = useState("");
   const [habitacionId, setHabitacionId] = useState("");
   const [detalles, setDetalles] = useState<CreateDetalleCuentaRequest[]>([
-    { producto_id: 1, precio: 0, cantidad: 1, comision: 0 }
+    { producto_id: 1, precio: 0, cantidad: 1, sub_total: 0, comision: 0 }
   ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,8 +57,11 @@ export default function CuentaFormDialog({
     try {
       const cuentaData: CreateCuentaRequest = {
         codigo,
-        cliente_id: clienteId ? parseInt(clienteId) : undefined,
-        habitacion_id: habitacionId ? parseInt(habitacionId) : undefined,
+        cliente_id: clienteId ? parseInt(clienteId, 10) : undefined,
+        habitacion_id: habitacionId ? parseInt(habitacionId, 10) : undefined,
+        total_comision: calculateTotalComision(),
+        sub_total: calculateSubTotal(),
+        total: calculateTotal(),
         detalles,
       };
 
@@ -84,14 +87,14 @@ export default function CuentaFormDialog({
     setCodigo("");
     setClienteId("");
     setHabitacionId("");
-    setDetalles([{ producto_id: 1, precio: 0, cantidad: 1, comision: 0 }]);
+    setDetalles([{ producto_id: 1, precio: 0, cantidad: 1, sub_total: 0, comision: 0 }]);
     onClose();
   };
 
   const addDetalle = () => {
     setDetalles([
       ...detalles,
-      { producto_id: detalles.length + 1, precio: 0, cantidad: 1, comision: 0 }
+      { producto_id: detalles.length + 1, precio: 0, cantidad: 1, sub_total: 0, comision: 0 }
     ]);
   };
 
@@ -101,9 +104,15 @@ export default function CuentaFormDialog({
     }
   };
 
-  const updateDetalle = (index: number, field: keyof CreateDetalleCuentaRequest, value: number) => {
+  const updateDetalle = (
+    index: number,
+    field: keyof CreateDetalleCuentaRequest,
+    value: string | number
+  ) => {
     const newDetalles = [...detalles];
-    newDetalles[index] = { ...newDetalles[index], [field]: value };
+    const nextDetalle = { ...newDetalles[index], [field]: value };
+    nextDetalle.sub_total = nextDetalle.precio * nextDetalle.cantidad;
+    newDetalles[index] = nextDetalle;
     setDetalles(newDetalles);
   };
 

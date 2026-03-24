@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 const PAYROLL_SQL = `
 SELECT 
   U.id_usuario, 
@@ -122,50 +124,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       try {
         const result = await withTransaction(async trx => {
+          const now = getNowInBusinessTimezone();
           // 1) Asistencias: estado 1 -> 0
           const asistencias = (await trx(
-            'UPDATE asistencias SET estado = 0, fecha_pago = NOW() WHERE usuario_id = ? AND estado = 1',
-            [userId]
+            'UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
+            [now, userId]
           )) as any;
 
           // 2) Detalle Comisiones: estado 1 -> 0 (solo las del usuario)
           const detalleComisiones = (await trx(
-            'UPDATE detalle_comisiones SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
-            [userId]
+            'UPDATE detalle_comisiones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+            [now, userId]
           )) as any;
 
           // 3) Ventas del usuario (vía comisiones): estado 1 -> 3
           const ventas = (await trx(
             `UPDATE ventas 
-             SET estado = 3, fecha_mod = NOW()
+             SET estado = 3, fecha_mod = ?
              WHERE estado = 1 AND id_venta IN (
                SELECT c.venta_id FROM comisiones c 
                INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision 
                WHERE dc.usuario_id = ? AND c.venta_id <> 0
              )`,
-            [userId]
+            [now, userId]
           )) as any;
 
           // 4) Servicios del usuario (vía detalle_servicios): estado 1 (Finalizado) -> 4 (Pagado/Planilla)
           const servicios = (await trx(
             `UPDATE servicios 
-             SET estado = 4, fecha_mod = NOW()
+             SET estado = 4, fecha_mod = ?
              WHERE estado = 1 AND id_servicio IN (
                SELECT ds.servicio_id FROM detalle_servicios ds WHERE ds.usuario_id = ?
              )`,
-            [userId]
+            [now, userId]
           )) as any;
 
           // 5) Detalle Propinas: estado 1 -> 0
           const detallePropinas = (await trx(
-            'UPDATE detalle_propinas SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
-            [userId]
+            'UPDATE detalle_propinas SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+            [now, userId]
           )) as any;
 
           // 5.1) Actualizar propinas principales cuando todas las propinas de detalle están pagadas
           const propinas = (await trx(
             `UPDATE propinas 
-             SET estado = 0, fecha_mod = NOW()
+             SET estado = 0, fecha_mod = ?
              WHERE estado = 1 AND id_propina IN (
                SELECT DISTINCT dp.propina_id 
                FROM detalle_propinas dp 
@@ -177,25 +180,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                  WHERE dp2.propina_id = dp.propina_id AND dp2.estado = 1
                )
              )`,
-            [userId]
+            [now, userId]
           )) as any;
 
           // 6) Anticipos: estado 1 -> 0
           const anticipos = (await trx(
-            'UPDATE anticipos SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
-            [userId]
+            'UPDATE anticipos SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+            [now, userId]
           )) as any;
 
           // 7) Horas Extras: estado 1 -> 0
           const horasExtras = (await trx(
-            'UPDATE horas_extras SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
-            [userId]
+            'UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+            [now, userId]
           )) as any;
 
           // 8) Gratificaciones: estado 1 -> 0
           const gratificaciones = (await trx(
-            'UPDATE gratificaciones SET estado = 0, fecha_mod = NOW() WHERE usuario_id = ? AND estado = 1',
-            [userId]
+            'UPDATE gratificaciones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+            [now, userId]
           )) as any;
 
           return {
@@ -229,3 +232,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ success: false, message: 'Error en planilla', error });
   }
 }
+

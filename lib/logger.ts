@@ -1,6 +1,8 @@
 import winston from 'winston';
 import path from 'path';
 
+type AuditDetails = Record<string, unknown>;
+
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
@@ -73,7 +75,7 @@ export const auditLogger = {
     }
   },
 
-  dataAccess: (userId: string, action: string, resource: string, details?: any) => {
+  dataAccess: (userId: string, action: string, resource: string, details?: AuditDetails) => {
     if (process.env.NODE_ENV !== 'production') {
       logger.info('Data access', {
         userId,
@@ -86,7 +88,7 @@ export const auditLogger = {
     }
   },
 
-  securityEvent: (userId: string, event: string, details: any) => {
+  securityEvent: (userId: string, event: string, details: AuditDetails) => {
     if (process.env.NODE_ENV !== 'production') {
       logger.warn('Security event', {
         userId,
@@ -98,7 +100,7 @@ export const auditLogger = {
     }
   },
 
-  error: (error: Error, context?: any) => {
+  error: (error: Error, context?: AuditDetails) => {
     logger.error('Application error', {
       error: error.message,
       stack: error.stack,
@@ -110,3 +112,4 @@ export const auditLogger = {
 };
 
 export default logger;
+

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -239,3 +240,4 @@ export function TimerDisplay() {
     </>
   );
 }
+

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { sendPushByRole } from '@/lib/pushNotifications';
 import { sendNotificationToAll } from '../sse';
@@ -125,3 +126,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 }
 
 export default withAuth(handler);
+

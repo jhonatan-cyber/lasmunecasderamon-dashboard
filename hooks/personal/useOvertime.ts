@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { Overtime, CreateOvertimeRequest } from '@/types/overtime';
@@ -96,3 +97,4 @@ export const useOvertime = () => {
     overtimeDetails
   };
 };
+

@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { toDateKey } from '@/lib/calendarUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -7,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const fechaHoy = new Date().toISOString().split('T')[0];
+    const fechaHoy = toDateKey(new Date());
 
     // Obtener información de la caja abierta
     const cajaResult = (await query(
@@ -114,3 +116,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+

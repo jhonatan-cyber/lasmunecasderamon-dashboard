@@ -1,21 +1,21 @@
 export interface Cuenta {
-  id_cuenta: string;
+  id_cuenta: string | number;
   codigo: string;
-  cliente_id: string;
+  cliente_id: string | number;
   total_comision: number;
-  habitacion_id: string | null;
+  habitacion_id: string | number | null;
   sub_total: number;
   total: number;
-  pedido_id: string | null;
-  servicio_id: string | null;
+  pedido_id: string | number | null;
+  servicio_id: string | number | null;
   fecha_crea: string;
   estado: number;
 }
 
 export interface DetalleCuenta {
-  id_detalle_cuenta: string;
-  cuenta_id: string;
-  producto_id: string;
+  id_detalle_cuenta: string | number;
+  cuenta_id: string | number;
+  producto_id: string | number;
   precio: number;
   cantidad: number;
   sub_total: number;
@@ -23,9 +23,9 @@ export interface DetalleCuenta {
 }
 
 export interface CuentaUsuario {
-  id_cuenta_usuario: string;
-  cuenta_id: string;
-  usuario_id: string;
+  id_cuenta_usuario: string | number;
+  cuenta_id: string | number;
+  usuario_id: string | number;
 }
 
 export interface CuentaWithDetails extends Cuenta {
@@ -37,19 +37,19 @@ export interface CuentaWithDetails extends Cuenta {
 
 export interface CreateCuentaRequest {
   codigo: string;
-  cliente_id: string;
+  cliente_id?: string | number | null;
   total_comision: number;
   sub_total: number;
   total: number;
-  habitacion_id?: string | null;
-  pedido_id?: string | null;
-  servicio_id?: string | null;
+  habitacion_id?: string | number | null;
+  pedido_id?: string | number | null;
+  servicio_id?: string | number | null;
   detalles: CreateDetalleCuentaRequest[];
-  usuarios?: string[];
+  usuarios?: Array<string | number>;
 }
 
 export interface CreateDetalleCuentaRequest {
-  producto_id: string;
+  producto_id: string | number;
   precio: number;
   cantidad: number;
   sub_total: number;
@@ -57,8 +57,8 @@ export interface CreateDetalleCuentaRequest {
 }
 
 export interface UpdateCuentaRequest {
-  id_cuenta: string;
+  id_cuenta: string | number;
   estado?: number;
   detalles?: CreateDetalleCuentaRequest[];
-  usuarios?: string[];
+  usuarios?: Array<string | number>;
 } 

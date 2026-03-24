@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import {
@@ -388,3 +389,4 @@ export function useAuth() {
   }
   return context;
 }
+

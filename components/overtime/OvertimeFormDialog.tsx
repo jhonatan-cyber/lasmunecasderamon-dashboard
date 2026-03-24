@@ -9,7 +9,7 @@ import { useEmployees } from '@/hooks/personal/useEmployees';
 import { useOvertime } from '@/hooks/personal/useOvertime';
 import { toast } from 'sonner';
 import GarzonSelect from '@/components/overtime/GarzonSelect';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals, formatNumberCL } from '@/lib/formatters';
 
 interface OvertimeFormDialogProps {
   open: boolean;
@@ -24,6 +24,7 @@ export default function OvertimeFormDialog({ open, onClose, onSuccess }: Overtim
   const [selectedUser, setSelectedUser] = useState('');
   const [hora, setHora] = useState('');
   const [monto, setMonto] = useState('');
+  const [montoDisplay, setMontoDisplay] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +51,7 @@ export default function OvertimeFormDialog({ open, onClose, onSuccess }: Overtim
     setLoading(true);
     try {
       await createOvertime({
-        usuario_id: parseInt(selectedUser),
+        usuario_id: selectedUser,
         hora: horaNum,
         monto: montoNum
       });
@@ -72,6 +73,7 @@ export default function OvertimeFormDialog({ open, onClose, onSuccess }: Overtim
     setSelectedUser('');
     setHora('');
     setMonto('');
+    setMontoDisplay('');
     onClose();
   };
 
@@ -81,8 +83,10 @@ export default function OvertimeFormDialog({ open, onClose, onSuccess }: Overtim
     return horaNum * montoNum;
   };
 
-  const formatNumber = (num: number) => {
-    return Math.round(num).toLocaleString();
+  const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+    setMonto(raw);
+    setMontoDisplay(raw ? formatNumberCL(parseInt(raw)) : '');
   };
 
   return (
@@ -133,11 +137,10 @@ export default function OvertimeFormDialog({ open, onClose, onSuccess }: Overtim
                   </Label>
                   <Input
                     id='monto'
-                    type='number'
-                    step='0.01'
-                    min='0'
-                    value={monto}
-                    onChange={e => setMonto(e.target.value)}
+                    type='text'
+                    inputMode='numeric'
+                    value={montoDisplay}
+                    onChange={handleMontoChange}
                     placeholder='0'
                     className='mt-1 text-xs sm:text-sm'
                   />
@@ -145,12 +148,12 @@ export default function OvertimeFormDialog({ open, onClose, onSuccess }: Overtim
               </div>
 
               {hora && monto && (
-                <div className='p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200 text-center'>
-                  <div className='text-xs sm:text-sm text-blue-700'>
+                <div className='p-3 sm:p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 text-center'>
+                  <div className='text-xs sm:text-sm text-blue-700 dark:text-blue-300'>
                     <strong className='font-bold text-xs sm:text-sm'>Total calculado:</strong>{' '}
                     {formatCurrencyNoDecimals(calculateTotal())}
                   </div>
-                  <div className='text-xs text-blue-600 mt-1'>
+                  <div className='text-xs text-blue-600 dark:text-blue-400 mt-1'>
                     {hora} horas × {formatCurrencyNoDecimals(parseFloat(monto))} ={' '}
                     {formatCurrencyNoDecimals(calculateTotal())}
                   </div>

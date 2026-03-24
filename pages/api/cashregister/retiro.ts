@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 import { RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
+import { formatCurrencyCLP } from '@/lib/formatters';
 
 const retiroSchema = z.object({
     id_caja: z.number().min(1, 'ID de caja es requerido'),
@@ -70,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (validatedData.monto > montoDisponible) {
             return res.status(400).json({
                 success: false,
-                message: `Monto insuficiente. Disponible: $${montoDisponible.toLocaleString()}`
+                message: `Monto insuficiente. Disponible: ${formatCurrencyCLP(montoDisponible)}`
             });
         }
 
@@ -138,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(200).json({
             success: true,
-            message: `Retiro de $${validatedData.monto.toLocaleString()} realizado exitosamente`,
+            message: `Retiro de ${formatCurrencyCLP(validatedData.monto)} realizado exitosamente`,
             data: {
                 id_caja: validatedData.id_caja,
                 monto_retirado: validatedData.monto,

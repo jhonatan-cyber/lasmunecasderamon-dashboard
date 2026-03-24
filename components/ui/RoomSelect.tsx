@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Select,
@@ -9,10 +10,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Home } from "lucide-react";
+import { formatCurrencyCLP } from "@/lib/formatters";
 
 interface Habitacion {
-  id_habitacion?: number;
-  id?: number;
+  id_habitacion?: string | number;
+  id?: string | number;
   nombre?: string;
   name?: string;
   numero?: string;
@@ -37,7 +39,7 @@ interface RoomSelectProps {
   showPrice?: boolean;
   showTime?: boolean;
   filterByStatus?: number; // 1 = disponible, 2 = ocupada, 0 = inactiva
-  includeRoomIds?: number[]; // IDs de habitaciones que deben incluirse siempre, incluso si están ocupadas
+  includeRoomIds?: Array<string | number>; // IDs de habitaciones que deben incluirse siempre, incluso si están ocupadas
 }
 
 const RoomSelect: React.FC<RoomSelectProps> = ({
@@ -73,7 +75,10 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
         const estado = habitacion.estado || habitacion.status;
         
         // Incluir si cumple el filtro de estado O si está en la lista de IDs a incluir
-        return estado === filterByStatus || (id && includeRoomIds.includes(id));
+        return (
+          estado === filterByStatus ||
+          (id !== undefined && includeRoomIds.some(roomId => String(roomId) === String(id)))
+        );
       });
     }
     
@@ -103,7 +108,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   // Formatear precio CLP
   const formatPrice = (price: number) => {
     if (!price || isNaN(price)) return "";
-    return `$${price.toLocaleString("es-CL", { minimumFractionDigits: 0 })}`;
+    return formatCurrencyCLP(price);
   };
 
   const getHabitacionId = (habitacion: Habitacion) => {

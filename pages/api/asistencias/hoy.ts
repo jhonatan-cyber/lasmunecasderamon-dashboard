@@ -19,7 +19,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const rows = await query(
     'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
     [currentUser.id, todayStr]
-  ) as any[];
+  ) as Array<{ id_asistencia: string | number }>;
 
   return res.status(200).json({
     success: true,
@@ -28,3 +28,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

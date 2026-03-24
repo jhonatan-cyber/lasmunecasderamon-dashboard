@@ -3,37 +3,62 @@ import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 import { enviarWhatsApp } from '@/lib/whatsappService';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
+import { buildVentaAnulacionMessage } from '@/lib/notificationMessages';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+type SolicitudAnulacionVentaRow = {
+  venta_id: string;
+  codigo: string;
+  total: number;
+  metodo_pago?: string | null;
+  cliente_id?: string | null;
+  cliente_nombre: string;
+};
+
+type DetalleVentaRow = {
+  id_producto: string;
+  cantidad: number;
+  precio: number;
+  tipo: string;
+};
+
+type CajaRow = {
+  id_caja: string;
+  efectivo: number;
+  tarjeta: number;
+  transferencia: number;
+  servicio: number;
+  devolucion: number;
+};
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Metodo no permitido' });
+  }
+
+  const { token, action } = req.body;
+
+  if (!token || !action || !['confirmar', 'rechazar'].includes(action)) {
+    return res.status(400).json({ error: 'Token y accion requeridos' });
   }
 
   try {
-    const { token, action } = req.body;
-
-    if (!token || !action) {
-      return res.status(400).json({ error: 'Token y acción requeridos' });
-    }
-
     const result = await withTransaction(async connection => {
-      // Buscar la solicitud por token
       const solicitudSql = `
-        SELECT 
-          sa.*,
-          v.codigo,
-          v.total,
-          v.metodo_pago,
-          v.cliente_id,
-          CONCAT(c.nombre, " ", c.apellido) as cliente_nombre
-        FROM solicitudes_anulacion sa
-        LEFT JOIN ventas v ON sa.venta_id = v.id_venta
-        LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
-        WHERE sa.token = ? AND sa.estado = 'pendiente'
+        SELECT
+          sva.venta_id,
+          sv.codigo,
+          sv.total,
+          sv.metodo_pago,
+          sv.cliente_id,
+          CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre
+        FROM solicitudes_anulacion_ventas sva
+        LEFT JOIN ventas sv ON sva.venta_id = sv.id_venta
+        LEFT JOIN clientes c ON sv.cliente_id = c.id_cliente
+        WHERE sva.token = ? AND sva.estado = 'pendiente'
         FOR UPDATE
       `;
 
-      const solicitudResult = (await connection(solicitudSql, [token])) as any[];
+      const solicitudResult = (await connection(solicitudSql, [token])) as SolicitudAnulacionVentaRow[];
 
       if (!Array.isArray(solicitudResult) || solicitudResult.length === 0) {
         throw new Error('Solicitud no encontrada o ya procesada');
@@ -42,73 +67,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const solicitud = solicitudResult[0];
       const ventaId = solicitud.venta_id;
       const codigoVenta = solicitud.codigo;
-      const clienteNombre = solicitud.cliente_nombre;
-      const totalVenta = solicitud.total;
+      const clienteNombre = solicitud.cliente_nombre || 'Sin cliente';
+      const totalVenta = Number(solicitud.total || 0);
       const metodoPago = solicitud.metodo_pago || 'efectivo';
 
       if (action === 'confirmar') {
-        // 1. Obtener detalles de la venta y usuarios
-        const detallesVenta = (await connection('SELECT * FROM detalle_ventas WHERE venta_id = ?', [
-          ventaId
-        ])) as any[];
-        const usuariosVenta = (await connection(
-          'SELECT usuario_id FROM ventas_usuarios WHERE venta_id = ?',
-          [ventaId]
-        )) as any[];
-
-        // Calcular totales para la caja
-        let totalComision = 0;
-        let totalSubTotal = 0;
-        detallesVenta.forEach(d => {
-          totalComision += Number(d.comision || 0);
-          totalSubTotal += Number(d.sub_total || d.precio * d.cantidad || 0);
-        });
-
-        const [ventaData] = (await connection('SELECT propina FROM ventas WHERE id_venta = ?', [
-          ventaId
-        ])) as any[];
-        const propinaVenta = Number(ventaData?.propina || 0);
+        await connection('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
 
         const { generateUUID } = await import('@/lib/db');
-        // 2. Registrar la DEVOLUCIÓN en las tablas específicas
-        const devVentaId = generateUUID();
+        const detalleResult = (await connection(
+          `SELECT d.venta_id, d.producto_id as id_producto, d.cantidad, d.precio, p.tipo
+           FROM detalle_ventas d
+           LEFT JOIN productos p ON d.producto_id = p.id_producto
+           WHERE d.venta_id = ?`,
+          [ventaId]
+        )) as DetalleVentaRow[];
+
+        const devVentId = generateUUID();
         await connection(
-          'INSERT INTO devoluciones_ventas (id, cliente_id, venta_id, total, fecha_crea, estado) VALUES (?, ?, ?, ?, NOW(), 1)',
-          [devVentaId, solicitud.cliente_id || 0, ventaId, totalVenta]
+          'INSERT INTO devoluciones_ventas (id, venta_id, cliente_id, total, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
+          [devVentId, ventaId, solicitud.cliente_id || 0, totalVenta]
         );
 
-        for (const dv of detallesVenta) {
-          const detDevId = generateUUID();
+        for (const detalle of detalleResult) {
+          const devDetalleId = generateUUID();
           await connection(
-            'INSERT INTO detalle_devoluciones_ventas (id, devolucion_venta_id, producto_id, cantidad, precio, comision, fecha_crea, estado) VALUES (?, ?, ?, ?, ?, ?, NOW(), 1)',
-            [detDevId, devVentaId, dv.producto_id, dv.cantidad, dv.precio, dv.comision]
+            'INSERT INTO detalle_devoluciones_ventas (id, devolucion_venta_id, producto_id, cantidad, precio, tipo) VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              devDetalleId,
+              devVentId,
+              detalle.id_producto,
+              detalle.cantidad,
+              detalle.precio,
+              detalle.tipo
+            ]
           );
-
-          for (const uv of usuariosVenta) {
-            await connection(
-              'INSERT INTO devoluciones_ventas_usuarios (detalle_devolucion_venta_id, usuario_id) VALUES (?, ?)',
-              [detDevId, uv.usuario_id]
-            );
-          }
         }
 
-        // 3. Confirmar anulación en tablas de origen
-        await connection('UPDATE ventas SET estado = 0, fecha_mod = NOW() WHERE id_venta = ?', [
-          ventaId
-        ]);
-        await connection("UPDATE solicitudes_anulacion SET estado = 'confirmada' WHERE token = ?", [
-          token
-        ]);
+        await connection(
+          'UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE codigo_venta = ?',
+          [codigoVenta]
+        );
 
-        // 4. Actualizar caja
         const cajaActualResult = (await connection(`
-          SELECT id_caja, efectivo, tarjeta, transferencia, venta, devolucion, comision, propina
-          FROM cajas 
-          WHERE estado = 1 
-          ORDER BY fecha_apertura DESC 
+          SELECT id_caja, efectivo, tarjeta, transferencia, servicio, devolucion
+          FROM cajas
+          WHERE estado = 1
+          ORDER BY fecha_apertura DESC
           LIMIT 1
-        `)) as any[];
-
+        `)) as CajaRow[];
         const cajaActual = cajaActualResult[0];
 
         if (cajaActual) {
@@ -117,46 +124,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           else if (metodoPago === 'transferencia') columnToUpdate = 'transferencia';
 
           await connection(
-            `UPDATE cajas 
-             SET ${columnToUpdate} = GREATEST(0, ${columnToUpdate} - ?), 
-                 venta = GREATEST(0, venta - ?), 
-                 devolucion = devolucion + ?, 
-                 comision = GREATEST(0, comision - ?), 
-                 propina = GREATEST(0, propina - ?)
-             WHERE id_caja = ?`,
-            [totalVenta, totalSubTotal, totalVenta, totalComision, propinaVenta, cajaActual.id_caja]
+            `UPDATE cajas SET ${columnToUpdate} = GREATEST(0, ${columnToUpdate} - ?), servicio = GREATEST(0, servicio - ?), devolucion = devolucion + ? WHERE id_caja = ?`,
+            [totalVenta, totalVenta, totalVenta, cajaActual.id_caja]
           );
         }
 
+        await connection("UPDATE solicitudes_anulacion_ventas SET estado = 'confirmada' WHERE token = ?", [token]);
+
         return {
           success: true,
-          message: 'Anulación confirmada exitosamente',
-          venta: { id: ventaId, codigo: codigoVenta, cliente: clienteNombre, total: totalVenta }
-        };
-      } else {
-        // Rechazar
-        await connection('UPDATE ventas SET estado = 1, fecha_mod = NOW() WHERE id_venta = ?', [
-          ventaId
-        ]);
-        await connection("UPDATE solicitudes_anulacion SET estado = 'rechazada' WHERE token = ?", [
-          token
-        ]);
-        return {
-          success: true,
-          message: 'Anulación rechazada exitosamente',
-          venta: { codigo: codigoVenta, cliente: clienteNombre, total: totalVenta }
+          message: 'Anulacion de venta confirmada exitosamente',
+          venta: {
+            id: ventaId,
+            codigo: codigoVenta,
+            cliente: clienteNombre,
+            total: totalVenta
+          }
         };
       }
+
+      await connection('UPDATE ventas SET estado = 2, fecha_mod = NOW() WHERE id_venta = ?', [ventaId]);
+      await connection("UPDATE solicitudes_anulacion_ventas SET estado = 'rechazada' WHERE token = ?", [token]);
+      return {
+        success: true,
+        message: 'Anulacion de venta rechazada exitosamente',
+        venta: {
+          id: ventaId,
+          codigo: codigoVenta,
+          cliente: clienteNombre,
+          total: totalVenta
+        }
+      };
     });
 
-    // Notificaciones (fuera de la transacción)
     if (result.success) {
-      const type = action === 'confirmar' ? 'anulacion_confirmada' : 'anulacion_rechazada';
+      const type = action === 'confirmar' ? 'anulacion_venta_confirmada' : 'anulacion_venta_rechazada';
       const notificationData = {
-        id: result.venta.id,
-        codigo: result.venta.codigo,
-        cliente: result.venta.cliente,
-        total: result.venta.total,
+        ...result.venta,
         accion: type,
         timestamp: new Date().toISOString()
       };
@@ -173,18 +177,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const adminWhatsApp =
         process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-      const emoji = action === 'confirmar' ? '✅' : '❌';
-      const titulo = action === 'confirmar' ? 'CONFIRMADA' : 'RECHAZADA';
-      const msg = `${emoji} *ANULACIÓN ${titulo}*\n\nLa venta con código *${result.venta.codigo}* ha sido ${action === 'confirmar' ? 'anulada' : 'mantenida'}.\n\n📋 *Detalles:*\n• Cliente: ${result.venta.cliente}\n• Total: $${result.venta.total?.toLocaleString()}`;
+      const msg = buildVentaAnulacionMessage({
+        action,
+        codigo: result.venta.codigo,
+        cliente: result.venta.cliente,
+        total: result.venta.total || 0
+      });
       await enviarWhatsApp(adminWhatsApp, msg);
     }
 
     return res.status(200).json(result);
-  } catch (error: any) {
-    console.error('Error en procesar-anulacion:', error);
-    return res.status(error.message.includes('No encontrada') ? 404 : 500).json({
+  } catch (error) {
+    console.error('Error en procesar-anulacion ventas:', error);
+    const message = error instanceof Error ? error.message : 'Error interno del servidor';
+    return res.status(message.includes('No encontrada') ? 404 : 500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      error: message
     });
   }
 }
+
+export default handler;

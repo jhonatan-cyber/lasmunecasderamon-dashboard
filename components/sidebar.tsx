@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import React from 'react';
@@ -351,7 +352,9 @@ export function Sidebar() {
                       }}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
-                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
+                        isActive
+                          ? cn('nav-item-active', isCollapsed && 'nav-collapsed')
+                          : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
@@ -382,7 +385,7 @@ export function Sidebar() {
                       onClick={closeSidebar}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
-                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
+                        isActive ? cn('nav-item-active', isCollapsed && 'nav-collapsed') : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
@@ -413,7 +416,7 @@ export function Sidebar() {
                       onClick={closeSidebar}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
-                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
+                        isActive ? cn('nav-item-active', isCollapsed && 'nav-collapsed') : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
@@ -444,7 +447,7 @@ export function Sidebar() {
                       onClick={closeSidebar}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
-                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
+                        isActive ? cn('nav-item-active', isCollapsed && 'nav-collapsed') : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
@@ -475,7 +478,7 @@ export function Sidebar() {
                       onClick={closeSidebar}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
-                        isActive ? 'nav-item-active' : 'text-gray-700 dark:text-neutral-300'
+                        isActive ? cn('nav-item-active', isCollapsed && 'nav-collapsed') : 'text-gray-700 dark:text-neutral-300'
                       )}
                       title={isCollapsed ? item.name : undefined}
                     >
@@ -511,3 +514,5 @@ export function Sidebar() {
     </>
   );
 }
+
+

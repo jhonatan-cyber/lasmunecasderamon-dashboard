@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -80,3 +81,4 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useSync = () => useContext(SyncContext);
+

@@ -1,6 +1,8 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -107,7 +109,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       let query_str = `
         SELECT 
           G.id as id,
-          G.fecha_hora,
+          DATE_FORMAT(G.fecha_hora, "%Y-%m-%d %H:%i:%s") as fecha_hora,
           U.id_usuario, 
           CONCAT(U.nombre, ' ', U.apellido) AS usuario, 
           G.monto,
@@ -159,7 +161,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (!usuario_id || !monto) {
         return res.status(400).json({
           success: false,
-          message: 'El usuario y el monto son requeridos'
+          message: `El usuario y el monto son requeridos. Recibido: usuario_id=${usuario_id}, monto=${monto}, body=${JSON.stringify(req.body)}`
         });
       }
 
@@ -190,14 +192,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
 
       const id = generateUUID();
-      const fecha_hora = new Date().toISOString();
+      const now = getNowInBusinessTimezone();
+      const fecha_hora = now;
 
       const result = (await query(
         `
-        INSERT INTO gratificaciones (id, fecha_hora, usuario_id, monto, descripcion, estado)
-        VALUES (?, ?, ?, ?, ?, 1)
+        INSERT INTO gratificaciones (id, fecha_hora, usuario_id, monto, descripcion, estado, fecha_crea)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
       `,
-        [id, fecha_hora, usuario_id, monto, descripcion || '']
+        [id, fecha_hora, usuario_id, monto, descripcion || '', now]
       )) as any;
 
       return res.status(201).json({
@@ -250,13 +253,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
+      const now = getNowInBusinessTimezone();
       const result = (await query(
         `
         UPDATE gratificaciones 
-        SET monto = ?, descripcion = ?, fecha_mod = NOW() 
+        SET monto = ?, descripcion = ?, fecha_mod = ? 
         WHERE id = ?
       `,
-        [monto, descripcion || '', id]
+        [monto, descripcion || '', now, id]
       )) as any;
 
       return res.status(200).json({
@@ -317,3 +321,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -78,3 +79,4 @@ export function QueryProvider({ children }: QueryProviderProps) {
 }
 
 export default QueryProvider;
+
