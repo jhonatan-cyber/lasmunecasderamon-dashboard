@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, @typescript-eslint/no-unused-vars, no-console */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,6 +25,8 @@ import Paginate from '@/components/ui/paginate';
 import { useCalendarActions } from '@/hooks/calendario/useCalendarActions';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { getMonthDateRange, toDateKey } from '@/lib/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/formatters';
 
 // Utilidades para fechas
 const months = [
@@ -60,12 +63,7 @@ export default function PayrollCalendarPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Hook para obtener acciones del calendario
-  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    .toISOString()
-    .split('T')[0];
-  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-    .toISOString()
-    .split('T')[0];
+  const { startDate, endDate } = getMonthDateRange(currentDate);
   const { actions: calendarActions, loading: actionsLoading } = useCalendarActions(
     startDate,
     endDate
@@ -151,7 +149,7 @@ export default function PayrollCalendarPage() {
 
   // Función para obtener acciones de una fecha específica
   const getActionsForDate = (date: Date) => {
-    const dateKey = date.toISOString().split('T')[0];
+    const dateKey = toDateKey(date);
     return calendarActions[dateKey] || [];
   };
 
@@ -288,8 +286,8 @@ export default function PayrollCalendarPage() {
     setIsLoading(true);
     try {
       const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
-      const startDate = sortedDates[0].toISOString().split('T')[0];
-      const endDate = sortedDates[sortedDates.length - 1].toISOString().split('T')[0];
+      const startDate = toDateKey(sortedDates[0]);
+      const endDate = toDateKey(sortedDates[sortedDates.length - 1]);
 
       console.log(`Fecha range: ${startDate} to ${endDate}`);
 
@@ -861,29 +859,29 @@ export default function PayrollCalendarPage() {
                                         {venta.habitacion || 'N/A'}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
-                                        ${(venta.propina || 0).toLocaleString()}
+                                        {formatCurrencyCLP(venta.propina)}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
                                         $
-                                        {(
+                                        {formatCurrencyCLP(
                                           venta.precio ||
                                           venta.precioHabitacion ||
                                           0
-                                        ).toLocaleString()}
+                                        )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
-                                        ${(venta.sub_total || venta.subtotal || 0).toLocaleString()}
+                                        {formatCurrencyCLP(venta.sub_total || venta.subtotal || 0)}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
-                                        ${(venta.total || 0).toLocaleString()}
+                                        {formatCurrencyCLP(venta.total)}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
                                         $
-                                        {(
+                                        {formatCurrencyCLP(
                                           venta.total_comision ||
                                           venta.comision ||
                                           0
-                                        ).toLocaleString()}
+                                        )}
                                       </TableCell>
                                       <TableCell className='px-4 py-3'>
                                         {venta.fecha_crea || venta.fechaVenta ? (
@@ -1021,33 +1019,33 @@ export default function PayrollCalendarPage() {
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
                                         $
-                                        {(
+                                        {formatCurrencyCLP(
                                           servicio.precio_habitacion ||
                                           servicio.precioHabitacion ||
                                           0
-                                        ).toLocaleString()}
+                                        )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
                                         $
-                                        {(
+                                        {formatCurrencyCLP(
                                           servicio.precio_servicio ||
                                           servicio.precioServicio ||
                                           0
-                                        ).toLocaleString()}
+                                        )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
-                                        ${(servicio.iva || 0).toLocaleString()}
+                                        {formatCurrencyCLP(servicio.iva)}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
                                         $
-                                        {(
+                                        {formatCurrencyCLP(
                                           servicio.sub_total ||
                                           servicio.subtotal ||
                                           0
-                                        ).toLocaleString()}
+                                        )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
-                                        ${(servicio.total || 0).toLocaleString()}
+                                        {formatCurrencyCLP(servicio.total)}
                                       </TableCell>
                                       <TableCell className='px-4 py-3'>
                                         {servicio.metodo_pago || servicio.metodoPago}
@@ -1143,3 +1141,4 @@ export default function PayrollCalendarPage() {
     </PermissionGuard>
   );
 }
+

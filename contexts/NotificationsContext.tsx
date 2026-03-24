@@ -1,11 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useNotifications } from '@/hooks/notificaciones/useNotifications';
 
 interface NotificationsContextType {
   isConnected: boolean;
-  lastNotification: any;
+  lastNotification: Record<string, unknown> | null;
   pendingOrdersCount: number;
   pendingServiceRequestsCount: number;
   reconnect: () => void;
@@ -16,17 +16,8 @@ const NotificationsContext = createContext<NotificationsContextType | undefined>
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const notifications = useNotifications();
 
-  // Memoizar el valor del contexto
-  const contextValue = useMemo(() => notifications, [
-    notifications.isConnected,
-    notifications.lastNotification,
-    notifications.pendingOrdersCount,
-    notifications.pendingServiceRequestsCount,
-    notifications.reconnect
-  ]);
-
   return (
-    <NotificationsContext.Provider value={contextValue}>
+    <NotificationsContext.Provider value={notifications}>
       {children}
     </NotificationsContext.Provider>
   );
@@ -39,3 +30,4 @@ export function useNotificationsContext() {
   }
   return context;
 }
+

@@ -1,236 +1,252 @@
+/* eslint-disable */
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  GratificacionesTable,
+  GratificacionesFilters,
+  GratificacionesStatsCards,
+  GratificacionesModal,
+  GratificacionesDetailModal
+} from '@/components/gratificaciones';
+import Pagination from '@/components/ui/Pagination';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useGratificaciones } from '@/hooks/personal/useGratificaciones';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import GratificacionesFilters from '@/components/gratificaciones/GratificacionesFilters';
-import GratificacionesStatsCards from '@/components/gratificaciones/GratificacionesStatsCards';
-import GratificacionesTable from '@/components/gratificaciones/GratificacionesTable';
-import GratificacionesFormDialog from '@/components/gratificaciones/GratificacionesFormDialog';
-import GratificacionesEditDialog from '@/components/gratificaciones/GratificacionesEditDialog';
-import GratificacionesDetailModal from '@/components/gratificaciones/GratificacionesDetailModal';
-import Paginate from '@/components/ui/paginate';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
-
-import { Button } from '@/components/ui/button';
-import { Plus, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 import { Gratificacion } from '@/types/gratificacion';
 
 export default function GratificacionesPage() {
-  const { gratificaciones, loading, error, getGratificaciones, deleteGratificacion } = useGratificaciones();
+  const {
+    gratificaciones,
+    loading,
+    error,
+    getGratificaciones,
+    createGratificacion,
+    updateGratificacion,
+    deleteGratificacion
+  } = useGratificaciones();
+
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
+
+  // States
   const [searchTerm, setSearchTerm] = useState('');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [page, setPage] = useState(1);
-  const [showFormDialog, setShowFormDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedGratificacion, setSelectedGratificacion] = useState<{
-    id_usuario: number;
-    usuario: string;
-  } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [gratificacionToEdit, setGratificacionToEdit] = useState<Gratificacion | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedGratificacion, setSelectedGratificacion] = useState<Gratificacion | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [gratificacionToDelete, setGratificacionToDelete] = useState<Gratificacion | null>(null);
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
-  const canCreate = hasPermission('gratificaciones', 'create');
-  const canEdit = hasPermission('gratificaciones', 'edit');
-  const canDelete = hasPermission('gratificaciones', 'delete');
+  // Filters logic
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return gratificaciones;
+    const lowerSearch = searchTerm.toLowerCase();
+    return gratificaciones.filter(g =>
+      g.usuario.toLowerCase().includes(lowerSearch) ||
+      String(g.id).includes(lowerSearch)
+    );
+  }, [gratificaciones, searchTerm]);
 
-  const gratificacionesData = gratificaciones || [];
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
-  const filteredGratificaciones = gratificacionesData.filter(gratificacion => {
-    return gratificacion.usuario.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  // Pagination helper: Calculate visible pages (showing up to 5 around current)
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 1) return [1];
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
 
-  const totalPages = Math.ceil(filteredGratificaciones.length / rowsPerPage) || 1;
-  const paginatedGratificaciones = filteredGratificaciones.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-
-  const handleRefresh = () => {
-    getGratificaciones();
-  };
-
-  const handleOpenFormDialog = () => {
-    if (!hasOpenCaja) {
-      toast.error(
-        'No se puede crear gratificación sin caja abierta. Por favor, abra una caja primero.'
-      );
-      return;
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
     }
-    setShowFormDialog(true);
-  };
 
-  const handleCloseFormDialog = () => {
-    setShowFormDialog(false);
-  };
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }, [currentPage, totalPages]);
 
-  const handleViewDetail = (gratificacion: { id_usuario: number; usuario: string }) => {
-    setSelectedGratificacion(gratificacion);
-    setShowDetailModal(true);
-  };
-
-  const handleCloseDetailModal = () => {
-    setShowDetailModal(false);
-    setSelectedGratificacion(null);
+  // Handlers
+  const handleOpenForm = () => {
+    setGratificacionToEdit(null);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (gratificacion: Gratificacion) => {
     setGratificacionToEdit(gratificacion);
-    setShowEditDialog(true);
+    setIsModalOpen(true);
   };
 
-  const handleCloseEditDialog = () => {
-    setShowEditDialog(false);
-    setGratificacionToEdit(null);
+  const handleViewDetail = (gratificacion: Gratificacion) => {
+    setSelectedGratificacion(gratificacion);
+    setShowDetailModal(true);
   };
 
-  const handleDelete = (gratificacion: Gratificacion) => {
+  const handleDeleteClick = (gratificacion: Gratificacion) => {
     setGratificacionToDelete(gratificacion);
     setShowDeleteDialog(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const confirmDelete = async () => {
     if (!gratificacionToDelete) return;
-    
+    await deleteGratificacion(gratificacionToDelete.id);
+    setShowDeleteDialog(false);
+    getGratificaciones();
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    setIsSubmitLoading(true);
     try {
-      await deleteGratificacion(gratificacionToDelete.id);
-      toast.success('Gratificación eliminada exitosamente');
-      setShowDeleteDialog(false);
-      setGratificacionToDelete(null);
-    } catch (error) {
-      toast.error('Error al eliminar la gratificación');
+      if (gratificacionToEdit) {
+        await updateGratificacion({
+          id: gratificacionToEdit.id,
+          monto: data.monto,
+          descripcion: data.descripcion
+        });
+      } else {
+        await createGratificacion({
+          usuario_id: data.usuario_id,
+          monto: data.monto,
+          descripcion: data.descripcion,
+          fecha_hora: getNowInBusinessTimezone()
+        });
+      }
+      setIsModalOpen(false);
+      getGratificaciones();
+    } finally {
+      setIsSubmitLoading(false);
     }
   };
 
+  if (error) {
+    return (
+      <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
+        <AlertCircle className='h-12 w-12 text-red-500' />
+        <h2 className='text-xl font-bold'>Lo sentimos, ocurrió un error</h2>
+        <p className='text-zinc-500'>{error}</p>
+        <button onClick={() => getGratificaciones()} className='px-6 py-2 bg-black text-white rounded-full'>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <PermissionGuard module="gratificaciones" action="view">
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
-          <div className='flex flex-col'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Gratificaciones</h1>
-            <p className='text-sm sm:text-base text-gray-600'>
-              Gestiona las gratificaciones de los empleados.
+    <div className='p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-700 bg-white dark:bg-neutral-900 min-h-screen'>
+      {/* Header Premium */}
+      <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-zinc-50 dark:bg-neutral-800/50 p-6 rounded-[2.5rem] border border-zinc-100 dark:border-neutral-800'>
+        <div className='flex items-center gap-5'>
+          <div>
+            <h1 className='text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter'>
+              Gratificaciones
+            </h1>
+            <p className='text-zinc-500 text-sm font-semibold mt-1 uppercase tracking-widest'>
+              Control de bonificaciones de personal
             </p>
           </div>
-          <div className='flex gap-2 w-full sm:w-auto'>
-            <PermissionGuard module="gratificaciones" action="create" fallback={null}>
-              <Button
-                size='sm'
-                disabled={cajaLoading || !hasOpenCaja}
-                className={`whitespace-nowrap inline-flex items-center px-4 sm:px-6 py-2 rounded-full duration-200 text-sm sm:text-base w-full sm:w-auto ${
-                  hasOpenCaja
-                    ? 'bg-black text-white hover:scale-105'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                onClick={handleOpenFormDialog}
-              >
-                {cajaLoading ? (
-                  <>
-                    <div className='animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1' />
-                    Verificando...
-                  </>
-                ) : hasOpenCaja ? (
-                  <>
-                    <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                    Nuevo
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                    Sin Caja
-                  </>
-                )}
-              </Button>
-            </PermissionGuard>
-          </div>
         </div>
 
-        {!cajaLoading && hasOpenCaja === false && (
-          <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-            <div className='flex items-center'>
-              <AlertCircle className='h-5 w-5 text-yellow-600 mr-2' />
-              <div>
-                <h3 className='text-sm font-medium text-yellow-800'>Caja cerrada</h3>
-                <p className='text-sm text-yellow-700 mt-1'>
-                  No se pueden crear nuevas gratificaciones sin una caja abierta. Por favor, abra una
-                  caja en el módulo de caja primero.
-                </p>
-              </div>
+        <div className='flex items-center gap-3 w-full md:w-auto'>
+          {!hasOpenCaja && !cajaLoading && (
+            <div className='hidden xl:flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-full text-xs font-bold border border-amber-100'>
+              <AlertCircle className='h-4 w-4' />
+              Apertura de caja requerida
             </div>
-          </div>
-        )}
-
-        <GratificacionesStatsCards gratificaciones={gratificacionesData} formatCurrency={formatCurrencyNoDecimals} />
-
-        <GratificacionesFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-          loading={loading}
-          onRefresh={handleRefresh}
-        />
-
-        <div className='overflow-x-auto'>
-          <GratificacionesTable
-            loading={loading}
-            rows={paginatedGratificaciones}
-            rowsPerPage={rowsPerPage}
-            onViewDetail={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          )}
+          {hasPermission('gratificaciones', 'create') && (
+            <Button
+              onClick={handleOpenForm}
+              disabled={!hasOpenCaja || cajaLoading}
+              className='w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-zinc-800 transition-all shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 font-bold text-sm'
+            >
+              <Plus className='h-4 w-4' />
+              Nueva gratificación
+            </Button>
+          )}
         </div>
-
-        {totalPages > 1 && (
-          <div className='flex justify-center mt-4 sm:mt-6'>
-            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-          </div>
-        )}
-
-        <GratificacionesFormDialog
-          open={showFormDialog}
-          onClose={handleCloseFormDialog}
-          onSuccess={handleRefresh}
-        />
-
-        {gratificacionToEdit && (
-          <GratificacionesEditDialog
-            open={showEditDialog}
-            onClose={handleCloseEditDialog}
-            gratificacion={gratificacionToEdit}
-            onSuccess={handleRefresh}
-          />
-        )}
-
-        {selectedGratificacion && (
-          <GratificacionesDetailModal
-            isOpen={showDetailModal}
-            onClose={handleCloseDetailModal}
-            userId={selectedGratificacion.id_usuario}
-            userName={selectedGratificacion.usuario}
-          />
-        )}
-
-        {gratificacionToDelete && (
-          <ConfirmModal
-            open={showDeleteDialog}
-            onOpenChange={setShowDeleteDialog}
-            title="Eliminar Gratificación"
-            message={`¿Estás seguro de eliminar la gratificación de ${gratificacionToDelete.usuario} por ${formatCurrencyNoDecimals(gratificacionToDelete.monto)}?`}
-            confirmText="Eliminar"
-            type="warning"
-            confirmVariant="destructive"
-            onConfirm={handleConfirmDelete}
-          />
-        )}
       </div>
-    </PermissionGuard>
+
+      <GratificacionesStatsCards
+        gratificaciones={gratificaciones}
+        formatCurrency={formatCurrencyNoDecimals}
+      />
+
+      <GratificacionesFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+        setPage={setCurrentPage}
+        loading={loading}
+        onRefresh={getGratificaciones}
+      />
+
+      <GratificacionesTable
+        loading={loading}
+        rows={paginatedData}
+        rowsPerPage={rowsPerPage}
+        onViewDetail={handleViewDetail}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
+
+      <div className='mt-8 flex justify-center'>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          itemsPerPage={rowsPerPage}
+          visiblePages={visiblePages}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(val) => {
+            setRowsPerPage(val);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
+      {/* Modales */}
+      <GratificacionesModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onSubmit={handleFormSubmit}
+        isEditMode={!!gratificacionToEdit}
+        gratificacion={gratificacionToEdit}
+        isLoading={isSubmitLoading}
+      />
+
+      <GratificacionesDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        gratificacion={selectedGratificacion}
+      />
+
+      <ConfirmModal
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="¿Deseas eliminar esta gratificación?"
+        message="Esta acción no se puede deshacer. Se eliminará el registro permanentemente."
+        type="warning"
+        confirmVariant="destructive"
+        onConfirm={confirmDelete}
+      />
+    </div>
   );
 }

@@ -10,7 +10,7 @@ interface CurrentUser {
   status: number;
   foto?: string;
   username?: string;
-  permissions?: any;
+  permissions?: Record<string, unknown>;
   phone?: string;
   address?: string;
   fecha_crea?: string;
@@ -40,3 +40,4 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
 };
 
 export default useCurrentUser;
+

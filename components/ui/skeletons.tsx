@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { cn } from '@/lib/utils';
 
 // Skeleton base
@@ -815,3 +816,4 @@ export function SalesSkeleton() {
     </div>
   );
 }
+

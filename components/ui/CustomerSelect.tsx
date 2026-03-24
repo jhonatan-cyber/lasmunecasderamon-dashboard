@@ -11,13 +11,14 @@ import { Input } from '@/components/ui/input';
 import React, { useState, useMemo } from 'react';
 
 interface Customer {
-  id_cliente?: number;
-  id?: number;
+  id_cliente?: string | number;
+  id?: string | number;
   nombre?: string;
   name?: string;
   apellido?: string;
   lastName?: string;
   run?: string;
+  saldo?: number;
 }
 
 interface CustomerSelectProps {
@@ -44,34 +45,6 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
   disabled = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Filtrar clientes basado en el término de búsqueda y excluir genéricos
-  const filteredClientes = useMemo(() => {
-    let filtered = clientes;
-
-    // Excluir clientes genéricos
-    filtered = filtered.filter(cliente => {
-      const nombre = cliente?.nombre || cliente?.name || '';
-      const apellido = cliente?.apellido || cliente?.lastName || '';
-      const fullName = `${nombre} ${apellido}`.toLowerCase();
-
-      return !fullName.includes('genérico') && !fullName.includes('generico');
-    });
-
-    // Filtrar por término de búsqueda
-    if (!searchTerm) return filtered;
-
-    return filtered.filter(cliente => {
-      const nombre = cliente?.nombre || cliente?.name || '';
-      const apellido = cliente?.apellido || cliente?.lastName || '';
-      const searchLower = searchTerm.toLowerCase();
-
-      return (
-        nombre.toLowerCase().includes(searchLower) || apellido.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [clientes, searchTerm]);
-
   const getCustomerId = (cliente: Customer) => {
     return cliente?.id_cliente || cliente?.id;
   };
@@ -80,9 +53,55 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
     const nombre = cliente?.nombre || cliente?.name || '';
     const apellido = cliente?.apellido || cliente?.lastName || '';
     const run = cliente?.run || '';
+    const saldo = cliente?.saldo ?? 0;
     const displayName = `${nombre} ${apellido}`.trim();
-    return run ? `${displayName} (${run})` : displayName;
+    const balanceText = saldo > 0 ? ` - Saldo: $${saldo.toLocaleString('es-CL')}` : '';
+    return run ? `${displayName} (${run})${balanceText}` : `${displayName}${balanceText}`;
   };
+
+  const filteredClientes = useMemo(() => {
+    let base = Array.isArray(clientes) ? clientes : [];
+
+    base = base.filter(cliente => {
+      const nombre = cliente?.nombre || cliente?.name || '';
+      const apellido = cliente?.apellido || cliente?.lastName || '';
+      const fullName = `${nombre} ${apellido}`.toLowerCase();
+      return !fullName.includes('genérico') && !fullName.includes('generico');
+    });
+
+    if (!searchTerm) return base;
+
+    const searchLower = searchTerm.toLowerCase();
+    return base.filter(cliente => {
+      const nombre = (cliente?.nombre || cliente?.name || '').toLowerCase();
+      const apellido = (cliente?.apellido || cliente?.lastName || '').toLowerCase();
+      const run = (cliente?.run || '').toLowerCase();
+
+      return (
+        nombre.includes(searchLower) ||
+        apellido.includes(searchLower) ||
+        run.includes(searchLower)
+      );
+    });
+  }, [clientes, searchTerm]);
+
+  const displayClientes = useMemo(() => {
+    if (!value || value === 'none') return filteredClientes;
+
+    const isSelectedInFiltered = filteredClientes.some(c => {
+      const id = getCustomerId(c);
+      return id && id.toString() === value;
+    });
+
+    if (isSelectedInFiltered) return filteredClientes;
+
+    const selectedClient = (Array.isArray(clientes) ? clientes : []).find(c => {
+      const id = getCustomerId(c);
+      return id && id.toString() === value;
+    });
+
+    return selectedClient ? [selectedClient, ...filteredClientes] : filteredClientes;
+  }, [filteredClientes, value, clientes]);
 
   return (
     <div className={`flex flex-col ${className}`}>
@@ -96,40 +115,54 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
         <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10'>
           <Users className='w-4 h-4' />
         </span>
-        <Select value={value || ''} onValueChange={onChange || (() => {})} disabled={disabled}>
+        <Select
+          value={value || ''}
+          onValueChange={(val) => {
+            onChange || (() => { });
+            onChange(val);
+            setSearchTerm('');
+          }}
+          disabled={disabled}
+        >
           <SelectTrigger className='w-full pl-10 rounded-full' disabled={disabled}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className='max-h-80'>
             {/* Barra de búsqueda */}
-            <div className='p-2 border-b'>
+            <div className='p-2 border-b sticky top-0 bg-white z-20'>
               <Input
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === ' ') {
+                    e.stopPropagation();
+                  }
+                }}
                 className='w-full'
                 disabled={disabled}
               />
             </div>
 
             {/* Lista de clientes */}
-            <div className='max-h-60 overflow-y-auto'>
+            <div className='overflow-y-auto'>
               {!searchTerm && (
                 <SelectItem value='none'>
                   <span className='text-gray-400 italic'>Sin cliente</span>
                 </SelectItem>
               )}
-              {filteredClientes.length === 0 ? (
-                <div className='p-2 text-center text-gray-500 text-sm'>
+              {displayClientes.length === 0 ? (
+                <div className='p-4 text-center text-gray-500 text-sm'>
                   {searchTerm ? 'No se encontraron clientes' : 'No hay clientes disponibles'}
                 </div>
               ) : (
-                filteredClientes.map(cliente => {
+                displayClientes.map(cliente => {
                   const id = getCustomerId(cliente);
                   const displayName = getCustomerDisplayName(cliente);
+                  const stringId = id ? id.toString() : 'none';
 
                   return (
-                    <SelectItem key={id} value={id ? id.toString() : 'none'} disabled={disabled}>
+                    <SelectItem key={`${stringId}`} value={stringId} disabled={disabled}>
                       {displayName || 'Sin nombre'}
                     </SelectItem>
                   );

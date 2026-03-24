@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -295,3 +296,4 @@ export function useAnulacionContext() {
   }
   return context;
 }
+

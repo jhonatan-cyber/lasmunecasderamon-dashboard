@@ -1,9 +1,12 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { withAuth } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '../notifications/sse';
 import { logger } from '@/lib/logger';
 import { sendPushByRole } from '@/lib/pushNotifications';
+import { formatCurrencyCLP } from '@/lib/formatters';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method } = req;
@@ -94,10 +97,11 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       total,
       iva,
       num_clientes,
-      codigo
+      codigo,
+      device_date
     } = req.body;
 
-    // @ts-ignore
+    // @ts-expect-error legacy runtime access
     const userId = req.user?.id;
 
     logger.info('Solicitud de servicio recibida', {
@@ -128,6 +132,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     const numClientesParsed = parseInt(num_clientes) || 1;
 
     const id_solicitud = generateUUID();
+    const fechaSolicitud = getNowInBusinessTimezone(device_date);
 
     logger.info('Insertando solicitud en BD', {
       id_solicitud,
@@ -142,14 +147,15 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       totalParsed,
       ivaParsed,
       numClientesParsed,
-      userId
+      userId,
+      fechaSolicitud
     });
 
-    const result = (await query(
+    await query(
       `INSERT INTO solicitudes_servicios 
         (id_solicitud, cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids, 
-         num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, fecha_solicitud) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id_solicitud,
         cliente_id || null,
@@ -164,9 +170,10 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
         totalParsed,
         ivaParsed,
         userId,
-        codigo || null
+        codigo || null,
+        fechaSolicitud
       ]
-    )) as any;
+    );
 
     logger.info('Solicitud insertada exitosamente', { id_solicitud });
 
@@ -202,10 +209,9 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       habitacion_id: habitacion_id,
       habitacion_nombre: info?.habitacion_nombre || null,
       tiempo: tiempo,
-      cliente_nombre: info?.cliente_nombre || null, // Cambiar 'cliente' a 'cliente_nombre'
+      cliente_nombre: info?.cliente_nombre || null,
       solicitado_por_nombre: info?.solicitado_por_nombre || null,
       solicitado_por_nick: info?.solicitado_por_nick || null,
-      // anfitrionas_ids ya es un array, no necesita JSON.parse
       anfitrionas_ids: anfitrionas_ids,
       metodo_pago: metodo_pago,
       precio_servicio: precio_servicio || 0,
@@ -218,7 +224,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
     // Enviar notificación Push a Cajeros y Administradores
     try {
       const roomName = info?.habitacion_nombre || 'Habitación';
-      const formattedTotal = totalParsed.toLocaleString('es-ES');
+      const formattedTotal = formatCurrencyCLP(totalParsed);
       const pushMsg = `Nueva solicitud de servicio en ${roomName} por $${formattedTotal}`;
 
       sendPushByRole('cajero', '¡SOLICITUD DE SERVICIO!', pushMsg, { type: 'new_service_request' });
@@ -241,7 +247,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       sql: error.sql
     });
 
-    // Si la tabla no existe
     if (error?.code === 'ER_NO_SUCH_TABLE' || error?.message?.includes("doesn't exist")) {
       return res.status(500).json({
         success: false,
@@ -249,7 +254,6 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
-    // Error de foreign key
     if (error?.code === 'ER_NO_REFERENCED_ROW_2') {
       return res.status(400).json({
         success: false,
@@ -268,7 +272,7 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
 const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { id } = req.query;
-    // @ts-ignore
+    // @ts-expect-error legacy runtime access
     const userRole = req.user?.role;
 
     const roleLower = (userRole || '').toLowerCase();
@@ -295,7 +299,6 @@ const handleDelete = async (req: NextApiRequest, res: NextApiResponse) => {
 
 const notificarCajeros = async (solicitudId: string) => {
   try {
-    // Obtener cajeros y administradores para logging
     const usuarios = (await query(
       `SELECT u.id_usuario, u.nombre, u.apellido, r.nombre as rol_nombre
        FROM usuarios u

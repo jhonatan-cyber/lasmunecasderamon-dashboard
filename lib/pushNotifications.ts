@@ -3,18 +3,25 @@ import { query } from './db';
 
 const expo = new Expo();
 
-/**
- * Envía una notificación push a uno o varios usuarios por sus IDs
- */
-export async function sendPushNotification(userIds: number | number[], title: string, body: string, data?: any) {
+type PushData = Record<string, unknown>;
+
+type PushUserRow = {
+    push_token: string | null;
+};
+
+export async function sendPushNotification(
+    userIds: string | string[],
+    title: string,
+    body: string,
+    data?: PushData
+) {
     const ids = Array.isArray(userIds) ? userIds : [userIds];
 
     try {
-        // Obtener los tokens de la base de datos
         const users = await query(
             `SELECT push_token FROM usuarios WHERE id_usuario IN (${ids.map(() => '?').join(',')}) AND push_token IS NOT NULL`,
             ids
-        ) as any[];
+        ) as PushUserRow[];
 
         if (!users || users.length === 0) return;
 
@@ -34,7 +41,6 @@ export async function sendPushNotification(userIds: number | number[], title: st
             });
         }
 
-        // Dividir en fragmentos (chunks) como recomienda Expo
         const chunks = expo.chunkPushNotifications(messages);
         const tickets = [];
 
@@ -43,11 +49,9 @@ export async function sendPushNotification(userIds: number | number[], title: st
                 const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
                 tickets.push(...ticketChunk);
 
-                // Manejar errores de tickets (tokens inválidos)
                 for (const [index, ticket] of ticketChunk.entries()) {
                     if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
                         const invalidToken = chunk[index].to;
-                        console.warn(`[PUSH] Token inválido detectado: ${invalidToken}. Eliminando...`);
                         await query('UPDATE usuarios SET push_token = NULL WHERE push_token = ?', [invalidToken]);
                     }
                 }
@@ -62,20 +66,24 @@ export async function sendPushNotification(userIds: number | number[], title: st
     }
 }
 
-/**
- * Envía una notificación push a todos los usuarios con un rol específico
- */
-export async function sendPushByRole(role: string, title: string, body: string, data?: any) {
+export async function sendPushByRole(
+    role: string,
+    title: string,
+    body: string,
+    data?: PushData
+) {
     try {
         const users = await query(
-            'SELECT push_token FROM usuarios WHERE JSON_EXTRACT(role, "$.name") = ? OR role = ? AND push_token IS NOT NULL',
-            [role, role]
-        ) as any[];
+            `SELECT u.push_token 
+             FROM usuarios u 
+             INNER JOIN roles r ON u.rol_id = r.id_rol 
+             WHERE LOWER(r.nombre) = LOWER(?) AND u.push_token IS NOT NULL`,
+            [role]
+        ) as PushUserRow[];
 
         if (!users || users.length === 0) return;
 
-        const tokens = users.map(u => u.push_token).filter(t => Expo.isExpoPushToken(t));
-        if (tokens.length === 0) return;
+        const tokens = users.map(u => u.push_token).filter((t): t is string => Boolean(t) && Expo.isExpoPushToken(t));
 
         const messages: ExpoPushMessage[] = tokens.map(token => ({
             to: token,
@@ -88,8 +96,7 @@ export async function sendPushByRole(role: string, title: string, body: string, 
         const chunks = expo.chunkPushNotifications(messages);
         for (const chunk of chunks) {
             try {
-                const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-                // Manejar errores de tokens inválidos
+                const ticketChunk = await expo.sendPushNotificationsAsync(chunk)
                 for (const [index, ticket] of ticketChunk.entries()) {
                     if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
                         const invalidToken = chunk[index].to;
@@ -104,3 +111,4 @@ export async function sendPushByRole(role: string, title: string, body: string, 
         console.error('Error en sendPushByRole:', error);
     }
 }
+

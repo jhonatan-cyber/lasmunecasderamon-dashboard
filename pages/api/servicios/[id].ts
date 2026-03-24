@@ -4,8 +4,8 @@ import { withTransaction } from '@/lib/transactionUtils';
 import { sendNotificationToAll } from '../notifications/sse';
 import { addServicioLog, initLogsTable } from '@/lib/logUtils';
 import { getCurrentUser } from '@/lib/middleware/auth';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
-// Initialize logs table on module load
 let tableInitialized = false;
 const ensureTableExists = async () => {
   if (!tableInitialized) {
@@ -202,9 +202,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      // -----------------------------------------------------------------
-      // SSE: Broadcast update
-      // -----------------------------------------------------------------
       try {
         const [updatedService] = (await query(`
           SELECT 
@@ -280,7 +277,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (servicio && servicio.habitacion_id) {
             const habitacionId = servicio.habitacion_id;
 
-            // Buscar timers pausados
             const [vPausada] = await query('SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId]) as any[];
             const [sPausado] = await query('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 AND id_servicio != ? ORDER BY paused_at DESC LIMIT 1', [habitacionId, servicioId]) as any[];
 
@@ -312,7 +308,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           await addServicioLog(servicioId, 'ANULADO', 'Servicio anulado.', currentUser?.id);
         } else if (estado === 3 && estadoAnterior !== 3) {
           await addServicioLog(servicioId, 'PAUSA', 'Servicio pausado manualmente.', currentUser?.id);
-          await query('UPDATE servicios SET paused_at = NOW() WHERE id_servicio = ?', [servicioId]);
+          const nowB = getNowInBusinessTimezone();
+          await query('UPDATE servicios SET estado = 3, paused_at = ? WHERE id_servicio = ?', [nowB, servicioId]);
         } else if (estado === 4 && estadoAnterior !== 4) {
           await addServicioLog(servicioId, 'SOLICITUD_ANULACION', 'Solicitud de anulación creada.', currentUser?.id);
         } else if (estadoAnterior === 3 && estado === 2) {
@@ -328,11 +325,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (estado === 1 || estado === 0) {
           const anfitrionas = await query('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [servicioId]) as any[];
           for (const a of anfitrionas || []) {
-            const [other] = await query('SELECT COUNT(*) as count FROM detalle_servicios ds JOIN servicios s ON ds.servicio_id = s.id_servicio WHERE s.estado IN (2, 4) AND s.id_servicio != ? AND ds.usuario_id = ?', [servicioId, a.usuario_id]) as any[];
+            const [other] = await query('SELECT COUNT(*) as count FROM detalle_servicios ds JOIN servicios s ON ds.servicio_id = s.id_servicio WHERE s.estado IN (2, 3, 4) AND s.id_servicio != ? AND ds.usuario_id = ?', [servicioId, a.usuario_id]) as any[];
             const [inV] = await query('SELECT COUNT(*) as count FROM ventas_usuarios vu JOIN ventas v ON vu.venta_id = v.id_venta WHERE v.estado = 2 AND vu.usuario_id = ?', [a.usuario_id]) as any[];
             if ((other?.count || 0) === 0 && (inV?.count || 0) === 0) {
-              await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [a.usuario_id]);
-              sendNotificationToAll('user_status_updated', { userId: a.usuario_id, status: 1 });
+              await query('UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario = ?', [a.usuario_id]);
+              sendNotificationToAll('user_status_updated', { userId: a.usuario_id, status: 0 });
             }
           }
         }
@@ -355,7 +352,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ success: false, message: 'Servicio no encontrado' });
         }
 
-        // REGLA: No se puede editar si el precio de servicio ya es mayor a 0
         if (Number(curr.precio_servicio) > 0) {
           return res.status(403).json({
             success: false,
@@ -366,7 +362,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const newPrice = Number(precio_servicio);
         const newHabPrice = Number(precio_habitacion);
 
-        // REGLA: Obtener reglas de comisión de la habitación
         const hInfo = (await query(
           'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
           [curr.habitacion_id]
@@ -377,7 +372,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let newIva = tieneComRoom ? 0 : Number(iva || 0);
         let newTotal = Number(total);
 
-        // Redondeo si es tarjeta y NO tiene comisión
         if (metodo_pago === 'tarjeta' && !tieneComRoom) {
           const subTotalNum = Number(sub_total || 0);
           if (!newIva && subTotalNum) newIva = Math.floor(subTotalNum * 0.2);
@@ -499,7 +493,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ success: false, message: 'Servicio no encontrado' });
         }
 
-        // REGLA: No se puede editar si el precio de servicio ya es mayor a 0
         if (Number(curr.precio_servicio) > 0) {
           return res.status(403).json({
             success: false,
@@ -511,33 +504,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           precio_servicio !== undefined ? Number(precio_servicio) : Number(curr.precio_servicio);
         const newTime = tiempo !== undefined ? Number(tiempo) : Number(curr.tiempo);
 
-        // Recalcular sub_total (es el precio de servicio) y total
         const sub_total = newPrice;
-        // El total en el front se calcula como: nuevoSubTotal + precioHabitacionTotal + formData.iva
-        // Recuperamos el precio_habitacion (que ya es el total por chicas en la tabla servicios)
         const total = sub_total + Number(curr.precio_habitacion) + Number(curr.iva);
 
-        // Diferencias para actualizar caja
         const priceDiff = newPrice - Number(curr.precio_servicio);
         const totalDiff = total - Number(curr.total);
 
         await withTransaction(async connection => {
-          // 1. Actualizar servicio
           await connection(
             'UPDATE servicios SET precio_servicio = ?, sub_total = ?, total = ?, tiempo = ? WHERE id_servicio = ?',
             [newPrice, sub_total, total, newTime, servicioId]
           );
-
-          // 2. Si el precio cambió, actualizar comisiones
           if (priceDiff !== 0) {
-            // Obtener anfitrionas del servicio
             const anfitrionas = (await connection(
               'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
               [servicioId]
             )) as any[];
 
             if (anfitrionas.length > 0) {
-              // Obtener comision de habitacion
               const [habitacion] = (await connection(
                 'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
                 [curr.habitacion_id]
@@ -548,7 +532,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               const comisionTotalIndiv =
                 comisionServicioBase + Math.floor(comisionHab / anfitrionas.length);
 
-              // Actualizar tabla comisiones y detalle_comisiones
               for (let i = 0; i < anfitrionas.length; i++) {
                 const userId = anfitrionas[i].usuario_id;
                 const [detalleExistente] = (await connection(
@@ -569,9 +552,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
               }
 
-              // 3. Actualizar caja si hay diferencia
               if (curr.caja_id) {
-                const comisionTotalDiff = priceDiff; // La parte de habitacion no cambia, solo la de servicio
+                const comisionTotalDiff = priceDiff;
 
                 const [serv] = (await connection(
                   'SELECT metodo_pago FROM servicios WHERE id_servicio = ?',
@@ -615,10 +597,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'DELETE') {
     try {
-      // Eliminar detalles primero
       await query('DELETE FROM detalle_servicios WHERE servicio_id = ?', [servicioId]);
 
-      // Eliminar servicio
       await query('DELETE FROM servicios WHERE id_servicio = ?', [servicioId]);
 
       return res.status(200).json({
@@ -638,3 +618,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+

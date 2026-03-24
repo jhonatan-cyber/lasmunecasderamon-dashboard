@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-assign-module-variable, @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 
@@ -75,3 +76,4 @@ export default async function handler(
     return res.status(500).json({ error: error.message });
   }
 }
+

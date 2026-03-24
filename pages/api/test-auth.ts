@@ -7,7 +7,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // Si llegó aquí, el middleware withAuth ya verificó el token
-  // @ts-ignore
+  // @ts-expect-error legacy runtime access
   const user = req.user;
 
   return res.status(200).json({
@@ -22,3 +22,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+
+

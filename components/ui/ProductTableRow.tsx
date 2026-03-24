@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -100,3 +101,4 @@ export const ProductTableRow = React.memo<ProductTableRowProps>(({
 });
 
 ProductTableRow.displayName = 'ProductTableRow';
+

@@ -2,13 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { FileText as FilePdf, FileSpreadsheet as FileXls } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { User } from "@/types/user";
 import { toast } from "sonner";
+import { buildExportFilename, formatDateLabel } from "@/lib/calendarUtils";
 
 interface ExportButtonsProps {
   users: User[];
-  tableRef?: React.RefObject<HTMLTableElement>;
 }
 
 export function ExportButtons({ users }: ExportButtonsProps) {
@@ -35,10 +35,10 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         AFP: user.afp || "Sin especificar",
         Sueldo: user.salary ? `${new Intl.NumberFormat('es-CL').format(user.salary)}` : "Sin sueldo",
         "Fecha Creación": user.created_at
-          ? new Date(user.created_at).toLocaleDateString()
+          ? formatDateLabel(user.created_at)
           : "Sin fecha",
         "Última Modificación": user.updated_at
-          ? new Date(user.updated_at).toLocaleDateString()
+          ? formatDateLabel(user.updated_at)
           : "Sin modificar",
       }));
 
@@ -85,7 +85,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `usuarios_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = buildExportFilename('usuarios', 'xlsx');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -165,13 +165,13 @@ export function ExportButtons({ users }: ExportButtonsProps) {
           doc.internal.pageSize.height - 10
         );
         doc.text(
-          `Generado el: ${new Date().toLocaleDateString()}`,
+          `Generado el: ${formatDateLabel(new Date())}`,
           14,
           doc.internal.pageSize.height - 10
         );
       }
 
-      doc.save(`usuarios_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(buildExportFilename('usuarios', 'pdf'));
       toast.success("PDF exportado correctamente");
     } catch (error) {
       console.error("Error exportando PDF:", error);
@@ -180,8 +180,6 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       setIsExporting(false);
     }
   };
-
-  const printRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex gap-2">
@@ -208,10 +206,10 @@ export function ExportButtons({ users }: ExportButtonsProps) {
 
       {/* Tabla oculta para la impresión */}
       <div style={{ display: "none" }}>
-        <div ref={printRef} className="p-6">
+        <div className="p-6">
           <h1 className="text-3xl font-bold mb-6">Listado de Usuarios</h1>
           <p className="text-base text-gray-600 mb-6">
-            Generado el {new Date().toLocaleDateString()}
+            Generado el {formatDateLabel(new Date())}
           </p>
           <table className="w-full text-base border-collapse">
             <thead>

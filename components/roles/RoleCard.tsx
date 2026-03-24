@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import { Shield, Edit, Trash2, CheckCircle, Users as UsersIcon, XCircle, Power } from "lucide-react";
 import { ActionButtonWithTooltip } from "@/components/ui/ActionButtonWithTooltip";

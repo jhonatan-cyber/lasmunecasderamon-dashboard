@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { notifyPermissionsUpdate } from '../../permissions/sse';

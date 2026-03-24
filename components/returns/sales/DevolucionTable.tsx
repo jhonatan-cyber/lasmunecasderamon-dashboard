@@ -13,6 +13,7 @@ import { Eye } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrency, metodoPagoLabels } from '@/lib/salesUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatLongDateEs } from '@/lib/calendarUtils';
 
 interface DevolucionTableProps {
   ventas: VentaWithDetails[];
@@ -21,15 +22,6 @@ interface DevolucionTableProps {
 }
 
 export const DevolucionTable = ({ ventas, loading, onVerDetalles }: DevolucionTableProps) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
   if (loading) {
     return (
       <div className='space-y-4'>
@@ -74,7 +66,7 @@ export const DevolucionTable = ({ ventas, loading, onVerDetalles }: DevolucionTa
                 {metodoPagoLabels[venta.metodo_pago] || venta.metodo_pago}
               </Badge>
             </TableCell>
-            <TableCell className='text-xs sm:text-sm'>{formatDate(venta.fecha_crea)}</TableCell>
+            <TableCell className='text-xs sm:text-sm'>{formatLongDateEs(venta.fecha_crea)}</TableCell>
             <TableCell>
               <div className='flex items-center gap-2'>
                 <TooltipProvider>

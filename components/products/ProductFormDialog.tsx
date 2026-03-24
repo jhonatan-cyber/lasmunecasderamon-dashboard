@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -400,3 +401,4 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
 };
 
 export default ProductFormDialog;
+

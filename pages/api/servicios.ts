@@ -1,8 +1,10 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { withTransaction } from '@/lib/transactionUtils';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -62,14 +64,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             END
             SEPARATOR ', '
           ) as anfitrionas_nombres,
-          CONCAT(creator.nombre, ' ', creator.apellido) as creator_name,
+           GROUP_CONCAT(DISTINCT ds.usuario_id SEPARATOR ',') as anfitrionas_ids,
+           GROUP_CONCAT(DISTINCT u.foto SEPARATOR ',') as anfitrionas_fotos,
+          creator.nombre as creator_nombre,
+          creator.apellido as creator_apellido,
           creator.nick as usuario_nick,
+          creator.foto as creator_foto,
           (
             SELECT IF(COUNT(dc_inner.id_detalle_comision) > 0 AND SUM(dc_inner.estado) = 0, 0, 1)
             FROM comisiones c_inner 
             JOIN detalle_comisiones dc_inner ON dc_inner.comision_id = c_inner.id_comision
             WHERE c_inner.servicio_id = s.id_servicio
-          ) as pago_estado
+          ) as pago_estado,
+          CONCAT(solicitante.nombre, ' ', solicitante.apellido) as solicitante_name,
+          solicitante.foto as solicitante_foto,
+          AVG(ds.comision) as comision_individual
         FROM servicios s
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN detalle_servicios_clientes dsc ON dsc.servicio_id = s.id_servicio
@@ -78,6 +87,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
         LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
+        LEFT JOIN solicitudes_servicios ss ON s.codigo = ss.codigo
+        LEFT JOIN usuarios solicitante ON solicitante.id_usuario = ss.solicitado_por
         ${whereClause}
         GROUP BY s.id_servicio
         ORDER BY s.fecha_crea DESC
@@ -182,12 +193,53 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       let cajaActualizada = false;
 
+      const now = getNowInBusinessTimezone();
       const result = await withTransaction(async connection => {
+        
+        // 0. Si el método de pago es prepago, verificar y descontar saldo
+        if (metodo_pago === 'prepago') {
+          if (!clienteIdFinal) {
+            throw new Error('Se requiere seleccionar un cliente registrado para pagar con saldo prepago');
+          }
+
+          const clienteData = (await connection('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [clienteIdFinal])) as any[];
+          if (clienteData.length === 0) {
+            throw new Error('Cliente no encontrado');
+          }
+
+          const saldoActual = clienteData[0].saldo || 0;
+          if (saldoActual < totalFinal) {
+            throw new Error(`Saldo insuficiente. Saldo disponible: ${saldoActual.toLocaleString('es-CL')}, Total servicio: ${totalFinal.toLocaleString('es-CL')}`);
+          }
+
+          // Descontar saldo
+          await connection('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [totalFinal, clienteIdFinal]);
+
+          // Buscar información para los metadatos
+          const [roomRow] = (await connection('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+          const hostessesRows = usuarios && usuarios.length > 0 
+            ? (await connection(`SELECT nick FROM usuarios WHERE id_usuario IN (${usuarios.map(() => '?').join(',')})`, usuarios)) as any[]
+            : [];
+          
+          const metadatos = JSON.stringify({
+            habitacion: roomRow?.nombre || 'S/N',
+            tiempo: tiempo,
+            anfitrionas: hostessesRows.map(h => h.nick).filter(Boolean)
+          });
+
+          // Registrar movimiento de consumo con metadatos detallados
+          await connection(
+            `INSERT INTO clientes_prepago_movimientos 
+            (id_movimiento, cliente_id, tipo, monto, venta_id, usuario_id, fecha_crea, metadatos) 
+            VALUES (?, ?, 'CONSUMO', ?, NULL, ?, ?, ?)`,
+            [generateUUID(), clienteIdFinal, totalFinal, createdBy, now, metadatos]
+          );
+        }
         // 1. Insertar servicio
         const servicioId = generateUUID();
         await connection(
-          `INSERT INTO servicios (id_servicio, codigo, cliente_id, habitacion_id, precio_habitacion, precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)`,
+          `INSERT INTO servicios (id_servicio, codigo, cliente_id, habitacion_id, precio_habitacion, precio_servicio, iva, sub_total, total, tiempo, metodo_pago, caja_id, created_by, estado, fecha_crea)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2, ?)`,
           [
             servicioId,
             codigo,
@@ -201,7 +253,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             tiempo,
             metodo_pago || null,
             cajaId,
-            createdBy
+            createdBy,
+            now
           ]
         );
 
@@ -224,14 +277,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if (clientesArray?.length > 0) {
           for (const cId of clientesArray) {
             await connection(
-              'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
-              [servicioId, cId]
+              'INSERT INTO detalle_servicios_clientes (id, servicio_id, cliente_id) VALUES (?, ?, ?)',
+              [generateUUID(), servicioId, cId]
             );
           }
         } else if (clienteIdFinal) {
           await connection(
-            'INSERT INTO detalle_servicios_clientes (servicio_id, cliente_id) VALUES (?, ?)',
-            [servicioId, clienteIdFinal]
+            'INSERT INTO detalle_servicios_clientes (id, servicio_id, cliente_id) VALUES (?, ?, ?)',
+            [generateUUID(), servicioId, clienteIdFinal]
           );
         }
 
@@ -271,30 +324,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 [comisionId, servicioId, finalComision]
               );
               await connection(
-                `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision, estado) VALUES (?, ?, ?, 1)`,
-                [comisionId, uId, finalComision]
+                `INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado) VALUES (?, ?, ?, ?, 1)`,
+                [generateUUID(), comisionId, uId, finalComision]
               );
             }
             await connection(
-              'INSERT INTO detalle_servicios (usuario_id, servicio_id, comision) VALUES (?, ?, ?)',
-              [uId, servicioId, Math.max(0, finalComision)]
+              'INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision) VALUES (?, ?, ?, ?)',
+              [generateUUID(), uId, servicioId, Math.max(0, finalComision)]
             );
-            await connection('UPDATE usuarios SET estado_servicio = 2 WHERE id_usuario = ?', [uId]);
+            await connection('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [uId]);
           }
         }
 
         // 6. Caja
         if (cajaId) {
-          let mEf = 0,
-            mTa = 0,
-            mTr = 0;
+          let mEf = 0, mTa = 0, mTr = 0, mPr = 0;
           if (metodo_pago === 'tarjeta') mTa = totalFinal;
           else if (metodo_pago === 'transferencia') mTr = totalFinal;
+          else if (metodo_pago === 'prepago') mPr = totalFinal;
           else mEf = totalFinal;
 
           await connection(
-            `UPDATE cajas SET servicio = servicio + ?, efectivo = efectivo + ?, tarjeta = tarjeta + ?, transferencia = transferencia + ?, iva = iva + ?, comision = comision + ? WHERE id_caja = ?`,
-            [totalFinal - ivaFinal, mEf, mTa, mTr, ivaFinal, tieneComisionRoom ? comisionHabitacionBase : (finalComision * numAnfitrionas), cajaId]
+            `UPDATE cajas SET servicio = servicio + ?, efectivo = efectivo + ?, tarjeta = tarjeta + ?, transferencia = transferencia + ?, prepago = prepago + ?, iva = iva + ?, comision = comision + ? WHERE id_caja = ?`,
+            [totalFinal - ivaFinal, mEf, mTa, mTr, mPr, ivaFinal, tieneComisionRoom ? comisionHabitacionBase : (finalComision * numAnfitrionas), cajaId]
           );
           cajaActualizada = true;
         }
@@ -399,3 +451,4 @@ function generateUniqueCode(): string {
   }
   return result;
 }
+

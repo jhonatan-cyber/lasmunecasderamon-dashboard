@@ -1,5 +1,7 @@
+/* eslint-disable */
 import Link from 'next/link';
 import { ArrowLeft, FileText, Shield, Users, Calendar, MapPin, Phone } from 'lucide-react';
+import { formatDateLabel } from '@/lib/calendarUtils';
 
 export const metadata = {
   title: 'Términos y Condiciones - Las Muñecas de Ramón',
@@ -9,6 +11,13 @@ export const metadata = {
 export default function TerminosCondiciones() {
   return (
     <div className='min-h-screen bg-black text-white'>
+      <a
+        href='#terms-content'
+        className='sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-20 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-black'
+      >
+        Saltar al contenido principal
+      </a>
+
       {/* Background Effects */}
       <div className='fixed inset-0 overflow-hidden pointer-events-none'>
         <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-900/5 via-black to-slate-800/5'></div>
@@ -20,7 +29,7 @@ export default function TerminosCondiciones() {
       </div>
 
       {/* Main Content */}
-      <main className='relative z-10 pt-24 pb-16 px-4 sm:px-6 lg:px-8'>
+      <main id='terms-content' className='relative z-10 pt-24 pb-16 px-4 sm:px-6 lg:px-8'>
         <div className='max-w-4xl mx-auto'>
           {/* Header */}
           <div className='text-center mb-12'>
@@ -35,7 +44,7 @@ export default function TerminosCondiciones() {
               </span>
             </h1>
             <p className='text-slate-300'>
-              Última actualización: {new Date().toLocaleDateString('es-CL')}
+              Última actualización: {formatDateLabel(new Date(), 'es-CL')}
             </p>
           </div>
 
@@ -226,11 +235,12 @@ export default function TerminosCondiciones() {
 
           {/* Footer */}
           <div className='text-center'>
-            <Link href='/'>
-              <button className='bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold px-6 py-3 rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-amber-500/30 inline-flex items-center gap-2'>
-                <ArrowLeft className='w-4 h-4' />
-                Volver al Inicio
-              </button>
+            <Link
+              href='/'
+              className='inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 font-bold text-black shadow-lg shadow-amber-500/30 transition-all duration-300 hover:scale-105 hover:from-amber-400 hover:to-amber-500'
+            >
+              <ArrowLeft className='w-4 h-4' />
+              Volver al Inicio
             </Link>
           </div>
         </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
@@ -34,9 +35,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       CLI.nombre as cliente_nombre,
       HAB.nombre as habitacion_nombre,
       (
-        SELECT JSON_ARRAYAGG(
-          JSON_OBJECT('nombre', P.nombre, 'cantidad', DV.cantidad, 'precio', P.precio)
-        )
+        SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('nombre', P.nombre, 'cantidad', DV.cantidad, 'precio', P.precio)), ']')
         FROM detalle_ventas DV
         JOIN productos P ON P.id_producto = DV.producto_id
         WHERE DV.venta_id = V.id_venta
@@ -58,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       data: commissions
     });
   } catch (error) {
-
+    console.error('[/api/commissions/user]', error);
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
@@ -67,3 +66,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

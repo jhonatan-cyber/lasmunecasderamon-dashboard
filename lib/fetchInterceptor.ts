@@ -5,11 +5,32 @@ export function setupFetchInterceptor() {
   const originalFetch = window.fetch;
 
   window.fetch = async (...args) => {
+    let [input, init] = args;
+
+    // Inyectar automáticamente la fecha del dispositivo en peticiones que envían datos
+    if (init && ['POST', 'PUT', 'PATCH'].includes(init.method?.toUpperCase() || '') && typeof init.body === 'string') {
+      try {
+        const bodyObj = JSON.parse(init.body);
+        if (typeof bodyObj === 'object' && bodyObj !== null && !bodyObj.device_date) {
+          bodyObj.device_date = new Date().toISOString();
+          init.body = JSON.stringify(bodyObj);
+        }
+      } catch (e) {
+        // Ignorar si no es JSON
+      }
+    }
+
     try {
-      const response = await originalFetch(...args);
+      const response = await originalFetch(input, init);
 
       if (response.status === 401 && !isRedirecting) {
-        const url = args[0] as string;
+        const requestInput = args[0];
+        const url =
+          typeof requestInput === 'string'
+            ? requestInput
+            : requestInput instanceof Request
+              ? requestInput.url
+              : '';
 
         const currentPath = window.location.pathname;
         const isPublicRoute =
@@ -42,7 +63,7 @@ export function setupFetchInterceptor() {
                 window.location.href = loginUrl;
               }, 500);
             }
-          } catch (e) {
+          } catch {
             setTimeout(() => {
               const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
               window.location.href = loginUrl;

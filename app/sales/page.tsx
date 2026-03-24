@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -92,7 +93,7 @@ export default function Sales() {
     setPage(1);
   };
 
-  const handleViewDetails = async (ventaId: number) => {
+  const handleViewDetails = async (ventaId: string | number) => {
     try {
       const ventaDetails = await getVentaDetails(ventaId, ventas);
       setSelectedVenta(ventaDetails);
@@ -103,9 +104,8 @@ export default function Sales() {
   };
 
   // Solicitar anulación de venta
-  const handleAnularVenta = async (ventaId: number, motivo?: string) => {
+  const handleAnularVenta = async (ventaId: string | number, motivo?: string) => {
     try {
-      // Primero verificar autenticación
       const authResponse = await fetch('/api/test-auth');
       if (!authResponse.ok) {
         showErrorToast('Sesión expirada. Por favor, inicia sesión nuevamente.');

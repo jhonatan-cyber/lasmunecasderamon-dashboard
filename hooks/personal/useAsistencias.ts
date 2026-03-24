@@ -5,6 +5,7 @@ import { useMemo, useCallback, useState } from 'react'
 import { AsistenciaResumen } from '@/types/asistencia'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import { useGenericFetch } from '../shared/useGenericFetch'
+import { getCurrentTimeKey, getTodayDateKey } from '@/lib/calendarUtils'
 
 interface UseAsistenciasReturn {
   data: AsistenciaResumen[]
@@ -39,10 +40,10 @@ export default function useAsistencias(): UseAsistenciasReturn {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          usuario_id: usuarioId,
-          fecha: new Date().toISOString().split('T')[0],
-          hora: new Date().toTimeString().slice(0, 8),
+          body: JSON.stringify({
+            usuario_id: usuarioId,
+          fecha: getTodayDateKey(),
+          hora: getCurrentTimeKey(),
           estado: 'presente'
         })
       })

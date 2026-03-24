@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import jwt from 'jsonwebtoken';
-import { logger, auditLogger } from '../logger';
+import { auditLogger } from '../logger';
 
 export interface UserPermissions {
   users: {
@@ -48,6 +48,7 @@ export interface UserPermissions {
 export interface AuthenticatedUser {
   id: string;
   username: string;
+  nick?: string;
   email: string;
   role: string;
   permissions: UserPermissions;
@@ -55,6 +56,9 @@ export interface AuthenticatedUser {
   exp: number;
 }
 
+type AuthenticatedNextApiRequest = NextApiRequest & {
+  user?: AuthenticatedUser;
+};
 
 const rolePermissions: Record<string, UserPermissions> = {
   administrador: {
@@ -105,7 +109,7 @@ async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions
 
     const userResult = await query(`
       SELECT rol_id FROM usuarios WHERE id_usuario = ?
-    `, [userId]) as any[];
+    `, [userId]) as Array<{ rol_id: string | number | null }>;
 
     if (!userResult || userResult.length === 0 || !userResult[0].rol_id) {
       return rolePermissions.garzon;
@@ -120,7 +124,7 @@ async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions
       FROM permissions p
       INNER JOIN role_permissions rp ON p.id = rp.permission_id
       WHERE rp.role_id = ? AND p.deleted_at IS NULL
-    `, [roleId]) as any[];
+    `, [roleId]) as Array<{ module: keyof UserPermissions; action: string }>;
 
 
     const userPerms: UserPermissions = {
@@ -169,7 +173,7 @@ async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions
     });
 
     return userPerms;
-  } catch (error) {
+  } catch {
     return rolePermissions.garzon; // Fallback a permisos por defecto
   }
 }
@@ -182,8 +186,8 @@ function getUserPermissions(role: string): UserPermissions {
 // Middleware de autenticación mejorado
 export function withAuth(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
+    const authedReq = req as AuthenticatedNextApiRequest;
     let token = null;
-    const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
 
     // logs removidos
 
@@ -215,13 +219,9 @@ export function withAuth(handler: NextApiHandler) {
       // Agregar permisos al usuario desde la base de datos
       decoded.permissions = await getUserPermissionsFromDB(decoded.id);
 
-      // @ts-ignore
-      req.user = decoded;
-
-
-
-      return handler(req, res);
-    } catch (err) {
+      authedReq.user = decoded;
+      return handler(authedReq, res);
+    } catch {
       return res.status(401).json({
         success: false,
         message: 'Token inválido o expirado',
@@ -235,8 +235,7 @@ export function withAuth(handler: NextApiHandler) {
 export function withPermission(permission: keyof UserPermissions, action: string) {
   return function (handler: NextApiHandler) {
     return withAuth(async (req: NextApiRequest, res: NextApiResponse) => {
-      // @ts-ignore
-      const user = req.user as AuthenticatedUser;
+      const user = (req as AuthenticatedNextApiRequest).user as AuthenticatedUser;
 
       if (!user) {
         return res.status(401).json({
@@ -264,8 +263,7 @@ export function withPermission(permission: keyof UserPermissions, action: string
 export function withRole(allowedRoles: string[]) {
   return function (handler: NextApiHandler) {
     return withAuth(async (req: NextApiRequest, res: NextApiResponse) => {
-      // @ts-ignore
-      const user = req.user as AuthenticatedUser;
+      const user = (req as AuthenticatedNextApiRequest).user as AuthenticatedUser;
 
       if (!user) {
         return res.status(401).json({
@@ -307,11 +305,10 @@ export function checkPermission(
 
 // Función para obtener información del usuario actual
 export function getCurrentUser(req: NextApiRequest): AuthenticatedUser | null {
-  // @ts-ignore
-  return req.user || null;
+  return (req as AuthenticatedNextApiRequest).user || null;
 }
 
-export default {
+const authMiddleware = {
   withAuth,
   withPermission,
   withRole,
@@ -319,3 +316,6 @@ export default {
   getCurrentUser,
   getUserPermissions
 };
+
+export default authMiddleware;
+

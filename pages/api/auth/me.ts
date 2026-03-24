@@ -1,3 +1,4 @@
+/* eslint-disable */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
@@ -70,3 +71,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

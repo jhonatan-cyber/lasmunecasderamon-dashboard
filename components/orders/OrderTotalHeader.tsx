@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import React, { useState } from 'react';

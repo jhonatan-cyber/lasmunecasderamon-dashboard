@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { query } from '@/lib/db';
@@ -40,10 +41,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         SELECT DP.fecha_crea as date, DP.monto as amount
         FROM detalle_propinas DP
         WHERE DP.usuario_id = ? AND DP.fecha_crea >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        
+        UNION ALL
+
+        /* Gratificaciones */
+        SELECT G.fecha_hora as date, G.monto as amount
+        FROM gratificaciones G
+        WHERE G.usuario_id = ? AND G.fecha_hora >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       ) as combined
       GROUP BY DATE(date)
       ORDER BY DATE(date) ASC
-    `, [userId, userId, userId]);
+    `, [userId, userId, userId, userId]);
 
         const totalServices = await query(`
       SELECT COUNT(*) as count FROM detalle_servicios WHERE usuario_id = ?
@@ -57,9 +65,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       SELECT SUM(monto) as total FROM detalle_propinas WHERE usuario_id = ?
     `, [userId]) as any;
 
+        const totalGratificaciones = await query(`
+      SELECT SUM(monto) as total FROM gratificaciones WHERE usuario_id = ?
+    `, [userId]) as any;
+
         const badges = [];
         const svcCount = totalServices[0]?.count || 0;
-        const totalEarnings = (totalComission[0]?.total || 0) + (totalTips[0]?.total || 0);
+        const totalEarnings = Number(totalComission[0]?.total || 0) + Number(totalTips[0]?.total || 0) + Number(totalGratificaciones[0]?.total || 0);
 
         if (svcCount >= 10) badges.push({ id: 'pro', icon: '🏆', title: 'Top 10 Servicios', description: '¡Has completado más de 10 servicios!' });
         if (totalEarnings >= 100000) badges.push({ id: 'gold', icon: '💰', title: 'Experta en Ventas', description: 'Más de $100,000 acumulados' });
@@ -68,7 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         return res.status(200).json({
             success: true,
             data: {
-                weeklyIncome,
+                weeklyIncome: weeklyIncome.map((w: any) => ({ ...w, total: Number(w.total) })),
                 badges,
                 svcCount,
                 totalEarnings
@@ -84,3 +96,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

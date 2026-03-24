@@ -22,7 +22,8 @@ export function useClients() {
         phone: c.phone,
         created_at: c.created_at,
         updated_at: c.updated_at,
-        status: c.status
+        status: c.status,
+        saldo: c.saldo
       }))
   });
 
@@ -117,3 +118,4 @@ export function useClientes() {
     getClientes: fetchClients
   };
 }
+

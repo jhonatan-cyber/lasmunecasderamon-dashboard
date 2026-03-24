@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,9 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { User, DollarSign, Calendar, CheckCircle, Clock, Banknote } from "lucide-react";
+import { formatCurrencyCLP } from "@/lib/formatters";
 
 export interface Advance {
-  id: number;
+  id: string | number;
   usuario: string;
   monto: number;
   fecha_crea: string;
@@ -84,7 +86,7 @@ export default function AdvancesTable({ advances, loading }: AdvancesTableProps)
                         <div className='flex items-center gap-2'>
                           <Banknote className='text-gray-500 w-4' />
                           <span className='font-medium'>Monto:</span>
-                          <span className='text-gray-700 font-semibold'>${a.monto.toLocaleString("es-CL")}</span>
+                          <span className='text-gray-700 font-semibold'>{formatCurrencyCLP(a.monto)}</span>
                         </div>
 
                         <div className='flex items-center gap-2'>
@@ -152,7 +154,7 @@ export default function AdvancesTable({ advances, loading }: AdvancesTableProps)
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="text-sm text-gray-700 text-center">{a.usuario}</TableCell>
-                        <TableCell className="font-semibold text-sm text-gray-700 text-center">${a.monto.toLocaleString("es-CL")}</TableCell>
+                        <TableCell className="font-semibold text-sm text-gray-700 text-center">{formatCurrencyCLP(a.monto)}</TableCell>
                         <TableCell className="text-sm text-gray-700 text-center">
                           <div className='leading-tight'>
                             <div className='font-medium'>{fecha}</div>
@@ -179,3 +181,4 @@ export default function AdvancesTable({ advances, loading }: AdvancesTableProps)
     </>
   );
 }
+

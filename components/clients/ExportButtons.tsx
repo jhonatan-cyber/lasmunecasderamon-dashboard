@@ -2,18 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet as FileXls, FileText as FilePdf } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Client } from "@/types/client";
 import { toast } from "sonner";
+import { buildExportFilename, formatDateLabel } from "@/lib/calendarUtils";
 
 interface ExportButtonsProps {
   clients: Client[];
-  tableRef?: React.RefObject<HTMLTableElement>;
 }
 
 export function ExportButtons({ clients }: ExportButtonsProps) {
   const [isExporting, setIsExporting] = useState(false);
-  const tableRef = useRef<HTMLTableElement>(null);
 
   const exportToExcel = async () => {
     if (isExporting) return;
@@ -31,10 +30,10 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         Teléfono: client.phone || "Sin teléfono",
         Estado: client.status === 1 ? "Activo" : "Inactivo",
         "Fecha Creación": client.created_at
-          ? new Date(client.created_at).toLocaleDateString()
+          ? formatDateLabel(client.created_at)
           : "Sin fecha",
         "Última Modificación": client.updated_at
-          ? new Date(client.updated_at).toLocaleDateString()
+          ? formatDateLabel(client.updated_at)
           : "Sin modificar",
       }));
 
@@ -70,7 +69,7 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `clientes_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = buildExportFilename('clientes', 'xlsx');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -148,13 +147,13 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
           doc.internal.pageSize.height - 10
         );
         doc.text(
-          `Generado el: ${new Date().toLocaleDateString()}`,
+          `Generado el: ${formatDateLabel(new Date())}`,
           14,
           doc.internal.pageSize.height - 10
         );
       }
 
-      doc.save(`clientes_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(buildExportFilename('clientes', 'pdf'));
       toast.success("PDF exportado correctamente");
     } catch (error) {
       console.error("Error exportando PDF:", error);
@@ -163,8 +162,6 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
       setIsExporting(false);
     }
   };
-
-  const printRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -191,10 +188,10 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
 
       {/* Tabla oculta para la impresión */}
       <div style={{ display: "none" }}>
-        <div ref={printRef} className="p-6">
+        <div className="p-6">
           <h1 className="text-3xl font-bold mb-6">Listado de Clientes</h1>
           <p className="text-base text-gray-600 mb-6">
-            Generado el {new Date().toLocaleDateString()}
+            Generado el {formatDateLabel(new Date())}
           </p>
           <table className="w-full text-base border-collapse">
             <thead>

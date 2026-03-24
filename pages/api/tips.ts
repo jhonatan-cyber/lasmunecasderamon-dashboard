@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery, generateUUID } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method, query: queryParams } = req;
@@ -44,16 +46,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       try {
         // Insertar la propina principal
  
+        const now = getNowInBusinessTimezone();
         const propinaId = generateUUID();
         await query(
-          'INSERT INTO propinas (id_propina, venta_id, propina) VALUES (?, ?, ?)',
-          [propinaId, venta_id, monto]
+          'INSERT INTO propinas (id_propina, venta_id, propina, fecha_crea) VALUES (?, ?, ?, ?)',
+          [propinaId, venta_id, monto, now]
         );
 
         for (const usuario of usuariosLogueados) {
           await query(
-            'INSERT INTO detalle_propinas (propina_id, usuario_id, monto) VALUES (?, ?, ?)',
-            [propinaId, usuario.id_usuario, montoPorUsuario]
+            'INSERT INTO detalle_propinas (propina_id, usuario_id, monto, fecha_crea) VALUES (?, ?, ?, ?)',
+            [propinaId, usuario.id_usuario, montoPorUsuario, now]
           );
         }
 
@@ -243,3 +246,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

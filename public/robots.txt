@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://lasmuñecasderamon.com/sitemap.xml
+Sitemap: https://xn--lasmuecasderamon-bub.com/sitemap.xml
 
 # Disallow admin areas
 Disallow: /login

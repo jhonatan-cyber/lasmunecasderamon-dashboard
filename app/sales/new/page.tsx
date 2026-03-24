@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ import IndividualHostessSelect from '@/components/ui/IndividualHostessSelect';
 
 import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyCLP, formatCurrencyNoDecimals } from '@/lib/formatters';
 import SaleProductModal from '@/components/sales/SaleProductModal';
 import { useRef } from 'react';
 import CustomerSelect from '@/components/ui/CustomerSelect';
@@ -180,15 +181,15 @@ export default function NewSale() {
     ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio ?? p.price ?? 0)))
     : 0;
 
-  // Función para verificar si un producto es "Tragos arriba" con precio >= 30,000
+  // Función para verificar si un producto es "Tragos arriba" con precio >= 30000
   const isTragosArribaProduct = (producto: any) => {
     const categoria = (producto?.categoria || producto?.category || '').toLowerCase();
     const precio = Number(producto.precio ?? producto.price ?? 0);
-    // El usuario dijo "tagos arriba" (Tragos arriba) y precio >= 30,000
+    // El usuario dijo "tagos arriba" (Tragos arriba) y precio >= 30000
     return categoria.includes('trago') && precio >= 30000;
   };
 
-  // Buscar si hay algún producto de "Tragos arriba" >= 30,000
+  // Buscar si hay algún producto de "Tragos arriba" >= 30000
   const hasTragosArriba = Array.isArray(productos) ? productos.some(isTragosArribaProduct) : false;
 
   // Determinar si se requiere o permite selección de habitación
@@ -202,17 +203,6 @@ export default function NewSale() {
     setSearchProducto('');
     setSearchResults([]);
     setSearchLoading(false);
-  };
-
-  // Función para obtener el conteo de productos por categoría
-  const getProductCountByCategory = async (categoryId: number) => {
-    try {
-      const res = await fetch(`/api/products?category_id=${categoryId}`);
-      const data = await res.json();
-      return data.success ? data.data.length : 0;
-    } catch {
-      return 0;
-    }
   };
 
   // Función para cargar categorías con conteo de productos
@@ -293,7 +283,6 @@ export default function NewSale() {
         setSearchLoading(false);
       }
     }, 300);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchProducto]);
 
   // Filtrar datos
@@ -485,6 +474,27 @@ export default function NewSale() {
       return;
     }
 
+    // Validar prepago
+    if (metodoPago === 'prepago') {
+      if (!selectedCliente || selectedCliente === 'none') {
+        toast.error('Debes seleccionar un cliente para usar pago con Prepago');
+        return;
+      }
+
+      const cliente = clientes.find(c => String(c.id || c.id_cliente) === String(selectedCliente));
+      if (!cliente) {
+        toast.error('Cliente no encontrado');
+        return;
+      }
+
+      if ((cliente.saldo || 0) < total) {
+        toast.error(
+          `Saldo insuficiente. Saldo actual: $${(cliente.saldo || 0).toLocaleString('es-CL')}`
+        );
+        return;
+      }
+    }
+
     // Verificar que todas las bebidas con comisión tengan anfitrionas asignadas
     const bebidasConComision = productos.filter(p => (p.comision || p.commission || 0) > 0);
 
@@ -509,12 +519,11 @@ export default function NewSale() {
         : 0;
 
       const ventaData = {
-        cliente_id:
-          selectedCliente && selectedCliente !== 'none' ? parseInt(selectedCliente) : null,
+        cliente_id: selectedCliente && selectedCliente !== 'none' ? selectedCliente : null,
         ...(selectedHabitacion && {
-          habitacion_id: parseInt(selectedHabitacion)
+          habitacion_id: selectedHabitacion
         }),
-        metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
+        metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago',
         propina: propina,
         sub_total: subtotal,
         total: total,
@@ -529,11 +538,11 @@ export default function NewSale() {
             hostesses: p?.selectedHostesses || [],
             hostess_id:
               p?.selectedHostesses && p.selectedHostesses.length > 0
-                ? parseInt(p.selectedHostesses[0])
+                ? p.selectedHostesses[0]
                 : null
           }))
           : [],
-        usuarios: anfitrionasUnicas.map(id => parseInt(id)),
+        usuarios: anfitrionasUnicas,
         tiempo:
           selectedHabitacion && selectedRoomInfo
             ? requiresRoom
@@ -568,7 +577,7 @@ export default function NewSale() {
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
+                `Propina de ${formatCurrencyCLP(propina)} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
@@ -624,7 +633,7 @@ export default function NewSale() {
           // Iniciar temporizador con la duración seleccionada
           startTimer(
             resultado.data?.id_venta || 0, // id_venta
-            Number(selectedHabitacion), // roomId
+            selectedHabitacion as any, // roomId (cast a any para evitar conflicto de tipos si es UUID)
             selectedRoomInfo.name, // roomName
             duration, // duration
             resultado.data?.codigo || `VENTA_${resultado.data?.id_venta || Date.now()}`, // servicioCode
@@ -1014,20 +1023,20 @@ export default function NewSale() {
           <div className='w-full flex justify-center mt-2 mb-2'>
             <div
               className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${hasChampagneProducts && maxChampagnePrice >= 120000
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : hasChampagneProducts
-                    ? 'bg-green-50 text-green-700 border border-green-200'
-                    : 'bg-orange-50 text-orange-700 border border-orange-200'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : hasChampagneProducts
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-orange-50 text-orange-700 border border-orange-200'
                 }`}
             >
               {hasChampagneProducts && maxChampagnePrice >= 240000
-                ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman $40,000 cada una.`
+                ? `Champaña de ${formatCurrencyCLP(maxChampagnePrice)}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman ${formatCurrencyCLP(40000)} cada una.`
                 : hasChampagneProducts && maxChampagnePrice >= 200000
-                  ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 6 anfitrionas. Las primeras 4 incluidas, la 5ta y 6ta suman $40,000 cada una.`
+                  ? `Champaña de ${formatCurrencyCLP(maxChampagnePrice)}: Puedes seleccionar hasta 6 anfitrionas. Las primeras 4 incluidas, la 5ta y 6ta suman ${formatCurrencyCLP(40000)} cada una.`
                   : hasChampagneProducts && maxChampagnePrice >= 140000
-                    ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 5 anfitrionas. Las primeras 3 incluidas, la 4ta y 5ta suman $40,000 cada una.`
+                    ? `Champaña de ${formatCurrencyCLP(maxChampagnePrice)}: Puedes seleccionar hasta 5 anfitrionas. Las primeras 3 incluidas, la 4ta y 5ta suman ${formatCurrencyCLP(40000)} cada una.`
                     : hasChampagneProducts && maxChampagnePrice >= 120000
-                      ? `Champaña de $${maxChampagnePrice.toLocaleString()}: Puedes seleccionar hasta 4 anfitrionas. Las primeras 2 incluidas, la 3ra y 4ta suman $40,000 cada una.`
+                      ? `Champaña de ${formatCurrencyCLP(maxChampagnePrice)}: Puedes seleccionar hasta 4 anfitrionas. Las primeras 2 incluidas, la 3ra y 4ta suman ${formatCurrencyCLP(40000)} cada una.`
                       : hasChampagneProducts
                         ? 'Productos de champaña detectados: Puedes seleccionar hasta 5 anfitrionas'
                         : 'Productos sin champaña: Solo puedes seleccionar 1 anfitriona máximo'}

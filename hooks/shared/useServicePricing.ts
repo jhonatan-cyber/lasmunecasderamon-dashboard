@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 
 interface ServicePricingParams {
   precioServicio: number;
@@ -8,6 +8,17 @@ interface ServicePricingParams {
   numAnfitrionas: number;
 }
 
+const getTiempoMultiplier = (tiempo: number) => (tiempo === 60 ? 2 : 1);
+
+const roundToNearest5000 = (value: number) => Math.ceil(value / 5000) * 5000;
+
+const calculateTarjetaIva = (subtotal: number, precioHabitacionTotal: number) => {
+  const ivaBase = Math.floor(subtotal * 0.2);
+  const totalBase = subtotal + precioHabitacionTotal + ivaBase;
+  const totalRedondeado = roundToNearest5000(totalBase);
+  return ivaBase + (totalRedondeado - totalBase);
+};
+
 export function useServicePricing({
   precioServicio,
   precioHabitacion,
@@ -15,59 +26,34 @@ export function useServicePricing({
   tiempo,
   numAnfitrionas
 }: ServicePricingParams) {
-  const multiplicadorTiempo = useMemo(() => tiempo === 60 ? 2 : 1, [tiempo]);
+  const multiplicadorTiempo = useMemo(() => getTiempoMultiplier(tiempo), [tiempo]);
 
-  const calculateIVA = useCallback((
-    precioServicio: number,
-    metodoPago: string,
-    numAnfitrionas: number,
-    precioHabitacion: number
-  ) => {
-    if (metodoPago === 'tarjeta') {
-      const nuevoSubTotal = precioServicio * numAnfitrionas;
-      const precioHabitacionTotal = precioHabitacion * numAnfitrionas;
-
-      let nuevoIVA = Math.floor(nuevoSubTotal * 0.20);
-      let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
-
-      const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
-      const excedente = totalRedondeado - nuevoTotal;
-
-      nuevoIVA = nuevoIVA + excedente;
-
-      return nuevoIVA;
-    }
-    return 0;
-  }, []);
+  const precioServicioBase = precioServicio * numAnfitrionas;
+  const precioHabitacionBase = precioHabitacion * numAnfitrionas;
 
   const precioServicioTotal = useMemo(
-    () => (precioServicio * numAnfitrionas) * multiplicadorTiempo,
-    [precioServicio, numAnfitrionas, multiplicadorTiempo]
+    () => precioServicioBase * multiplicadorTiempo,
+    [precioServicioBase, multiplicadorTiempo]
   );
 
   const precioHabitacionTotal = useMemo(
-    () => (precioHabitacion * numAnfitrionas) * multiplicadorTiempo,
-    [precioHabitacion, numAnfitrionas, multiplicadorTiempo]
+    () => precioHabitacionBase * multiplicadorTiempo,
+    [precioHabitacionBase, multiplicadorTiempo]
   );
 
   const iva = useMemo(
-    () => calculateIVA(
-      precioServicio * multiplicadorTiempo,
-      metodoPago,
-      numAnfitrionas,
-      precioHabitacion * multiplicadorTiempo
-    ),
-    [precioServicio, metodoPago, numAnfitrionas, precioHabitacion, multiplicadorTiempo, calculateIVA]
+    () =>
+      metodoPago === 'tarjeta'
+        ? calculateTarjetaIva(precioServicioTotal, precioHabitacionTotal)
+        : 0,
+    [metodoPago, precioServicioTotal, precioHabitacionTotal]
   );
 
-  const subTotal = useMemo(() => precioServicioTotal, [precioServicioTotal]);
+  const subTotal = precioServicioTotal;
 
   const total = useMemo(() => {
-    let calculatedTotal = subTotal + precioHabitacionTotal + iva;
-    if (metodoPago === 'tarjeta') {
-      calculatedTotal = Math.ceil((subTotal + precioHabitacionTotal + Math.floor(subTotal * 0.20)) / 5000) * 5000;
-    }
-    return calculatedTotal;
+    const rawTotal = subTotal + precioHabitacionTotal + iva;
+    return metodoPago === 'tarjeta' ? roundToNearest5000(rawTotal) : rawTotal;
   }, [subTotal, precioHabitacionTotal, iva, metodoPago]);
 
   return {
@@ -79,3 +65,4 @@ export function useServicePricing({
     multiplicadorTiempo
   };
 }
+

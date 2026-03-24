@@ -15,7 +15,7 @@ export const useDevolucionFilters = () => {
     rowsPerPage: 10
   });
 
-  const updateFilter = (key: keyof DevolucionFilters, value: any) => {
+  const updateFilter = (key: keyof DevolucionFilters, value: DevolucionFilters[keyof DevolucionFilters]) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,

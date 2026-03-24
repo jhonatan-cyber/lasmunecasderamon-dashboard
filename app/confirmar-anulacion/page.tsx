@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatLongDateEs } from '@/lib/calendarUtils';
 
 interface SolicitudAnulacion {
   venta_id: number;
@@ -189,7 +191,7 @@ function ConfirmarAnulacionContent() {
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Total:</span>
                   <span className='font-bold text-green-600 dark:text-green-400'>
-                    ${solicitud.total?.toLocaleString('es-ES')}
+                    {formatCurrencyCLP(solicitud.total || 0)}
                   </span>
                 </div>
                 <div className='flex justify-between'>
@@ -198,7 +200,7 @@ function ConfirmarAnulacionContent() {
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Fecha:</span>
-                  <span className='text-gray-900 dark:text-gray-100'>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-ES')}</span>
+                  <span className='text-gray-900 dark:text-gray-100'>{formatLongDateEs(solicitud.fecha_solicitud)}</span>
                 </div>
               </div>
             </div>

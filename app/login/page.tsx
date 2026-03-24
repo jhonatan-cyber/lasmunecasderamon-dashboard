@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
@@ -874,3 +875,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

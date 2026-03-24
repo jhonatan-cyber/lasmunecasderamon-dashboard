@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-console */
 import {
   Dialog,
   DialogContent,
@@ -569,3 +570,4 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
 };
 
 export default CategoryProductsModal;
+

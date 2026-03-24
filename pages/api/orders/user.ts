@@ -2,16 +2,23 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/lib/middleware/auth';
 import db from '@/lib/db';
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+type AuthenticatedOrderRequest = NextApiRequest & {
+  user?: {
+    id?: string | number;
+  };
+};
+
+async function handler(req: AuthenticatedOrderRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, message: 'Método no permitido' });
+    return res.status(405).json({ success: false, message: 'Metodo no permitido' });
   }
 
   try {
-    // @ts-ignore - El usuario ya está disponible gracias al middleware withAuth
     const user = req.user;
+    if (!user?.id) {
+      return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
 
-    // Consulta para obtener los pedidos del usuario (todos los estados)
     const orders = await db.query(
       `
   SELECT 
@@ -35,18 +42,18 @@ LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
 LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
 WHERE P.mesero_id = ?
 ORDER BY P.fecha_crea DESC;
-    `,
+      `,
       [user.id]
     );
 
     return res.status(200).json({
       success: true,
-      data: orders
+      data: orders,
     });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Error interno del servidor',
     });
   }
 }

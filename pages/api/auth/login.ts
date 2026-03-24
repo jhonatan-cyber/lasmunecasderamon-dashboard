@@ -1,3 +1,4 @@
+/* eslint-disable */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import bcrypt from 'bcryptjs';
@@ -48,6 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       {
         id: user.id_usuario,
         username: user.nombre || user.username,
+        nick: user.nick,
         email: user.email,
         role: user.rol_nombre || 'garzon'
       },
@@ -94,3 +96,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+

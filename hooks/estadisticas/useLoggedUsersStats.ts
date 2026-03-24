@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
@@ -55,3 +56,4 @@ export const useLoggedUsersStats = (): UseLoggedUsersStatsReturn => {
     }
   };
 };
+

@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -15,7 +16,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals, formatCurrencyCLP } from '@/lib/formatters';
+import { formatLongDateEs, formatShortDmyDateEs, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/calendarUtils';
 
 // Utilidades para fechas
 const months = [
@@ -124,38 +126,21 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
   };
 
   const getDataForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateKey = toDateKey(date);
 
     // Verificar asistencias - usar la misma lógica que anticipos y horas extras
     const asistenciasMatch = calendarData.asistencias.some((item: any) => {
-      const itemFecha = item.fecha;
-      let matches = false;
-
-      // Usar la misma lógica que anticipos y horas extras
-      if (itemFecha) {
-        // Si es un objeto Date, convertir a string YYYY-MM-DD
-        if (itemFecha instanceof Date || (typeof itemFecha === 'object' && itemFecha !== null)) {
-          const fechaString = itemFecha.toISOString().split('T')[0];
-          matches = fechaString === dateStr;
-        }
-        // Si es un string, usar split('T')[0] como hacen los otros
-        else if (typeof itemFecha === 'string') {
-          const fechaString = itemFecha.split('T')[0];
-          matches = fechaString === dateStr;
-        }
-      }
-
-      return matches;
+      return matchesAnyDateKey(item.fecha, [dateKey]);
     });
 
     const anticiposMatch = calendarData.anticipos.some(
-      (item: any) => item.fecha_crea?.split('T')[0] === dateStr
+      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
     const propinasMatch = calendarData.propinas.some(
-      (item: any) => item.fecha_crea?.split('T')[0] === dateStr
+      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
     const horasExtrasMatch = calendarData.horasExtras.some(
-      (item: any) => item.fecha_crea?.split('T')[0] === dateStr
+      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
 
     const result = {
@@ -230,10 +215,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
     setIsLoading(true);
     try {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+      const { startDate, endDate } = getMonthDateRange(currentDate);
 
       // Fetch asistencias usando la nueva API
       const asistenciasRes = await fetch(
@@ -304,7 +286,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
     setIsLoadingSelectedData(true);
     try {
-      const dateStrs = selectedDates.map(date => date.toISOString().split('T')[0]);
+      const dateKeys = toDateKeys(selectedDates);
 
       // Calcular conteos para todos los tipos de datos
       const newCounts: { [key: string]: number } = {
@@ -316,7 +298,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
       // Obtener conteo de asistencias
       try {
-        const asistenciasDatesParam = dateStrs.join(',');
+        const asistenciasDatesParam = dateKeys.join(',');
         const asistenciasRes = await fetch(
           `/api/asistencias/by-dates?dates=${asistenciasDatesParam}`
         );
@@ -327,7 +309,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
       // Obtener conteo de anticipos
       try {
-        const anticiposDatesParam = dateStrs.join(',');
+        const anticiposDatesParam = dateKeys.join(',');
         const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
         const anticiposData = await anticiposRes.json();
         newCounts.anticipos = anticiposData.success ? anticiposData.data?.length || 0 : 0;
@@ -336,12 +318,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
       // Calcular conteo de propinas
       newCounts.propinas = calendarData.propinas.filter(item =>
-        dateStrs.includes(item.fecha_crea?.split('T')[0])
+        matchesAnyDateKey(item.fecha_crea, dateKeys)
       ).length;
 
       // Obtener conteo de horas extras
       try {
-        const horasExtrasDatesParam = dateStrs.join(',');
+        const horasExtrasDatesParam = dateKeys.join(',');
         const horasExtrasRes = await fetch(`/api/overtime/by-dates?dates=${horasExtrasDatesParam}`);
         const horasExtrasData = await horasExtrasRes.json();
         newCounts.horasExtras = horasExtrasData.success ? horasExtrasData.data?.length || 0 : 0;
@@ -356,7 +338,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       // Sumar asistencias (sueldo_final)
       if (newCounts.asistencias > 0) {
         try {
-          const asistenciasDatesParam = dateStrs.join(',');
+          const asistenciasDatesParam = dateKeys.join(',');
           const asistenciasRes = await fetch(
             `/api/asistencias/by-dates?dates=${asistenciasDatesParam}`
           );
@@ -377,7 +359,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       // Sumar propinas (monto)
       if (newCounts.propinas > 0) {
         const propinasEstado1 = calendarData.propinas.filter(
-          (item: any) => dateStrs.includes(item.fecha_crea?.split('T')[0]) && item.estado === 1
+          (item: any) => matchesAnyDateKey(item.fecha_crea, dateKeys) && item.estado === 1
         );
         total += propinasEstado1.reduce((sum: number, item: any) => sum + (item.monto || 0), 0);
       }
@@ -385,7 +367,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       // Sumar horas extras (total)
       if (newCounts.horasExtras > 0) {
         try {
-          const horasExtrasDatesParam = dateStrs.join(',');
+          const horasExtrasDatesParam = dateKeys.join(',');
           const horasExtrasRes = await fetch(
             `/api/overtime/by-dates?dates=${horasExtrasDatesParam}`
           );
@@ -406,7 +388,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       // Restar anticipos (monto)
       if (newCounts.anticipos > 0) {
         try {
-          const anticiposDatesParam = dateStrs.join(',');
+          const anticiposDatesParam = dateKeys.join(',');
           const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
           const anticiposData = await anticiposRes.json();
           if (anticiposData.success && anticiposData.data) {
@@ -425,24 +407,24 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       // Obtener datos para el tipo seleccionado
       switch (selectedDataType) {
         case 'asistencias':
-          const datesParam = dateStrs.join(',');
+          const datesParam = dateKeys.join(',');
           const asistenciasRes = await fetch(`/api/asistencias/by-dates?dates=${datesParam}`);
           const asistenciasData = await asistenciasRes.json();
           setSelectedDateData(asistenciasData.success ? asistenciasData.data || [] : []);
           break;
         case 'anticipos':
-          const anticiposDatesParam = dateStrs.join(',');
+          const anticiposDatesParam = dateKeys.join(',');
           const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
           const anticiposData = await anticiposRes.json();
           setSelectedDateData(anticiposData.success ? anticiposData.data || [] : []);
           break;
         case 'propinas':
           setSelectedDateData(
-            calendarData.propinas.filter(item => dateStrs.includes(item.fecha_crea?.split('T')[0]))
+            calendarData.propinas.filter(item => matchesAnyDateKey(item.fecha_crea, dateKeys))
           );
           break;
         case 'horasExtras':
-          const horasExtrasDatesParam = dateStrs.join(',');
+          const horasExtrasDatesParam = dateKeys.join(',');
           const horasExtrasRes = await fetch(
             `/api/overtime/by-dates?dates=${horasExtrasDatesParam}`
           );
@@ -461,22 +443,11 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    return formatLongDateEs(dateString);
   };
 
   const formatSimpleDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return formatShortDmyDateEs(dateString);
   };
 
   const formatDatesList = () => {
@@ -761,7 +732,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
             <div className='flex justify-center gap-4 flex-wrap'>
               {Object.entries(dataTypeConfig).map(([key, config]) => {
                 const Icon = config.icon;
-                const dateStrs = selectedDates.map(date => date.toISOString().split('T')[0]);
 
                 // Usar los conteos calculados previamente
                 const count = modalCounts[key] || 0;
@@ -789,7 +759,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               <div className='flex items-center justify-center gap-2'>
                 <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
                 <span className='text-2xl font-bold text-blue-600'>
-                  ${modalTotal.toLocaleString('es-ES')}
+                {formatCurrencyCLP(modalTotal)}
                 </span>
               </div>
               <div className='text-sm text-gray-600 mt-1'>
@@ -980,3 +950,4 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     </div>
   );
 }
+

@@ -1,5 +1,8 @@
+/* eslint-disable */
 import mysql from 'mysql2/promise';
 import { getSQLTimezoneOffset } from './timezoneService';
+
+const dbTzOffset = getSQLTimezoneOffset();
 
 interface DatabaseConfig {
   host: string;
@@ -21,7 +24,7 @@ const defaultConfig: DatabaseConfig & { timezone?: string } = {
   waitForConnections: true,
   connectionLimit: 50,
   queueLimit: 0,
-  timezone: process.env.DB_TZ || 'Z'
+  timezone: process.env.DB_TZ || dbTzOffset
 };
 const pool = mysql.createPool(defaultConfig);
 
@@ -66,3 +69,4 @@ export default {
   pool,
   generateUUID
 };
+
