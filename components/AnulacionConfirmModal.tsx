@@ -13,6 +13,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import { formatCurrencyCLP } from "@/lib/formatters";
 
 interface AnulacionConfirmModalProps {
   open: boolean;
@@ -110,8 +111,7 @@ export function AnulacionConfirmModal({
                       </p>
                     )}
                     <p>
-                      <strong>Total:</strong> $
-                      {(isServicio ? servicio?.total : venta?.total)?.toLocaleString() || 0}
+                      <strong>Total:</strong> {formatCurrencyCLP((isServicio ? servicio?.total : venta?.total) || 0)}
                     </p>
                   </div>
                 </div>
@@ -148,8 +148,7 @@ export function AnulacionConfirmModal({
                       </p>
                     )}
                     <p>
-                      <strong>Total:</strong> $
-                      {(isServicio ? servicio?.total : venta?.total)?.toLocaleString() || 0}
+                      <strong>Total:</strong> {formatCurrencyCLP((isServicio ? servicio?.total : venta?.total) || 0)}
                     </p>
                   </div>
                 </div>

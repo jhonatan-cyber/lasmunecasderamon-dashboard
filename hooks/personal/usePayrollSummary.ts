@@ -30,10 +30,10 @@ export default function usePayrollSummary(month?: number, year?: number) {
       return { sueldo: 0, descuento: 0, total: 0 };
     }
     return data.reduce(
-      (acc, item: any) => ({
-        sueldo: acc.sueldo + (item.sueldo || 0),
-        descuento: acc.descuento + (item.descuento || 0),
-        total: acc.total + (item.total || 0),
+      (acc, item: AsistenciaResumen) => ({
+        sueldo: acc.sueldo + Number(item.sueldo_total || 0),
+        descuento: acc.descuento + Number(item.descuento_total || 0),
+        total: acc.total + Number(item.total_final || 0),
       }),
       { sueldo: 0, descuento: 0, total: 0 }
     );
@@ -46,3 +46,4 @@ export default function usePayrollSummary(month?: number, year?: number) {
     error
   };
 }
+

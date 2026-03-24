@@ -36,6 +36,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -345,4 +349,117 @@ body {
 
 .animate-pulse-yellow {
   animation: pulse-yellow 2s infinite;
+}
+
+/* Ocultar barra lateral en módulos específicos para evitar colapso */
+.hide-sidebar .sidebar, 
+.hide-sidebar aside {
+  display: none !important;
+}
+
+.hide-sidebar .lg\:ml-64,
+.hide-sidebar .lg\:ml-16,
+.hide-sidebar .ml-64,
+.hide-sidebar .ml-16 {
+  margin-left: 0 !important;
+}
+
+*:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 3px;
+}
+
+@keyframes landing-fall {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes landing-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes landing-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.landing-shell .animate-float {
+  animation: landing-float 3s ease-in-out infinite;
+}
+
+.landing-shell .animate-shimmer {
+  animation: landing-shimmer 2s linear infinite;
+}
+
+.landing-shell .animate-blink {
+  animation: landing-blink 2s ease-in-out infinite;
+}
+
+.landing-shell::-webkit-scrollbar {
+  width: 8px;
+}
+
+.landing-shell::-webkit-scrollbar-track {
+  background: #000;
+}
+
+.landing-shell::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #d4af37, #c5a028);
+  border-radius: 4px;
+}
+
+.landing-shell::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #e5c158, #d4af37);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

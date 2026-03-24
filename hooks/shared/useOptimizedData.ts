@@ -1,40 +1,63 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+/* eslint-disable */
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryKeys, invalidateQueries } from '@/lib/queryClient';
 import { usePagination } from './usePagination';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
-// Hook para obtener usuarios con caché y paginación
+type ApiCollection<T> = { data?: T[] } | T[] | undefined;
+
+const toArray = <T,>(collection: ApiCollection<T>): T[] => {
+  if (Array.isArray(collection)) return collection;
+  return collection?.data ?? [];
+};
+
+const includesText = (value: unknown, search: string) =>
+  String(value ?? '').toLowerCase().includes(search.toLowerCase());
+
+const fetchJson = async <T,>(
+  url: string,
+  init?: RequestInit,
+  errorMessage = 'Error al cargar datos'
+): Promise<T> => {
+  const response = await fetch(url, init);
+
+  if (!response.ok) {
+    throw new Error(errorMessage);
+  }
+
+  return response.json() as Promise<T>;
+};
+
+const invalidateUsers = () => invalidateQueries.users();
+const invalidateSales = () => {
+  invalidateQueries.sales();
+  invalidateQueries.cashRegister();
+};
+
 export function useUsers(filters?: any) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
 
-  const { data: users = [], isLoading, error } = useQuery({
+  const { data: users = [], isLoading, error } = useQuery<ApiCollection<any>>({
     queryKey: queryKeys.users.list(filters),
-    queryFn: async () => {
-      const response = await fetch('/api/users');
-      if (!response.ok) {
-        throw new Error('Error al cargar usuarios');
-      }
-      return response.json();
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutos
+    queryFn: async () => fetchJson('/api/users', undefined, 'Error al cargar usuarios'),
+    staleTime: 2 * 60 * 1000,
   });
 
-  // Filtrar datos localmente
   const filteredUsers = useMemo(() => {
-    let filtered = users.data || users;
-    
+    let filtered = toArray(users);
+
     if (searchTerm) {
       filtered = filtered.filter((user: any) =>
-        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        includesText(user.username, searchTerm) ||
+        includesText(user.email, searchTerm)
       );
     }
-    
+
     if (roleFilter) {
       filtered = filtered.filter((user: any) => user.rol === roleFilter);
     }
-    
+
     return filtered;
   }, [users, searchTerm, roleFilter]);
 
@@ -55,21 +78,15 @@ export function useUsers(filters?: any) {
   };
 }
 
-// Hook para obtener ventas con caché y paginación
 export function useSales(filters?: any) {
-  const { data: sales = [], isLoading, error } = useQuery({
+  const { data: sales = [], isLoading, error } = useQuery<ApiCollection<any>>({
     queryKey: queryKeys.sales.list(filters),
-    queryFn: async () => {
-      const response = await fetch('/api/ventas');
-      if (!response.ok) {
-        throw new Error('Error al cargar ventas');
-      }
-      return response.json();
-    },
-    staleTime: 1 * 60 * 1000, // 1 minuto (datos más dinámicos)
+    queryFn: async () => fetchJson('/api/ventas', undefined, 'Error al cargar ventas'),
+    staleTime: 1 * 60 * 1000,
   });
 
-  const pagination = usePagination(sales.data || sales, { itemsPerPage: 15 });
+  const salesItems = toArray(sales);
+  const pagination = usePagination(salesItems, { itemsPerPage: 15 });
 
   return {
     sales: pagination.paginatedData,
@@ -78,42 +95,34 @@ export function useSales(filters?: any) {
     visiblePages: pagination.visiblePages,
     isLoading,
     error,
-    totalSales: (sales.data || sales).length,
+    totalSales: salesItems.length,
   };
 }
 
-// Hook para obtener productos con caché y paginación
 export function useProducts(filters?: any) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
-  const { data: products = [], isLoading, error } = useQuery({
+  const { data: products = [], isLoading, error } = useQuery<ApiCollection<any>>({
     queryKey: queryKeys.products.list(filters),
-    queryFn: async () => {
-      const response = await fetch('/api/products');
-      if (!response.ok) {
-        throw new Error('Error al cargar productos');
-      }
-      return response.json();
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutos (datos más estáticos)
+    queryFn: async () => fetchJson('/api/products', undefined, 'Error al cargar productos'),
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Filtrar productos localmente
   const filteredProducts = useMemo(() => {
-    let filtered = products.data || products;
-    
+    let filtered = toArray(products);
+
     if (searchTerm) {
       filtered = filtered.filter((product: any) =>
-        product.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
+        includesText(product.nombre, searchTerm) ||
+        includesText(product.descripcion, searchTerm)
       );
     }
-    
+
     if (categoryFilter) {
       filtered = filtered.filter((product: any) => product.categoria_id === categoryFilter);
     }
-    
+
     return filtered;
   }, [products, searchTerm, categoryFilter]);
 
@@ -137,83 +146,45 @@ export function useProducts(filters?: any) {
 export function useSalesStats() {
   return useQuery({
     queryKey: queryKeys.sales.stats(),
-    queryFn: async () => {
-      const response = await fetch('/api/sales/stats');
-      if (!response.ok) {
-        throw new Error('Error al cargar estadísticas');
-      }
-      return response.json();
-    },
-    staleTime: 30 * 1000, 
+    queryFn: async () => fetchJson('/api/sales/stats', undefined, 'Error al cargar estadisticas'),
+    staleTime: 30 * 1000,
   });
 }
-
 
 export function useCashRegisterStatus() {
   return useQuery({
     queryKey: queryKeys.cashRegister.status(),
-    queryFn: async () => {
-      const response = await fetch('/api/caja-status');
-      if (!response.ok) {
-        throw new Error('Error al cargar estado de caja');
-      }
-      return response.json();
-    },
+    queryFn: async () => fetchJson('/api/caja-status', undefined, 'Error al cargar estado de caja'),
     staleTime: 10 * 1000,
-    refetchInterval: 30 * 1000, 
+    refetchInterval: 30 * 1000,
   });
 }
 
 export function useUserMutations() {
-  const queryClient = useQueryClient();
-
   const createUser = useMutation({
-    mutationFn: async (userData: any) => {
-      const response = await fetch('/api/users', {
+    mutationFn: async (userData: any) =>
+      fetchJson('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-      });
-      if (!response.ok) {
-        throw new Error('Error al crear usuario');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      invalidateQueries.users();
-    },
+      }, 'Error al crear usuario'),
+    onSuccess: invalidateUsers,
   });
 
   const updateUser = useMutation({
-    mutationFn: async ({ id, userData }: { id: number; userData: any }) => {
-      const response = await fetch(`/api/users/${id}`, {
+    mutationFn: async ({ id, userData }: { id: number; userData: any }) =>
+      fetchJson(`/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-      });
-      if (!response.ok) {
-        throw new Error('Error al actualizar usuario');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      invalidateQueries.users();
-    },
+      }, 'Error al actualizar usuario'),
+    onSuccess: invalidateUsers,
   });
 
   const deleteUser = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/users/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error('Error al eliminar usuario');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      invalidateQueries.users();
-    },
+    mutationFn: async (id: number) =>
+      fetchJson(`/api/users/${id}`, { method: 'DELETE' }, 'Error al eliminar usuario'),
+    onSuccess: invalidateUsers,
   });
 
   return {
@@ -224,42 +195,24 @@ export function useUserMutations() {
 }
 
 export function useSalesMutations() {
-  const queryClient = useQueryClient();
-
   const createSale = useMutation({
-    mutationFn: async (saleData: any) => {
-      const response = await fetch('/api/ventas', {
+    mutationFn: async (saleData: any) =>
+      fetchJson('/api/ventas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(saleData),
-      });
-      if (!response.ok) {
-        throw new Error('Error al crear venta');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      invalidateQueries.sales();
-      invalidateQueries.cashRegister();
-    },
+      }, 'Error al crear venta'),
+    onSuccess: invalidateSales,
   });
 
   const updateSale = useMutation({
-    mutationFn: async ({ id, saleData }: { id: number; saleData: any }) => {
-      const response = await fetch(`/api/ventas/${id}`, {
+    mutationFn: async ({ id, saleData }: { id: number; saleData: any }) =>
+      fetchJson(`/api/ventas/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(saleData),
-      });
-      if (!response.ok) {
-        throw new Error('Error al actualizar venta');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      invalidateQueries.sales();
-      invalidateQueries.cashRegister();
-    },
+      }, 'Error al actualizar venta'),
+    onSuccess: invalidateSales,
   });
 
   return {
@@ -276,4 +229,4 @@ export default {
   useCashRegisterStatus,
   useUserMutations,
   useSalesMutations,
-}; 
+};

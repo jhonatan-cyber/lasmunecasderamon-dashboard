@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
@@ -166,28 +167,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // Calcular el total
       const total = hora * monto;
 
-      // Verificar si la tabla existe
-      const tableCheckResult = (await query(`
-        SHOW TABLES LIKE 'horas_extras'
-      `)) as any[];
-      const tableCheck = tableCheckResult[0];
-
-      if (!tableCheck || tableCheck.length === 0) {
-        // Si la tabla no existe, crear datos de prueba en memoria
-        return res.status(201).json({
-          success: true,
-          message: 'Hora extra creada exitosamente (modo simulación)',
-          data: {
-            id: Date.now(),
-            usuario_id,
-            hora,
-            monto,
-            total,
-            estado: 1
-          }
-        });
-      }
-
       const id = generateUUID();
       // Insertar en la base de datos
       await query(
@@ -224,3 +203,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

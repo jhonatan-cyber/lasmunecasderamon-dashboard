@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 import { withAuth, getCurrentUser } from '@/lib/middleware/auth';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
+import { withTransaction } from '@/lib/transactionUtils';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -22,6 +25,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const currentUser = getCurrentUser(req);
+    const createdBy = currentUser?.id || "default-user";
     const { cuenta_id, metodo_pago, propina = 0, total_cobrado, habitacion_id = null } = req.body;
 
     // Validaciones
@@ -32,8 +36,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    // Validar método de pago
-    const metodosValidos = ['efectivo', 'tarjeta', 'transferencia'];
+    // Validar método de pago (incluyendo prepago)
+    const metodosValidos = ['efectivo', 'tarjeta', 'transferencia', 'prepago'];
     if (!metodosValidos.includes(metodo_pago)) {
       return res.status(400).json({
         success: false,
@@ -41,34 +45,101 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    // Actualizar el estado de la cuenta a "Cobrada" (estado = 0)
-    const updateCuentaSql = `
-      UPDATE cuentas 
-      SET estado = 0, 
-          fecha_mod = NOW()
-      WHERE id_cuenta = ?
-    `;
+    const now = getNowInBusinessTimezone();
 
-    await query(updateCuentaSql, [cuenta_id]);
+    const result = await withTransaction(async (trx) => {
+      // 0. Si el método de pago es prepago, verificar y descontar saldo
+      if (metodo_pago === 'prepago') {
+        const cuentaData = (await trx('SELECT cliente_id, total FROM cuentas WHERE id_cuenta = ?', [cuenta_id])) as any[];
+        if (cuentaData.length === 0) {
+          throw new Error('Cuenta no encontrada');
+        }
+        
+        const clienteId = cuentaData[0].cliente_id;
+        if (!clienteId) {
+          throw new Error('Se requiere seleccionar un cliente registrado para pagar con saldo prepago');
+        }
 
-    // Registrar el cobro en la tabla cobros_cuentas (si existe)
-    try {
-      const insertCobroSql = `
-        INSERT INTO cobros_cuentas (
-          cuenta_id,
-          metodo_pago,
-          propina,
-          total_cobrado,
-          habitacion_id,
-          fecha_cobro
-        ) VALUES (?, ?, ?, ?, ?, NOW())
+        const clienteData = (await trx('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [clienteId])) as any[];
+        if (clienteData.length === 0) {
+          throw new Error('Cliente no encontrado');
+        }
+
+        const saldoActual = clienteData[0].saldo || 0;
+        if (saldoActual < total_cobrado) {
+          throw new Error(`Saldo insuficiente. Saldo disponible: ${saldoActual.toLocaleString('es-CL')}, Total cobro: ${total_cobrado.toLocaleString('es-CL')}`);
+        }
+
+        // Descontar saldo
+        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [total_cobrado, clienteId]);
+
+        // Registrar movimiento de consumo prepago (sin venta_id ya que es una cuenta consolidada)
+        await trx(
+          `INSERT INTO clientes_prepago_movimientos 
+          (id_movimiento, cliente_id, tipo, monto, venta_id, usuario_id, fecha_crea) 
+          VALUES (?, ?, 'CONSUMO', ?, NULL, ?, ?)`,
+          [generateUUID(), clienteId, total_cobrado, createdBy, now]
+        );
+      }
+
+      // 1. Actualizar el estado de la cuenta a "Cobrada" (estado = 0) y registrar quién cobró y la propina gastada
+      await trx(`UPDATE cuentas SET estado = 0, fecha_mod = ?, cobrado_por = ?, propina = ? WHERE id_cuenta = ?`, [now, createdBy, propina || 0, cuenta_id]);
+
+      // 1.5 Crear el registro de Venta para el historial unificado
+      const ventaId = generateUUID();
+      const codigoVentaRes = await trx(`SELECT codigo, cliente_id FROM cuentas WHERE id_cuenta = ?`, [cuenta_id]);
+      const codigoVenta = codigoVentaRes[0]?.codigo || `V-${Date.now()}`;
+      const clienteId = codigoVentaRes[0]?.cliente_id || null;
+      
+      const insertVentaSql = `
+        INSERT INTO ventas (
+          id_venta, codigo, cliente_id, habitacion_id, metodo_pago, propina, 
+          sub_total, total, caja_id, created_by, estado, fecha_crea, cuenta_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       `;
+      
+      const cajaActivaResult = (await trx('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1')) as any[];
+      const cajaId = (cajaActivaResult && cajaActivaResult.length > 0) ? cajaActivaResult[0].id_caja : null;
 
-      await query(insertCobroSql, [cuenta_id, metodo_pago, propina, total_cobrado, habitacion_id]);
+      await trx(insertVentaSql, [
+        ventaId, codigoVenta, clienteId, habitacion_id, metodo_pago, propina,
+        total_cobrado - propina, total_cobrado, cajaId, createdBy, now, cuenta_id
+      ]);
 
-      // --- DISTRIBUCIÓN DE PROPINAS ---
+      // 1.6 Migrar detalles de cuenta a detalles de venta
+      const detallesCuenta = (await trx(`SELECT * FROM detalle_cuentas WHERE cuenta_id = ?`, [cuenta_id])) as any[];
+      for (const dc of detallesCuenta) {
+        await trx(
+          `INSERT INTO detalle_ventas (id_detalle_venta, venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [generateUUID(), ventaId, dc.producto_id, dc.precio, (Number(dc.comision) || 0) / (dc.cantidad || 1), dc.cantidad, dc.sub_total, dc.hostess_id]
+        );
+      }
+
+      // 1.7 Migrar usuarios de cuenta a usuarios de venta
+      const usuariosCuenta = (await trx(`SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?`, [cuenta_id])) as any[];
+      for (const uc of usuariosCuenta) {
+        await trx(
+          `INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id) VALUES (?, ?, ?)`,
+          [generateUUID(), ventaId, uc.usuario_id]
+        );
+      }
+
+      // 2. Registrar el cobro en la tabla cobros_cuentas (Opcional - mantenemos por compatibilidad si existe)
+      try {
+        const insertCobroSql = `
+          INSERT INTO cobros_cuentas (
+            cuenta_id, metodo_pago, propina, total_cobrado, habitacion_id, fecha_cobro
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `;
+        await trx(insertCobroSql, [cuenta_id, metodo_pago, propina, total_cobrado, habitacion_id, now]);
+      } catch (e) {
+        // Si no existe la tabla cobros_cuentas, ignorar
+      }
+
+      // 3. Distribución de propinas
       if (propina && Number(propina) > 0) {
-        let staffIds = (await query(`
+        let staffIds = (await trx(`
           SELECT DISTINCT u.id_usuario
           FROM logins l
           INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
@@ -76,7 +147,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           WHERE l.estado = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
         `)) as any[];
 
-        // Fallback al usuario actual si no hay nadie más logueado
         if ((!staffIds || staffIds.length === 0) && currentUser) {
           staffIds = [{ id_usuario: currentUser.id }];
         }
@@ -87,25 +157,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           const residuo = totalPropina % staffIds.length;
 
           const propinaId = generateUUID();
-          await query(
-            'INSERT INTO propinas (id_propina, venta_id, propina) VALUES (?, ?, ?)',
-            [propinaId, null, totalPropina]
-          );
+          await trx('INSERT INTO propinas (id_propina, venta_id, propina, fecha_crea) VALUES (?, ?, ?, ?)', [propinaId, ventaId, totalPropina, now]);
 
           for (let i = 0; i < staffIds.length; i++) {
             const montoFinal = cuotaBase + (i < residuo ? 1 : 0);
             if (montoFinal > 0) {
-              await query(
-                'INSERT INTO detalle_propinas (propina_id, usuario_id, monto) VALUES (?, ?, ?)',
-                [propinaId, staffIds[i].id_usuario, montoFinal]
-              );
+              await trx('INSERT INTO detalle_propinas (id_detalle_propina, propina_id, usuario_id, monto, fecha_crea) VALUES (?, ?, ?, ?, ?)', [generateUUID(), propinaId, staffIds[i].id_usuario, montoFinal, now]);
             }
           }
         }
       }
 
-      // --- REGISTRO DE COMISIONES ---
-      const detallesParaComisiones = (await query(`
+      // 4. Registro de comisiones
+      const detallesParaComisiones = (await trx(`
         SELECT DC.comision, DC.hostess_id 
         FROM detalle_cuentas DC
         WHERE DC.cuenta_id = ? AND DC.comision > 0
@@ -113,9 +177,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       if (detallesParaComisiones.length > 0) {
         const comisionesPorAnfitriona = new Map<string, number>();
-        const usuariosGralesCuenta = (await query(`
-          SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?
-        `, [cuenta_id])) as any[];
+        const usuariosGralesCuenta = (await trx(`SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?`, [cuenta_id])) as any[];
 
         for (const detalle of detallesParaComisiones) {
           const montoComm = Math.round(Number(detalle.comision) || 0);
@@ -136,128 +198,82 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         for (const [uId, monto] of comisionesPorAnfitriona.entries()) {
           if (monto > 0) {
             const comisionId = generateUUID();
-            await query(
-              `INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto) VALUES (?, ?, ?, ?)`,
-              [comisionId, null, null, monto]
-            );
-            await query(
-              `INSERT INTO detalle_comisiones (comision_id, usuario_id, comision) VALUES (?, ?, ?)`,
-              [comisionId, uId, monto]
-            );
+            await trx(`INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto, fecha_crea) VALUES (?, ?, ?, ?, ?)`, [comisionId, ventaId, null, monto, now]);
+            await trx(`INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, fecha_crea) VALUES (?, ?, ?, ?, ?)`, [generateUUID(), comisionId, uId, monto, now]);
           }
         }
       }
 
-      // --- ACTUALIZACIÓN DE CAJA ---
-      try {
-        const cajaActiva = (await query(
-          'SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1'
-        )) as any[];
+      // 5. Actualización de caja activa
+      if (cajaId) {
+        let montoEfectivo = 0, montoTarjeta = 0, montoTransferencia = 0, montoPrepago = 0;
+        const totalVenta = Number(total_cobrado || 0);
 
-        if (cajaActiva && cajaActiva.length > 0) {
-          const cajaId = cajaActiva[0].id_caja;
-          let montoEfectivo = 0;
-          let montoTarjeta = 0;
-          let montoTransferencia = 0;
+        switch (metodo_pago) {
+          case 'efectivo': montoEfectivo = totalVenta; break;
+          case 'tarjeta': montoTarjeta = totalVenta; break;
+          case 'transferencia': montoTransferencia = totalVenta; break;
+          case 'prepago': montoPrepago = totalVenta; break;
+          default: montoEfectivo = totalVenta;
+        }
 
-          const totalVenta = Number(total_cobrado || 0);
+        const totalCommCuenta = detallesParaComisiones.reduce((acc, d) => acc + (Number(d.comision) || 0), 0);
+        await trx(
+          `UPDATE cajas SET 
+            venta = venta + ?, 
+            propina = propina + ?, 
+            efectivo = efectivo + ?, 
+            tarjeta = tarjeta + ?, 
+            transferencia = transferencia + ?, 
+            prepago = prepago + ?, 
+            comision = comision + ?
+          WHERE id_caja = ?`,
+          [
+            totalVenta - Number(propina || 0), 
+            Number(propina || 0), 
+            montoEfectivo, 
+            montoTarjeta, 
+            montoTransferencia, 
+            montoPrepago, 
+            totalCommCuenta, 
+            cajaId
+          ]
+        );
+      }
 
-          switch (metodo_pago) {
-            case 'efectivo': montoEfectivo = totalVenta; break;
-            case 'tarjeta': montoTarjeta = totalVenta; break;
-            case 'transferencia': montoTransferencia = totalVenta; break;
-            default: montoEfectivo = totalVenta;
+      // 6. Liberar habitación si aplica
+      if (habitacion_id) {
+        const roomInfo = (await trx('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
+        if (roomInfo.length > 0) {
+          const room = roomInfo[0];
+          const isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+          if (!isFreeRoom) {
+            await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacion_id]);
           }
-
-          // Calcular comision total de la cuenta para actualizar la caja
-          const totalCommCuenta = detallesParaComisiones.reduce((acc, d) => acc + (Number(d.comision) || 0), 0);
-
-          await query(
-            `UPDATE cajas SET 
-              venta = venta + ?,
-              propina = propina + ?,
-              efectivo = efectivo + ?,
-              tarjeta = tarjeta + ?,
-              transferencia = transferencia + ?,
-              comision = comision + ?
-            WHERE id_caja = ?`,
-            [
-              totalVenta - Number(propina || 0),
-              Number(propina || 0),
-              montoEfectivo,
-              montoTarjeta,
-              montoTransferencia,
-              totalCommCuenta,
-              cajaId
-            ]
-          );
         }
-      } catch (cajaError) {
-        console.error('Error al actualizar caja:', cajaError);
       }
 
-    } catch (error) {
-      console.error('Error al registrar cobro o distribuir propinas/comisiones:', error);
-    }
-
-    // Actualizar estado de la habitación si no es área libre
-    if (habitacion_id) {
-      try {
-        const checkFreeRoom = (await query('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [habitacion_id])) as any[];
-        let isFreeRoom = false;
-        if (checkFreeRoom.length > 0) {
-          const room = checkFreeRoom[0];
-          isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
-        }
-
-        if (!isFreeRoom) {
-          await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacion_id]);
-        }
-      } catch (error) {
-        console.error('Error al actualizar habitación:', error);
-      }
-    }
-
-    // --- LIBERAR ANFITRIONAS ---
-    try {
-      const usersToRelease = (await query(
-        'SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?',
-        [cuenta_id]
-      )) as any[];
-
+      // 7. Liberar anfitrionas asignadas a la cuenta
+      const usersToRelease = (await trx('SELECT usuario_id FROM cuentas_usuarios WHERE cuenta_id = ?', [cuenta_id])) as any[];
       for (const u of usersToRelease) {
-        const userId = u.usuario_id as string;
-        // Actualizar estado en DB
-        await query('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [userId]);
-
-        // Notificar por SSE
-        await sendNotificationToAll('user_status_updated', {
-          userId: userId,
-          status: 1 // Disponible
-        });
+        await trx('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [u.usuario_id]);
+        await sendNotificationToAll('user_status_updated', { userId: u.usuario_id, status: 1 });
       }
-    } catch (userReleaseError) {
-      console.error('Error al liberar anfitrionas:', userReleaseError);
-    }
+
+      return { cuenta_id, metodo_pago, propina, total_cobrado, habitacion_id, fecha_cobro: now };
+    });
 
     return res.status(200).json({
       success: true,
       message: 'Cuenta cobrada exitosamente',
-      data: {
-        cuenta_id,
-        metodo_pago,
-        propina,
-        total_cobrado,
-        habitacion_id,
-        fecha_cobro: new Date().toISOString()
-      }
+      data: result
     });
 
   } catch (error) {
     console.error('Error final en handler de cobro:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error interno del servidor al cobrar la cuenta'
+      message: error instanceof Error ? error.message : 'Error interno al cobrar la cuenta'
     });
   }
 }

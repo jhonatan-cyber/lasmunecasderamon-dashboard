@@ -1,23 +1,59 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 import { withTransaction } from '@/lib/transactionUtils';
 import { enviarWhatsApp } from '@/lib/whatsappService';
 import { sendNotificationToAll } from '@/pages/api/notifications/sse';
+import { buildServicioAnulacionMessage } from '@/lib/notificationMessages';
+
+type SolicitudAnulacionServicioRow = {
+  servicio_id: string;
+  estado?: string;
+  codigo: string;
+  servicio_estado?: number;
+  total: number;
+  metodo_pago?: string | null;
+  habitacion_id?: string | null;
+  cliente_id?: string | null;
+  cliente_nombre: string;
+  habitacion_numero?: string | null;
+  tiempo?: number | null;
+  anfitrionas_nombres?: string | null;
+};
+
+type AnfitrionaRow = {
+  usuario_id: string;
+  comision: number;
+};
+
+type RoomInfoRow = {
+  precio: number;
+  comision_anfitriona: number;
+  tiempo: number;
+};
+
+type CajaRow = {
+  id_caja: string;
+  efectivo: number;
+  tarjeta: number;
+  transferencia: number;
+  servicio: number;
+  devolucion: number;
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Metodo no permitido' });
   }
 
   const { token, action } = req.body;
 
   if (!token || !action || !['confirmar', 'rechazar'].includes(action)) {
-    return res.status(400).json({ error: 'Token y acción requeridos' });
+    return res.status(400).json({ error: 'Token y accion requeridos' });
   }
 
   try {
     const result = await withTransaction(async connection => {
-      // Buscar la solicitud por token
       const solicitudSql = `
         SELECT 
           sas.servicio_id,
@@ -43,7 +79,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         FOR UPDATE
       `;
 
-      const solicitudResult = (await connection(solicitudSql, [token])) as any[];
+      const solicitudResult = (await connection(
+        solicitudSql,
+        [token]
+      )) as SolicitudAnulacionServicioRow[];
 
       if (!Array.isArray(solicitudResult) || solicitudResult.length === 0) {
         throw new Error('Solicitud no encontrada o ya procesada');
@@ -56,46 +95,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const totalServicio = solicitud.total || 0;
       const habitacionId = solicitud.habitacion_id;
       const habitacionNombre = solicitud.habitacion_numero;
-      const tiempo = solicitud.tiempo;
       const anfitrionasNombres = solicitud.anfitrionas_nombres || 'Sin anfitriones';
       const metodoPago = solicitud.metodo_pago || 'efectivo';
 
       if (action === 'confirmar') {
-        // 1. Cambiar el estado del servicio a anulado (0)
+        const now = getNowInBusinessTimezone();
         await connection(
-          'UPDATE servicios SET estado = 0, fecha_mod = NOW() WHERE id_servicio = ?',
-          [servicioId]
+          'UPDATE servicios SET estado = 0, fecha_mod = ? WHERE id_servicio = ?',
+          [now, servicioId]
         );
 
         const { generateUUID } = await import('@/lib/db');
-        // 2. Registrar la DEVOLUCIÓN en las tablas específicas
         const devServId = generateUUID();
         await connection(
-          'INSERT INTO devoluciones_servicios (id, servicio_id, pieza_id, cliente_id, total, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
-          [devServId, servicioId, habitacionId || 0, solicitud.cliente_id || 0, totalServicio]
+          'INSERT INTO devoluciones_servicios (id, servicio_id, pieza_id, cliente_id, total, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
+          [devServId, servicioId, habitacionId || 0, solicitud.cliente_id || 0, totalServicio, now]
         );
 
-        // Registrar detalles por anfitriona
         const anfitrionas = (await connection(
           'SELECT usuario_id, comision FROM detalle_servicios WHERE servicio_id = ?',
           [servicioId]
-        )) as any[];
+        )) as AnfitrionaRow[];
         for (const anf of anfitrionas) {
           const detDevId = generateUUID();
           await connection(
             'INSERT INTO detalle_devoluciones_servicios (id, devolucion_servicio_id, usuario_id, monto) VALUES (?, ?, ?, ?)',
             [detDevId, devServId, anf.usuario_id, anf.comision || 0]
           );
-          // Liberar anfitriona
           await connection('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [anf.usuario_id]);
         }
 
-        // 3. Liberar habitación si no es área libre
         if (habitacionId) {
           const roomInfo = (await connection(
             'SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?',
             [habitacionId]
-          )) as any[];
+          )) as RoomInfoRow[];
           if (roomInfo.length > 0) {
             const room = roomInfo[0];
             const isFreeRoom =
@@ -108,20 +142,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           }
         }
 
-        // 4. Anular comisiones
         await connection(
-          'UPDATE comisiones SET estado = 2, fecha_mod = NOW() WHERE servicio_id = ?',
-          [servicioId]
+          'UPDATE comisiones SET estado = 2, fecha_mod = ? WHERE servicio_id = ?',
+          [now, servicioId]
         );
 
-        // 5. Actualizar caja
         const cajaActualResult = (await connection(`
           SELECT id_caja, efectivo, tarjeta, transferencia, servicio, devolucion
           FROM cajas 
           WHERE estado = 1 
           ORDER BY fecha_apertura DESC 
           LIMIT 1
-        `)) as any[];
+        `)) as CajaRow[];
         const cajaActual = cajaActualResult[0];
 
         if (cajaActual) {
@@ -142,7 +174,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         return {
           success: true,
-          message: 'Anulación de servicio confirmada exitosamente',
+          message: 'Anulacion de servicio confirmada exitosamente',
           servicio: {
             id: servicioId,
             codigo: codigoServicio,
@@ -153,32 +185,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             anfitrionas: anfitrionasNombres
           }
         };
-      } else {
-        // Rechazar
-        await connection(
-          'UPDATE servicios SET estado = 2, fecha_mod = NOW() WHERE id_servicio = ?',
-          [servicioId]
-        );
-        await connection(
-          "UPDATE solicitudes_anulacion_servicios SET estado = 'rechazada' WHERE token = ?",
-          [token]
-        );
-        return {
-          success: true,
-          message: 'Anulación de servicio rechazada exitosamente',
-          servicio: {
-            id: servicioId,
-            codigo: codigoServicio,
-            cliente: clienteNombre,
-            total: totalServicio,
-            habitacion: habitacionNombre,
-            anfitrionas: anfitrionasNombres
-          }
-        };
       }
+
+      const now = getNowInBusinessTimezone();
+      await connection(
+        'UPDATE servicios SET estado = 2, fecha_mod = ? WHERE id_servicio = ?',
+        [now, servicioId]
+      );
+      await connection(
+        "UPDATE solicitudes_anulacion_servicios SET estado = 'rechazada' WHERE token = ?",
+        [token]
+      );
+      return {
+        success: true,
+        message: 'Anulacion de servicio rechazada exitosamente',
+        servicio: {
+          id: servicioId,
+          codigo: codigoServicio,
+          cliente: clienteNombre,
+          total: totalServicio,
+          habitacion: habitacionNombre,
+          anfitrionas: anfitrionasNombres
+        }
+      };
     });
 
-    // Notificaciones (fuera de la transacción)
     if (result.success) {
       const type =
         action === 'confirmar' ? 'anulacion_servicio_confirmada' : 'anulacion_servicio_rechazada';
@@ -189,9 +220,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       };
 
       try {
+        const now = getNowInBusinessTimezone();
         await query(
-          `INSERT INTO notificaciones_sistema (tipo, datos, leida, fecha_creacion) VALUES (?, ?, 0, NOW())`,
-          [type, JSON.stringify(notificationData)]
+          `INSERT INTO notificaciones_sistema (tipo, datos, leida, fecha_creacion) VALUES (?, ?, 0, ?)`,
+          [type, JSON.stringify(notificationData), now]
         );
         sendNotificationToAll(type, notificationData);
         if (action === 'confirmar') {
@@ -206,18 +238,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       const adminWhatsApp =
         process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-      const emoji = action === 'confirmar' ? '✅' : '❌';
-      const titulo = action === 'confirmar' ? 'SERVICIO ANULADO' : 'ANULACIÓN RECHAZADA';
-      const msg = `${emoji} *${titulo}*\n\nEl servicio con código *${result.servicio.codigo}* ha sido ${action === 'confirmar' ? 'anulado' : 'mantenido activo'}.\n\n📋 *Detalles:*\n• Cliente: ${result.servicio.cliente}\n• Habitación: ${result.servicio.habitacion}\n• Total: $${result.servicio.total?.toLocaleString()}`;
+      const msg = buildServicioAnulacionMessage({
+        action,
+        codigo: result.servicio.codigo,
+        cliente: result.servicio.cliente,
+        habitacion: result.servicio.habitacion || 'Sin habitacion',
+        total: result.servicio.total || 0
+      });
       await enviarWhatsApp(adminWhatsApp, msg);
     }
 
     return res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error en procesar-anulacion servicios:', error);
-    return res.status(error.message.includes('No encontrada') ? 404 : 500).json({
+    const message = error instanceof Error ? error.message : 'Error interno del servidor';
+    return res.status(message.includes('No encontrada') ? 404 : 500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      error: message
     });
   }
 }

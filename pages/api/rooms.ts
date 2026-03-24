@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { query, generateUUID } from "@/lib/db";
 import { z } from "zod";
@@ -20,8 +21,8 @@ const mapRoomFromDB = (row: any) => ({
   precio: row.precio, // Agregar también este campo
   time: row.tiempo,
   tiempo: row.tiempo, // Agregar también este campo
-  status: row.estado,
-  estado: row.estado, // Agregar también este campo
+  status: row.en_servicio > 0 ? 2 : row.estado,
+  estado: row.en_servicio > 0 ? 2 : row.estado, // Agregar también este campo
   fecha_crea: row.fecha_crea,
   fecha_mod: row.fecha_mod,
   fecha_elim: row.fecha_elim,
@@ -50,7 +51,10 @@ const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
         results = await query("SELECT * FROM habitaciones WHERE estado = ? ORDER BY display_order ASC, id_habitacion ASC", [status]);
       }
     } else {
-      results = await query("SELECT * FROM habitaciones ORDER BY display_order ASC, id_habitacion ASC", []);
+      results = await query(
+      "SELECT h.*, (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 1) as en_servicio FROM habitaciones h ORDER BY h.display_order ASC, h.id_habitacion ASC",
+      []
+    );
     }
     const rooms = Array.isArray(results) ? results.map(mapRoomFromDB) : [];
     return res.status(200).json({ success: true, data: rooms });
@@ -243,3 +247,4 @@ export default async function handler(
         .json({ success: false, message: `Método ${req.method} no permitido` });
   }
 }
+

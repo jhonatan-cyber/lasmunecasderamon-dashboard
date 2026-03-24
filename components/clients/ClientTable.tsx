@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
-import { Trash, Pencil, Eye, Phone, User, Calendar, MoreVertical } from 'lucide-react';
+import { Trash, Pencil, Eye, Phone, User, Calendar, MoreVertical, Wallet } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ interface ClientTableProps {
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
   onViewDetails: (client: Client) => void;
+  onLoadPrepago: (client: Client) => void;
   currentPage: number;
   pageSize: number;
 }
@@ -38,19 +39,18 @@ export function ClientTable({
   onEdit,
   onDelete,
   onViewDetails,
+  onLoadPrepago,
   currentPage,
   pageSize
 }: ClientTableProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const { hasPermission } = useUserPermissions();
-  
-  // Verificar permisos
+
   const canViewDetails = hasPermission('clients', 'view_details');
   const canEdit = hasPermission('clients', 'edit');
   const canDelete = hasPermission('clients', 'delete');
-  
-  // Si no tiene ningún permiso de acción, no mostrar el menú
+
   const hasAnyAction = canViewDetails || canEdit || canDelete;
 
   const handleDeleteClick = (client: Client) => {
@@ -110,7 +110,6 @@ export function ClientTable({
     return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es });
   };
 
-  // Vista de tarjetas para móviles
   const MobileCardView = () => (
     <div className='lg:hidden space-y-3'>
       {clients.length === 0 ? (
@@ -164,6 +163,13 @@ export function ClientTable({
                   <Calendar className='h-3 w-3 text-gray-400' />
                   <span className='text-xs sm:text-sm text-gray-500'>
                     {renderDate(client.updated_at, 'Sin modificar')}
+                  </span>
+                </div>
+
+                <div className='flex items-center gap-2'>
+                  <Wallet className='h-3 w-3 text-green-500' />
+                  <span className='text-xs sm:text-sm font-bold text-green-600'>
+                    Saldo: ${(client.saldo || 0).toLocaleString('es-CL')}
                   </span>
                 </div>
               </div>
@@ -236,6 +242,22 @@ export function ClientTable({
                           </Tooltip>
                         </TooltipProvider>
                       )}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuItem
+                              onClick={() => onLoadPrepago(client)}
+                              className='cursor-pointer group'
+                            >
+                              <Wallet className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
+                              <span className='group-hover:text-green-700 transition-colors text-sm sm:text-base'>
+                                Cargar saldo
+                              </span>
+                            </DropdownMenuItem>
+                          </TooltipTrigger>
+                          <TooltipContent>Cargar saldo prepago</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -272,6 +294,9 @@ export function ClientTable({
                 <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                   Estado
                 </TableHead>
+                <TableHead className='py-3 px-4 text-center text-sm text-gray-400 font-bold text-green-600'>
+                  Saldo Prepago
+                </TableHead>
                 <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                   Acciones
                 </TableHead>
@@ -288,9 +313,8 @@ export function ClientTable({
               {clients.map((client, idx) => (
                 <TableRow
                   key={client.id}
-                  className={`border-b bg-white group ${
-                    idx === 0 ? 'first:rounded-t-xl' : ''
-                  } ${idx === clients.length - 1 ? 'last:rounded-b-xl' : ''}`}
+                  className={`border-b bg-white group ${idx === 0 ? 'first:rounded-t-xl' : ''
+                    } ${idx === clients.length - 1 ? 'last:rounded-b-xl' : ''}`}
                 >
                   <TableCell className='py-3 px-4 text-center text-sm text-gray-600 font-medium'>
                     <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>
@@ -316,6 +340,9 @@ export function ClientTable({
                         Inactivo
                       </Badge>
                     )}
+                  </TableCell>
+                  <TableCell className='py-3 px-4 text-center font-bold text-green-600'>
+                    ${(client.saldo || 0).toLocaleString('es-CL')}
                   </TableCell>
                   <TableCell className='py-3 px-4 text-center'>
                     {hasAnyAction && (
@@ -385,6 +412,22 @@ export function ClientTable({
                                 </Tooltip>
                               </TooltipProvider>
                             )}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenuItem
+                                    onClick={() => onLoadPrepago(client)}
+                                    className='cursor-pointer group'
+                                  >
+                                    <Wallet className='mr-2 text-green-600 group-hover:text-green-700 transition-colors' />
+                                    <span className='group-hover:text-green-700 transition-colors'>
+                                      Cargar saldo
+                                    </span>
+                                  </DropdownMenuItem>
+                                </TooltipTrigger>
+                                <TooltipContent>Cargar saldo prepago</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -413,3 +456,4 @@ export function ClientTable({
     </TooltipProvider>
   );
 }
+

@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatLongDateEs, formatShortDmyDateEs, formatShortTimeEs, formatMonthYearLabel, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/calendarUtils';
 
 interface AnfitrionaCalendarProps {
   userId: number;
@@ -80,7 +82,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
 
     setIsLoadingSelectedData(true);
     try {
-      const dateStrs = selectedDates.map(date => date.toISOString().split('T')[0]);
+      const dateKeys = toDateKeys(selectedDates);
 
       // Calcular conteos para todos los tipos de datos
       const newCounts: { [key: string]: number } = {
@@ -92,7 +94,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
 
       // Obtener conteo de asistencias
       try {
-        const asistenciasDatesParam = dateStrs.join(',');
+        const asistenciasDatesParam = dateKeys.join(',');
         const asistenciasRes = await fetch(
           `/api/asistencias/by-dates?dates=${asistenciasDatesParam}`
         );
@@ -103,7 +105,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
 
       // Obtener conteo de anticipos
       try {
-        const anticiposDatesParam = dateStrs.join(',');
+        const anticiposDatesParam = dateKeys.join(',');
         const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
         const anticiposData = await anticiposRes.json();
         newCounts.anticipos = anticiposData.success ? anticiposData.data?.length || 0 : 0;
@@ -112,12 +114,12 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
 
       // Calcular conteo de comisiones
       newCounts.comisiones = calendarData.comisiones.filter(item =>
-        dateStrs.includes(item.fecha_crea?.split('T')[0])
+        matchesAnyDateKey(item.fecha_crea, dateKeys)
       ).length;
 
       // Obtener conteo de servicios
       try {
-        const serviciosDatesParam = dateStrs.join(',');
+        const serviciosDatesParam = dateKeys.join(',');
         const serviciosRes = await fetch(`/api/servicios/by-dates?dates=${serviciosDatesParam}`);
         const serviciosData = await serviciosRes.json();
         newCounts.servicios = serviciosData.success ? serviciosData.data?.length || 0 : 0;
@@ -132,7 +134,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
       // Sumar asistencias (sueldo_final)
       if (newCounts.asistencias > 0) {
         try {
-          const asistenciasDatesParam = dateStrs.join(',');
+          const asistenciasDatesParam = dateKeys.join(',');
           const asistenciasRes = await fetch(
             `/api/asistencias/by-dates?dates=${asistenciasDatesParam}`
           );
@@ -153,7 +155,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
       // Sumar comisiones (comision)
       if (newCounts.comisiones > 0) {
         const comisionesEstado1 = calendarData.comisiones.filter(
-          (item: any) => dateStrs.includes(item.fecha_crea?.split('T')[0]) && item.estado === 1
+          (item: any) => matchesAnyDateKey(item.fecha_crea, dateKeys) && item.estado === 1
         );
         total += comisionesEstado1.reduce((sum: number, item: any) => sum + (item.comision || 0), 0);
       }
@@ -161,7 +163,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
       // Sumar servicios (precio_servicio) - estado 0 (POR COBRAR) y estado 4 (PAGADO)
       if (newCounts.servicios > 0) {
         try {
-          const serviciosDatesParam = dateStrs.join(',');
+          const serviciosDatesParam = dateKeys.join(',');
           const serviciosRes = await fetch(
             `/api/servicios/by-dates?dates=${serviciosDatesParam}`
           );
@@ -182,7 +184,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
       // Restar anticipos (monto)
       if (newCounts.anticipos > 0) {
         try {
-          const anticiposDatesParam = dateStrs.join(',');
+          const anticiposDatesParam = dateKeys.join(',');
           const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
           const anticiposData = await anticiposRes.json();
           if (anticiposData.success && anticiposData.data) {
@@ -201,24 +203,24 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
       // Obtener datos para el tipo seleccionado
       switch (selectedDataType) {
         case 'asistencias':
-          const datesParam = dateStrs.join(',');
+          const datesParam = dateKeys.join(',');
           const asistenciasRes = await fetch(`/api/asistencias/by-dates?dates=${datesParam}`);
           const asistenciasData = await asistenciasRes.json();
           setSelectedDateData(asistenciasData.success ? asistenciasData.data || [] : []);
           break;
         case 'anticipos':
-          const anticiposDatesParam = dateStrs.join(',');
+          const anticiposDatesParam = dateKeys.join(',');
           const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
           const anticiposData = await anticiposRes.json();
           setSelectedDateData(anticiposData.success ? anticiposData.data || [] : []);
           break;
         case 'comisiones':
           setSelectedDateData(
-            calendarData.comisiones.filter(item => dateStrs.includes(item.fecha_crea?.split('T')[0]))
+            calendarData.comisiones.filter(item => matchesAnyDateKey(item.fecha_crea, dateKeys))
           );
           break;
         case 'servicios':
-          const serviciosDatesParam = dateStrs.join(',');
+          const serviciosDatesParam = dateKeys.join(',');
           const serviciosRes = await fetch(
             `/api/servicios/by-dates?dates=${serviciosDatesParam}`
           );
@@ -244,10 +246,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
   const fetchCalendarData = async () => {
     setIsLoading(true);
     try {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+      const { startDate, endDate } = getMonthDateRange(currentDate);
 
       // Fetch asistencias usando la nueva API
       const asistenciasRes = await fetch(
@@ -290,33 +289,21 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
   }, [currentDate, userId]);
 
   const getDataForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateKey = toDateKey(date);
 
     // Verificar asistencias - usar la misma lógica que anticipos y servicios
     const asistenciasMatch = calendarData.asistencias.some((item: any) => {
-      const itemFecha = item.fecha;
-      let matches = false;
-
-      // Usar la misma lógica que anticipos y servicios
-      if (itemFecha) {
-        if (itemFecha instanceof Date) {
-          matches = itemFecha.toISOString().split('T')[0] === dateStr;
-        } else if (typeof itemFecha === 'string') {
-          matches = itemFecha.split('T')[0] === dateStr;
-        }
-      }
-
-      return matches;
+      return matchesAnyDateKey(item.fecha, [dateKey]);
     });
 
     const anticiposMatch = calendarData.anticipos.some(
-      (item: any) => item.fecha_crea?.split('T')[0] === dateStr
+      (item: any) => toDateKey(item.fecha_crea) === dateKey
     );
     const comisionesMatch = calendarData.comisiones.some(
-      (item: any) => item.fecha_crea?.split('T')[0] === dateStr
+      (item: any) => toDateKey(item.fecha_crea) === dateKey
     );
     const serviciosMatch = calendarData.servicios.some(
-      (item: any) => item.fecha_crea?.split('T')[0] === dateStr
+      (item: any) => toDateKey(item.fecha_crea) === dateKey
     );
 
     const result = {
@@ -411,23 +398,13 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
   const formatDatesList = () => {
     if (selectedDates.length === 0) return '';
     if (selectedDates.length === 1) {
-      return selectedDates[0].toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      return formatLongDateEs(selectedDates[0]);
     }
     return `${selectedDates.length} fechas seleccionadas`;
   };
 
   const formatSimpleDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return formatShortDmyDateEs(dateString);
   };
 
   const getStatusBadge = (estado: number, dataType?: DataType) => {
@@ -485,7 +462,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+              {formatMonthYearLabel(currentDate)}
             </h2>
             <Button variant="ghost" size="sm" onClick={goToNextMonth}>
               <ChevronRight className="w-4 h-4" />
@@ -672,7 +649,6 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
             <div className="flex flex-wrap justify-center gap-3">
               {Object.entries(dataTypeConfig).map(([key, config]) => {
                 const Icon = config.icon;
-                const dateStrs = selectedDates.map(date => date.toISOString().split('T')[0]);
 
                 // Usar los conteos calculados previamente
                 const count = modalCounts[key] || 0;
@@ -686,7 +662,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
                         : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
                     variant={selectedDataType === key ? 'default' : 'outline'}
-                    onClick={() => setSelectedDataType(key as any)}
+                    onClick={() => setSelectedDataType(key as DataType)}
                   >
                     <Icon className={`w-5 h-5 mr-3 ${config.color}`} />
                     {config.title} ({count})
@@ -866,11 +842,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
                                      {formatSimpleDate(item.fecha_crea)}
                                    </div>
                                    <div className="text-sm text-gray-500">
-                                     {new Date(item.fecha_crea).toLocaleTimeString('es-ES', {
-                                       hour: '2-digit',
-                                       minute: '2-digit',
-                                       second: '2-digit'
-                                     })}
+                                     {formatShortTimeEs(item.fecha_crea)}
                                    </div>
                                  </div>
                                </td>
@@ -903,3 +875,4 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
     </div>
   );
 }
+

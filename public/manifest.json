@@ -1,11 +1,11 @@
 {
-  "name": "Las Muñecas de Ramón - Admin",
-  "short_name": "LMR Admin",
-  "description": "Panel de administración del club Las Muñecas de Ramón",
-  "start_url": "/dashboard",
+  "name": "Las Munecas de Ramon",
+  "short_name": "LMR",
+  "description": "Sitio publico y panel operativo de Las Munecas de Ramon.",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#6366f1",
+  "theme_color": "#0b0b0f",
   "orientation": "any",
   "scope": "/",
   "icons": [
@@ -34,24 +34,24 @@
   "screenshots": [],
   "shortcuts": [
     {
+      "name": "Inicio",
+      "short_name": "Inicio",
+      "description": "Abrir el sitio principal",
+      "url": "/",
+      "icons": [{ "src": "/img/system/logo1.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Login",
+      "short_name": "Login",
+      "description": "Ingresar al panel administrativo",
+      "url": "/login",
+      "icons": [{ "src": "/img/system/logo1.png", "sizes": "96x96" }]
+    },
+    {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "Ver panel de control",
+      "description": "Abrir el panel interno",
       "url": "/dashboard",
-      "icons": [{ "src": "/img/system/logo1.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Ventas",
-      "short_name": "Ventas",
-      "description": "Ver ventas del día",
-      "url": "/sales",
-      "icons": [{ "src": "/img/system/logo1.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Servicios",
-      "short_name": "Servicios",
-      "description": "Gestionar servicios",
-      "url": "/anfitriona-servicios",
       "icons": [{ "src": "/img/system/logo1.png", "sizes": "96x96" }]
     }
   ],

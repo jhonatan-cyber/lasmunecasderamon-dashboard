@@ -1,6 +1,12 @@
-// Configuración para suprimir warnings de React Strict Mode en Swagger UI
+type SwaggerRequest = {
+  headers?: Record<string, string>;
+};
+
+type SwaggerResponse = {
+  status?: number;
+};
+
 export const swaggerConfig = {
-  // Configuración básica
   url: '/api/swagger',
   docExpansion: 'list' as const,
   defaultModelsExpandDepth: 2,
@@ -18,22 +24,14 @@ export const swaggerConfig = {
   defaultModelRendering: 'example' as const,
   validatorUrl: null,
   withCredentials: true,
-
-  // Interceptores
-  requestInterceptor: (request: any) => {
+  requestInterceptor: (request: SwaggerRequest) => {
     if (!request.headers) {
       request.headers = {};
     }
+
     request.headers['Content-Type'] = 'application/json';
     return request;
   },
-
-  responseInterceptor: (response: any) => {
-    return response;
-  },
-
-  // Callback simple
-  onComplete: (system: any) => {
-    console.log('Swagger UI cargado completamente');
-  }
+  responseInterceptor: (response: SwaggerResponse) => response,
+  onComplete: () => undefined,
 };

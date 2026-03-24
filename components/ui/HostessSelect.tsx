@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import React, { useState, useMemo } from "react";
 
 interface Hostess {
-  id_usuario?: number;
-  id?: number;
+  id_usuario?: string | number;
+  id?: string | number;
   nombre?: string;
   name?: string;
   apellido?: string;

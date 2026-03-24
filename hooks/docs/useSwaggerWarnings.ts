@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from 'react';
 
 export const useSwaggerWarnings = () => {
@@ -48,3 +49,4 @@ export const useSwaggerWarnings = () => {
     };
   }, []); // Solo ejecutar una vez al montar el componente
 };
+

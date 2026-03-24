@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, no-console */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -9,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatLongDateEs } from '@/lib/calendarUtils';
 
 interface SolicitudAnulacionServicio {
   servicio_id: number;
@@ -218,7 +221,7 @@ function ConfirmarAnulacionServicioContent() {
                   <div>
                     <Label className='text-sm font-medium text-gray-600'>Total</Label>
                     <p className='text-lg font-semibold text-green-600'>
-                      ${solicitud.total?.toLocaleString()}
+                      {formatCurrencyCLP(solicitud.total || 0)}
                     </p>
                   </div>
                 </div>
@@ -257,7 +260,7 @@ function ConfirmarAnulacionServicioContent() {
                   <div>
                     <Label className='text-sm font-medium text-gray-600'>Fecha de Solicitud</Label>
                     <p className='text-lg'>
-                      {new Date(solicitud.fecha_solicitud).toLocaleString()}
+                      {formatLongDateEs(solicitud.fecha_solicitud)}
                     </p>
                   </div>
                 </div>

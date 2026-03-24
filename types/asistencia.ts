@@ -23,5 +23,5 @@ export interface AsistenciaResponse {
   success: boolean;
   data?: AsistenciaResumen[]; // Hacemos data opcional con el operador ?
   error?: string;
-  details?: any;
+  details?: unknown;
 }

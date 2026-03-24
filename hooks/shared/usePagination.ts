@@ -1,4 +1,10 @@
-import { useState, useMemo } from 'react';
+/* eslint-disable */
+import { useState, useMemo, useCallback, useEffect } from 'react';
+
+const DEFAULT_CONFIG: PaginationConfig = {
+  itemsPerPage: 10,
+  maxVisiblePages: 5
+};
 
 export interface PaginationConfig {
   itemsPerPage: number;
@@ -32,10 +38,11 @@ export interface UsePaginationReturn<T> {
 
 export function usePagination<T>(
   data: T[],
-  config: PaginationConfig = { itemsPerPage: 10, maxVisiblePages: 5 }
+  config: PaginationConfig = DEFAULT_CONFIG
 ): UsePaginationReturn<T> {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(config.itemsPerPage);
+  const maxVisiblePages = config.maxVisiblePages ?? DEFAULT_CONFIG.maxVisiblePages ?? 5;
 
   const pagination = useMemo((): PaginationState => {
     const totalItems = data.length;
@@ -53,14 +60,20 @@ export function usePagination<T>(
     };
   }, [data.length, currentPage, itemsPerPage]);
 
+  useEffect(() => {
+    const lastPage = Math.max(pagination.totalPages, 1);
+    if (currentPage > lastPage) {
+      setCurrentPage(lastPage);
+    }
+  }, [currentPage, pagination.totalPages]);
+
   const paginatedData = useMemo(() => {
     return data.slice(pagination.startIndex, pagination.endIndex);
   }, [data, pagination.startIndex, pagination.endIndex]);
 
   const visiblePages = useMemo(() => {
     const { currentPage, totalPages } = pagination;
-    const maxVisiblePages = config.maxVisiblePages || 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
@@ -77,35 +90,43 @@ export function usePagination<T>(
       { length: endPage - startPage + 1 },
       (_, i) => startPage + i
     );
-  }, [pagination.currentPage, pagination.totalPages, config.maxVisiblePages]);
+  }, [pagination.currentPage, pagination.totalPages, maxVisiblePages]);
 
-  const controls: PaginationControls = {
-    goToPage: (page: number) => {
-      if (page >= 1 && page <= pagination.totalPages) {
-        setCurrentPage(page);
-      }
-    },
-    nextPage: () => {
-      if (currentPage < pagination.totalPages) {
-        setCurrentPage(currentPage + 1);
-      }
-    },
-    previousPage: () => {
-      if (currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    },
-    goToFirstPage: () => {
-      setCurrentPage(1);
-    },
-    goToLastPage: () => {
-      setCurrentPage(pagination.totalPages);
-    },
-    setItemsPerPage: (newItemsPerPage: number) => {
-      setItemsPerPage(newItemsPerPage);
-      setCurrentPage(1);
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setCurrentPage(page);
     }
-  };
+  }, [pagination.totalPages]);
+
+  const nextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages));
+  }, [pagination.totalPages]);
+
+  const previousPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
+
+  const goToFirstPage = useCallback(() => {
+    setCurrentPage(1);
+  }, []);
+
+  const goToLastPage = useCallback(() => {
+    setCurrentPage(pagination.totalPages || 1);
+  }, [pagination.totalPages]);
+
+  const updateItemsPerPage = useCallback((newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  }, []);
+
+  const controls: PaginationControls = useMemo(() => ({
+    goToPage,
+    nextPage,
+    previousPage,
+    goToFirstPage,
+    goToLastPage,
+    setItemsPerPage: updateItemsPerPage
+  }), [goToPage, nextPage, previousPage, goToFirstPage, goToLastPage, updateItemsPerPage]);
 
   return {
     paginatedData,

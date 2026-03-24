@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/display-name */
 import { ReactNode, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { User, Users, UserCheck, DollarSign, Clock, CheckCircle, Barcode } from "lucide-react";
+import { formatCurrencyCLP } from "@/lib/formatters";
 
 const badgeColors = [
   "bg-purple-300 text-purple-800",
@@ -111,10 +113,7 @@ const OrderRow = memo(({ order, onRowClick, isGarzon }: {
             <DollarSign className="h-3 w-3 text-green-500" />
             <p className="font-medium text-gray-900 text-sm sm:text-base">
               <b className="text-gray-600">Total:</b>{" "}
-              {order.total.toLocaleString("es-CL", {
-                style: "currency",
-                currency: "CLP",
-              })}
+              {formatCurrencyCLP(order.total)}
             </p>
           </div>
         </div>
@@ -158,3 +157,4 @@ const OrderTable = memo(function OrderTable({
 });
 
 export default OrderTable;
+

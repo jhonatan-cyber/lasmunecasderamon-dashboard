@@ -1,5 +1,5 @@
 import { query, generateUUID } from './db';
-
+import { logger } from './logger';
 
 export const addClient = async (
   run: string,
@@ -14,11 +14,12 @@ export const addClient = async (
   );
 };
 
-
 export const getAllClients = async () => {
-  console.log('[PROCEDURES] getAllClients called');
+  logger.info('[PROCEDURES] getAllClients called');
   const result = await query('SELECT * FROM clientes WHERE estado = 1 ORDER BY nombre ASC');
-  console.log('[PROCEDURES] getAllClients result count:', Array.isArray(result) ? result.length : 1);
+  logger.info('[PROCEDURES] getAllClients result count', {
+    count: Array.isArray(result) ? result.length : 1,
+  });
   return result;
 };
 

@@ -7,6 +7,8 @@ import { Bed, Clock, DollarSign, Percent, MoreVertical, Edit, Trash2, Check, Pow
 import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatShortDmyDateEs } from "@/lib/calendarUtils";
 
 const RoomCard: React.FC<{
   room: Room;
@@ -172,7 +174,7 @@ const RoomCard: React.FC<{
               <span className="text-xs font-medium truncate">Precio</span>
             </div>
             <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
-              ${room.price.toLocaleString('es-CL')}
+              {formatCurrencyCLP(room.price)}
             </p>
           </div>
           
@@ -182,7 +184,7 @@ const RoomCard: React.FC<{
               <span className="text-xs font-medium truncate">Comisión</span>
             </div>
             <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
-              {room.comision_anfitriona ? `$${room.comision_anfitriona.toLocaleString('es-CL')}` : '—'}
+              {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : '—'}
             </p>
           </div>
         </div>
@@ -209,11 +211,7 @@ const RoomCard: React.FC<{
         {room.fecha_crea && (
           <div className="pt-2 sm:pt-3 border-t border-gray-100">
             <p className="text-xs text-gray-500 text-center truncate">
-              {new Date(room.fecha_crea).toLocaleDateString('es-ES', { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric' 
-              })}
+              {formatShortDmyDateEs(room.fecha_crea)}
             </p>
           </div>
         )}

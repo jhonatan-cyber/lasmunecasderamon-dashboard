@@ -1,9 +1,9 @@
 // Tipos para servicios
 export interface Servicio {
-  id_servicio?: string;
+  id_servicio?: string | number;
   codigo: string;
-  cliente_id: string;
-  habitacion_id: string;
+  cliente_id: string | number;
+  habitacion_id: string | number;
   precio_habitacion: number;
   precio_servicio: number;
   iva: number;
@@ -77,5 +77,5 @@ export interface ServiceActions {
   handleCreateServicio: () => void;
   handleShowActiveServices: () => Promise<void>;
   handleShowAllServices: () => Promise<void>;
-  handleStopTimer: (servicioId: string) => Promise<void>;
+  handleStopTimer: (servicioId: string | number) => Promise<void>;
 } 

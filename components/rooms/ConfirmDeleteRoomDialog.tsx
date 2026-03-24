@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import {
@@ -66,3 +67,4 @@ export default function ConfirmDeleteRoomDialog({
     </Dialog>
   );
 }
+

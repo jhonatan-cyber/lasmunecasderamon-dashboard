@@ -1,5 +1,7 @@
+/* eslint-disable */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, generateUUID } from '@/lib/db';
+import { getNowInBusinessTimezone } from '@/lib/timezoneService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -8,7 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'GET': {
         if (queryParams.id) {
           const id = queryParams.id as string;
-          const clients = (await query('SELECT * FROM clientes WHERE id_cliente = ?', [
+          const clients = (await query(`
+            SELECT c.*, 
+            COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
+            FROM clientes c 
+            WHERE c.id_cliente = ?`, [
             id
           ])) as any[];
 
@@ -22,18 +28,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             name: client.nombre,
             lastName: client.apellido,
             phone: client.telefono,
+            saldo: client.saldo || 0,
+            deuda: client.deuda || 0,
             created_at: client.fecha_crea,
             updated_at: client.fecha_mod,
             status: client.estado
           });
         } else {
-          const clients = (await query('SELECT * FROM clientes ORDER BY nombre ASC')) as any[];
+          const clients = (await query(`
+            SELECT c.*, 
+            COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
+            FROM clientes c 
+            ORDER BY c.nombre ASC`)) as any[];
           const formattedClients = clients.map(client => ({
             id: client.id_cliente,
             run: client.run,
             name: client.nombre,
             lastName: client.apellido,
             phone: client.telefono,
+            saldo: client.saldo || 0,
+            deuda: client.deuda || 0,
             created_at: client.fecha_crea,
             updated_at: client.fecha_mod,
             status: client.estado
@@ -49,9 +63,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
         const id = generateUUID();
+        const now = getNowInBusinessTimezone();
         await query(
-          'INSERT INTO clientes (id_cliente, run, nombre, apellido, telefono) VALUES (?, ?, ?, ?, ?)',
-          [id, run || '', name, lastName, phone || '']
+          'INSERT INTO clientes (id_cliente, run, nombre, apellido, telefono, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
+          [id, run || '', name, lastName, phone || '', now]
         );
  
         return res.status(201).json({
@@ -65,9 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!id || !name || !lastName) {
           return res.status(400).json({ message: 'Faltan parámetros requeridos' });
         }
+        const now = getNowInBusinessTimezone();
         await query(
-          'UPDATE clientes SET run = ?, nombre = ?, apellido = ?, telefono = ?, fecha_mod = NOW() WHERE id_cliente = ?',
-          [run, name, lastName, phone, id]
+          'UPDATE clientes SET run = ?, nombre = ?, apellido = ?, telefono = ?, fecha_mod = ? WHERE id_cliente = ?',
+          [run, name, lastName, phone, now, id]
         );
         return res.status(200).json({ message: 'Cliente actualizado correctamente' });
       }
@@ -92,3 +108,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+

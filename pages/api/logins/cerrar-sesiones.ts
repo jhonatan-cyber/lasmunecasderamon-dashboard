@@ -12,12 +12,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     // Eliminar todas las sesiones activas
-    const result = await query('DELETE FROM logins WHERE estado = 1');
+    const result = await query('DELETE FROM logins WHERE estado = 1') as { affectedRows?: number };
 
     return res.status(200).json({
       success: true,
       message: 'Todas las sesiones han sido cerradas exitosamente',
-      data: { sesionesCerradas: (result as any).affectedRows || 0 }
+      data: { sesionesCerradas: result.affectedRows || 0 }
     });
   } catch (error) {
     return res.status(500).json({
@@ -29,3 +29,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withAuth(handler);
+

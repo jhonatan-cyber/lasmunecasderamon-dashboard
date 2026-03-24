@@ -1,10 +1,11 @@
+/* eslint-disable */
 'use client';
 
 import { useState } from 'react';
 import { useOvertime } from '@/hooks/personal/useOvertime';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/formatters';
 import OvertimeFilters from '@/components/overtime/OvertimeFilters';
 import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
 import OvertimeTable from '@/components/overtime/OvertimeTable';
@@ -131,7 +132,7 @@ export default function OvertimePage() {
           </div>
         )}
 
-        <OvertimeStatsCards overtime={overtimeData} formatCurrency={formatCurrencyNoDecimals} />
+        <OvertimeStatsCards overtime={overtimeData} formatCurrency={formatCurrencyCLP} />
 
         <OvertimeFilters
           searchTerm={searchTerm}

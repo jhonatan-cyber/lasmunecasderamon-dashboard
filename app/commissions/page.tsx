@@ -9,7 +9,7 @@ import { DollarSign, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useCommissions } from '@/hooks/personal/useCommissions';
 import useCommissionStats from '@/hooks/personal/useCommissionStats';
 import { Commission } from '@/types/commission';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/formatters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CommissionsPage() {
@@ -81,7 +81,7 @@ export default function CommissionsPage() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.total_comisiones || 0)}
+                {isLoadingStats ? '...' : formatCurrencyCLP(stats?.total_comisiones || 0)}
               </div>
               <p className='text-xs text-gray-400 mt-1'>Acumulado en caja activa</p>
             </CardContent>
@@ -94,7 +94,7 @@ export default function CommissionsPage() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.comision_ventas || 0)}
+                {isLoadingStats ? '...' : formatCurrencyCLP(stats?.comision_ventas || 0)}
               </div>
               <p className='text-xs text-gray-400 mt-1'>
                 {stats?.porcentaje_ventas || 0}% del total
@@ -109,7 +109,7 @@ export default function CommissionsPage() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : formatCurrencyNoDecimals(stats?.comision_servicios || 0)}
+                {isLoadingStats ? '...' : formatCurrencyCLP(stats?.comision_servicios || 0)}
               </div>
               <p className='text-xs text-gray-400 mt-1'>
                 {stats?.porcentaje_servicios || 0}% del total

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-console */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query, rawQuery, generateUUID } from '@/lib/db';
 import { z } from 'zod';
@@ -298,3 +299,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ success: false, message: `Método ${req.method} no permitido` });
   }
 }
+

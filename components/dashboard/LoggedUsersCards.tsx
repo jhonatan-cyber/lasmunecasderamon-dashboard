@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
@@ -245,3 +246,4 @@ export default function LoggedUsersCards() {
     </div>
   );
 }
+

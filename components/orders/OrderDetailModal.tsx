@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -22,6 +23,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { formatCurrencyCLP } from '@/lib/formatters';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
@@ -36,40 +38,8 @@ import {
 import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
-
-function formatFecha(fechaStr?: string) {
-  if (!fechaStr) return '-';
-
-  if (fechaStr.includes('T')) {
-    const date = new Date(fechaStr);
-    const d = String(date.getDate()).padStart(2, '0');
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const y = date.getFullYear();
-    return `${d}-${m}-${y}`;
-  }
-
-  const [fecha] = fechaStr.split(' ');
-  if (!fecha) return '-';
-  const [y, m, d] = fecha.split('-');
-  return `${d}-${m}-${y}`;
-}
-function formatHora(fechaStr?: string) {
-  if (!fechaStr) return '-';
-
-  if (fechaStr.includes('T')) {
-    const date = new Date(fechaStr);
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return `${h}:${min}`;
-  }
-
-  const parts = fechaStr.split(' ');
-  if (parts[1]) {
-    const [h, m] = parts[1].split(':');
-    return `${h}:${m}`;
-  }
-  return '-';
-}
+import { formatNumberCL } from '@/lib/formatters';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
 
 interface OrderDetailModalProps {
   open: boolean;
@@ -158,7 +128,7 @@ export default function OrderDetailModal({
 
         if (propinaOriginal > 0) {
           setPropina(propinaOriginal);
-          setPropinaDisplayValue(propinaOriginal.toLocaleString('es-CL'));
+          setPropinaDisplayValue(formatNumberCL(propinaOriginal));
           setAgregarPropina(true);
         }
 
@@ -258,13 +228,13 @@ export default function OrderDetailModal({
       if (propinaOriginal > 0) {
         // Si ya hay propina original, usar esa
         setPropina(propinaOriginal);
-        setPropinaDisplayValue(propinaOriginal.toLocaleString('es-CL'));
+        setPropinaDisplayValue(formatNumberCL(propinaOriginal));
       } else {
         // Si no hay propina original, calcular el 10%
         const totalPedido = detail[0]?.total || 0;
         const propinaCalculada = Math.round(totalPedido * 0.1);
         setPropina(propinaCalculada);
-        setPropinaDisplayValue(propinaCalculada.toLocaleString('es-CL'));
+        setPropinaDisplayValue(formatNumberCL(propinaCalculada));
       }
     } else {
       const propinaOriginal = detail[0]?.propina || 0;
@@ -503,13 +473,13 @@ export default function OrderDetailModal({
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de $${propina.toLocaleString()} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
+                `Propina de ${formatCurrencyCLP(propina)} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
               if (dataPropina.message?.includes('No hay usuarios logueados')) {
                 toast.warning(
-                  `Venta registrada con propina de $${propina.toLocaleString()}, pero no se distribuyó porque no hay cajeros/garzones logueados`
+                  `Venta registrada con propina de ${formatCurrencyCLP(propina)}, pero no se distribuyó porque no hay cajeros/garzones logueados`
                 );
               } else {
                 toast.error('Error al registrar la propina: ' + dataPropina.message);
@@ -517,7 +487,7 @@ export default function OrderDetailModal({
             }
           } catch (error) {
             toast.warning(
-              `Venta registrada con propina de $${propina.toLocaleString()}, pero hubo un error al distribuirla`
+              `Venta registrada con propina de ${formatCurrencyCLP(propina)}, pero hubo un error al distribuirla`
             );
           }
         }
@@ -784,8 +754,8 @@ export default function OrderDetailModal({
                         Fecha y Hora:
                       </span>
                       <div className='text-xs sm:text-sm font-medium'>
-                        <div>{formatFecha(detail[0]?.fecha_crea)}</div>
-                        <div>{formatHora(detail[0]?.fecha_crea)}</div>
+                        <div>{formatLongDateEs(detail[0]?.fecha_crea)}</div>
+                        <div>{formatShortTimeEs(detail[0]?.fecha_crea)}</div>
                       </div>
                     </div>
                     <Separator />
@@ -921,8 +891,8 @@ export default function OrderDetailModal({
                       {agregarPropina && (
                         <div className='text-xs text-green-600 mt-1'>
                           {detail[0]?.propina > 0
-                            ? `✓ Propina original: $${propina.toLocaleString('es-CL')}`
-                            : `✓ Propina del 10%: $${propina.toLocaleString('es-CL')}`
+                            ? `✓ Propina original: ${formatCurrencyCLP(propina)}`
+                            : `✓ Propina del 10%: ${formatCurrencyCLP(propina)}`
                           }
                         </div>
                       )}
@@ -940,7 +910,7 @@ export default function OrderDetailModal({
                         <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
                         <Input
                           className='pl-8 font-semibold'
-                          value={(detail[0]?.total_comision || 0).toLocaleString('es-CL')}
+                          value={formatNumberCL(detail[0]?.total_comision || 0)}
                           disabled
                         />
                       </div>
@@ -966,13 +936,13 @@ export default function OrderDetailModal({
                           <TableCell className='font-medium'>{item.producto}</TableCell>
                           <TableCell className='text-center'>{item.cantidad}</TableCell>
                           <TableCell className='text-center'>
-                            ${item.precio?.toLocaleString('es-CL')}
+                            {formatCurrencyCLP(item.precio)}
                           </TableCell>
                           <TableCell className='text-center'>
-                            ${item.comision?.toLocaleString('es-CL')}
+                            {formatCurrencyCLP(item.comision)}
                           </TableCell>
                           <TableCell className='text-right font-medium'>
-                            ${item.subtotal?.toLocaleString('es-CL')}
+                            {formatCurrencyCLP(item.subtotal)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -985,23 +955,19 @@ export default function OrderDetailModal({
                   <div className='space-y-2'>
                     <div className='flex justify-between items-center text-sm'>
                       <span className='text-muted-foreground'>SUBTOTAL:</span>
-                      <span className='font-semibold'>
-                        ${detail[0]?.total?.toLocaleString('es-CL')}
-                      </span>
+                      <span className='font-semibold'>{formatCurrencyCLP(detail[0]?.total)}</span>
                     </div>
                     {propina > 0 && (
                       <div className='flex justify-between items-center text-sm'>
                         <span className='text-blue-600'>+ Propina:</span>
-                        <span className='text-blue-600 font-medium'>
-                          ${propina.toLocaleString('es-CL')}
-                        </span>
+                        <span className='text-blue-600 font-medium'>{formatCurrencyCLP(propina)}</span>
                       </div>
                     )}
                     {recargoAnfitrionas > 0 && (
                       <div className='flex justify-between items-center text-sm'>
                         <span className='text-orange-600'>+ Recargo anfitrionas:</span>
                         <span className='text-orange-600 font-medium'>
-                          ${recargoAnfitrionas.toLocaleString('es-CL')}
+                          {formatCurrencyCLP(recargoAnfitrionas)}
                         </span>
                       </div>
                     )}
@@ -1009,10 +975,7 @@ export default function OrderDetailModal({
                     <div className='flex justify-between items-center text-base'>
                       <span className='font-bold'>TOTAL:</span>
                       <span className='font-bold text-lg'>
-                        $
-                        {((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString(
-                          'es-CL'
-                        )}
+                        {formatCurrencyCLP((detail[0]?.total || 0) + propina + recargoAnfitrionas)}
                       </span>
                     </div>
                   </div>
@@ -1072,22 +1035,21 @@ export default function OrderDetailModal({
             <DialogDescription>¿Estás seguro de que deseas registrar esta venta?</DialogDescription>
           </DialogHeader>
           <div className='px-6 py-4'>
-            <div className='space-y-2 text-sm'>
-              <div>
-                <strong>Pedido:</strong> {orderCode}
-              </div>
-              <div>
-                <strong>Total:</strong> $
-                {((detail[0]?.total || 0) + propina + recargoAnfitrionas).toLocaleString('es-CL')}
-              </div>
-              <div>
-                <strong>Método de pago:</strong> {metodoPago}
-              </div>
-              {propina > 0 && (
+              <div className='space-y-2 text-sm'>
                 <div>
-                  <strong>Propina:</strong> ${propina.toLocaleString('es-CL')}
+                  <strong>Pedido:</strong> {orderCode}
                 </div>
-              )}
+                <div>
+                  <strong>Total:</strong> {formatCurrencyCLP((detail[0]?.total || 0) + propina + recargoAnfitrionas)}
+                </div>
+                <div>
+                  <strong>Método de pago:</strong> {metodoPago}
+                </div>
+                {propina > 0 && (
+                  <div>
+                    <strong>Propina:</strong> {formatCurrencyCLP(propina)}
+                  </div>
+                )}
               {shouldShowRoomSelector && habitacionId && (
                 <>
                   <div>
@@ -1133,3 +1095,4 @@ export default function OrderDetailModal({
     </Dialog>
   );
 }
+

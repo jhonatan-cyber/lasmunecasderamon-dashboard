@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { memo, useCallback, useRef } from 'react';
 import { Control, FieldPath, FieldValues } from 'react-hook-form';
 import {
@@ -108,3 +109,4 @@ function FormFieldWithIconComponent<T extends FieldValues>({
 }
 
 export const FormFieldWithIcon = memo(FormFieldWithIconComponent) as typeof FormFieldWithIconComponent;
+

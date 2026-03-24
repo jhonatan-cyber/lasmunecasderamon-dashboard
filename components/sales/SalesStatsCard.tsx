@@ -15,7 +15,7 @@ export function SalesStatsCard() {
 
   const statsCards: StatCard[] = [
     {
-      title: "Total Ventas",
+      title: "Total Ventas Hoy",
       value: Number(stats?.total_ventas) || 0,
       subtitle: "Desde apertura de caja",
       icon: DollarSign,

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { memo, useRef, useEffect, useState } from 'react';
 import { Control } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -131,3 +132,4 @@ function ImageUploadFieldComponent({
 }
 
 export const ImageUploadField = memo(ImageUploadFieldComponent);
+

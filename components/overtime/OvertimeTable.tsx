@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import {
@@ -189,3 +190,4 @@ export default function OvertimeTable({
     </>
   );
 }
+

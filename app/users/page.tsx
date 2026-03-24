@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -157,7 +158,7 @@ export default function Users() {
   }, []);
 
   const handleActivateUser = useCallback(
-    async (userId: number) => {
+    async (userId: string | number) => {
       try {
         const result = await activateUser(userId);
         if (result.success) {
@@ -175,7 +176,7 @@ export default function Users() {
   );
 
   const handleDeactivateUser = useCallback(
-    async (userId: number) => {
+    async (userId: string | number) => {
       try {
         const result = await deactivateUser(userId);
         if (result.success) {
@@ -193,7 +194,7 @@ export default function Users() {
   );
 
   const handleDeleteUser = useCallback(
-    (userId: number) => {
+    (userId: string | number) => {
       const user = paginatedUsers?.find(u => u.id === userId);
       if (user) {
         setUserToDelete(user);

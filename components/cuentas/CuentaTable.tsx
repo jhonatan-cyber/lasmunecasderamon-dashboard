@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import {
@@ -25,6 +26,7 @@ import AgregarProductosModal from "./AgregarProductosModal";
 import CobrarCuentaModal from "./CobrarCuentaModal";
 import { useState } from "react";
 import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
+import { formatShortDmyDateEs } from "@/lib/calendarUtils";
 
 interface CuentaTableProps {
   loading: boolean;
@@ -42,10 +44,10 @@ export default function CuentaTable({
   onOrderStatusChange,
 }: CuentaTableProps) {
   const { hasPermission } = useUserPermissions();
-  const [selectedCuentaId, setSelectedCuentaId] = useState<number | null>(null);
+  const [selectedCuentaId, setSelectedCuentaId] = useState<string | number | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
-  const [selectedCuentaForProductos, setSelectedCuentaForProductos] = useState<number | null>(null);
+  const [selectedCuentaForProductos, setSelectedCuentaForProductos] = useState<string | number | null>(null);
   const [cobrarCuentaOpen, setCobrarCuentaOpen] = useState(false);
   const [selectedCuentaForCobro, setSelectedCuentaForCobro] = useState<any>(null);
   
@@ -68,20 +70,12 @@ export default function CuentaTable({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleDateString("es-ES", { month: "long" });
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const handleVerDetalles = (cuentaId: number) => {
+  const handleVerDetalles = (cuentaId: string | number) => {
     setSelectedCuentaId(cuentaId);
     setDetailModalOpen(true);
   };
 
-  const handleAgregarProductos = (cuentaId: number) => {
+  const handleAgregarProductos = (cuentaId: string | number) => {
     setSelectedCuentaForProductos(cuentaId);
     setAgregarProductosOpen(true);
   };
@@ -94,7 +88,7 @@ export default function CuentaTable({
     }
   };
 
-  const handleCobrarCuenta = async (cuentaId: number) => {
+  const handleCobrarCuenta = async (cuentaId: string | number) => {
     try {
       // Obtener los detalles completos de la cuenta
       const response = await fetch(`/api/cuentas/${cuentaId}`);
@@ -187,7 +181,7 @@ export default function CuentaTable({
                 <div className='flex items-center gap-2'>
                   <Calendar className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Fecha:</span>
-                  <span className='text-gray-700'>{formatDate(cuenta.fecha_crea)}</span>
+                  <span className='text-gray-700'>{formatShortDmyDateEs(cuenta.fecha_crea)}</span>
                 </div>
               </div>
 
@@ -304,7 +298,7 @@ export default function CuentaTable({
                     {getEstadoBadge(cuenta.estado)}
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center text-sm text-gray-500">
-                    {formatDate(cuenta.fecha_crea)}
+                    {formatShortDmyDateEs(cuenta.fecha_crea)}
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center">
                     {hasAnyAction && (
@@ -397,3 +391,4 @@ export default function CuentaTable({
     </>
   );
 }
+

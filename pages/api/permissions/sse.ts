@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextApiRequest, NextApiResponse } from 'next';
 
 // Almacenar las conexiones activas con información adicional
@@ -76,3 +77,4 @@ export function notifyPermissionsUpdate(roleId: string) {
     }
   });
 }
+

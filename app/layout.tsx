@@ -1,89 +1,87 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 import LayoutContent from '@/components/LayoutContent';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { AnulacionProvider } from '@/contexts/AnulacionContext';
-import { TimerProvider } from '@/contexts/TimerContext';
-import { QueryProvider } from '@/components/providers/QueryProvider';
-import { NotificationProvider } from '@/components/notifications';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { ServicioAnfitrionasProvider } from '@/contexts/ServicioAnfitrionasContext';
-import { NotificationsProvider } from '@/contexts/NotificationsContext';
-import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
-import { FetchInterceptorInit } from '@/components/FetchInterceptorInit';
-import { PermissionsSSEListener } from '@/components/PermissionsSSEListener';
-import { SyncProvider } from '@/contexts/SyncContext';
+import { siteConfig } from '@/lib/site';
 
 import './globals.css';
 import '@/styles/sidebar.css';
 import '@/styles/notifications.css';
 
-// Optimización de fuentes con next/font
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-  preload: true,
-  fallback: ['system-ui', 'arial'],
-});
-
-
-
 export const metadata: Metadata = {
-  title: 'Las Muñecas de Ramón',
-  description: 'Panel de administración del club',
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`
+  },
+  description: siteConfig.adminDescription,
   manifest: '/manifest.json',
+  applicationName: siteConfig.name,
+  authors: [{ name: siteConfig.legalName }],
+  alternates: {
+    canonical: '/'
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/img/system/logo1.png'
+  },
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: siteConfig.legalName,
+    locale: siteConfig.locale,
+    type: 'website',
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage]
+  },
+  robots: {
+    index: true,
+    follow: true
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Admin Dashboard',
-  },
+    title: siteConfig.name
+  }
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#000000',
+  themeColor: '#0b0b0f'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='es' suppressHydrationWarning className={inter.variable}>
+    <html lang='es' suppressHydrationWarning>
       <body className='font-sans antialiased'>
         <ErrorBoundary>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <FetchInterceptorInit />
-            <AuthProvider>
-              <PermissionsSSEListener />
-              <QueryProvider>
-                <SyncProvider>
-                  <AnulacionProvider>
-                    <TimerProvider>
-                      <ServicioAnfitrionasProvider>
-                        <NotificationsProvider>
-                          <NotificationProvider>
-                            <LayoutContent>{children}</LayoutContent>
-                            <Toaster
-                              richColors
-                              position='top-right'
-                              expand={true}
-                              closeButton={true}
-                              duration={4000}
-                            />
-                            <AnulacionNotificationModal />
-                            <ServiceWorkerRegistration />
-                          </NotificationProvider>
-                        </NotificationsProvider>
-                      </ServicioAnfitrionasProvider>
-                    </TimerProvider>
-                  </AnulacionProvider>
-                </SyncProvider>
-              </QueryProvider>
-            </AuthProvider>
+            <LayoutContent>{children}</LayoutContent>
+            <Toaster
+              richColors
+              position='top-right'
+              expand={true}
+              closeButton={true}
+              duration={4000}
+            />
+            <ServiceWorkerRegistration />
           </ThemeProvider>
         </ErrorBoundary>
       </body>

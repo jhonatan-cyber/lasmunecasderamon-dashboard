@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const connectionTest = (await query('SELECT 1 as test')) as any[];
+    const connectionTest = (await query('SELECT 1 as test')) as Array<{ test?: number }>;
 
     if (!connectionTest || connectionTest.length === 0) {
       return res.status(500).json({
@@ -20,9 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const users = (await query('SELECT COUNT(*) as count FROM usuarios WHERE estado = 1')) as any[];
+    const users = (await query('SELECT COUNT(*) as count FROM usuarios WHERE estado = 1')) as Array<{ count?: number | string }>;
 
-    const userCount = users[0]?.count || 0;
+    const userCount = Number(users[0]?.count || 0);
     const hasUsers = userCount > 0;
 
     return res.status(200).json({
@@ -36,8 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: false,
       message: 'Error interno del servidor',
       error: error instanceof Error ? error.message : 'Error desconocido',
-      errorCode: (error as any)?.code,
+      errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
       dbConnected: false
     });
   }
 }
+

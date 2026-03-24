@@ -1,9 +1,12 @@
 export interface User {
-    id: string;
+    id: string | number;
+    id_usuario?: string | number;
     run: string;
     nick: string;
     name: string;
+    nombre?: string;
     lastName: string;
+    apellido?: string;
     email?: string;
     phone: string;
     address: string;

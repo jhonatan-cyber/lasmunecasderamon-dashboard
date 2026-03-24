@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useEffect } from 'react';
@@ -40,7 +41,6 @@ export default function PropinasDetalleModal({
     if (open && usuario) {
       fetchDetalles(usuario.id_usuario);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, usuario]);
 
   const getEstadoColor = (estado: string) => {

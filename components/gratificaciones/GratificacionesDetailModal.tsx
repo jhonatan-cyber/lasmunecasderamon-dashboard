@@ -1,33 +1,40 @@
-'use client';
-
-import { useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useGratificaciones } from '@/hooks/personal/useGratificaciones';
+/* eslint-disable */
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { User, Calendar, DollarSign, FileText } from 'lucide-react';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { 
+  User as UserIcon, 
+  Calendar, 
+  DollarSign, 
+  FileText, 
+  Hash, 
+  Clock, 
+  CheckCircle, 
+  XCircle,
+  History
+} from 'lucide-react';
+import { Gratificacion } from '@/types/gratificacion';
 
 interface GratificacionesDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userId: number;
-  userName: string;
+  gratificacion: Gratificacion | null;
 }
 
 export default function GratificacionesDetailModal({
   isOpen,
   onClose,
-  userId,
-  userName
+  gratificacion
 }: GratificacionesDetailModalProps) {
-  const { getGratificacionesDetails, detailsLoading, gratificacionesDetails } = useGratificaciones();
-
-  useEffect(() => {
-    if (isOpen && userId) {
-      getGratificacionesDetails(userId);
-    }
-  }, [isOpen, userId, getGratificacionesDetails]);
+  if (!gratificacion) return null;
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -36,92 +43,136 @@ export default function GratificacionesDetailModal({
   };
 
   const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateStr) return 'N/A';
+    try {
+      return `${formatLongDateEs(dateStr)} ${formatShortTimeEs(dateStr)}`;
+    } catch (e) {
+      return dateStr;
+    }
   };
-
-  const totalMonto = gratificacionesDetails.reduce((acc, g) => acc + g.monto, 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[600px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-          <DialogTitle className='text-center text-lg sm:text-xl lg:text-2xl font-semibold'>
-            Detalle de Gratificaciones
-          </DialogTitle>
-          <p className='text-center text-sm text-gray-500'>{userName}</p>
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[650px] max-h-[90vh] flex flex-col p-0 overflow-hidden'>
+        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b bg-zinc-50 dark:bg-neutral-900'>
+          <div className='flex justify-between items-center'>
+            <div>
+              <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
+                Detalle de Gratificación
+              </DialogTitle>
+              <div className='flex items-center gap-2 mt-1 text-zinc-500'>
+                <Hash className='h-3 w-3' />
+                <span className='text-xs font-mono uppercase'>ID: {gratificacion.id}</span>
+              </div>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
+              gratificacion.estado === 1 
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
+                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+            }`}>
+              {gratificacion.estado === 1 ? (
+                <><Clock className='h-3 w-3' /> Por pagar</>
+              ) : (
+                <><CheckCircle className='h-3 w-3' /> Pagado</>
+              )}
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
-          {detailsLoading ? (
-            <div className='space-y-3'>
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className='h-20 w-full' />
-              ))}
-            </div>
-          ) : gratificacionesDetails.length === 0 ? (
-            <div className='text-center py-8 text-gray-500'>
-              No hay gratificaciones para este usuario
-            </div>
-          ) : (
-            <div className='space-y-3'>
-              {gratificacionesDetails.map((detail, index) => (
-                <Card key={index} className='shadow-sm'>
-                  <CardContent className='p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <div className='flex items-center gap-2'>
-                        <Calendar className='h-4 w-4 text-gray-400' />
-                        <span className='text-sm text-gray-600'>
-                          {formatDateTime(detail.fecha_crea)}
-                        </span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <DollarSign className='h-4 w-4 text-green-500' />
-                        <span className='text-sm font-semibold text-green-600'>
-                          {formatCurrencyNoDecimals(detail.monto)}
-                        </span>
-                      </div>
-                      {detail.descripcion && (
-                        <div className='flex items-start gap-2 pt-2 border-t border-gray-100'>
-                          <FileText className='h-4 w-4 text-gray-400 mt-0.5' />
-                          <span className='text-sm text-gray-600'>{detail.descripcion}</span>
-                        </div>
-                      )}
+        <div className='flex-1 overflow-y-auto px-6 py-6'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            {/* Información Principal */}
+            <div className='space-y-6'>
+              <section>
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>Información General</h3>
+                <div className='space-y-4'>
+                  <div className='flex items-start gap-3'>
+                    <div className='mt-1 p-2 bg-zinc-100 dark:bg-neutral-800 rounded-lg'>
+                      <UserIcon className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                    <div>
+                      <p className='text-xs text-zinc-500 font-medium'>Empleado</p>
+                      <p className='text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100'>{gratificacion.usuario}</p>
+                    </div>
+                  </div>
+                  
+                  <div className='flex items-start gap-3'>
+                    <div className='mt-1 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg'>
+                      <DollarSign className='h-4 w-4 text-green-600 dark:text-green-400' />
+                    </div>
+                    <div>
+                      <p className='text-xs text-zinc-500 font-medium'>Monto Registrado</p>
+                      <p className='text-lg sm:text-xl font-bold text-green-600 dark:text-green-400'>
+                        {formatCurrencyNoDecimals(gratificacion.monto)}
+                      </p>
+                    </div>
+                  </div>
 
-        {!detailsLoading && gratificacionesDetails.length > 0 && (
-          <div className='flex-shrink-0 border-t px-6 py-4 bg-gray-50'>
-            <div className='flex justify-between items-center'>
-              <span className='font-semibold text-sm sm:text-base'>Total:</span>
-              <span className='font-bold text-lg text-green-600'>
-                {formatCurrencyNoDecimals(totalMonto)}
-              </span>
+                  <div className='flex items-start gap-3'>
+                    <div className='mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                      <Calendar className='h-4 w-4 text-blue-600 dark:text-blue-400' />
+                    </div>
+                    <div>
+                      <p className='text-xs text-zinc-500 font-medium'>Fecha de Aplicación</p>
+                      <p className='text-sm sm:text-base font-medium'>{formatDateTime(gratificacion.fecha_hora || gratificacion.fecha_crea)}</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* Auditoría y Descripción */}
+            <div className='space-y-6'>
+              <section>
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>Registro y Auditoría</h3>
+                <div className='space-y-4 p-4 bg-zinc-50 dark:bg-neutral-900/50 rounded-2xl border border-zinc-100 dark:border-neutral-800'>
+                  <div className='flex items-start gap-2'>
+                    <Clock className='h-3 w-3 text-zinc-400 mt-0.5' />
+                    <div>
+                      <p className='text-[10px] text-zinc-500 uppercase'>Creado el</p>
+                      <p className='text-xs font-medium'>{formatDateTime(gratificacion.fecha_crea)}</p>
+                    </div>
+                  </div>
+                  {gratificacion.fecha_mod && (
+                    <div className='flex items-start gap-2'>
+                      <History className='h-3 w-3 text-zinc-400 mt-0.5' />
+                      <div>
+                        <p className='text-[10px] text-zinc-500 uppercase'>Última modificación</p>
+                        <p className='text-xs font-medium'>{formatDateTime(gratificacion.fecha_mod)}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section>
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>Descripción / Nota</h3>
+                <div className='p-4 bg-white dark:bg-neutral-800 rounded-2xl border border-zinc-100 dark:border-neutral-700'>
+                  <div className='flex gap-3'>
+                    <FileText className='h-4 w-4 text-zinc-400 mt-0.5 shrink-0' />
+                    <p className='text-sm text-zinc-600 dark:text-zinc-300 italic'>
+                      {gratificacion.descripcion || 'Sin descripción adicional.'}
+                    </p>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
-        )}
-
-        <div className='flex-shrink-0 border-t px-6 py-4'>
-          <div className='flex justify-center'>
-            <button
-              onClick={onClose}
-              className='px-6 py-2 rounded-full border border-gray-300 text-sm hover:bg-gray-100 transition-colors'
-            >
-              Cerrar
-            </button>
-          </div>
         </div>
+
+        <DialogFooter className='flex-shrink-0 border-t px-6 py-4 bg-zinc-50 dark:bg-neutral-900'>
+          <div className='flex justify-center w-full'>
+            <DialogClose asChild>
+              <button
+                type='button'
+                className='px-8 py-2 border border-zinc-300 rounded-full text-zinc-700 hover:bg-white transition-all duration-200 text-sm sm:text-base font-medium hover:shadow-sm'
+                onClick={onClose}
+              >
+                Cerrar Detalle
+              </button>
+            </DialogClose>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

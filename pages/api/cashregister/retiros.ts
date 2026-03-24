@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { RowDataPacket } from 'mysql2/promise';
@@ -80,3 +81,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
     }
 }
+

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -151,3 +152,4 @@ export default function CategoryFormDialog({
     </Dialog>
   );
 }
+

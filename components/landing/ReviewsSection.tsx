@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Star } from 'lucide-react';
 
 interface ReviewsSectionProps {
@@ -113,6 +114,7 @@ export default function ReviewsSection({ reviewData, setReviewData, handleReview
     </section>
   );
 }
+
 
 
 

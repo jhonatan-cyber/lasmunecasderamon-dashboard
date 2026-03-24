@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { Card } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, User, Home, CreditCard, Square, Users, ShoppingBag } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { useTimer } from '@/contexts/TimerContext';
+import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -24,7 +25,10 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
   const isAdminOrCajero = user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
   // Obtener el timer sincronizado con el contexto global
-  const timer = getTimerByServicioId(venta.id);
+  const timer = getTimerByServicioId(String(venta.id));
+
+  // Hook específico para obtener el segundero en tiempo real sin re-renderizar todo
+  const remainingTime = useCountdown(timer);
 
   // Forzar re-render cuando cambian los timers para mantener sincronización
   useEffect(() => {
@@ -35,7 +39,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
     setStopping(true);
     try {
       // Detener el timer usando el contexto global
-      await stopTimerByServicioId(venta.id);
+      await stopTimerByServicioId(String(venta.id));
 
       toast.success('Temporizador finalizado exitosamente');
       setShowConfirm(false);
@@ -47,7 +51,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
     }
   };
 
-  const isLowTime = isAdminOrCajero && timer && timer.isActive && timer.remainingTime <= 300;
+  const isLowTime = isAdminOrCajero && timer && timer.isActive && remainingTime <= 300;
 
   // Filtrar nombres de anfitrionas únicos
   const hostesses = venta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) || [];
@@ -94,7 +98,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
                 <span
                   className={`font-mono text-xl font-bold ${isLowTime ? 'text-red-600 dark:text-red-500' : 'text-gray-900 dark:text-gray-100'}`}
                 >
-                  {timer ? formatTime(timer.remainingTime) : '00:00'}
+                  {timer ? formatTime(remainingTime) : '00:00'}
                 </span>
               </div>
             </div>

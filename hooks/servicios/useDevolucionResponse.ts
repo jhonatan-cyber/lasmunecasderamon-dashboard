@@ -11,7 +11,7 @@ export const useDevolucionResponse = () => {
         await stopTimerByServicioId(servicioId);
 
         showSuccessToast('Devolución confirmada. Temporizador finalizado y habitación liberada.');
-      } catch (error) {
+      } catch {
         showErrorToast('Error al finalizar el temporizador');
       }
     },
@@ -26,7 +26,7 @@ export const useDevolucionResponse = () => {
         showSuccessToast(
           'Devolución rechazada. El servicio continúa activo y el temporizador se ha reanudado.'
         );
-      } catch (error) {
+      } catch {
         showErrorToast('Error al procesar el rechazo');
       }
     },

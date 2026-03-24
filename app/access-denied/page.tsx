@@ -1,31 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, ArrowLeft, Home } from 'lucide-react';
+import { Shield, ArrowLeft, Home, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
 
 export default function AccessDeniedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mounted, setMounted] = useState(false);
 
-  const module = searchParams?.get('module') || 'desconocido';
+  const requestedModule = searchParams?.get('module') || 'desconocido';
   const action = searchParams?.get('action') || 'desconocido';
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
 
   const handleGoBack = () => {
     router.back();
@@ -64,7 +49,7 @@ export default function AccessDeniedPage() {
                   <div className="mt-1 space-y-1">
                     <p>
                       <span className="font-mono text-xs">Módulo:</span>{' '}
-                      <span className="font-semibold">{module}</span>
+                      <span className="font-semibold">{requestedModule}</span>
                     </p>
                     <p>
                       <span className="font-mono text-xs">Acción:</span>{' '}
