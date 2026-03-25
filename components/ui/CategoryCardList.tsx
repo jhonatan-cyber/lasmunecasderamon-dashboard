@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Card } from "@/components/ui/card";
 import { Wine, ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useState } from "react";

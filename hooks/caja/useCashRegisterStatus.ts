@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
 import { CashRegisterStatusSchema } from '@/lib/schemas';
 import { useCallback, useEffect } from 'react';

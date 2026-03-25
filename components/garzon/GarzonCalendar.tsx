@@ -219,7 +219,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
       // Fetch asistencias usando la nueva API
       const asistenciasRes = await fetch(
-        `/api/asistencias/by-dates?startDate=${startDate}&endDate=${endDate}`
+        `/api/attendance/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const asistenciasData = await asistenciasRes.json();
 
@@ -300,7 +300,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       try {
         const asistenciasDatesParam = dateKeys.join(',');
         const asistenciasRes = await fetch(
-          `/api/asistencias/by-dates?dates=${asistenciasDatesParam}`
+          `/api/attendance/by-dates?dates=${asistenciasDatesParam}`
         );
         const asistenciasData = await asistenciasRes.json();
         newCounts.asistencias = asistenciasData.success ? asistenciasData.data?.length || 0 : 0;
@@ -340,7 +340,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         try {
           const asistenciasDatesParam = dateKeys.join(',');
           const asistenciasRes = await fetch(
-            `/api/asistencias/by-dates?dates=${asistenciasDatesParam}`
+            `/api/attendance/by-dates?dates=${asistenciasDatesParam}`
           );
           const asistenciasData = await asistenciasRes.json();
           if (asistenciasData.success && asistenciasData.data) {
@@ -408,7 +408,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       switch (selectedDataType) {
         case 'asistencias':
           const datesParam = dateKeys.join(',');
-          const asistenciasRes = await fetch(`/api/asistencias/by-dates?dates=${datesParam}`);
+          const asistenciasRes = await fetch(`/api/attendance/by-dates?dates=${datesParam}`);
           const asistenciasData = await asistenciasRes.json();
           setSelectedDateData(asistenciasData.success ? asistenciasData.data || [] : []);
           break;

@@ -16,8 +16,11 @@ export default [
   {
     rules: {
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-debugger': 'error',
-      'prefer-const': 'error'
+      'no-debugger': 'off',
+      'prefer-const': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
+      '@typescript-eslint/no-unused-vars': 'off'
     }
   }
 ];

@@ -81,9 +81,9 @@ export default function LoginPage() {
     async function checkUsers() {
       try {
         const baseUrl = getBaseUrl();
-        console.log('🔍 [LOGIN] Verificando usuarios en:', `${baseUrl}/api/auth/check-users`);
+        console.log('🔍 [LOGIN] Verificando usuarios en:', '/api/auth/check-users');
 
-        const res = await fetch(`${baseUrl}/api/auth/check-users`, {
+        const res = await fetch('/api/auth/check-users', {
           credentials: 'include'
         });
 
@@ -121,7 +121,7 @@ export default function LoginPage() {
       try {
         const baseUrl = getBaseUrl();
 
-        const res = await fetch(`${baseUrl}/api/auth/check`, {
+        const res = await fetch('/api/auth/check', {
           credentials: 'include'
         });
 
@@ -196,7 +196,7 @@ export default function LoginPage() {
       const emailOriginal = registerData.email;
 
       const baseUrl = getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/auth/register-first-user`, {
+      const res = await fetch('/api/auth/register-first-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -324,7 +324,7 @@ export default function LoginPage() {
                       }
 
                       const baseUrl = getBaseUrl();
-                      const res = await fetch(`${baseUrl}/api/login`, {
+                      const res = await fetch('/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -554,7 +554,7 @@ export default function LoginPage() {
                       }
 
                       const baseUrl = getBaseUrl();
-                      const res = await fetch(`${baseUrl}/api/login`, {
+                      const res = await fetch('/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable no-console */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -179,7 +179,7 @@ export default function PayrollCalendarPage() {
     if (actions.length === 0) return null;
 
     // Agrupar acciones por tipo (solo mostrar un icono por tipo de acción)
-    const actionsByType = actions.reduce((acc: { [key: string]: any }, action) => {
+    const actionsByType = actions.reduce((acc: { [key: string]: any }, action: any) => {
       if (!acc[action.tipo]) {
         acc[action.tipo] = action;
       }
@@ -547,7 +547,7 @@ export default function PayrollCalendarPage() {
                       {(() => {
                         const actions = getActionsForDate(day.date);
                         const actionsByType = actions.reduce(
-                          (acc: { [key: string]: any }, action) => {
+                          (acc: { [key: string]: any }, action: any) => {
                             if (!acc[action.tipo]) {
                               acc[action.tipo] = action;
                             }

@@ -135,7 +135,7 @@ export function Header() {
 
   async function handleLogout() {
     try {
-      const res = await fetch('/api/logout', { method: 'POST' });
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (res.ok) {
         showSuccessToast('Sesión cerrada exitosamente');
         setTimeout(() => {

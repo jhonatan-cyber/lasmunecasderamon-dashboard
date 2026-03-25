@@ -13,8 +13,8 @@ export function useClients() {
     error,
     refetch
   } = useGenericFetch<Client>('/api/clients', {
-    transform: (data: any[]) =>
-      data.map((c: any) => ({
+    transform: (result: any) =>
+      (result.data || []).map((c: any) => ({
         id: c.id,
         run: c.run,
         name: c.name,
@@ -87,7 +87,8 @@ export function useClients() {
     allClients: data,
     filteredClients: filters.filteredData,
 
-    isLoading: isMutating,
+    isLoading: isFetching,
+    isMutating: isMutating,
     error,
 
     searchTerm: filters.searchTerm,

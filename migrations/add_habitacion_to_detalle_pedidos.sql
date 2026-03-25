@@ -1,9 +1,10 @@
 -- Agregar columna habitacion_id a la tabla detalle_pedidos
 -- Esta columna almacena la habitación asignada a productos con precio >= 30000 y comisión
 
--- Verificar si la columna ya existe antes de agregarla
+-- Verificar si la columna ya existe antes de agregarla y añadir el comentario directamente
 ALTER TABLE detalle_pedidos 
 ADD COLUMN IF NOT EXISTS habitacion_id INT NULL 
+COMMENT 'ID de la habitación asignada para productos con precio >= 30000 y comisión'
 AFTER hostess_id;
 
 -- Agregar índice para mejorar el rendimiento de las consultas
@@ -16,8 +17,3 @@ ADD CONSTRAINT fk_detalle_pedidos_habitacion
 FOREIGN KEY (habitacion_id) REFERENCES habitaciones(id_habitacion) 
 ON DELETE SET NULL 
 ON UPDATE CASCADE;
-
--- Comentario sobre la columna
-ALTER TABLE detalle_pedidos 
-MODIFY COLUMN habitacion_id INT NULL 
-COMMENT 'ID de la habitación asignada para productos con precio >= 30000 y comisión';

@@ -48,6 +48,8 @@ export interface UserPermissions {
 export interface AuthenticatedUser {
   id: string;
   username: string;
+  name: string;
+  lastName: string;
   nick?: string;
   email: string;
   role: string;

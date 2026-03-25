@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { useCallback } from "react";
 import { Permission } from "../auth/usePermissions";
 import { useGenericFetch } from "../shared/useGenericFetch";
