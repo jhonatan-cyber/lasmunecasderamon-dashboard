@@ -77,9 +77,23 @@ async function runMigrations() {
           await connection.query('INSERT INTO _migrations (filename) VALUES (?)', [file]);
           console.log(`✅ Migración ${file} completada.`);
         } catch (err) {
+          console.log(`DEBUG: Error en migración ${file}. Code: ${err.code}, ErrNo: ${err.errno}, Message: ${err.message}`);
+          
           // Si el error es una columna que ya existe, lo ignoramos amigablemente
-          if (err.code === 'ER_DUP_FIELDNAME' || err.code === 'ER_TABLE_EXISTS_ERROR' || err.code === 'ER_DUP_KEYNAME') {
-            console.log(`⏭️ Migración ${file} ya parecía aplicada (Error de duplicado controlado). Marcando como hecha.`);
+          const isDuplicateError = 
+            err.code === 'ER_DUP_FIELDNAME' || 
+            err.code === 'ER_TABLE_EXISTS_ERROR' || 
+            err.code === 'ER_DUP_KEYNAME' ||
+            err.code === 'ER_FK_DUP_NAME' ||
+            err.code === 'ER_CANT_CREATE_TABLE' || // Agregado para MySQL errno 121
+            err.errno === 121 ||
+            err.errno === 1022 ||
+            err.message.includes('Duplicate field name') ||
+            err.message.includes('Duplicate key on write or update') ||
+            err.message.includes('already exists');
+
+          if (isDuplicateError) {
+            console.log(`⏭️ Migración ${file} ya parecía aplicada (Error de duplicado controlado: ${err.code || err.errno}). Marcando como hecha.`);
             await connection.query('INSERT INTO _migrations (filename) VALUES (?)', [file]);
           } else {
             console.error(`❌ Error en migración ${file}:`, err.message);

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import Link from 'next/link';
 import { ArrowLeft, FileText, Shield, Users, Calendar, MapPin, Phone } from 'lucide-react';
 import { formatDateLabel } from '@/lib/calendarUtils';

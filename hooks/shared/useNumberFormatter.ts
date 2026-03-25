@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 const formatNumberHelper = (value: string | number) => {
   const numericValue = String(value).replace(/\D/g, '');
@@ -25,11 +25,11 @@ export function useNumberFormatter(initialValue: number = 0) {
     onChange(Number(getNumericValue(formatted)) || 0);
   }, [formatNumber, getNumericValue]);
 
-  return {
+  return useMemo(() => ({
     formattedValue,
     setFormattedValue,
     formatNumber,
     getNumericValue,
     handleChange,
-  };
+  }), [formattedValue, formatNumber, getNumericValue, handleChange]);
 }

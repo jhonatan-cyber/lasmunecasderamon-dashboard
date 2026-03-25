@@ -14,12 +14,13 @@ export const UserSchema = z.object({
   telefono: z.string().min(1, 'Teléfono es requerido'),
   direccion: z.string().optional(),
   estado_civil: z.string().optional(),
+  afp: z.string().optional(),
   rol_id: z.string().min(1, 'Rol es requerido').or(z.number().min(1, 'Rol es requerido')),
-  sueldo: z.number().or(z.string()).optional(),
-  aporte: z.number().or(z.string()).optional(),
-  descuento: z.number().nullable().optional(),
+  sueldo: z.preprocess(v => v === '' ? 0 : v, z.coerce.number().min(0, 'El sueldo no puede ser negativo').optional()),
+  aporte: z.preprocess(v => v === '' ? 0 : v, z.coerce.number().min(0, 'El aporte no puede ser negativo').optional()),
+  descuento: z.preprocess(v => v === '' || v === null ? 0 : v, z.coerce.number().min(0, 'El descuento no puede ser negativo').nullable().optional()),
   foto: z.string().nullable().optional(),
-  estado: z.number().optional(),
+  estado: z.coerce.number().optional(),
 });
 
 export const UserCreateSchema = UserSchema.omit({ id: true });

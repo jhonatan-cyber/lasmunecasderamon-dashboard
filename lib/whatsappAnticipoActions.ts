@@ -1,6 +1,6 @@
 import { query } from '@/lib/db';
 import { enviarWhatsApp } from '@/lib/whatsappService';
-import { sendNotificationToAll } from '@/pages/api/notifications/sse';
+import { sendNotificationToAll } from '@/lib/sseService';
 import {
   buildAnticipoNotFoundMessage,
   buildAnticipoProcessedMessages,

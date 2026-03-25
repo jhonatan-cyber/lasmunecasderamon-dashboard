@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 'use client';
 
 import { useState, useEffect } from "react";
@@ -41,7 +41,7 @@ export default function GarzonDashboard() {
     setLoadingData(true);
     try {
       // Fetch asistencias
-      const asistenciasRes = await fetch("/api/asistencias/user");
+      const asistenciasRes = await fetch("/api/attendance/user");
       const asistenciasData = await asistenciasRes.json();
       
       // Fetch anticipos

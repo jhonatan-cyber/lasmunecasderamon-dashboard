@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/display-name */
+/* eslint-disable react/display-name */
 import { ReactNode, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { User, Users, UserCheck, DollarSign, Clock, CheckCircle, Barcode } from "lucide-react";

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { Star } from 'lucide-react';
 
 interface ReviewsSectionProps {

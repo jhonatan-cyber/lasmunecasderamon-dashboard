@@ -127,7 +127,8 @@ export function UserForm({
       aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');
       descuento.setFormattedValue(user.discount ? descuento.formatNumber(user.discount) : '');
     }
-  }, [user, sueldo, aporte, descuento]);
+     
+  }, [user?.id]);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),

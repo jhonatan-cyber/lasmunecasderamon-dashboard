@@ -4,9 +4,11 @@ import { logger } from './logger';
 import { getSystemTimezone, getNowInBusinessTimezone } from './timezoneService';
 
 export interface AuthenticatedUser {
-  id: number;
-  userId: number;
+  id: string | number;
+  userId: string | number;
   username: string;
+  name: string;
+  lastName: string;
   nick?: string;
   email: string;
   role: string;
@@ -37,8 +39,10 @@ export function verifyToken(token: string): AuthenticatedUser | null {
 }
 
 export function generateToken(userData: {
-  id: number;
+  id: string | number;
   username: string;
+  name: string;
+  lastName: string;
   nick?: string;
   email: string;
   role: string;
@@ -48,6 +52,8 @@ export function generateToken(userData: {
       id: userData.id,
       userId: userData.id,
       username: userData.username,
+      name: userData.name,
+      lastName: userData.lastName,
       nick: userData.nick,
       email: userData.email,
       role: userData.role,

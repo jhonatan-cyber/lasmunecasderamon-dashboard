@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 'use client';
 
 import { useState, useEffect } from "react";
@@ -40,8 +40,8 @@ export default function AnfitrionaDashboard() {
     try {
       // Fetch asistencias (detalle y resumen para descuento)
       const [asistenciasRes, asistenciasSummaryRes, comisionesRes, serviciosRes, anticiposRes] = await Promise.all([
-        fetch("/api/asistencias/user?tipo=detalle"),
-        fetch("/api/asistencias/user"),
+        fetch("/api/attendance/user?tipo=detalle"),
+        fetch("/api/attendance/user"),
         fetch("/api/commissions/user"),
         fetch("/api/servicios/user"),
         fetch("/api/anticipos/user"),

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import React, { useState, useMemo } from "react";
 import { Room } from "@/types/room";
 import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from "lucide-react";
