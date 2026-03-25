@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "node ./scripts/clean-next-dev-types.mjs && next build",
+    "build": "pnpm run migrate && node ./scripts/clean-next-dev-types.mjs && next build",
     "build:analyze": "ANALYZE=true next build",
     "dev": "cross-env TZ=UTC next dev --turbopack --hostname 0.0.0.0",
     "lint": "eslint app/layout.tsx app/page.tsx app/landing components/LayoutContent.tsx components/providers/ProtectedAppProviders.tsx components/landing/Navigation.tsx lib/site.ts tests/e2e/smoke.spec.ts --ignore-pattern .next --ignore-pattern node_modules",
@@ -131,6 +131,7 @@
     "@types/react-dom": "^19",
     "compression-webpack-plugin": "^11.1.0",
     "cross-env": "^10.1.0",
+    "dotenv": "^17.3.1",
     "eslint": "^9.32.0",
     "eslint-config-next": "^16.1.6",
     "exceljs": "^4.4.0",

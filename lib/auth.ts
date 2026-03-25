@@ -86,7 +86,8 @@ export async function registrarLogin(usuarioId: string | number, ip?: string): P
     const lastLogin = getNowInBusinessTimezone();
     const enLocal = horaLocal >= 23 ? 1 : 0;
 
-    await query('DELETE FROM logins WHERE usuario_id = ?', [usuarioId]);
+    // We stop deleting old logins to maintain an audit trail
+    // await query('DELETE FROM logins WHERE usuario_id = ?', [usuarioId]);
     await query(
       'INSERT INTO logins (id_login, usuario_id, last_login, estado, ip_address, en_local) VALUES (?, ?, ?, 1, ?, ?)',
       [generateUUID(), usuarioId, lastLogin, ipLimpia, enLocal]

@@ -7,7 +7,8 @@ import {
   DialogTrigger,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Plus } from 'lucide-react';
 import { useClients } from '@/hooks/clientes/useClients';
@@ -220,7 +221,7 @@ export default function Clients() {
 
         {/* Diálogo de detalles del cliente */}
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className='max-w-2xl w-[95vw] max-w-[95vw] sm:w-auto'>
+          <DialogContent className='max-w-6xl w-[95vw] sm:w-[90vw] h-fit max-h-[95vh] flex flex-col p-4 sm:p-6 overflow-hidden'>
             <DialogHeader>
               <DialogTitle className='text-lg sm:text-xl'>Detalles del Cliente</DialogTitle>
             </DialogHeader>
@@ -230,6 +231,15 @@ export default function Clients() {
                 onClose={() => setIsDetailsOpen(false)}
               />
             )}
+            <DialogFooter className='border-t pt-4 mt-2'>
+              <Button 
+                variant='outline' 
+                onClick={() => setIsDetailsOpen(false)}
+                className='rounded-full w-full sm:w-auto px-8 py-2'
+              >
+                Cerrar
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

@@ -47,7 +47,7 @@ export function useStats<T = any>({
     }
   });
 
-  const data = rawData?.[0] || null;
+  const data = (Array.isArray(rawData) && rawData.length > 0) ? rawData[0] : (rawData as any);
 
   return {
     data,

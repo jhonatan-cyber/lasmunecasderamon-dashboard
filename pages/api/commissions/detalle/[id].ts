@@ -7,29 +7,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { id } = req.query;
+  const requestId = Array.isArray(id) ? id[0] : id;
 
-  if (!id) {
-    return res.status(400).json({ success: false, message: 'ID de usuario requerido' });
+  if (!requestId || requestId === 'undefined' || requestId === 'null') {
+    return res.status(400).json({ success: false, message: 'ID de usuario es requerido y debe ser válido' });
   }
+  
+  const idToLog = String(requestId);
 
   try {
+    // DEBUG: Comprobar si existen registros en detalle_comisiones independientemente de la tabla comisiones
+    const testDC = await query('SELECT count(*) as count FROM detalle_comisiones WHERE usuario_id = ?', [requestId]);
+    console.log('[Detalle API] Registros en detalle_comisiones sin join:', testDC[0].count);
+
     // Obtener detalles de comisiones por ventas y servicios
     const detallesQuery = `
       SELECT 
         C.id_comision,
         C.fecha_crea as fecha_hora,
+        V.codigo as codigo_venta,
+        S.codigo as codigo_servicio,
         CASE 
-          WHEN C.venta_id IS NOT NULL THEN V.codigo
-          ELSE NULL
-        END as codigo_venta,
-        CASE 
-          WHEN C.servicio_id IS NOT NULL THEN S.codigo
-          ELSE NULL
-        END as codigo_servicio,
-        CASE 
-          WHEN C.venta_id IS NOT NULL THEN 'venta'
-          WHEN C.servicio_id IS NOT NULL THEN 'servicio'
-          ELSE 'desconocido'
+          WHEN C.venta_id IS NOT NULL AND C.venta_id != '' THEN 'venta'
+          WHEN C.servicio_id IS NOT NULL AND C.servicio_id != '' THEN 'servicio'
+          ELSE 'otro'
         END as tipo,
         DC.comision as monto,
         CASE 
@@ -39,19 +40,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         END as estado,
         DC.fecha_mod as fecha_pago,
         CASE 
-          WHEN C.venta_id IS NOT NULL THEN (
-            SELECT GROUP_CONCAT(p.nombre SEPARATOR ', ')
+          WHEN C.venta_id IS NOT NULL AND C.venta_id != '' THEN (
+            SELECT p.nombre
             FROM detalle_ventas dv
             JOIN productos p ON dv.producto_id = p.id_producto
-            WHERE dv.venta_id = C.venta_id AND (dv.hostess_id = DC.usuario_id OR (dv.hostess_id IS NULL AND dv.comision > 0))
+            WHERE dv.venta_id = C.venta_id 
+            LIMIT 1
           )
-          WHEN C.servicio_id IS NOT NULL THEN 'Servicio de Habitación'
-          ELSE 'Comisión'
+          WHEN C.servicio_id IS NOT NULL AND C.servicio_id != '' THEN 'Servicio de Habitación'
+          ELSE 'Comisión Especial'
         END as producto,
         CASE 
-          WHEN C.venta_id IS NOT NULL THEN CONCAT('Venta - ', V.codigo)
-          WHEN C.servicio_id IS NOT NULL THEN CONCAT('Servicio - ', S.codigo)
-          ELSE 'Comisión'
+          WHEN C.venta_id IS NOT NULL AND C.venta_id != '' THEN CONCAT('Venta - ', V.codigo)
+          WHEN C.servicio_id IS NOT NULL AND C.servicio_id != '' THEN CONCAT('Servicio - ', S.codigo)
+          ELSE 'Comisión Directa'
         END as descripcion
       FROM comisiones C
       INNER JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision
@@ -62,12 +64,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ORDER BY C.fecha_crea DESC
     `;
 
-    const detalles = await query(detallesQuery, [id]);
+    console.log('[Detalle API] Al buscar detalles para ID:', requestId);
+    const detalles = await query(detallesQuery, [requestId]);
+    console.log('[Detalle API] Detalles encontrados:', detalles.length);
 
     res.status(200).json({
       success: true,
       data: detalles,
-      message: 'Detalles de comisiones obtenidos correctamente'
+      message: `Detalles para ID ${requestId} obtenidos correctamente. Total: ${detalles.length}`
     });
   } catch (error) {
     console.error('Error al obtener detalles de comisiones:', error);
