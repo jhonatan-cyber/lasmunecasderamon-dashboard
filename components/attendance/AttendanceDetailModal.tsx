@@ -95,7 +95,10 @@ export default function AttendanceDetailModal({
   };
 
   const formatTime = (timeString: string) => {
-    return `${formatShortTimeEs(timeString)} UTC`;
+    if (!timeString) return 'Sin hora';
+    const formatted = formatShortTimeEs(timeString);
+    if (!formatted || formatted === 'Hora inválida') return 'Hora inválida';
+    return `${formatted}`;
   };
 
   const getStatusBadge = (estado: number) => {
@@ -133,9 +136,9 @@ export default function AttendanceDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700">
           <div className='flex items-center justify-between'>
-            <DialogTitle className='text-xl font-bold'>Detalle de Asistencias</DialogTitle>
+            <DialogTitle className='text-xl font-bold dark:text-white'>Detalle de Asistencias</DialogTitle>
           </div>
         </DialogHeader>
 
@@ -148,42 +151,42 @@ export default function AttendanceDetailModal({
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                 {/* Sección Izquierda: Información del Usuario */}
                 <div className='flex flex-col space-y-2'>
-                  <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>
+                  <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
                     Información del Usuario
                   </h4>
                   <div className='space-y-1'>
-                    <div className='text-lg font-semibold text-gray-900'>{userName}</div>
-                    <div className='text-sm text-gray-600'>@{userNick}</div>
+                    <div className='text-lg font-semibold text-gray-900 dark:text-white'>{userName}</div>
+                    <div className='text-sm text-gray-600 dark:text-gray-400'>@{userNick}</div>
                   </div>
                 </div>
 
                 {/* Sección Derecha: Totales Financieros */}
                 <div className='flex flex-col space-y-2'>
-                  <h4 className='text-sm font-medium text-gray-500 uppercase tracking-wide'>
+                  <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
                     Resumen Financiero
                   </h4>
                   <div className='space-y-3'>
                     <div className='flex items-center justify-between'>
-                      <span className='text-sm text-gray-600'>Total sueldos:</span>
-                      <span className='text-lg font-bold'>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>Total sueldos:</span>
+                      <span className='text-lg font-bold dark:text-white'>
                         {formatCurrencyNoDecimals(totalSueldos)}
                       </span>
                     </div>
                     <div className='flex items-center justify-between'>
-                      <span className='text-sm text-gray-600'>Total aportes:</span>
-                      <span className='text-lg font-bold '>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>Total aportes:</span>
+                      <span className='text-lg font-bold dark:text-white'>
                         {formatCurrencyNoDecimals(totalAportes)}
                       </span>
                     </div>
                     <div className='flex items-center justify-between'>
-                      <span className='text-sm text-gray-600'>Descuento habitación:</span>
-                      <span className='text-lg font-bold '>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>Descuento habitación:</span>
+                      <span className='text-lg font-bold dark:text-white'>
                         {formatCurrencyNoDecimals(totalDescuentos)}
                       </span>
                     </div>
-                    <div className='flex items-center justify-between border-t pt-2'>
-                      <span className='text-sm font-medium text-gray-700'>Total a pagar:</span>
-                      <span className='text-lg font-bold text-green-600'>
+                    <div className='flex items-center justify-between border-t pt-2 dark:border-gray-700'>
+                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>Total a pagar:</span>
+                      <span className='text-lg font-bold text-green-600 dark:text-green-500'>
                         {formatCurrencyNoDecimals(totalFinal)}
                       </span>
                     </div>
@@ -193,10 +196,10 @@ export default function AttendanceDetailModal({
 
               {/* Información adicional sobre el descuento */}
               {semanasConDescuento > 0 && (
-                <div className='mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                <div className='mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/50'>
                   <div className='flex items-start gap-2'>
-                    <Info className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0' />
-                    <div className='text-sm text-blue-800'>
+                    <Info className='w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0' />
+                    <div className='text-sm text-blue-800 dark:text-blue-200'>
                       <p className='font-medium mb-1'>Información del Descuento por Habitación:</p>
                       <ul className='space-y-1 text-xs'>
                         <li>
@@ -227,8 +230,8 @@ export default function AttendanceDetailModal({
           {/* Lista de asistencias */}
           {loading ? (
             <div className='text-center py-8'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p className='mt-2 text-sm text-gray-600'>Cargando asistencias...</p>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto'></div>
+              <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>Cargando asistencias...</p>
             </div>
           ) : error ? (
             <Card>
@@ -239,7 +242,7 @@ export default function AttendanceDetailModal({
           ) : asistencias.length === 0 ? (
             <Card>
               <CardContent className='p-4 text-center'>
-                <p className='text-gray-500 text-sm'>
+                <p className='text-gray-500 dark:text-gray-400 text-sm'>
                   No hay asistencias registradas para este usuario
                 </p>
               </CardContent>
@@ -247,7 +250,7 @@ export default function AttendanceDetailModal({
           ) : (
             <div className='space-y-3'>
               <div className='flex items-center justify-between'>
-                <h3 className='font-semibold text-lg'>Registro de Asistencias</h3>
+                <h3 className='font-semibold text-lg dark:text-white'>Registro de Asistencias</h3>
 
                 {/* Controles de paginación para la tabla */}
                 <SelectElements
@@ -269,8 +272,8 @@ export default function AttendanceDetailModal({
                       <div className='space-y-2'>
                         <div className='flex items-center justify-between'>
                           <div className='flex items-center gap-2'>
-                            <Calendar className='text-gray-500 w-4' />
-                            <span className='font-medium text-sm'>
+                            <Calendar className='text-gray-500 dark:text-gray-400 w-4' />
+                            <span className='font-medium text-sm dark:text-gray-200'>
                               {formatDate(asistencia.fecha)}
                             </span>
                           </div>
@@ -278,22 +281,22 @@ export default function AttendanceDetailModal({
                         </div>
 
                         <div className='flex items-center gap-2'>
-                          <Clock className='text-gray-500 w-4' />
-                          <span className='text-sm text-gray-600'>
+                          <Clock className='text-gray-500 dark:text-gray-400 w-4' />
+                          <span className='text-sm text-gray-600 dark:text-gray-400'>
                             Hora: {formatTime(asistencia.hora)}
                           </span>
                         </div>
 
                         <div className='grid grid-cols-2 gap-2 text-xs'>
                           <div>
-                            <span className='text-gray-500'>Sueldo:</span>
-                            <span className='font-medium ml-1'>
+                            <span className='text-gray-500 dark:text-gray-400'>Sueldo:</span>
+                            <span className='font-medium ml-1 dark:text-gray-200'>
                               {formatCurrencyNoDecimals(asistencia.sueldo || 0)}
                             </span>
                           </div>
                           <div>
-                            <span className='text-gray-500'>Aporte AFP:</span>
-                            <span className='font-medium ml-1'>
+                            <span className='text-gray-500 dark:text-gray-400'>Aporte AFP:</span>
+                            <span className='font-medium ml-1 dark:text-gray-200'>
                               {formatCurrencyNoDecimals(asistencia.aporte || 0)}
                             </span>
                           </div>
@@ -321,19 +324,19 @@ export default function AttendanceDetailModal({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className='text-left py-2 px-3 text-sm font-medium text-gray-700'>
+                        <TableHead className='text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300'>
                           Fecha
                         </TableHead>
-                        <TableHead className='text-left py-2 px-3 text-sm font-medium text-gray-700'>
+                        <TableHead className='text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300'>
                           Hora
                         </TableHead>
-                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700'>
+                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300'>
                           Sueldo
                         </TableHead>
-                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700'>
+                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300'>
                           Aporte AFP
                         </TableHead>
-                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700'>
+                        <TableHead className='text-center py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300'>
                           Estado
                         </TableHead>
                       </TableRow>
@@ -342,18 +345,18 @@ export default function AttendanceDetailModal({
                       {paginatedAsistencias.map(asistencia => (
                         <TableRow
                           key={asistencia.id_asistencia}
-                          className='border-b border-gray-100 hover:bg-gray-50'
+                          className='border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'
                         >
-                          <TableCell className='py-3 px-3 text-sm'>
+                          <TableCell className='py-3 px-3 text-sm dark:text-gray-200'>
                             {formatDate(asistencia.fecha)}
                           </TableCell>
-                          <TableCell className='py-3 px-3 text-sm'>
+                          <TableCell className='py-3 px-3 text-sm dark:text-gray-200'>
                             {formatTime(asistencia.hora)}
                           </TableCell>
-                          <TableCell className='py-3 px-3 text-sm text-center text-green-600 font-medium'>
+                          <TableCell className='py-3 px-3 text-sm text-center text-green-600 dark:text-green-400 font-medium'>
                             {formatCurrencyNoDecimals(asistencia.sueldo || 0)}
                           </TableCell>
-                          <TableCell className='py-3 px-3 text-sm text-center text-blue-600 font-medium'>
+                          <TableCell className='py-3 px-3 text-sm text-center text-blue-600 dark:text-blue-400 font-medium'>
                             {formatCurrencyNoDecimals(asistencia.aporte || 0)}
                           </TableCell>
                           <TableCell className='py-3 px-3 text-center'>
