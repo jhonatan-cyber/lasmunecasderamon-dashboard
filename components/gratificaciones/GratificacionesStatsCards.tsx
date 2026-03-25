@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,7 +40,7 @@ export default function GarzonAsistenciasPage() {
   const fetchAsistencias = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/asistencias/user?tipo=detalle");
+      const res = await fetch("/api/attendance/user?tipo=detalle");
       const data = await res.json();
 
       if (data.success) {

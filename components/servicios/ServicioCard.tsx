@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable no-console */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -64,8 +64,8 @@ export default function ServicioCard({
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
-  const globalTimer = getTimerByServicioId(Number(servicio.id_servicio!));
-  const temporaryTimer = getTemporaryTimerByServicioId(Number(servicio.id_servicio!));
+  const globalTimer = getTimerByServicioId(String(servicio.id_servicio!));
+  const temporaryTimer = getTemporaryTimerByServicioId(String(servicio.id_servicio!));
 
   const displayTimer = temporaryTimer || globalTimer;
   const isTemporaryActive = !!temporaryTimer;
@@ -76,7 +76,7 @@ export default function ServicioCard({
       ? temporaryTimer.datosTemporales.servicio_original_id
       : servicio.id_servicio;
 
-  const anfitrionasDelContexto = obtenerAnfitrionas(servicioIdOriginal);
+  const anfitrionasDelContexto = obtenerAnfitrionas(Number(servicioIdOriginal));
 
   const displayData =
     isTemporaryActive && temporaryTimer?.datosTemporales
@@ -229,7 +229,7 @@ export default function ServicioCard({
       if (response.ok) {
         // Detener el timer en el contexto global (esto también libera la habitación y actualiza el servicio)
         if (servicio.id_servicio) {
-          stopTimerByServicioId(Number(servicio.id_servicio));
+          stopTimerByServicioId(String(servicio.id_servicio));
         }
 
         if (onStopTimer) onStopTimer(Number(servicio.id_servicio!));
@@ -248,14 +248,14 @@ export default function ServicioCard({
   const handlePauseMainTimer = useCallback(() => {
     if (servicio.id_servicio) {
       console.log('ServicioCard: Pausando timer principal para servicio:', servicio.id_servicio);
-      pauseTimerByServicioId(Number(servicio.id_servicio));
+      pauseTimerByServicioId(String(servicio.id_servicio));
     }
   }, [servicio.id_servicio, pauseTimerByServicioId]);
 
   const handleResumeMainTimer = useCallback(() => {
     if (servicio.id_servicio) {
       console.log('ServicioCard: Reanudando timer principal para servicio:', servicio.id_servicio);
-      resumeTimerByServicioId(Number(servicio.id_servicio));
+      resumeTimerByServicioId(String(servicio.id_servicio));
     }
   }, [servicio.id_servicio, resumeTimerByServicioId]);
 

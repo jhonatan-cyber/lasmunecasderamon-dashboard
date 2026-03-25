@@ -15,7 +15,7 @@ export const useAttendanceStats = () => {
     isLoading: loading,
     error,
     refetch,
-  } = useGenericFetch<AttendanceStats>('/api/attendance-stats', {
+  } = useGenericFetch<AttendanceStats>('/api/attendance/stats', {
     initialFetch: true,
     transform: (data) => (data.success ? data.data : {
       total: 0,

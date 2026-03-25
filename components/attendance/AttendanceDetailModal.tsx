@@ -68,7 +68,7 @@ export default function AttendanceDetailModal({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/asistencias/${userId}/detalle`);
+      const response = await fetch(`/api/attendance/${userId}/detalle`);
 
       if (!response.ok) {
         throw new Error('Error al obtener el detalle de asistencias');

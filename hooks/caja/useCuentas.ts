@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { useCallback } from 'react';
 import {
   Cuenta,

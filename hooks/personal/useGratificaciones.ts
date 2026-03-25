@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { Gratificacion, CreateGratificacionRequest, GratificacionDetail } from '@/types/gratificacion';
