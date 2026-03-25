@@ -18,7 +18,7 @@ import { User, DollarSign, Calendar, Clock } from 'lucide-react';
 import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
 
 interface CommissionDetalle {
-  id: number;
+  id: string;
   fecha_hora: string;
   codigo_venta?: string;
   codigo_servicio?: string;
@@ -31,7 +31,7 @@ interface CommissionDetalle {
 }
 
 interface CommissionResumen {
-  id_usuario: number;
+  id_usuario: string;
   nombre_completo: string;
   nick: string;
   total_comisiones: number;
@@ -78,7 +78,7 @@ export default function CommissionsDetalleModal({
 
   useEffect(() => {
     if (open && usuario) {
-      fetchDetalles(usuario.id_usuario);
+      fetchDetalles(Number(usuario.id_usuario));
     }
   }, [open, usuario]);
 
@@ -92,48 +92,48 @@ export default function CommissionsDetalleModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className='w-[98vw] max-w-[900px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b'>
-          <DialogTitle className='text-center text-base sm:text-lg font-semibold'>
+      <DialogContent className='w-[98vw] max-w-6xl max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className='flex-shrink-0 px-2 sm:px-4 pt-4 sm:pt-6 pb-2 border-b dark:border-gray-800'>
+          <DialogTitle className='text-center text-base sm:text-lg font-semibold dark:text-gray-100'>
             Detalle de Comisiones
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
-          <div className='border-b pb-4 mb-4 flex flex-col items-center gap-2'>
-            <div className='flex items-center gap-2 text-gray-700 text-base sm:text-lg'>
-              <span className='font-bold text-blue-600'>@{usuario.nick}</span>
+        <div className='flex-1 overflow-y-auto px-2 sm:px-4 py-4'>
+          <div className='border-b dark:border-gray-800 pb-4 mb-4 flex flex-col items-center gap-2'>
+            <div className='flex items-center gap-2 text-gray-700 dark:text-gray-200 text-base sm:text-lg'>
+              <span className='font-bold text-blue-600 dark:text-blue-400'>@{usuario.nick}</span>
             </div>
-            <div className='flex items-center gap-2 text-gray-500 text-xs italic'>
+            <div className='flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs italic'>
               <span>{usuario.nombre_completo}</span>
             </div>
 
             {/* Resumen de totales */}
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 w-full'>
-              <div className='bg-blue-50 rounded-lg p-3 text-center'>
+              <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
-                  <span className='text-sm font-medium text-blue-800'>Comisiones</span>
+                  <span className='text-sm font-medium text-blue-800 dark:text-blue-300'>Comisiones</span>
                 </div>
-                <p className='text-lg font-bold text-blue-900'>
+                <p className='text-lg font-bold text-blue-900 dark:text-blue-100'>
                   {formatCurrencyNoDecimals(usuario.total_ventas)}
                 </p>
               </div>
 
-              <div className='bg-green-50 rounded-lg p-3 text-center'>
+              <div className='bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
-                  <span className='text-sm font-medium text-green-800'>Servicios</span>
+                  <span className='text-sm font-medium text-green-800 dark:text-green-300'>Servicios</span>
                 </div>
-                <p className='text-lg font-bold text-green-900'>
+                <p className='text-lg font-bold text-green-900 dark:text-green-100'>
                   {formatCurrencyNoDecimals(usuario.total_servicios)}
                 </p>
               </div>
 
-              <div className='bg-purple-50 rounded-lg p-3 text-center'>
+              <div className='bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
-                  <DollarSign className='w-4 h-4 text-purple-600' />
-                  <span className='text-sm font-medium text-purple-800'>Total</span>
+                  <DollarSign className='w-4 h-4 text-purple-600 dark:text-purple-400' />
+                  <span className='text-sm font-medium text-purple-800 dark:text-purple-300'>Total</span>
                 </div>
-                <p className='text-lg font-bold text-purple-900'>
+                <p className='text-lg font-bold text-purple-900 dark:text-purple-100'>
                   {formatCurrencyNoDecimals(usuario.total_comisiones)}
                 </p>
               </div>
@@ -142,20 +142,20 @@ export default function CommissionsDetalleModal({
 
           {/* Tabla de detalles */}
           <div>
-            <h3 className='text-sm font-semibold mb-4 text-center text-gray-600'>
+            <h3 className='text-sm font-semibold mb-4 text-center text-gray-600 dark:text-gray-400'>
               Detalle de Comisiones
             </h3>
             <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className='text-xs sm:text-sm'>CÓDIGO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>FECHA</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>TIPO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>PRODUCTO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>COMISIÓN</TableHead>
-                    <TableHead className='text-xs sm:text-sm text-center'>ESTADO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>FECHA PAGO</TableHead>
+                  <TableRow className="bg-gray-50/50 dark:bg-gray-900/50">
+                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>CÓDIGO</TableHead>
+                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>FECHA</TableHead>
+                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>TIPO</TableHead>
+                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>PRODUCTO</TableHead>
+                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>COMISIÓN</TableHead>
+                    <TableHead className='text-xs sm:text-sm text-center dark:text-gray-400'>ESTADO</TableHead>
+                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>FECHA PAGO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -188,12 +188,12 @@ export default function CommissionsDetalleModal({
                   ) : error ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className='text-center text-red-600 text-xs sm:text-sm'
                       >
                         {error}
                         <Button
-                          onClick={() => fetchDetalles(usuario.id_usuario)}
+                          onClick={() => fetchDetalles(Number(usuario.id_usuario))}
                           className='mt-2 ml-4 text-xs sm:text-sm'
                           size='sm'
                         >
@@ -204,8 +204,8 @@ export default function CommissionsDetalleModal({
                   ) : detalles.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
-                        className='text-center text-gray-600 text-xs sm:text-sm py-8'
+                        colSpan={7}
+                        className='text-center text-gray-600 dark:text-gray-400 text-xs sm:text-sm py-8'
                       >
                         No hay detalles de comisiones para mostrar
                       </TableCell>
@@ -218,10 +218,10 @@ export default function CommissionsDetalleModal({
                         </TableCell>
                         <TableCell className='text-xs sm:text-sm'>
                           <div className='flex items-center gap-2'>
-                            <Calendar className='w-3 h-3 text-gray-400' />
+                            <Calendar className='w-3 h-3 text-gray-400 dark:text-gray-500' />
                             <div>
-                              <div>{formatSoloFecha(detalle.fecha_hora)}</div>
-                              <div className='text-gray-500 flex items-center gap-1 text-[10px]'>
+                              <div className="dark:text-gray-200">{formatSoloFecha(detalle.fecha_hora)}</div>
+                              <div className='text-gray-500 dark:text-gray-400 flex items-center gap-1 text-[10px]'>
                                 <Clock className='w-2.5 h-2.5' />
                                 {formatSoloHora(detalle.fecha_hora)}
                               </div>
@@ -234,11 +234,11 @@ export default function CommissionsDetalleModal({
                           </Badge>
                         </TableCell>
                         <TableCell className='text-xs sm:text-sm max-w-[150px]'>
-                          <div className='truncate font-medium' title={detalle.producto}>
+                          <div className='truncate font-medium dark:text-gray-300' title={detalle.producto}>
                             {detalle.producto || '-'}
                           </div>
                         </TableCell>
-                        <TableCell className='font-bold text-xs sm:text-sm text-green-600'>
+                        <TableCell className='font-bold text-xs sm:text-sm text-green-600 dark:text-green-400'>
                           {formatCurrencyNoDecimals(detalle.monto)}
                         </TableCell>
                         <TableCell className='text-xs sm:text-sm text-center'>
@@ -248,11 +248,11 @@ export default function CommissionsDetalleModal({
                             {detalle.estado}
                           </Badge>
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm'>
+                        <TableCell className='text-xs sm:text-sm dark:text-gray-300'>
                           {detalle.fecha_pago ? (
                             formatSoloFecha(detalle.fecha_pago)
                           ) : (
-                            <span className='text-gray-400'>Pendiente</span>
+                            <span className='text-gray-400 dark:text-gray-500'>Pendiente</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -265,7 +265,7 @@ export default function CommissionsDetalleModal({
         </div>
 
         {/* Botón cerrar */}
-        <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
+        <div className='flex-shrink-0 border-t dark:border-gray-800 px-2 sm:px-4 py-4'>
           <div className='flex justify-center'>
             <Button
               size='sm'

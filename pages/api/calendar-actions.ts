@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import { toDateKey } from '@/lib/calendarUtils';
@@ -26,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ventas = await query(`
         SELECT 
           'venta' as tipo,
-          v.fecha_crea as fecha,
+          DATE_FORMAT(v.fecha_crea, '%Y-%m-%d') as fecha,
           v.codigo,
           COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Cliente no disponible') as cliente,
           v.total,
@@ -46,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const servicios = await query(`
         SELECT 
           'servicio' as tipo,
-          s.fecha_crea as fecha,
+          DATE_FORMAT(s.fecha_crea, '%Y-%m-%d') as fecha,
           s.codigo,
           COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Cliente no disponible') as cliente,
           s.total,
@@ -66,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const asistencias = await query(`
         SELECT 
           'asistencia' as tipo,
-          a.fecha as fecha,
+          DATE_FORMAT(a.fecha, '%Y-%m-%d') as fecha,
           CONCAT(u.nombre, ' ', u.apellido) as codigo,
           CONCAT(u.nombre, ' ', u.apellido) as cliente,
           CASE 
@@ -93,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const propinas = await query(`
         SELECT 
           'propina' as tipo,
-          p.fecha_crea as fecha,
+          DATE_FORMAT(p.fecha_crea, '%Y-%m-%d') as fecha,
           v.codigo,
           COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Cliente no disponible') as cliente,
           p.propina as total,
@@ -114,7 +113,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const anticipos = await query(`
         SELECT 
           'anticipo' as tipo,
-          a.fecha_crea as fecha,
+          DATE_FORMAT(a.fecha_crea, '%Y-%m-%d') as fecha,
           CONCAT(u.nombre, ' ', u.apellido) as codigo,
           CONCAT(u.nombre, ' ', u.apellido) as cliente,
           a.monto as total,
@@ -134,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const horasExtras = await query(`
         SELECT 
           'hora_extra' as tipo,
-          he.fecha_crea as fecha,
+          DATE_FORMAT(he.fecha_crea, '%Y-%m-%d') as fecha,
           CONCAT(u.nombre, ' ', u.apellido) as codigo,
           CONCAT(u.nombre, ' ', u.apellido) as cliente,
           he.total as total,
@@ -156,6 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const actionsByDate: { [key: string]: any[] } = {};
     
     actions.forEach(action => {
+      // Como ya viene formateada de SQL como YYYY-MM-DD, toDateKey solo asegura compatibilidad
       const dateKey = toDateKey(action.fecha);
       
       if (!actionsByDate[dateKey]) {
@@ -169,7 +169,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: actionsByDate
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al obtener acciones del calendario:', error);
     return res.status(500).json({
       success: false,
