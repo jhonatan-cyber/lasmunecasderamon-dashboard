@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable no-console */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';

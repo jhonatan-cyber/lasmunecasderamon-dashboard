@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { useState, useCallback } from "react";
 import { useGenericFetch } from "../shared/useGenericFetch";
 

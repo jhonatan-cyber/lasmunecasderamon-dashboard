@@ -21,7 +21,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
   
   // Determinar qué endpoint usar basado en el rol del usuario
   const endpoint = useMemo(() => 
-    user?.role?.toLowerCase() === 'cajero' ? '/api/asistencias/user' : '/api/asistencias',
+    user?.role?.toLowerCase() === 'cajero' ? '/api/attendance/user' : '/api/attendance',
     [user?.role]
   )
   
@@ -35,7 +35,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
   const registrarAsistencia = useCallback(async (usuarioId: string | number): Promise<boolean> => {
     try {
       setMutationError(null)
-      const response = await fetch('/api/asistencias', {
+      const response = await fetch('/api/attendance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

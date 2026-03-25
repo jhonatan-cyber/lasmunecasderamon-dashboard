@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { useState, useCallback, useMemo } from 'react';
 
 interface UseProductSelectionParams {

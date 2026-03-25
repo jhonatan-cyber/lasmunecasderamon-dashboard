@@ -37,7 +37,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=60, s-maxage=60, stale-while-revalidate=120'
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0'
           },
           {
             key: 'X-Content-Type-Options',

@@ -29,6 +29,7 @@ export default function Clients() {
     clients,
     allClients,
     isLoading,
+    isMutating,
     createClient,
     updateClient,
     deleteClient,
@@ -71,7 +72,7 @@ export default function Clients() {
       setIsModalOpen(false);
       setModalClientData(CLIENT_EMPTY);
       toast.success('Cliente creado correctamente');
-    } catch (error) {
+    } catch {
       toast.error('Error al crear el cliente');
     }
   };
@@ -93,7 +94,7 @@ export default function Clients() {
       setEditClientId(null);
       setModalClientData(CLIENT_EMPTY);
       toast.success('Cliente actualizado correctamente');
-    } catch (error) {
+    } catch {
       toast.error('Error al actualizar el cliente');
     }
   };
@@ -102,7 +103,7 @@ export default function Clients() {
     try {
       await deleteClient(client.id);
       toast.success('Cliente eliminado correctamente');
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar el cliente');
     }
   };
@@ -131,18 +132,12 @@ export default function Clients() {
     setIsModalOpen(true);
   };
 
-  const handleEditFromDetails = () => {
-    if (!selectedClient) return;
-    setIsDetailsOpen(false);
-    handleEditClick(selectedClient);
-  };
-
   const handleLoadPrepago = (client: Client) => {
     setPrepagoClient(client);
     setIsPrepagoModalOpen(true);
   };
 
-  if (isLoading) return <ClientsSkeleton />;
+  if (isLoading && allClients.length === 0) return <ClientsSkeleton />;
 
   return (
     <PermissionGuard module='clients' action='view'>
@@ -175,7 +170,7 @@ export default function Clients() {
                   isEditMode={isEditMode}
                   clientData={modalClientData}
                   setClientData={setModalClientData}
-                  isLoading={isLoading}
+                  isLoading={isMutating}
                   onSubmit={isEditMode ? handleEditClient : handleAddClient}
                   onCancel={() => {
                     setIsModalOpen(false);

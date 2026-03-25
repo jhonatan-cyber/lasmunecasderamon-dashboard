@@ -18,7 +18,7 @@ export const useLogins = (): UseLoginsReturn => {
     isLoading: loading,
     error: fetchError,
     refetch,
-  } = useGenericFetch<Login>('/api/logins', {
+  } = useGenericFetch<Login>('/api/auth/logs', {
     initialFetch: true,
     transform: (data) => data.data || [],
   });
@@ -28,7 +28,7 @@ export const useLogins = (): UseLoginsReturn => {
   const cerrarSesiones = async (): Promise<boolean> => {
     try {
       setMutationError(null);
-      const response = await fetch('/api/logins/cerrar-sesiones', {
+      const response = await fetch('/api/auth/logs', {
         method: 'POST'
       });
 

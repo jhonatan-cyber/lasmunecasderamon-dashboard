@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 "use client"
 
 import { useState, useEffect } from "react";
@@ -44,7 +44,7 @@ export default function AnfitrionaAsistenciasPage() {
     setLoading(true);
     try {
       // 1) Detalle por asistencia
-      const res = await fetch("/api/asistencias/user?tipo=detalle");
+      const res = await fetch("/api/attendance/user?tipo=detalle");
       const data = await res.json();
 
       if (res.ok && data.success) {
@@ -55,7 +55,7 @@ export default function AnfitrionaAsistenciasPage() {
       }
 
       // 2) Resumen para calcular descuento por habitación (se aplica por semana)
-      const resSummary = await fetch('/api/asistencias/user');
+      const resSummary = await fetch('/api/attendance/user');
       const summary = await resSummary.json();
       if (resSummary.ok && summary.success && Array.isArray(summary.data) && summary.data.length > 0) {
         const row = summary.data[0];

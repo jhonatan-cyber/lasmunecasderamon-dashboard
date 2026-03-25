@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
 import { 

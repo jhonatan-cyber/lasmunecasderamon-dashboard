@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,7 +45,7 @@ export default function DashboardStatsCards() {
         
         
                // Fetch asistencias
-       const asistenciasRes = await fetch("/api/asistencias/user");
+       const asistenciasRes = await fetch("/api/attendance/user");
        const asistenciasData = await asistenciasRes.json();
        
        // Fetch anticipos

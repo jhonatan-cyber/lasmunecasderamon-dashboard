@@ -374,8 +374,8 @@ export default function NewCuentaPage() {
         );
         if (habitacionSeleccionada) {
           startTimer(
-            Number(result.data?.cuenta_id || 0), // servicioId (usar cuenta_id para cuentas)
-            Number(habitacionSeleccionada.id || 0), // roomId
+            String(result.data?.cuenta_id || 0), // servicioId (usar cuenta_id para cuentas)
+            String(habitacionSeleccionada.id || 0), // roomId
             habitacionSeleccionada.name, // roomName
             habitacionSeleccionada.time || 60, // duration
             `CUENTA_${result.data?.cuenta_id || Date.now()}`, // servicioCode (ID de cuenta único)

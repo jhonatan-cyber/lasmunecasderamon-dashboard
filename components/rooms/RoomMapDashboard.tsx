@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 'use client';
 
 import React from 'react';
@@ -48,7 +48,7 @@ const RoomMapCard: React.FC<{ room: Room; servicio?: ServicioWithDetails }> = ({
     servicio
 }) => {
     const { getTimerByServicioId, formatTime } = useTimer();
-    const timer = servicio ? getTimerByServicioId(Number(servicio.id_servicio!)) : null;
+    const timer = servicio ? getTimerByServicioId(String(servicio.id_servicio!)) : null;
     const remainingTime = useCountdown(timer || undefined);
 
     const isOccupied = room.status === 2 || !!servicio;

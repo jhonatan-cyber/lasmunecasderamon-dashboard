@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { useState, useEffect } from 'react';
 import { formatDateLabel } from '@/lib/calendarUtils';
 import { toast } from 'sonner';

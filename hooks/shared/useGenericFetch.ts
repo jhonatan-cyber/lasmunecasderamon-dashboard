@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const */
+ 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { z } from 'zod';

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable no-console */
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -241,8 +241,8 @@ export default function NuevoServicioPage() {
             .join(', ');
 
           startTimer(
-            Number(data.data.id_servicio),
-            Number(servicioDataToSubmit.habitacion_id),
+            String(data.data.id_servicio),
+            String(servicioDataToSubmit.habitacion_id),
             selectedRoom.nombre || selectedRoom.name || selectedRoom.numero || "N/A",
             servicioDataToSubmit.tiempo,
             servicioDataToSubmit.codigo,

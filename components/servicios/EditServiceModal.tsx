@@ -200,7 +200,7 @@ export default function EditServiceModal({
         setTimeout(() => {
           onPauseMainTimer();
           if (servicio?.id_servicio) {
-            pauseTimerByServicioId(Number(servicio.id_servicio));
+            pauseTimerByServicioId(String(servicio.id_servicio));
           }
           console.log('Modal: Pausando timer principal para servicio:', servicio?.id_servicio);
         }, 0);
@@ -214,9 +214,9 @@ export default function EditServiceModal({
 
       const timeoutId = setTimeout(() => {
         onResumeMainTimer();
-        const tempTimer = getTemporaryTimerByServicioId(Number(servicioId));
+        const tempTimer = getTemporaryTimerByServicioId(String(servicioId));
         if (!tempTimer) {
-          resumeTimerByServicioId(Number(servicioId));
+          resumeTimerByServicioId(String(servicioId));
         }
       }, 0);
 
@@ -345,8 +345,8 @@ export default function EditServiceModal({
 
         // Iniciar timer temporal que mostrará los nuevos datos en el card
         startGlobalTemporaryTimer(
-          Number(servicio.id_servicio!),
-          Number(servicio.habitacion_id),
+          String(servicio.id_servicio!),
+          String(servicio.habitacion_id),
           servicio.habitacion_numero || '?',
           formData.tiempo,
           `${servicio.codigo}-TEMP`,

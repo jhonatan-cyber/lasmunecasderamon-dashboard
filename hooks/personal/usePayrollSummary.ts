@@ -6,7 +6,7 @@ import { useGenericFetch } from '../shared/useGenericFetch';
 
 export default function usePayrollSummary(month?: number, year?: number) {
   const endpoint = useMemo(() => {
-    let url = '/api/asistencias?resumen=true';
+    let url = '/api/attendance?resumen=true';
     if (month !== undefined) {
       url += `&month=${month}`;
     }

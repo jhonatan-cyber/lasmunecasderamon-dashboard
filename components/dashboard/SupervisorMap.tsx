@@ -27,7 +27,7 @@ export const SupervisorMap: React.FC = () => {
   const roomsWithTimers = useMemo(() => {
     return filteredRooms
       .map(room => {
-        const activeTimer = timers.find(t => t.roomId === Number(room.id) && t.isActive);
+        const activeTimer = timers.find(t => t.roomId === String(room.id) && t.isActive);
         const remaining = activeTimer ? calculateRemainingTime(activeTimer, serverOffset) : 0;
         return {
           ...room,

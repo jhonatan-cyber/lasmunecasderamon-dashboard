@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
+/* eslint-disable react/no-unescaped-entities */
 import { Star, User } from 'lucide-react';
 
 interface TestimonialsSectionProps {

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,7 @@ export function SalesDetailModal({
 
   if (!selectedVenta) return null;
 
-  const timer = getTimerByServicioId(Number(selectedVenta.id));
+  const timer = getTimerByServicioId(String(selectedVenta.id));
   const isLowTime = timer && timer.isActive && timer.remainingTime <= 300;
 
   const hasAnfitrionas = Array.isArray(selectedVenta.usuarios) && selectedVenta.usuarios.length > 0;
