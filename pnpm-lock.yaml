@@ -296,6 +296,9 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
       eslint:
         specifier: ^9.32.0
         version: 9.39.2(jiti@1.21.7)
@@ -2873,6 +2876,10 @@ packages:
 
   dompurify@3.3.1:
     resolution: {integrity: sha512-qkdCKzLNtrgPFP1Vo+98FRzJnBRGe4ffyCea9IwHB1fyxPOeNTHpLKYGd4Uk9xvNoH0ZoOjwZxNptyMwqrId1Q==}
+
+  dotenv@17.3.1:
+    resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
+    engines: {node: '>=12'}
 
   drange@1.1.1:
     resolution: {integrity: sha512-pYxfDYpued//QpnLIm4Avk7rsNtAtQkUES2cwAYSvD/wd2pKD71gN2Ebj3e7klzXwjocvE8c5vx/1fxwpqmSxA==}
@@ -8435,6 +8442,8 @@ snapshots:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
     optional: true
+
+  dotenv@17.3.1: {}
 
   drange@1.1.1: {}
 

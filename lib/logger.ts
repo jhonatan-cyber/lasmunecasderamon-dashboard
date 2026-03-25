@@ -53,51 +53,43 @@ if (process.env.NODE_ENV !== 'production') {
 
 export const auditLogger = {
   login: (userId: string, ip: string, success: boolean) => {
-    if (process.env.NODE_ENV !== 'production') {
-      logger.info('Login attempt', {
-        userId,
-        ip,
-        success,
-        timestamp: new Date().toISOString(),
-        actionType: 'LOGIN'
-      });
-    }
+    logger.info('Login attempt', {
+      userId,
+      ip,
+      success,
+      timestamp: new Date().toISOString(),
+      actionType: 'LOGIN'
+    });
   },
 
   logout: (userId: string, ip: string) => {
-    if (process.env.NODE_ENV !== 'production') {
-      logger.info('Logout', {
-        userId,
-        ip,
-        timestamp: new Date().toISOString(),
-        actionType: 'LOGOUT'
-      });
-    }
+    logger.info('Logout', {
+      userId,
+      ip,
+      timestamp: new Date().toISOString(),
+      actionType: 'LOGOUT'
+    });
   },
 
   dataAccess: (userId: string, action: string, resource: string, details?: AuditDetails) => {
-    if (process.env.NODE_ENV !== 'production') {
-      logger.info('Data access', {
-        userId,
-        action,
-        resource,
-        details,
-        timestamp: new Date().toISOString(),
-        actionType: 'DATA_ACCESS'
-      });
-    }
+    logger.info('Data access', {
+      userId,
+      action,
+      resource,
+      details,
+      timestamp: new Date().toISOString(),
+      actionType: 'DATA_ACCESS'
+    });
   },
 
   securityEvent: (userId: string, event: string, details: AuditDetails) => {
-    if (process.env.NODE_ENV !== 'production') {
-      logger.warn('Security event', {
-        userId,
-        event,
-        details,
-        timestamp: new Date().toISOString(),
-        actionType: 'SECURITY_EVENT'
-      });
-    }
+    logger.warn('Security event', {
+      userId,
+      event,
+      details,
+      timestamp: new Date().toISOString(),
+      actionType: 'SECURITY_EVENT'
+    });
   },
 
   error: (error: Error, context?: AuditDetails) => {
@@ -112,4 +104,3 @@ export const auditLogger = {
 };
 
 export default logger;
-

@@ -1,7 +1,13 @@
 export const toDateKey = (value?: string | Date | null) => {
   if (!value) return '';
-  if (value instanceof Date) return value.toISOString().split('T')[0];
-  return value.split('T')[0];
+  if (value instanceof Date) {
+    // Usar formato local para evitar desfases de zona horaria
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return value.substring(0, 10).replace('T', ' '); // Normalizar a YYYY-MM-DD
 };
 
 export const toDateKeys = (dates: Date[]) => dates.map(date => toDateKey(date));
@@ -53,25 +59,55 @@ export const getCurrentTimeKey = () => new Date().toTimeString().slice(0, 8);
 export const formatMonthYearLabel = (date: Date, locale = 'es-ES') =>
   date.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 
-export const formatLongDateEs = (value: string | Date, locale = 'es-ES') =>
-  new Date(value).toLocaleDateString(locale, {
+export const formatLongDateEs = (value: string | Date, locale = 'es-ES') => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return 'Fecha inválida';
+  return date.toLocaleDateString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
+};
 
-export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') =>
-  new Date(value).toLocaleTimeString(locale, {
+export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
+  if (!value) return '';
+  
+  if (typeof value === 'string' && value.includes(':') && !value.includes('-') && !value.includes('T')) {
+    // If it's a time-only string like "HH:MM:SS" or "HH:MM"
+    const parts = value.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return date.toLocaleTimeString(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  }
+
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return 'Hora inválida';
+
+  return date.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
 
-export const formatShortDateEs = (value: string | Date, locale = 'es-ES') =>
-  new Date(value).toLocaleDateString(locale, {
+export const formatShortDateEs = (value: string | Date, locale = 'es-ES') => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return 'Fecha inválida';
+  return date.toLocaleDateString(locale, {
     weekday: 'short',
     day: 'numeric',
   });
+};
 
 export const formatDateLabel = (value: string | Date, locale = 'es-ES') =>
   new Date(value).toLocaleDateString(locale);

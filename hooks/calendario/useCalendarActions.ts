@@ -44,7 +44,7 @@ export const useCalendarActions = (startDate?: string, endDate?: string) => {
   );
 
   return {
-    actions: actions?.[0] || {},
+    actions: (actions as any) || {},
     loading,
     error,
     refetch: fetchActions

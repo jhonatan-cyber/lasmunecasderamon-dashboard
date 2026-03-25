@@ -161,7 +161,7 @@ export default function CommissionsPage() {
           usuario={
             selectedCommission
               ? {
-                  id_usuario: parseInt(selectedCommission.employeeId),
+                  id_usuario: selectedCommission.employeeId,
                   nombre_completo: selectedCommission.employeeName,
                   nick: selectedCommission.nick,
                   total_comisiones: selectedCommission.total,

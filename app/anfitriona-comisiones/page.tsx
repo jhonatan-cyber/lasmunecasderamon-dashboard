@@ -83,17 +83,14 @@ export default function AnfitrionaComisionesPage() {
     );
   }
 
-  // Filtrar solo comisiones de ventas
-  const comisionesVentas = commissions.filter(commission => commission.tipo === 'venta');
-  
-  // Calcular totales solo de ventas
-  const totalCommissions = comisionesVentas.length;
-  const totalAmount = comisionesVentas.reduce((sum, commission) => sum + (commission.comision || 0), 0);
-  const pendingCommissions = comisionesVentas.filter(commission => commission.estado === 1).length;
-  const totalPending = comisionesVentas.filter(commission => commission.estado === 1).reduce((sum, commission) => sum + (commission.comision || 0), 0);
+  // Calcular totales (ventas, servicios, otros)
+  const totalCommissions = commissions.length;
+  const totalAmount = commissions.reduce((sum, commission) => sum + (commission.comision || 0), 0);
+  const pendingCommissionsCount = commissions.filter(commission => commission.estado === 1).length;
+  const totalPendingAmount = commissions.filter(commission => commission.estado === 1).reduce((sum, commission) => sum + (commission.comision || 0), 0);
 
-  // Ordenar y filtrar comisiones de ventas
-  const filteredCommissions = comisionesVentas.filter((commission) => {
+  // Ordenar y filtrar comisiones
+  const filteredCommissions = commissions.filter((commission) => {
     if (!searchTerm) return true;
     
     try {
@@ -101,13 +98,14 @@ export default function AnfitrionaComisionesPage() {
       return date.toLowerCase().includes(searchTerm.toLowerCase()) ||
              (commission.comision || 0).toString().includes(searchTerm) ||
              (commission.codigo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+             (commission.tipo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
              (commission.id_comision || '').toString().includes(searchTerm);
     } catch (error) {
       return false;
     }
   });
 
-  const sortedCommissions = [...filteredCommissions].sort((a, b) => {
+  const sortedCommissions = [...filteredCommissions].sort((a: any, b: any) => {
     const aValue = a[sortField];
     const bValue = b[sortField];
     
@@ -158,9 +156,9 @@ export default function AnfitrionaComisionesPage() {
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm text-gray-500">LAS MUÑECAS DE RAMÓN</p>
-                     <h1 className="text-2xl font-bold text-gray-900">
-             Listado de Comisiones de Ventas {user?.name} {user?.lastName}
-           </h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Listado de Comisiones {user?.name} {user?.lastName}
+          </h1>
         </div>
         <Button
           variant="outline"
@@ -174,14 +172,14 @@ export default function AnfitrionaComisionesPage() {
 
       {/* Totales centrados */}
       <div className="text-center space-y-2">
-        <div className="flex justify-center gap-8">
+        <div className="flex justify-center flex-wrap gap-4 sm:gap-8">
           <div>
             <p className="text-sm text-gray-500">Total Comisiones:</p>
             <p className="text-xl font-bold text-gray-900">{totalCommissions}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Comisiones Pendientes:</p>
-            <p className="text-xl font-bold text-gray-900">{pendingCommissions}</p>
+            <p className="text-sm text-gray-500">Pendientes:</p>
+            <p className="text-xl font-bold text-gray-900">{pendingCommissionsCount}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Total Ganado:</p>
@@ -189,17 +187,18 @@ export default function AnfitrionaComisionesPage() {
           </div>
           <div>
             <p className="text-sm text-gray-500">Por Cobrar:</p>
-            <p className="text-xl font-bold text-gray-900">{formatCurrencyCLP(totalPending)}</p>
+            <p className="text-xl font-bold text-gray-900">{formatCurrencyCLP(totalPendingAmount)}</p>
           </div>
         </div>
         
-                 {/* Información de comisiones de ventas */}
-         <div className="flex justify-center gap-8 mt-4 pt-4 border-t border-gray-200">
-           <div>
-             <p className="text-sm text-gray-500">Comisiones de Ventas:</p>
-              <p className="text-lg font-bold text-green-600">{comisionesVentas.length} comisiones • {formatCurrencyCLP(totalAmount)}</p>
-           </div>
-         </div>
+        <div className="flex justify-center gap-8 mt-4 pt-4 border-t border-gray-200">
+          <div>
+            <p className="text-sm text-gray-500">Resumen Detallado:</p>
+            <p className="text-lg font-bold text-green-600">
+              {commissions.length} registros totales • {formatCurrencyCLP(totalAmount)}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -249,7 +248,7 @@ export default function AnfitrionaComisionesPage() {
                       onClick={() => handleSort('codigo')}
                       className="flex items-center gap-1 hover:text-gray-700"
                     >
-                      CÓDIGO VENTA
+                      CÓDIGO (Venta/Serv.)
                       {sortField === 'codigo' ? (
                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                       ) : <ChevronUp className="h-4 w-4 opacity-0" />}
@@ -267,11 +266,14 @@ export default function AnfitrionaComisionesPage() {
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                   TIPO
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort('fecha_crea')}
                       className="flex items-center gap-1 hover:text-gray-700"
                     >
-                      FECHA VENTA
+                      FECHA
                       {sortField === 'fecha_crea' ? (
                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                       ) : <ChevronUp className="h-4 w-4 opacity-0" />}
@@ -296,14 +298,14 @@ export default function AnfitrionaComisionesPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center">
+                    <td colSpan={7} className="px-6 py-4 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-600">Cargando comisiones...</p>
                     </td>
                   </tr>
                 ) : paginatedCommissions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                       No se encontraron comisiones
                     </td>
                   </tr>
@@ -321,6 +323,9 @@ export default function AnfitrionaComisionesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {formatCurrencyCLP(commission.comision)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm capitalize">
+                          {commission.tipo || 'venta'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
