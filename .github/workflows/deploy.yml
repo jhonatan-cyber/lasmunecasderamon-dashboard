@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,middleware.ts"
+          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs"
           target: "${{ env.DEPLOY_DIR }}"
           rm: false
           strip_components: 0
@@ -74,7 +74,6 @@ jobs:
             NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
             NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
             CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
-            TZ=America/La_Paz
             EOF
             
             # Configurar pnpm
