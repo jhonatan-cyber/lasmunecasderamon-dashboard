@@ -5,13 +5,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDateTimeLabel } from '@/lib/calendarUtils';
-import { formatNumberCL } from '@/lib/formatters';
+import { formatDateTimeLabel } from '@/lib/utils/calendarUtils';
+import { formatNumberCL } from '@/lib/utils/formatters';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, XCircle, Clock, User, Users, Home, DollarSign, Trash2 } from 'lucide-react';
 

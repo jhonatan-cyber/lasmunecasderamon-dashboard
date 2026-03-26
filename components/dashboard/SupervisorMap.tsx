@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import useRooms from '@/hooks/habitaciones/useRooms';
 import { useTimer } from '@/contexts/TimerContext';
-import { calculateRemainingTime } from '@/lib/timeUtils';
+import { calculateRemainingTime } from '@/lib/utils/timeUtils';
 import { Bed, Map as MapIcon, Clock, Pause, Play, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

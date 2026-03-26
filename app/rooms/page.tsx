@@ -1,12 +1,20 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import useRooms from '@/hooks/habitaciones/useRooms';
-import RoomFormDialog, { RoomForm } from '@/components/rooms/RoomFormDialog';
+import { RoomForm } from '@/components/rooms/RoomForm';
+import { type RoomFormValues } from '@/hooks/personal/useRoomForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import RoomCard from '@/components/rooms/RoomCard';
 import RoomTable from '@/components/rooms/RoomTable';
 import { RoomFilters } from '@/components/rooms/RoomFilters';
 import Paginate from '@/components/ui/paginate';
-import { Button } from '@/components/ui/button';
 import { Room } from '@/types/room';
 import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -59,7 +67,7 @@ const RoomsPage = () => {
   const [editRoom, setEditRoom] = useState<Room | null>(null);
   const [showTableView, setShowTableView] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(8); // Valor inicial para modo cards
+  const [pageSize, setPageSize] = useState(8);
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
   const [localRooms, setLocalRooms] = useState<Room[]>([]);
 
@@ -74,7 +82,6 @@ const RoomsPage = () => {
     })
   );
 
-  // Ajustar pageSize cuando cambia el modo de visualización
   React.useEffect(() => {
     const targetSize = showTableView ? 5 : 8;
     setPageSize(prev => (prev !== targetSize ? targetSize : prev));
@@ -86,10 +93,8 @@ const RoomsPage = () => {
     return filteredRooms.filter(room => room.status === filterStatus);
   }, [filteredRooms, filterStatus]);
 
-  // Actualizar localRooms cuando filteredByStatus cambia
   React.useEffect(() => {
     setLocalRooms(prev => {
-      // Solo actualizar si la referencia cambió (useMemo ya ayuda aquí)
       if (prev === filteredByStatus) return prev;
       return filteredByStatus;
     });
@@ -116,7 +121,7 @@ const RoomsPage = () => {
     }
   };
 
-  const handleCreate = async (form: RoomForm) => {
+  const handleCreate = async (form: RoomFormValues) => {
     await createRoom({
       name: toTitleCase(form.name),
       price: Number(form.price.replace(/\./g, '')),
@@ -133,7 +138,7 @@ const RoomsPage = () => {
     setOpenDialog(true);
   };
 
-  const handleUpdate = async (form: RoomForm) => {
+  const handleUpdate = async (form: RoomFormValues) => {
     if (!editRoom) return;
     await updateRoom(editRoom.id, {
       name: toTitleCase(form.name),
@@ -323,13 +328,53 @@ const RoomsPage = () => {
             )}
           </>
         )}
-        <RoomFormDialog
+        <Dialog
           open={openDialog}
-          onClose={handleDialogClose}
-          onSubmit={editRoom ? handleUpdate : handleCreate}
-          initialValues={editRoom}
-          isLoading={isLoading}
-        />
+          onOpenChange={v => {
+            if (!v) handleDialogClose();
+          }}
+        >
+          <DialogContent className='p-0 w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] max-h-[90vh] flex flex-col'>
+            <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
+              <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
+                {editRoom ? 'Editar habitación' : 'Nueva habitación'}
+              </DialogTitle>
+              <DialogDescription className='sr-only'>Formulario de habitación</DialogDescription>
+            </DialogHeader>
+            <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+              <RoomForm
+                open={openDialog}
+                onCancel={handleDialogClose}
+                onSubmit={editRoom ? handleUpdate : handleCreate}
+                initialValues={editRoom}
+                isLoading={isLoading}
+                hideButtons={true}
+              />
+            </div>
+            <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
+              <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
+                <Button
+                  type='button'
+                  onClick={handleDialogClose}
+                  variant='outline'
+                  disabled={isLoading}
+                  className='w-full sm:w-auto rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='submit'
+                  form='room-form'
+                  disabled={isLoading}
+                  variant='outline'
+                  className='flex items-center gap-2 w-full sm:w-auto rounded-full hover:scale-105 transition-all duration-200 bg-black text-white'
+                >
+                  {editRoom ? 'Actualizar' : 'Guardar'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PermissionGuard>
   );

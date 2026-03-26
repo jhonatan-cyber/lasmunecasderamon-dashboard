@@ -1,78 +1,185 @@
-import { query, generateUUID } from '@/lib/db';
-import { getActiveCaja, getCajaStats, closeNonAdminSessions } from '@/lib/procedures';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { CajaSchema, type CajaType } from '@/lib/business/schemas';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { BaseRepository } from './BaseRepository';
 
 export class CashRegisterRepository {
-  static async summary() {
-    const cajaRow = await getActiveCaja();
-    if (!cajaRow) return { balance_total: 0, cajas_abiertas: 0 };
+  private static mapCajaFromDB(row: any): CajaType {
+    return CajaSchema.parse({
+      id: row.id_caja,
+      fecha_apertura: row.fecha_apertura,
+      usuario_id_apertura: row.usuario_id_apertura,
+      monto_apertura: row.monto_apertura,
+      estado: row.estado,
+      fecha_cierre: row.fecha_cierre,
+      usuario_id_cierre: row.usuario_id_cierre,
+      monto_cierre: row.monto_cierre,
+      ventas: row.venta ?? 0,
+      servicios: row.servicio ?? 0,
+      efectivo: row.efectivo ?? 0,
+      tarjeta: row.tarjeta ?? 0,
+      transferencia: row.transferencia ?? 0,
+      devoluciones: row.devolucion ?? 0,
+      prepago: row.prepago ?? 0,
+      propina: row.propina ?? 0,
+      cuenta: row.cuenta ?? 0,
+      anticipo: row.anticipo ?? 0,
+      egreso: row.egreso ?? 0,
+      iva: row.iva ?? 0,
+      comision: row.comision ?? 0,
+      usuario_apertura: row.usuario_apertura,
+      cajero_nombre: row.cajero_nombre
+    });
+  }
 
-    const { ventas, servicios } = await getCajaStats(cajaRow.fecha_apertura);
-    const montoApertura = Number(cajaRow.monto_apertura || 0);
-    const balanceTotal = Number(cajaRow.efectivo || 0) + Number(cajaRow.tarjeta || 0) + 
-                       Number(cajaRow.transferencia || 0) + montoApertura - Number(cajaRow.devolucion || 0);
+  static async getCurrentCajaId(trx?: TransactionQuery): Promise<string | null> {
+    const qFunc = trx || query;
+    const res = await qFunc<any[]>('SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1');
+    return res[0]?.id_caja || null;
+  }
+
+  static async updateBalances(
+    trx: TransactionQuery, 
+    id_caja: string, 
+    deltas: {
+      venta?: number;
+      servicio?: number;
+      efectivo?: number;
+      tarjeta?: number;
+      transferencia?: number;
+      prepago?: number;
+      anticipo?: number;
+      egreso?: number;
+      iva?: number;
+      comision?: number;
+      propina?: number;
+      cuenta?: number;
+      devolucion?: number;
+    }
+  ): Promise<void> {
+    const entries = Object.entries(deltas).filter(([_, v]) => v !== 0 && v !== undefined);
+    if (entries.length === 0) return;
+
+    // Map business fields to DB columns
+    const columnMap: Record<string, string> = {
+      venta: 'venta',
+      servicio: 'servicio',
+      efectivo: 'efectivo',
+      tarjeta: 'tarjeta',
+      transferencia: 'transferencia',
+      prepago: 'prepago',
+      anticipo: 'anticipo',
+      egreso: 'egreso',
+      iva: 'iva',
+      comision: 'comision',
+      propina: 'propina',
+      cuenta: 'cuenta',
+      devolucion: 'devolucion'
+    };
+
+    const setClause = entries.map(([k]) => `${columnMap[k] || k} = ${columnMap[k] || k} + ?`).join(', ');
+    const values = entries.map(([_, v]) => v);
+
+    await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [...values, id_caja]);
+  }
+
+  static async summary(): Promise<any> {
+    const row = await query<any[]>(`
+      SELECT c.*, CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
+      FROM cajas c
+      LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
+      WHERE c.estado = 1
+      ORDER BY c.fecha_apertura DESC LIMIT 1
+    `);
+    
+    if (row.length === 0) return { balance_total: 0, cajas_abiertas: 0 };
+    const cajaRow = row[0];
+
+    const stats = {
+      ventas: (await query<any[]>('SELECT COUNT(*) AS cantidad, COALESCE(AVG(total), 0) AS promedio FROM ventas WHERE estado = 1 AND fecha_crea >= ?', [cajaRow.fecha_apertura]))[0],
+      servicios: (await query<any[]>('SELECT COUNT(*) AS cantidad, COALESCE(AVG(total), 0) AS promedio FROM servicios WHERE estado = 1 AND fecha_crea >= ?', [cajaRow.fecha_apertura]))[0]
+    };
+
+    const balanceTotal = Number(cajaRow.efectivo || 0) + Number(cajaRow.tarjeta || 0) + Number(cajaRow.transferencia || 0) + Number(cajaRow.monto_apertura || 0) - Number(cajaRow.devolucion || 0);
 
     return {
-      ...cajaRow,
-      monto_apertura: montoApertura,
+      ...this.mapCajaFromDB(cajaRow),
       balance_total: balanceTotal,
-      cantidad_ventas: ventas.cantidad,
-      promedio_venta: ventas.promedio,
-      cantidad_servicios: servicios.cantidad,
-      promedio_servicio: servicios.promedio
+      cantidad_ventas: stats.ventas.cantidad,
+      promedio_venta: stats.ventas.promedio,
+      cantidad_servicios: stats.servicios.cantidad,
+      promedio_servicio: stats.servicios.promedio
     };
   }
 
-  static async getAll() {
-    return await query(`
+  static async getAll(): Promise<CajaType[]> {
+    const results = await query<any[]>(`
       SELECT c.*, CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre
       FROM cajas c
       LEFT JOIN usuarios u1 ON c.usuario_id_apertura = u1.id_usuario
       WHERE c.estado IN (0, 1) ORDER BY c.fecha_apertura DESC
     `);
+    return results.map(row => this.mapCajaFromDB(row));
   }
 
-  static async getById(id: string) {
+  static async getById(id: string): Promise<CajaType | null> {
     const res = await query<any[]>(`
       SELECT c.*, CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre
       FROM cajas c
       LEFT JOIN usuarios u1 ON c.usuario_id_apertura = u1.id_usuario
       WHERE c.id_caja = ?
     `, [id]);
-    return res.length > 0 ? res[0] : null;
+    return res.length > 0 ? this.mapCajaFromDB(res[0]) : null;
   }
 
-  static async open(usuario_id: string, monto_apertura: number) {
+  static async open(usuario_id: string, monto_apertura: number): Promise<CajaType | null> {
     const open = await query<any[]>('SELECT id_caja FROM cajas WHERE usuario_id_apertura = ? AND estado = 1', [usuario_id]);
     if (open.length > 0) throw new Error('Usuario ya tiene una caja abierta');
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    await query(`INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, estado) VALUES (?, ?, ?, ?, 1)`, [id, now, usuario_id, monto_apertura]);
-    return id;
+    await BaseRepository.insert(query, 'cajas', {
+      id_caja: id,
+      fecha_apertura: now,
+      usuario_id_apertura: usuario_id,
+      monto_apertura,
+      estado: 1
+    });
+    return await this.getById(id);
   }
 
-  static async update(id: string, data: any) {
-    const keys = Object.keys(data);
-    const set = keys.map(k => `${k} = ?`).join(', ');
-    if (!set) return;
-    await query(`UPDATE cajas SET ${set} WHERE id_caja = ? AND estado = 1`, [...Object.values(data), id]);
+  static async update(id: string, data: any): Promise<CajaType | null> {
+    await BaseRepository.update(query, 'cajas', 'id_caja', id, data);
+    return await this.getById(id);
   }
 
-  static async close(id: string, usuario_id_cierre: string) {
-    const caja = await query<any[]>('SELECT * FROM cajas WHERE id_caja = ? AND estado = 1', [id]);
-    if (caja.length === 0) throw new Error('Caja no encontrada o ya cerrada');
+  static async close(id: string, usuario_id_cierre: string): Promise<CajaType | null> {
+    const caja = await BaseRepository.findOne<any>(query, 'cajas', 'id_caja', id);
+    if (!caja || caja.estado !== 1) throw new Error('Caja no encontrada o ya cerrada');
 
-    const c = caja[0];
-    const montoCierre = Number(c.monto_apertura || 0) + Number(c.efectivo || 0) + 
-                        Number(c.tarjeta || 0) + Number(c.transferencia || 0) - Number(c.devolucion || 0);
+    const montoCierre = Number(caja.monto_apertura || 0) + Number(caja.efectivo || 0) + 
+                        Number(caja.tarjeta || 0) + Number(caja.transferencia || 0) - Number(caja.devolucion || 0);
 
-    await closeNonAdminSessions();
+    // closeNonAdminSessions
+    await query(`
+      UPDATE logins l
+      INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
+      INNER JOIN roles r ON u.rol_id = r.id_rol
+      SET l.estado = 0
+      WHERE l.estado = 1 AND r.nombre NOT IN ('administrador', 'cajero')
+    `);
+
     const now = getNowInBusinessTimezone();
-    await query(`UPDATE cajas SET usuario_id_cierre = ?, fecha_cierre = ?, monto_cierre = ?, estado = 0 WHERE id_caja = ?`, [usuario_id_cierre, now, montoCierre, id]);
+    await BaseRepository.update(query, 'cajas', 'id_caja', id, {
+      usuario_id_cierre,
+      fecha_cierre: now,
+      monto_cierre: montoCierre,
+      estado: 0
+    });
+    return await this.getById(id);
   }
 
-  static async delete(id: string) {
-    await query('UPDATE cajas SET estado = -1 WHERE id_caja = ? AND estado = 0', [id]);
+  static async delete(id: string): Promise<void> {
+    await BaseRepository.update(query, 'cajas', 'id_caja', id, { estado: -1 });
   }
 }

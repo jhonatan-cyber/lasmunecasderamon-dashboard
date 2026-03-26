@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import { Gratificacion } from "@/types/gratificacion";
 import { User, DollarSign, Eye, Calendar, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

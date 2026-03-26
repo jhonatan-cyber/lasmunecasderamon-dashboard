@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { syncOfflineRequests, getQueuedRequests } from '@/lib/offlineStore';
+import { syncOfflineRequests, getQueuedRequests } from '@/lib/utils/offlineStore';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 

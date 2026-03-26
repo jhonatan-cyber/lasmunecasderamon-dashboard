@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/site';
+import { createMarketingMetadata } from '@/lib/api/site';
 
 export const metadata: Metadata = createMarketingMetadata({
   alternates: {

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import jwt from 'jsonwebtoken';
-import { auditLogger } from '../logger';
+import { auditLogger } from '@/lib/utils/logger';
 
 export interface UserPermissions {
   users: {
@@ -105,9 +105,9 @@ const rolePermissions: Record<string, UserPermissions> = {
   }
 };
 
-async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions> {
+export async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions> {
   try {
-    const { query } = await import('@/lib/db');
+    const { query } = await import('@/lib/database/db');
 
     const userResult = await query(`
       SELECT rol_id FROM usuarios WHERE id_usuario = ?
@@ -140,38 +140,26 @@ async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions
       orders: { read: false, write: false, delete: false, process: false }
     };
 
+    // Mapear acciones de la BD al formato interno del middleware
+    // BD: view, create, edit, delete, export, anulate, process, etc.
+    // Middleware: read, write, delete, export, anulate, process
+    const actionMap: Record<string, string> = {
+      'view': 'read',
+      'view_details': 'read',
+      'create': 'write',
+      'edit': 'write',
+      'delete': 'delete',
+      'export': 'export',
+      'anulate': 'anulate',
+      'process': 'process',
+    };
+
     permissions.forEach(perm => {
-      if (perm.module === 'users' && perm.action === 'read') userPerms.users.read = true;
-      if (perm.module === 'users' && perm.action === 'write') userPerms.users.write = true;
-      if (perm.module === 'users' && perm.action === 'delete') userPerms.users.delete = true;
-      
-      if (perm.module === 'sales' && perm.action === 'read') userPerms.sales.read = true;
-      if (perm.module === 'sales' && perm.action === 'write') userPerms.sales.write = true;
-      if (perm.module === 'sales' && perm.action === 'delete') userPerms.sales.delete = true;
-      if (perm.module === 'sales' && perm.action === 'anulate') userPerms.sales.anulate = true;
-      
-      if (perm.module === 'products' && perm.action === 'read') userPerms.products.read = true;
-      if (perm.module === 'products' && perm.action === 'write') userPerms.products.write = true;
-      if (perm.module === 'products' && perm.action === 'delete') userPerms.products.delete = true;
-      
-      if (perm.module === 'clients' && perm.action === 'read') userPerms.clients.read = true;
-      if (perm.module === 'clients' && perm.action === 'write') userPerms.clients.write = true;
-      if (perm.module === 'clients' && perm.action === 'delete') userPerms.clients.delete = true;
-      
-      if (perm.module === 'finances' && perm.action === 'read') userPerms.finances.read = true;
-      if (perm.module === 'finances' && perm.action === 'write') userPerms.finances.write = true;
-      if (perm.module === 'finances' && perm.action === 'delete') userPerms.finances.delete = true;
-      
-      if (perm.module === 'reports' && perm.action === 'read') userPerms.reports.read = true;
-      if (perm.module === 'reports' && perm.action === 'export') userPerms.reports.export = true;
-      
-      if (perm.module === 'settings' && perm.action === 'read') userPerms.settings.read = true;
-      if (perm.module === 'settings' && perm.action === 'write') userPerms.settings.write = true;
-      
-      if (perm.module === 'orders' && perm.action === 'read') userPerms.orders.read = true;
-      if (perm.module === 'orders' && perm.action === 'write') userPerms.orders.write = true;
-      if (perm.module === 'orders' && perm.action === 'delete') userPerms.orders.delete = true;
-      if (perm.module === 'orders' && perm.action === 'process') userPerms.orders.process = true;
+      const mappedAction = actionMap[perm.action] || perm.action;
+      const modulePerms = userPerms[perm.module as keyof UserPermissions];
+      if (modulePerms && mappedAction in modulePerms) {
+        (modulePerms as any)[mappedAction] = true;
+      }
     });
 
     return userPerms;
@@ -247,8 +235,11 @@ export function withPermission(permission: keyof UserPermissions, action: string
         });
       }
 
+      const isAdministrator = user.role?.toLowerCase() === 'administrador';
       const userPermissions = user.permissions[permission];
-      if (!userPermissions || !userPermissions[action as keyof typeof userPermissions]) {
+      const hasPermission = isAdministrator || (userPermissions && userPermissions[action as keyof typeof userPermissions] === true);
+
+      if (!hasPermission) {
         return res.status(403).json({
           success: false,
           message: 'No tienes permisos para realizar esta acción',

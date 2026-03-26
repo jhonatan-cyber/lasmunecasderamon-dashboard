@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { ArrowLeft, Shield, Eye, Lock, Database, Users, Phone } from 'lucide-react';
-import { formatDateLabel } from '@/lib/calendarUtils';
+import { formatDateLabel } from '@/lib/utils/calendarUtils';
 
 export const metadata = {
   title: 'Política de Privacidad - Las Muñecas de Ramón',
-  description: 'Política de privacidad y protección de datos',
+  description: 'Política de privacidad y protección de datos'
 };
 
 export default function PoliticaPrivacidad() {
@@ -50,7 +50,6 @@ export default function PoliticaPrivacidad() {
           {/* Content */}
           <div className='bg-gradient-to-br from-gray-900 to-black border-2 border-amber-500/30 rounded-3xl p-6 md:p-10 mb-12'>
             <div className='space-y-10'>
-
               {/* Introduccion */}
               <section>
                 <h2 className='text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2'>
@@ -58,12 +57,13 @@ export default function PoliticaPrivacidad() {
                   1. Introduccion
                 </h2>
                 <p className='text-slate-300 leading-relaxed mb-3'>
-                  En <strong className='text-amber-400'>Las Muñecas de Ramon</strong>,
-                  respetamos y protegemos la privacidad de nuestros clientes. Esta politica
-                  describe como recopilamos, utilizamos y protegemos su informacion personal.
+                  En <strong className='text-amber-400'>Las Muñecas de Ramon</strong>, respetamos y
+                  protegemos la privacidad de nuestros clientes. Esta politica describe como
+                  recopilamos, utilizamos y protegemos su informacion personal.
                 </p>
                 <p className='text-slate-300 leading-relaxed'>
-                  Al utilizar nuestros servicios, usted acepta las practicas descritas en esta politica de privacidad.
+                  Al utilizar nuestros servicios, usted acepta las practicas descritas en esta
+                  politica de privacidad.
                 </p>
               </section>
 
@@ -75,7 +75,9 @@ export default function PoliticaPrivacidad() {
                 </h2>
                 <div className='space-y-3'>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Informacion Personal</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Informacion Personal
+                    </h3>
                     <ul className='space-y-1 text-slate-300 text-sm'>
                       <li>• Nombre completo</li>
                       <li>• Numero de telefono</li>
@@ -85,7 +87,9 @@ export default function PoliticaPrivacidad() {
                     </ul>
                   </div>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Informacion de Uso</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Informacion de Uso
+                    </h3>
                     <ul className='space-y-1 text-slate-300 text-sm'>
                       <li>• Fechas y horarios de visita</li>
                       <li>• Servicios utilizados</li>
@@ -104,7 +108,9 @@ export default function PoliticaPrivacidad() {
                 </h2>
                 <div className='grid md:grid-cols-2 gap-4'>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Servicios Principales</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Servicios Principales
+                    </h3>
                     <ul className='space-y-1 text-slate-300 text-sm'>
                       <li>• Proporcionar servicios de entretenimiento</li>
                       <li>• Gestionar reservas y citas</li>
@@ -113,7 +119,9 @@ export default function PoliticaPrivacidad() {
                     </ul>
                   </div>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Mejora del Servicio</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Mejora del Servicio
+                    </h3>
                     <ul className='space-y-1 text-slate-300 text-sm'>
                       <li>• Personalizar la experiencia</li>
                       <li>• Mejorar nuestros servicios</li>
@@ -132,7 +140,9 @@ export default function PoliticaPrivacidad() {
                 </h2>
                 <div className='space-y-3'>
                   <div className='bg-gray-800/50 border border-emerald-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-emerald-300 mb-2'>Medidas de Seguridad</h3>
+                    <h3 className='text-lg font-semibold text-emerald-300 mb-2'>
+                      Medidas de Seguridad
+                    </h3>
                     <ul className='space-y-1 text-slate-300 text-sm'>
                       <li>• Encriptacion de datos sensibles</li>
                       <li>• Acceso restringido a informacion personal</li>
@@ -141,8 +151,9 @@ export default function PoliticaPrivacidad() {
                     </ul>
                   </div>
                   <p className='text-slate-300 leading-relaxed'>
-                    Implementamos medidas tecnicas y organizativas apropiadas para proteger
-                    su informacion personal contra acceso no autorizado, alteracion, divulgacion o destruccion.
+                    Implementamos medidas tecnicas y organizativas apropiadas para proteger su
+                    informacion personal contra acceso no autorizado, alteracion, divulgacion o
+                    destruccion.
                   </p>
                 </div>
               </section>
@@ -170,7 +181,9 @@ export default function PoliticaPrivacidad() {
                     </li>
                     <li className='flex items-start gap-2'>
                       <div className='w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0'></div>
-                      <span>Con proveedores de servicios confiables (bajo acuerdos de confidencialidad)</span>
+                      <span>
+                        Con proveedores de servicios confiables (bajo acuerdos de confidencialidad)
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -206,12 +219,14 @@ export default function PoliticaPrivacidad() {
 
               {/* Cookies */}
               <section>
-                <h2 className='text-2xl font-bold text-amber-400 mb-4'>7. Cookies y Tecnologias de Seguimiento</h2>
+                <h2 className='text-2xl font-bold text-amber-400 mb-4'>
+                  7. Cookies y Tecnologias de Seguimiento
+                </h2>
                 <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
                   <p className='text-slate-300 text-sm leading-relaxed mb-3'>
-                    Utilizamos tecnologias minimas de seguimiento para mejorar su experiencia.
-                    Puede configurar su navegador para rechazar cookies, aunque esto puede
-                    afectar la funcionalidad de algunos servicios.
+                    Utilizamos tecnologias minimas de seguimiento para mejorar su experiencia. Puede
+                    configurar su navegador para rechazar cookies, aunque esto puede afectar la
+                    funcionalidad de algunos servicios.
                   </p>
                   <p className='text-slate-300 text-sm leading-relaxed'>
                     No utilizamos cookies de seguimiento de terceros ni tecnologias invasivas.
@@ -229,7 +244,9 @@ export default function PoliticaPrivacidad() {
                     requiera un periodo de retencion mas largo.
                   </p>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Periodos de Retencion</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Periodos de Retencion
+                    </h3>
                     <ul className='space-y-1 text-slate-300 text-sm'>
                       <li>• Datos de clientes activos: Mientras mantenga relacion comercial</li>
                       <li>• Registros de visitas: 2 años</li>
@@ -249,18 +266,28 @@ export default function PoliticaPrivacidad() {
                 <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
                   <div className='grid md:grid-cols-2 gap-4'>
                     <div>
-                      <h3 className='text-lg font-semibold text-amber-300 mb-2'>Informacion de Contacto</h3>
+                      <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                        Informacion de Contacto
+                      </h3>
                       <div className='space-y-1 text-slate-300 text-sm'>
-                        <p><strong>Telefono:</strong> +56 9 87904824</p>
-                        <p><strong>WhatsApp:</strong> Disponible 24/7</p>
-                        <p><strong>Ubicacion:</strong> Linares, Chile</p>
+                        <p>
+                          <strong>Telefono:</strong> +56 9 87904824
+                        </p>
+                        <p>
+                          <strong>WhatsApp:</strong> Disponible 24/7
+                        </p>
+                        <p>
+                          <strong>Ubicacion:</strong> Linares, Chile
+                        </p>
                       </div>
                     </div>
                     <div>
-                      <h3 className='text-lg font-semibold text-amber-300 mb-2'>Para Consultas de Privacidad</h3>
+                      <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                        Para Consultas de Privacidad
+                      </h3>
                       <p className='text-slate-300 text-sm leading-relaxed'>
-                        Si tiene preguntas sobre esta politica de privacidad o desea ejercer
-                        sus derechos, puede contactarnos a traves de:
+                        Si tiene preguntas sobre esta politica de privacidad o desea ejercer sus
+                        derechos, puede contactarnos a traves de:
                       </p>
                       <ul className='space-y-1 text-slate-300 text-sm mt-2'>
                         <li>• WhatsApp: +56 9 87904824</li>
@@ -271,7 +298,6 @@ export default function PoliticaPrivacidad() {
                   </div>
                 </div>
               </section>
-
             </div>
           </div>
 

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, DollarSign, Calendar, Clock } from 'lucide-react';
-import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
+import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/utils/formatters';
 
 interface CommissionDetalle {
   id: string;

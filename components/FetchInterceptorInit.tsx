@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { setupFetchInterceptor } from '@/lib/fetchInterceptor';
+import { setupFetchInterceptor } from '@/lib/api/fetchInterceptor';
 
 /**
  * Componente que inicializa el interceptor de fetch

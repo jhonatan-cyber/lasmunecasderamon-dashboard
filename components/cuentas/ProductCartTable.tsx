@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, Trash2 } from 'lucide-react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
   Table,
   TableBody,

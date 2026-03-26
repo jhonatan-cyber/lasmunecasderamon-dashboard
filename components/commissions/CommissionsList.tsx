@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Commission } from '@/types/commission';
 import { DollarSign, User, Tag, ShoppingCart, Server, Coins, Eye } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';

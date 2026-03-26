@@ -20,7 +20,7 @@ import {
   formatFechaLarga,
   formatSoloFecha,
   formatSoloHora
-} from '@/lib/formatters';
+} from '@/lib/utils/formatters';
 import { useTipsDetalle } from '@/hooks/personal/useTips';
 import { PropinaResumen } from '@/types/propina';
 

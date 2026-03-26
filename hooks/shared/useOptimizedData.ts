@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { queryKeys, invalidateQueries } from '@/lib/queryClient';
+import { queryKeys, invalidateQueries } from '@/lib/api/queryClient';
 import { usePagination } from './usePagination';
 import { useMemo, useState } from 'react';
 

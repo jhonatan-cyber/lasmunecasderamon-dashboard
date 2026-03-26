@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import SearchInput from "@/components/ui/SearchInput";
 import { toast } from "sonner";
 
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 
 function formatFecha(fechaStr?: string) {
   if (!fechaStr) return "-";

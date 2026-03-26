@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CajaWithUser } from "@/types/caja";
 import { Eye, Lock, DollarSign, ArrowDownCircle } from "lucide-react";
-import { formatCurrencyCLP } from "@/lib/formatters";
-import { formatLongDateEs } from "@/lib/calendarUtils";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
+import { formatLongDateEs } from "@/lib/utils/calendarUtils";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {

@@ -4,8 +4,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, Clock, DollarSign, Users } from 'lucide-react';
 import { ServicioWithDetails } from '@/types/servicio';
-import { calculateServiceStats, calculateRoomStats } from '@/lib/serviceUtils';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { calculateServiceStats, calculateRoomStats } from '@/lib/business/serviceUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface ServiceStatsProps {
   servicios: ServicioWithDetails[];

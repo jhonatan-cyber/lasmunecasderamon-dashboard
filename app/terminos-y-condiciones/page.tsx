@@ -1,11 +1,10 @@
- 
 import Link from 'next/link';
 import { ArrowLeft, FileText, Shield, Users, Calendar, MapPin, Phone } from 'lucide-react';
-import { formatDateLabel } from '@/lib/calendarUtils';
+import { formatDateLabel } from '@/lib/utils/calendarUtils';
 
 export const metadata = {
   title: 'Términos y Condiciones - Las Muñecas de Ramón',
-  description: 'Términos y condiciones de uso del servicio',
+  description: 'Términos y condiciones de uso del servicio'
 };
 
 export default function TerminosCondiciones() {
@@ -51,7 +50,6 @@ export default function TerminosCondiciones() {
           {/* Content */}
           <div className='bg-gradient-to-br from-gray-900 to-black border-2 border-amber-500/30 rounded-3xl p-6 md:p-10 mb-12'>
             <div className='space-y-10'>
-
               {/* Introducción */}
               <section>
                 <h2 className='text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2'>
@@ -59,9 +57,9 @@ export default function TerminosCondiciones() {
                   1. Introducción
                 </h2>
                 <p className='text-slate-300 leading-relaxed mb-3'>
-                  Bienvenido a <strong className='text-amber-400'>Las Muñecas de Ramón</strong>,
-                  el club nocturno más exclusivo de Linares. Estos términos y condiciones rigen
-                  el uso de nuestros servicios y la visita a nuestro establecimiento.
+                  Bienvenido a <strong className='text-amber-400'>Las Muñecas de Ramón</strong>, el
+                  club nocturno más exclusivo de Linares. Estos términos y condiciones rigen el uso
+                  de nuestros servicios y la visita a nuestro establecimiento.
                 </p>
                 <p className='text-slate-300 leading-relaxed'>
                   Al acceder a nuestro establecimiento o utilizar nuestros servicios, usted acepta
@@ -78,21 +76,28 @@ export default function TerminosCondiciones() {
                 </h2>
                 <div className='space-y-3'>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Entretenimiento Nocturno</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Entretenimiento Nocturno
+                    </h3>
                     <p className='text-slate-300 text-sm'>
-                      Ofrecemos servicios de entretenimiento nocturno exclusivo para adultos mayores de 18 años.
+                      Ofrecemos servicios de entretenimiento nocturno exclusivo para adultos mayores
+                      de 18 años.
                     </p>
                   </div>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
                     <h3 className='text-lg font-semibold text-amber-300 mb-2'>Servicios VIP</h3>
                     <p className='text-slate-300 text-sm'>
-                      Salas privadas, servicio de bar premium y atención personalizada para clientes VIP.
+                      Salas privadas, servicio de bar premium y atención personalizada para clientes
+                      VIP.
                     </p>
                   </div>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Eventos Especiales</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Eventos Especiales
+                    </h3>
                     <p className='text-slate-300 text-sm'>
-                      Organización de eventos privados y celebraciones especiales bajo reserva previa.
+                      Organización de eventos privados y celebraciones especiales bajo reserva
+                      previa.
                     </p>
                   </div>
                 </div>
@@ -132,7 +137,9 @@ export default function TerminosCondiciones() {
                 </h2>
                 <div className='grid md:grid-cols-2 gap-4'>
                   <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
-                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>Horarios de Atención</h3>
+                    <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                      Horarios de Atención
+                    </h3>
                     <p className='text-slate-300 text-sm mb-1'>Martes a Domingo</p>
                     <p className='text-slate-300 text-sm'>20:00 - 06:00 hrs</p>
                   </div>
@@ -149,8 +156,8 @@ export default function TerminosCondiciones() {
                 <h2 className='text-2xl font-bold text-amber-400 mb-4'>5. Políticas de Pago</h2>
                 <div className='space-y-3'>
                   <p className='text-slate-300'>
-                    Los precios de nuestros servicios están sujetos a cambios sin previo aviso.
-                    Se aceptan pagos en efectivo y transferencias bancarias.
+                    Los precios de nuestros servicios están sujetos a cambios sin previo aviso. Se
+                    aceptan pagos en efectivo y transferencias bancarias.
                   </p>
                   <p className='text-slate-300'>
                     Las reservas requieren confirmación y pueden estar sujetas a depósito previo.
@@ -160,7 +167,9 @@ export default function TerminosCondiciones() {
 
               {/* Responsabilidades */}
               <section>
-                <h2 className='text-2xl font-bold text-amber-400 mb-4'>6. Responsabilidades del Cliente</h2>
+                <h2 className='text-2xl font-bold text-amber-400 mb-4'>
+                  6. Responsabilidades del Cliente
+                </h2>
                 <ul className='space-y-2 text-slate-300'>
                   <li className='flex items-start gap-2'>
                     <div className='w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0'></div>
@@ -183,10 +192,13 @@ export default function TerminosCondiciones() {
 
               {/* Limitación de Responsabilidad */}
               <section>
-                <h2 className='text-2xl font-bold text-amber-400 mb-4'>7. Limitación de Responsabilidad</h2>
+                <h2 className='text-2xl font-bold text-amber-400 mb-4'>
+                  7. Limitación de Responsabilidad
+                </h2>
                 <p className='text-slate-300 leading-relaxed mb-3'>
-                  Las Muñecas de Ramón no se hace responsable por pérdidas, daños o lesiones que puedan
-                  ocurrir en el establecimiento, excepto en casos de negligencia comprobada de nuestra parte.
+                  Las Muñecas de Ramón no se hace responsable por pérdidas, daños o lesiones que
+                  puedan ocurrir en el establecimiento, excepto en casos de negligencia comprobada
+                  de nuestra parte.
                 </p>
                 <p className='text-slate-300 leading-relaxed'>
                   Los clientes ingresan al establecimiento bajo su propio riesgo y responsabilidad.
@@ -197,9 +209,9 @@ export default function TerminosCondiciones() {
               <section>
                 <h2 className='text-2xl font-bold text-amber-400 mb-4'>8. Modificaciones</h2>
                 <p className='text-slate-300 leading-relaxed'>
-                  Nos reservamos el derecho de modificar estos términos y condiciones en cualquier momento.
-                  Las modificaciones entrarán en vigor inmediatamente después de su publicación en nuestro
-                  establecimiento o sitio web.
+                  Nos reservamos el derecho de modificar estos términos y condiciones en cualquier
+                  momento. Las modificaciones entrarán en vigor inmediatamente después de su
+                  publicación en nuestro establecimiento o sitio web.
                 </p>
               </section>
 
@@ -212,24 +224,31 @@ export default function TerminosCondiciones() {
                 <div className='bg-gray-800/50 border border-amber-500/20 rounded-lg p-4'>
                   <div className='grid md:grid-cols-2 gap-4'>
                     <div>
-                      <h3 className='text-lg font-semibold text-amber-300 mb-2'>Información de Contacto</h3>
+                      <h3 className='text-lg font-semibold text-amber-300 mb-2'>
+                        Información de Contacto
+                      </h3>
                       <div className='space-y-1 text-slate-300 text-sm'>
-                        <p><strong>Teléfono:</strong> +56 9 87904824</p>
-                        <p><strong>Ubicación:</strong> Linares, Chile</p>
-                        <p><strong>Horario:</strong> Martes a Domingo 20:00-06:00</p>
+                        <p>
+                          <strong>Teléfono:</strong> +56 9 87904824
+                        </p>
+                        <p>
+                          <strong>Ubicación:</strong> Linares, Chile
+                        </p>
+                        <p>
+                          <strong>Horario:</strong> Martes a Domingo 20:00-06:00
+                        </p>
                       </div>
                     </div>
                     <div>
                       <h3 className='text-lg font-semibold text-amber-300 mb-2'>Para Consultas</h3>
                       <p className='text-slate-300 text-sm'>
-                        Para cualquier consulta sobre estos términos y condiciones,
-                        puede contactarnos a través de WhatsApp o visitarnos en nuestro establecimiento.
+                        Para cualquier consulta sobre estos términos y condiciones, puede
+                        contactarnos a través de WhatsApp o visitarnos en nuestro establecimiento.
                       </p>
                     </div>
                   </div>
                 </div>
               </section>
-
             </div>
           </div>
 

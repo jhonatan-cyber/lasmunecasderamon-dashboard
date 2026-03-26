@@ -5,7 +5,7 @@ import { useMemo, useCallback, useState } from 'react'
 import { AsistenciaResumen } from '@/types/asistencia'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import { useGenericFetch } from '../shared/useGenericFetch'
-import { getCurrentTimeKey, getTodayDateKey } from '@/lib/calendarUtils'
+import { getCurrentTimeKey, getTodayDateKey } from '@/lib/utils/calendarUtils'
 
 interface UseAsistenciasReturn {
   data: AsistenciaResumen[]

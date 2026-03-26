@@ -1,36 +1,41 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
-import { getAuth } from '@/lib/auth-app';
+import { AnticipoService } from '@/lib/services/AnticipoService';
 
-export async function GET() {
-  try {
+export const GET = withAppAuth(
+  async () => {
     const data = await AnticipoRepository.getAll();
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error interno del servidor', error: error.message }, { status: 500 });
-  }
-}
+  },
+  { module: 'finances', action: 'read' }
+);
 
-export async function POST(request: Request) {
-  try {
-    const userAuth = await getAuth();
-    if (!userAuth) return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const POST = withAppAuth(
+  async (request: Request, { user }) => {
     const body = await request.json();
-    const { action, usuario_id, monto, motivo } = body;
+    const { action, usuario_id, monto } = body;
 
-    if (action === "solicitar") {
-        const id = await AnticipoRepository.request(userAuth.id, monto, motivo || '');
-        return NextResponse.json({ success: true, message: 'Solicitud enviada', anticipo_id: id }, { status: 201 });
+    if (action === 'solicitar') {
+      const id = await AnticipoService.requestAnticipo(user.id.toString(), body);
+      return NextResponse.json(
+        { success: true, message: 'Solicitud enviada', anticipo_id: id },
+        { status: 201 }
+      );
     }
 
     if (!usuario_id || !monto || isNaN(Number(monto))) {
-      return NextResponse.json({ success: false, message: 'usuario_id y monto son requeridos' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'usuario_id y monto son requeridos' },
+        { status: 400 }
+      );
     }
 
-    const result = await AnticipoRepository.grant(usuario_id, Number(monto));
-    return NextResponse.json({ success: true, message: 'Anticipo otorgado correctamente', ...result }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message || 'Error al procesar el anticipo' }, { status: 400 });
-  }
-}
+    const result = await AnticipoService.grantAnticipo(usuario_id, Number(monto));
+    return NextResponse.json(
+      { success: true, message: 'Anticipo otorgado correctamente', ...result },
+      { status: 201 }
+    );
+  },
+  { module: 'finances', action: 'write' }
+);

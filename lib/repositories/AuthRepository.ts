@@ -1,7 +1,7 @@
-import { query, generateUUID } from '@/lib/db';
-import bcrypt from 'bcryptjs';
-import { generateToken, registrarLogin } from '@/lib/auth';
-import { getSystemTimezone } from '@/lib/timezoneService';
+import { query, generateUUID } from '@/lib/database/db';
+import * as argon2 from 'argon2';
+import { generateToken, registrarLogin } from '@/lib/auth/auth';
+import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import crypto from 'crypto';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
@@ -10,16 +10,13 @@ const SHIFT_END = 23 * 60;
 
 export class AuthRepository {
   static getSystemDateTime() {
-    const tz = getSystemTimezone();
-    const now = new Date();
-    const f = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(now);
-    const getV = (t: string) => f.find(p => p.type === t)?.value || '0';
-    const h = parseInt(getV('hour'));
-    const m = parseInt(getV('minute'));
+    const now = getNowInBusinessTimezone();
+    const [date, time] = now.split(' ');
+    const [h, m, s] = time.split(':').map(Number);
     return {
       hora: h, totalMinutos: h * 60 + m,
-      timeString: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${getV('second').padStart(2, '0')}`,
-      dateString: `${getV('year')}-${getV('month')}-${getV('day')}`
+      timeString: time,
+      dateString: date
     };
   }
 
@@ -36,7 +33,8 @@ export class AuthRepository {
       const users = await query<any[]>(`SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.email = ? AND u.estado = 1`, [creds.email]);
       if (users.length === 0) throw new Error('Credenciales inválidas');
       user = users[0];
-      if (!await bcrypt.compare(creds.password, user.password)) throw new Error('Contraseña incorrecta');
+      const isMatch = await argon2.verify(user.password, creds.password);
+      if (!isMatch) throw new Error('Contraseña incorrecta');
     } else {
       throw new Error('Proporciones QR o credenciales');
     }
@@ -52,14 +50,14 @@ export class AuthRepository {
       if (valid.length === 0) throw new Error('Código de verificación incorrecto');
     }
 
-    const token = generateToken({ 
-      id: user.id_usuario, 
-      username: user.username || user.nombre, 
+    const token = generateToken({
+      id: user.id_usuario,
+      username: user.username || user.nombre,
       name: user.nombre,
       lastName: user.apellido,
-      nick: user.nick, 
-      email: user.email, 
-      role: user.rol_nombre 
+      nick: user.nick,
+      email: user.email,
+      role: user.rol_nombre
     });
     await registrarLogin(user.id_usuario, ip);
 
@@ -68,7 +66,7 @@ export class AuthRepository {
       await query('INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)', [generateUUID(), user.id_usuario, dateString, timeString]);
       await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [user.id_usuario]);
       if (creds.codigo) {
-        const { regenerateAttendanceCode } = await import('@/lib/codigoService');
+        const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
         await regenerateAttendanceCode();
       }
     }
@@ -101,22 +99,33 @@ export class AuthRepository {
     return Number(users[0].count) > 0;
   }
 
-  static async registerFirstUser(data: { nombre: string, apellido: string, email: string, password: string }) {
+  static async registerFirstUser(data: { nombre: string, apellido: string, email: string, password: string, ci: string }) {
     const hasUsers = await this.checkUsers();
     if (hasUsers) throw new Error('Ya existen usuarios registrados');
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const hashedPassword = await argon2.hash(data.ci);
     const id = generateUUID();
-    const adminRoleId = '3c4ae24a-700a-436d-8bb8-d44e6d45b007'; 
 
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    // Buscar o crear rol administrador
+    let adminRoleId = '';
+    const roles = await query<any[]>('SELECT id_rol FROM roles WHERE nombre = ?', ['Administrador']);
+    if (roles.length > 0) {
+      adminRoleId = roles[0].id_rol;
+    } else {
+      adminRoleId = generateUUID();
+      await query('INSERT INTO roles (id_rol, nombre, descripcion, estado) VALUES (?, ?, ?, 1)',
+        [adminRoleId, 'Administrador', 'Admin con todos los permisos']);
+    }
+
+    const now = getNowInBusinessTimezone();
 
     await query(`
-      INSERT INTO usuarios (id_usuario, nombre, apellido, email, password, rol_id, estado, fecha_crea)
-      VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-    `, [id, data.nombre, data.apellido, data.email, hashedPassword, adminRoleId, now]);
+      INSERT INTO usuarios (id_usuario, run, nombre, apellido, email, password, rol_id, estado, fecha_crea, estado_servicio)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, 0)
+    `, [id, data.ci, data.nombre, data.apellido, data.email, hashedPassword, adminRoleId, now]);
 
-    return { success: true, id };
+    const res = await query<any[]>('SELECT * FROM usuarios WHERE id_usuario = ?', [id]);
+    return { success: true, data: res[0] };
   }
 
   static async checkSession(userId: string) {

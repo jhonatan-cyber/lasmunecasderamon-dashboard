@@ -1,23 +1,28 @@
-import { query, generateUUID, withTransaction } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
-import { getAnticipoBalances } from '@/lib/anticiposUtils';
-import { enviarWhatsApp } from '@/lib/whatsappService';
-import { sendNotificationToAll } from '@/lib/sseService';
-import { formatCurrencyCLP } from '@/lib/formatters';
-import { buildAnticipoRequestMessage } from '@/lib/notificationMessages';
+import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
+import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { buildAnticipoRequestMessage } from '@/lib/notifications/notificationMessages';
+import { CashRegisterRepository } from './CashRegisterRepository';
+import { BaseRepository } from './BaseRepository';
 
 export class AnticipoRepository {
+  private static readonly TABLE = 'anticipos';
+  private static readonly ID_COL = 'id_anticipo';
+
   static async getAll() {
     return await query(`
-      SELECT A.id_anticipo, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario_nombre, A.fecha_crea, A.monto, A.estado
-      FROM anticipos A
+      SELECT A.${this.ID_COL}, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario_nombre, A.fecha_crea, A.monto, A.estado
+      FROM ${this.TABLE} A
       INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
       ORDER BY A.fecha_crea DESC
     `);
   }
 
   static async getByUser(usuario_id: string, startDate?: string, endDate?: string) {
-    let sql = 'SELECT * FROM anticipos WHERE usuario_id = ?';
+    let sql = `SELECT * FROM ${this.TABLE} WHERE usuario_id = ?`;
     const params: any[] = [usuario_id];
     if (startDate && endDate) {
       sql += ' AND DATE(fecha_crea) BETWEEN ? AND ?';
@@ -30,7 +35,7 @@ export class AnticipoRepository {
   static async getByDates(usuario_id: string, dates: string[]) {
     if (dates.length === 0) return [];
     return await query(`
-      SELECT * FROM anticipos 
+      SELECT * FROM ${this.TABLE} 
       WHERE usuario_id = ? AND DATE(fecha_crea) IN (?)
       ORDER BY fecha_crea DESC
     `, [usuario_id, dates]);
@@ -43,21 +48,26 @@ export class AnticipoRepository {
     return await withTransaction(async (trx) => {
       const id = generateUUID();
       const now = getNowInBusinessTimezone();
-      await trx("INSERT INTO anticipos (id_anticipo, usuario_id, monto, fecha_crea) VALUES (?, ?, ?, ?)", [id, usuario_id, monto, now]);
+      
+      await BaseRepository.insert(trx, this.TABLE, {
+        [this.ID_COL]: id,
+        usuario_id,
+        monto,
+        fecha_crea: now
+      });
 
-      const cajaResult = await trx<any[]>(`
-        SELECT id_caja, efectivo, anticipo FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1
-      `);
-      const caja = cajaResult[0];
-      if (!caja) throw new Error("No hay una caja abierta para procesar el anticipo");
-      if (Number(caja.efectivo || 0) < monto) throw new Error("No hay suficiente efectivo en caja");
+      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
+      if (!idCaja) throw new Error("No hay una caja abierta para procesar el anticipo");
 
-      const nuevoEfectivo = Number(caja.efectivo) - monto;
-      const nuevoAnticipo = Number(caja.anticipo || 0) + monto;
+      const caja = await CashRegisterRepository.getById(idCaja);
+      if (!caja || Number(caja.efectivo || 0) < monto) throw new Error("No hay suficiente efectivo en caja");
 
-      await trx(`UPDATE cajas SET efectivo = ?, anticipo = ? WHERE id_caja = ?`, [nuevoEfectivo, nuevoAnticipo, caja.id_caja]);
+      await CashRegisterRepository.updateBalances(trx, idCaja, {
+        efectivo: -monto,
+        anticipo: monto
+      });
 
-      return { efectivo_restante: nuevoEfectivo, anticipo_total: nuevoAnticipo };
+      return await BaseRepository.findOne<any>(trx, this.TABLE, this.ID_COL, id);
     });
   }
 
@@ -74,7 +84,14 @@ export class AnticipoRepository {
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    await query(`INSERT INTO anticipos (id_anticipo, usuario_id, monto, estado, fecha_crea) VALUES (?, ?, ?, 2, ?)`, [id, usuario_id, monto, now]);
+    
+    await BaseRepository.insert(query, this.TABLE, {
+      [this.ID_COL]: id,
+      usuario_id,
+      monto,
+      estado: 2,
+      fecha_crea: now
+    });
 
     const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
     const msg = buildAnticipoRequestMessage({
@@ -82,17 +99,22 @@ export class AnticipoRepository {
       usuarioNick: user.nick,
       montoSolicitado: monto,
       motivo, montoAsistencia, montoComision, montoPropina, montoMaximo,
-      anticipoId: id, fecha: new Date()
+      anticipoId: id, fecha: new Date(now.replace(' ', 'T'))
     });
 
     await enviarWhatsApp(adminWhatsApp, msg);
     sendNotificationToAll('new_anticipo_request', { id, monto, empleado: `${user.nombre} ${user.apellido}`, nick: user.nick });
 
-    return id;
+    const res = await query<any[]>('SELECT * FROM anticipos WHERE id_anticipo = ?', [id]);
+    return res.length > 0 ? res[0] : null;
   }
 
-  static async update(id: string, estado: number) {
+  static async updateStatus(id: string, estado: number) {
     const now = getNowInBusinessTimezone();
-    await query("UPDATE anticipos SET estado = ?, fecha_mod = ? WHERE id_anticipo = ?", [estado, now, id]);
+    await BaseRepository.update(query, this.TABLE, this.ID_COL, id, {
+      estado,
+      fecha_mod: now
+    });
+    return await BaseRepository.findOne<any>(query, this.TABLE, this.ID_COL, id);
   }
 }

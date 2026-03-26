@@ -23,14 +23,16 @@ interface PayrollSummaryListProps {
   onFilterChange?: (month: number, year: number) => void
 }
 
+import { getTodayDateKey } from '@/lib/utils/calendarUtils'
+
 export default function PayrollSummaryList({
   data = [],
   isLoading = false,
   onFilterChange,
 }: PayrollSummaryListProps) {
-  const currentDate = new Date()
-  const [month, setMonth] = useState(currentDate.getMonth() + 1)
-  const [year, setYear] = useState(currentDate.getFullYear())
+  const todayStr = getTodayDateKey(); // "YYYY-MM-DD" in business timezone
+  const [month, setMonth] = useState(parseInt(todayStr.substring(5, 7)))
+  const [year, setYear] = useState(parseInt(todayStr.substring(0, 4)))
 
   const handleMonthChange = (value: string) => {
     const newMonth = parseInt(value)
@@ -49,9 +51,9 @@ export default function PayrollSummaryList({
   }
 
   const handleReset = () => {
-    const now = new Date()
-    const currentMonth = now.getMonth() + 1
-    const currentYear = now.getFullYear()
+    const now = getTodayDateKey()
+    const currentMonth = parseInt(now.substring(5, 7))
+    const currentYear = parseInt(now.substring(0, 4))
     setMonth(currentMonth)
     setYear(currentYear)
     if (onFilterChange) {
@@ -95,7 +97,7 @@ export default function PayrollSummaryList({
                 <SelectValue placeholder="Seleccione un año" />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map((y) => (
+                {Array.from({ length: 5 }, (_, i) => parseInt(getTodayDateKey().substring(0, 4)) - 2 + i).map((y) => (
                   <SelectItem key={y} value={y.toString()}>
                     {y}
                   </SelectItem>

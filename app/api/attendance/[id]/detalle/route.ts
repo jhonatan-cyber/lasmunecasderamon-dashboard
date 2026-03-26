@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const GET = withAppApiWrapper(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     if (!id) return NextResponse.json({ success: false, message: 'Falta el id' }, { status: 400 });
 
     const data = await AttendanceRepository.getByUser(id, 'detalle');
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error al obtener detalle de asistencia', error: error.message }, { status: 500 });
   }
-}
+);

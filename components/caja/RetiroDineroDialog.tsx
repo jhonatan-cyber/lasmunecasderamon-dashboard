@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CajaWithUser, CajaRetiro } from '@/types/caja';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Loader2 } from 'lucide-react';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {

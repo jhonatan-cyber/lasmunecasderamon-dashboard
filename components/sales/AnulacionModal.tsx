@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle } from "lucide-react";
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
+import { useSaleAnulacionForm } from "@/hooks/personal/useSaleAnulacionForm";
 
 interface AnulacionModalProps {
   open: boolean;
@@ -33,19 +33,15 @@ export function AnulacionModal({
   loading = false,
   ventaInfo,
 }: AnulacionModalProps) {
-  const [motivo, setMotivo] = useState("");
-
-  const handleConfirm = () => {
-    if (motivo.trim()) {
-      onConfirm(motivo.trim());
-      setMotivo(""); // Limpiar después de confirmar
-    }
-  };
-
-  const handleCancel = () => {
-    setMotivo("");
-    onOpenChange(false);
-  };
+  const {
+    motivo,
+    setMotivo,
+    handleConfirm,
+    handleCancel
+  } = useSaleAnulacionForm({
+    onOpenChange,
+    onConfirm
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { formatCurrencyCLP } from '@/lib/formatters';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface SolicitudAnulacionServicio {
   servicio_id: number;
@@ -259,12 +259,10 @@ function ConfirmarAnulacionServicioContent() {
                   </div>
                   <div>
                     <Label className='text-sm font-medium text-gray-600'>Fecha de Solicitud</Label>
-                    <p className='text-lg'>
-                      {formatLongDateEs(solicitud.fecha_solicitud)}
-                    </p>
+                    <p className='text-lg'>{formatLongDateEs(solicitud.fecha_solicitud)}</p>
                   </div>
                 </div>
-              </div> 
+              </div>
             </div>
 
             {/* Botones de acción */}
@@ -312,16 +310,18 @@ function ConfirmarAnulacionServicioContent() {
 
 export default function ConfirmarAnulacionServicioPage() {
   return (
-    <Suspense fallback={
-      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50'>
-        <Card className='w-full max-w-lg'>
-          <CardContent className='text-center py-8'>
-            <Loader2 className='animate-spin mx-auto mb-4' />
-            <p>Cargando...</p>
-          </CardContent>
-        </Card>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50'>
+          <Card className='w-full max-w-lg'>
+            <CardContent className='text-center py-8'>
+              <Loader2 className='animate-spin mx-auto mb-4' />
+              <p>Cargando...</p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
       <ConfirmarAnulacionServicioContent />
     </Suspense>
   );

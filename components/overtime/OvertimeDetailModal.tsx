@@ -14,7 +14,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Clock, Calendar, DollarSign } from 'lucide-react';

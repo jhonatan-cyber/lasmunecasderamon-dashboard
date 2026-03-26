@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useCuentas } from "@/hooks/caja/useCuentas";
 import { toast } from "sonner";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import { CreateCuentaRequest, CreateDetalleCuentaRequest } from "@/types/cuenta";
 
 interface CuentaFormDialogProps {

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, User, Home, CreditCard, Square, Users, ShoppingBag } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';

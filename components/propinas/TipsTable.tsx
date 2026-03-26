@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
-import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/formatters";
+import { formatCurrencyNoDecimals, formatFechaLarga } from "@/lib/utils/formatters";
 import { PropinaResumen } from "@/types/propina";
 import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
 

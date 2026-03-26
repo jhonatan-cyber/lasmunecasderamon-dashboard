@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { AuthRepository } from '@/lib/repositories/AuthRepository';
 import { cookies } from 'next/headers';
-import { getAuth } from '@/lib/auth-app';
+import { getAuth } from '@/lib/auth/auth-app';
 
-export async function POST() {
-  try {
-    const user = await getAuth();
-    if (user) await AuthRepository.logout(user.id);
+export const POST = withAppApiWrapper(async () => {
+  const user = await getAuth();
+  if (user) await AuthRepository.logout(user.id);
 
-    const cookieStore = await cookies();
-    cookieStore.delete('token');
+  const cookieStore = await cookies();
+  cookieStore.delete('token');
 
-    return NextResponse.json({ success: true, message: 'Sesión cerrada' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error al cerrar sesión', error: error.message }, { status: 500 });
-  }
-}
+  return NextResponse.json({ success: true, message: 'Sesión cerrada' });
+});

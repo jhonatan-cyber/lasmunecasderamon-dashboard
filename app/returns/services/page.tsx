@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/ui/paginate';
 import { ServicioDetailModal } from '@/components/servicios/ServicioDetailModal';
-import { anfitrionaColors, metodoPagoLabels } from '@/lib/salesUtils';
+import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/services/DevolucionHeader';
 import { DevolucionFilters } from '@/components/returns/services/DevolucionFilters';
 import { DevolucionTable } from '@/components/returns/services/DevolucionTable';
@@ -97,7 +97,9 @@ export default function DevolucionesServiciosPage() {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-          <p className='text-red-800 text-sm sm:text-base'>Error al cargar los servicios: {error}</p>
+          <p className='text-red-800 text-sm sm:text-base'>
+            Error al cargar los servicios: {error}
+          </p>
         </div>
       </div>
     );

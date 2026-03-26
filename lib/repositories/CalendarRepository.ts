@@ -1,5 +1,5 @@
-import { query } from '@/lib/db';
-import { toDateKey } from '@/lib/calendarUtils';
+import { query } from '@/lib/database/db';
+import { toDateKey } from '@/lib/utils/calendarUtils';
 
 export class CalendarRepository {
   static async getData(startDate: string, endDate: string, type: 'servicios' | 'ventas') {

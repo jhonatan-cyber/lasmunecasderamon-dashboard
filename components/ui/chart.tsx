@@ -4,8 +4,8 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
-import { cn } from "@/lib/utils"
-import { formatNumberCL } from "@/lib/formatters"
+import { cn } from "@/lib/utils/utils"
+import { formatNumberCL } from "@/lib/utils/formatters"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const

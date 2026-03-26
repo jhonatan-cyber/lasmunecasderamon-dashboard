@@ -7,7 +7,7 @@ import {
   VentaResumen,
   VentaFiltros
 } from '@/types/venta';
-import { showErrorToast } from '@/lib/toastUtils';
+import { showErrorToast } from '@/lib/utils/toastUtils';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
 export const useSales = () => {

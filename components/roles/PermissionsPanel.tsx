@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions, Permission } from '@/hooks/auth/usePermissions';
 import { Role } from '@/hooks/personal/useRoles';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface PermissionsPanelProps {

@@ -13,7 +13,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
 
 interface AnulacionConfirmModalProps {
   open: boolean;

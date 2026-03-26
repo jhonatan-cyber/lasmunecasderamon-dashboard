@@ -28,9 +28,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatCurrencyCLP } from '@/lib/formatters';
-import { formatShortTimeEs } from '@/lib/calendarUtils';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatShortTimeEs } from '@/lib/utils/calendarUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useRouter, usePathname } from 'next/navigation';
 import useOrders from '@/hooks/servicios/useOrders';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';

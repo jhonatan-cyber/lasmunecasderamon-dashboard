@@ -30,8 +30,8 @@ import {
   AlertTriangle 
 } from "lucide-react";
 import { ServicioWithDetails } from "@/types/servicio";
-import { formatCurrency } from "@/lib/salesUtils";
-import { formatLongDateEs, formatShortTimeEs } from "@/lib/calendarUtils";
+import { formatCurrency } from "@/lib/business/salesUtils";
+import { formatLongDateEs, formatShortTimeEs } from "@/lib/utils/calendarUtils";
 
 interface DevolucionDetailModalProps {
   open: boolean;
