@@ -13,9 +13,9 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, X, User, Bed, Clock, DollarSign, CreditCard, Calendar } from 'lucide-react';
 import { ServicioWithDetails } from '@/types/servicio';
-import { formatCurrency, metodoPagoLabels } from '@/lib/salesUtils';
+import { formatCurrency, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface DevolucionTableProps {
   servicios: ServicioWithDetails[];

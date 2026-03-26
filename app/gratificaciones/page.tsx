@@ -1,23 +1,29 @@
- 
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   GratificacionesTable,
   GratificacionesFilters,
   GratificacionesStatsCards,
-  GratificacionesModal,
+  GratificacionesForm,
   GratificacionesDetailModal
 } from '@/components/gratificaciones';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import Pagination from '@/components/ui/Pagination';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useGratificaciones } from '@/hooks/personal/useGratificaciones';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { Gratificacion } from '@/types/gratificacion';
 
 export default function GratificacionesPage() {
@@ -52,9 +58,8 @@ export default function GratificacionesPage() {
   const filteredData = useMemo(() => {
     if (!searchTerm) return gratificaciones;
     const lowerSearch = searchTerm.toLowerCase();
-    return gratificaciones.filter(g =>
-      g.usuario.toLowerCase().includes(lowerSearch) ||
-      String(g.id).includes(lowerSearch)
+    return gratificaciones.filter(
+      g => g.usuario.toLowerCase().includes(lowerSearch) || String(g.id).includes(lowerSearch)
     );
   }, [gratificaciones, searchTerm]);
 
@@ -140,7 +145,10 @@ export default function GratificacionesPage() {
         <AlertCircle className='h-12 w-12 text-red-500' />
         <h2 className='text-xl font-bold'>Lo sentimos, ocurrió un error</h2>
         <p className='text-zinc-500'>{error}</p>
-        <button onClick={() => getGratificaciones()} className='px-6 py-2 bg-black text-white rounded-full'>
+        <button
+          onClick={() => getGratificaciones()}
+          className='px-6 py-2 bg-black text-white rounded-full'
+        >
           Reintentar
         </button>
       </div>
@@ -214,7 +222,7 @@ export default function GratificacionesPage() {
           itemsPerPage={rowsPerPage}
           visiblePages={visiblePages}
           onPageChange={setCurrentPage}
-          onItemsPerPageChange={(val) => {
+          onItemsPerPageChange={val => {
             setRowsPerPage(val);
             setCurrentPage(1);
           }}
@@ -222,15 +230,55 @@ export default function GratificacionesPage() {
       </div>
 
       {/* Modales */}
-      <GratificacionesModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onSubmit={handleFormSubmit}
-        isEditMode={!!gratificacionToEdit}
-        gratificacion={gratificacionToEdit}
-        isLoading={isSubmitLoading}
-      />
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
+          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+            <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
+              {gratificacionToEdit ? 'Editar Gratificación' : 'Nueva Gratificación'}
+            </DialogTitle>
+            <DialogDescription className='sr-only'>Formulario de gratificación</DialogDescription>
+          </DialogHeader>
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+            <GratificacionesForm
+              open={isModalOpen}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setIsModalOpen(false)}
+              isEditMode={!!gratificacionToEdit}
+              gratificacion={gratificacionToEdit}
+              isLoading={isSubmitLoading}
+              hideButtons={true}
+            />
+          </div>
+          <div className='flex-shrink-0 border-t px-6 py-4 bg-white dark:bg-neutral-900'>
+            <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
+                onClick={() => setIsModalOpen(false)}
+                disabled={isSubmitLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type='submit'
+                form='gratificaciones-form'
+                variant='outline'
+                size='sm'
+                className='bg-black text-white rounded-full px-6 hover:scale-105 transition-all duration-200 w-full sm:w-auto'
+                disabled={isSubmitLoading}
+              >
+                {isSubmitLoading
+                  ? 'Guardando...'
+                  : gratificacionToEdit
+                    ? 'Guardar Cambios'
+                    : 'Guardar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <GratificacionesDetailModal
         isOpen={showDetailModal}
@@ -241,10 +289,10 @@ export default function GratificacionesPage() {
       <ConfirmModal
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title="¿Deseas eliminar esta gratificación?"
-        message="Esta acción no se puede deshacer. Se eliminará el registro permanentemente."
-        type="warning"
-        confirmVariant="destructive"
+        title='¿Deseas eliminar esta gratificación?'
+        message='Esta acción no se puede deshacer. Se eliminará el registro permanentemente.'
+        type='warning'
+        confirmVariant='destructive'
         onConfirm={confirmDelete}
       />
     </div>

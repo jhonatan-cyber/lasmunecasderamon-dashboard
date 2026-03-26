@@ -10,13 +10,13 @@ import {
   TableRow
 } from '@/components/ui/table';
 
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/ui/paginate';
 import type { PayrollRow } from '@/hooks/personal/usePayroll';
 import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 

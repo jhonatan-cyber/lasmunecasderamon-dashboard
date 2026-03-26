@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ServicioWithDetails } from "@/types/servicio";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import {
   Eye,
   Pencil,
@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { formatShortDmyDateEs } from "@/lib/calendarUtils";
+import { formatShortDmyDateEs } from "@/lib/utils/calendarUtils";
 
 interface ServicioTableProps {
   loading: boolean;

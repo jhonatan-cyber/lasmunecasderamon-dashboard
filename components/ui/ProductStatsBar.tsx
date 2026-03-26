@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Badge } from "@/components/ui/badge";
 import { Package, DollarSign, Coins, TrendingUp } from "lucide-react";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 
 interface ProductStatsBarProps {
   productos: any[];

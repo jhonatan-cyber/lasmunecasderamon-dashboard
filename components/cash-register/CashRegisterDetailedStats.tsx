@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { StatsCard, StatCard } from '@/components/ui/StatsCard';
 import { useCashRegister } from '@/hooks/caja/useCashRegister';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 export function CashRegisterDetailedStats() {
   const { resumen: stats, loading: isLoading, error } = useCashRegister();

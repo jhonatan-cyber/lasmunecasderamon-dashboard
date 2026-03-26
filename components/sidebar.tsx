@@ -28,7 +28,7 @@ import {
   X,
   Trophy
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';

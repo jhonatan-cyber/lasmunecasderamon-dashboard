@@ -19,8 +19,8 @@ import {
   TrendingDown,
   BarChart3,
 } from 'lucide-react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import {
   PieChart,
   Pie,

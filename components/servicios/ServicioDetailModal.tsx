@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Calendar, Clock, Tag, User, DollarSign, CreditCard, Home } from 'lucide-react';
 import { ServicioWithDetails } from '@/types/servicio';
-import { formatCurrency } from '@/lib/salesUtils';
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { formatCurrency } from '@/lib/business/salesUtils';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 
 interface ServicioDetailModalProps {
   open: boolean;

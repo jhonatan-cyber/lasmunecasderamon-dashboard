@@ -2,7 +2,7 @@
 import { ReactNode, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { User, Users, UserCheck, DollarSign, Clock, CheckCircle, Barcode } from "lucide-react";
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
 
 const badgeColors = [
   "bg-purple-300 text-purple-800",

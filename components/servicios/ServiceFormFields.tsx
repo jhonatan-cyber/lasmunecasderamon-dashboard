@@ -3,7 +3,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import HostessSelect from '@/components/ui/HostessSelect';
 
 interface ServiceFormFieldsProps {

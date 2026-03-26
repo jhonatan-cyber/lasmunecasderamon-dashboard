@@ -6,7 +6,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart, CalendarDays } from "lucide-react";
 import Link from "next/link";
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface DashboardData {
   totalAsistencias: number;

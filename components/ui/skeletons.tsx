@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 
 // Skeleton base
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

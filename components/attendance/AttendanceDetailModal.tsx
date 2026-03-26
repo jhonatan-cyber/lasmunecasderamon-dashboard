@@ -15,10 +15,10 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Calendar, Clock, User, X, Info } from 'lucide-react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import Paginate from '@/components/ui/paginate';
 import SelectElements from '@/components/ui/select-elements';
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 
 interface AsistenciaDetalle {
   id_asistencia: number;

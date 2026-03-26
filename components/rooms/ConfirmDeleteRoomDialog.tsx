@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import {
@@ -35,7 +34,7 @@ export default function ConfirmDeleteRoomDialog({
             Confirmar eliminación
           </DialogTitle>
           <DialogDescription className='text-center'>
-            ¿Seguro que deseas eliminar la habitación "{room.name}"? Esta acción no se puede
+            ¿Seguro que deseas eliminar la habitación &quot;{room.name}&quot;? Esta acción no se puede
             deshacer.
           </DialogDescription>
         </DialogHeader>

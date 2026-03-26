@@ -1,7 +1,7 @@
 import { DollarSign, TrendingUp, Activity, CreditCard, ArrowUpDown } from "lucide-react";
 import { StatsCard, StatCard } from "@/components/ui/StatsCard";
 import { useCashRegister } from "@/hooks/caja/useCashRegister";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 
 interface CashRegisterStatsCardProps {
   isCajero?: boolean;

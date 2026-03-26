@@ -12,8 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CajaCreate } from '@/types/caja';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { formatNumberCL } from '@/lib/formatters';
-import { formatDateTimeDmyLabel } from '@/lib/calendarUtils';
+import { formatNumberCL } from '@/lib/utils/formatters';
+import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 
 import { Plus, Loader2, DollarSign, Calendar } from 'lucide-react';
 interface CajaFormDialogProps {

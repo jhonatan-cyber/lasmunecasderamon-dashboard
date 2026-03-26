@@ -9,7 +9,7 @@ import { DollarSign, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useCommissions } from '@/hooks/personal/useCommissions';
 import useCommissionStats from '@/hooks/personal/useCommissionStats';
 import { Commission } from '@/types/commission';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CommissionsPage() {

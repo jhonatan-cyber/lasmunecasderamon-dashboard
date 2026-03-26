@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
-import { formatCurrencyNoDecimals, formatNumberCL } from "@/lib/formatters";
+import { formatCurrencyNoDecimals, formatNumberCL } from "@/lib/utils/formatters";
 
 export interface StatCard {
   title: string;

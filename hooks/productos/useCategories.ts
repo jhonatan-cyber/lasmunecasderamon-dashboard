@@ -163,7 +163,7 @@ export function useCategories(): UseCategoriesReturn {
  
         if (!data.success) {
           if (setData) setData(previous);
-          const { showErrorToast } = await import('@/lib/toastUtils');
+          const { showErrorToast } = await import('@/lib/utils/toastUtils');
           showErrorToast(data.message || 'Error al activar categoría');
           return { success: false, message: data.message };
         }
@@ -174,12 +174,12 @@ export function useCategories(): UseCategoriesReturn {
           await refetchCategories();
         }
 
-        const { showSuccessToast } = await import('@/lib/toastUtils');
+        const { showSuccessToast } = await import('@/lib/utils/toastUtils');
         showSuccessToast(data.message || 'Categoría activada correctamente');
         return { success: true, message: data.message };
       } catch (e) {
         if (setData) setData(previous);
-        const { showErrorToast } = await import('@/lib/toastUtils');
+        const { showErrorToast } = await import('@/lib/utils/toastUtils');
         showErrorToast('Error de red al activar la categoría');
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
@@ -200,7 +200,7 @@ export function useCategories(): UseCategoriesReturn {
 
         if (!data.success) {
           if (setData) setData(previous);
-          const { showErrorToast } = await import('@/lib/toastUtils');
+          const { showErrorToast } = await import('@/lib/utils/toastUtils');
           showErrorToast(data.message || 'Error al desactivar categoría');
           return { success: false, message: data.message };
         }
@@ -211,12 +211,12 @@ export function useCategories(): UseCategoriesReturn {
           await refetchCategories();
         }
 
-        const { showSuccessToast } = await import('@/lib/toastUtils');
+        const { showSuccessToast } = await import('@/lib/utils/toastUtils');
         showSuccessToast(data.message || 'Categoría desactivada correctamente');
         return { success: true, message: data.message };
       } catch (e) {
         if (setData) setData(previous);
-        const { showErrorToast } = await import('@/lib/toastUtils');
+        const { showErrorToast } = await import('@/lib/utils/toastUtils');
         showErrorToast('Error de red al desactivar la categoría');
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
@@ -255,7 +255,7 @@ export function useCategories(): UseCategoriesReturn {
    
         if (!data.success) {
           if (setData) setData(previous);
-          const { showErrorToast } = await import('@/lib/toastUtils');
+          const { showErrorToast } = await import('@/lib/utils/toastUtils');
           showErrorToast(data.message || 'Error al actualizar el orden');
           return { success: false, message: data.message };
         }
@@ -267,14 +267,14 @@ export function useCategories(): UseCategoriesReturn {
           await refetchCategories();
         }
 
-        const { showSuccessToast } = await import('@/lib/toastUtils');
+        const { showSuccessToast } = await import('@/lib/utils/toastUtils');
         showSuccessToast('Orden actualizado correctamente');
 
         return { success: true, message: data.message };
       } catch (e) {
       
         if (setData) setData(previous);
-        const { showErrorToast } = await import('@/lib/toastUtils');
+        const { showErrorToast } = await import('@/lib/utils/toastUtils');
         showErrorToast('Error de red al actualizar el orden');
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }

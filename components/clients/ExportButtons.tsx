@@ -5,7 +5,7 @@ import { FileSpreadsheet as FileXls, FileText as FilePdf } from "lucide-react";
 import { useState } from "react";
 import { Client } from "@/types/client";
 import { toast } from "sonner";
-import { buildExportFilename, formatDateLabel } from "@/lib/calendarUtils";
+import { buildExportFilename, formatDateLabel } from "@/lib/utils/calendarUtils";
 
 interface ExportButtonsProps {
   clients: Client[];

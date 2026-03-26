@@ -18,9 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CajaWithUser, CajaCierre } from "@/types/caja";
+import { getNowInBusinessTimezone } from "@/lib/business/timezoneService";
 import { useUsers } from "@/hooks/personal/useUsers";
 import { useCurrentUser } from "@/hooks/auth/useCurrentUser";
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
 import { Loader2 } from "lucide-react";
 
 // Función para obtener el día de la semana en español
@@ -56,7 +57,7 @@ export const CerrarCajaDialog = ({
   const [formData, setFormData] = useState<CajaCierre>({
     id_caja: 0,
     usuario_id_cierre: 0,
-    fecha_cierre: new Date().toISOString(),
+    fecha_cierre: getNowInBusinessTimezone(),
     monto_cierre: 0,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -70,7 +71,7 @@ export const CerrarCajaDialog = ({
       setFormData({
         id_caja: caja.id_caja,
         usuario_id_cierre: currentUser.id,
-        fecha_cierre: new Date().toISOString(),
+        fecha_cierre: getNowInBusinessTimezone(),
         monto_cierre: 0,
       });
     }
@@ -109,7 +110,7 @@ export const CerrarCajaDialog = ({
       const dataToSend = {
         ...formData,
         monto_cierre: Number(montoCierreCalculado) || 0,
-        fecha_cierre: new Date().toISOString(),
+        fecha_cierre: getNowInBusinessTimezone(),
       } as CajaCierre & { monto_cierre: number };
 
       await onCerrarCaja(dataToSend);
@@ -117,7 +118,7 @@ export const CerrarCajaDialog = ({
       setFormData({
         id_caja: 0,
         usuario_id_cierre: 0,
-        fecha_cierre: new Date().toISOString(),
+        fecha_cierre: getNowInBusinessTimezone(),
         monto_cierre: 0,
       });
       setErrors({});
@@ -131,7 +132,7 @@ export const CerrarCajaDialog = ({
     setFormData({
       id_caja: 0,
       usuario_id_cierre: 0,
-      fecha_cierre: new Date().toISOString(),
+      fecha_cierre: getNowInBusinessTimezone(),
       monto_cierre: 0,
     });
     setErrors({});

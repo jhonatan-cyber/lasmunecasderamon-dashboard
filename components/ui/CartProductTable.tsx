@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/utils/formatters";
 
 interface CartProduct {
   id_producto?: number;

@@ -1,6 +1,6 @@
  
 import { useState, useEffect } from 'react';
-import { formatDateLabel } from '@/lib/calendarUtils';
+import { formatDateLabel } from '@/lib/utils/calendarUtils';
 import { toast } from 'sonner';
 
 export function useLandingState() {

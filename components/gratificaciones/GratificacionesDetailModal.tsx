@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogClose
 } from '@/components/ui/dialog';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import { 
   User as UserIcon, 
   Calendar, 

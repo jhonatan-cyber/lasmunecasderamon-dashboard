@@ -23,7 +23,8 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
@@ -38,8 +39,8 @@ import {
 import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
-import { formatNumberCL } from '@/lib/formatters';
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { formatNumberCL } from '@/lib/utils/formatters';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 
 interface OrderDetailModalProps {
   open: boolean;
@@ -588,14 +589,7 @@ export default function OrderDetailModal({
         detail.reduce((acc, item) => acc + (item.comision || 0), 0) + recargoAnfitrionas;
       const sub_total = detail.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
 
-      const generateCode = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = '';
-        for (let i = 0; i < 8; i++) {
-          result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
-      };
+      const generateCode = generateRandomCode;
 
       const anfitrionasIds =
         detail[0]?.anfitrionas_con_ids?.map((anfitriona: any) => anfitriona.usuario_id) || [];

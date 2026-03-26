@@ -1,8 +1,12 @@
-import { query, rawQuery, generateUUID, withTransaction } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { query, generateUUID, withTransaction } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { TipRegisterSchema } from '@/lib/business/schemas';
+import { BaseRepository } from './BaseRepository';
 
 export class TipRepository {
-  static async register(venta_id: string, monto: number) {
+  static async register(body: any) {
+    const { venta_id, monto } = TipRegisterSchema.parse(body);
+
     const logueados = await query<any[]>(`
       SELECT DISTINCT u.id_usuario FROM logins l
       INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
@@ -17,13 +21,25 @@ export class TipRepository {
     const id = generateUUID();
 
     await withTransaction(async (trx) => {
-      await trx('INSERT INTO propinas (id_propina, venta_id, propina, fecha_crea) VALUES (?, ?, ?, ?)', [id, venta_id, monto, now]);
+      await BaseRepository.insert(trx, 'propinas', {
+        id_propina: id,
+        venta_id,
+        propina: monto,
+        fecha_crea: now
+      });
+
       for (const u of logueados) {
-        await trx('INSERT INTO detalle_propinas (propina_id, usuario_id, monto, fecha_crea) VALUES (?, ?, ?, ?)', [id, u.id_usuario, montoPorUsuario, now]);
+        await BaseRepository.insert(trx, 'detalle_propinas', {
+          id_detalle_propina: generateUUID(), // Aseguramos que tenga ID si la tabla lo requiere
+          propina_id: id,
+          usuario_id: u.id_usuario,
+          monto: montoPorUsuario,
+          fecha_crea: now
+        });
       }
     });
 
-    return { id, montoPorUsuario, count: logueados.length };
+    return { id, montoPorUsuario, count: logueados.length, usuarios_distribucion: logueados.length };
   }
 
   static async getSummary(isAdmin: boolean, userId: string, cajaActiva: boolean) {
@@ -85,18 +101,5 @@ export class TipRepository {
 
     sql += ' ORDER BY v.fecha_crea DESC';
     return await query(sql, params);
-  }
-
-  static async getByDates(usuario_id: string, dates: string[]) {
-    if (dates.length === 0) return [];
-    return await query(`
-      SELECT 
-        v.fecha_crea, v.total, dp.monto, v.metodo_pago, v.codigo
-      FROM ventas v
-      INNER JOIN propinas p ON p.venta_id = v.id_venta
-      INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina
-      WHERE dp.usuario_id = ? AND DATE(v.fecha_crea) IN (?)
-      ORDER BY v.fecha_crea DESC
-    `, [usuario_id, dates]);
   }
 }

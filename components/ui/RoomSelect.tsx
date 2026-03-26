@@ -10,7 +10,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Home } from "lucide-react";
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
 
 interface Habitacion {
   id_habitacion?: string | number;

@@ -20,7 +20,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import {
   BarChart,
   Bar,

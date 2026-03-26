@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { VentaWithDetails } from '@/types/venta';
-import { formatCurrency } from '@/lib/salesUtils';
+import { formatCurrency } from '@/lib/business/salesUtils';
 
 interface DevolucionModalProps {
   isOpen: boolean;

@@ -14,8 +14,8 @@ import {
 import { VentaWithDetails } from '@/types/venta';
 import { Home, Clock, CreditCard } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
-import { formatCurrencyCLP } from '@/lib/formatters';
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 
 interface SalesDetailModalProps {
   open: boolean;

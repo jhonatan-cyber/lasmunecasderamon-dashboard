@@ -1,7 +1,7 @@
  
 import { useState, useCallback, useMemo } from 'react';
 import { Room } from '@/types/room';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
 

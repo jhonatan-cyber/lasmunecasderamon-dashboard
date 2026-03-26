@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { User, DollarSign, Calendar, CheckCircle, Clock, Banknote } from "lucide-react";
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
 
 export interface Advance {
   id: string | number;

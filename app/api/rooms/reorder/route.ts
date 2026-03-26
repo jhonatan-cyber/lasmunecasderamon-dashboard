@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { RoomRepository } from '@/lib/repositories/RoomRepository';
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    await RoomRepository.reorder(body.items);
-    return NextResponse.json({ success: true, message: 'Rooms reordered' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error reordering rooms', error: error.message }, { status: 500 });
-  }
-}
+export const POST = withAppApiWrapper(async (request: Request) => {
+  const body = await request.json();
+  await RoomRepository.reorder(body.items);
+  return NextResponse.json({ success: true, message: 'Rooms reordered' });
+});

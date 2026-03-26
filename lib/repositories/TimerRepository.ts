@@ -1,11 +1,11 @@
-import { query } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
-import { sendNotificationToAll } from '@/lib/sseService';
+import { query } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export class TimerRepository {
   static async getActive() {
     const nowStr = getNowInBusinessTimezone();
-    const nowObj = new Date();
+    const nowObj = new Date(nowStr.replace(' ', 'T'));
 
     const [activeServices, activeVentas, activeCuentas] = await Promise.all([
       query(`
@@ -102,7 +102,7 @@ export class TimerRepository {
     const [sP] = await query<any[]>('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId]);
 
     if (vP || sP) {
-      const resumeV = vP && (!sP || new Date(vP.paused_at) >= new Date(sP.paused_at));
+      const resumeV = vP && (!sP || new Date(vP.paused_at.toString().replace(' ', 'T')) >= new Date(sP.paused_at.toString().replace(' ', 'T')));
       if (resumeV) await query('UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_venta = ?', [nowStr, vP.id_venta]);
       else await query('UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_servicio = ?', [nowStr, sP.id_servicio]);
     } else {

@@ -4,7 +4,7 @@ import { Control } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Image, Trash2 } from 'lucide-react';
-import { UserFormValues } from './UserForm';
+import { type UserFormValues } from '@/hooks/personal/useUserForm';
 
 interface ImageUploadFieldProps {
   control: Control<UserFormValues>;
