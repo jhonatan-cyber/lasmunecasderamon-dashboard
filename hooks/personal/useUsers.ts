@@ -106,17 +106,17 @@ export function useUsers(): UseUsersReturn {
   const mapFormToUserPatch = (fields: Record<string, string>): Partial<User> => ({
     run: fields.run,
     nick: fields.nick,
-    name: fields.nombre,
-    lastName: fields.apellido,
+    name: fields.name,
+    lastName: fields.lastName,
     email: fields.correo || fields.email,
-    phone: fields.telefono,
-    address: fields.direccion,
-    maritalStatus: fields.estado_civil,
-    roleId: fields.rol_id ? String(fields.rol_id) : undefined,
+    phone: fields.phone,
+    address: fields.address,
+    maritalStatus: fields.maritalStatus,
+    rol_id: fields.rol_id ? String(fields.rol_id) : undefined,
     afp: fields.afp,
-    salary: fields.sueldo ? Number(fields.sueldo) : undefined,
-    contributions: fields.aporte ? Number(fields.aporte) : undefined,
-    discount: fields.descuento ? Number(fields.descuento) : undefined
+    salary: fields.salary ? Number(fields.salary) : undefined,
+    contributions: fields.contributions ? Number(fields.contributions) : undefined,
+    discount: fields.discount ? Number(fields.discount) : undefined
   });
 
   const getUserById = useCallback(async (id: string | number): Promise<User | null> => {
@@ -154,11 +154,11 @@ export function useUsers(): UseUsersReturn {
         const requiredFields = [
           'run',
           'nick',
-          'nombre',
-          'apellido',
-          'direccion',
-          'telefono',
-          'estado_civil',
+          'name',
+          'lastName',
+          'address',
+          'phone',
+          'maritalStatus',
           'afp',
           'rol_id'
         ];

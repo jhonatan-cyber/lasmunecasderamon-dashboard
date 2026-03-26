@@ -1,7 +1,7 @@
  
 import { useState } from 'react';
 import { VentaWithDetails } from '@/types/venta';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 
 export const useDevolucionVentasLogic = () => {
   const [selectedVenta, setSelectedVenta] = useState<VentaWithDetails | null>(null);

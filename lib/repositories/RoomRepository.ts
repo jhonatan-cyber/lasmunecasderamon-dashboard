@@ -1,41 +1,28 @@
-import { query, generateUUID } from '@/lib/db';
-import { z } from 'zod';
-
-export const roomSchema = z.object({
-  name: z.string().min(1, "Nombre requerido"),
-  price: z.preprocess((v) => Number(v), z.number()),
-  time: z.preprocess((v) => Number(v), z.number()),
-  comision_anfitriona: z.preprocess((v) => v === '' || v === null || v === undefined ? null : Number(v), z.number().nullable().optional()),
-});
-
-export type RoomData = z.infer<typeof roomSchema>;
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { RoomSchema, type RoomType } from '@/lib/business/schemas';
+import { BaseRepository } from './BaseRepository';
 
 export class RoomRepository {
-  private static mapRoomFromDB(row: any) {
-    return {
+  private static mapRoomFromDB(row: any): RoomType {
+    return RoomSchema.parse({
       id: row.id_habitacion,
-      id_habitacion: row.id_habitacion,
       name: row.nombre,
-      nombre: row.nombre,
-      display_order: row.display_order,
       price: row.precio,
-      precio: row.precio,
       time: row.tiempo,
-      tiempo: row.tiempo,
-      status: row.en_servicio > 0 ? 2 : row.estado,
-      estado: row.en_servicio > 0 ? 2 : row.estado,
-      fecha_crea: row.fecha_crea,
-      fecha_mod: row.fecha_mod,
-      fecha_elim: row.fecha_elim,
       comision_anfitriona: row.comision_anfitriona ?? null,
-    };
+      status: row.en_servicio > 0 ? 2 : row.estado,
+      display_order: row.display_order,
+      created_at: row.fecha_crea,
+      updated_at: row.fecha_mod
+    });
   }
 
-  static async getAll(status?: string) {
-    let results;
+  static async getAll(status?: string): Promise<RoomType[]> {
+    let results: any[];
     if (status !== undefined) {
       if (status === '1') {
-        results = await query(
+        results = await query<any[]>(
           `SELECT h.* FROM habitaciones h 
            WHERE h.estado = ? 
            AND NOT EXISTS (
@@ -47,82 +34,114 @@ export class RoomRepository {
           [status]
         );
       } else {
-        results = await query("SELECT * FROM habitaciones WHERE estado = ? ORDER BY display_order ASC, id_habitacion ASC", [status]);
+        results = await query<any[]>("SELECT * FROM habitaciones WHERE estado = ? ORDER BY display_order ASC, id_habitacion ASC", [status]);
       }
     } else {
-      results = await query(
+      results = await query<any[]>(
         "SELECT h.*, (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 1) as en_servicio FROM habitaciones h ORDER BY h.display_order ASC, h.id_habitacion ASC",
         []
       );
     }
-    return Array.isArray(results) ? results.map(this.mapRoomFromDB) : [];
+    return results.map(row => this.mapRoomFromDB(row));
   }
 
-  static async create(data: RoomData) {
+  static async getById(id: string): Promise<RoomType | null> {
+    const row = await BaseRepository.findOne<any>(query, 'habitaciones', 'id_habitacion', id);
+    return row ? this.mapRoomFromDB(row) : null;
+  }
+
+  static async create(data: any): Promise<RoomType | null> {
+    const validated = RoomSchema.parse(data);
+    
     // Validar duplicado por nombre
-    const dup = await query(
+    const dup = await query<any[]>(
       "SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?)",
-      [data.name]
+      [validated.name]
     );
-    if (Array.isArray(dup) && dup.length) {
+    if (dup.length > 0) {
       throw new Error("Ya existe una habitación con ese nombre");
     }
 
     const id = generateUUID();
-    await query(
-      "INSERT INTO habitaciones (id_habitacion, nombre, precio, tiempo, comision_anfitriona) VALUES (?, ?, ?, ?, ?)",
-      [id, data.name, data.price, data.time, data.comision_anfitriona]
-    );
-    return id;
+    const now = getNowInBusinessTimezone();
+    await BaseRepository.insert(query, 'habitaciones', {
+      id_habitacion: id,
+      nombre: validated.name,
+      precio: validated.price,
+      tiempo: validated.time,
+      comision_anfitriona: validated.comision_anfitriona,
+      fecha_crea: now
+    });
+    
+    return await this.getById(id);
   }
 
-  static async update(id: string, data: RoomData) {
+  static async update(id: string, data: any): Promise<RoomType | null> {
+    const validated = RoomSchema.partial().parse(data);
+
     // Validar duplicado por nombre (excluyendo el actual)
-    const dup = await query(
-      "SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?) AND id_habitacion != ?",
-      [data.name, id]
-    );
-    if (Array.isArray(dup) && dup.length) {
-      throw new Error("Ya existe una habitación con ese nombre");
+    if (validated.name) {
+      const dup = await query<any[]>(
+        "SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?) AND id_habitacion != ?",
+        [validated.name, id]
+      );
+      if (dup.length > 0) {
+        throw new Error("Ya existe una habitación con ese nombre");
+      }
     }
 
-    await query(
-      "UPDATE habitaciones SET nombre = ?, precio = ?, tiempo = ?, comision_anfitriona = ? WHERE id_habitacion = ?",
-      [data.name, data.price, data.time, data.comision_anfitriona, id]
-    );
+    await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, {
+      nombre: validated.name,
+      precio: validated.price,
+      tiempo: validated.time,
+      comision_anfitriona: validated.comision_anfitriona,
+      fecha_mod: getNowInBusinessTimezone()
+    });
+    return await this.getById(id);
   }
 
-  static async updateStatus(id: string, action: string) {
+  static async updateStatus(id: string, action: string): Promise<RoomType | null> {
     let newStatus;
     if (action === "activate") newStatus = 1;
     else if (action === "deactivate") newStatus = 0;
     else if (action === "occupy") newStatus = 2;
     else throw new Error("Acción no válida");
 
-    await query("UPDATE habitaciones SET estado = ? WHERE id_habitacion = ?", [newStatus, id]);
+    await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, { 
+      estado: newStatus,
+      fecha_mod: getNowInBusinessTimezone()
+    });
+    return await this.getById(id);
   }
 
-  static async delete(id: string) {
+  static async delete(id: string): Promise<{ success: boolean, deactivated: boolean }> {
     // Verificar referencias en servicios
-    const refs: any = await query(
+    const refs = await query<any[]>(
       'SELECT COUNT(*) AS cnt FROM servicios WHERE habitacion_id = ?',
       [id]
     );
-    const count = Array.isArray(refs) ? (refs[0]?.cnt ?? 0) : 0;
+    const count = refs[0]?.cnt ?? 0;
 
     if (count > 0) {
       // Si hay referencias, no eliminar: desactivar por seguridad
-      await query('UPDATE habitaciones SET estado = 0 WHERE id_habitacion = ?', [id]);
+      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, { 
+        estado: 0,
+        fecha_mod: getNowInBusinessTimezone()
+      });
       return { success: true, deactivated: true };
     }
 
-    await query('DELETE FROM habitaciones WHERE id_habitacion = ?', [id]);
+    await BaseRepository.delete(query, 'habitaciones', 'id_habitacion', id);
     return { success: true, deactivated: false };
   }
 
-  static async reorder(items: { id: string, display_order: number }[]) {
+  static async reorder(items: { id: string, display_order: number }[]): Promise<void> {
+    const now = getNowInBusinessTimezone();
     for (const item of items) {
-      await query('UPDATE habitaciones SET display_order = ? WHERE id_habitacion = ?', [item.display_order, item.id]);
+      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', item.id, { 
+        display_order: item.display_order,
+        fecha_mod: now
+      });
     }
   }
 }

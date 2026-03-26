@@ -4,7 +4,7 @@ import LayoutContent from '@/components/LayoutContent';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
-import { siteConfig } from '@/lib/site';
+import { siteConfig } from '@/lib/api/site';
 
 import './globals.css';
 import '@/styles/sidebar.css';

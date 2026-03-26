@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { StatsRepository } from '@/lib/repositories/StatsRepository';
 
-export async function GET() {
-  try {
-    const data = await StatsRepository.getSalesByMonth();
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
-}
+export const GET = withAppApiWrapper(async () => {
+  const data = await StatsRepository.getSalesByMonth();
+  return NextResponse.json({ success: true, data });
+});

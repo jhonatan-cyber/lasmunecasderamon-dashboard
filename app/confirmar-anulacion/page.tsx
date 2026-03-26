@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { formatCurrencyCLP } from '@/lib/formatters';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface SolicitudAnulacion {
   venta_id: number;
@@ -31,10 +31,7 @@ function ConfirmarAnulacionContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-
-
     if (!token) {
-
       setError('Token de anulación no válido');
       setLoading(false);
       return;
@@ -43,18 +40,16 @@ function ConfirmarAnulacionContent() {
     // Cargar datos de la solicitud
     const cargarSolicitud = async () => {
       try {
-  
         const response = await fetch(`/api/ventas/solicitud-anulacion?token=${token}`);
-        
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          
+
           throw new Error(errorData.message || 'Solicitud no encontrada o ya procesada');
         }
 
         const data = await response.json();
-        
+
         setSolicitud(data.solicitud);
       } catch (err) {
         console.error('🔍 Error cargando solicitud:', err);
@@ -172,13 +167,17 @@ function ConfirmarAnulacionContent() {
             <CardTitle className='text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2'>
               Confirmar Anulación de Venta
             </CardTitle>
-            <p className='text-gray-600 dark:text-gray-400 text-md'>Revisa los detalles y confirma tu decisión</p>
+            <p className='text-gray-600 dark:text-gray-400 text-md'>
+              Revisa los detalles y confirma tu decisión
+            </p>
           </CardHeader>
 
           <CardContent className='space-y-6'>
             {/* Detalles de la venta */}
             <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
-              <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>Detalles de la Venta</h4>
+              <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
+                Detalles de la Venta
+              </h4>
               <div className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Código:</span>
@@ -186,7 +185,9 @@ function ConfirmarAnulacionContent() {
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Cliente:</span>
-                  <span className='text-gray-900 dark:text-gray-100'>{solicitud.cliente_nombre}</span>
+                  <span className='text-gray-900 dark:text-gray-100'>
+                    {solicitud.cliente_nombre}
+                  </span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Total:</span>
@@ -195,12 +196,18 @@ function ConfirmarAnulacionContent() {
                   </span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium text-gray-700 dark:text-gray-300'>Solicitado por:</span>
-                  <span className='text-gray-900 dark:text-gray-100'>{solicitud.solicitado_por}</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>
+                    Solicitado por:
+                  </span>
+                  <span className='text-gray-900 dark:text-gray-100'>
+                    {solicitud.solicitado_por}
+                  </span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Fecha:</span>
-                  <span className='text-gray-900 dark:text-gray-100'>{formatLongDateEs(solicitud.fecha_solicitud)}</span>
+                  <span className='text-gray-900 dark:text-gray-100'>
+                    {formatLongDateEs(solicitud.fecha_solicitud)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -208,7 +215,9 @@ function ConfirmarAnulacionContent() {
             {/* Motivo de anulación */}
             {solicitud.motivo && solicitud.motivo !== 'Motivo no especificado' && (
               <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800'>
-                <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>Motivo de Anulación</h3>
+                <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>
+                  Motivo de Anulación
+                </h3>
                 <p className='text-sm text-yellow-800 dark:text-yellow-200'>{solicitud.motivo}</p>
               </div>
             )}
@@ -258,16 +267,18 @@ function ConfirmarAnulacionContent() {
 
 export default function ConfirmarAnulacionPage() {
   return (
-    <Suspense fallback={
-      <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950'>
-        <Card className='w-full max-w-lg'>
-          <CardContent className='text-center py-8'>
-            <Loader2 className='animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100' />
-            <p className='text-gray-900 dark:text-gray-100'>Cargando...</p>
-          </CardContent>
-        </Card>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950'>
+          <Card className='w-full max-w-lg'>
+            <CardContent className='text-center py-8'>
+              <Loader2 className='animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100' />
+              <p className='text-gray-900 dark:text-gray-100'>Cargando...</p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
       <ConfirmarAnulacionContent />
     </Suspense>
   );

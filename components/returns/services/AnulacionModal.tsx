@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ServicioWithDetails } from '@/types/servicio';
-import { solicitarAnulacionServicio } from '@/lib/serviciosUtils';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { useServiceAnulacionForm } from '@/hooks/personal/useServiceAnulacionForm';
 
 interface AnulacionModalProps {
   open: boolean;
@@ -16,47 +14,17 @@ interface AnulacionModalProps {
 }
 
 export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: AnulacionModalProps) {
-  const [motivo, setMotivo] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!motivo.trim()) {
-      showErrorToast('Por favor ingrese un motivo para la anulación');
-      return;
-    }
-
-    if (!servicio) {
-      showErrorToast('No se ha seleccionado ningún servicio');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await solicitarAnulacionServicio(Number(servicio.id_servicio!), motivo);
-
-      if (result.success) {
-        showSuccessToast('Solicitud de anulación enviada al administrador');
-        setMotivo('');
-        onOpenChange(false);
-        onConfirm();
-      } else {
-        showErrorToast(result.error || 'Error al enviar la solicitud de anulación');
-      }
-    } catch (error) {
-      console.error('Error al solicitar anulación:', error);
-      showErrorToast('Error de conexión al enviar la solicitud');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setMotivo('');
-    onOpenChange(false);
-  };
+  const {
+    motivo,
+    setMotivo,
+    isLoading,
+    handleSubmit,
+    handleCancel
+  } = useServiceAnulacionForm({
+    onOpenChange,
+    servicio,
+    onConfirm
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

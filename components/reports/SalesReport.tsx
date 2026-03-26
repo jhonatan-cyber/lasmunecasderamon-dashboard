@@ -16,7 +16,7 @@ import {
   Users,
   CalendarDays,
 } from 'lucide-react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
   PieChart,
   Pie,
@@ -30,7 +30,7 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { formatShortDateEs } from '@/lib/calendarUtils';
+import { formatShortDateEs } from '@/lib/utils/calendarUtils';
 
 interface SalesData {
   totalVentas: number;

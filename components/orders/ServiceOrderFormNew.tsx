@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useClientes } from '@/hooks/clientes/useClients';
-import { formatCurrencyCLP, formatNumberCL } from '@/lib/formatters';
+import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import {
   Select,
   SelectContent,

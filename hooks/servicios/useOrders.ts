@@ -1,7 +1,7 @@
  
 import { useState, useCallback } from "react";
 import { Order } from "@/types/order";
-import { showSuccessToast, showErrorToast } from "@/lib/toastUtils";
+import { showSuccessToast, showErrorToast } from "@/lib/utils/toastUtils";
 import { useGenericFetch } from "../shared/useGenericFetch";
 
 export default function useOrders() {

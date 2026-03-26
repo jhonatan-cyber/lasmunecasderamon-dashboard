@@ -11,6 +11,11 @@ interface AdvancesFiltersProps {
   rowsPerPage: number;
   setRowsPerPage: (size: number) => void;
   setPage: (page: number) => void;
+  filterStatus?: string;
+  setFilterStatus?: (v: string) => void;
+  filterAnfitriona?: string;
+  setFilterAnfitriona?: (v: string) => void;
+  onClearFilters?: () => void;
 }
 
 export default function AdvancesFilters({
@@ -19,10 +24,15 @@ export default function AdvancesFilters({
   rowsPerPage,
   setRowsPerPage,
   setPage,
+  onClearFilters
 }: AdvancesFiltersProps) {
   const handleClear = () => {
-    setSearchTerm("");
-    setPage(1);
+    if (onClearFilters) {
+      onClearFilters();
+    } else {
+      setSearchTerm("");
+      setPage(1);
+    }
   };
 
   const handleRowsPerPageChange = (value: number) => {

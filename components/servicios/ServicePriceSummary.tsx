@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface ServicePriceSummaryProps {
   subTotal: number;

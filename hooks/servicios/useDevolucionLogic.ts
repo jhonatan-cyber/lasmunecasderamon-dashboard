@@ -1,7 +1,7 @@
  
 import { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
-import {  showErrorToast } from '@/lib/toastUtils';
+import {  showErrorToast } from '@/lib/utils/toastUtils';
 import { useTimer } from '@/contexts/TimerContext';
 
 

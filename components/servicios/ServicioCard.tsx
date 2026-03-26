@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/dialog';
 import { ServiceTimeline } from './ServiceTimeline';
 import { ServicioWithDetails } from '@/types/servicio';
-import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/formatters';
+import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/utils/formatters';
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useServicioAnfitrionas } from '@/contexts/ServicioAnfitrionasContext';

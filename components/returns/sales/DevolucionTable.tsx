@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/table';
 import { Eye } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
-import { formatCurrency, metodoPagoLabels } from '@/lib/salesUtils';
+import { formatCurrency, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface DevolucionTableProps {
   ventas: VentaWithDetails[];

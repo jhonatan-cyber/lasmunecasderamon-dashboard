@@ -1,4 +1,6 @@
-import { query, generateUUID } from '@/lib/db';
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { BaseRepository } from './BaseRepository';
 
 export class OvertimeRepository {
   static async getAll(userId?: string, startDate?: string, endDate?: string) {
@@ -63,7 +65,28 @@ export class OvertimeRepository {
   static async create(data: { usuario_id: string, hora: number, monto: number }) {
     const id = generateUUID();
     const total = data.hora * data.monto;
-    await query(`INSERT INTO horas_extras (id_hora_extra, usuario_id, hora, monto, total, estado) VALUES (?, ?, ?, ?, ?, 1)`, [id, data.usuario_id, data.hora, data.monto, total]);
-    return id;
+    const now = getNowInBusinessTimezone();
+    await BaseRepository.insert(query, 'horas_extras', {
+      id_hora_extra: id,
+      usuario_id: data.usuario_id,
+      hora: data.hora,
+      monto: data.monto,
+      total,
+      fecha_crea: now,
+      estado: 1
+    });
+    const res = await query<any[]>('SELECT * FROM horas_extras WHERE id_hora_extra = ?', [id]);
+    return res.length > 0 ? res[0] : null;
+  }
+
+  static async update(id: string, data: Partial<{ hora: number, monto: number, estado: number }>) {
+    const now = getNowInBusinessTimezone();
+    await BaseRepository.update(query, 'horas_extras', 'id_hora_extra', id, { ...data, fecha_mod: now });
+    const res = await query<any[]>('SELECT * FROM horas_extras WHERE id_hora_extra = ?', [id]);
+    return res.length > 0 ? res[0] : null;
+  }
+
+  static async delete(id: string) {
+    await BaseRepository.delete(query, 'horas_extras', 'id_hora_extra', id);
   }
 }

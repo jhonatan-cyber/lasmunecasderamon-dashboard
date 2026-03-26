@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import SelectElements from '@/components/ui/select-elements';
 import Paginate from '@/components/ui/paginate';
-import { formatDateTimeLabel } from '@/lib/calendarUtils';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatDateTimeLabel } from '@/lib/utils/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface Asistencia {
   id_asistencia: number;
@@ -331,4 +330,3 @@ export default function CajeroAsistenciasPage() {
     </div>
   );
 }
-

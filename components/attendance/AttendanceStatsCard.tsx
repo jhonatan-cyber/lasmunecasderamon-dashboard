@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AsistenciaStats } from '@/types/asistencia'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Users, CheckCircle, XCircle } from 'lucide-react'
-import { formatLongDateEs, getTodayDateKey } from '@/lib/calendarUtils'
+import { formatLongDateEs, getTodayDateKey } from '@/lib/utils/calendarUtils'
 
 interface AttendanceStatsCardProps {
   stats: AsistenciaStats

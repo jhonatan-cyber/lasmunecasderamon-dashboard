@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDateTimeLabel } from '@/lib/calendarUtils';
-import { formatNumberCL } from '@/lib/formatters';
+import { formatDateTimeLabel } from '@/lib/utils/calendarUtils';
+import { formatNumberCL } from '@/lib/utils/formatters';
 import {
   Dialog,
   DialogContent,
@@ -140,22 +140,25 @@ export default function OrdersPage() {
     }
   }, []);
 
-  const handleOrderUpdate = useCallback((data: { type: string; orderId: number }) => {
-    setOrders(prevOrders => {
-      if (data.type === 'order-processed' || data.type === 'order-deleted') {
-        const updated = prevOrders.filter(order => order.id_pedido !== data.orderId);
-        return updated;
-      } else if (data.type === 'order-created') {
-        fetchOrders();
+  const handleOrderUpdate = useCallback(
+    (data: { type: string; orderId: number }) => {
+      setOrders(prevOrders => {
+        if (data.type === 'order-processed' || data.type === 'order-deleted') {
+          const updated = prevOrders.filter(order => order.id_pedido !== data.orderId);
+          return updated;
+        } else if (data.type === 'order-created') {
+          fetchOrders();
+          return prevOrders;
+        }
         return prevOrders;
-      }
-      return prevOrders;
-    });
+      });
 
-    if (data.type === 'order-processed' || data.type === 'order-deleted') {
-      fetchServicios();
-    }
-  }, [fetchOrders, fetchServicios]);
+      if (data.type === 'order-processed' || data.type === 'order-deleted') {
+        fetchServicios();
+      }
+    },
+    [fetchOrders, fetchServicios]
+  );
 
   useOrdersSSE(handleOrderUpdate);
 
@@ -259,12 +262,14 @@ export default function OrdersPage() {
   }, [fetchOrders, fetchServicios, selectedOrderId]);
 
   const hasProcessPermission = () => {
-    return hasPermission('orders', 'process') ||
+    return (
+      hasPermission('orders', 'process') ||
       hasPermission('orders', 'registar_venta') ||
       hasPermission('orders', 'registar_cuenta') ||
       hasPermission('pedidos', 'registar_venta') ||
       hasPermission('pedidos', 'registar_cuenta') ||
-      hasPermission('pedidos', 'ventas');
+      hasPermission('pedidos', 'ventas')
+    );
   };
 
   const fetchOrderDetail = async (orderId: number) => {
@@ -527,10 +532,11 @@ export default function OrdersPage() {
               <Button
                 onClick={handleCreateOrder}
                 disabled={cajaLoading || !hasOpenCaja}
-                className={`rounded-full transition-all duration-200 ${hasOpenCaja
-                  ? 'bg-black text-white hover:scale-105'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
+                className={`rounded-full transition-all duration-200 ${
+                  hasOpenCaja
+                    ? 'bg-black text-white hover:scale-105'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
                 {cajaLoading ? (
                   <>
@@ -707,10 +713,11 @@ export default function OrdersPage() {
                       return (
                         <div
                           key={order.id_pedido}
-                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors ${canProcess
-                            ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
-                            : 'cursor-not-allowed opacity-60 pointer-events-none'
-                            }`}
+                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors ${
+                            canProcess
+                              ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+                              : 'cursor-not-allowed opacity-60 pointer-events-none'
+                          }`}
                           onClick={
                             canProcess
                               ? () => handleOrderClick(order.id_pedido, order.codigo)
@@ -758,18 +765,19 @@ export default function OrdersPage() {
                                     {order.nicks.split(',').map((nick, index) => (
                                       <Badge
                                         key={index}
-                                        className={`text-xs font-medium ${index % 6 === 0
-                                          ? 'bg-blue-500 text-white'
-                                          : index % 6 === 1
-                                            ? 'bg-green-500 text-white'
-                                            : index % 6 === 2
-                                              ? 'bg-purple-500 text-white'
-                                              : index % 6 === 3
-                                                ? 'bg-orange-500 text-white'
-                                                : index % 6 === 4
-                                                  ? 'bg-pink-500 text-white'
-                                                  : 'bg-red-500 text-white'
-                                          }`}
+                                        className={`text-xs font-medium ${
+                                          index % 6 === 0
+                                            ? 'bg-blue-500 text-white'
+                                            : index % 6 === 1
+                                              ? 'bg-green-500 text-white'
+                                              : index % 6 === 2
+                                                ? 'bg-purple-500 text-white'
+                                                : index % 6 === 3
+                                                  ? 'bg-orange-500 text-white'
+                                                  : index % 6 === 4
+                                                    ? 'bg-pink-500 text-white'
+                                                    : 'bg-red-500 text-white'
+                                        }`}
                                       >
                                         {nick.trim()}
                                       </Badge>
@@ -989,4 +997,3 @@ export default function OrdersPage() {
     </PermissionGuard>
   );
 }
-

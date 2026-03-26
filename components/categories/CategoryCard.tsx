@@ -25,7 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useState } from 'react';
 import { DeleteCategoryConfirmModal } from './DeleteCategoryConfirmModal';
 import { CardContainer, CardBody } from '@/components/ui/3d-card';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface CategoryCardProps {
   category: {

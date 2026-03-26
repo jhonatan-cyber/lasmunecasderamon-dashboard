@@ -1,26 +1,30 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { sendPushNotification, sendPushByRole } from '@/lib/pushNotifications';
-import { sendNotificationToAll } from '@/lib/sseService';
-import { getSystemTimezone } from '@/lib/timezoneService';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { query } from '@/lib/database/db';
+import { sendPushNotification, sendPushByRole } from '@/lib/integrations/pushNotifications';
+import { sendNotificationToAll } from '@/lib/api/sseService';
+import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export const dynamic = 'force-dynamic';
 
 const globalForCron = globalThis as typeof globalThis & { __attendanceCheckDate?: string };
 
-export async function GET() {
-  try {
-    const now = new Date();
-    const tz = getSystemTimezone();
-    const localHour = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hour12: false }).format(now));
-    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(now);
+export const GET = withAppApiWrapper(async () => {
+  const bizNow = getNowInBusinessTimezone();
+  const now = new Date(bizNow.replace(' ', 'T'));
+  const tz = getSystemTimezone();
+  const localHour = parseInt(bizNow.substring(11, 13), 10);
+  const todayStr = bizNow.substring(0, 10);
 
-    if (localHour === 21 && globalForCron.__attendanceCheckDate !== todayStr) {
-      globalForCron.__attendanceCheckDate = todayStr;
-      sendNotificationToAll('check_attendance', { roles: ['cajero', 'garzon', 'anfitriona'], message: 'Verifica tu asistencia del día' });
-    }
+  if (localHour === 21 && globalForCron.__attendanceCheckDate !== todayStr) {
+    globalForCron.__attendanceCheckDate = todayStr;
+    sendNotificationToAll('check_attendance', {
+      roles: ['cajero', 'garzon', 'anfitriona'],
+      message: 'Verifica tu asistencia del día'
+    });
+  }
 
-    const allActive = await query<any[]>(`
+  const allActive = await query<any[]>(`
       SELECT s.id_servicio as id, s.codigo, s.tiempo, s.fecha_crea, s.created_by, s.push_notified_5m, s.push_notified_end, s.habitacion_id, h.nombre as room_name, 'servicio' as type
       FROM servicios s LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion WHERE s.estado = 2 AND s.paused_at IS NULL AND s.tiempo > 0
       UNION ALL
@@ -31,29 +35,55 @@ export async function GET() {
       FROM cuentas c LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion WHERE c.estado = 1 AND c.tiempo > 0
     `);
 
-    for (const item of allActive) {
-      const startTime = new Date(item.fecha_crea);
-      const remainingMin = (startTime.getTime() + item.tiempo * 60000 - now.getTime()) / 60000;
-      const table = { servicio: 'servicios', venta: 'ventas', cuenta: 'cuentas' }[item.type as 'servicio' | 'venta' | 'cuenta'];
-      const idField = { servicio: 'id_servicio', venta: 'id_venta', cuenta: 'id_cuenta' }[item.type as 'servicio' | 'venta' | 'cuenta'];
+  for (const item of allActive) {
+    const startTime = new Date(item.fecha_crea);
+    const remainingMin = (startTime.getTime() + item.tiempo * 60000 - now.getTime()) / 60000;
+    const table = { servicio: 'servicios', venta: 'ventas', cuenta: 'cuentas' }[
+      item.type as 'servicio' | 'venta' | 'cuenta'
+    ];
+    const idField = { servicio: 'id_servicio', venta: 'id_venta', cuenta: 'id_cuenta' }[
+      item.type as 'servicio' | 'venta' | 'cuenta'
+    ];
 
-      if (remainingMin <= 5 && remainingMin > 4.5 && !item.push_notified_5m) {
-        await query(`UPDATE ${table} SET push_notified_5m = 1 WHERE ${idField} = ?`, [item.id]);
-        if (item.created_by) sendPushNotification([item.created_by], '5 MINUTOS RESTANTES', `Tiempo por terminar en ${item.room_name || 'habitación'}`, { type: 'timer_warning_5m' });
-        sendNotificationToAll('timer_warning_5m', { id: item.id, type: item.type, room_name: item.room_name });
-      }
-
-      if (remainingMin <= 0 && !item.push_notified_end) {
-        await query(`UPDATE ${table} SET push_notified_end = 1 WHERE ${idField} = ?`, [item.id]);
-        if (item.created_by) sendPushNotification([item.created_by], 'TIEMPO AGOTADO', `Tiempo finalizado en ${item.room_name || 'habitación'}`, { type: 'timer_ended' });
-        sendPushByRole('cajero', 'TIEMPO AGOTADO', `Tiempo finalizado en ${item.room_name}`, { type: 'timer_ended' });
-        sendNotificationToAll('timer_ended_event', { id: item.id, type: item.type, room_name: item.room_name });
-        if (item.habitacion_id) await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [item.habitacion_id]);
-      }
+    if (remainingMin <= 5 && remainingMin > 4.5 && !item.push_notified_5m) {
+      await query(`UPDATE ${table} SET push_notified_5m = 1 WHERE ${idField} = ?`, [item.id]);
+      if (item.created_by)
+        sendPushNotification(
+          [item.created_by],
+          '5 MINUTOS RESTANTES',
+          `Tiempo por terminar en ${item.room_name || 'habitación'}`,
+          { type: 'timer_warning_5m' }
+        );
+      sendNotificationToAll('timer_warning_5m', {
+        id: item.id,
+        type: item.type,
+        room_name: item.room_name
+      });
     }
 
-    return NextResponse.json({ success: true, timestamp: now.toISOString() });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    if (remainingMin <= 0 && !item.push_notified_end) {
+      await query(`UPDATE ${table} SET push_notified_end = 1 WHERE ${idField} = ?`, [item.id]);
+      if (item.created_by)
+        sendPushNotification(
+          [item.created_by],
+          'TIEMPO AGOTADO',
+          `Tiempo finalizado en ${item.room_name || 'habitación'}`,
+          { type: 'timer_ended' }
+        );
+      sendPushByRole('cajero', 'TIEMPO AGOTADO', `Tiempo finalizado en ${item.room_name}`, {
+        type: 'timer_ended'
+      });
+      sendNotificationToAll('timer_ended_event', {
+        id: item.id,
+        type: item.type,
+        room_name: item.room_name
+      });
+      if (item.habitacion_id)
+        await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
+          item.habitacion_id
+        ]);
+    }
   }
-}
+
+  return NextResponse.json({ success: true, timestamp: bizNow });
+});

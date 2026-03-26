@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CajaWithUser } from "@/types/caja";
-import { formatCurrencyCLP, formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyCLP, formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import {
   Lock,
   DollarSign,
@@ -31,7 +31,7 @@ import {
 import { useRetiros } from "@/hooks/caja/useRetiros";
 import { useEffect, useState } from "react";
 import Paginate from "@/components/ui/paginate";
-import { formatLongDateEs, formatShortTimeEs } from "@/lib/calendarUtils";
+import { formatLongDateEs, formatShortTimeEs } from "@/lib/utils/calendarUtils";
 
 // Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {

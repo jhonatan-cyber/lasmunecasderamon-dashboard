@@ -1,25 +1,27 @@
-/* eslint-disable */
 'use client';
 
 import { useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import Paginate from '@/components/ui/paginate';
+
 import { useUsers } from '@/hooks/personal/useUsers';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserImage } from '@/contexts/UserImageContext';
+
 import { User } from '@/types/user';
+import { formatCurrency, formatDate } from '@/lib/utils/formatters';
+
 import { UserDetails } from '@/components/users/UserDetails';
 import { UserTable } from '@/components/users/UserTable';
 import { UserFilters } from '@/components/users/UserFilters';
-import { UserForm, UserFormValues } from '@/components/users/UserForm';
+import { UserForm, type UserFormValues } from '@/components/users/UserForm';
 import { DeleteUserConfirmModal } from '@/components/users/DeleteUserConfirmModal';
 import { ExportButtons } from '@/components/users/ExportButtons';
-import { Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import { formatCurrency, formatDate } from '@/lib/formatters';
-import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useUserImage } from '@/contexts/UserImageContext';
 import { UsersSkeleton } from '@/components/ui/skeletons';
 
 export default function Users() {
@@ -47,7 +49,6 @@ export default function Users() {
     pageSize,
     setPageSize,
     totalPages,
-    fetchUsers,
     createUser,
     updateUser,
     activateUser,
@@ -55,7 +56,6 @@ export default function Users() {
     deleteUser
   } = useUsers();
 
-  // Función para limpiar filtros
   const handleClearFilters = () => {
     setSearchTerm('');
     setFilterStatus('all');
@@ -67,77 +67,51 @@ export default function Users() {
     async (values: UserFormValues, file?: File) => {
       try {
         const formData = new FormData();
-
         Object.entries(values).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             formData.append(key, String(value));
           }
         });
 
-        // Generar correo solo si es creación o si el nick cambió en edición
         let shouldGenerateEmail = true;
         if (isEditing && selectedUser) {
-          // Solo generar nuevo correo si el nick cambió
           shouldGenerateEmail = values.nick !== selectedUser.nick;
         }
 
         if (shouldGenerateEmail) {
-          const correo = `${values.nick}@lasmuñecasderamon.com`;
-          formData.set('correo', correo);
-          // Correo generado
-        } else {
-          // No se genera nuevo correo - nick no cambió
+          formData.set('correo', `${values.nick}@lasmuñecasderamon.com`);
         }
-
         formData.set('password', values.run);
-
-        if (file) {
-          formData.append('foto', file);
-        }
+        if (file) formData.append('foto', file);
 
         if (isEditing && selectedUser) {
-          const result = await updateUser(selectedUser.id, formData);
+          const result = await updateUser(String(selectedUser.id), formData);
           if (result.success) {
-            toast.success(result.message || 'Usuario actualizado exitosamente');
+            toast.success(result.message || 'Usuario actualizado');
             setIsFormOpen(false);
             setIsEditing(false);
             setSelectedUser(null);
-            // Datos ya actualizados en estado local
-
-            // Si se editó el usuario actual, actualizar contexto de autenticación
             if (currentUser && selectedUser.id === currentUser.id) {
-              console.log('🔄 Actualizando contexto de usuario actual...');
-              updateImage(); // Actualizar versión de imagen
-              await refetchCurrentUser(); // Recargar datos del usuario
+              updateImage();
+              await refetchCurrentUser();
             }
           } else {
-            toast.error(result.message || 'Error al actualizar usuario');
+            toast.error(result.message || 'Error al actualizar');
           }
         } else {
           const result = await createUser(formData);
           if (result.success) {
-            toast.success(result.message || 'Usuario creado exitosamente');
+            toast.success(result.message || 'Usuario creado');
             setIsFormOpen(false);
-            // Datos ya actualizados en estado local
           } else {
-            toast.error(result.message || 'Error al crear usuario');
+            toast.error(result.message || 'Error al crear');
           }
         }
-      } catch (error) {
-        console.error('Error en handleFormSubmit:', error);
+      } catch (e) {
         toast.error('Error al procesar la solicitud');
       }
     },
-    [
-      isEditing,
-      selectedUser,
-      createUser,
-      updateUser,
-      fetchUsers,
-      currentUser,
-      updateImage,
-      refetchCurrentUser
-    ]
+    [isEditing, selectedUser, createUser, updateUser, currentUser, updateImage, refetchCurrentUser]
   );
 
   const handleFormCancel = useCallback(() => {
@@ -157,221 +131,107 @@ export default function Users() {
     setIsFormOpen(true);
   }, []);
 
-  const handleActivateUser = useCallback(
-    async (userId: string | number) => {
-      try {
-        const result = await activateUser(userId);
-        if (result.success) {
-          toast.success('Usuario activado exitosamente');
-          // Datos ya actualizados en estado local
-        } else {
-          toast.error(result.message || 'Error al activar usuario');
-        }
-      } catch (error) {
-        console.error('Error al activar usuario:', error);
-        toast.error('Error al activar usuario');
-      }
-    },
-    [activateUser, fetchUsers]
-  );
+  const handleActivateUser = useCallback(async (userId: string | number) => {
+    const r = await activateUser(String(userId));
+    if (r.success) toast.success('Activado');
+    else toast.error(r.message || 'Error');
+  }, [activateUser]);
 
-  const handleDeactivateUser = useCallback(
-    async (userId: string | number) => {
-      try {
-        const result = await deactivateUser(userId);
-        if (result.success) {
-          toast.success('Usuario desactivado exitosamente');
-          // Datos ya actualizados en estado local
-        } else {
-          toast.error(result.message || 'Error al desactivar usuario');
-        }
-      } catch (error) {
-        console.error('Error al desactivar usuario:', error);
-        toast.error('Error al desactivar usuario');
-      }
-    },
-    [deactivateUser, fetchUsers]
-  );
+  const handleDeactivateUser = useCallback(async (userId: string | number) => {
+    const r = await deactivateUser(String(userId));
+    if (r.success) toast.success('Desactivado');
+    else toast.error(r.message || 'Error');
+  }, [deactivateUser]);
 
-  const handleDeleteUser = useCallback(
-    (userId: string | number) => {
-      const user = paginatedUsers?.find(u => u.id === userId);
-      if (user) {
-        setUserToDelete(user);
-        setDeleteModalOpen(true);
-      }
-    },
-    [paginatedUsers]
-  );
+  const handleDeleteUser = useCallback((userId: string | number) => {
+    const user = paginatedUsers?.find(u => u.id === userId);
+    if (user) {
+      setUserToDelete(user);
+      setDeleteModalOpen(true);
+    }
+  }, [paginatedUsers]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!userToDelete) return;
-
-    try {
-      const result = await deleteUser(userToDelete.id);
-      if (result.success) {
-        toast.success('Usuario eliminado exitosamente');
-        setDeleteModalOpen(false);
-        setUserToDelete(null);
-        // Datos ya actualizados en estado local
-      } else {
-        toast.error(result.message || 'Error al eliminar usuario');
-      }
-    } catch (error) {
-      console.error('Error al eliminar usuario:', error);
-      toast.error('Error al eliminar usuario');
-    }
-  }, [userToDelete, deleteUser, fetchUsers]);
+    const r = await deleteUser(String(userToDelete.id));
+    if (r.success) {
+      toast.success('Eliminado');
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
+    } else toast.error(r.message || 'Error');
+  }, [userToDelete, deleteUser]);
 
   const getRoleBadgeColor = useCallback((role: string): string => {
     const roleColors: Record<string, string> = {
-      admin: 'bg-purple-100 text-purple-900 hover:bg-purple-200',
-      administrador: 'bg-purple-100 text-purple-900 hover:bg-purple-200',
-      garzon: 'bg-blue-100 text-blue-900 hover:bg-blue-200',
-      anfitriona: 'bg-red-100 text-red-900 hover:bg-red-200',
-      cajero: 'bg-green-100 text-green-900 hover:bg-green-200',
-      default: 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+      admin: 'bg-purple-100 text-purple-900',
+      administrador: 'bg-purple-100 text-purple-900',
+      garzon: 'bg-blue-100 text-blue-900',
+      anfitriona: 'bg-red-100 text-red-900',
+      cajero: 'bg-green-100 text-green-900',
+      default: 'bg-gray-100 text-gray-900'
     };
-
-    const normalizedRole = role?.toLowerCase().trim() || 'default';
-    return roleColors[normalizedRole] || roleColors['default'];
+    return roleColors[role?.toLowerCase()] || roleColors.default;
   }, []);
 
   if (isLoading) return <UsersSkeleton />;
-  if (error) return <div>Error al cargar los usuarios: {error}</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <PermissionGuard module='users' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
-          <div className='flex flex-col'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Gestión de Usuarios</h1>
-            <p className='text-sm sm:text-base text-gray-600'>
-              Gestiona todos los usuarios de la plataforma.
-            </p>
+      <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-6'>
+        <div className='flex flex-col sm:flex-row justify-between items-center gap-6'>
+          <div>
+            <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
+            <p className='text-gray-600'>Control de plataforma.</p>
           </div>
-          <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
+          <div className='flex gap-2 items-center'>
             <ExportButtons users={paginatedUsers || []} />
-
             <PermissionGuard module='users' action='create' fallback={null}>
-              <Button
-                onClick={() => {
-                  setSelectedUser(null);
-                  setIsEditing(false);
-                  setIsFormOpen(true);
-                }}
-                size='sm'
-                variant='outline'
-                className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
-              >
-                <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                Nuevo Usuario
+              <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
+                className='bg-black text-white rounded-full px-6 py-2'>
+                <Plus className='w-4 h-4 mr-1' /> Nuevo Usuario
               </Button>
             </PermissionGuard>
           </div>
         </div>
 
-        <UserFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterRole={filterRole}
-          setFilterRole={setFilterRole}
-          onClearFilters={handleClearFilters}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          setPage={setPage}
-        />
+        <UserFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus} filterRole={filterRole} setFilterRole={setFilterRole}
+          onClearFilters={handleClearFilters} pageSize={pageSize} setPageSize={setPageSize} setPage={setPage} />
 
-        <div className='mt-4 sm:mt-6'>
-          <div className='overflow-x-auto'>
-            <UserTable
-              users={paginatedUsers}
-              onViewDetails={handleViewDetails}
-              onEdit={handleEditUser}
-              onActivate={handleActivateUser}
-              onDeactivate={handleDeactivateUser}
-              onDelete={handleDeleteUser}
-              formatCurrency={formatCurrency}
-              formatDate={formatDate}
-              getRoleBadgeColor={getRoleBadgeColor}
-              currentPage={page}
-              pageSize={pageSize}
-            />
-          </div>
+        <div className='mt-6 overflow-x-auto'>
+          <UserTable users={paginatedUsers} onViewDetails={handleViewDetails} onEdit={handleEditUser}
+            onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} onDelete={handleDeleteUser}
+            formatCurrency={formatCurrency} formatDate={formatDate} getRoleBadgeColor={getRoleBadgeColor}
+            currentPage={page} pageSize={pageSize} />
         </div>
 
-        {totalPages > 1 && (
-          <div className='flex justify-center mt-4 sm:mt-6'>
-            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-          </div>
-        )}
+        {totalPages > 1 && <div className='flex justify-center mt-6'><Paginate page={page} totalPages={totalPages} setPage={setPage} /></div>}
 
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl max-h-[90vh] flex flex-col p-0'>
-            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-              <DialogTitle className='text-lg sm:text-xl'>Detalles del Usuario</DialogTitle>
-              <DialogDescription className='sr-only'>Información detallada del usuario</DialogDescription>
-            </DialogHeader>
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
-              {selectedUser && <UserDetails user={selectedUser} />}
-            </div>
+          <DialogContent className='max-w-2xl'>
+            <DialogHeader><DialogTitle>Detalles</DialogTitle><DialogDescription className='sr-only'>Detalles</DialogDescription></DialogHeader>
+            <div className='overflow-y-auto'>{selectedUser && <UserDetails user={selectedUser} />}</div>
           </DialogContent>
         </Dialog>
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
-            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-              <DialogTitle className='text-lg sm:text-xl'>
-                {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
-              </DialogTitle>
-              <DialogDescription className='sr-only'>
-                {isEditing ? 'Formulario para editar usuario' : 'Formulario para crear nuevo usuario'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
-              <UserForm
-                user={selectedUser || undefined}
-                onSubmit={handleFormSubmit}
-                onCancel={handleFormCancel}
-                isEditMode={isEditing}
-                hideButtons={true}
-              />
+          <DialogContent className='max-w-3xl'>
+            <DialogHeader><DialogTitle>{isEditing ? 'Editar' : 'Nuevo'}</DialogTitle><DialogDescription className='sr-only'>Form</DialogDescription></DialogHeader>
+            <div className='overflow-y-auto'>
+              <UserForm user={selectedUser || undefined} onSubmit={handleFormSubmit} onCancel={handleFormCancel} isEditMode={isEditing} hideButtons={true} />
             </div>
-            <div className='flex-shrink-0 border-t px-6 py-4'>
-              <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full'>
-                <Button
-                  type='button'
-                  size='default'
-                  className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
-                  variant='outline'
-                  onClick={handleFormCancel}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type='submit'
-                  form='user-form'
-                  size='default'
-                  className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
-                  variant='outline'
-                >
-                  {isEditing ? 'Actualizar' : 'Guardar'}
-                </Button>
-              </div>
+            <div className='border-t p-4 flex justify-center gap-4'>
+              <Button onClick={handleFormCancel} variant='outline' className='rounded-full'>Cancelar</Button>
+              <Button type='submit' form='user-form' className='bg-black text-white rounded-full'>
+                {isEditing ? 'Actualizar' : 'Guardar'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        <PermissionGuard module='users' action='delete' fallback={null}>
-          <DeleteUserConfirmModal
-            open={deleteModalOpen}
-            onOpenChange={setDeleteModalOpen}
-            onConfirm={handleConfirmDelete}
-            userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
-          />
-        </PermissionGuard>
+        <DeleteUserConfirmModal open={deleteModalOpen} onOpenChange={setDeleteModalOpen} onConfirm={handleConfirmDelete}
+          userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''} />
       </div>
     </PermissionGuard>
   );

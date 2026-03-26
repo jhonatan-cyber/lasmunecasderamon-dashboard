@@ -22,7 +22,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { formatShortDateEs, getWeekDateRange } from '@/lib/calendarUtils';
+import { formatShortDateEs, getWeekDateRange } from '@/lib/utils/calendarUtils';
 
 interface SalesData {
   dia_semana: string;

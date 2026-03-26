@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { query } from '@/lib/database/db';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const GET = withAppApiWrapper(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
-    
-    const userResult = await query<any[]>(`
+
+    const userResult = await query<any[]>(
+      `
       SELECT rol_id FROM usuarios WHERE id_usuario = ?
-    `, [id]);
+    `,
+      [id]
+    );
 
     if (!userResult || userResult.length === 0 || !userResult[0].rol_id) {
       return NextResponse.json({ success: true, data: [] });
@@ -19,7 +20,8 @@ export async function GET(
     const roleId = userResult[0].rol_id;
 
     // Obtener los permisos del rol del usuario
-    const permissions = await query<any[]>(`
+    const permissions = await query<any[]>(
+      `
       SELECT 
         p.id,
         p.name,
@@ -29,10 +31,10 @@ export async function GET(
       FROM permissions p
       INNER JOIN role_permissions rp ON p.id = rp.permission_id
       WHERE rp.role_id = ? AND p.deleted_at IS NULL
-    `, [roleId]);
+    `,
+      [roleId]
+    );
 
     return NextResponse.json({ success: true, data: permissions });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
-}
+);

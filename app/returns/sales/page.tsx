@@ -8,7 +8,7 @@ import { useDevolucionVentasLogic } from '@/hooks/servicios/useDevolucionVentasL
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Paginate from '@/components/ui/paginate';
 import { SalesDetailModal } from '@/components/sales';
-import { anfitrionaColors, metodoPagoLabels } from '@/lib/salesUtils';
+import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/sales/DevolucionHeader';
 import { DevolucionFiltersComponent } from '@/components/returns/sales/DevolucionFilters';
 import { DevolucionTable } from '@/components/returns/sales/DevolucionTable';
@@ -74,7 +74,7 @@ export default function DevolucionesVentasPage() {
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <DevolucionHeader />
 
-              <DevolucionFiltersComponent
+      <DevolucionFiltersComponent
         filters={filters}
         updateFilter={updateFilter}
         clearFilters={clearFilters}
@@ -82,7 +82,9 @@ export default function DevolucionesVentasPage() {
 
       <Card className='shadow-sm'>
         <CardHeader className='p-4 sm:p-6'>
-          <CardTitle className='text-lg sm:text-xl lg:text-2xl'>Ventas Anuladas ({filteredVentas.length})</CardTitle>
+          <CardTitle className='text-lg sm:text-xl lg:text-2xl'>
+            Ventas Anuladas ({filteredVentas.length})
+          </CardTitle>
         </CardHeader>
         <CardContent className='p-4 sm:p-6'>
           <div className='overflow-x-auto'>

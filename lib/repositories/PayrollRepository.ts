@@ -1,5 +1,5 @@
-import { query, withTransaction } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { query, withTransaction } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 const PAYROLL_SQL = `
 SELECT U.id_usuario, R.nombre AS rol, CONCAT(U.nombre, ' ', U.apellido) AS usuario,

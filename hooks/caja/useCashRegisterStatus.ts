@@ -1,6 +1,6 @@
  
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
-import { CashRegisterStatusSchema } from '@/lib/schemas';
+import { CashRegisterStatusSchema } from '@/lib/business/schemas';
 import { useCallback, useEffect } from 'react';
 
 interface CashRegisterStatus {

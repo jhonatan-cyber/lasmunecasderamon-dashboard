@@ -18,7 +18,7 @@ import { useState, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
-import { formatDateLabel } from '@/lib/calendarUtils';
+import { formatDateLabel } from '@/lib/utils/calendarUtils';
 import { ProfileSkeleton } from '@/components/ui/skeletons';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -43,14 +43,12 @@ export default function ProfilePage() {
   const [rolesList, setRolesList] = useState<any[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
 
-
-
   // Datos del usuario actual
   const [userData, setUserData] = useState<any>(null);
   const [loadingUserData, setLoadingUserData] = useState(false);
 
   const [originalData, setOriginalData] = useState<any>(null);
-  
+
   // Estado para la vista previa de la nueva imagen
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
 
@@ -251,12 +249,12 @@ export default function ProfilePage() {
         });
       }
 
-            const data = await res.json();
+      const data = await res.json();
       if (data.success) {
         setOriginalData({ ...userData });
         setIsEditing(false);
         setNewImagePreview(null); // Limpiar vista previa de nueva imagen
-        
+
         // Mostrar información sobre los cambios realizados
         let message = 'Perfil actualizado exitosamente';
         if (data.changes) {
@@ -264,20 +262,20 @@ export default function ProfilePage() {
           if (data.changes.passwordUpdated) changes.push('contraseña actualizada');
           if (data.changes.emailUpdated) changes.push('email actualizado');
           if (data.changes.photoUpdated) changes.push('foto actualizada');
-          
+
           if (changes.length > 0) {
             message += ` (${changes.join(', ')})`;
           }
         }
-        
+
         toast.success(message);
-        
+
         // Recargar datos del usuario para asegurar sincronización
         await loadUserData(userData.id.toString());
-        
+
         // Actualizar el header con la nueva información del usuario
         await refetchCurrentUser();
-        
+
         // Forzar actualización de la imagen en el header
         updateImage();
       } else {
@@ -447,10 +445,10 @@ export default function ProfilePage() {
 
         // Recargar datos del usuario para actualizar fecha_mod
         await loadUserData(userData.id.toString());
-        
+
         // Actualizar el header con la nueva información del usuario
         await refetchCurrentUser();
-        
+
         // Forzar actualización de la imagen en el header
         updateImage();
       } else {
@@ -465,7 +463,7 @@ export default function ProfilePage() {
   // Polling para actualización del QR en tiempo real si el usuario tiene un token
   useEffect(() => {
     if (!userData?.qr_token || isAdmin) return; // No pollear si es admin (ya maneja su selector) o no tiene token
-    
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/users/${userData.id}`);
@@ -474,7 +472,7 @@ export default function ProfilePage() {
           setUserData(data.user);
         }
       } catch (e) {
-        console.error("Error polling user QR status:", e);
+        console.error('Error polling user QR status:', e);
       }
     }, 5000); // Polling cada 5 segundos para el perfil propio
 
@@ -506,7 +504,7 @@ export default function ProfilePage() {
   }
 
   return (
-      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
       <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
         <div>
           <h1 className='text-3xl font-bold'>Perfil de Usuario</h1>
@@ -602,27 +600,26 @@ export default function ProfilePage() {
             </div>
 
             {userData?.qr_token && (
-              <div className="mt-8 p-6 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-center">
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Mi QR de Asistencia</h3>
-                <p className="text-sm text-slate-600 mb-6">Escanea este código con tu aplicación móvil para registrar tu presencia.</p>
-                <div className="inline-block p-4 bg-white rounded-2xl shadow-sm border border-slate-100">
-                  <QRCodeSVG 
-                    value={userData.qr_token} 
-                    size={200}
-                    level="M"
-                    includeMargin={true}
-                  />
+              <div className='mt-8 p-6 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-center'>
+                <h3 className='text-lg font-bold text-slate-900 mb-2'>Mi QR de Asistencia</h3>
+                <p className='text-sm text-slate-600 mb-6'>
+                  Escanea este código con tu aplicación móvil para registrar tu presencia.
+                </p>
+                <div className='inline-block p-4 bg-white rounded-2xl shadow-sm border border-slate-100'>
+                  <QRCodeSVG value={userData.qr_token} size={200} level='M' includeMargin={true} />
                 </div>
-                <div className="mt-4 flex flex-col items-center gap-2">
-                   <p className="text-[10px] font-mono text-slate-400 select-all">TOKEN: {userData.qr_token}</p>
-                   <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-blue-600 h-8 rounded-full"
+                <div className='mt-4 flex flex-col items-center gap-2'>
+                  <p className='text-[10px] font-mono text-slate-400 select-all'>
+                    TOKEN: {userData.qr_token}
+                  </p>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-xs text-blue-600 h-8 rounded-full'
                     onClick={() => loadUserData(userData.id.toString())}
-                   >
-                     Actualizar Código
-                   </Button>
+                  >
+                    Actualizar Código
+                  </Button>
                 </div>
               </div>
             )}
@@ -690,13 +687,21 @@ export default function ProfilePage() {
                       id='nick'
                       value={userData.nick || ''}
                       onChange={e => handleAdminNickChange(e.target.value)}
-                      disabled={!isEditing || userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon'}
+                      disabled={
+                        !isEditing ||
+                        userData.role?.toLowerCase() === 'anfitriona' ||
+                        userData.role?.toLowerCase() === 'garzon'
+                      }
                       placeholder='usuario123'
                     />
                     <p className='text-xs text-muted-foreground mt-1'>
                       El email se actualizará automáticamente: {userData.nick}@lasmuñecasderamon.com
-                      {(userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon') && (
-                        <span className='text-orange-600 font-medium'> - No editable para anfitrionas y garzones</span>
+                      {(userData.role?.toLowerCase() === 'anfitriona' ||
+                        userData.role?.toLowerCase() === 'garzon') && (
+                        <span className='text-orange-600 font-medium'>
+                          {' '}
+                          - No editable para anfitrionas y garzones
+                        </span>
                       )}
                     </p>
                   </div>
@@ -832,14 +837,22 @@ export default function ProfilePage() {
                       id='nick'
                       value={userData.nick || ''}
                       onChange={e => handleNickChange(e.target.value)}
-                      disabled={!isEditing || userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon'}
+                      disabled={
+                        !isEditing ||
+                        userData.role?.toLowerCase() === 'anfitriona' ||
+                        userData.role?.toLowerCase() === 'garzon'
+                      }
                       placeholder='usuario123'
                     />
                     <p className='text-xs text-muted-foreground mt-1'>
                       El email se actualizará automáticamente: {userData.nick || ''}
                       @lasmuñecasderamon.com
-                      {(userData.role?.toLowerCase() === 'anfitriona' || userData.role?.toLowerCase() === 'garzon') && (
-                        <span className='text-orange-600 font-medium'> - No editable para anfitrionas y garzones</span>
+                      {(userData.role?.toLowerCase() === 'anfitriona' ||
+                        userData.role?.toLowerCase() === 'garzon') && (
+                        <span className='text-orange-600 font-medium'>
+                          {' '}
+                          - No editable para anfitrionas y garzones
+                        </span>
                       )}
                     </p>
                   </div>
@@ -916,13 +929,15 @@ export default function ProfilePage() {
                         src={newImagePreview}
                         alt='Nueva imagen'
                         className='w-16 h-16 rounded-full object-cover border'
-                                                 onError={e => {
-                           e.currentTarget.src = '/placeholder-user.jpg';
-                         }}
+                        onError={e => {
+                          e.currentTarget.src = '/placeholder-user.jpg';
+                        }}
                       />
                       <div>
                         <p className='text-xs text-muted-foreground'>Nueva imagen seleccionada</p>
-                        <p className='text-xs text-muted-foreground'>Se guardará al actualizar el perfil</p>
+                        <p className='text-xs text-muted-foreground'>
+                          Se guardará al actualizar el perfil
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1121,4 +1136,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

@@ -6,7 +6,7 @@ import { useSales } from '@/hooks/caja/useSales';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 import { VentaWithDetails } from '@/types/venta';
-import { showErrorToast, showSuccessToast } from '@/lib/toastUtils';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toastUtils';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -29,7 +29,7 @@ import {
   statusLabels,
   metodoPagoLabels,
   anfitrionaColors
-} from '@/lib/salesUtils';
+} from '@/lib/business/salesUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 import { SalesSkeleton } from '@/components/ui/skeletons';

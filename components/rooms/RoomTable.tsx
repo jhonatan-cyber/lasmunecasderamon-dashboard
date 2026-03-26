@@ -3,10 +3,7 @@ import React, { useState, useMemo } from "react";
 import { Room } from "@/types/room";
 import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from "lucide-react";
 import {
-  Tooltip,
   TooltipProvider,
-  TooltipTrigger,
-  TooltipContent,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +31,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
 
 interface RoomTableProps {
   rooms: Room[];

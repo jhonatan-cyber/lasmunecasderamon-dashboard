@@ -4,9 +4,9 @@ import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
-import { playNotificationSound, announcePriority } from '@/lib/audioUtils';
+import { playNotificationSound, announcePriority } from '@/lib/utils/audioUtils';
 import { useSSE } from '@/hooks/shared/useSSE';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface NotificationData {
   id: number;

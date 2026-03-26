@@ -1,24 +1,23 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { query } from '@/lib/database/db';
 
-export async function GET() {
-  try {
-    const dbCheck = await query('SELECT 1 as health_check');
-    return NextResponse.json({
-        success: true,
-        data: {
-          status: 'healthy',
-          timestamp: new Date().toISOString(),
-          uptime: process.uptime(),
-          database: { status: 'connected', response: dbCheck },
-          memory: {
-            used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
-          }
-        },
-        message: 'API funcionando correctamente'
-    });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, data: { status: 'unhealthy', error: error.message }, message: 'API no disponible' }, { status: 503 });
-  }
-}
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+
+export const GET = withAppApiWrapper(async () => {
+  const dbCheck = await query('SELECT 1 as health_check');
+  return NextResponse.json({
+    success: true,
+    data: {
+      status: 'healthy',
+      timestamp: getNowInBusinessTimezone(),
+      uptime: process.uptime(),
+      database: { status: 'connected', response: dbCheck },
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      }
+    },
+    message: 'API funcionando correctamente'
+  });
+});

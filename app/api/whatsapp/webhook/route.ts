@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query } from '@/lib/database/db';
 import {
   isApprovalAction,
   normalizeWhatsAppMessage,
   parseAnticipoCommand,
-  parseSolicitudResponseCommand,
-} from '@/lib/whatsappCommandUtils';
-import { processPendingSolicitud } from '@/lib/whatsappPendingActions';
-import { processAnticipoCommand } from '@/lib/whatsappAnticipoActions';
+  parseSolicitudResponseCommand
+} from '@/lib/integrations/whatsappCommandUtils';
+import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
+import { processAnticipoCommand } from '@/lib/integrations/whatsappAnticipoActions';
 
 export async function POST(request: Request) {
   try {
@@ -19,15 +19,22 @@ export async function POST(request: Request) {
 
     const mensaje = normalizeWhatsAppMessage(Body);
     const numeroRemitente = From.replace('whatsapp:', '');
-    const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
+    const adminWhatsApp =
+      process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
 
     if (numeroRemitente !== adminWhatsApp) return NextResponse.json({ message: 'No autorizado' });
 
     // Fetch pending items (logic from original handler)
     const [ventasPendientes, serviciosPendientes, anticiposPendientes] = await Promise.all([
-      query(`SELECT v.id_venta, v.codigo, v.total, COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre, v.fecha_mod FROM ventas v LEFT JOIN clientes c ON v.id_cliente = c.id_cliente WHERE v.estado = 2 ORDER BY v.fecha_mod DESC`),
-      query(`SELECT s.id_servicio, s.codigo, s.total, COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre, s.fecha_mod FROM servicios s LEFT JOIN clientes c ON s.cliente_id = c.id_cliente WHERE s.estado = 2 ORDER BY s.fecha_mod DESC`),
-      query(`SELECT a.id_anticipo as id, a.monto, CONCAT(u.nombre, ' ', u.apellido) as empleado_nombre, u.nick as empleado_nick, a.fecha_crea as fecha_mod FROM anticipos a INNER JOIN usuarios u ON a.usuario_id = u.id_usuario WHERE a.estado = 2 ORDER BY a.fecha_crea DESC`)
+      query(
+        `SELECT v.id_venta, v.codigo, v.total, COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre, v.fecha_mod FROM ventas v LEFT JOIN clientes c ON v.id_cliente = c.id_cliente WHERE v.estado = 2 ORDER BY v.fecha_mod DESC`
+      ),
+      query(
+        `SELECT s.id_servicio, s.codigo, s.total, COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre, s.fecha_mod FROM servicios s LEFT JOIN clientes c ON s.cliente_id = c.id_cliente WHERE s.estado = 2 ORDER BY s.fecha_mod DESC`
+      ),
+      query(
+        `SELECT a.id_anticipo as id, a.monto, CONCAT(u.nombre, ' ', u.apellido) as empleado_nombre, u.nick as empleado_nick, a.fecha_crea as fecha_mod FROM anticipos a INNER JOIN usuarios u ON a.usuario_id = u.id_usuario WHERE a.estado = 2 ORDER BY a.fecha_crea DESC`
+      )
     ]);
 
     const todasLasSolicitudes = [
@@ -42,27 +49,36 @@ export async function POST(request: Request) {
     // Command parsing (logic from original handler)
     const comandoAnticipo = parseAnticipoCommand(mensaje);
     if (comandoAnticipo) {
-        const result = await processAnticipoCommand((anticiposPendientes as any[]).map(a => ({ ...a, tipo: 'anticipo' })), comandoAnticipo.anticipoId, comandoAnticipo.action === 'aprobar', adminWhatsApp);
-        return NextResponse.json({ message: result.message });
+      const result = await processAnticipoCommand(
+        (anticiposPendientes as any[]).map(a => ({ ...a, tipo: 'anticipo' })),
+        comandoAnticipo.anticipoId,
+        comandoAnticipo.action === 'aprobar',
+        adminWhatsApp
+      );
+      return NextResponse.json({ message: result.message });
     }
 
     const respuestaEspecifica = parseSolicitudResponseCommand(mensaje);
     if (respuestaEspecifica) {
-        const { index, action } = respuestaEspecifica;
-        if (index >= 0 && index < todasLasSolicitudes.length) {
-            await processPendingSolicitud(todasLasSolicitudes[index], isApprovalAction(action) ? 'confirmar' : 'rechazar', adminWhatsApp);
-            return NextResponse.json({ message: 'Procesado' });
-        }
+      const { index, action } = respuestaEspecifica;
+      if (index >= 0 && index < todasLasSolicitudes.length) {
+        await processPendingSolicitud(
+          todasLasSolicitudes[index],
+          isApprovalAction(action) ? 'confirmar' : 'rechazar',
+          adminWhatsApp
+        );
+        return NextResponse.json({ message: 'Procesado' });
+      }
     }
 
     if (['si', 'confirmar', 'aprobar'].includes(mensaje) && todasLasSolicitudes.length > 0) {
-        await processPendingSolicitud(todasLasSolicitudes[0], 'confirmar', adminWhatsApp);
-        return NextResponse.json({ message: 'Confirmado' });
+      await processPendingSolicitud(todasLasSolicitudes[0], 'confirmar', adminWhatsApp);
+      return NextResponse.json({ message: 'Confirmado' });
     }
 
     if (['no', 'rechazar'].includes(mensaje) && todasLasSolicitudes.length > 0) {
-        await processPendingSolicitud(todasLasSolicitudes[0], 'rechazar', adminWhatsApp);
-        return NextResponse.json({ message: 'Rechazado' });
+      await processPendingSolicitud(todasLasSolicitudes[0], 'rechazar', adminWhatsApp);
+      return NextResponse.json({ message: 'Rechazado' });
     }
 
     return NextResponse.json({ message: 'Mensaje no reconocido' });

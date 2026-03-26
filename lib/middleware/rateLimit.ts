@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
-import { logger } from '../logger';
+import { logger } from '@/lib/utils/logger';
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 

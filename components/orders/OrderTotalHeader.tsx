@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import React, { useState } from 'react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface OrderTotalHeaderProps {

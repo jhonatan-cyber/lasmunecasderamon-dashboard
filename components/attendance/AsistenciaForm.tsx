@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useForm } from 'react-hook-form'
-import { getTodayDateKey } from '@/lib/calendarUtils'
+import { getTodayDateKey, getCurrentTimeKey } from '@/lib/utils/calendarUtils'
 
 interface AsistenciaFormProps {
   onSubmit: (data: any) => void
@@ -43,7 +43,7 @@ export default function AsistenciaForm({ onSubmit, isOpen, onOpenChange }: Asist
       defaultValues: {
         usuario_id: '',
       fecha: getTodayDateKey(),
-      hora: new Date().toISOString().slice(11, 16),
+      hora: getCurrentTimeKey().slice(0, 5),
       estado: 'presente',
     },
   })

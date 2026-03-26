@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatCurrencyNoDecimals, formatCurrencyCLP } from '@/lib/formatters';
-import { formatLongDateEs, formatShortDmyDateEs, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/calendarUtils';
+import { formatCurrencyNoDecimals, formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatLongDateEs, formatShortDmyDateEs, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/utils/calendarUtils';
 
 // Utilidades para fechas
 const months = [

@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { UserRepository } from '@/lib/repositories/UserRepository';
+import { UserService } from '@/lib/services/UserService';
+import path from 'path';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 
-export async function GET() {
-  try {
-    const data = await UserRepository.getAll();
+export const GET = withAppAuth(
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const anfitrionas = searchParams.get('anfitrionas');
+    const data = await UserRepository.getAll(anfitrionas || undefined);
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error at list users', error: error.message }, { status: 500 });
-  }
-}
+  },
+  { module: 'users', action: 'read' }
+);
 
-export async function POST(request: Request) {
-  try {
+export const POST = withAppAuth(
+  async (request: Request) => {
     const contentType = request.headers.get('content-type') || '';
     let body: any;
     let fotoFilename = 'default.png';
@@ -21,41 +27,52 @@ export async function POST(request: Request) {
       body = Object.fromEntries(formData.entries());
       const foto = formData.get('foto') as File | null;
       if (foto && foto.size > 0) {
-        // Here we would normally save the file and get the filename
-        // For now, we'll assume the repository or a utility handles it if we pass the file
-        // Or we use a placeholder if the integration is not yet complete
-        // But the Repository.create expects a filename
+        const buffer = Buffer.from(await foto.arrayBuffer());
+        const filename = `user_${Date.now()}${path.extname(foto.name)}`;
+        const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
+
+        if (!existsSync(uploadDir)) {
+          await fs.mkdir(uploadDir, { recursive: true });
+        }
+
+        await fs.writeFile(path.join(uploadDir, filename), buffer);
+        fotoFilename = filename;
       }
     } else {
       body = await request.json();
     }
 
-    const id = await UserRepository.create(body, fotoFilename);
-    return NextResponse.json({ success: true, message: 'Usuario creado', id }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error al crear usuario', error: error.message }, { status: 400 });
-  }
-}
+    const data = await UserService.createUser(body, fotoFilename);
+    return NextResponse.json({ success: true, message: 'Usuario creado', data }, { status: 201 });
+  },
+  { module: 'users', action: 'write' }
+);
 
-export async function PATCH(request: Request) {
-  try {
+export const PATCH = withAppAuth(
+  async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const action = searchParams.get('action');
 
     if (!id || !action) {
-      return NextResponse.json({ success: false, message: 'ID y acción son requeridos' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'ID y acción son requeridos' },
+        { status: 400 }
+      );
     }
 
-    await UserRepository.updateStatus(id, action);
-    return NextResponse.json({ success: true, message: `Estado del usuario actualizado correctamente a ${action === 'activate' ? 'activo' : 'inactivo'}` });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error al actualizar el estado del usuario', error: error.message }, { status: 500 });
-  }
-}
+    const data = await UserService.toggleUserStatus(id, action);
+    return NextResponse.json({
+      success: true,
+      message: `Estado del usuario actualizado correctamente`,
+      data
+    });
+  },
+  { module: 'users', action: 'write' }
+);
 
-export async function PUT(request: Request) {
-  try {
+export const PUT = withAppAuth(
+  async (request: Request) => {
     const contentType = request.headers.get('content-type') || '';
     let body: any;
     let id: string | null = null;
@@ -70,24 +87,24 @@ export async function PUT(request: Request) {
       body = jsonBody;
     }
 
-    if (!id) return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
-    
-    await UserRepository.update(id, body);
-    return NextResponse.json({ success: true, message: 'Usuario actualizado' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error al actualizar usuario', error: error.message }, { status: 500 });
-  }
-}
+    if (!id)
+      return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-export async function DELETE(request: Request) {
-  try {
+    const data = await UserService.updateUser(id, body);
+    return NextResponse.json({ success: true, message: 'Usuario actualizado', data });
+  },
+  { module: 'users', action: 'write' }
+);
+
+export const DELETE = withAppAuth(
+  async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
-    
+    if (!id)
+      return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
+
     await UserRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Usuario eliminado' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Error al eliminar usuario', error: error.message }, { status: 500 });
-  }
-}
+  },
+  { module: 'users', action: 'delete' }
+);

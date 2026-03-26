@@ -1,15 +1,21 @@
- 
 'use client';
 
 import { useState } from 'react';
 import { useOvertime } from '@/hooks/personal/useOvertime';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import OvertimeFilters from '@/components/overtime/OvertimeFilters';
 import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
 import OvertimeTable from '@/components/overtime/OvertimeTable';
-import OvertimeFormDialog from '@/components/overtime/OvertimeFormDialog';
+import { OvertimeForm } from '@/components/overtime/OvertimeForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import OvertimeDetailModal from '@/components/overtime/OvertimeDetailModal';
 import Paginate from '@/components/ui/paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -19,7 +25,7 @@ import { Plus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function OvertimePage() {
-  const { overtime, loading, error, getOvertime } = useOvertime();
+  const { overtime, loading, error, getOvertime, createOvertime } = useOvertime();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,6 +69,33 @@ export default function OvertimePage() {
     setShowFormDialog(false);
   };
 
+  const handleOvertimeSubmit = async (data: {
+    usuario_id: string;
+    hora: number;
+    monto: number;
+  }) => {
+    if (!data.usuario_id || !data.hora || !data.monto) {
+      toast.error('Todos los campos son requeridos');
+      return;
+    }
+    if (data.hora <= 0 || data.monto <= 0) {
+      toast.error('Las horas y el monto deben ser mayores a 0');
+      return;
+    }
+    if (data.hora > 24) {
+      toast.error('Las horas no pueden ser mayores a 24');
+      return;
+    }
+    try {
+      await createOvertime({ usuario_id: data.usuario_id, hora: data.hora, monto: data.monto });
+      toast.success('Hora extra creada exitosamente');
+      setShowFormDialog(false);
+      handleRefresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al crear la hora extra');
+    }
+  };
+
   const handleViewDetail = (overtime: { id_usuario: number; usuario: string }) => {
     setSelectedOvertime(overtime);
     setShowDetailModal(true);
@@ -74,7 +107,7 @@ export default function OvertimePage() {
   };
 
   return (
-    <PermissionGuard module="overtime" action="view">
+    <PermissionGuard module='overtime' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
           <div className='flex flex-col'>
@@ -84,7 +117,7 @@ export default function OvertimePage() {
             </p>
           </div>
           <div className='flex gap-2 w-full sm:w-auto'>
-            <PermissionGuard module="overtime" action="create" fallback={null}>
+            <PermissionGuard module='overtime' action='create' fallback={null}>
               <Button
                 size='sm'
                 disabled={cajaLoading || !hasOpenCaja}
@@ -160,11 +193,46 @@ export default function OvertimePage() {
         )}
 
         {/* Modal para agregar nueva hora extra */}
-        <OvertimeFormDialog
-          open={showFormDialog}
-          onClose={handleCloseFormDialog}
-          onSuccess={handleRefresh}
-        />
+        <Dialog open={showFormDialog} onOpenChange={setShowFormDialog}>
+          <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
+            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+              <DialogTitle className='text-center text-lg sm:text-xl lg:text-2xl font-semibold'>
+                Nueva Hora Extra
+              </DialogTitle>
+              <DialogDescription className='sr-only'>Formulario de hora extra</DialogDescription>
+            </DialogHeader>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              <OvertimeForm
+                open={showFormDialog}
+                onSubmit={handleOvertimeSubmit}
+                onCancel={handleCloseFormDialog}
+                hideButtons={true}
+              />
+            </div>
+            <div className='flex-shrink-0 border-t px-6 py-4'>
+              <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
+                <Button
+                  type='button'
+                  onClick={handleCloseFormDialog}
+                  variant='outline'
+                  size='sm'
+                  className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='submit'
+                  form='overtime-form'
+                  variant='outline'
+                  size='sm'
+                  className='rounded-full px-6 hover:scale-105 transition-all duration-200 bg-black text-white w-full sm:w-auto'
+                >
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Modal de detalles */}
         {selectedOvertime && (

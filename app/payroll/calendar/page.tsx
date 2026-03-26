@@ -25,8 +25,8 @@ import Paginate from '@/components/ui/paginate';
 import { useCalendarActions } from '@/hooks/calendario/useCalendarActions';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { getMonthDateRange, toDateKey } from '@/lib/calendarUtils';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { getMonthDateRange, toDateKey } from '@/lib/utils/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 // Utilidades para fechas
 const months = [
@@ -444,14 +444,17 @@ export default function PayrollCalendarPage() {
             return (
               <div
                 key={index}
-                className={`min-h-[80px] p-2 border-r border-b border-gray-200 dark:border-gray-700 ${canViewDetails
+                className={`min-h-[80px] p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
+                  canViewDetails
                     ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
                     : 'cursor-not-allowed opacity-60'
-                  } transition-colors select-none ${isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  } ${isSelected
+                } transition-colors select-none ${
+                  isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                } ${
+                  isSelected
                     ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600'
                     : ''
-                  } ${isDragging && canViewDetails ? 'cursor-grabbing' : ''}`}
+                } ${isDragging && canViewDetails ? 'cursor-grabbing' : ''}`}
                 onMouseDown={e => {
                   e.preventDefault();
                   handleMouseDown(day.date);
@@ -459,12 +462,13 @@ export default function PayrollCalendarPage() {
                 onMouseEnter={() => handleMouseEnter(day.date)}
               >
                 <div
-                  className={`text-sm font-medium mb-1 ${!day.isCurrentMonth
+                  className={`text-sm font-medium mb-1 ${
+                    !day.isCurrentMonth
                       ? 'text-gray-400 dark:text-gray-600'
                       : isCurrentDay
                         ? 'text-blue-600 dark:text-blue-400 font-bold'
                         : 'text-gray-900 dark:text-white'
-                    }`}
+                  }`}
                 >
                   {day.date.getDate()}
                 </div>
@@ -518,14 +522,17 @@ export default function PayrollCalendarPage() {
               return (
                 <div
                   key={index}
-                  className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 ${canViewDetails
+                  className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 ${
+                    canViewDetails
                       ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600'
                       : 'cursor-not-allowed opacity-60'
-                    } transition-colors relative select-none ${isCurrentDay ? 'bg-blue-100 dark:bg-blue-800' : ''
-                    } ${isSelected
+                  } transition-colors relative select-none ${
+                    isCurrentDay ? 'bg-blue-100 dark:bg-blue-800' : ''
+                  } ${
+                    isSelected
                       ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600'
                       : ''
-                    } ${isDragging && canViewDetails ? 'cursor-grabbing' : ''}`}
+                  } ${isDragging && canViewDetails ? 'cursor-grabbing' : ''}`}
                   onMouseDown={e => {
                     e.preventDefault();
                     handleMouseDown(day.date);
@@ -533,12 +540,13 @@ export default function PayrollCalendarPage() {
                   onMouseEnter={() => handleMouseEnter(day.date)}
                 >
                   <div
-                    className={`text-xs ${!day.isCurrentMonth
+                    className={`text-xs ${
+                      !day.isCurrentMonth
                         ? 'text-gray-400 dark:text-gray-600'
                         : isCurrentDay
                           ? 'text-blue-600 dark:text-blue-300 font-bold'
                           : 'text-gray-900 dark:text-white'
-                      }`}
+                    }`}
                   >
                     {day.date.getDate()}
                   </div>
@@ -750,10 +758,11 @@ export default function PayrollCalendarPage() {
                   <div className='space-y-4 text-center'>
                     <div className='flex justify-center gap-4'>
                       <Button
-                        className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${showVentasTable
+                        className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+                          showVentasTable
                             ? 'bg-black text-white hover:bg-gray-800'
                             : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                          }`}
+                        }`}
                         variant={showVentasTable ? 'default' : 'outline'}
                         disabled={isLoading}
                         onClick={() => {
@@ -766,10 +775,11 @@ export default function PayrollCalendarPage() {
                         {isLoading && showVentasTable ? 'Cargando...' : 'Ventas'}
                       </Button>
                       <Button
-                        className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${!showVentasTable
+                        className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+                          !showVentasTable
                             ? 'bg-black text-white hover:bg-gray-800'
                             : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                          }`}
+                        }`}
                         variant={!showVentasTable ? 'default' : 'outline'}
                         disabled={isLoading}
                         onClick={() => {
@@ -864,9 +874,7 @@ export default function PayrollCalendarPage() {
                                       <TableCell className='text-right px-4 py-3'>
                                         $
                                         {formatCurrencyCLP(
-                                          venta.precio ||
-                                          venta.precioHabitacion ||
-                                          0
+                                          venta.precio || venta.precioHabitacion || 0
                                         )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
@@ -878,9 +886,7 @@ export default function PayrollCalendarPage() {
                                       <TableCell className='text-right px-4 py-3'>
                                         $
                                         {formatCurrencyCLP(
-                                          venta.total_comision ||
-                                          venta.comision ||
-                                          0
+                                          venta.total_comision || venta.comision || 0
                                         )}
                                       </TableCell>
                                       <TableCell className='px-4 py-3'>
@@ -903,7 +909,8 @@ export default function PayrollCalendarPage() {
                                       </TableCell>
                                       <TableCell className='px-4 py-3'>
                                         <span
-                                          className={`px-3 py-1 rounded-full text-xs font-medium ${venta.estado === 1
+                                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                            venta.estado === 1
                                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                               : venta.estado === 0
                                                 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
@@ -912,7 +919,7 @@ export default function PayrollCalendarPage() {
                                                   : venta.estado === 3
                                                     ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
                                                     : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                                            }`}
+                                          }`}
                                         >
                                           {venta.estado === 1
                                             ? 'Completado'
@@ -1013,7 +1020,7 @@ export default function PayrollCalendarPage() {
                                       <TableCell className='px-4 py-3'>
                                         {servicio.tiempo}
                                         {servicio.tiempo &&
-                                          !servicio.tiempo.toString().includes('hrs')
+                                        !servicio.tiempo.toString().includes('hrs')
                                           ? ' min'
                                           : ''}
                                       </TableCell>
@@ -1021,16 +1028,14 @@ export default function PayrollCalendarPage() {
                                         $
                                         {formatCurrencyCLP(
                                           servicio.precio_habitacion ||
-                                          servicio.precioHabitacion ||
-                                          0
+                                            servicio.precioHabitacion ||
+                                            0
                                         )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
                                         $
                                         {formatCurrencyCLP(
-                                          servicio.precio_servicio ||
-                                          servicio.precioServicio ||
-                                          0
+                                          servicio.precio_servicio || servicio.precioServicio || 0
                                         )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
@@ -1039,9 +1044,7 @@ export default function PayrollCalendarPage() {
                                       <TableCell className='text-right px-4 py-3'>
                                         $
                                         {formatCurrencyCLP(
-                                          servicio.sub_total ||
-                                          servicio.subtotal ||
-                                          0
+                                          servicio.sub_total || servicio.subtotal || 0
                                         )}
                                       </TableCell>
                                       <TableCell className='text-right px-4 py-3'>
@@ -1070,7 +1073,8 @@ export default function PayrollCalendarPage() {
                                       </TableCell>
                                       <TableCell className='px-4 py-3'>
                                         <span
-                                          className={`px-3 py-1 rounded-full text-xs font-medium ${servicio.estado === 0
+                                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                            servicio.estado === 0
                                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                               : servicio.estado === 1
                                                 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
@@ -1081,7 +1085,7 @@ export default function PayrollCalendarPage() {
                                                     : servicio.estado === 4
                                                       ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
                                                       : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                                            }`}
+                                          }`}
                                         >
                                           {servicio.estado === 0
                                             ? 'Finalizado'
@@ -1141,4 +1145,3 @@ export default function PayrollCalendarPage() {
     </PermissionGuard>
   );
 }
-

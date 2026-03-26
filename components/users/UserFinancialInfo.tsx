@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { User as UserType } from '@/types/user';
 import { Label } from '@radix-ui/react-label';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface UserFinancialInfoProps {
   user: UserType;

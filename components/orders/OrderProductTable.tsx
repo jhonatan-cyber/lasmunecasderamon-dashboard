@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Minus } from "lucide-react";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import { memo } from "react";
 import {
   Tooltip,

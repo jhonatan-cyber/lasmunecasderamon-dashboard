@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useDebounce } from 'use-debounce';
 import {
   Table,
