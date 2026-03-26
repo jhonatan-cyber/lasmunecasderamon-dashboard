@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
-import { logger } from '../logger';
+import { logger } from '@/lib/utils/logger';
 
 export const securityHeaders = {
   'X-Content-Type-Options': 'nosniff',

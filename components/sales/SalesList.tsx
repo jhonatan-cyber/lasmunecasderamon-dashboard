@@ -15,7 +15,7 @@ import { ShoppingCart, Beer, Eye, Ban, MoreVertical } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { AnulacionModal } from './AnulacionModal';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { formatLongDateEs } from '@/lib/calendarUtils';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface SalesListProps {
   loading: boolean;

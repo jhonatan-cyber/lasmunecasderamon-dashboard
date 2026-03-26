@@ -4,7 +4,14 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Category, useCategories } from '@/hooks/productos/useCategories';
 import { toast } from 'sonner';
-import CategoryFormDialog from '@/components/categories/CategoryFormDialog';
+import { CategoryForm } from '@/components/categories/CategoryForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import SortableCategoryCard from '@/components/categories/SortableCategoryCard';
 import { Plus } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
@@ -174,17 +181,16 @@ export default function Categories() {
             </p>
           </div>
           <PermissionGuard module='categories' action='create' fallback={null}>
-            <CategoryFormDialog open={openDialog} setOpen={setOpenDialog} onCreate={handleCreate}>
-              <Button
-                variant='outline'
-                className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
-                type='button'
-                size='sm'
-              >
-                <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                Nueva Categoria
-              </Button>
-            </CategoryFormDialog>
+            <Button
+              variant='outline'
+              className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
+              type='button'
+              size='sm'
+              onClick={() => setOpenDialog(true)}
+            >
+              <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+              Nueva Categoria
+            </Button>
           </PermissionGuard>
         </div>
 
@@ -243,22 +249,103 @@ export default function Categories() {
           </div>
         )}
 
-        {/* Pasa los valores iniciales al formulario de edición */}
+        {/* Diálogo crear categoría */}
+        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+          <DialogContent className='sm:max-w-md w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0'>
+            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+              <DialogTitle className='text-lg sm:text-xl'>Nueva Categoría</DialogTitle>
+              <DialogDescription className='sr-only'>
+                Formulario para crear categoría
+              </DialogDescription>
+            </DialogHeader>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              <CategoryForm
+                open={openDialog}
+                onSubmit={handleCreate}
+                onCancel={() => setOpenDialog(false)}
+                hideButtons={true}
+              />
+            </div>
+            <div className='flex-shrink-0 border-t px-6 py-4'>
+              <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  type='button'
+                  onClick={() => setOpenDialog(false)}
+                  className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='submit'
+                  form='category-form'
+                  size='sm'
+                  variant='outline'
+                  className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200 w-full sm:w-auto'
+                >
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo editar categoría */}
         {editCategory && (
-          <CategoryFormDialog
+          <Dialog
             open={editDialog}
-            setOpen={open => {
+            onOpenChange={open => {
               setEditDialog(open);
               if (!open) setEditCategory(null);
             }}
-            onCreate={handleUpdate}
-            initialValues={{
-              name: editCategory.name,
-              description: editCategory.description
-            }}
           >
-            <span />
-          </CategoryFormDialog>
+            <DialogContent className='sm:max-w-md w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0'>
+              <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+                <DialogTitle className='text-lg sm:text-xl'>Editar Categoría</DialogTitle>
+                <DialogDescription className='sr-only'>
+                  Formulario para editar categoría
+                </DialogDescription>
+              </DialogHeader>
+              <div className='flex-1 overflow-y-auto px-6 py-4'>
+                <CategoryForm
+                  open={editDialog}
+                  onSubmit={handleUpdate}
+                  onCancel={() => {
+                    setEditDialog(false);
+                    setEditCategory(null);
+                  }}
+                  initialValues={{ name: editCategory.name, description: editCategory.description }}
+                  hideButtons={true}
+                />
+              </div>
+              <div className='flex-shrink-0 border-t px-6 py-4'>
+                <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    type='button'
+                    onClick={() => {
+                      setEditDialog(false);
+                      setEditCategory(null);
+                    }}
+                    className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type='submit'
+                    form='category-form'
+                    size='sm'
+                    variant='outline'
+                    className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200 w-full sm:w-auto'
+                  >
+                    Actualizar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </PermissionGuard>

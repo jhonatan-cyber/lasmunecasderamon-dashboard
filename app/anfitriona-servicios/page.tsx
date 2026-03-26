@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import SelectElements from '@/components/ui/select-elements';
 import Paginate from '@/components/ui/paginate';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/calendarUtils';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface Service {
   id_servicio: number;
@@ -240,7 +239,7 @@ export default function AnfitrionaServiciosPage() {
           </div>
           <div>
             <p className='text-sm text-gray-500'>Total Ganado:</p>
-             <p className='text-xl font-bold text-gray-900'>{formatCurrencyCLP(totalEarnings)}</p>
+            <p className='text-xl font-bold text-gray-900'>{formatCurrencyCLP(totalEarnings)}</p>
           </div>
         </div>
       </div>

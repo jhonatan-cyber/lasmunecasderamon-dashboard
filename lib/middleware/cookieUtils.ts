@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Cookies from 'cookies';
-import { logger } from '../logger';
+import { logger } from '@/lib/utils/logger';
 
 export interface CookieOptions {
   httpOnly?: boolean;

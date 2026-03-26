@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import { Overtime } from "@/types/overtime";
 import { User, Clock, DollarSign, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";

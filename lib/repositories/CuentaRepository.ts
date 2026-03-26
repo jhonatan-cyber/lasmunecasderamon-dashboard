@@ -1,11 +1,16 @@
-import { query, generateUUID, withTransaction } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
-import { sendNotificationToAll } from '@/lib/sseService';
+import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
+import { CashRegisterRepository } from './CashRegisterRepository';
+import { BaseRepository } from './BaseRepository';
 
 export class CuentaRepository {
+  private static readonly TABLE = 'cuentas';
+  private static readonly ID_COL = 'id_cuenta';
+
   static async getAll(tipo?: string, estado?: string) {
     if (tipo === 'resumen') {
-      const result = await query<any[]>('SELECT SUM(total) as total_por_cobrar FROM cuentas WHERE estado = 1');
+      const result = await query<any[]>(`SELECT SUM(total) as total_por_cobrar FROM ${this.TABLE} WHERE estado = 1`);
       return { total_por_cobrar: result[0]?.total_por_cobrar || 0 };
     }
 
@@ -21,7 +26,7 @@ export class CuentaRepository {
              h.nombre as habitacion_numero, u.nick as nombre_cajero,
              (SELECT COUNT(*) FROM detalle_cuentas dc WHERE dc.cuenta_id = c.id_cuenta) as total_detalles,
              (SELECT COUNT(*) FROM cuentas_usuarios cu WHERE cu.cuenta_id = c.id_cuenta) as total_usuarios
-      FROM cuentas c
+      FROM ${this.TABLE} c
       LEFT JOIN clientes cl ON c.cliente_id = cl.id_cliente
       LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
       LEFT JOIN usuarios u ON c.created_by = u.id_usuario
@@ -34,12 +39,12 @@ export class CuentaRepository {
       const cuentaRes = await trx<any[]>(`
         SELECT c.*, CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre, h.nombre as habitacion_numero,
                u.nick as nombre_cajero, u.foto as foto_cajero, uc.nick as nombre_cobrador, uc.foto as foto_cobrador
-        FROM cuentas c
+        FROM ${this.TABLE} c
         LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id
         LEFT JOIN habitaciones h ON h.id_habitacion = c.habitacion_id
         LEFT JOIN usuarios u ON u.id_usuario = c.created_by
         LEFT JOIN usuarios uc ON uc.id_usuario = c.cobrado_por
-        WHERE c.id_cuenta = ?
+        WHERE c.${this.ID_COL} = ?
       `, [id]);
 
       if (cuentaRes.length === 0) return null;
@@ -68,10 +73,20 @@ export class CuentaRepository {
     return await withTransaction(async (trx) => {
       const id = generateUUID();
       const now = getNowInBusinessTimezone();
-      await trx(`
-        INSERT INTO cuentas (id_cuenta, codigo, cliente_id, total_comision, habitacion_id, sub_total, total, propina, fecha_crea, estado, tiempo, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-      `, [id, body.codigo, body.cliente_id, body.total_comision, body.habitacion_id || null, body.sub_total, body.total, body.propina || 0, now, body.tiempo || 0, createdBy]);
+      await BaseRepository.insert(trx, this.TABLE, {
+        [this.ID_COL]: id,
+        codigo: body.codigo,
+        cliente_id: body.cliente_id || null,
+        total_comision: body.total_comision,
+        habitacion_id: body.habitacion_id || null,
+        sub_total: body.sub_total,
+        total: body.total,
+        propina: body.propina || 0,
+        fecha_crea: now,
+        estado: 1,
+        tiempo: body.tiempo || 0,
+        created_by: createdBy
+      });
 
       for (const d of body.detalles) {
         const selectedHostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : [null];
@@ -115,11 +130,14 @@ export class CuentaRepository {
           tipoTransaccion: 'cuenta', status: 1
         });
       }
-      return id;
+      return await this.getById(id);
     });
   }
 
-  static async update(id: string, body: any, createdBy: string) {
+  static async updateCuenta(id: string, body: any, createdBy: string) {
+    const bizNow = getNowInBusinessTimezone();
+    const nowObj = new Date(bizNow.replace(' ', 'T'));
+
     await withTransaction(async (trx) => {
       if (body.estado !== undefined) await trx('UPDATE cuentas SET estado = ? WHERE id_cuenta = ?', [body.estado, id]);
       if (body.detalles?.length) {
@@ -128,8 +146,7 @@ export class CuentaRepository {
         const actual = await trx<any[]>('SELECT sub_total, total_comision FROM cuentas WHERE id_cuenta = ?', [id]);
         const finalSub = (actual[0]?.sub_total || 0) + nuevoSubTotal;
         const finalComm = (actual[0]?.total_comision || 0) + nuevaComision;
-        const now = getNowInBusinessTimezone();
-        await trx('UPDATE cuentas SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = ? WHERE id_cuenta = ?', [finalSub, finalComm, finalSub, now, id]);
+        await trx('UPDATE cuentas SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = ? WHERE id_cuenta = ?', [finalSub, finalComm, finalSub, bizNow, id]);
 
         for (const d of body.detalles) {
           const selectedHostesses = (d.hostesses?.length) ? d.hostesses : [null];
@@ -140,7 +157,7 @@ export class CuentaRepository {
              const rem = tComm % selectedHostesses.length;
              for (let i = 0; i < selectedHostesses.length; i++) {
                await trx('INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                 [generateUUID(), id, d.producto_id, d.precio, i === 0 ? d.cantidad : 0, i === 0 ? d.sub_total : 0, base + (i === 0 ? rem : 0), selectedHostesses[i], now, createdBy]);
+                 [generateUUID(), id, d.producto_id, d.precio, i === 0 ? d.cantidad : 0, i === 0 ? d.sub_total : 0, base + (i === 0 ? rem : 0), selectedHostesses[i], bizNow, createdBy]);
              }
           } else {
              const baseQty = Math.floor(d.cantidad / selectedHostesses.length);
@@ -150,7 +167,7 @@ export class CuentaRepository {
                remQty -= qty;
                if (qty > 0 || selectedHostesses.length === 1) {
                  await trx('INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, d.comision || 0, selectedHostesses[i], now, createdBy]);
+                   [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, d.comision || 0, selectedHostesses[i], bizNow, createdBy]);
                }
              }
           }
@@ -165,21 +182,23 @@ export class CuentaRepository {
     if (body.extraTiempo > 0) {
       const c = await query<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
       if (c.length) {
-        const elapsed = Math.floor((Date.now() - new Date(c[0].fecha_crea).getTime()) / 1000);
+        const createTimeObj = new Date(c[0].fecha_crea.toString().replace(' ', 'T'));
+        const elapsed = Math.floor((nowObj.getTime() - createTimeObj.getTime()) / 1000);
         const remaining = Math.max(0, (c[0].tiempo * 60) - elapsed);
         const nuevoTiempo = Math.ceil(remaining / 60) + Number(body.extraTiempo);
-        const now = getNowInBusinessTimezone();
-        await query('UPDATE cuentas SET tiempo = ?, fecha_crea = ? WHERE id_cuenta = ?', [nuevoTiempo, now, id]);
+        await query('UPDATE cuentas SET tiempo = ?, fecha_crea = ? WHERE id_cuenta = ?', [nuevoTiempo, bizNow, id]);
         if (c[0].habitacion_id) await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0)', [c[0].habitacion_id]);
         
         const client = await query<any[]>('SELECT cl.nombre FROM cuentas c LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id WHERE c.id_cuenta = ?', [id]);
         const room = await query<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [c[0].habitacion_id]);
         sendNotificationToAll(remaining > 0 ? 'timer_updated' : 'timer_started', {
           servicioId: id, roomId: c[0].habitacion_id, roomName: room[0]?.nombre || '', duration: nuevoTiempo,
-          startTime: now, codigo: c[0].codigo, clienteNombre: client[0]?.nombre || 'Cliente', tipoTransaccion: 'cuenta', status: 1
+          startTime: bizNow, codigo: c[0].codigo, clienteNombre: client[0]?.nombre || 'Cliente', tipoTransaccion: 'cuenta', status: 1
         });
       }
     }
+
+    return await this.getById(id);
   }
 
   static async cobrar(id: string, body: any, cobradoPor: string) {
@@ -197,10 +216,16 @@ export class CuentaRepository {
         await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [body.montoFinal, cuenta[0].cliente_id]);
       }
 
-      const caja = await trx<any[]>('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1');
-      if (caja.length) {
-        await trx(`UPDATE cajas SET cuenta = cuenta + ?, propina = propina + ?, efectivo = efectivo + ?, tarjeta = tarjeta + ?, transferencia = transferencia + ?, prepago = prepago + ? WHERE id_caja = ?`,
-          [body.montoFinal - body.propinaFinal, body.propinaFinal, body.tipoPago === 'efectivo' ? body.montoFinal : 0, body.tipoPago === 'tarjeta' ? body.montoFinal : 0, body.tipoPago === 'transferencia' ? body.montoFinal : 0, body.tipoPago === 'prepago' ? body.montoFinal : 0, caja[0].id_caja]);
+      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
+      if (idCaja) {
+        await CashRegisterRepository.updateBalances(trx, idCaja, {
+          cuenta: body.montoFinal - body.propinaFinal,
+          propina: body.propinaFinal,
+          efectivo: body.tipoPago === 'efectivo' ? body.montoFinal : 0,
+          tarjeta: body.tipoPago === 'tarjeta' ? body.montoFinal : 0,
+          transferencia: body.tipoPago === 'transferencia' ? body.montoFinal : 0,
+          prepago: body.tipoPago === 'prepago' ? body.montoFinal : 0
+        });
       }
 
       const detalles = await trx<any[]>('SELECT * FROM detalle_cuentas WHERE cuenta_id = ?', [id]);
@@ -219,13 +244,15 @@ export class CuentaRepository {
 
       sendNotificationToAll('timer_stopped', { servicioId: id, status: 0 });
     });
+
+    return await this.getById(id);
   }
 
   static async delete(id: string) {
     await withTransaction(async (trx) => {
-      await trx('DELETE FROM detalle_cuentas WHERE cuenta_id = ?', [id]);
-      await trx('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [id]);
-      await trx('DELETE FROM cuentas WHERE id_cuenta = ?', [id]);
+      await BaseRepository.delete(trx, 'detalle_cuentas', 'cuenta_id', id);
+      await BaseRepository.delete(trx, 'cuentas_usuarios', 'cuenta_id', id);
+      await BaseRepository.delete(trx, this.TABLE, this.ID_COL, id);
     });
   }
 }

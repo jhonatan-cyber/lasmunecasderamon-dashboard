@@ -1,5 +1,5 @@
-import { query, generateUUID } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export class ServiceRequestRepository {
   static async getAll(estado?: string) {

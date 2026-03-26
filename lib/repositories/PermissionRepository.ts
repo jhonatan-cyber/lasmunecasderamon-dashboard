@@ -1,4 +1,5 @@
-import { query, generateUUID } from '@/lib/db';
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export class PermissionRepository {
   static async getAll() {
@@ -20,6 +21,6 @@ export class PermissionRepository {
   }
 
   static async delete(id: string) {
-    await query('UPDATE permissions SET deleted_at = NOW() WHERE id = ?', [id]);
+    await query('UPDATE permissions SET deleted_at = ? WHERE id = ?', [getNowInBusinessTimezone(), id]);
   }
 }

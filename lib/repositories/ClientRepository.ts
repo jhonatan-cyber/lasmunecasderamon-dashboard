@@ -1,61 +1,83 @@
-import { query, generateUUID } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { ClientSchema, type ClientType } from '@/lib/business/schemas';
+import { BaseRepository } from './BaseRepository';
 
 export class ClientRepository {
-  private static mapClientFromDB(row: any) {
-    return {
+  private static mapClientFromDB(row: any): ClientType {
+    return ClientSchema.parse({
       id: row.id_cliente,
       run: row.run,
       name: row.nombre,
       lastName: row.apellido,
       phone: row.telefono,
-      saldo: row.saldo || 0,
-      deuda: row.deuda || 0,
+      saldo: Number(row.saldo || 0),
+      deuda: Number(row.deuda || 0),
       created_at: row.fecha_crea,
-      updated_at: row.fecha_mod,
-      status: row.estado
-    };
+      updated_at: row.fecha_mod || undefined,
+      status: Number(row.estado || 1)
+    });
   }
 
-  static async getAll() {
-    const clients = await query(`
+  static async getAll(): Promise<ClientType[]> {
+    const clients = await query<any[]>(`
       SELECT c.*, 
       COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
       FROM clientes c 
       ORDER BY c.nombre ASC
-    `) as any[];
-    return clients.map(this.mapClientFromDB);
+    `);
+    return clients.map(row => this.mapClientFromDB(row));
   }
 
-  static async getById(id: string) {
-    const clients = await query(`
+  static async getById(id: string): Promise<ClientType | null> {
+    const clients = await query<any[]>(`
       SELECT c.*, 
       COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
       FROM clientes c 
       WHERE c.id_cliente = ?
-    `, [id]) as any[];
+    `, [id]);
     return clients.length > 0 ? this.mapClientFromDB(clients[0]) : null;
   }
 
-  static async create(data: { run?: string, name: string, lastName: string, phone?: string }) {
+  static async getByIdForUpdate(trx: TransactionQuery, id: string): Promise<ClientType | null> {
+    const row = await BaseRepository.findOne<any>(trx, 'clientes', 'id_cliente', id);
+    return row ? this.mapClientFromDB(row) : null;
+  }
+
+  static async updateBalance(trx: TransactionQuery, id: string, amount: number): Promise<void> {
+    await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [amount, id]);
+  }
+
+  static async create(data: Pick<ClientType, 'run' | 'name' | 'lastName' | 'phone'>): Promise<ClientType | null> {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    await query(
-      'INSERT INTO clientes (id_cliente, run, nombre, apellido, telefono, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, data.run || '', data.name, data.lastName, data.phone || '', now]
-    );
-    return id;
+    await BaseRepository.insert(query, 'clientes', {
+      id_cliente: id,
+      run: data.run || '',
+      nombre: data.name,
+      apellido: data.lastName,
+      telefono: data.phone || '',
+      fecha_crea: now
+    });
+    
+    return await this.getById(id);
   }
 
-  static async update(id: string, data: { run: string, name: string, lastName: string, phone: string }) {
+  static async update(id: string, data: Partial<ClientType>): Promise<ClientType | null> {
     const now = getNowInBusinessTimezone();
-    await query(
-      'UPDATE clientes SET run = ?, nombre = ?, apellido = ?, telefono = ?, fecha_mod = ? WHERE id_cliente = ?',
-      [data.run, data.name, data.lastName, data.phone, now, id]
-    );
+    const upData: any = {
+      run: data.run,
+      nombre: data.name,
+      apellido: data.lastName,
+      telefono: data.phone,
+      fecha_mod: now
+    };
+
+    await BaseRepository.update(query, 'clientes', 'id_cliente', id, upData);
+    return await this.getById(id);
   }
 
-  static async delete(id: string) {
-    await query('DELETE FROM clientes WHERE id_cliente = ?', [id]);
+  static async delete(id: string): Promise<void> {
+    await BaseRepository.delete(query, 'clientes', 'id_cliente', id);
   }
 }

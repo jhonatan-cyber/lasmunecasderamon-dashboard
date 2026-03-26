@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useTimer } from '@/contexts/TimerContext';
-import { showSuccessToast, showErrorToast } from '@/lib/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 
 export const useDevolucionResponse = () => {
   const { stopTimerByServicioId, resumeTimerByServicioId } = useTimer();

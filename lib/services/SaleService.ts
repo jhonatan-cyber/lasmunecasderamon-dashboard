@@ -1,0 +1,134 @@
+import { generateUUID, withTransaction } from '@/lib/database/db';
+import { SaleCreateSchema } from '@/lib/business/schemas';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { SaleRepository } from '@/lib/repositories/SaleRepository';
+import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { ClientRepository } from '@/lib/repositories/ClientRepository';
+import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
+import { AuditRepository } from '@/lib/repositories/AuditRepository';
+import { RoomManager } from '@/lib/services/RoomManager';
+
+export class SaleService {
+  /**
+   * Procesa la creación de una venta, incluyendo deducción de prepago,
+   * gestión de conflictos de habitación/anfitrionas y actualización de caja.
+   */
+  static async createSale(body: any, createdBy: string) {
+    const validated = SaleCreateSchema.parse(body);
+    const ventaId = generateUUID();
+    const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
+    const now = getNowInBusinessTimezone();
+
+    const cajaId = await CashRegisterRepository.getCurrentCajaId();
+
+    const result = await withTransaction(async (trx) => {
+      // 1. Deducción de Prepago (Usa método del repositorio)
+      if (validated.metodo_pago === 'prepago' && validated.cliente_id) {
+        const client = await ClientRepository.getByIdForUpdate(trx, validated.cliente_id);
+        
+        if (!client || (client.saldo || 0) < validated.total) {
+          throw new Error('Saldo insuficiente en cuenta de prepago');
+        }
+        
+        await ClientRepository.updateBalance(trx, validated.cliente_id, -validated.total);
+      }
+
+      // 2. Determinar estado inicial (2: en servicio si tiene habitación y tiempo, 1: completado)
+      const estado = (validated.habitacion_id && validated.tiempo > 0) ? 2 : 1;
+
+      // 3. Persistencia de la venta (vía Repository)
+      await SaleRepository.rawInsert(trx, {
+        id_venta: ventaId,
+        codigo,
+        cliente_id: validated.cliente_id,
+        pedido_id: validated.pedido_id,
+        habitacion_id: validated.habitacion_id,
+        metodo_pago: validated.metodo_pago,
+        propina: validated.propina,
+        sub_total: validated.sub_total,
+        total: validated.total,
+        total_comision: validated.total_comision,
+        tiempo: validated.tiempo,
+        caja_id: cajaId,
+        created_by: createdBy,
+        estado,
+        fecha_crea: now
+      });
+
+      // 4. Gestión de Anfitrionas y Conflictos
+      if (validated.usuarios?.length) {
+        if (estado === 2) {
+          await RoomManager.pauseConflictingServices(trx, validated.usuarios, undefined, ventaId);
+        }
+
+        for (const uId of validated.usuarios) {
+          await SaleRepository.insertUserRelation(trx, ventaId, uId);
+        }
+        
+        await RoomManager.updateHostessServiceStatus(trx, validated.usuarios, undefined, ventaId);
+      }
+
+      // 5. Detalles y Comisiones (Lógica de Desglose)
+      for (const d of validated.detalles) {
+        const hostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : (d.hostess_id ? [d.hostess_id] : [null]);
+        const numAnfs = hostesses.length;
+        const totalComm = Math.round(d.comision || 0);
+        const commBase = Math.floor(totalComm / numAnfs);
+        const remainder = totalComm % numAnfs;
+
+        for (let i = 0; i < numAnfs; i++) {
+          const hostessId = hostesses[i];
+          const commPart = commBase + (i === 0 ? remainder : 0);
+          const qtyPart = (i === 0) ? d.cantidad : 0;
+          const subPart = (i === 0) ? (d.sub_total || (d.precio * d.cantidad)) : 0;
+
+          await SaleRepository.insertDetail(trx, {
+            id: generateUUID(),
+            venta_id: ventaId,
+            producto_id: d.producto_id,
+            precio: d.precio,
+            comision: commPart,
+            cantidad: qtyPart,
+            sub_total: subPart,
+            hostess_id: hostessId
+          });
+
+          // Registro de comisiones usando el repositorio especializado
+          if (hostessId && commPart > 0) {
+            await CommissionRepository.createWithDetail(trx, {
+              venta_id: ventaId,
+              usuario_id: hostessId,
+              monto: commPart
+            });
+          }
+        }
+      }
+
+      // 6. Actualización de Caja
+      if (cajaId) {
+        await CashRegisterRepository.updateBalances(trx, cajaId, {
+          venta: validated.total - validated.propina,
+          propina: validated.propina,
+          efectivo: validated.metodo_pago === 'efectivo' ? validated.total : 0,
+          tarjeta: validated.metodo_pago === 'tarjeta' ? validated.total : 0,
+          transferencia: validated.metodo_pago === 'transferencia' ? validated.total : 0,
+          prepago: validated.metodo_pago === 'prepago' ? validated.total : 0,
+          comision: validated.total_comision || 0
+        });
+      }
+
+      // 7. Auditoría de negocio
+      await AuditRepository.log({
+        user_id: createdBy,
+        action: 'CREATE_SALE',
+        resource_type: 'sales',
+        resource_id: ventaId,
+        details: { total: validated.total, metodo_pago: validated.metodo_pago, codigo }
+      }, trx);
+
+      return { id: ventaId, codigo, total: validated.total };
+    });
+
+    return result;
+  }
+}

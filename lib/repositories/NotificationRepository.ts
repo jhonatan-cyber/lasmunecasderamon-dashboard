@@ -1,6 +1,17 @@
-import { query, generateUUID } from '@/lib/db';
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export class NotificationRepository {
+  static async create(data: { usuario_id: string; tipo: string; titulo: string; mensaje: string; estado: number; data?: string }) {
+    const id = generateUUID();
+    const now = getNowInBusinessTimezone();
+    await query(
+      'INSERT INTO notificaciones (id_notificacion, usuario_id, tipo, titulo, mensaje, leida, estado, fecha_crea, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, data.usuario_id, data.tipo, data.titulo, data.mensaje, 0, data.estado, now, data.data || null]
+    );
+    return id;
+  }
+
   static async getHistory(userId: string) {
     return await query(`
       SELECT * FROM notificaciones 

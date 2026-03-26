@@ -45,7 +45,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface ProductTableProps {
   products: Product[];

@@ -1,5 +1,6 @@
-import { query, generateUUID } from '@/lib/db';
-import { getNowInBusinessTimezone } from '@/lib/timezoneService';
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { BaseRepository } from './BaseRepository';
 
 export class GratificacionRepository {
   static async getAll(userId?: string) {
@@ -37,19 +38,30 @@ export class GratificacionRepository {
     const now = getNowInBusinessTimezone();
     if (tableCheck.length === 0) return id;
 
-    await query(`
-      INSERT INTO gratificaciones (id, fecha_hora, usuario_id, monto, descripcion, estado, fecha_crea)
-      VALUES (?, ?, ?, ?, ?, 1, ?)
-    `, [id, now, data.usuario_id, data.monto, data.descripcion || '', now]);
-    return id;
+    await BaseRepository.insert(query, 'gratificaciones', {
+      id,
+      fecha_hora: now,
+      usuario_id: data.usuario_id,
+      monto: data.monto,
+      descripcion: data.descripcion || '',
+      estado: 1,
+      fecha_crea: now
+    });
+    const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
+    return res.length > 0 ? res[0] : null;
   }
 
   static async update(id: string, data: { monto: number, descripcion?: string }) {
     const now = getNowInBusinessTimezone();
-    await query(`UPDATE gratificaciones SET monto = ?, descripcion = ?, fecha_mod = ? WHERE id = ?`, [data.monto, data.descripcion || '', now, id]);
+    await BaseRepository.update(query, 'gratificaciones', 'id', id, {
+      ...data,
+      fecha_mod: now
+    });
+    const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
+    return res.length > 0 ? res[0] : null;
   }
 
   static async delete(id: string) {
-    await query('DELETE FROM gratificaciones WHERE id = ?', [id]);
+    await BaseRepository.delete(query, 'gratificaciones', 'id', id);
   }
 }

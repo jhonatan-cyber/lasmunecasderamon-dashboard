@@ -7,8 +7,8 @@ import { Bed, Clock, DollarSign, Percent, MoreVertical, Edit, Trash2, Check, Pow
 import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { formatCurrencyCLP } from "@/lib/formatters";
-import { formatShortDmyDateEs } from "@/lib/calendarUtils";
+import { formatCurrencyCLP } from "@/lib/utils/formatters";
+import { formatShortDmyDateEs } from "@/lib/utils/calendarUtils";
 
 const RoomCard: React.FC<{
   room: Room;

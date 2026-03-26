@@ -9,11 +9,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { LucideIcon } from 'lucide-react';
-import { UserFormValues } from './UserForm';
+import { type UserFormValues } from '@/hooks/personal/useUserForm';
 
 interface NumberInputFieldProps {
   control: Control<UserFormValues>;
-  name: 'sueldo' | 'aporte' | 'descuento';
+  name: 'salary' | 'contributions' | 'discount';
   label: string;
   icon: LucideIcon;
   formattedValue: string;

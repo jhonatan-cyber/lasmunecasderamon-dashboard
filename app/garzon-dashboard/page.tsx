@@ -1,13 +1,12 @@
- 
 'use client';
 
-import { useState, useEffect } from "react";
-import { useCurrentUser } from "@/hooks/auth/useCurrentUser";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { formatCurrencyCLP } from "@/lib/formatters";
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface DashboardData {
   totalAsistencias: number;
@@ -41,23 +40,23 @@ export default function GarzonDashboard() {
     setLoadingData(true);
     try {
       // Fetch asistencias
-      const asistenciasRes = await fetch("/api/attendance/user");
+      const asistenciasRes = await fetch('/api/attendance/user');
       const asistenciasData = await asistenciasRes.json();
-      
+
       // Fetch anticipos
-      const anticiposRes = await fetch("/api/anticipos/user");
+      const anticiposRes = await fetch('/api/anticipos/user');
       const anticiposData = await anticiposRes.json();
-      
+
       // Fetch propinas
-      const propinasRes = await fetch("/api/tips/user");
+      const propinasRes = await fetch('/api/tips/user');
       const propinasData = await propinasRes.json();
-      
+
       // Fetch horas extras
-      const horasExtrasRes = await fetch("/api/overtime/user");
+      const horasExtrasRes = await fetch('/api/overtime/user');
       const horasExtrasData = await horasExtrasRes.json();
-      
+
       // Fetch pedidos (orders)
-      const pedidosRes = await fetch("/api/orders/user");
+      const pedidosRes = await fetch('/api/orders/user');
       const pedidosData = await pedidosRes.json();
 
       // Calcular totales
@@ -68,28 +67,46 @@ export default function GarzonDashboard() {
       const pedidos = pedidosData.success ? pedidosData.data || [] : [];
 
       // Calcular totales de asistencias (solo estado 1)
-      const asistenciasPendientes = asistencias.filter((asistencia: any) => asistencia.estado === 1);
-      const totalACobrarAsistencias = asistenciasPendientes.reduce((sum: number, asistencia: any) => {
-        const sueldo = asistencia.sueldo || 0;
-        const aporte = asistencia.aporte || 0;
-        const descuento = asistencia.descuento || 0;
-        return sum + (sueldo + aporte - descuento);
-      }, 0);
+      const asistenciasPendientes = asistencias.filter(
+        (asistencia: any) => asistencia.estado === 1
+      );
+      const totalACobrarAsistencias = asistenciasPendientes.reduce(
+        (sum: number, asistencia: any) => {
+          const sueldo = asistencia.sueldo || 0;
+          const aporte = asistencia.aporte || 0;
+          const descuento = asistencia.descuento || 0;
+          return sum + (sueldo + aporte - descuento);
+        },
+        0
+      );
 
       // Calcular totales de anticipos (solo estado 1)
       const anticiposPendientes = anticipos.filter((anticipo: any) => anticipo.estado === 1);
-      const totalAnticiposPendientes = anticiposPendientes.reduce((sum: number, anticipo: any) => sum + (anticipo.monto || 0), 0);
+      const totalAnticiposPendientes = anticiposPendientes.reduce(
+        (sum: number, anticipo: any) => sum + (anticipo.monto || 0),
+        0
+      );
 
       // Calcular totales de propinas (solo estado 1)
       const propinasPendientes = propinas.filter((propina: any) => propina.estado === 1);
-      const totalPropinasPendientes = propinasPendientes.reduce((sum: number, propina: any) => sum + (propina.monto || 0), 0);
+      const totalPropinasPendientes = propinasPendientes.reduce(
+        (sum: number, propina: any) => sum + (propina.monto || 0),
+        0
+      );
 
       // Calcular totales de horas extras (solo estado 1)
       const horasExtrasPendientes = horasExtras.filter((horaExtra: any) => horaExtra.estado === 1);
-      const totalHorasExtrasPendientes = horasExtrasPendientes.reduce((sum: number, horaExtra: any) => sum + (horaExtra.total || 0), 0);
+      const totalHorasExtrasPendientes = horasExtrasPendientes.reduce(
+        (sum: number, horaExtra: any) => sum + (horaExtra.total || 0),
+        0
+      );
 
       // Total a cobrar (asistencias estado 1 + propinas estado 1 + horas extras estado 1 - anticipos estado 1)
-      const totalACobrar = totalACobrarAsistencias + totalPropinasPendientes + totalHorasExtrasPendientes - totalAnticiposPendientes;
+      const totalACobrar =
+        totalACobrarAsistencias +
+        totalPropinasPendientes +
+        totalHorasExtrasPendientes -
+        totalAnticiposPendientes;
 
       setDashboardData({
         totalAsistencias: asistencias.length,
@@ -102,7 +119,6 @@ export default function GarzonDashboard() {
         propinasPendientes: propinasPendientes.length,
         horasExtrasPendientes: horasExtrasPendientes.length
       });
-
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -120,21 +136,21 @@ export default function GarzonDashboard() {
   const { refetch } = useCurrentUser();
   useEffect(() => {
     if (!user?.qr_token) return;
-    
+
     const checkToken = async () => {
       try {
         const res = await fetch(`/api/users/${user.id}`);
         const data = await res.json();
         if (data.success && data.user && data.user.qr_token !== user.qr_token) {
-           refetch(true);
+          refetch(true);
         }
       } catch (e) {
-        console.error("Error polling user status:", e);
+        console.error('Error polling user status:', e);
       }
     };
 
     const interval = setInterval(checkToken, 60000); // Polling cada 60 segundos
-    
+
     // También verificar cuando el usuario vuelve a la pestaña
     window.addEventListener('focus', checkToken);
 
@@ -146,10 +162,10 @@ export default function GarzonDashboard() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+      <div className='p-6 flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
+          <p className='mt-4 text-gray-600'>Cargando...</p>
         </div>
       </div>
     );
@@ -158,10 +174,10 @@ export default function GarzonDashboard() {
   // Verificar que el usuario sea garzon
   if (user?.role?.toLowerCase() !== 'garzon') {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Acceso Denegado</h1>
-          <p className="text-gray-600">No tienes permisos para acceder a esta página.</p>
+      <div className='p-6 flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
+          <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
         </div>
       </div>
     );
@@ -169,123 +185,129 @@ export default function GarzonDashboard() {
 
   const dashboardItems = [
     {
-      title: "Asistencia",
-      description: "Se visualiza la asistencia del usuario",
+      title: 'Asistencia',
+      description: 'Se visualiza la asistencia del usuario',
       icon: Calendar,
-      href: "/garzon-asistencias",
-      color: "text-blue-600",
+      href: '/garzon-asistencias',
+      color: 'text-blue-600',
       count: dashboardData.totalAsistencias
     },
     {
-      title: "Anticipos",
-      description: "Se visualiza la lista de anticipos obtenidos del usuario",
+      title: 'Anticipos',
+      description: 'Se visualiza la lista de anticipos obtenidos del usuario',
       icon: ArrowLeftRight,
-      href: "/garzon-anticipos",
-      color: "text-orange-600",
+      href: '/garzon-anticipos',
+      color: 'text-orange-600',
       count: dashboardData.totalAnticipos
     },
     {
-      title: "Propinas",
-      description: "Se visualiza la lista de propinas obtenidos del usuario",
+      title: 'Propinas',
+      description: 'Se visualiza la lista de propinas obtenidos del usuario',
       icon: DollarSign,
-      href: "/garzon-propinas",
-      color: "text-green-600",
+      href: '/garzon-propinas',
+      color: 'text-green-600',
       count: dashboardData.totalPropinas
     },
     {
-      title: "Horas extras",
-      description: "Se visualiza la lista de horas extras obtenidos del usuario",
+      title: 'Horas extras',
+      description: 'Se visualiza la lista de horas extras obtenidos del usuario',
       icon: Clock,
-      href: "/garzon-horas-extras",
-      color: "text-purple-600",
+      href: '/garzon-horas-extras',
+      color: 'text-purple-600',
       count: dashboardData.totalHorasExtras
     },
     {
-      title: "Calendario",
-      description: "Vista de calendario con todas las actividades",
+      title: 'Calendario',
+      description: 'Vista de calendario con todas las actividades',
       icon: Calendar,
-      href: "/garzon-calendar",
-      color: "text-indigo-600",
+      href: '/garzon-calendar',
+      color: 'text-indigo-600',
       count: 0
     },
     {
-      title: "Pedidos",
-      description: "Se realizan los pedidos",
+      title: 'Pedidos',
+      description: 'Se realizan los pedidos',
       icon: ShoppingCart,
-      href: "/orders",
-      color: "text-red-600",
+      href: '/orders',
+      color: 'text-red-600',
       count: dashboardData.totalPedidos
     }
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className='p-6 space-y-6'>
       {/* Header */}
-      <div className="space-y-4">
-        <div className="text-left">
-          <h1 className="text-2xl font-bold text-gray-900">
+      <div className='space-y-4'>
+        <div className='text-left'>
+          <h1 className='text-2xl font-bold text-gray-900'>
             {user?.name} {user?.lastName} - Garzon
           </h1>
-          <p className="text-gray-600">Panel de control para garzones</p>
+          <p className='text-gray-600'>Panel de control para garzones</p>
         </div>
-        
-                 {/* Total a Cobrar centrado debajo del nombre */}
-         <div className="text-center">
-           <p className="text-sm text-gray-500">TOTAL A COBRAR</p>
-           <div className="text-2xl font-bold text-gray-900">
-             {loadingData ? (
-               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
-             ) : (
+
+        {/* Total a Cobrar centrado debajo del nombre */}
+        <div className='text-center'>
+          <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
+          <div className='text-2xl font-bold text-gray-900'>
+            {loadingData ? (
+              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto'></div>
+            ) : (
               formatCurrencyCLP(dashboardData.totalACobrar)
-              )}
-           </div>
-         </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* QR de Asistencia - New Section */}
       {user?.qr_token && (
-        <Card className="max-w-md mx-auto border-2 border-orange-100 bg-orange-50/30 overflow-hidden">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-lg">Mi Registro de Asistencia</CardTitle>
-            <CardDescription>Escanea este código con tu celular para marcar entrada</CardDescription>
+        <Card className='max-w-md mx-auto border-2 border-orange-100 bg-orange-50/30 overflow-hidden'>
+          <CardHeader className='text-center pb-2'>
+            <CardTitle className='text-lg'>Mi Registro de Asistencia</CardTitle>
+            <CardDescription>
+              Escanea este código con tu celular para marcar entrada
+            </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <div className="bg-white p-3 rounded-xl shadow-sm border border-orange-100">
-                <QRCodeSVG 
-                  value={user.qr_token} 
-                  size={160} 
-                  level="H" 
-                  includeMargin={true}
-                  fgColor="#F97316"
-                  imageSettings={user.foto ? {
-                    src: `/img/users/${user.foto}`,
-                    height: 35,
-                    width: 35,
-                    excavate: true,
-                  } : undefined}
-                />
+          <CardContent className='flex flex-col items-center'>
+            <div className='bg-white p-3 rounded-xl shadow-sm border border-orange-100'>
+              <QRCodeSVG
+                value={user.qr_token}
+                size={160}
+                level='H'
+                includeMargin={true}
+                fgColor='#F97316'
+                imageSettings={
+                  user.foto
+                    ? {
+                        src: `/img/users/${user.foto}`,
+                        height: 35,
+                        width: 35,
+                        excavate: true
+                      }
+                    : undefined
+                }
+              />
             </div>
-            <p className="text-[10px] mt-2 text-orange-400 font-mono select-all uppercase">ID: {user.qr_token}</p>
+            <p className='text-[10px] mt-2 text-orange-400 font-mono select-all uppercase'>
+              ID: {user.qr_token}
+            </p>
           </CardContent>
         </Card>
       )}
 
       {/* Dashboard Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {dashboardItems.map((item) => (
+      <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+        {dashboardItems.map(item => (
           <Link key={item.title} href={item.href}>
-            <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer border-dotted border-2 border-gray-200">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+            <Card className='hover:shadow-lg transition-shadow duration-200 cursor-pointer border-dotted border-2 border-gray-200'>
+              <CardHeader className='pb-3'>
+                <div className='flex items-center justify-between'>
                   <item.icon className={`h-8 w-8 ${item.color}`} />
-                  <span className="text-2xl font-bold text-gray-900">{item.count}</span>
+                  <span className='text-2xl font-bold text-gray-900'>{item.count}</span>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardTitle className="text-xl font-bold text-gray-900 mb-2">
-                  {item.title}
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600">
+                <CardTitle className='text-xl font-bold text-gray-900 mb-2'>{item.title}</CardTitle>
+                <CardDescription className='text-sm text-gray-600'>
                   {item.description}
                 </CardDescription>
               </CardContent>
@@ -296,4 +318,3 @@ export default function GarzonDashboard() {
     </div>
   );
 }
-

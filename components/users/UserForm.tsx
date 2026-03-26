@@ -1,8 +1,3 @@
-/* eslint-disable */
-import { useForm } from 'react-hook-form';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { User as UserType } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,32 +31,11 @@ import {
   Coins,
   Users
 } from 'lucide-react';
-import { useRoles } from '@/hooks/personal/useRoles';
-import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
 import { FormFieldWithIcon } from './FormFieldWithIcon';
 import { ImageUploadField } from './ImageUploadField';
 import { NumberInputField } from './NumberInputField';
-
-const userFormSchema = z.object({
-  run: z.string().min(8, 'El RUN es requerido'),
-  nick: z.string().min(3, 'El nick debe tener al menos 3 caracteres'),
-  nombre: z.string().min(2, 'El nombre es requerido'),
-  apellido: z.string().min(2, 'El apellido es requerido'),
-  direccion: z.string().min(5, 'La dirección es requerida'),
-  telefono: z.string().min(8, 'El teléfono es requerido'),
-  estado_civil: z.string().min(1, 'El estado civil es requerido'),
-  afp: z.string().min(2, 'El establecimiento de aporte es requerido'),
-  sueldo: z.number().min(0, 'El sueldo no puede ser negativo'),
-  aporte: z.number().min(0, 'El aporte no puede ser negativo'),
-  descuento: z.number().min(0, 'El descuento no puede ser negativo'),
-  housing_discount: z.boolean(),
-  rol_id: z.string().min(1, 'El rol es requerido'),
-  correo: z.string().optional(), // Completamente opcional, sin validación de email
-  password: z.string().optional(),
-  foto: z.string().optional(),
-  foto_anterior: z.string().optional()
-});
-export type UserFormValues = z.infer<typeof userFormSchema>;
+import { useUserForm, type UserFormValues } from '@/hooks/personal/useUserForm';
+export type { UserFormValues };
 
 interface UserFormProps {
   user?: UserType;
@@ -78,214 +52,23 @@ export function UserForm({
   isEditMode,
   hideButtons = false
 }: UserFormProps) {
-  const { roles, isLoading: isLoadingRoles } = useRoles();
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const sueldo = useNumberFormatter(user?.salary || 0);
-  const aporte = useNumberFormatter(user?.contributions || 0);
-  const descuento = useNumberFormatter(user?.discount || 0);
-
-  useEffect(() => {}, [roles]);
-
-  // Funciones memoizadas para mapeo de estado civil
-  const mapEstadoCivilToSelect = useCallback((estadoCivil: string | undefined): string => {
-    if (!estadoCivil) return '';
-    const estado = estadoCivil.toLowerCase();
-    if (estado.includes('soltero') || estado.includes('soltera')) return 'Soltero';
-    if (estado.includes('casado') || estado.includes('casada')) return 'Casado';
-    if (estado.includes('divorciado') || estado.includes('divorciada')) return 'Divorciado';
-    if (estado.includes('viudo') || estado.includes('viuda')) return 'Viudo';
-    if (estado.includes('separado') || estado.includes('separada')) return 'Separado';
-    return estadoCivil;
-  }, []);
-
-  const mapSelectToEstadoCivil = useCallback((selectValue: string): string => {
-    const mapping: Record<string, string> = {
-      Soltero: 'Soltero/a',
-      Casado: 'Casado/a',
-      Divorciado: 'Divorciado/a',
-      Viudo: 'Viudo/a',
-      Separado: 'Separado/a'
-    };
-    return mapping[selectValue] || selectValue;
-  }, []);
-
-  const capitalizeWords = useCallback((value: string | undefined) => {
-    if (!value) return '';
-    return value
-      .trim()
-      .split(/\s+/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  }, []);
-
-  // Inicializar valores formateados cuando cambia el usuario
-  useEffect(() => {
-    if (user) {
-      sueldo.setFormattedValue(user.salary ? sueldo.formatNumber(user.salary) : '');
-      aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');
-      descuento.setFormattedValue(user.discount ? descuento.formatNumber(user.discount) : '');
-    }
-     
-  }, [user?.id]);
-
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: useMemo(
-      () => ({
-        run: user?.run || '',
-        nick: user?.nick || '',
-        nombre: user?.name || '',
-        apellido: user?.lastName || '',
-        direccion: user?.address || '',
-        telefono: user?.phone || '',
-        estado_civil: mapEstadoCivilToSelect(user?.maritalStatus),
-        afp: user?.afp || '',
-        sueldo: user?.salary || 0,
-        aporte: user?.contributions || 0,
-        descuento: user?.discount || 0,
-        rol_id: user?.roleId ? user.roleId.toString() : '',
-        correo: '',
-        password: '',
-        foto: user?.foto || '',
-        housing_discount: (user?.discount && user.discount > 0) || false
-      }),
-      [user, mapEstadoCivilToSelect]
-    )
-  });
-
-  const housingDiscount = form.watch('housing_discount');
-  const watchedNick = form.watch('nick');
-  const watchedNombre = form.watch('nombre');
-  const watchedApellido = form.watch('apellido');
-  const watchedDireccion = form.watch('direccion');
-
-  useEffect(() => {
-    if (watchedNick && watchedNick.trim()) {
-      const words = watchedNick.split(' ');
-      const capitalized = words.map(word => 
-        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
-      ).join(' ');
-      if (watchedNick !== capitalized) {
-        form.setValue('nick', capitalized, { shouldValidate: false });
-      }
-    }
-  }, [watchedNick, form]);
-
-  useEffect(() => {
-    if (watchedNombre && watchedNombre.trim()) {
-      const words = watchedNombre.split(' ');
-      const capitalized = words.map(word => 
-        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
-      ).join(' ');
-      if (watchedNombre !== capitalized) {
-        form.setValue('nombre', capitalized, { shouldValidate: false });
-      }
-    }
-  }, [watchedNombre, form]);
-
-  useEffect(() => {
-    if (watchedApellido && watchedApellido.trim()) {
-      const words = watchedApellido.split(' ');
-      const capitalized = words.map(word => 
-        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
-      ).join(' ');
-      if (watchedApellido !== capitalized) {
-        form.setValue('apellido', capitalized, { shouldValidate: false });
-      }
-    }
-  }, [watchedApellido, form]);
-
-  useEffect(() => {
-    if (watchedDireccion) {
-      const capitalized = watchedDireccion.charAt(0).toUpperCase() + watchedDireccion.slice(1);
-      if (watchedDireccion !== capitalized) {
-        form.setValue('direccion', capitalized);
-      }
-    }
-  }, [watchedDireccion, form]);
-
-  const handleFormSubmit = useCallback(
-    async (values: UserFormValues) => {
-      try {
-        setIsSubmitting(true);
-
-        // Verificar que los campos nombre y apellido estén presentes
-        if (!values.nombre || !values.apellido) {
-          form.setError('nombre', {
-            type: 'manual',
-            message: !values.nombre ? 'El nombre es requerido' : ''
-          });
-          form.setError('apellido', {
-            type: 'manual',
-            message: !values.apellido ? 'El apellido es requerido' : ''
-          });
-          return;
-        }
-
-        // Verificar si hay una imagen para enviar
-        if (imageFile) {
-          // Verificar tipo de archivo nuevamente
-          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-          if (!allowedTypes.includes(imageFile.type)) {
-            form.setError('foto', {
-              type: 'manual',
-              message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF)'
-            });
-            return;
-          }
-
-          // Verificar tamaño nuevamente
-          if (imageFile.size > 5 * 1024 * 1024) {
-            form.setError('foto', {
-              type: 'manual',
-              message: 'La imagen no puede superar los 5MB'
-            });
-            return;
-          }
-        } else {
-          console.log('No hay imagen para enviar');
-        }
-
-        const processedValues = { ...values };
-        processedValues.nick = capitalizeWords(processedValues.nick);
-        processedValues.nombre = capitalizeWords(processedValues.nombre);
-        processedValues.apellido = capitalizeWords(processedValues.apellido);
-        processedValues.direccion = capitalizeWords(processedValues.direccion);
-        processedValues.sueldo = Number(sueldo.getNumericValue(sueldo.formattedValue)) || 0;
-        processedValues.aporte = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
-        processedValues.descuento =
-          Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
-
-        processedValues.estado_civil = mapSelectToEstadoCivil(processedValues.estado_civil);
-
-        if (isEditMode && user && processedValues.run !== user.run) {
-          processedValues.password = processedValues.run;
-        }
-
-        if (isEditMode && user && user.foto && !imageFile) {
-          processedValues.foto_anterior = user.foto;
-        }
-
-        await onSubmit(processedValues, imageFile || undefined);
-      } catch (error) {
-        form.setError('root', {
-          type: 'manual',
-          message: 'Error al enviar el formulario. Por favor, inténtelo de nuevo.'
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [imageFile, isEditMode, user, onSubmit, sueldo, aporte, descuento, mapSelectToEstadoCivil, form]
-  );
+  const {
+    form,
+    roles,
+    isLoadingRoles,
+    isSubmitting,
+    setImageFile,
+    sueldo,
+    aporte,
+    descuento,
+    handleFormSubmit
+  } = useUserForm({ user, onSubmit, isEditMode });
 
   return (
     <Form {...form}>
       <form
         id='user-form'
-        onSubmit={form.handleSubmit(handleFormSubmit)}
+        onSubmit={handleFormSubmit}
         className='space-y-4 sm:space-y-6'
       >
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
@@ -323,7 +106,7 @@ export function UserForm({
           {/* Nombre */}
           <FormFieldWithIcon
             control={form.control}
-            name='nombre'
+            name='name'
             label='Nombre'
             placeholder='Nombre(s)'
             icon={User}
@@ -333,7 +116,7 @@ export function UserForm({
           {/* Apellido */}
           <FormFieldWithIcon
             control={form.control}
-            name='apellido'
+            name='lastName'
             label='Apellido'
             placeholder='Apellido(s)'
             icon={FileSignature}
@@ -344,7 +127,7 @@ export function UserForm({
           <div className='lg:col-span-2'>
             <FormFieldWithIcon
               control={form.control}
-              name='direccion'
+              name='address'
               label='Dirección'
               placeholder='Dirección completa'
               icon={MapPin}
@@ -355,7 +138,7 @@ export function UserForm({
           {/* Teléfono */}
           <FormFieldWithIcon
             control={form.control}
-            name='telefono'
+            name='phone'
             label='Teléfono'
             placeholder='Telefono'
             icon={Phone}
@@ -364,7 +147,7 @@ export function UserForm({
           {/* Estado Civil */}
           <FormField
             control={form.control}
-            name='estado_civil'
+            name='maritalStatus'
             render={({ field }) => {
               return (
                 <FormItem>
@@ -470,7 +253,7 @@ export function UserForm({
           {/* Sueldo */}
           <NumberInputField
             control={form.control}
-            name='sueldo'
+            name='salary'
             label='Monto en Sueldo'
             icon={DollarSign}
             formattedValue={sueldo.formattedValue}
@@ -480,7 +263,7 @@ export function UserForm({
           {/* Aporte AFP */}
           <NumberInputField
             control={form.control}
-            name='aporte'
+            name='contributions'
             label='Monto en Aporte AFP'
             icon={Coins}
             formattedValue={aporte.formattedValue}
@@ -511,7 +294,7 @@ export function UserForm({
             {form.watch('housing_discount') && (
               <NumberInputField
                 control={form.control}
-                name='descuento'
+                name='discount'
                 label='Monto en Descuento'
                 icon={DollarSign}
                 formattedValue={descuento.formattedValue}
@@ -549,3 +332,4 @@ export function UserForm({
     </Form>
   );
 }
+

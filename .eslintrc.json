@@ -12,6 +12,7 @@
 
     // React rules
     "react-hooks/rules-of-hooks": "error",
+    "react-hooks/set-state-in-effect": "off",
     "react-hooks/exhaustive-deps": "warn",
     "react/jsx-key": "error",
     "react/jsx-no-duplicate-props": "error",

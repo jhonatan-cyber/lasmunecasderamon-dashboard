@@ -11,7 +11,7 @@ import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useSessionCheck } from '@/hooks/auth/useSessionCheck';
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 
 interface LayoutUser {
   role?: string;

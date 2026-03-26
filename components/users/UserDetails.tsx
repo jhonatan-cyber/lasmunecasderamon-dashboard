@@ -65,7 +65,7 @@ export function UserDetails({ user }: UserDetailsProps) {
           <Avatar className='h-12 w-12 sm:h-16 sm:w-16'>
             <AvatarImage
               src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-              alt={user.name}
+              alt={user.name || user.nick || 'Usuario'}
             />
             <AvatarFallback className='bg-gray-200 text-sm sm:text-lg'>
               {user.name ? user.name[0].toUpperCase() : ''}

@@ -23,7 +23,8 @@ import { useUsers } from '@/hooks/personal/useUsers';
 import useRooms from '@/hooks/habitaciones/useRooms';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
-import { formatCurrencyCLP } from '@/lib/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { CreateCuentaRequest, CreateDetalleCuentaRequest } from '@/types/cuenta';
 import CustomerSelect from '@/components/ui/CustomerSelect';
 import HostessSelect from '@/components/ui/HostessSelect';
@@ -63,14 +64,7 @@ export default function NewCuentaPage() {
   const [loadingProductos, setLoadingProductos] = useState(false);
 
   // Función para generar código automático de 8 dígitos
-  const generateCodigo = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
+  const generateCodigo = generateRandomCode;
 
   // Filtrar anfitrionas (usuarios con rol de anfitriona)
   const anfitrionas = users.filter(
@@ -307,7 +301,9 @@ export default function NewCuentaPage() {
   useEffect(() => {
     if (selectedAnfitrionas.length > maxAnfitrionas) {
       setSelectedAnfitrionas(selectedAnfitrionas.slice(0, maxAnfitrionas));
-      toast.info(`Se ha ajustado la selección al máximo permitido: ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''}`);
+      toast.info(
+        `Se ha ajustado la selección al máximo permitido: ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''}`
+      );
     }
   }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, selectedAnfitrionas]);
 
@@ -562,12 +558,17 @@ export default function NewCuentaPage() {
         {Array.isArray(productos) && productos.length > 0 && (
           <div className='w-full flex justify-center mt-2 mb-2'>
             <div
-              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${hasChampagneProducts
+              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${
+                hasChampagneProducts
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : 'bg-orange-50 text-orange-700 border border-orange-200'
-                }`}
+              }`}
             >
-              {hasChampagneProducts ? <Wine className='mr-1 inline' /> : <Users className='mr-1 inline' />}
+              {hasChampagneProducts ? (
+                <Wine className='mr-1 inline' />
+              ) : (
+                <Users className='mr-1 inline' />
+              )}
               {hasChampagneProducts
                 ? `Champaña de ${formatCurrencyCLP(maxChampagnePrice)}: Puedes seleccionar hasta ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''}`
                 : 'Productos sin champaña: Solo puedes seleccionar 1 anfitriona máximo'}
@@ -647,9 +648,7 @@ export default function NewCuentaPage() {
                       <td className='px-4 py-2'>
                         {formatCurrencyCLP(producto.commission || producto.comision || 0)}
                       </td>
-                      <td className='px-4 py-2'>
-                        {formatCurrencyCLP(producto.subtotal || 0)}
-                      </td>
+                      <td className='px-4 py-2'>{formatCurrencyCLP(producto.subtotal || 0)}</td>
                       <td className='px-4 py-2'>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -702,4 +701,3 @@ export default function NewCuentaPage() {
     </>
   );
 }
-

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { AtSign, Phone, MapPin, User, Calendar, DollarSign, PiggyBank, Home } from 'lucide-react';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface UserInfoDisplayProps {
   user: UserType;
@@ -26,12 +26,12 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
         <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
           <AvatarImage
             src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-            alt={user.name}
+            alt={user.name || user.nick || 'Usuario'}
             asChild
           >
             <Image
               src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-              alt={user.name}
+              alt={user.name || user.nick || 'Usuario'}
               width={40}
               height={40}
               loading="lazy"
@@ -70,21 +70,21 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
       {/* Columna izquierda - Información personal */}
       <div className='space-y-2'>
         <div className='flex items-center gap-2'>
-          <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
-            <AvatarImage
+        <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
+          <AvatarImage
+            src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+            alt={user.name || user.nick || 'Usuario'}
+            asChild
+          >
+            <Image
               src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-              alt={user.name}
-              asChild
-            >
-              <Image
-                src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
-                alt={user.name}
-                width={40}
-                height={40}
-                loading="lazy"
-                className="object-cover"
-              />
-            </AvatarImage>
+              alt={user.name || user.nick || 'Usuario'}
+              width={40}
+              height={40}
+              loading="lazy"
+              className="object-cover"
+            />
+          </AvatarImage>
             <AvatarFallback className='text-xs sm:text-sm'>
               {user.name?.charAt(0) || 'U'}
             </AvatarFallback>

@@ -20,10 +20,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { User, Home, DollarSign, Calendar, Receipt, Users } from "lucide-react";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import { toast } from "sonner";
 import AgregarProductosModal from "./AgregarProductosModal";
-import { formatLongDateEs } from "@/lib/calendarUtils";
+import { formatLongDateEs } from "@/lib/utils/calendarUtils";
 
 interface CuentaDetailModalProps {
   open: boolean;

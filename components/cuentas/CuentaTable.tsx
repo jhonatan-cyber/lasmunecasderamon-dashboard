@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CuentaWithDetails } from "@/types/cuenta";
-import { formatCurrencyNoDecimals } from "@/lib/formatters";
+import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 import { Eye, CreditCard, Trash2, MoreVertical, ShoppingCart, User, Bed, Calendar, DollarSign, Receipt } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ import AgregarProductosModal from "./AgregarProductosModal";
 import CobrarCuentaModal from "./CobrarCuentaModal";
 import { useState } from "react";
 import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
-import { formatShortDmyDateEs } from "@/lib/calendarUtils";
+import { formatShortDmyDateEs } from "@/lib/utils/calendarUtils";
 
 interface CuentaTableProps {
   loading: boolean;

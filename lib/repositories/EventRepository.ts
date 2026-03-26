@@ -1,7 +1,9 @@
-import { query } from '@/lib/db';
+import { query } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export class EventRepository {
   static async getStats(userId: string) {
+    const now = getNowInBusinessTimezone();
     const weeklyIncome = await query<any[]>(`
       SELECT DATE(date) as day, SUM(amount) as total
       FROM (
@@ -9,21 +11,21 @@ export class EventRepository {
         INNER JOIN detalle_servicios DS ON DS.servicio_id = S.id_servicio
         LEFT JOIN comisiones C ON C.servicio_id = S.id_servicio
         LEFT JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision AND DC.usuario_id = DS.usuario_id
-        WHERE DS.usuario_id = ? AND S.fecha_crea >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE DS.usuario_id = ? AND S.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
         UNION ALL
         SELECT DC.fecha_crea as date, DC.comision as amount FROM detalle_comisiones DC
         INNER JOIN comisiones C ON C.id_comision = DC.comision_id
-        WHERE DC.usuario_id = ? AND C.venta_id IS NOT NULL AND DC.fecha_crea >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE DC.usuario_id = ? AND C.venta_id IS NOT NULL AND DC.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
         UNION ALL
         SELECT DP.fecha_crea as date, DP.monto as amount FROM detalle_propinas DP
-        WHERE DP.usuario_id = ? AND DP.fecha_crea >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE DP.usuario_id = ? AND DP.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
         UNION ALL
         SELECT G.fecha_hora as date, G.monto as amount FROM gratificaciones G
-        WHERE G.usuario_id = ? AND G.fecha_hora >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE G.usuario_id = ? AND G.fecha_hora >= DATE_SUB(?, INTERVAL 7 DAY)
       ) as combined
       GROUP BY DATE(date)
       ORDER BY DATE(date) ASC
-    `, [userId, userId, userId, userId]);
+    `, [userId, now, userId, now, userId, now, userId, now]);
 
     const stats = await Promise.all([
       query<any[]>('SELECT COUNT(*) as count FROM detalle_servicios WHERE usuario_id = ?', [userId]),

@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle } from 'lucide-react';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import useAnticipos from '@/hooks/personal/useAnticipos';
-import AdvanceFormDialog from '@/components/advances/AdvanceFormDialog';
+import { AdvanceForm } from '@/components/advances/AdvanceForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import AdvancesTable, { Advance } from '@/components/advances/AdvancesTable';
 import AdvancesFilters from '@/components/advances/AdvancesFilters';
 import Paginate from '@/components/ui/paginate';
@@ -22,6 +28,8 @@ export default function AdvancesPage() {
   const { data: anticipos, loading, fetchAnticipos } = useAnticipos();
   const { hasPermission } = useUserPermissions();
   const [openDialog, setOpenDialog] = useState(false);
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
+  const [advanceSaving, setAdvanceSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
@@ -55,13 +63,46 @@ export default function AdvancesPage() {
       );
       return;
     }
+    setAdvanceError(null);
     setOpenDialog(true);
+  };
+
+  const handleAdvanceSubmit = async (data: { usuario_id: string; monto: string }) => {
+    setAdvanceError(null);
+    if (!data.usuario_id) {
+      setAdvanceError('Selecciona un usuario');
+      return;
+    }
+    if (!data.monto || isNaN(Number(data.monto)) || Number(data.monto) <= 0) {
+      setAdvanceError('Ingresa un monto válido');
+      return;
+    }
+    setAdvanceSaving(true);
+    try {
+      const res = await fetch('/api/anticipos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario_id: data.usuario_id, monto: data.monto })
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        toast.success(result.message || 'Anticipo otorgado correctamente');
+        setOpenDialog(false);
+        fetchAnticipos();
+      } else {
+        setAdvanceError(result.message || 'No se pudo otorgar el anticipo');
+      }
+    } catch {
+      setAdvanceError('Error de red o del servidor');
+    } finally {
+      setAdvanceSaving(false);
+    }
   };
 
   const totalPages = Math.ceil(filteredAdvances.length / rowsPerPage) || 1;
 
   return (
-    <PermissionGuard module="advances" action="view">
+    <PermissionGuard module='advances' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 pt-4 sm:pt-8 px-4 sm:px-8'>
           <div className='flex items-center gap-4'>
@@ -73,73 +114,88 @@ export default function AdvancesPage() {
             </div>
           </div>
           {canCreate && (
-            <AdvanceFormDialog open={openDialog} setOpen={setOpenDialog} onCreated={fetchAnticipos}>
-              <Button
-                onClick={handleOpenDialog}
-                disabled={cajaLoading || !hasOpenCaja}
-                className={`w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 shadow transition-all duration-200 text-sm sm:text-base ${
-                  hasOpenCaja
-                    ? 'bg-black text-white hover:scale-105'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {cajaLoading ? (
-                  <>
-                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2' />
-                    Verificando...
-                  </>
-                ) : hasOpenCaja ? (
-                  <>
-                    <Plus className='mr-2' />
-                    Nuevo Anticipo
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className='mr-2' />
-                    Sin Caja
-                  </>
-                )}
-              </Button>
-            </AdvanceFormDialog>
+            <Button
+              onClick={handleOpenDialog}
+              disabled={cajaLoading || !hasOpenCaja}
+              className={`w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 shadow transition-all duration-200 text-sm sm:text-base ${
+                hasOpenCaja
+                  ? 'bg-black text-white hover:scale-105'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {cajaLoading ? (
+                <>
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2' />
+                  Verificando...
+                </>
+              ) : hasOpenCaja ? (
+                <>
+                  <Plus className='mr-2' />
+                  Nuevo Anticipo
+                </>
+              ) : (
+                <>
+                  <AlertCircle className='mr-2' />
+                  Sin Caja
+                </>
+              )}
+            </Button>
           )}
         </div>
 
-      {/* Mensaje de advertencia cuando no hay caja abierta */}
-      {!cajaLoading && hasOpenCaja === false && (
-        <div className='px-4 sm:px-8'>
-          <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-            <div className='flex items-center'>
-              <AlertCircle className='h-5 w-5 text-yellow-600 mr-2' />
-              <div>
-                <h3 className='text-sm font-medium text-yellow-800'>Caja cerrada</h3>
-                <p className='text-sm text-yellow-700 mt-1'>
-                  No se pueden crear nuevos anticipos sin una caja abierta. Por favor, abra una caja
-                  en el módulo de caja primero.
-                </p>
+        {/* Mensaje de advertencia cuando no hay caja abierta */}
+        {!cajaLoading && hasOpenCaja === false && (
+          <div className='px-4 sm:px-8'>
+            <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
+              <div className='flex items-center'>
+                <AlertCircle className='h-5 w-5 text-yellow-600 mr-2' />
+                <div>
+                  <h3 className='text-sm font-medium text-yellow-800'>Caja cerrada</h3>
+                  <p className='text-sm text-yellow-700 mt-1'>
+                    No se pueden crear nuevos anticipos sin una caja abierta. Por favor, abra una
+                    caja en el módulo de caja primero.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
-        <AdvancesFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-        />
-        <div className='overflow-x-auto'>
-          <AdvancesTable advances={paginatedAdvances} loading={loading} />
-        </div>
-        {totalPages > 1 && (
-          <div className='flex justify-center mt-4 sm:mt-6'>
-            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-          </div>
         )}
+
+        <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
+          <AdvancesFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
+            setPage={setPage}
+          />
+          <div className='overflow-x-auto'>
+            <AdvancesTable advances={paginatedAdvances} loading={loading} />
+          </div>
+          {totalPages > 1 && (
+            <div className='flex justify-center mt-4 sm:mt-6'>
+              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+            </div>
+          )}
+        </div>
       </div>
-      </div>
+
+      {/* Diálogo nuevo anticipo */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className='sm:max-w-md w-[95vw] max-w-[95vw] sm:w-auto'>
+          <DialogHeader>
+            <DialogTitle className='text-lg sm:text-xl'>Nuevo Anticipo</DialogTitle>
+            <DialogDescription className='sr-only'>Formulario de anticipo</DialogDescription>
+          </DialogHeader>
+          <AdvanceForm
+            open={openDialog}
+            onSubmit={handleAdvanceSubmit}
+            onCancel={() => setOpenDialog(false)}
+            isLoading={advanceSaving}
+            error={advanceError}
+          />
+        </DialogContent>
+      </Dialog>
     </PermissionGuard>
   );
 }

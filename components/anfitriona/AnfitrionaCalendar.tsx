@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
-import { formatCurrencyNoDecimals } from '@/lib/formatters';
-import { formatLongDateEs, formatShortDmyDateEs, formatShortTimeEs, formatMonthYearLabel, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/calendarUtils';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { formatLongDateEs, formatShortDmyDateEs, formatShortTimeEs, formatMonthYearLabel, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/utils/calendarUtils';
 
 interface AnfitrionaCalendarProps {
   userId: number;

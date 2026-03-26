@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import path from 'path';
 import fs from 'fs/promises';
 
 const PRODUCT_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'products');
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const PUT = withAppApiWrapper(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const formData = await request.formData();
-    
+
     const fields: any = {};
     formData.forEach((value, key) => {
       if (key !== 'foto') fields[key] = value;
@@ -31,20 +29,13 @@ export async function PUT(
 
     await ProductRepository.update(id, fields, fotoName);
     return NextResponse.json({ success: true, message: 'Producto actualizado' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
-}
+);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const DELETE = withAppApiWrapper(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await ProductRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Producto eliminado' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
-}
+);
