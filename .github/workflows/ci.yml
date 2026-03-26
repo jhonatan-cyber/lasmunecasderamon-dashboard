@@ -10,9 +10,12 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: "ci_build_dummy_secret_for_validation"
+      NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -20,7 +23,7 @@ jobs:
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: 20
           cache: pnpm
@@ -36,6 +39,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          JWT_SECRET: "ci_build_dummy_secret_for_validation"
-          NEXT_PUBLIC_BASE_URL: "http://localhost:3000"

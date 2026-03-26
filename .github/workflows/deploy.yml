@@ -7,6 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: "ci_build_dummy_secret_for_validation"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -35,7 +37,6 @@ jobs:
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-          JWT_SECRET: "ci_build_dummy_secret_for_validation"
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
