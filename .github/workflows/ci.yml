@@ -36,3 +36,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          JWT_SECRET: "ci_build_dummy_secret_for_validation"
+          NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
