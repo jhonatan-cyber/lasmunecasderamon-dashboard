@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      JWT_SECRET: "ci_build_dummy_secret_for_validation"
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

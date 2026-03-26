@@ -11,8 +11,8 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     env:
-      JWT_SECRET: "ci_build_dummy_secret_for_validation"
-      NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
