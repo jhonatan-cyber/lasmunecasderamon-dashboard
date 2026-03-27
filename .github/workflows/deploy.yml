@@ -45,8 +45,8 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          source: ".next/,public/,package.json,pnpm-lock.yaml,next.config.mjs"
-          target: "${{ env.DEPLOY_DIR }}"
+          source: '.next/,public/,package.json,pnpm-lock.yaml,next.config.mjs'
+          target: '${{ env.DEPLOY_DIR }}'
           rm: false
           strip_components: 0
 
@@ -61,7 +61,7 @@ jobs:
             DEPLOY_DIR="${{ env.DEPLOY_DIR }}"
             mkdir -p "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
-            
+
             # Crear/Actualizar archivo .env
             cat <<EOF > .env
             DB_HOST=${{ secrets.DB_HOST }}
@@ -74,29 +74,31 @@ jobs:
             TWILIO_WHATSAPP_NUMBER=${{ secrets.TWILIO_WHATSAPP_NUMBER }}
             ADMIN_WHATSAPP_NUMBER=${{ secrets.ADMIN_WHATSAPP_NUMBER }}
             NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
             CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
             EOF
-            
+
             # Configurar pnpm
             export PNPM_HOME="/root/.local/share/pnpm"
             export PATH="$PNPM_HOME:$PATH"
-            
+
             if ! command -v pnpm &> /dev/null; then
               npm install -g pnpm@latest
             fi
-            
+
             # Instalación limpia (incluye devDependencies porque next.config.mjs requiere plugins de build)
             pnpm install --no-frozen-lockfile
-            
+
             # Limpiar logs anteriores
             pm2 flush
-            
+
             # Reiniciar con PM2 usando un shell wrapper para evitar SyntaxError de pnpm
             pm2 delete lasmunecas || true
             PORT=3000 pm2 start "pnpm start" --name "lasmunecas" --cwd "$DEPLOY_DIR"
             pm2 save
-            
+
             # Verificar estado
             sleep 5
             pm2 status lasmunecas
