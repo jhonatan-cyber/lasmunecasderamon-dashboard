@@ -6,44 +6,35 @@ const CACHE_NAME = 'lasmunecas-pwa-v2';
 const RUNTIME_CACHE = 'runtime-cache-v2';
 const API_CACHE = 'api-cache-v1';
 
-const PRECACHE_URLS = [
-  '/',
-  '/dashboard',
-  '/login',
-  '/manifest.json',
-];
+const PRECACHE_URLS = ['/', '/dashboard', '/login', '/manifest.json'];
 
 // Recursos estáticos a cachear
-const STATIC_ASSETS = [
-  '/img/system/logo1.png',
-  '/img/system/logo2.png',
-  '/favicon.ico',
-];
+const STATIC_ASSETS = ['/img/system/logo1.png', '/img/system/logo2.png', '/favicon.ico'];
 
 // Install event - precache critical resources
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   console.log('[SW] Installing service worker v2...');
   event.waitUntil(
     Promise.all([
-      caches.open(CACHE_NAME).then((cache) => {
+      caches.open(CACHE_NAME).then(cache => {
         console.log('[SW] Precaching critical resources');
         return cache.addAll(PRECACHE_URLS);
       }),
-      caches.open(RUNTIME_CACHE).then((cache) => {
+      caches.open(RUNTIME_CACHE).then(cache => {
         return cache.addAll(STATIC_ASSETS);
-      }),
+      })
     ])
   );
   self.skipWaiting();
 });
 
 // Activate event - clean old caches
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   console.log('[SW] Activating service worker...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
+        cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE && cacheName !== API_CACHE) {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
@@ -56,7 +47,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - advanced caching strategies
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
@@ -106,7 +97,7 @@ async function cacheFirst(request) {
 
   try {
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
+    if (networkResponse.status === 200) {
       const cache = await caches.open(RUNTIME_CACHE);
       cache.put(request, networkResponse.clone());
     }
@@ -120,7 +111,7 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
+    if (networkResponse.status === 200) {
       const cache = await caches.open(RUNTIME_CACHE);
       cache.put(request, networkResponse.clone());
     }
@@ -135,7 +126,7 @@ async function networkFirst(request) {
 async function networkFirstWithCache(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
+    if (networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
       // Cache GET API responses for 5 minutes
       cache.put(request, networkResponse.clone());
@@ -149,12 +140,24 @@ async function networkFirstWithCache(request, cacheName) {
 
 // Helper: Check if static asset
 function isStaticAsset(pathname) {
-  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf'];
+  const staticExtensions = [
+    '.js',
+    '.css',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.svg',
+    '.ico',
+    '.woff',
+    '.woff2',
+    '.ttf'
+  ];
   return staticExtensions.some(ext => pathname.endsWith(ext));
 }
 
 // Push Notifications
-self.addEventListener('push', (event) => {
+self.addEventListener('push', event => {
   if (!event.data) return;
 
   const data = event.data.json();
@@ -177,13 +180,13 @@ self.addEventListener('push', (event) => {
 });
 
 // Notification click handler
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   const url = event.notification.data?.url || '/';
-  
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+    self.clients.matchAll({ type: 'window' }).then(clientList => {
       for (const client of clientList) {
         if (client.url === url && 'focus' in client) {
           return client.focus();
@@ -195,7 +198,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Background Sync
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', event => {
   if (event.tag === 'sync-pending-data') {
     event.waitUntil(syncPendingData());
   }
@@ -204,13 +207,13 @@ self.addEventListener('sync', (event) => {
 async function syncPendingData() {
   const cache = await caches.open(RUNTIME_CACHE);
   const requests = await cache.keys();
-  
+
   // Get pending offline requests and resend them
   console.log('[SW] Background sync: processing pending requests');
 }
 
 // Message handler for cache management
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   if (!event.data) return;
 
   switch (event.data.type) {
