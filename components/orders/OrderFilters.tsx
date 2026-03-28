@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import SearchInput from "@/components/ui/SearchInput";
 import SelectElements from "@/components/ui/select-elements";
 import { Trash2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OrderFiltersProps {
   searchTerm: string;
@@ -57,15 +58,24 @@ export function OrderFilters({
 
           {/* Botón limpiar filtros */}
           <div className="w-full lg:w-auto">
-            <Button
+            <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <Button
               onClick={onClearFilters}
               variant="outline"
               size="icon"
               className="w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm"
-              title="Limpiar filtros"
+              
             >
               <Trash2 className="w-4 h-4" />
             </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl">
+                <p>Limpiar filtros</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           </div>
         </div>
       </CardContent>

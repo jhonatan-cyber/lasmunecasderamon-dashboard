@@ -43,6 +43,12 @@ export interface UserPermissions {
     delete: boolean;
     process: boolean;
   };
+  advances: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+    process: boolean;
+  };
 }
 
 export interface AuthenticatedUser {
@@ -71,7 +77,8 @@ const rolePermissions: Record<string, UserPermissions> = {
     finances: { read: true, write: true, delete: true },
     reports: { read: true, export: true },
     settings: { read: true, write: true },
-    orders: { read: true, write: true, delete: true, process: true }
+    orders: { read: true, write: true, delete: true, process: true },
+    advances: { read: true, write: true, delete: true, process: true }
   },
   cajero: {
     users: { read: false, write: false, delete: false },
@@ -81,7 +88,8 @@ const rolePermissions: Record<string, UserPermissions> = {
     finances: { read: false, write: false, delete: false },
     reports: { read: false, export: false },
     settings: { read: false, write: false },
-    orders: { read: true, write: true, delete: false, process: true }
+    orders: { read: true, write: true, delete: false, process: true },
+    advances: { read: true, write: true, delete: false, process: true }
   },
   garzon: {
     users: { read: false, write: false, delete: false },
@@ -91,7 +99,8 @@ const rolePermissions: Record<string, UserPermissions> = {
     finances: { read: false, write: false, delete: false },
     reports: { read: false, export: false },
     settings: { read: false, write: false },
-    orders: { read: false, write: false, delete: false, process: false }
+    orders: { read: false, write: false, delete: false, process: false },
+    advances: { read: true, write: false, delete: false, process: false }
   },
   anfitriona: {
     users: { read: false, write: false, delete: false },
@@ -101,7 +110,8 @@ const rolePermissions: Record<string, UserPermissions> = {
     finances: { read: false, write: false, delete: false },
     reports: { read: false, export: false },
     settings: { read: false, write: false },
-    orders: { read: false, write: false, delete: false, process: false }
+    orders: { read: false, write: false, delete: false, process: false },
+    advances: { read: true, write: false, delete: false, process: false }
   }
 };
 
@@ -137,7 +147,8 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
       finances: { read: false, write: false, delete: false },
       reports: { read: false, export: false },
       settings: { read: false, write: false },
-      orders: { read: false, write: false, delete: false, process: false }
+      orders: { read: false, write: false, delete: false, process: false },
+      advances: { read: false, write: false, delete: false, process: false }
     };
 
     // Mapear acciones de la BD al formato interno del middleware
