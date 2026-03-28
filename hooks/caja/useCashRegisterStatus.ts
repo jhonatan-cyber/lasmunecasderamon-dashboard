@@ -9,6 +9,7 @@ interface CashRegisterStatus {
     id_caja: number;
     usuario_id_apertura: number;
     fecha_apertura: string;
+    efectivo_en_caja: number;
   } | null;
 }
 
@@ -30,11 +31,15 @@ export function useCashRegisterStatus() {
     window.addEventListener('cajaOpened', handleCajaChanged);
     window.addEventListener('cajaClosed', handleCajaChanged);
     window.addEventListener('ventaRegistrada', handleCajaChanged);
+    window.addEventListener('pagoSueldo', handleCajaChanged);
+    window.addEventListener('anticipoOtorgado', handleCajaChanged);
 
     return () => {
       window.removeEventListener('cajaOpened', handleCajaChanged);
       window.removeEventListener('cajaClosed', handleCajaChanged);
       window.removeEventListener('ventaRegistrada', handleCajaChanged);
+      window.removeEventListener('pagoSueldo', handleCajaChanged);
+      window.removeEventListener('anticipoOtorgado', handleCajaChanged);
     };
   }, [refetch]);
 
@@ -43,6 +48,7 @@ export function useCashRegisterStatus() {
   return {
     hasOpenCaja: statusData.hasOpenCaja,
     cajaInfo: statusData.cajaInfo,
+    efectivoEnCaja: statusData.cajaInfo?.efectivo_en_caja || 0,
     loading: isLoading,
     error,
     refresh: refetch

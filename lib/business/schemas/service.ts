@@ -11,12 +11,19 @@ export const ServiceSchema = z.object({
   total: z.number().min(0),
   tiempo: z.number().min(0).optional(),
   metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago']).optional().default('efectivo'),
+  created_by: z.string().nullable().optional(),
   estado: z.number().optional().default(1),
   fecha_crea: z.string().or(z.date()).optional(),
   fecha_mod: z.string().or(z.date()).optional(),
   habitacion_nombre: z.string().optional(),
   anfitrionas_nombres: z.string().optional(),
   anfitrionas_ids: z.string().optional(),
+  creator_nick: z.string().nullable().optional(),
+  creator_nombre: z.string().nullable().optional(),
+  creator_apellido: z.string().nullable().optional(),
+  creator_foto: z.string().nullable().optional(),
+  waiter_name: z.string().nullable().optional(),
+  waiter_foto: z.string().nullable().optional(),
 });
 
 export const ServiceCreateSchema = z.object({
@@ -30,7 +37,8 @@ export const ServiceCreateSchema = z.object({
   tiempo: z.number().min(1, 'Tiempo es requerido'),
   metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago']).optional().default('efectivo'),
   usuarios: z.array(z.string()).min(1, 'Al menos una anfitriona es requerida'),
-  clientes: z.array(z.string()).optional().default([])
+  clientes: z.array(z.string()).optional().default([]),
+  device_date: z.string().optional()
 });
 
 export type ServiceType = z.infer<typeof ServiceSchema>;

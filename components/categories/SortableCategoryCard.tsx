@@ -5,17 +5,18 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface SortableCategoryCardProps {
   category: {
-    id: number;
+    id: string;
     name: string;
     description: string;
     status: number;
     total_products?: number;
     created_at?: string;
   };
-  onEdit: (category: { id: number; name: string; description: string }) => void;
-  onDelete: (id: number) => void;
-  onActivate: (id: number) => void;
-  onDeactivate: (id: number) => void;
+  onEdit: (category: { id: string; name: string; description: string }) => void;
+  onDelete: (id: string) => void;
+  onActivate: (id: string) => void;
+  onDeactivate: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export default function SortableCategoryCard({
@@ -23,7 +24,8 @@ export default function SortableCategoryCard({
   onEdit,
   onDelete,
   onActivate,
-  onDeactivate
+  onDeactivate,
+  isLoading = false
 }: SortableCategoryCardProps) {
   const {
     attributes,
@@ -61,6 +63,7 @@ export default function SortableCategoryCard({
         canDelete={canDelete}
         canActivate={canActivate}
         canDeactivate={canDeactivate}
+        isLoading={isLoading}
       />
     </div>
   );

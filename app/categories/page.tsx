@@ -13,11 +13,12 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import SortableCategoryCard from '@/components/categories/SortableCategoryCard';
-import { Plus } from 'lucide-react';
-import Paginate from '@/components/ui/paginate';
-import { CategoryFilters } from '@/components/categories/CategoryFilters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { CategoriesSkeleton } from '@/components/ui/skeletons';
+import { Tag, Plus, Wallet, Loader2 } from 'lucide-react';
+import { useCallback } from 'react';
+import Paginate from '@/components/ui/paginate';
+import { CategoryFilters } from '@/components/categories/CategoryFilters';
 import {
   DndContext,
   closestCenter,
@@ -35,7 +36,6 @@ import {
 } from '@dnd-kit/sortable';
 export default function Categories() {
   const {
-    // lista completa
     filteredCategories,
     searchTerm,
     setSearchTerm,
@@ -46,20 +46,20 @@ export default function Categories() {
     deleteCategory,
     activateCategory,
     deactivateCategory,
-    reorderCategories
+    reorderCategories,
+    isMutating
   } = useCategories();
   const [filterStatus, setFilterStatus] = useState('all');
   const [openDialog, setOpenDialog] = useState(false);
   const [editDialog, setEditDialog] = useState(false);
   const [editCategory, setEditCategory] = useState<{
-    id: number;
+    id: string;
     name: string;
     description: string;
   } | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
-  // Configurar sensores para drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -71,13 +71,12 @@ export default function Categories() {
     })
   );
 
-  // Sincronizar categorías locales con la lista completa (no con el subconjunto filtrado)
-  // Además deduplicar por seguridad para evitar `key` duplicadas en el render
   const dedupedCategories = useMemo(() => {
-    const seen = new Set<number>();
+    const seen = new Set<string>();
     return filteredCategories.filter(category => {
-      if (seen.has(category.id)) return false;
-      seen.add(category.id);
+      const idStr = String(category.id);
+      if (seen.has(idStr)) return false;
+      seen.add(idStr);
       return true;
     });
   }, [filteredCategories]);
@@ -87,13 +86,7 @@ export default function Categories() {
     return String(category.status) === filterStatus;
   });
 
-  // Paginación
-  const totalPages = Math.ceil(filteredByStatus.length / pageSize);
-  const paginatedCategories = filteredByStatus.slice((page - 1) * pageSize, page * pageSize);
-
-  if (isLoading) return <CategoriesSkeleton />;
-
-  const handleCreate = async (form: { name: string; description: string }) => {
+  const handleCreate = useCallback(async (form: { name: string; description: string }) => {
     const result = await createCategory({
       name: form.name,
       description: form.description
@@ -104,23 +97,23 @@ export default function Categories() {
     } else {
       toast.error(result.message);
     }
-  };
+  }, [createCategory]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: string) => {
     const result = await deleteCategory(id);
     if (result.success) {
       toast.success(result.message);
     } else {
       toast.error(result.message);
     }
-  };
+  }, [deleteCategory]);
 
-  const handleEdit = (category: { id: number; name: string; description: string }) => {
+  const handleEdit = useCallback((category: { id: string; name: string; description: string }) => {
     setEditCategory(category);
     setEditDialog(true);
-  };
+  }, []);
 
-  const handleUpdate = async (form: { name: string; description: string }) => {
+  const handleUpdate = useCallback(async (form: { name: string; description: string }) => {
     if (!editCategory) return;
 
     const result = await updateCategory(editCategory.id, {
@@ -134,16 +127,15 @@ export default function Categories() {
     } else {
       toast.error(result.message);
     }
-  };
+  }, [editCategory, updateCategory]);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchTerm('');
     setFilterStatus('all');
     setPage(1);
-  };
+  }, [setSearchTerm]);
 
-  // Manejar drag end usando la lista deduplicada actual.
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -159,16 +151,29 @@ export default function Categories() {
     if (!result.success) {
       toast.error(result.message);
     }
-  };
+  }, [dedupedCategories, reorderCategories]);
 
-  // Debug: detectar ids duplicados antes de render
-  const duplicateIds = (() => {
+  const handleActivate = useCallback(async (id: string) => {
+    await activateCategory(id);
+  }, [activateCategory]);
+
+  const handleDeactivate = useCallback(async (id: string) => {
+    await deactivateCategory(id);
+  }, [deactivateCategory]);
+
+  const totalPages = Math.ceil(filteredByStatus.length / pageSize);
+  const paginatedCategories = filteredByStatus.slice((page - 1) * pageSize, page * pageSize);
+
+  const duplicateIds = useMemo(() => {
     const ids = paginatedCategories.map(category => category.id);
     return ids.filter((value, index, array) => array.indexOf(value) !== index);
-  })();
+  }, [paginatedCategories]);
+
   if (duplicateIds.length) {
     console.error('[Categories] duplicate ids present in paginatedCategories:', duplicateIds);
   }
+
+  if (isLoading) return <CategoriesSkeleton />;
 
   return (
     <PermissionGuard module='categories' action='view'>
@@ -183,13 +188,12 @@ export default function Categories() {
           <PermissionGuard module='categories' action='create' fallback={null}>
             <Button
               variant='outline'
-              className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
+              className='flex items-center gap-2 rounded-full bg-black text-white dark:bg-white dark:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 w-full sm:w-auto dark:hover:bg-gray-200'
               type='button'
-              size='sm'
               onClick={() => setOpenDialog(true)}
             >
-              <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-              Nueva Categoria
+              <Plus className='w-4 h-4' />
+              Nueva Categoría
             </Button>
           </PermissionGuard>
         </div>
@@ -217,25 +221,18 @@ export default function Categories() {
                 <SortableCategoryCard
                   key={category.id}
                   category={{
-                    id: category.id,
+                    id: String(category.id),
                     name: category.name ?? '',
                     description: category.description ?? '',
                     status: category.status ?? 1,
                     total_products: category.total_products,
                     created_at: category.created_at
                   }}
-                  onDelete={handleDelete}
-                  onActivate={async id => {
-                    const result = await activateCategory(id);
-                    if (result.success) toast.success(result.message);
-                    else toast.error(result.message);
-                  }}
-                  onDeactivate={async id => {
-                    const result = await deactivateCategory(id);
-                    if (result.success) toast.success(result.message);
-                    else toast.error(result.message);
-                  }}
-                  onEdit={handleEdit}
+                  onDelete={handleDelete as any}
+                  onActivate={handleActivate as any}
+                  onDeactivate={handleDeactivate as any}
+                  onEdit={handleEdit as any}
+                  isLoading={isMutating}
                 />
               ))}
             </div>
@@ -249,16 +246,19 @@ export default function Categories() {
           </div>
         )}
 
-        {/* Diálogo crear categoría */}
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent className='sm:max-w-md w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0'>
-            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-              <DialogTitle className='text-lg sm:text-xl'>Nueva Categoría</DialogTitle>
+          <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+            <DialogHeader className='p-6 pb-2 border-b'>
+              <DialogTitle className='text-xl font-bold flex items-center gap-2'>
+                <Tag className='w-5 h-5 text-purple-600' />
+                <span>Nueva Categoría</span>
+              </DialogTitle>
               <DialogDescription className='sr-only'>
                 Formulario para crear categoría
               </DialogDescription>
             </DialogHeader>
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
+
+            <div className='flex-1 overflow-y-auto p-6'>
               <CategoryForm
                 open={openDialog}
                 onSubmit={handleCreate}
@@ -266,27 +266,31 @@ export default function Categories() {
                 hideButtons={true}
               />
             </div>
-            <div className='flex-shrink-0 border-t px-6 py-4'>
-              <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  type='button'
-                  onClick={() => setOpenDialog(false)}
-                  className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type='submit'
-                  form='category-form'
-                  size='sm'
-                  variant='outline'
-                  className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200 w-full sm:w-auto'
-                >
-                  Guardar
-                </Button>
-              </div>
+
+            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+              <Button
+                variant='outline'
+                onClick={() => setOpenDialog(false)}
+                className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                disabled={isMutating}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type='submit'
+                form='category-form'
+                className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+                disabled={isMutating}
+              >
+                {isMutating ? (
+                  <div className='flex items-center gap-2'>
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                    <span>Guardando...</span>
+                  </div>
+                ) : (
+                  <span>Guardar Categoría</span>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -300,14 +304,18 @@ export default function Categories() {
               if (!open) setEditCategory(null);
             }}
           >
-            <DialogContent className='sm:max-w-md w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0'>
-              <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-                <DialogTitle className='text-lg sm:text-xl'>Editar Categoría</DialogTitle>
+            <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+              <DialogHeader className='p-6 pb-2 border-b'>
+                <DialogTitle className='text-xl font-bold flex items-center gap-2'>
+                  <Tag className='w-5 h-5 text-purple-600' />
+                  <span>Editar Categoría</span>
+                </DialogTitle>
                 <DialogDescription className='sr-only'>
                   Formulario para editar categoría
                 </DialogDescription>
               </DialogHeader>
-              <div className='flex-1 overflow-y-auto px-6 py-4'>
+
+              <div className='flex-1 overflow-y-auto p-6'>
                 <CategoryForm
                   open={editDialog}
                   onSubmit={handleUpdate}
@@ -319,30 +327,34 @@ export default function Categories() {
                   hideButtons={true}
                 />
               </div>
-              <div className='flex-shrink-0 border-t px-6 py-4'>
-                <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    type='button'
-                    onClick={() => {
-                      setEditDialog(false);
-                      setEditCategory(null);
-                    }}
-                    className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type='submit'
-                    form='category-form'
-                    size='sm'
-                    variant='outline'
-                    className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200 w-full sm:w-auto'
-                  >
-                    Actualizar
-                  </Button>
-                </div>
+
+              <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+                <Button
+                  variant='outline'
+                  onClick={() => {
+                    setEditDialog(false);
+                    setEditCategory(null);
+                  }}
+                  className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                  disabled={isMutating}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type='submit'
+                  form='category-form'
+                  className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+                  disabled={isMutating}
+                >
+                  {isMutating ? (
+                    <div className='flex items-center gap-2'>
+                      <Loader2 className='w-4 h-4 animate-spin' />
+                      <span>Actualizando...</span>
+                    </div>
+                  ) : (
+                    <span>Actualizar Cambios</span>
+                  )}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

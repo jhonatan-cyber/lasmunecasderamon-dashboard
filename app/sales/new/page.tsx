@@ -229,7 +229,7 @@ export default function NewSale() {
         // Cargar clientes
         const resClientes = await fetch('/api/clients');
         const dataClientes = await resClientes.json();
-        setClientes(dataClientes);
+        setClientes(dataClientes.data || []);
 
         // Cargar anfitrionas
         const resAnfitrionas = await fetch('/api/users?anfitrionas=1');

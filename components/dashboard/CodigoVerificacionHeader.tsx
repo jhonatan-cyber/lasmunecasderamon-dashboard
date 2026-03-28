@@ -1,10 +1,6 @@
-/* eslint-disable */
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { RotateCcw } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 
 interface CodigoVerificacionHeaderProps {
   userRole?: string;
@@ -12,9 +8,8 @@ interface CodigoVerificacionHeaderProps {
 
 export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderProps) {
   const [codigo, setCodigo] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const fetchCodigo = async (showToast = false) => {
-    setLoading(true);
+
+  const fetchCodigo = async () => {
     try {
       const res = await fetch('/api/codigo/actual', {
         headers: {
@@ -22,32 +17,15 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
         }
       });
       const data = await res.json();
-
       if (data.success) {
         setCodigo(data.codigo);
-        if (showToast) {
-          toast.success('Código actualizado');
-        }
-      } else {
-        if (showToast) {
-          toast.error(data.message || 'Error al obtener el código');
-        }
       }
     } catch (error) {
-      if (showToast) {
-        toast.error('Error de conexión');
-      }
-    } finally {
-      setLoading(false);
+      console.error('Error fetching verification code:', error);
     }
   };
 
-  const handleManualUpdate = () => {
-    fetchCodigo(true);
-  };
-
   useEffect(() => {
-    // Solo ejecutar si es administrador o cajero
     const role = userRole?.toLowerCase();
     if (role === 'administrador' || role === 'cajero') {
       fetchCodigo();
@@ -61,7 +39,6 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
     }
   }, [userRole]);
 
-  // Mostrar para administradores y cajeros
   if (!userRole || (userRole.toLowerCase() !== 'administrador' && userRole.toLowerCase() !== 'cajero')) {
     return null;
   }

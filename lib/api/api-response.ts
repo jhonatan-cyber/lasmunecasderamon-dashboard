@@ -44,6 +44,7 @@ export class ApiResponse {
     return NextResponse.json(
       {
         success: false,
+        message,
         error: {
           code: 'VALIDATION_ERROR',
           message,
@@ -61,6 +62,7 @@ export class ApiResponse {
     return NextResponse.json(
       {
         success: false,
+        message,
         error: {
           code: 'NOT_FOUND',
           message,
@@ -77,12 +79,30 @@ export class ApiResponse {
     return NextResponse.json(
       {
         success: false,
+        message,
         error: {
           code: 'UNAUTHORIZED',
           message,
         },
       },
       { status: 401 }
+    );
+  }
+
+  /**
+   * Error de permisos insuficientes (403 Forbidden)
+   */
+  static forbidden(message: string = 'Permisos insuficientes') {
+    return NextResponse.json(
+      {
+        success: false,
+        message,
+        error: {
+          code: 'FORBIDDEN',
+          message,
+        },
+      },
+      { status: 403 }
     );
   }
 }

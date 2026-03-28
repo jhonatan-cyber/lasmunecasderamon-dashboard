@@ -13,7 +13,7 @@ export class CashRegisterService {
   }
 
   static async updateCaja(id: string, body: any) {
-    const validated = CajaUpdateSchema.omit({ id: true }).parse(body);
+    const validated = CajaUpdateSchema.omit({ id_caja: true }).parse(body);
     return await CashRegisterRepository.update(id, validated);
   }
 }

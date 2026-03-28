@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,11 +12,12 @@ import { CajaCard } from '@/components/caja/CajaCard';
 import { CajaFormDialog } from '@/components/caja/CajaFormDialog';
 import { CerrarCajaDialog } from '@/components/caja/CerrarCajaDialog';
 import { RetiroDineroDialog } from '@/components/caja/RetiroDineroDialog';
-import { CajaDetails } from '@/components/caja/CajaDetails';
+import dynamic from 'next/dynamic';
+const CajaDetails = dynamic(() => import('@/components/caja/CajaDetails'), { ssr: false });
 import { CajaFilters } from '@/components/caja/CajaFilters';
 import { CashRegisterStatsCard, CashRegisterDetailedStats } from '@/components/cash-register';
 import { CajaWithUser, CajaCreate, CajaCierre, CajaRetiro } from '@/types/caja';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Wallet, Plus, Info } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CashRegister() {
@@ -53,10 +53,7 @@ export default function CashRegister() {
   });
 
   const handleCreateCaja = async (data: CajaCreate) => {
-    // Verificar si puede abrir cajas
-    if (!canOpenCaja) {
-      return;
-    }
+    if (!canOpenCaja) return;
     try {
       await createCaja(data);
     } catch (error) {
@@ -78,10 +75,7 @@ export default function CashRegister() {
   };
 
   const handleCloseCaja = (caja: CajaWithUser) => {
-    // Verificar si puede cerrar cajas
-    if (!canCloseCaja) {
-      return;
-    }
+    if (!canCloseCaja) return;
     setSelectedCaja(caja);
     setShowCerrarDialog(true);
   };
@@ -95,7 +89,6 @@ export default function CashRegister() {
     try {
       const success = await retirarDinero(data);
       if (success) {
-        // Actualizar los datos después del retiro exitoso
         getCajas();
         getResumen();
       }
@@ -116,7 +109,6 @@ export default function CashRegister() {
     getResumen();
   };
 
-  // Refrescar automáticamente cuando en otra parte se dispare el evento de cierre/apertura
   useEffect(() => {
     const refreshFromEvent = () => {
       getCajas();
@@ -132,89 +124,87 @@ export default function CashRegister() {
 
   if (error) {
     return (
-      <div className='p-4 sm:p-6'>
-        <div className='flex items-center justify-center h-64'>
-          <div className='text-center'>
-            <AlertTriangle
-              className='h-8 sm:h-12 w-8 sm:w-12 text-red-500 mx-auto mb-4'
-            />
-            <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>Error al cargar datos</h3>
-            <p className='text-sm sm:text-base text-gray-600 mb-4'>{error}</p>
-            <Button
-              onClick={handleRefresh}
-              size='sm'
-              variant='outline'
-              className='rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base'
-            >
-              <RotateCcw className='h-4 w-4 mr-2' />
-              Reintentar
-            </Button>
+      <div className='p-6 min-h-[60vh] flex items-center justify-center'>
+        <Card className="max-w-md w-full border-none shadow-2xl bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] p-8 text-center">
+          <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className='h-10 w-10 text-rose-500' />
           </div>
-        </div>
+          <h3 className='text-2xl font-black text-slate-900 dark:text-white mb-2'>¡Ups! Algo salió mal</h3>
+          <p className='text-slate-500 dark:text-slate-400 mb-8'>{error}</p>
+          <Button
+            onClick={handleRefresh}
+            className='w-full h-12 rounded-2xl bg-black text-white hover:scale-[1.02] active:scale-95 transition-all font-bold'
+          >
+            <RotateCcw className='h-4 w-4 mr-2' />
+            Reintentar Carga
+          </Button>
+        </Card>
       </div>
     );
   }
 
+  const openCajasCount = cajas.filter(c => c.estado === 1).length;
+
   return (
     <PermissionGuard module="cash_register" action="view">
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
-        <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
-            {isCajero ? 'Mi Caja Registradora' : 'Control de Cajas'}
-          </h1>
-          <p className='text-sm sm:text-base text-gray-600'>
-            {isCajero 
-              ? 'Gestiona tu caja registradora actual' 
-              : 'Gestiona las cajas registradoras y transacciones'
-            }
-          </p>
+      <div className='p-4 sm:p-6 lg:p-10 space-y-8 mt-4 sm:mt-6 lg:mt-10 max-w-[1600px] mx-auto'>
+        {/* Header Section */}
+        <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
+          <div className="space-y-1">
+            <h1 className='text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 dark:text-white'>
+              {isCajero ? 'Mi Caja' : 'Control de Cajas'}
+            </h1>
+            <p className='text-slate-500 font-medium'>
+              {isCajero 
+                ? 'Monitorea y gestiona tus transacciones diarias' 
+                : 'Administración centralizada de flujos de efectivo'
+              }
+            </p>
+          </div>
+          
+          <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto'>
+            {openCajasCount > 0 ? (
+              <div className='flex items-center gap-3 pl-4 pr-6 py-3 bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/10 rounded-2xl shadow-sm animate-pulse'>
+                <div className="bg-amber-100 dark:bg-amber-500/20 p-2 rounded-xl">
+                  <Info className='h-4 w-4 text-amber-600' />
+                </div>
+                <span className='text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-tight'>
+                  {openCajasCount} caja{openCajasCount > 1 ? 's' : ''} abierta{openCajasCount > 1 ? 's' : ''}
+                </span>
+              </div>
+            ) : (
+              canOpenCaja && (
+                <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
+              )
+            )}
+          </div>
         </div>
-        
-        <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto'>
-          {cajas.filter(c => c.estado === 1).length > 0 ? (
-            <div className='flex items-center gap-2 px-3 sm:px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-md'>
-              <AlertTriangle className='h-4 w-4 text-yellow-600 flex-shrink-0' />
-              <span className='text-xs sm:text-sm text-yellow-800'>
-                Hay {cajas.filter(c => c.estado === 1).length} caja
-                {cajas.filter(c => c.estado === 1).length > 1 ? 's' : ''} abierta
-                {cajas.filter(c => c.estado === 1).length > 1 ? 's' : ''}. Cierre la caja actual
-                antes de abrir una nueva.
-              </span>
+
+        {/* Stats Section */}
+        <CashRegisterStatsCard isCajero={isCajero} />
+
+        {/* Main Content Sections */}
+        <Tabs defaultValue='cajas' className='space-y-8'>
+          {!isCajero && (
+            <div className='flex justify-center w-full'>
+              <TabsList className='inline-flex p-1 bg-transparent rounded-3xl'>
+                <TabsTrigger
+                  value='cajas'
+                  className='rounded-2xl px-8 py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-xl transition-all'
+                >
+                  Listado de Cajas
+                </TabsTrigger>
+                <TabsTrigger
+                  value='resumen'
+                  className='rounded-2xl px-8 py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-xl transition-all'
+                >
+                  Análisis Global
+                </TabsTrigger>
+              </TabsList>
             </div>
-          ) : (
-            // Mostrar botón de crear caja si tiene permisos
-            canOpenCaja && <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
           )}
-        </div>
-      </div>
 
-      {/* Tarjetas de estadísticas */}
-      <CashRegisterStatsCard isCajero={isCajero} />
-
-      {/* Contenido principal */}
-      <Tabs defaultValue='cajas' className='space-y-4 sm:space-y-6'>
-        {!isCajero && (
-          <TabsList className='grid w-full grid-cols-2'>
-            <TabsTrigger
-              value='cajas'
-              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base'
-            >
-              Cajas Registradoras
-            </TabsTrigger>
-            <TabsTrigger
-              value='resumen'
-              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base'
-            >
-              Resumen
-            </TabsTrigger>
-          </TabsList>
-        )}
-
-        {/* Para cajeros, solo mostrar el contenido de cajas sin pestañas */}
-        {isCajero ? (
-          <div className='space-y-4 sm:space-y-6'>
-            {/* Solo mostrar filtros si no es cajero */}
+          <TabsContent value='cajas' className='space-y-6 outline-none'>
             {!isCajero && (
               <CajaFilters
                 searchTerm={searchTerm}
@@ -226,36 +216,39 @@ export default function CashRegister() {
             )}
 
             {loading ? (
-              <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+              <div className='grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className='shadow-sm'>
-                    <CardHeader className='pb-4'>
-                      <Skeleton className='h-6 w-32' />
-                      <Skeleton className='h-4 w-24' />
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                      <Skeleton className='h-4 w-full' />
-                      <Skeleton className='h-4 w-3/4' />
-                      <Skeleton className='h-4 w-1/2' />
-                      <Skeleton className='h-8 w-full' />
-                    </CardContent>
+                  <Card key={i} className='border border-slate-100 dark:border-white/10 shadow-sm bg-white dark:bg-slate-900/40 rounded-[2rem] overflow-hidden p-8 space-y-6'>
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <Skeleton className='h-6 w-32 rounded-lg' />
+                        <Skeleton className='h-4 w-24 rounded-lg' />
+                      </div>
+                      <Skeleton className='h-8 w-20 rounded-full' />
+                    </div>
+                    <Skeleton className='h-24 w-full rounded-2xl' />
+                    <Skeleton className='h-12 w-full rounded-2xl' />
                   </Card>
                 ))}
               </div>
             ) : filteredCajas.length === 0 ? (
-              <div className='text-center py-8 sm:py-12'>
-                <AlertTriangle
-                  className='h-8 sm:h-12 w-8 sm:w-12 text-gray-400 mx-auto mb-4'
-                />
-                <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>
-                  No tienes una caja abierta
-                </h3>
-                <p className='text-sm sm:text-base text-gray-600'>
-                  Solicita al administrador que abra una caja para ti
-                </p>
+              <div className='flex flex-col items-center justify-center py-20 text-center space-y-6'>
+                <div className='w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center'>
+                  <Wallet className='h-12 w-12 text-slate-300' />
+                </div>
+                <div className="space-y-2">
+                  <h3 className='text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter'>
+                    {searchTerm || filterStatus !== 'all' ? 'Sin coincidencias' : 'Sin cajas activas'}
+                  </h3>
+                  <p className='text-slate-500 font-medium max-w-sm mx-auto'>
+                    {searchTerm || filterStatus !== 'all'
+                      ? 'No encontramos lo que buscas con los filtros actuales.'
+                      : 'Todavía no hay registros en el sistema. ¡Abre una nueva caja para empezar!'}
+                  </p>
+                </div>
               </div>
             ) : (
-              <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+              <div className='grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3'>
                 {filteredCajas.map(caja => (
                   <CajaCard
                     key={caja.id_caja}
@@ -270,98 +263,34 @@ export default function CashRegister() {
                 ))}
               </div>
             )}
-          </div>
-        ) : (
-          <>
-            <TabsContent value='cajas' className='space-y-4 sm:space-y-6'>
-              {/* Solo mostrar filtros si no es cajero */}
-              {!isCajero && (
-                <CajaFilters
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  filterStatus={filterStatus}
-                  onStatusChange={setFilterStatus}
-                  onClearFilters={handleClearFilters}
-                />
-              )}
+          </TabsContent>
 
-              {loading ? (
-                <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-                  {[...Array(6)].map((_, i) => (
-                    <Card key={i} className='shadow-sm'>
-                      <CardHeader className='pb-4'>
-                        <Skeleton className='h-6 w-32' />
-                        <Skeleton className='h-4 w-24' />
-                      </CardHeader>
-                      <CardContent className='space-y-4'>
-                        <Skeleton className='h-4 w-full' />
-                        <Skeleton className='h-4 w-3/4' />
-                        <Skeleton className='h-4 w-1/2' />
-                        <Skeleton className='h-8 w-full' />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : filteredCajas.length === 0 ? (
-                <div className='text-center py-8 sm:py-12'>
-                  <AlertTriangle
-                    className='h-8 sm:h-12 w-8 sm:w-12 text-gray-400 mx-auto mb-4'
-                  />
-                  <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>
-                    {searchTerm || filterStatus !== 'all'
-                      ? 'No se encontraron cajas'
-                      : 'No hay cajas registradas'}
-                  </h3>
-                  <p className='text-sm sm:text-base text-gray-600'>
-                    {searchTerm || filterStatus !== 'all'
-                      ? 'Intenta ajustar los filtros de búsqueda'
-                      : 'Comienza creando una nueva caja'}
-                  </p>
-                </div>
-              ) : (
-                <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-                  {filteredCajas.map(caja => (
-                    <CajaCard
-                      key={caja.id_caja}
-                      caja={caja}
-                      onViewDetails={handleViewDetails}
-                      onCloseCaja={handleCloseCaja}
-                      onRetirar={handleRetirar}
-                      canCloseCaja={canCloseCaja}
-                      canRetirar={canWithdrawMoney}
-                      canViewDetails={canViewDetails}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+          <TabsContent value='resumen' className='outline-none'>
+            <CashRegisterDetailedStats />
+          </TabsContent>
+        </Tabs>
 
-            <TabsContent value='resumen' className='space-y-4 sm:space-y-6'>
-              <CashRegisterDetailedStats />
-            </TabsContent>
-          </>
+        {/* Dialogs */}
+        <CerrarCajaDialog
+          caja={selectedCaja}
+          open={showCerrarDialog}
+          onOpenChange={setShowCerrarDialog}
+          onCerrarCaja={handleCerrarCaja}
+          loading={loading}
+        />
+
+        <RetiroDineroDialog
+          caja={selectedCaja}
+          open={showRetiroDialog}
+          onOpenChange={setShowRetiroDialog}
+          onRetirar={handleRetirarDinero}
+          loading={loading}
+        />
+
+        {showDetails && selectedCaja && (
+          <CajaDetails caja={selectedCaja} open={showDetails} onOpenChange={setShowDetails} />
         )}
-      </Tabs>
-
-      {/* Diálogos */}
-      <CerrarCajaDialog
-        caja={selectedCaja}
-        open={showCerrarDialog}
-        onOpenChange={setShowCerrarDialog}
-        onCerrarCaja={handleCerrarCaja}
-        loading={loading}
-      />
-
-      <RetiroDineroDialog
-        caja={selectedCaja}
-        open={showRetiroDialog}
-        onOpenChange={setShowRetiroDialog}
-        onRetirar={handleRetirarDinero}
-        loading={loading}
-      />
-
-      <CajaDetails caja={selectedCaja} open={showDetails} onOpenChange={setShowDetails} />
-    </div>
+      </div>
     </PermissionGuard>
   );
 }

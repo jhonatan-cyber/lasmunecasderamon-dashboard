@@ -29,23 +29,24 @@ import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface CategoryCardProps {
   category: {
-    id: number;
+    id: string;
     name: string;
     description: string;
     status: number;
     total_products?: number;
     created_at?: string;
   };
-  onEdit: (category: { id: number; name: string; description: string }) => void;
-  onDelete: (id: number) => void;
-  onActivate: (id: number) => void;
-  onDeactivate: (id: number) => void;
+  onEdit: (category: { id: string; name: string; description: string }) => void;
+  onDelete: (id: string) => void;
+  onActivate: (id: string) => void;
+  onDeactivate: (id: string) => void;
   isDragging?: boolean;
   dragHandleProps?: any;
   canEdit?: boolean;
   canDelete?: boolean;
   canActivate?: boolean;
   canDeactivate?: boolean;
+  isLoading?: boolean;
 }
 
 const statusColors = {
@@ -59,7 +60,7 @@ const statusLabels = {
 };
 
 // Función para generar un color basado en el nombre de la categoría
-const generateColor = (name: string, id: number) => {
+const generateColor = (name: string, id: string) => {
   // Paleta de colores vibrantes y variados
   const colors = [
     // Azules
@@ -137,7 +138,12 @@ const generateColor = (name: string, id: number) => {
   ];
 
   // Usar el ID para seleccionar un color de manera determinística
-  const colorIndex = (id * name.length) % colors.length;
+  let hash = 0;
+  const strId = String(id);
+  for (let i = 0; i < strId.length; i++) {
+    hash = strId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = Math.abs(hash) % colors.length;
   return colors[colorIndex];
 };
 
@@ -152,7 +158,8 @@ export default function CategoryCard({
   canEdit = true,
   canDelete = true,
   canActivate = true,
-  canDeactivate = true
+  canDeactivate = true,
+  isLoading = false
 }: CategoryCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -358,6 +365,7 @@ export default function CategoryCard({
           onOpenChange={setShowDeleteModal}
           onConfirm={handleConfirmDelete}
           categoryName={category.name}
+          isLoading={isLoading}
         />
       </CardBody>
     </CardContainer>

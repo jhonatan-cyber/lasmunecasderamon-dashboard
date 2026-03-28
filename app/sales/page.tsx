@@ -13,7 +13,7 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 import {
   SalesHeader,
-  SalesStatsCard,
+  SalesStatsCards,
   SalesFilters,
   SalesList,
   SalesDetailModal,
@@ -22,6 +22,7 @@ import {
 } from '@/components/sales';
 import {
   filterVentas,
+  sortVentas,
   solicitarAnulacionVenta,
   getVentaDetails,
   formatCurrency,
@@ -47,6 +48,8 @@ export default function Sales() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('fecha_crea');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleRefresh = useCallback(async () => {
     await getVentas();
@@ -81,14 +84,17 @@ export default function Sales() {
   }, [setTimerRefreshCallback, handleRefresh]);
 
   const filteredVentas = filterVentas(ventas, searchTerm, statusFilter, paymentFilter);
+  const sortedAndFilteredVentas = sortVentas(filteredVentas, sortBy, sortOrder);
 
-  const totalPages = Math.ceil(filteredVentas.length / rowsPerPage);
-  const paginatedVentas = filteredVentas.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages = Math.ceil(sortedAndFilteredVentas.length / rowsPerPage);
+  const paginatedVentas = sortedAndFilteredVentas.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setPaymentFilter('all');
+    setSortBy('fecha_crea');
+    setSortOrder('desc');
     setRowsPerPage(5);
     setPage(1);
   };
@@ -151,7 +157,7 @@ export default function Sales() {
 
         <CajaStatusBanner />
 
-        <SalesStatsCard />
+        <SalesStatsCards ventas={ventas} />
 
         <SalesFilters
           searchTerm={searchTerm}
@@ -160,6 +166,10 @@ export default function Sales() {
           setFilterStatus={setStatusFilter}
           filterMetodoPago={paymentFilter}
           setFilterMetodoPago={setPaymentFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           onClearFilters={handleClearFilters}
           rowsPerPage={rowsPerPage}
           setRowsPerPage={setRowsPerPage}
@@ -183,25 +193,23 @@ export default function Sales() {
           </TabsList>
 
           <TabsContent value='all' className='space-y-4'>
-            <div className='overflow-x-auto'>
-              <SalesList
-                loading={loading}
-                paginatedVentas={paginatedVentas}
-                searchTerm={searchTerm}
-                filterStatus={statusFilter}
-                filterMetodoPago={paymentFilter}
-                statusColors={statusColors}
-                statusLabels={statusLabels}
-                metodoPagoLabels={metodoPagoLabels}
-                anfitrionaColors={anfitrionaColors}
-                formatCurrency={formatCurrency}
-                onVerDetalles={handleViewDetails}
-                onAnularVenta={handleAnularVenta}
-                page={page}
-                setPage={setPage}
-                totalPages={totalPages}
-              />
-            </div>
+            <SalesList
+              loading={loading}
+              paginatedVentas={paginatedVentas}
+              searchTerm={searchTerm}
+              filterStatus={statusFilter}
+              filterMetodoPago={paymentFilter}
+              statusColors={statusColors}
+              statusLabels={statusLabels}
+              metodoPagoLabels={metodoPagoLabels}
+              anfitrionaColors={anfitrionaColors}
+              formatCurrency={formatCurrency}
+              onVerDetalles={handleViewDetails}
+              onAnularVenta={handleAnularVenta}
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+            />
 
             {filteredVentas.length > rowsPerPage && (
               <div className='flex justify-center'>
@@ -212,7 +220,7 @@ export default function Sales() {
 
           <TabsContent value='with-room'>
             <SalesWithRoomTab
-              ventas={filteredVentas as VentaWithDetails[]}
+              ventas={sortedAndFilteredVentas as VentaWithDetails[]}
               loading={loading}
               onRefresh={handleRefresh}
             />

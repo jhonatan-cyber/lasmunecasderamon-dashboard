@@ -144,7 +144,8 @@ export const getVentaDetails = async <T extends VentaSearchRow>(
     try {
       const response = await fetch(`/api/ventas/${ventaId}`);
       if (response.ok) {
-        venta = (await response.json()) as T;
+        const json = await response.json();
+        venta = json.data as T;
       }
     } catch {
       return null;
@@ -152,4 +153,33 @@ export const getVentaDetails = async <T extends VentaSearchRow>(
   }
 
   return venta || null;
+};
+
+export const sortVentas = <T extends VentaSearchRow & { fecha_crea?: string; total?: number | string }>(
+  ventas: T[],
+  sortBy: string,
+  sortOrder: 'asc' | 'desc'
+) => {
+  return [...ventas].sort((a, b) => {
+    let comparison = 0;
+
+    switch (sortBy) {
+      case 'fecha_crea':
+        comparison = new Date(a.fecha_crea || 0).getTime() - new Date(b.fecha_crea || 0).getTime();
+        break;
+      case 'total':
+        comparison = Number(a.total || 0) - Number(b.total || 0);
+        break;
+      case 'cliente_nombre':
+        comparison = (a.cliente_nombre || '').localeCompare(b.cliente_nombre || '');
+        break;
+      case 'codigo':
+        comparison = (a.codigo || '').localeCompare(b.codigo || '');
+        break;
+      default:
+        comparison = 0;
+    }
+
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 };

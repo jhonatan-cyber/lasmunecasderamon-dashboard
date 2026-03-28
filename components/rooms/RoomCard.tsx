@@ -24,6 +24,7 @@ const RoomCard: React.FC<{
   canDeactivate?: boolean;
   canOccupy?: boolean;
   canLiberate?: boolean;
+  isMutating?: boolean;
 }> = ({ 
   room, 
   onEdit, 
@@ -37,7 +38,8 @@ const RoomCard: React.FC<{
   canActivate = true,
   canDeactivate = true,
   canOccupy = true,
-  canLiberate = true
+  canLiberate = true,
+  isMutating = false
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   
@@ -184,7 +186,9 @@ const RoomCard: React.FC<{
               <span className="text-xs font-medium truncate">Comisión</span>
             </div>
             <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
-              {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : '—'}
+              {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : (
+                <span className="text-gray-400 italic">sin comisión</span>
+              )}
             </p>
           </div>
         </div>
@@ -222,9 +226,10 @@ const RoomCard: React.FC<{
         room={room}
         onOpenChange={setConfirmOpen}
         onConfirm={(r) => onDelete(r)}
+        isLoading={isMutating}
       />
     </div>
   );
 };
 
-export default RoomCard; 
+export default RoomCard;

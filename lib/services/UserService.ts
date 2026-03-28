@@ -1,54 +1,61 @@
 import { UserCreateSchema, UserUpdateSchema, type UserType } from '@/lib/business/schemas';
 import { UserRepository } from '@/lib/repositories/UserRepository';
+import { ValidationError } from '@/lib/errors/errors';
 import * as argon2 from 'argon2';
+import fs from 'fs/promises';
+import path from 'path';
+import { existsSync } from 'fs';
 
 export class UserService {
-  /**
-   * Procesa la creación de un nuevo usuario.
-   */
+
   static async createUser(body: any, fotoFilename: string = 'default.png') {
-    const validated = UserCreateSchema.parse(body);
-    
-    // Business Logic: Verificar si el RUN ya existe
-    const existing = await UserRepository.getByRun(validated.run);
-    if (existing) {
-      throw new Error('El RUN ya está registrado');
+    const bodyToValidate = { ...body };
+    if (bodyToValidate.foto && typeof bodyToValidate.foto !== 'string' && 'arrayBuffer' in (bodyToValidate.foto as any)) {
+      delete bodyToValidate.foto;
     }
 
-    // Business Logic: Generar email automático y password (basada en RUN)
+    const validated = UserCreateSchema.parse(bodyToValidate);
+
+    const existing = await UserRepository.getByRun(validated.run);
+    if (existing) {
+      throw new ValidationError('El RUN ya está registrado');
+    }
     const email = `${validated.nick}@lasmuñecasderamon.com`;
     const password = await argon2.hash(validated.run);
 
     return await UserRepository.create({ ...validated, email, password }, fotoFilename);
   }
 
-  /**
-   * Actualiza un usuario existente.
-   */
-  static async updateUser(id: string, body: any) {
-    const validated = UserUpdateSchema.parse({ ...body, id });
-    
+
+  static async updateUser(id: string, body: any, fotoFilename: string | null = null) {
+    const bodyToValidate = { ...body, id };
+    if (bodyToValidate.foto && typeof bodyToValidate.foto !== 'string' && 'arrayBuffer' in (bodyToValidate.foto as any)) {
+      delete bodyToValidate.foto;
+    }
+    const validated = UserUpdateSchema.parse(bodyToValidate);
+
     const existing = await UserRepository.getById(id.toString());
     if (!existing) throw new Error('Usuario no encontrado');
 
+    if (fotoFilename && existing.foto && existing.foto !== 'default.png' && !existing.foto.startsWith('http')) {
+      const oldPath = path.join(process.cwd(), 'public', 'img', 'users', existing.foto);
+      if (existsSync(oldPath)) {
+        await fs.unlink(oldPath).catch(() => { });
+      }
+    }
+
     const updateData: any = { ...validated };
 
-    // Si cambió el nick, regenerar email
     if (validated.nick) {
       updateData.email = `${validated.nick}@lasmuñecasderamon.com`;
     }
-
-    // Si cambió el RUN, hashear nueva password
     if (validated.run) {
       updateData.password = await argon2.hash(validated.run);
     }
 
-    return await UserRepository.update(id.toString(), updateData);
+    return await UserRepository.update(id.toString(), updateData, fotoFilename);
   }
 
-  /**
-   * Activa o desactiva un usuario.
-   */
   static async toggleUserStatus(id: string, action: string) {
     if (!['activate', 'deactivate'].includes(action)) {
       throw new Error('Acción de estado inválida');

@@ -109,14 +109,3 @@ export function useClients() {
   };
 }
 
-export function useClientes() {
-  const { allClients, isLoading, error, fetchClients } = useClients();
-
-  return {
-    clientes: allClients,
-    loading: isLoading,
-    error,
-    getClientes: fetchClients
-  };
-}
-

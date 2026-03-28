@@ -189,3 +189,6 @@ export const formatCurrencyAbbreviated = (value: number | string | undefined): s
 
   return `${sign}$${Math.round(absValue).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 };
+export const toTitleCase = (str: string): string => {
+  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};

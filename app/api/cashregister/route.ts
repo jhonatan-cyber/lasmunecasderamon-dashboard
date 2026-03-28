@@ -31,10 +31,10 @@ export const POST = withAppAuth(
 export const PUT = withAppAuth(
   async (request: Request) => {
     const body = await request.json();
-    const { id, ...data } = body;
-    if (!id) return NextResponse.json({ success: false, message: 'ID requerido' }, { status: 400 });
+    const { id_caja, ...data } = body;
+    if (!id_caja) return NextResponse.json({ success: false, message: 'ID requerido' }, { status: 400 });
 
-    await CashRegisterService.updateCaja(id, data);
+    await CashRegisterService.updateCaja(id_caja, data);
     return NextResponse.json({ success: true, message: 'Caja actualizada' });
   },
   { module: 'finances', action: 'write' }

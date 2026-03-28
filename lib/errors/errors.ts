@@ -1,6 +1,4 @@
-/**
- * Base error class for all application specific errors.
- */
+
 export class AppError extends Error {
   constructor(
     message: string,
@@ -14,36 +12,24 @@ export class AppError extends Error {
   }
 }
 
-/**
- * Validation errors (Zod, business rules, etc.)
- */
 export class ValidationError extends AppError {
   constructor(message: string, details?: unknown) {
     super(message, 'VALIDATION_ERROR', 400, details);
   }
 }
 
-/**
- * Authentication / Authorization errors
- */
 export class AuthError extends AppError {
   constructor(message: string = 'No autorizado', code: string = 'UNAUTHORIZED', statusCode: number = 401) {
     super(message, code, statusCode);
   }
 }
 
-/**
- * Database specific errors
- */
 export class DatabaseError extends AppError {
   constructor(message: string, originalError?: unknown) {
     super(`Error en la base de datos: ${message}`, 'DATABASE_ERROR', 500, originalError);
   }
 }
 
-/**
- * Commission specific errors (Legacy compatibility)
- */
 export class CommissionError extends AppError {
   constructor(
     message: string,
@@ -115,13 +101,11 @@ export class InvalidCommissionAmountError extends CommissionError {
   }
 }
 
-/**
- * Formats an error into a standardized JSON response.
- */
 export const formatErrorResponse = (error: unknown) => {
   if (error instanceof AppError) {
     return {
       success: false,
+      message: error.message,
       error: {
         code: error.code,
         message: error.message,
@@ -133,6 +117,7 @@ export const formatErrorResponse = (error: unknown) => {
   if (error instanceof Error) {
     return {
       success: false,
+      message: error.message,
       error: {
         code: 'UNKNOWN_ERROR',
         message: error.message,
@@ -142,6 +127,7 @@ export const formatErrorResponse = (error: unknown) => {
 
   return {
     success: false,
+    message: 'Error desconocido',
     error: {
       code: 'UNKNOWN_ERROR',
       message: 'Error desconocido',
@@ -149,9 +135,6 @@ export const formatErrorResponse = (error: unknown) => {
   };
 };
 
-/**
- * Validates state transitions for commissions (Business logic)
- */
 export const validateStatusTransition = (currentStatus: string, newStatus: string): boolean => {
   const transitions: Record<string, string[]> = {
     'por_pagar': ['pagado', 'anulado'],

@@ -42,11 +42,10 @@ export const useSales = () => {
   } = useGenericFetch<VentaWithDetails>(endpoint, {
     initialFetch: false,
     transform: (data) => {
-
-
-
-      const ventasArray = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
-      return ventasArray;
+      // API returns: { success: true, data: { data: [...], total: N } }
+      const payload = data?.data;
+      const ventasArray = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : (Array.isArray(data) ? data : []));
+      return ventasArray.filter((item: unknown): item is VentaWithDetails => item != null && typeof item === 'object' && 'estado' in item);
     }
   });
 
@@ -95,7 +94,7 @@ export const useSales = () => {
       }
 
       const nuevaVenta = await response.json();
-      if (setVentas) {
+      if (setVentas && nuevaVenta?.data && typeof nuevaVenta.data === 'object' && 'estado' in nuevaVenta.data) {
         setVentas((prev: VentaWithDetails[] | undefined) => [nuevaVenta.data, ...(prev || [])]);
       }
       return nuevaVenta;

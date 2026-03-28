@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const SaleSchema = z.object({
   id: z.string().optional(),
-  codigo: z.string().optional(),
+  codigo: z.string().nullable().optional(),
   cliente_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
@@ -12,12 +12,14 @@ export const SaleSchema = z.object({
   total: z.number().min(0),
   tiempo: z.number().optional().default(0),
   caja_id: z.string().nullable().optional(),
-  created_by: z.string().optional(),
+  created_by: z.string().nullable().optional(),
   estado: z.number().optional().default(1),
-  fecha_crea: z.string().or(z.date()).optional(),
-  fecha_mod: z.string().or(z.date()).optional(),
-  cliente_nombre: z.string().optional(),
-  habitacion_nombre: z.string().optional(),
+  fecha_crea: z.string().or(z.date()).nullable().optional(),
+  fecha_mod: z.string().or(z.date()).nullable().optional(),
+  cliente_nombre: z.string().nullable().optional(),
+  habitacion_nombre: z.string().nullable().optional(),
+  item_count: z.number().optional().default(0),
+  anfitrionas_nicks: z.string().nullable().optional(),
 });
 
 export const SaleCreateSchema = z.object({
@@ -32,6 +34,7 @@ export const SaleCreateSchema = z.object({
   usuarios: z.array(z.string()).optional().default([]),
   tiempo: z.number().optional().default(0),
   codigo: z.string().optional(),
+  device_date: z.string().optional(),
   detalles: z.array(z.object({
     producto_id: z.string(),
     precio: z.number(),

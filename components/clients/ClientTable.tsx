@@ -2,7 +2,7 @@ import { Client } from '@/types/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Trash, Pencil, Eye, Phone, User, Calendar, MoreVertical, Wallet } from 'lucide-react';
 import {
   Table,
@@ -32,6 +32,7 @@ interface ClientTableProps {
   onLoadPrepago: (client: Client) => void;
   currentPage: number;
   pageSize: number;
+  isMutating?: boolean;
 }
 
 interface MobileCardViewProps {
@@ -51,7 +52,7 @@ interface MobileCardViewProps {
   renderDate: (date: string | undefined | null, defaultText?: string) => React.ReactNode;
 }
 
-const MobileCardView = ({
+const MobileCardView = React.memo(({
   clients,
   currentPage,
   pageSize,
@@ -69,12 +70,12 @@ const MobileCardView = ({
 }: MobileCardViewProps) => (
   <div className='lg:hidden space-y-3'>
     {clients.length === 0 ? (
-      <Card className='p-6 text-center'>
+      <Card className='p-6 text-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm'>
         <p className='text-gray-500 text-sm sm:text-base'>No hay clientes</p>
       </Card>
     ) : (
       clients.map((client, idx) => (
-        <Card key={client.id} className='p-4 sm:p-6'>
+        <Card key={client.id} className='p-4 sm:p-6 bg-white dark:bg-slate-900/40'>
           <CardContent className='space-y-3'>
             {/* Header con número y estado */}
             <div className='flex justify-between items-start'>
@@ -138,7 +139,7 @@ const MobileCardView = ({
                     <Button
                       variant='ghost'
                       size='icon'
-                      className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200 p-2'
+                      className='hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full hover:scale-105 transition-all duration-200 p-2'
                     >
                       <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
                     </Button>
@@ -223,7 +224,7 @@ const MobileCardView = ({
       ))
     )}
   </div>
-);
+));
 
 interface DesktopTableViewProps {
   clients: Client[];
@@ -242,7 +243,7 @@ interface DesktopTableViewProps {
   renderDate: (date: string | undefined | null, defaultText?: string) => React.ReactNode;
 }
 
-const DesktopTableView = ({
+const DesktopTableView = React.memo(({
   clients,
   currentPage,
   pageSize,
@@ -259,11 +260,11 @@ const DesktopTableView = ({
   renderDate
 }: DesktopTableViewProps) => (
   <div className='hidden lg:block'>
-    <div className='rounded-xl border bg-white overflow-hidden shadow-md'>
+    <div className='rounded-xl border bg-white dark:bg-slate-900/40 overflow-hidden shadow-md'>
       <div className='overflow-x-auto'>
-        <Table className='min-w-full text-sm bg-white rounded-xl overflow-hidden text-center'>
-          <TableHeader className='border-b last:border-b-0 bg-white group'>
-            <TableRow>
+        <Table className='min-w-full text-sm rounded-xl overflow-hidden text-center'>
+          <TableHeader className='border-b last:border-b-0 group'>
+            <TableRow className='hover:bg-transparent'>
               <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>#</TableHead>
               <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>RUN</TableHead>
               <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
@@ -300,7 +301,7 @@ const DesktopTableView = ({
             {clients.map((client, idx) => (
               <TableRow
                 key={client.id}
-                className={`border-b bg-white group ${idx === 0 ? 'first:rounded-t-xl' : ''
+                className={`border-b group ${idx === 0 ? 'first:rounded-t-xl' : ''
                   } ${idx === clients.length - 1 ? 'last:rounded-b-xl' : ''}`}
               >
                 <TableCell className='py-3 px-4 text-center text-sm text-gray-600 font-medium'>
@@ -427,7 +428,7 @@ const DesktopTableView = ({
       </div>
     </div>
   </div>
-);
+));
 
 export function ClientTable({
   clients,
@@ -436,7 +437,8 @@ export function ClientTable({
   onViewDetails,
   onLoadPrepago,
   currentPage,
-  pageSize
+  pageSize,
+  isMutating = false
 }: ClientTableProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
@@ -460,12 +462,12 @@ export function ClientTable({
     }
   };
 
-  const renderRun = (run: string | undefined | null) => {
+  const renderRun = useCallback((run: string | undefined | null) => {
     if (!run || run === '0') {
       return (
         <Badge
           variant='outline'
-          className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'
+          className='text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 text-xs sm:text-sm'
         >
           <User className='h-3 w-3 mr-1' />
           Sin RUN
@@ -473,14 +475,14 @@ export function ClientTable({
       );
     }
     return run;
-  };
+  }, []);
 
-  const renderPhone = (phone: string | undefined | null | '0') => {
+  const renderPhone = useCallback((phone: string | undefined | null | '0') => {
     if (!phone || phone === '0') {
       return (
         <Badge
           variant='outline'
-          className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'
+          className='text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 text-xs sm:text-sm'
         >
           <Phone className='h-3 w-3 mr-1' />
           Sin teléfono
@@ -488,14 +490,14 @@ export function ClientTable({
       );
     }
     return phone;
-  };
+  }, []);
 
-  const renderDate = (date: string | undefined | null, defaultText: string = 'Sin fecha') => {
+  const renderDate = useCallback((date: string | undefined | null, defaultText: string = 'Sin fecha') => {
     if (!date) {
       return (
         <Badge
           variant='outline'
-          className='text-purple-600 border-purple-300 bg-purple-50 text-xs sm:text-sm'
+          className='text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 text-xs sm:text-sm'
         >
           <Calendar className='h-3 w-3 mr-1' />
           {defaultText}
@@ -503,7 +505,7 @@ export function ClientTable({
       );
     }
     return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es });
-  };
+  }, []);
 
   return (
     <TooltipProvider>
@@ -546,6 +548,7 @@ export function ClientTable({
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleConfirmDelete}
         clientName={clientToDelete ? `${clientToDelete.name} ${clientToDelete.lastName}` : ''}
+        isLoading={isMutating}
       />
     </TooltipProvider>
   );
