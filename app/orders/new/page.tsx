@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import OrderForm from "@/components/orders/OrderForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useClientes } from "@/hooks/clientes/useClients";
+import { useClients } from "@/hooks/clientes/useClients";
 import { useAnfitrionas } from "@/hooks/personal/useAnfitrionas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ServiceOrderForm from "@/components/orders/ServiceOrderFormNew";
@@ -17,7 +17,7 @@ export default function NewOrder() {
   const [selectedCliente, setSelectedCliente] = useState("");
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]); // productos agregados
-  const { clientes, loading: loadingClientes } = useClientes();
+  const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
   const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas(false); // false = todas las anfitrionas
   const [searchCliente, setSearchCliente] = useState("");
   const [searchAnfitriona, setSearchAnfitriona] = useState("");

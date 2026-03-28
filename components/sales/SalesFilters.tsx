@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Trash2, SortAsc, SortDesc } from "lucide-react";
 import SearchInput from "@/components/ui/SearchInput";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SalesFiltersProps {
   searchTerm: string;
@@ -157,15 +158,24 @@ export function SalesFilters({
           </div>
 
           {/* Botón Limpiar con ícono trash */}
-          <Button
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <Button
             onClick={onClearFilters}
             variant='outline'
             size="icon"
             className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
-            title="Limpiar filtros"
+            
           >
             <Trash2 className='w-4 h-4' />
           </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl">
+                <p>Limpiar filtros</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardContent>
     </Card>
