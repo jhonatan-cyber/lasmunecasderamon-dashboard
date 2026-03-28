@@ -15,7 +15,7 @@ import CustomersSelect from '@/components/ui/CustomersSelect';
 import HostessSelect from '@/components/ui/HostessSelect';
 import RoomSelect from '@/components/ui/RoomSelect';
 import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
-import { useClientes } from '@/hooks/clientes/useClients';
+import { useClients } from '@/hooks/clientes/useClients';
 import { useAnfitrionasDisponibles } from '@/hooks/personal/useAnfitrionasDisponibles';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
@@ -23,7 +23,7 @@ import { useTimer } from '@/contexts/TimerContext';
 export default function NuevoServicioPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { clientes, loading: loadingClientes } = useClientes();
+  const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
   const {
     anfitrionas,
     loading: loadingAnfitrionas,

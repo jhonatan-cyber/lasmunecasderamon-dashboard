@@ -29,6 +29,8 @@ export default function AttendancePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('nombre_completo');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
@@ -46,14 +48,38 @@ export default function AttendancePage() {
     });
   }, [data, searchTerm]);
 
-  const totalItems = filteredData.length;
+  const sortedData = useMemo(() => {
+    const list = [...filteredData];
+    const compareValues = (a: any, b: any) => {
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;
+      if (b == null) return -1;
+
+      if (typeof a === 'number' || typeof b === 'number') {
+        return Number(a) - Number(b);
+      }
+
+      return String(a).localeCompare(String(b), 'es', { sensitivity: 'base' });
+    };
+
+    list.sort((a: any, b: any) => {
+      const aValue = a?.[sortBy as keyof typeof a];
+      const bValue = b?.[sortBy as keyof typeof b];
+      const baseResult = compareValues(aValue, bValue);
+      return sortOrder === 'asc' ? baseResult : -baseResult;
+    });
+
+    return list;
+  }, [filteredData, sortBy, sortOrder]);
+
+  const totalItems = sortedData.length;
   const totalPages = Math.ceil(totalItems / pageSize);
 
   const paginatedData = useMemo(() => {
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, page, pageSize]);
+    return sortedData.slice(startIndex, endIndex);
+  }, [sortedData, page, pageSize]);
 
   const activePersonnel = useMemo(() => {
     if (!users) return [];
@@ -82,6 +108,7 @@ export default function AttendancePage() {
 
   // Polling para actualización del QR en tiempo real
   useEffect(() => {
+
     if (!selectedUserForQR) return;
     
     const checkQR = async () => {
@@ -112,6 +139,8 @@ export default function AttendancePage() {
     setSearchTerm('');
     setPageSize(10);
     setPage(1);
+    setSortBy('nombre_completo');
+    setSortOrder('asc');
   };
 
   const handleGenerateQR = async (userId: number) => {
@@ -134,10 +163,6 @@ export default function AttendancePage() {
         setSelectedUserForQR((prev: any) => 
           prev && prev.id === userId ? { ...prev, qr_token: result.qr_token } : prev
         );
-        
-        // Forzar actualización de la lista de usuarios
-        // Podríamos llamar a fetchUsers() aquí si el hook useUsers lo expone,
-        // pero useUsers ya maneja el estado de carga y datos.
       } else {
         toast.error(result.message || 'Error al generar el token');
       }
@@ -154,145 +179,144 @@ export default function AttendancePage() {
 
   return (
     <PermissionGuard module='attendance' action='view'>
-      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-        <Tabs defaultValue='history' className='w-full'>
-          <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>Asistencias</h1>
-            <TabsList className='flex w-full sm:w-auto h-auto p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700'>
-              <TabsTrigger 
-                value='history' 
-                className='flex-1 sm:flex-none px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300 font-bold text-xs uppercase tracking-wider'
-              >
-                Historial de Asistencias
-              </TabsTrigger>
-              <TabsTrigger 
-                value='personnel'
-                className='flex-1 sm:flex-none px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300 font-bold text-xs uppercase tracking-wider'
-              >
-                Personal
-              </TabsTrigger>
-            </TabsList>
-          </div>
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        
+        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>Asistencias</h1>
+        </div>
 
-          {error ? (
-            <Card className='shadow-sm'>
-              <CardHeader className='pb-4'>
-                <CardTitle className='text-lg sm:text-xl'>Error</CardTitle>
-                <CardDescription className='text-sm sm:text-base'>
-                  Ocurrió un error al cargar los datos
-                </CardDescription>
-              </CardHeader>
-              <CardContent className='p-4 sm:p-6'>
-                <p className='text-sm sm:text-base text-red-500'>{error}</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
+        {error ? (
+          <Card className='shadow-sm'>
+            <CardHeader className='pb-4'>
+              <CardTitle className='text-lg sm:text-xl'>Error</CardTitle>
+              <CardDescription className='text-sm sm:text-base'>
+                Ocurrió un error al cargar los datos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='p-4 sm:p-6'>
+              <p className='text-sm sm:text-base text-red-500'>{error}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Estadísticas (Globales) */}
+            <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
 
-            <TabsContent value='history' className='space-y-6'>
-              {/* Estadísticas */}
-              <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
+            {/* Filtros (Globales o afectan al menos la tabla principal) */}
+            <AttendanceFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              setPage={setPage}
+              onClearFilters={handleClearFilters}
+            />
 
-              {/* Filtros */}
-              <AttendanceFilters
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                pageSize={pageSize}
-                setPageSize={setPageSize}
-                page={page}
-                setPage={setPage}
-                totalItems={totalItems}
-                totalPages={totalPages}
-                onClearFilters={handleClearFilters}
-              />
+            <Tabs defaultValue='history' className='w-full'>
+              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-sm'>
+                <TabsTrigger 
+                  value='history' 
+                  className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
+                >
+                  Historial de Asistencias
+                </TabsTrigger>
+                <TabsTrigger 
+                  value='personnel'
+                  className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
+                >
+                  Personal
+                </TabsTrigger>
+              </TabsList>
 
-              {/* Tabla de asistencias */}
-              <Card className='shadow-sm'>
-                <CardHeader className='pb-4'>
-                  <CardTitle className='text-lg sm:text-xl'>Listado de Asistencias</CardTitle>
-                </CardHeader>
-                <CardContent className='p-4 sm:p-6'>
-                  <div className='overflow-x-auto'>
-                    <AttendanceTable data={paginatedData} />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value='personnel'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
-                {activePersonnel.map(person => (
-                  <Card
-                    key={person.id}
-                    className='group relative h-[450px] overflow-hidden rounded-[2.5rem] border-none shadow-2xl hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] dark:hover:shadow-[0_20px_50px_-12px_rgba(255,255,255,0.1)] transition-all duration-700 cursor-pointer active:scale-95'
-                    onClick={() => setSelectedUserForQR(person)}
-                  >
-                    {/* Background Hero Image with Zoom and Filter */}
-                    <div className='absolute inset-0'>
-                      <img
-                        src={person.foto ? `/img/users/${person.foto}` : `/placeholder-user.jpg`}
-                        alt={`${person.name} ${person.lastName}`}
-                        className='h-full w-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1 desaturate-[0.3] group-hover:desaturate-0'
-                        onError={(e) => {
-                           e.currentTarget.src = '/placeholder-user.jpg';
-                        }}
-                      />
-                      {/* Premium Ultra-Dark Gradient Overlay */}
-                      <div className='absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-500' />
-                      
-                      {/* Shine Effect on Hover */}
-                      <div className='absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform [transition-duration:1500ms]' />
+              <TabsContent value='history' className='space-y-6'>
+                {/* Tabla de asistencias */}
+                <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+                  <CardContent className='p-0 sm:p-0'>
+                    <div className='overflow-x-auto'>
+                      <AttendanceTable data={paginatedData} />
                     </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                    {/* Card Content Overlay */}
-                    <div className='absolute inset-0 flex flex-col justify-end p-8'>
-                      <div className='space-y-4 transform translate-y-6 group-hover:translate-y-0 transition-all duration-500 ease-out'>
+              <TabsContent value='personnel'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+                  {activePersonnel.map(person => (
+                    <Card
+                      key={person.id}
+                      className='group relative h-[450px] overflow-hidden rounded-[2.5rem] border-none shadow-2xl hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] dark:hover:shadow-[0_20px_50px_-12px_rgba(255,255,255,0.1)] transition-all duration-700 cursor-pointer active:scale-95'
+                      onClick={() => setSelectedUserForQR(person)}
+                    >
+                      {/* Background Hero Image with Zoom and Filter */}
+                      <div className='absolute inset-0'>
+                        <img
+                          src={person.foto ? `/img/users/${person.foto}` : `/placeholder-user.jpg`}
+                          alt={`${person.name} ${person.lastName}`}
+                          className='h-full w-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1 desaturate-[0.3] group-hover:desaturate-0'
+                          onError={(e) => {
+                             e.currentTarget.src = '/placeholder-user.jpg';
+                          }}
+                        />
+                        {/* Premium Ultra-Dark Gradient Overlay */}
+                        <div className='absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-500' />
                         
-                        <div>
-                          <h3 className='text-3xl font-black text-white leading-tight tracking-tighter uppercase drop-shadow-2xl'>
-                            {person.name}
-                            <span className='block text-slate-300 opacity-80 group-hover:opacity-100 transition-opacity'>{person.lastName}</span>
-                          </h3>
-                        </div>
+                        {/* Shine Effect on Hover */}
+                        <div className='absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform [transition-duration:1500ms]' />
+                      </div>
 
-                        <div className='flex items-center justify-between gap-6 pt-4 border-t border-white/10'>
-                          <div className='flex flex-col gap-1'>
-                            <span className='text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]'>Username</span>
-                            <span className='text-sm font-bold text-white antialiased tracking-wide'>@{person.nick}</span>
+                      {/* Card Content Overlay */}
+                      <div className='absolute inset-0 flex flex-col justify-end p-8'>
+                        <div className='space-y-4 transform translate-y-6 group-hover:translate-y-0 transition-all duration-500 ease-out'>
+                          
+                          <div>
+                            <h3 className='text-3xl font-black text-white leading-tight tracking-tighter uppercase drop-shadow-2xl'>
+                              {person.name}
+                              <span className='block text-slate-300 opacity-80 group-hover:opacity-100 transition-opacity'>{person.lastName}</span>
+                            </h3>
                           </div>
 
-                          <Badge className='bg-white dark:bg-white text-black dark:text-black font-black text-[10px] px-4 py-2 rounded-xl border-none shadow-xl uppercase tracking-widest hover:scale-105 transition-transform'>
-                            {person.role}
-                          </Badge>
-                        </div>
+                          <div className='flex items-center justify-between gap-6 pt-4 border-t border-white/10'>
+                            <div className='flex flex-col gap-1'>
+                              <span className='text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]'>Username</span>
+                              <span className='text-sm font-bold text-white antialiased tracking-wide'>@{person.nick}</span>
+                            </div>
 
-                        {/* Animated Visual Accent Bar */}
-                        <div className='overflow-hidden w-full h-[2px] bg-white/10 rounded-full'>
-                           <div className='w-full h-full bg-white transform -translate-x-full group-hover:translate-x-0 transition-transform duration-1000 ease-in-out' />
+                            <Badge className='bg-white dark:bg-white text-black dark:text-black font-black text-[10px] px-4 py-2 rounded-xl border-none shadow-xl uppercase tracking-widest hover:scale-105 transition-transform'>
+                              {person.role}
+                            </Badge>
+                          </div>
+
+                          {/* Animated Visual Accent Bar */}
+                          <div className='overflow-hidden w-full h-[2px] bg-white/10 rounded-full'>
+                             <div className='w-full h-full bg-white transform -translate-x-full group-hover:translate-x-0 transition-transform duration-1000 ease-in-out' />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Employee ID Chip */}
-                    <div className='absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-10px] group-hover:translate-y-0'>
-                       <div className='h-12 w-12 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center shadow-2xl'>
-                          <span className='text-white font-black text-sm tracking-tighter'>#{person.id}</span>
-                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-
-              {activePersonnel.length === 0 && (
-                <div className='text-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200'>
-                  <p className='text-slate-500'>No se encontró personal activo registrado.</p>
+                      {/* Employee ID Chip */}
+                      <div className='absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-10px] group-hover:translate-y-0'>
+                         <div className='h-12 w-12 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center shadow-2xl'>
+                            <span className='text-white font-black text-sm tracking-tighter'>#{person.id}</span>
+                         </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              )}
-            </TabsContent>
+
+                {activePersonnel.length === 0 && (
+                  <div className='text-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200'>
+                    <p className='text-slate-500'>No se encontró personal activo registrado.</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </>
         )}
-      </Tabs>
-    </div>
+      </div>
 
       <Dialog open={!!selectedUserForQR} onOpenChange={(open) => !open && setSelectedUserForQR(null)}>
         <DialogContent className="w-[92vw] max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-white">
@@ -363,4 +387,3 @@ export default function AttendancePage() {
     </PermissionGuard>
   );
 }
-
