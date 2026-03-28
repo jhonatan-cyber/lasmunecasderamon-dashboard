@@ -25,12 +25,16 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
       <div className='flex items-center space-x-2 sm:space-x-3'>
         <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
           <AvatarImage
-            src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+            src={user.foto 
+              ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
+              : '/img/users/default.png'}
             alt={user.name || user.nick || 'Usuario'}
             asChild
           >
             <Image
-              src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+              src={user.foto 
+                ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
+                : '/img/users/default.png'}
               alt={user.name || user.nick || 'Usuario'}
               width={40}
               height={40}
@@ -64,7 +68,6 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
     );
   }
 
-  // Card variant
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
       {/* Columna izquierda - Información personal */}
@@ -72,12 +75,16 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
         <div className='flex items-center gap-2'>
         <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
           <AvatarImage
-            src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+            src={user.foto 
+              ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
+              : '/img/users/default.png'}
             alt={user.name || user.nick || 'Usuario'}
             asChild
           >
             <Image
-              src={user.foto ? `/img/users/${user.foto}` : '/img/users/default.png'}
+              src={user.foto 
+                ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
+                : '/img/users/default.png'}
               alt={user.name || user.nick || 'Usuario'}
               width={40}
               height={40}

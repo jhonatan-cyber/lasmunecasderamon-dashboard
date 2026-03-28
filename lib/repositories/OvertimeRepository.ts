@@ -5,7 +5,7 @@ import { BaseRepository } from './BaseRepository';
 export class OvertimeRepository {
   static async getAll(userId?: string, startDate?: string, endDate?: string) {
     let sql = `
-      SELECT HR.*, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario, HR.fecha_crea, HR.estado
+      SELECT HR.*, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario
       FROM horas_extras HR
       INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
       WHERE 1=1
@@ -62,10 +62,10 @@ export class OvertimeRepository {
     }));
   }
 
-  static async create(data: { usuario_id: string, hora: number, monto: number }) {
+  static async create(data: { usuario_id: string, hora: number, monto: number, device_date?: string }) {
     const id = generateUUID();
     const total = data.hora * data.monto;
-    const now = getNowInBusinessTimezone();
+    const now = getNowInBusinessTimezone(data.device_date);
     await BaseRepository.insert(query, 'horas_extras', {
       id_hora_extra: id,
       usuario_id: data.usuario_id,

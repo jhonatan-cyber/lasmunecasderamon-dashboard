@@ -60,7 +60,7 @@ export class CommissionRepository {
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
       LEFT JOIN ventas v ON c.venta_id = v.id_venta
       ${where}
-      ORDER BY c.created_at DESC
+      ORDER BY c.fecha_crea DESC
     `;
     return await query<any[]>(sql, sqlParams);
   }

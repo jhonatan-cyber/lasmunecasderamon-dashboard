@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
 import { Client } from '@/types/client';
 
 interface UsePrepagoFormProps {
@@ -7,9 +7,20 @@ interface UsePrepagoFormProps {
 }
 
 export function usePrepagoForm({ client, onSubmit }: UsePrepagoFormProps) {
-  const [amount, setAmount] = useState('');
+  const { 
+    formattedValue, 
+    setFormattedValue, 
+    getNumericValue,
+    formatNumber 
+  } = useNumberFormatter(0);
 
-  const reset = () => setAmount('');
+  const reset = () => setFormattedValue('');
 
-  return { amount, setAmount, reset, handleSubmit: onSubmit };
+  const numericAmount = Number(getNumericValue(formattedValue)) || 0;
+
+  const setAmount = (value: string) => {
+    setFormattedValue(formatNumber(value));
+  };
+
+  return { amount: formattedValue, setAmount, numericAmount, reset, handleSubmit: onSubmit };
 }

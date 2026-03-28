@@ -1,6 +1,5 @@
-/* eslint-disable */
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import useProducts from '@/hooks/productos/useProducts';
 import { useCategories } from '@/hooks/productos/useCategories';
@@ -19,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/types/product';
 import { cn } from '@/lib/utils/utils';
-import { Table, Grid3X3, Plus, ArrowLeft } from 'lucide-react';
+import { Table, Grid3X3, Plus, ArrowLeft, Loader2 } from 'lucide-react';
 import Paginate from '@/components/ui/paginate';
 import {
   DndContext,
@@ -43,15 +42,18 @@ const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
 const ProductCategoryPage = () => {
   const params = useParams();
-  const categoryId = params?.id as string;
-  const numericCategoryId = Number(categoryId);
+  const rawId = params?.id;
+  const categoryId = typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : '';
+  const numericCategoryId = isNaN(Number(categoryId)) ? 0 : Number(categoryId);
+  
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
-  const category = filteredCategories.find(cat => String(cat.id) === categoryId);
+  const category = filteredCategories.find(cat => String(cat.id) === String(numericCategoryId));
 
   // Llamar a useProducts ANTES de cualquier return condicional
   const {
     products,
     isLoading,
+    isMutating,
     createProduct,
     updateProduct,
     deleteProduct,
@@ -62,7 +64,7 @@ const ProductCategoryPage = () => {
     setSearchTerm,
     filterStatus,
     setFilterStatus
-  } = useProducts(categoryId);
+  } = useProducts(numericCategoryId > 0 ? String(numericCategoryId) : '');
 
   // TODOS los hooks deben ir ANTES de cualquier return condicional
   const [openDialog, setOpenDialog] = useState(false);
@@ -119,7 +121,7 @@ const ProductCategoryPage = () => {
     return localProductsCards.slice(start, start + pageSizeCards);
   }, [localProductsCards, pageCards, pageSizeCards]);
 
-  const handleDragEndCards = (event: DragEndEvent) => {
+  const handleDragEndCards = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -132,7 +134,42 @@ const ProductCategoryPage = () => {
       // Llamar al callback de reordenamiento
       reorderProducts(newProducts);
     }
-  };
+  }, [localProductsCards, reorderProducts]);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm('');
+    setFilterStatus(null);
+    setPage(1);
+    setPageCards(1);
+  }, [setSearchTerm, setFilterStatus]);
+
+  const handleCreate = useCallback(async (form: FormData) => {
+    await createProduct(form);
+    setOpenDialog(false);
+  }, [createProduct]);
+
+  const handleEdit = useCallback((product: Product) => {
+    setEditProduct(product);
+    setOpenDialog(true);
+  }, []);
+
+  const handleUpdate = useCallback(async (form: FormData) => {
+    await updateProduct(form);
+    setEditProduct(null);
+    setOpenDialog(false);
+  }, [updateProduct]);
+
+  const handleDelete = useCallback(async (product: Product) => {
+    await deleteProduct(product.id);
+  }, [deleteProduct]);
+
+  const handleActivate = useCallback(async (product: Product) => {
+    await activateProduct(product.id);
+  }, [activateProduct]);
+
+  const handleDeactivate = useCallback(async (product: Product) => {
+    await deactivateProduct(product.id);
+  }, [deactivateProduct]);
 
   // Si las categorías están cargando o no hay categorías cargadas, mostrar loading
   if (categoriesLoading || (filteredCategories.length === 0 && categoriesLoading)) {
@@ -166,34 +203,6 @@ const ProductCategoryPage = () => {
     );
   }
 
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setFilterStatus(null);
-    setPage(1);
-    setPageCards(1);
-  };
-  const handleCreate = async (form: FormData) => {
-    await createProduct(form);
-    setOpenDialog(false);
-  };
-  const handleEdit = (product: Product) => {
-    setEditProduct(product);
-    setOpenDialog(true);
-  };
-  const handleUpdate = async (form: FormData) => {
-    await updateProduct(form);
-    setEditProduct(null);
-    setOpenDialog(false);
-  };
-  const handleDelete = async (product: Product) => {
-    await deleteProduct(product.id);
-  };
-  const handleActivate = async (product: Product) => {
-    await activateProduct(product.id);
-  };
-  const handleDeactivate = async (product: Product) => {
-    await deactivateProduct(product.id);
-  };
 
   return (
     <PermissionGuard module='products' action='view'>
@@ -238,24 +247,22 @@ const ProductCategoryPage = () => {
             <div className='flex gap-2 items-center'>
               <Button
                 variant='outline'
-                size='sm'
-                className='whitespace-nowrap inline-flex items-center hover:bg-black hover:text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                className='whitespace-nowrap inline-flex items-center rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black mt-2 sm:mt-0'
                 onClick={() => router.push('/products')}
               >
-                <ArrowLeft className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+                <ArrowLeft className='w-4 h-4 mr-1' />
                 Atrás
               </Button>
               <PermissionGuard module='products' action='create' fallback={null}>
                 <Button
-                  size='sm'
                   variant='outline'
-                  className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  className='whitespace-nowrap inline-flex items-center bg-black text-white dark:bg-white dark:text-black rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto dark:hover:bg-gray-200 mt-2 sm:mt-0'
                   onClick={() => {
                     setEditProduct(null);
                     setOpenDialog(true);
                   }}
                 >
-                  <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+                  <Plus className='w-4 h-4 mr-1' />
                   Nuevo Producto
                 </Button>
               </PermissionGuard>
@@ -288,6 +295,7 @@ const ProductCategoryPage = () => {
                   onDeactivate={handleDeactivate}
                   onReorder={reorderProducts}
                   isLoading={isLoading}
+                  isMutating={isMutating}
                   currentPage={page}
                   pageSize={pageSize}
                 />
@@ -319,6 +327,7 @@ const ProductCategoryPage = () => {
                         onActivate={handleActivate}
                         onDeactivate={handleDeactivate}
                         isDraggable={true}
+                        isLoading={isMutating}
                       />
                     ))}
                   </div>
@@ -354,6 +363,7 @@ const ProductCategoryPage = () => {
                     onActivate={handleActivate}
                     onDeactivate={handleDeactivate}
                     isDraggable={true}
+                    isLoading={isMutating}
                   />
                 ))}
               </div>
@@ -375,10 +385,11 @@ const ProductCategoryPage = () => {
             }
           }}
         >
-          <DialogContent className='p-0 max-h-[90vh] overflow-hidden flex flex-col'>
-            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-              <DialogTitle className='text-xl font-bold'>
-                {editProduct ? 'Editar producto' : 'Nuevo producto'}
+          <DialogContent className='sm:max-w-2xl w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
+              <DialogTitle className='text-lg sm:text-xl font-bold flex items-center gap-2'>
+                <Plus className='w-5 h-5 text-purple-600' />
+                <span>{editProduct ? 'Editar Producto' : 'Nuevo Producto'}</span>
               </DialogTitle>
               <DialogDescription className='sr-only'>Formulario de producto</DialogDescription>
             </DialogHeader>
@@ -392,34 +403,39 @@ const ProductCategoryPage = () => {
                 onSubmit={editProduct ? handleUpdate : handleCreate}
                 initialValues={editProduct}
                 categoryId={numericCategoryId}
-                isLoading={isLoading}
+                isLoading={isMutating}
                 hideButtons={true}
               />
             </div>
-            <div className='flex-shrink-0 border-t px-6 py-4'>
-              <div className='flex flex-row justify-center gap-2 w-full'>
+            <div className='flex-shrink-0 border-t dark:border-slate-800 px-6 py-4 bg-gray-50 dark:bg-slate-900/50'>
+              <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
                 <Button
+                  variant='outline'
                   type='button'
                   onClick={() => {
                     setOpenDialog(false);
                     setEditProduct(null);
                   }}
+                  className='flex items-center gap-2 rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black w-full sm:w-auto text-sm sm:text-base'
                   disabled={isLoading}
-                  size='sm'
-                  variant='outline'
-                  className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
                 >
                   Cancelar
                 </Button>
                 <Button
                   type='submit'
                   form='product-form'
-                  disabled={isLoading}
-                  size='sm'
                   variant='outline'
-                  className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200'
+                  className='flex items-center bg-black text-white dark:bg-white dark:text-black gap-2 rounded-full px-6 hover:scale-105 transition-all duration-200 w-full sm:w-auto dark:hover:bg-gray-200 text-sm sm:text-base'
+                  disabled={isMutating}
                 >
-                  {editProduct ? 'Actualizar' : 'Guardar'}
+                  {isMutating ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{editProduct ? 'Actualizando...' : 'Guardando...'}</span>
+                    </div>
+                  ) : (
+                    <span>{editProduct ? 'Actualizar' : 'Guardar'}</span>
+                  )}
                 </Button>
               </div>
             </div>

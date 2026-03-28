@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import SelectElements from "@/components/ui/select-elements";
 import Paginate from "@/components/ui/paginate";
-import { Eraser, Search } from "lucide-react";
+import { Trash2, Search } from "lucide-react";
 
 interface AttendanceFiltersProps {
   searchTerm: string;
@@ -67,13 +68,15 @@ export default function AttendanceFilters({
 
           {/* Botón limpiar filtros */}
           <div className="w-full sm:w-auto flex flex-col justify-end">
-            <button
+            <Button
               onClick={onClearFilters}
-              className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors inline-flex items-center justify-center gap-2 h-10"
+              variant="outline"
+              size="icon"
+              className="w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm"
+              title="Limpiar filtros"
             >
-              <Eraser className="w-4 h-4" />
-              Limpiar
-            </button>
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 

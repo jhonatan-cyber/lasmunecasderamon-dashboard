@@ -5,38 +5,64 @@ export class ProductService {
   /**
    * Procesa la creación de un nuevo producto.
    */
-  static async createProduct(body: any) {
-    const validated = ProductSchema.omit({ id: true }).parse(body);
+  static async createProduct(body: any, fotoName?: string) {
+    // Normalizar nombres de campos comunes antes de validar
+    const normalizedBody = {
+      ...body,
+      category_id: body.category_id ?? body.categoryId,
+    };
 
-    // Business Logic: Verificar duplicados
-    const existing = await ProductRepository.getByCodeOrName(validated.code, validated.name, validated.category_id);
+    const validated = ProductSchema.parse(normalizedBody);
+
+    // Business Logic: Verificar duplicados en la misma categoría
+    const existing = await ProductRepository.getByCodeOrName(
+      validated.code, 
+      validated.name, 
+      validated.category_id
+    );
+    
     if (existing) {
-      throw new Error('Producto ya existe (código o nombre duplicado en esta categoría)');
+      throw new Error('Ya existe un producto con el mismo código o nombre en esta categoría');
     }
 
-    const foto = body.foto || 'default.png';
+    const foto = fotoName || body.foto || 'default.png';
     return await ProductRepository.create(validated, foto);
   }
 
   /**
    * Actualiza un producto existente.
    */
-  static async updateProduct(id: string, body: any) {
-    const validated = ProductSchema.partial().omit({ id: true }).parse(body);
+  static async updateProduct(id: string, body: any, fotoName?: string) {
+    // Normalizar nombres de campos comunes antes de validar
+    const normalizedBody = {
+      ...body,
+      category_id: body.category_id || body.categoryId,
+    };
 
-    // Business Logic: Si cambió el código o nombre, verificar que no choque con otro
+    const validated = ProductSchema.partial().parse(normalizedBody);
+
+    // Business Logic: Si cambió el código o nombre, verificar que no choque con otro en la misma categoría
+    // Nota: Usamos la categoría actual si no se proporciona una nueva
+    const currentProduct = await ProductRepository.getById(id);
+    const categoryId = validated.category_id || currentProduct?.category_id || '0';
+
     if (validated.code || validated.name) {
       const existing = await ProductRepository.getByCodeOrName(
-        validated.code || '', 
-        validated.name || '', 
-        validated.category_id || 0
+        validated.code || currentProduct?.code || '', 
+        validated.name || currentProduct?.name || '', 
+        categoryId
       );
-      if (existing && existing.id !== id) {
-        throw new Error('Duplicado detectado');
+      
+      if (existing && String(existing.id) !== String(id)) {
+        throw new Error('Ya existe otro producto con ese código o nombre en esta categoría');
       }
     }
 
-    const foto = body.foto || 'default.png';
-    return await ProductRepository.update(id, validated, foto);
+    const foto = fotoName || body.foto || (currentProduct?.foto || 'default.png');
+    
+    // Eliminar campos que no queremos actualizar directamente desde 'validated' si son nulos/undefined
+    const updateData = { ...validated };
+    
+    return await ProductRepository.update(id, updateData, foto);
   }
 }

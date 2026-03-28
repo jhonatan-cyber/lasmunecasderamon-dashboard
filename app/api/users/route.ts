@@ -5,13 +5,25 @@ import { UserService } from '@/lib/services/UserService';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
+import sharp from 'sharp';
+import logger from '@/lib/utils/logger';
+
+export const dynamic = 'force-dynamic';
 
 export const GET = withAppAuth(
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
-    const anfitrionas = searchParams.get('anfitrionas');
-    const data = await UserRepository.getAll(anfitrionas || undefined);
-    return NextResponse.json({ success: true, data });
+    const params = {
+      anfitrionas: searchParams.get('anfitrionas') || undefined,
+      search: searchParams.get('search') || undefined,
+      status: searchParams.get('status') || undefined,
+      role: searchParams.get('role') || undefined,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
+      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
+    };
+
+    const { data, total } = await UserRepository.getAll(params);
+    return NextResponse.json({ success: true, data, total });
   },
   { module: 'users', action: 'read' }
 );
@@ -25,23 +37,44 @@ export const POST = withAppAuth(
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       body = Object.fromEntries(formData.entries());
-      const foto = formData.get('foto') as File | null;
-      if (foto && foto.size > 0) {
-        const buffer = Buffer.from(await foto.arrayBuffer());
-        const filename = `user_${Date.now()}${path.extname(foto.name)}`;
-        const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
+      const foto = formData.get('foto');
 
-        if (!existsSync(uploadDir)) {
-          await fs.mkdir(uploadDir, { recursive: true });
+      if (foto && typeof foto !== 'string' && 'arrayBuffer' in (foto as any)) {
+        const file = foto as unknown as File;
+        if (file.size > 0) {
+          const buffer = Buffer.from(await file.arrayBuffer());
+          const filename = `user_${Date.now()}.webp`;
+          const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
+
+          if (!existsSync(uploadDir)) {
+            await fs.mkdir(uploadDir, { recursive: true });
+          }
+
+          try {
+            const optimizedBuffer = await sharp(buffer)
+              .resize(500, 500, { fit: 'cover', position: 'center' })
+              .webp({ quality: 80 })
+              .toBuffer();
+
+            await fs.writeFile(path.join(uploadDir, filename), optimizedBuffer);
+            fotoFilename = filename;
+            logger.info(`[USER API POST] Foto guardada OK: ${filename}`);
+          } catch (sharpError) {
+            logger.error(`[USER API POST] Error en Sharp, guardando original:`, { error: sharpError });
+            const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
+            await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
+            fotoFilename = fallbackFilename;
+          }
         }
-
-        await fs.writeFile(path.join(uploadDir, filename), buffer);
-        fotoFilename = filename;
+      } else if (typeof foto === 'string' && foto.startsWith('http')) {
+        fotoFilename = foto;
+        logger.info(`[USER API POST] Usando URL: ${fotoFilename}`);
       }
     } else {
       body = await request.json();
     }
 
+    logger.info(`[USER API POST] Creando usuario`, { foto: fotoFilename, body: { ...body, password: '***' } });
     const data = await UserService.createUser(body, fotoFilename);
     return NextResponse.json({ success: true, message: 'Usuario creado', data }, { status: 201 });
   },
@@ -76,11 +109,44 @@ export const PUT = withAppAuth(
     const contentType = request.headers.get('content-type') || '';
     let body: any;
     let id: string | null = null;
-
+    let fotoFilename: string | null = null;
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       id = formData.get('id') as string;
       body = Object.fromEntries(formData.entries());
+      const foto = formData.get('foto');
+
+      if (foto && typeof foto !== 'string' && 'arrayBuffer' in (foto as any)) {
+        const file = foto as unknown as File;
+        if (file.size > 0) {
+          const buffer = Buffer.from(await file.arrayBuffer());
+          const filename = `user_${Date.now()}.webp`;
+          const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
+
+          if (!existsSync(uploadDir)) {
+            await fs.mkdir(uploadDir, { recursive: true });
+          }
+
+          try {
+            const optimizedBuffer = await sharp(buffer)
+              .resize(500, 500, { fit: 'cover', position: 'center' })
+              .webp({ quality: 80 })
+              .toBuffer();
+
+            await fs.writeFile(path.join(uploadDir, filename), optimizedBuffer);
+            fotoFilename = filename;
+            logger.info(`[USER API PUT] Foto guardada OK: ${filename}`);
+          } catch (sharpError) {
+            logger.error(`[USER API PUT] Error en Sharp, guardando original:`, { error: sharpError });
+            const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
+            await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
+            fotoFilename = fallbackFilename;
+          }
+        }
+      } else if (typeof foto === 'string' && foto.startsWith('http')) {
+        fotoFilename = foto;
+        logger.info(`[USER API PUT] Usando URL: ${fotoFilename}`);
+      }
     } else {
       const jsonBody = await request.json();
       id = jsonBody.id;
@@ -90,7 +156,8 @@ export const PUT = withAppAuth(
     if (!id)
       return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    const data = await UserService.updateUser(id, body);
+    logger.info(`[USER API PUT] Actualizando usuario ${id}`, { foto: fotoFilename, body: { ...body, password: '***' } });
+    const data = await UserService.updateUser(id, body, fotoFilename);
     return NextResponse.json({ success: true, message: 'Usuario actualizado', data });
   },
   { module: 'users', action: 'write' }

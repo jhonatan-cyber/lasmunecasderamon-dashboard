@@ -7,52 +7,73 @@ type AnticipoBalances = {
   montoMaximo: number;
 };
 
+let cachedTableChecks: { hasGratificaciones: boolean; hasHorasExtras: boolean } | null = null;
+
 export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBalances> {
-  const asistenciaResult = (await query(
-    `SELECT total_final FROM (
-      SELECT U.id_usuario, (COALESCE(A.total_asistencias, 0) * U.sueldo)
-        - (COALESCE(A.total_asistencias, 0) * U.aporte)
-        - (COALESCE(U.semanas_con_descuento, 0) * U.descuento) AS total_final
-      FROM (
-        SELECT id_usuario, nombre, apellido, sueldo, aporte, descuento,
-          COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas_con_descuento
-        FROM usuarios
-        LEFT JOIN asistencias ON usuarios.id_usuario = asistencias.usuario_id AND asistencias.estado = 1
-        GROUP BY id_usuario
-      ) U
+  try {
+    // 1. Module-level caching for table existence checks
+    if (!cachedTableChecks) {
+      const tableChecks = await query<any[]>(
+        `SELECT table_name 
+         FROM information_schema.tables 
+         WHERE table_schema = DATABASE() 
+         AND table_name IN ('gratificaciones', 'horas_extras')`
+      );
+      cachedTableChecks = {
+        hasGratificaciones: tableChecks.some(t => t.table_name === 'gratificaciones'),
+        hasHorasExtras: tableChecks.some(t => t.table_name === 'horas_extras')
+      };
+    }
+
+    // 2. Optimized single query for standard income and deductions
+    const mainSql = `
+      SELECT 
+        U.id_usuario,
+        (COALESCE(A.total_asistencias, 0) * U.sueldo) as monto_sueldo,
+        (COALESCE(A.total_asistencias, 0) * U.aporte) as monto_aporte,
+        (COALESCE(S.total_semanas, 0) * U.descuento) as monto_descuento_hab,
+        (SELECT COALESCE(SUM(DC.comision), 0) FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE DC.usuario_id = U.id_usuario AND C.estado = 1) as total_comisiones,
+        (SELECT COALESCE(SUM(DP.monto), 0) FROM detalle_propinas DP INNER JOIN propinas P ON P.id_propina = DP.propina_id WHERE DP.usuario_id = U.id_usuario AND P.estado = 1) as total_propinas,
+        (SELECT COALESCE(SUM(monto), 0) FROM anticipos WHERE usuario_id = U.id_usuario AND estado = 1) as total_anticipos
+        ${cachedTableChecks.hasGratificaciones ? ', (SELECT COALESCE(SUM(monto), 0) FROM gratificaciones WHERE usuario_id = U.id_usuario AND estado = 1) as total_gratificaciones' : ', 0 as total_gratificaciones'}
+        ${cachedTableChecks.hasHorasExtras ? ', (SELECT COALESCE(SUM(total), 0) FROM horas_extras WHERE usuario_id = U.id_usuario AND estado = 1) as total_horas_extras' : ', 0 as total_horas_extras'}
+      FROM usuarios U
       LEFT JOIN (
-        SELECT usuario_id, COUNT(*) AS total_asistencias
+        SELECT usuario_id, COUNT(*) AS total_asistencias 
         FROM asistencias WHERE estado = 1 GROUP BY usuario_id
       ) A ON U.id_usuario = A.usuario_id
-    ) X WHERE id_usuario = ?`,
-    [usuarioId]
-  )) as Array<{ total_final: number | string | null }>;
+      LEFT JOIN (
+        SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS total_semanas 
+        FROM asistencias WHERE estado = 1 GROUP BY usuario_id
+      ) S ON U.id_usuario = S.usuario_id
+      WHERE U.id_usuario = ?
+    `;
 
-  const comisionesResult = (await query(
-    `SELECT COALESCE(SUM(DC.comision),0) AS total
-     FROM detalle_comisiones DC
-     INNER JOIN comisiones C ON C.id_comision = DC.comision_id
-     WHERE DC.usuario_id = ? AND C.estado = 1`,
-    [usuarioId]
-  )) as Array<{ total: number | string | null }>;
+    const result = await query<any[]>(mainSql, [usuarioId]);
+    const data = result[0] || { monto_sueldo: 0, monto_aporte: 0, monto_descuento_hab: 0, total_comisiones: 0, total_propinas: 0, total_anticipos: 0, total_gratificaciones: 0, total_horas_extras: 0 };
 
-  const propinasResult = (await query(
-    `SELECT COALESCE(SUM(DP.monto),0) AS total
-     FROM detalle_propinas DP
-     INNER JOIN propinas P ON P.id_propina = DP.propina_id
-     WHERE DP.usuario_id = ? AND P.estado = 1`,
-    [usuarioId]
-  )) as Array<{ total: number | string | null }>;
+    const ingresos = 
+      Number(data.monto_sueldo) + 
+      Number(data.total_propinas) + 
+      Number(data.total_comisiones) + 
+      Number(data.total_gratificaciones) + 
+      Number(data.total_horas_extras);
 
-  const montoAsistencia = Number(asistenciaResult[0]?.total_final || 0);
-  const montoComision = Number(comisionesResult[0]?.total || 0);
-  const montoPropina = Number(propinasResult[0]?.total || 0);
-  const montoMaximo = montoAsistencia + montoComision + montoPropina;
+    const egresos = 
+      Number(data.monto_aporte) + 
+      Number(data.monto_descuento_hab) + 
+      Number(data.total_anticipos);
 
-  return {
-    montoAsistencia,
-    montoComision,
-    montoPropina,
-    montoMaximo,
-  };
+    const montoMaximo = Math.max(0, ingresos - egresos);
+
+    return {
+      montoAsistencia: Number(data.monto_sueldo),
+      montoComision: Number(data.total_comisiones),
+      montoPropina: Number(data.total_propinas),
+      montoMaximo
+    };
+  } catch (error: any) {
+    console.error('Error in getAnticipoBalances:', error);
+    throw new Error(`Error al calcular balances: ${error.message}`);
+  }
 }

@@ -47,11 +47,13 @@ interface RoomTableProps {
   canDeactivate?: boolean;
   canOccupy?: boolean;
   canLiberate?: boolean;
+  isMutating: boolean;
+  currentPage?: number;
+  pageSize?: number;
 }
 
 interface SortableRowProps {
   room: Room;
-  index: number;
   onEdit: (room: Room) => void;
   onActivate: (room: Room) => void;
   onDeactivate: (room: Room) => void;
@@ -64,11 +66,12 @@ interface SortableRowProps {
   canDeactivate?: boolean;
   canOccupy?: boolean;
   canLiberate?: boolean;
+  absoluteIndex: number;
 }
 
 const SortableRow: React.FC<SortableRowProps> = ({
   room,
-  index,
+  absoluteIndex,
   onEdit,
   onActivate,
   onDeactivate,
@@ -109,7 +112,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
         </div>
       </td>
       <td className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600'>
-        {index + 1}
+        <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>
+          {absoluteIndex}
+        </Badge>
       </td>
       <td className='py-3 px-2 sm:px-4 text-center'>
         <span className='font-medium text-gray-900 text-xs sm:text-sm'>{room.name}</span>
@@ -124,7 +129,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
       </td>
       <td className='py-3 px-2 sm:px-4 text-center'>
         <span className='text-gray-600 text-xs sm:text-sm'>
-          {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : 'N/A'}
+          {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : (
+            <span className="text-gray-400 italic">sin comisión</span>
+          )}
         </span>
       </td>
       <td className='py-3 px-2 sm:px-4 text-center'>
@@ -226,7 +233,10 @@ const RoomTable: React.FC<RoomTableProps> = ({
   canActivate = true,
   canDeactivate = true,
   canOccupy = true,
-  canLiberate = true
+  canLiberate = true,
+  isMutating = false,
+  currentPage = 1,
+  pageSize = 5
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
@@ -315,7 +325,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                       <SortableRow
                         key={room.id}
                         room={room}
-                        index={index}
+                        absoluteIndex={(currentPage - 1) * pageSize + index + 1}
                         onEdit={onEdit}
                         onActivate={onActivate}
                         onDeactivate={onDeactivate}
@@ -342,6 +352,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
         room={roomToDelete}
         onOpenChange={setConfirmOpen}
         onConfirm={(room) => onDelete(room)}
+        isLoading={isMutating}
       />
     </TooltipProvider>
   );

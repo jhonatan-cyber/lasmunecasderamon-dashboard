@@ -11,7 +11,7 @@ export interface Retiro {
     usuario_nombre?: string;
 }
 
-export function useRetiros(idCaja: number | null) {
+export function useRetiros(idCaja: string | null) {
     const endpoint = useMemo(() => 
         idCaja ? `/api/cashregister/retiros?id_caja=${idCaja}` : null,
         [idCaja]

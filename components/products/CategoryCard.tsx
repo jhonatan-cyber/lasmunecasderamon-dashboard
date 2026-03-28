@@ -7,7 +7,7 @@ import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface CategoryCardProps {
   category: {
-    id: number;
+    id: string;
     name: string;
     description: string;
     status: number;
@@ -18,7 +18,7 @@ interface CategoryCardProps {
 }
 
 // Función para generar un color basado en el ID de la categoría
-const generateColor = (id: number) => {
+const generateColor = (id: string) => {
   const colors = [
     '#3B82F6',
     '#10B981',
@@ -41,7 +41,16 @@ const generateColor = (id: number) => {
     '#3B82F6',
     '#10B981'
   ];
-  return colors[id % colors.length];
+  
+  // Hash simple para strings
+  let hash = 0;
+  const strId = String(id);
+  for (let i = 0; i < strId.length; i++) {
+    hash = strId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
 };
 
 export default function CategoryCard({ category, onClick }: CategoryCardProps) {

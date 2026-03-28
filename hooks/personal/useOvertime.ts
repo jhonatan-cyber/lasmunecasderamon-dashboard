@@ -1,4 +1,4 @@
- 
+
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { Overtime, CreateOvertimeRequest } from '@/types/overtime';
@@ -17,7 +17,7 @@ export const useOvertime = () => {
   const { data: overtime, isLoading: loading, error, refetch: getOvertime } = useGenericFetch<Overtime>(
     '/api/overtime',
     {
-      transform: (result) => Array.isArray(result) ? result : []
+      transform: (result) => result.success && Array.isArray(result.data) ? result.data : []
     }
   );
 
@@ -39,14 +39,14 @@ export const useOvertime = () => {
       }
 
       const result = await response.json();
-      await getOvertime(); 
+      await getOvertime();
       return result;
     } catch (err) {
       throw err;
     }
   }, [getOvertime]);
 
-  const getOvertimeDetails = useCallback(async (userId: number) => {
+  const getOvertimeDetails = useCallback(async (userId: string) => {
     try {
       setDetailsLoading(true);
       setDetailsError(null);

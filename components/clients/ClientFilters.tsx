@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eraser } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import SearchInput from "@/components/ui/SearchInput";
 import SelectElements from "@/components/ui/select-elements";
 
@@ -42,63 +41,69 @@ export function ClientFilters({
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardContent className="mt-3 p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-end">
-          {/* Buscador */}
-          <div className="w-full lg:w-1/3">
-            <Label htmlFor="search" className="mb-2 text-sm">
-              Buscar
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+      <CardContent className='p-6'>
+        <div className='flex flex-col lg:flex-row gap-6 items-end'>
+          {/* Búsqueda */}
+          <div className='w-full lg:flex-1'>
+            <Label htmlFor='search' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+              Buscar Clientes
             </Label>
             <SearchInput
-              id="search"
+              id='search'
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Buscar por nombre, apellido, RUN o teléfono..."
-              className="w-full text-sm"
+              placeholder='Nombre, RUT, Email o Teléfono...'
+              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800'
             />
           </div>
 
-          {/* Filtro de estado */}
-          <div className="w-full lg:w-auto">
-            <Label htmlFor="status" className="mb-2 text-sm">
-              Estados
-            </Label>
-            <Select
-              value={filterStatus === null ? "all" : String(filterStatus)}
-              onValueChange={(value) => setFilterStatus(value === "all" ? null : Number(value))}
-            >
-              <SelectTrigger id="status" className="w-full lg:w-[140px] text-sm rounded-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="1">Activos</SelectItem>
-                <SelectItem value="0">Inactivos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
+            {/* Filtro de estado */}
+            <div className='w-full sm:w-auto min-w-[160px]'>
+              <Label htmlFor='status' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                Estado
+              </Label>
+              <Select
+                value={filterStatus === null ? 'all' : String(filterStatus)}
+                onValueChange={value => setFilterStatus(value === 'all' ? null : Number(value))}
+              >
+                <SelectTrigger
+                  id='status'
+                  className='w-full text-sm rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                  <SelectItem value='all'>Todos los estados</SelectItem>
+                  <SelectItem value='1'>Activos</SelectItem>
+                  <SelectItem value='0'>Inactivos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Elementos por página */}
-          <div className="w-full lg:w-auto">
-            <SelectElements
-              value={pageSize}
-              onChange={handlePageSizeChange}
-              options={[5, 10, 20, 40]}
-              label="Clientes por página"
-            />
-          </div>
+            {/* Elementos por página */}
+            <div className='w-full sm:w-auto'>
+              <SelectElements
+                value={pageSize}
+                onChange={handlePageSizeChange}
+                options={[5, 10, 20, 40]}
+                label='Mostrar'
+              />
+            </div>
 
-          {/* Botón limpiar filtros */}
-          <div className="w-full lg:w-auto">
-            <Button
-              onClick={onClearFilters}
-              size="sm"
-              variant="outline"
-              className="w-full lg:w-auto rounded-full px-4 text-sm"
-            >
-              <Eraser className="w-3 h-3 mr-1" />
-            </Button>
+            {/* Botón limpiar filtros */}
+            <div className='w-full sm:w-auto'>
+              <Button
+                onClick={onClearFilters}
+                variant='outline'
+                size="icon"
+                className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+                title="Limpiar filtros"
+              >
+                <Trash2 className='w-4 h-4' />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>

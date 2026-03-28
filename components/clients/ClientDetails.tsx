@@ -71,7 +71,7 @@ export function ClientDetails({ client, onClose }: ClientDetailsProps) {
         </h2>
       </div>
 
-      <div className='space-y-8 max-h-[70vh] overflow-y-auto pr-2 px-1'>
+      <div className='space-y-8 max-h-[70vh] overflow-y-auto pr-2 px-1 pb-10'>
         {/* Información Básica */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b dark:border-gray-800'>
           <div className='space-y-3'>

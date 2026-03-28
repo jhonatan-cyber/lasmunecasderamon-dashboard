@@ -184,7 +184,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id, ...data })
+          body: JSON.stringify({ id_caja: id, ...data })
         });
 
         const result = await response.json();
@@ -248,7 +248,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
       setMutationLoading(true);
       setMutationError(null);
       try {
-        const response = await fetch('/api/cashregister/retiro', {
+        const response = await fetch('/api/cashregister/retiros', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

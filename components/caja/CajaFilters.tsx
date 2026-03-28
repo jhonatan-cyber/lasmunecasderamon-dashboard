@@ -1,4 +1,8 @@
-import { Input } from "@/components/ui/input";
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -6,9 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
+import SearchInput from "@/components/ui/SearchInput";
 
 interface CajaFiltersProps {
   searchTerm: string;
@@ -25,59 +28,61 @@ export const CajaFilters = ({
   onStatusChange,
   onClearFilters,
 }: CajaFiltersProps) => {
-  const hasActiveFilters = searchTerm || filterStatus !== "all";
-
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
+      <CardContent className='p-6'>
+        <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {/* Búsqueda */}
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
-            />
-            <Input
-              placeholder="Buscar cajas..."
+          <div className='w-full lg:flex-1'>
+            <Label htmlFor='search-caja' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+              Buscar Cajero o ID
+            </Label>
+            <SearchInput
+              id='search-caja'
               value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 text-sm sm:text-base"
+              onChange={onSearchChange}
+              placeholder='Nombre del cajero o ID de caja...'
+              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800'
             />
           </div>
 
-          {/* Filtro de estado */}
-          <div className="flex-1 sm:flex-none">
-            <Select value={filterStatus} onValueChange={onStatusChange}>
-              <SelectTrigger className="w-full sm:w-[180px] text-center rounded-full text-sm sm:text-base">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem className="text-center text-sm sm:text-base" value="all">
-                  Todos los estados
-                </SelectItem>
-                <SelectItem className="text-center text-sm sm:text-base" value="1">
-                  Abiertas
-                </SelectItem>
-                <SelectItem className="text-center text-sm sm:text-base" value="0">
-                  Cerradas
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Botón limpiar filtros */}
-          {hasActiveFilters && (
-            <div className="flex-1 sm:flex-none">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onClearFilters}
-                className="w-full sm:w-auto flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2"
+          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
+            {/* Filtro de estado */}
+            <div className='w-full sm:w-auto min-w-[200px]'>
+              <Label htmlFor='status-caja' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                Estado de Caja
+              </Label>
+              <Select
+                value={filterStatus}
+                onValueChange={onStatusChange}
               >
-                <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                Limpiar
+                <SelectTrigger
+                  id='status-caja'
+                  className='w-full text-sm rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+                >
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                  <SelectItem value='all'>Todos los estados</SelectItem>
+                  <SelectItem value='1'>Cajas Abiertas</SelectItem>
+                  <SelectItem value='0'>Cajas Cerradas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Botón limpiar filtros */}
+            <div className='w-full sm:w-auto'>
+              <Button
+                onClick={onClearFilters}
+                variant='outline'
+                size="icon"
+                className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+                title="Limpiar filtros"
+              >
+                <Trash2 className='w-4 h-4' />
               </Button>
             </div>
-          )}
+          </div>
         </div>
       </CardContent>
     </Card>

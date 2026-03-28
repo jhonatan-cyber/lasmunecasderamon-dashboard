@@ -29,6 +29,15 @@ export class NotificationRepository {
     return res[0]?.count || 0;
   }
 
+  static async markAsRead(id: string) {
+    const now = getNowInBusinessTimezone();
+    try {
+      await query('UPDATE notificaciones SET leida = 1, fecha_leida = ? WHERE id = ?', [now, id]);
+    } catch {
+      await query('UPDATE notificaciones SET leida = 1, fecha_leida = ? WHERE id_notificacion = ?', [now, id]);
+    }
+  }
+
   static async registerToken(userId: string, token: string, deviceType?: string) {
     const id = generateUUID();
     await query('REPLACE INTO push_tokens (id, usuario_id, token, device_type) VALUES (?, ?, ?, ?)', [id, userId, token, deviceType || 'web']);

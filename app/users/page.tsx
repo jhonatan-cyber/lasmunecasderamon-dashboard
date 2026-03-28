@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -35,8 +35,9 @@ export default function Users() {
   const { updateImage } = useUserImage();
 
   const {
-    paginatedUsers,
+    users,
     isLoading,
+    isMutating,
     error,
     searchTerm,
     setSearchTerm,
@@ -68,10 +69,15 @@ export default function Users() {
       try {
         const formData = new FormData();
         Object.entries(values).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
+          if (value !== undefined && value !== null && key !== 'foto') {
             formData.append(key, String(value));
           }
         });
+        if (file) {
+          formData.set('foto', file);
+        } else if (values.foto) {
+          formData.set('foto', values.foto);
+        }
 
         let shouldGenerateEmail = true;
         if (isEditing && selectedUser) {
@@ -82,7 +88,6 @@ export default function Users() {
           formData.set('correo', `${values.nick}@lasmuñecasderamon.com`);
         }
         formData.set('password', values.run);
-        if (file) formData.append('foto', file);
 
         if (isEditing && selectedUser) {
           const result = await updateUser(String(selectedUser.id), formData);
@@ -144,12 +149,12 @@ export default function Users() {
   }, [deactivateUser]);
 
   const handleDeleteUser = useCallback((userId: string | number) => {
-    const user = paginatedUsers?.find(u => u.id === userId);
+    const user = users?.find(u => u.id === userId);
     if (user) {
       setUserToDelete(user);
       setDeleteModalOpen(true);
     }
-  }, [paginatedUsers]);
+  }, [users]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!userToDelete) return;
@@ -185,7 +190,7 @@ export default function Users() {
             <p className='text-gray-600'>Control de plataforma.</p>
           </div>
           <div className='flex gap-2 items-center'>
-            <ExportButtons users={paginatedUsers || []} />
+            <ExportButtons users={users || []} />
             <PermissionGuard module='users' action='create' fallback={null}>
               <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
                 className='bg-black text-white rounded-full px-6 py-2'>
@@ -200,7 +205,7 @@ export default function Users() {
           onClearFilters={handleClearFilters} pageSize={pageSize} setPageSize={setPageSize} setPage={setPage} />
 
         <div className='mt-6 overflow-x-auto'>
-          <UserTable users={paginatedUsers} onViewDetails={handleViewDetails} onEdit={handleEditUser}
+          <UserTable users={users} onViewDetails={handleViewDetails} onEdit={handleEditUser}
             onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} onDelete={handleDeleteUser}
             formatCurrency={formatCurrency} formatDate={formatDate} getRoleBadgeColor={getRoleBadgeColor}
             currentPage={page} pageSize={pageSize} />
@@ -209,29 +214,58 @@ export default function Users() {
         {totalPages > 1 && <div className='flex justify-center mt-6'><Paginate page={page} totalPages={totalPages} setPage={setPage} /></div>}
 
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className='max-w-2xl'>
-            <DialogHeader><DialogTitle>Detalles</DialogTitle><DialogDescription className='sr-only'>Detalles</DialogDescription></DialogHeader>
-            <div className='overflow-y-auto'>{selectedUser && <UserDetails user={selectedUser} />}</div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className='max-w-3xl'>
-            <DialogHeader><DialogTitle>{isEditing ? 'Editar' : 'Nuevo'}</DialogTitle><DialogDescription className='sr-only'>Form</DialogDescription></DialogHeader>
-            <div className='overflow-y-auto'>
-              <UserForm user={selectedUser || undefined} onSubmit={handleFormSubmit} onCancel={handleFormCancel} isEditMode={isEditing} hideButtons={true} />
+          <DialogContent className='max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden'>
+            <DialogHeader className='p-6 border-b'>
+              <DialogTitle className='text-xl font-bold'>Detalles del Usuario</DialogTitle>
+              <DialogDescription className='sr-only'>Información detallada del usuario seleccionado</DialogDescription>
+            </DialogHeader>
+            <div className='flex-1 overflow-y-auto p-6'>
+              {selectedUser && <UserDetails user={selectedUser} />}
             </div>
-            <div className='border-t p-4 flex justify-center gap-4'>
-              <Button onClick={handleFormCancel} variant='outline' className='rounded-full'>Cancelar</Button>
-              <Button type='submit' form='user-form' className='bg-black text-white rounded-full'>
-                {isEditing ? 'Actualizar' : 'Guardar'}
+            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl'>
+              <Button onClick={() => setIsDetailsOpen(false)} className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 transition-all hover:scale-105'>
+                Cerrar
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        <DeleteUserConfirmModal open={deleteModalOpen} onOpenChange={setDeleteModalOpen} onConfirm={handleConfirmDelete}
-          userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''} />
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden'>
+            <DialogHeader className='p-6 pb-2 border-b'>
+              <DialogTitle className='text-xl font-bold'>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
+              <DialogDescription className='sr-only'>Formulario para crear o editar usuarios</DialogDescription>
+            </DialogHeader>
+
+            <div className='flex-1 overflow-y-auto p-6'>
+              <UserForm user={selectedUser || undefined} onSubmit={handleFormSubmit} onCancel={handleFormCancel} isEditMode={isEditing} hideButtons={true} />
+            </div>
+
+            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+              <Button onClick={handleFormCancel} variant='outline' className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105' disabled={isMutating}>
+                Cancelar
+              </Button>
+              <Button type='submit' form='user-form' className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105' disabled={isMutating}>
+                {isMutating ? (
+                  <div className='flex items-center gap-2'>
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                    <span>{isEditing ? 'Actualizando...' : 'Guardando...'}</span>
+                  </div>
+                ) : (
+                  <span>{isEditing ? 'Actualizar Cambios' : 'Guardar Usuario'}</span>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <DeleteUserConfirmModal 
+          open={deleteModalOpen} 
+          onOpenChange={setDeleteModalOpen} 
+          onConfirm={handleConfirmDelete}
+          userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
+          isLoading={isMutating} 
+        />
       </div>
     </PermissionGuard>
   );

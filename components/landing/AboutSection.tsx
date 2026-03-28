@@ -1,5 +1,7 @@
-/* eslint-disable */
+'use client';
+
 import { useState, useEffect } from 'react';
+import NextImage from 'next/image';
 import { Award, Shield, Calendar, Users, Star, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AboutSection() {
@@ -7,19 +9,19 @@ export default function AboutSection() {
 
   const images = [
     {
-      url: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1000&auto=format&fit=crop',
+      url: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67',
       alt: 'Ambiente de Lujo'
     },
     {
-      url: 'https://images.unsplash.com/photo-1570572225676-47621c255771?q=80&w=1000&auto=format&fit=crop',
+      url: 'https://images.unsplash.com/photo-1570572225676-47621c255771',
       alt: 'Iluminación Premium'
     },
     {
-      url: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?q=80&w=1000&auto=format&fit=crop',
+      url: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34',
       alt: 'Bar Exclusivo'
     },
     {
-      url: 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80&w=1000&auto=format&fit=crop',
+      url: 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2',
       alt: 'Sala VIP'
     }
   ];
@@ -29,7 +31,7 @@ export default function AboutSection() {
       setCurrentImage((prev) => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [images.length]);
 
   const nextImage = () => {
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -102,10 +104,14 @@ export default function AboutSection() {
                   className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentImage ? 'opacity-100' : 'opacity-0'
                     }`}
                 >
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform ease-linear transform scale-105 hover:scale-110"
-                    style={{ backgroundImage: `url('${img.url}')`, transitionDuration: '10000ms' }}
-                  ></div>
+                  <NextImage
+                    src={img.url}
+                    alt={img.alt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform ease-linear transform scale-105 hover:scale-110"
+                    style={{ transitionDuration: '10000ms' }}
+                  />
                   <div className='absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60'></div>
                 </div>
               ))}
