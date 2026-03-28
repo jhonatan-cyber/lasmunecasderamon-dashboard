@@ -16,4 +16,5 @@ export type AnticipoType = z.infer<typeof AnticipoSchema>;
 export const AnticipoRequestSchema = z.object({
   monto: z.number().positive('El monto debe ser positivo'),
   motivo: z.string().min(1, 'El motivo es requerido'),
+  device_date: z.string().optional(),
 });

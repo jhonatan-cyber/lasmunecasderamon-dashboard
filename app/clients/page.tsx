@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, Wallet, Loader2 } from 'lucide-react';
 import { useClients } from '@/hooks/clientes/useClients';
 import { Client } from '@/types/client';
 import { ClientForm } from '@/components/clients/ClientForm';
@@ -25,6 +25,8 @@ import { ClientsSkeleton } from '@/components/ui/skeletons';
 import { PrepagoForm } from '@/components/clients/PrepagoForm';
 import { usePrepagoForm } from '@/hooks/personal/usePrepagoForm';
 import { type ClientFormValues } from '@/hooks/personal/useClientForm';
+
+const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
 
 export default function Clients() {
   const {
@@ -50,25 +52,29 @@ export default function Clients() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
   const [modalClientData, setModalClientData] = useState(CLIENT_EMPTY);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editClientId, setEditClientId] = useState<string | number | null>(null);
   const [isPrepagoModalOpen, setIsPrepagoModalOpen] = useState(false);
   const [prepagoClient, setPrepagoClient] = useState<Client | null>(null);
   const [prepagoSubmitting, setPrepagoSubmitting] = useState(false);
-  const { amount: prepagoAmount, setAmount: setPrepagoAmount } = usePrepagoForm({
+
+  const { 
+    amount: prepagoAmount, 
+    setAmount: setPrepagoAmount,
+    numericAmount
+  } = usePrepagoForm({
     client: prepagoClient,
     onSubmit: () => {}
   });
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchTerm('');
     setFilterStatus(null);
     setPage(1);
-  };
+  }, [setSearchTerm, setFilterStatus, setPage]);
 
-  const handleAddClient = async (data: ClientFormValues) => {
+  const handleAddClient = useCallback(async (data: ClientFormValues) => {
     try {
       await createClient(data);
       setIsModalOpen(false);
@@ -77,8 +83,9 @@ export default function Clients() {
     } catch {
       toast.error('Error al crear el cliente');
     }
-  };
-  const handleEditClient = async (data: ClientFormValues) => {
+  }, [createClient]);
+
+  const handleEditClient = useCallback(async (data: ClientFormValues) => {
     if (editClientId === null) return;
     try {
       await updateClient({
@@ -93,23 +100,23 @@ export default function Clients() {
     } catch {
       toast.error('Error al actualizar el cliente');
     }
-  };
+  }, [editClientId, updateClient]);
 
-  const handleDeleteClient = async (client: Client) => {
+  const handleDeleteClient = useCallback(async (client: Client) => {
     try {
       await deleteClient(client.id);
       toast.success('Cliente eliminado correctamente');
     } catch {
       toast.error('Error al eliminar el cliente');
     }
-  };
+  }, [deleteClient]);
 
-  const handleViewDetails = (client: Client) => {
+  const handleViewDetails = useCallback((client: Client) => {
     setSelectedClient(client);
     setIsDetailsOpen(true);
-  };
+  }, []);
 
-  const handleEditClick = (client: Client) => {
+  const handleEditClick = useCallback((client: Client) => {
     setModalClientData({
       run: client.run || '',
       name: client.name || '',
@@ -119,22 +126,22 @@ export default function Clients() {
     setEditClientId(client.id);
     setIsEditMode(true);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleAddClick = () => {
+  const handleAddClick = useCallback(() => {
     setModalClientData(CLIENT_EMPTY);
     setEditClientId(null);
     setIsEditMode(false);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleLoadPrepago = (client: Client) => {
+  const handleLoadPrepago = useCallback((client: Client) => {
     setPrepagoClient(client);
     setPrepagoAmount('');
     setIsPrepagoModalOpen(true);
-  };
+  }, [setPrepagoAmount]);
 
-  const handlePrepagoSubmit = async (e: React.FormEvent) => {
+  const handlePrepagoSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prepagoClient || !prepagoAmount) return;
     setPrepagoSubmitting(true);
@@ -144,7 +151,7 @@ export default function Clients() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cliente_id: prepagoClient.id,
-          monto: parseInt(prepagoAmount),
+          monto: numericAmount,
           tipo: 'CARGA'
         })
       });
@@ -162,7 +169,7 @@ export default function Clients() {
     } finally {
       setPrepagoSubmitting(false);
     }
-  };
+  }, [prepagoClient, prepagoAmount, setPrepagoAmount, fetchClients]);
 
   if (isLoading && allClients.length === 0) return <ClientsSkeleton />;
 
@@ -212,6 +219,7 @@ export default function Clients() {
               onLoadPrepago={handleLoadPrepago}
               currentPage={page}
               pageSize={pageSize}
+              isMutating={isMutating}
             />
           </div>
         </div>
@@ -222,20 +230,18 @@ export default function Clients() {
           </div>
         )}
 
-        {/* Diálogo de formulario cliente */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-md max-h-[90vh] flex flex-col p-0'>
-            <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-              <DialogTitle className='text-lg sm:text-xl'>
-                {isEditMode ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}
+          <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+            <DialogHeader className='p-6 pb-2 border-b'>
+              <DialogTitle className='text-xl font-bold'>
+                {isEditMode ? 'Editar Cliente' : 'Nuevo Cliente'}
               </DialogTitle>
               <DialogDescription className='sr-only'>
-                {isEditMode
-                  ? 'Formulario para editar cliente'
-                  : 'Formulario para crear nuevo cliente'}
+                {isEditMode ? 'Formulario para editar cliente' : 'Formulario para crear nuevo cliente'}
               </DialogDescription>
             </DialogHeader>
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
+
+            <div className='flex-1 overflow-y-auto p-6'>
               <ClientForm
                 clientData={modalClientData}
                 open={isModalOpen}
@@ -251,34 +257,36 @@ export default function Clients() {
                 hideButtons={true}
               />
             </div>
-            <div className='flex-shrink-0 border-t px-6 py-4'>
-              <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto px-6 py-2'
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setModalClientData(CLIENT_EMPTY);
-                    setIsEditMode(false);
-                    setEditClientId(null);
-                  }}
-                  disabled={isMutating}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type='submit'
-                  form='client-form'
-                  size='sm'
-                  variant='outline'
-                  className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200 w-full sm:w-auto px-6 py-2'
-                  disabled={isMutating}
-                >
-                  {isMutating ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Guardar'}
-                </Button>
-              </div>
+
+            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+              <Button
+                variant='outline'
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setModalClientData(CLIENT_EMPTY);
+                  setIsEditMode(false);
+                  setEditClientId(null);
+                }}
+                className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                disabled={isMutating}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type='submit'
+                form='client-form'
+                className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+                disabled={isMutating}
+              >
+                {isMutating ? (
+                  <div className='flex items-center gap-2'>
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                    <span>{isEditMode ? 'Actualizando...' : 'Guardando...'}</span>
+                  </div>
+                ) : (
+                  <span>{isEditMode ? 'Actualizar Cambios' : 'Guardar Cliente'}</span>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -292,35 +300,67 @@ export default function Clients() {
             {selectedClient && (
               <ClientDetails client={selectedClient} onClose={() => setIsDetailsOpen(false)} />
             )}
-            <DialogFooter className='border-t pt-4 mt-2'>
+            <div className='border-t pt-4 mt-2 bg-gray-50 dark:bg-slate-900/50 -m-4 sm:-m-6 p-4 sm:p-6 rounded-b-xl flex justify-center w-full'>
               <Button
                 variant='outline'
                 onClick={() => setIsDetailsOpen(false)}
-                className='rounded-full w-full sm:w-auto px-8 py-2'
+                className='rounded-full w-full sm:w-auto px-8 py-2 dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all'
               >
                 Cerrar
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
-        {/* Modal de Prepago */}
         <Dialog open={isPrepagoModalOpen} onOpenChange={setIsPrepagoModalOpen}>
-          <DialogContent className='sm:max-w-[425px]'>
-            <DialogHeader>
-              <DialogTitle>Cargar Saldo Prepago</DialogTitle>
+          <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+            <DialogHeader className='p-6 pb-2 border-b'>
+              <DialogTitle className='text-xl font-bold flex items-center gap-2'>
+                <Wallet className='w-5 h-5 text-green-600' />
+                <span>Cargar Saldo Prepago</span>
+              </DialogTitle>
               <DialogDescription className='sr-only'>
-                Formulario de carga de saldo
+                Formulario para cargar saldo al cliente
               </DialogDescription>
             </DialogHeader>
-            <PrepagoForm
-              client={prepagoClient}
-              amount={prepagoAmount}
-              onAmountChange={setPrepagoAmount}
-              onSubmit={handlePrepagoSubmit}
-              onCancel={() => setIsPrepagoModalOpen(false)}
-              isSubmitting={prepagoSubmitting}
-            />
+
+            <div className='flex-1 overflow-y-auto p-6'>
+              <PrepagoForm
+                client={prepagoClient}
+                amount={prepagoAmount}
+                onAmountChange={setPrepagoAmount}
+                onSubmit={handlePrepagoSubmit}
+                onCancel={() => setIsPrepagoModalOpen(false)}
+                isSubmitting={prepagoSubmitting}
+                hideButtons={true}
+              />
+            </div>
+
+            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+              <Button
+                variant='outline'
+                onClick={() => setIsPrepagoModalOpen(false)}
+                className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                disabled={prepagoSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type='submit'
+                form='prepago-form'
+                className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+                disabled={prepagoSubmitting || !prepagoAmount}
+              >
+                {prepagoSubmitting ? (
+                  <div className='flex items-center gap-2'>
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                    <span>Cargando...</span>
+                  </div>
+                ) : (
+                  <span>Confirmar Recarga</span>
+                )}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

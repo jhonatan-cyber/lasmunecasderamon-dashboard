@@ -1,49 +1,27 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import useRooms from '@/hooks/habitaciones/useRooms';
-import { RoomForm } from '@/components/rooms/RoomForm';
 import { type RoomFormValues } from '@/hooks/personal/useRoomForm';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import RoomCard from '@/components/rooms/RoomCard';
 import RoomTable from '@/components/rooms/RoomTable';
 import { RoomFilters } from '@/components/rooms/RoomFilters';
 import Paginate from '@/components/ui/paginate';
 import { Room } from '@/types/room';
-import { Table, Grid3X3, Plus, Bed } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { RoomsSkeleton } from '@/components/ui/skeletons';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy
-} from '@dnd-kit/sortable';
+import { toTitleCase } from '@/lib/utils/formatters';
 
-function toTitleCase(str: string) {
-  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-}
+// Nuevos componentes refactorizados
+import { RoomsHeader } from '@/components/rooms/RoomsHeader';
+import { RoomGridView } from '@/components/rooms/RoomGridView';
+import { RoomFormDialog } from '@/components/rooms/RoomFormDialog';
 
 const RoomsPage = () => {
   const {
     filteredRooms,
     isLoading,
+    isMutating,
     searchTerm,
     setSearchTerm,
     createRoom,
@@ -51,17 +29,20 @@ const RoomsPage = () => {
     deleteRoom,
     activateRoom,
     deactivateRoom,
-    occupyRoom
+    occupyRoom,
+    reorderRooms
   } = useRooms();
 
   const { hasPermission } = useUserPermissions();
-  const canCreate = hasPermission('rooms', 'create');
-  const canEdit = hasPermission('rooms', 'edit');
-  const canDelete = hasPermission('rooms', 'delete');
-  const canActivate = hasPermission('rooms', 'activate');
-  const canDeactivate = hasPermission('rooms', 'deactivate');
-  const canOccupy = hasPermission('rooms', 'occupy');
-  const canLiberate = hasPermission('rooms', 'liberate');
+  const permissions = {
+    canCreate: hasPermission('rooms', 'create'),
+    canEdit: hasPermission('rooms', 'edit'),
+    canDelete: hasPermission('rooms', 'delete'),
+    canActivate: hasPermission('rooms', 'activate'),
+    canDeactivate: hasPermission('rooms', 'deactivate'),
+    canOccupy: hasPermission('rooms', 'occupy'),
+    canLiberate: hasPermission('rooms', 'liberate'),
+  };
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editRoom, setEditRoom] = useState<Room | null>(null);
@@ -71,18 +52,7 @@ const RoomsPage = () => {
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
   const [localRooms, setLocalRooms] = useState<Room[]>([]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8
-      }
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
-  );
-
-  React.useEffect(() => {
+  useEffect(() => {
     const targetSize = showTableView ? 5 : 8;
     setPageSize(prev => (prev !== targetSize ? targetSize : prev));
     setPage(1);
@@ -93,11 +63,8 @@ const RoomsPage = () => {
     return filteredRooms.filter(room => room.status === filterStatus);
   }, [filteredRooms, filterStatus]);
 
-  React.useEffect(() => {
-    setLocalRooms(prev => {
-      if (prev === filteredByStatus) return prev;
-      return filteredByStatus;
-    });
+  useEffect(() => {
+    setLocalRooms(prev => (prev === filteredByStatus ? prev : filteredByStatus));
   }, [filteredByStatus]);
 
   const totalPages = Math.max(1, Math.ceil(localRooms.length / pageSize));
@@ -105,21 +72,6 @@ const RoomsPage = () => {
     const start = (page - 1) * pageSize;
     return localRooms.slice(start, start + pageSize);
   }, [localRooms, page, pageSize]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = localRooms.findIndex(r => r.id === active.id);
-      const newIndex = localRooms.findIndex(r => r.id === over.id);
-
-      const newRooms = arrayMove(localRooms, oldIndex, newIndex);
-      setLocalRooms(newRooms);
-
-      // TODO: Implementar reordenamiento en el backend
-      // reorderRooms(newRooms);
-    }
-  };
 
   const handleCreate = async (form: RoomFormValues) => {
     await createRoom({
@@ -152,20 +104,9 @@ const RoomsPage = () => {
     setOpenDialog(false);
   };
 
-  const handleDelete = async (room: Room) => {
-    await deleteRoom(room.id);
-  };
-
   const handleActivate = async (room: Room) => {
-    await activateRoom(room.id);
-  };
-
-  const handleDeactivate = async (room: Room) => {
-    await deactivateRoom(room.id);
-  };
-
-  const handleOccupy = async (room: Room) => {
-    await occupyRoom(room.id);
+    const isLiberate = room.status === 2;
+    await activateRoom(room.id, isLiberate ? 'liberate' : 'activate');
   };
 
   const handleDialogClose = () => {
@@ -184,45 +125,12 @@ const RoomsPage = () => {
   return (
     <PermissionGuard module='rooms' action='view'>
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Habitaciones</h1>
-          <div className='flex flex-col sm:flex-row gap-2 items-center'>
-            <div className='flex gap-2 items-center'>
-              <Button
-                variant={showTableView ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setShowTableView(true)}
-                className='rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
-              >
-                <Table className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                Tabla
-              </Button>
-              <Button
-                variant={!showTableView ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setShowTableView(false)}
-                className='rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
-              >
-                <Grid3X3 className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                Cards
-              </Button>
-            </div>
-            {canCreate && (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => {
-                  setEditRoom(null);
-                  setOpenDialog(true);
-                }}
-                className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
-              >
-                <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                Nueva Habitacion
-              </Button>
-            )}
-          </div>
-        </div>
+        <RoomsHeader 
+          showTableView={showTableView} 
+          setShowTableView={setShowTableView} 
+          canCreate={permissions.canCreate}
+          onNew={() => { setEditRoom(null); setOpenDialog(true); }}
+        />
 
         <RoomFilters
           searchTerm={searchTerm}
@@ -238,22 +146,18 @@ const RoomsPage = () => {
 
         {showTableView ? (
           <div className='mt-4 sm:mt-6'>
-            <div className='overflow-x-auto'>
-              <RoomTable
-                rooms={paginatedRooms}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onDeactivate={handleDeactivate}
-                onOccupy={handleOccupy}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                canActivate={canActivate}
-                canDeactivate={canDeactivate}
-                canOccupy={canOccupy}
-                canLiberate={canLiberate}
-              />
-            </div>
+            <RoomTable
+              rooms={paginatedRooms}
+              onEdit={handleEdit}
+              onDelete={room => deleteRoom(room.id)}
+              onActivate={handleActivate}
+              onDeactivate={room => deactivateRoom(room.id)}
+              onOccupy={room => occupyRoom(room.id)}
+              isMutating={isMutating}
+              {...permissions}
+              currentPage={page}
+              pageSize={pageSize}
+            />
             {totalPages > 1 && (
               <div className='flex justify-center mt-4 sm:mt-6'>
                 <Paginate page={page} totalPages={totalPages} setPage={setPage} />
@@ -261,120 +165,36 @@ const RoomsPage = () => {
             )}
           </div>
         ) : (
-          <>
-            {paginatedRooms.length === 0 ? (
-              <div className='flex flex-col items-center justify-center py-20'>
-                <div className='w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4'>
-                  <Bed className='w-8 h-8 text-gray-400' />
-                </div>
-                <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                  {localRooms.length === 0 ? 'No hay habitaciones' : 'Sin resultados'}
-                </h3>
-                <p className='text-gray-500 text-center mb-6 max-w-sm'>
-                  {localRooms.length === 0
-                    ? 'Crea tu primera habitación para comenzar'
-                    : 'Ajusta los filtros para ver más resultados'}
-                </p>
-                {localRooms.length === 0 && (
-                  <Button
-                    onClick={() => {
-                      setEditRoom(null);
-                      setOpenDialog(true);
-                    }}
-                    className='bg-black text-white hover:bg-gray-800 rounded-xl px-6 py-2'
-                  >
-                    <Plus className='w-4 h-4 mr-2' />
-                    Nueva habitación
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={paginatedRooms.map(r => r.id)}
-                  strategy={rectSortingStrategy}
-                >
-                  <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mt-4 sm:mt-6'>
-                    {paginatedRooms.map(room => (
-                      <RoomCard
-                        key={room.id}
-                        room={room}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onActivate={handleActivate}
-                        onDeactivate={handleDeactivate}
-                        onOccupy={handleOccupy}
-                        isDraggable={true}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        canActivate={canActivate}
-                        canDeactivate={canDeactivate}
-                        canOccupy={canOccupy}
-                        canLiberate={canLiberate}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
+          <div className='mt-4 sm:mt-6'>
+            <RoomGridView 
+              rooms={paginatedRooms}
+              localRooms={localRooms}
+              setLocalRooms={setLocalRooms}
+              reorderRooms={reorderRooms}
+              onEdit={handleEdit}
+              onDelete={room => deleteRoom(room.id)}
+              onActivate={handleActivate}
+              onDeactivate={room => deactivateRoom(room.id)}
+              onOccupy={room => occupyRoom(room.id)}
+              isMutating={isMutating}
+              {...permissions}
+              onNew={() => { setEditRoom(null); setOpenDialog(true); }}
+            />
             {totalPages > 1 && paginatedRooms.length > 0 && (
               <div className='flex justify-center mt-4 sm:mt-6'>
                 <Paginate page={page} totalPages={totalPages} setPage={setPage} />
               </div>
             )}
-          </>
+          </div>
         )}
-        <Dialog
+
+        <RoomFormDialog 
           open={openDialog}
-          onOpenChange={v => {
-            if (!v) handleDialogClose();
-          }}
-        >
-          <DialogContent className='p-0 w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] max-h-[90vh] flex flex-col'>
-            <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
-              <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
-                {editRoom ? 'Editar habitación' : 'Nueva habitación'}
-              </DialogTitle>
-              <DialogDescription className='sr-only'>Formulario de habitación</DialogDescription>
-            </DialogHeader>
-            <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
-              <RoomForm
-                open={openDialog}
-                onCancel={handleDialogClose}
-                onSubmit={editRoom ? handleUpdate : handleCreate}
-                initialValues={editRoom}
-                isLoading={isLoading}
-                hideButtons={true}
-              />
-            </div>
-            <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
-              <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
-                <Button
-                  type='button'
-                  onClick={handleDialogClose}
-                  variant='outline'
-                  disabled={isLoading}
-                  className='w-full sm:w-auto rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type='submit'
-                  form='room-form'
-                  disabled={isLoading}
-                  variant='outline'
-                  className='flex items-center gap-2 w-full sm:w-auto rounded-full hover:scale-105 transition-all duration-200 bg-black text-white'
-                >
-                  {editRoom ? 'Actualizar' : 'Guardar'}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+          onClose={handleDialogClose}
+          onSubmit={editRoom ? handleUpdate : handleCreate}
+          room={editRoom}
+          isMutating={isMutating}
+        />
       </div>
     </PermissionGuard>
   );

@@ -3,12 +3,31 @@ import * as argon2 from 'argon2';
 import { generateToken, registrarLogin } from '@/lib/auth/auth';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import crypto from 'crypto';
+import { ValidationError } from '@/lib/errors/errors';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 20 * 60;
 const SHIFT_END = 23 * 60;
 
 export class AuthRepository {
+  private static mapAuthenticatedUser(user: any) {
+    return {
+      id: user.id_usuario,
+      username: user.nick || user.username || user.nombre,
+      name: user.nombre,
+      lastName: user.apellido,
+      email: user.email,
+      role: user.rol_nombre,
+      foto: user.foto,
+      nick: user.nick,
+      phone: user.telefono,
+      address: user.direccion,
+      estado_civil: user.estado_civil,
+      qr_token: user.qr_token,
+      two_factor_enabled: Boolean(user.two_factor_enabled),
+    };
+  }
+
   static getSystemDateTime() {
     const now = getNowInBusinessTimezone();
     const [date, time] = now.split(' ');
@@ -71,11 +90,51 @@ export class AuthRepository {
       }
     }
 
-    return { success: true, token, user: { id: user.id_usuario, name: user.nombre, lastName: user.apellido, email: user.email, role: user.rol_nombre, qr_token: user.qr_token } };
+    return { success: true, token, user: this.mapAuthenticatedUser(user) };
   }
 
   static async logout(userId: string) {
     await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
+  }
+
+  static async resetPassword(run: string) {
+    const normalizedRun = run.trim();
+    const users = await query<any[]>(
+      `SELECT id_usuario, run, email, nick, nombre, apellido
+       FROM usuarios
+       WHERE estado = 1
+       AND run = ?
+       LIMIT 1`,
+      [normalizedRun]
+    );
+
+    if (users.length === 0) {
+      throw new ValidationError('Usuario no encontrado');
+    }
+
+    const user = users[0];
+    if (!user.run || String(user.run).trim().length === 0) {
+      throw new ValidationError('El usuario no tiene RUN registrado');
+    }
+
+    const hashedPassword = await argon2.hash(String(user.run).trim());
+
+    await query(
+      'UPDATE usuarios SET password = ?, fecha_mod = ? WHERE id_usuario = ?',
+      [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
+    );
+
+    return {
+      success: true,
+      message: 'La contraseña fue reseteada correctamente',
+      user: {
+        id: user.id_usuario,
+        name: user.nombre,
+        lastName: user.apellido,
+        email: user.email,
+        nick: user.nick,
+      },
+    };
   }
 
   static async cerrarSesiones() {

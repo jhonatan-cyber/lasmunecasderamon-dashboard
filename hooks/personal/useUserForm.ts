@@ -43,7 +43,6 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
   const aporte = useNumberFormatter(user?.contributions || 0);
   const descuento = useNumberFormatter(user?.discount || 0);
 
-  // Helper patterns
   const mapEstadoCivilToSelect = useCallback((estadoCivil: string | undefined): string => {
     if (!estadoCivil) return '';
     const estado = estadoCivil.toLowerCase();
@@ -179,9 +178,9 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       }
 
       if (imageFile) {
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(imageFile.type)) {
-          form.setError('foto', { type: 'manual', message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF)' });
+          form.setError('foto', { type: 'manual', message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)' });
           return;
         }
         if (imageFile.size > 5 * 1024 * 1024) {

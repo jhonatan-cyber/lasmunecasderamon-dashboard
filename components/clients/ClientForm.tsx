@@ -125,8 +125,7 @@ export function ClientForm({
           <Button
             type='button'
             variant='outline'
-            size='sm'
-            className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto px-6 py-2'
+            className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black w-full sm:w-auto px-6 py-2 text-sm sm:text-base'
             onClick={onCancel}
             disabled={isLoading}
           >
@@ -134,9 +133,8 @@ export function ClientForm({
           </Button>
           <Button
             type='submit'
-            size='sm'
             variant='outline'
-            className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200 w-full sm:w-auto px-6 py-2'
+            className='flex items-center bg-black text-white dark:bg-white dark:text-black gap-2 rounded-full hover:scale-105 transition-all duration-200 w-full sm:w-auto px-6 py-2 dark:hover:bg-gray-200 text-sm sm:text-base'
             disabled={isLoading}
           >
             {isLoading ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Guardar'}

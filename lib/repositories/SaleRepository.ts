@@ -8,28 +8,35 @@ export class SaleRepository {
   private static readonly TABLE = 'ventas';
   private static readonly ID_COL = 'id_venta';
 
-  private static mapSaleFromDB(row: any): SaleType {
-    if (!row) return null as any;
-    return SaleSchema.parse({
-      id: row.id_venta,
-      codigo: row.codigo,
-      cliente_id: row.cliente_id,
-      pedido_id: row.pedido_id,
-      habitacion_id: row.habitacion_id,
-      metodo_pago: row.metodo_pago,
-      propina: Number(row.propina || 0),
-      sub_total: Number(row.sub_total || 0),
-      total: Number(row.total || 0),
-      total_comision: Number(row.total_comision || 0),
-      tiempo: Number(row.tiempo || 0),
-      caja_id: row.caja_id,
-      created_by: row.created_by,
-      estado: row.estado,
-      fecha_crea: row.fecha_crea,
-      fecha_mod: row.fecha_mod,
-      cliente_nombre: row.cliente_nombre,
-      habitacion_nombre: row.habitacion_nombre
-    });
+  private static mapSaleFromDB(row: any): SaleType | null {
+    if (!row) return null;
+    try {
+      return SaleSchema.parse({
+        id: row.id_venta,
+        codigo: row.codigo,
+        cliente_id: row.cliente_id,
+        pedido_id: row.pedido_id,
+        habitacion_id: row.habitacion_id,
+        metodo_pago: row.metodo_pago,
+        propina: Number(row.propina || 0),
+        sub_total: Number(row.sub_total || 0),
+        total: Number(row.total || 0),
+        total_comision: Number(row.total_comision || 0),
+        tiempo: Number(row.tiempo || 0),
+        caja_id: row.caja_id,
+        created_by: row.created_by,
+        estado: Number(row.estado ?? 1),
+        fecha_crea: row.fecha_crea,
+        fecha_mod: row.fecha_mod,
+        cliente_nombre: row.cliente_nombre,
+        habitacion_nombre: row.habitacion_nombre,
+        item_count: Number(row.item_count || 0),
+        anfitrionas_nicks: row.anfitrionas_nicks || null,
+      });
+    } catch (err) {
+      console.warn('[SaleRepository] Skipping invalid sale row:', row.id_venta, err);
+      return null;
+    }
   }
 
   static async getAll(params: { tipo?: string; page?: string; limit?: string; estado?: string; caja_id?: string; search?: string }): Promise<any> {
@@ -74,10 +81,19 @@ export class SaleRepository {
     }
     
     const sql = `
-      SELECT v.*, c.nombre as cliente_nombre, u.nick as staff_nick
+      SELECT v.*,
+        c.nombre as cliente_nombre,
+        u.nick as staff_nick,
+        h.nombre as habitacion_nombre,
+        (SELECT COUNT(*) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
+        (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
+         FROM ventas_usuarios vu
+         JOIN usuarios u2 ON u2.id_usuario = vu.usuario_id
+         WHERE vu.venta_id = v.id_venta) as anfitrionas_nicks
       FROM ventas v
       LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
       LEFT JOIN usuarios u ON v.created_by = u.id_usuario
+      LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
       ${where}
       ORDER BY v.fecha_crea DESC
       LIMIT ? OFFSET ?
@@ -87,7 +103,7 @@ export class SaleRepository {
     const count = await query<any[]>(countSql, sqlParams);
 
     return { 
-      data: data.map(row => this.mapSaleFromDB(row)), 
+      data: data.map(row => this.mapSaleFromDB(row)).filter((item): item is SaleType => item !== null), 
       total: count[0]?.count || 0 
     };
   }
@@ -110,7 +126,8 @@ export class SaleRepository {
     );
   }
 
-  static async getById(id: string): Promise<SaleType | null> {
+  static async getById(id: string): Promise<any | null> {
+    // 1. Fetch main venta data
     const res = await query<any[]>(`
       SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_nombre,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
@@ -122,7 +139,50 @@ export class SaleRepository {
       WHERE v.id_venta = ?
       GROUP BY v.id_venta
     `, [id]);
-    return res.length > 0 ? this.mapSaleFromDB(res[0]) : null;
+
+    if (res.length === 0) return null;
+
+    const venta = this.mapSaleFromDB(res[0]);
+    if (!venta) return null;
+
+    // 2. Fetch detalle items with product info
+    const detalles = await query<any[]>(`
+      SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
+             p.nombre as producto_nombre, p.precio as producto_precio
+      FROM detalle_ventas dv
+      LEFT JOIN productos p ON p.id_producto = dv.producto_id
+      WHERE dv.venta_id = ?
+      ORDER BY dv.id_detalle_venta ASC
+    `, [id]);
+
+    // 3. Fetch anfitrionas/users assigned to this venta
+    const usuarios = await query<any[]>(`
+      SELECT vu.usuario_id, u.nick, u.nombre as usuario_nombre
+      FROM ventas_usuarios vu
+      LEFT JOIN usuarios u ON u.id_usuario = vu.usuario_id
+      WHERE vu.venta_id = ?
+    `, [id]);
+
+    return {
+      ...venta,
+      detalles: detalles.map(d => ({
+        id: d.id,
+        venta_id: d.venta_id,
+        producto_id: d.producto_id,
+        precio: Number(d.precio || 0),
+        comision: Number(d.comision || 0),
+        cantidad: Number(d.cantidad || 0),
+        sub_total: Number(d.sub_total || 0),
+        producto_nombre: d.producto_nombre,
+        producto_precio: d.producto_precio ? Number(d.producto_precio) : undefined,
+      })),
+      usuarios: usuarios.map(u => ({
+        id: u.usuario_id,
+        usuario_id: u.usuario_id,
+        nick: u.nick,
+        usuario_nombre: u.usuario_nombre,
+      })),
+    };
   }
 
   static async updateStatus(id: string, estado: number, userId?: string): Promise<SaleType | null> {

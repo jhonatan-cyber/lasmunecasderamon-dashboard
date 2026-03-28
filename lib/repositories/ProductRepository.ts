@@ -24,7 +24,7 @@ export class ProductRepository {
   static async getAll(categoryId?: string): Promise<ProductType[]> {
     let where = 'WHERE 1=1';
     let params: any[] = [];
-    if (categoryId) {
+    if (categoryId && categoryId !== 'undefined' && categoryId !== 'NaN') {
       where = 'WHERE P.categoria_id = ?';
       params.push(categoryId);
     }
@@ -69,18 +69,22 @@ export class ProductRepository {
     return await this.getById(id);
   }
 
-  static async update(id: string, data: Partial<ProductType>, foto: string): Promise<ProductType | null> {
-    await BaseRepository.update(query, 'productos', 'id_producto', id, {
-      codigo: data.code,
-      nombre: data.name,
-      categoria_id: data.category_id,
-      precio: data.price,
-      comision: data.commission,
-      descripcion: data.description,
-      estado: data.status,
-      foto: foto || undefined,
+  static async update(id: string, data: Partial<ProductType>, foto?: string): Promise<ProductType | null> {
+    // Mapeamos solo los campos que vienen en 'data' para evitar sobreescribir con undefined
+    const updateData: any = {
       fecha_mod: getNowInBusinessTimezone()
-    });
+    };
+
+    if (data.code !== undefined) updateData.codigo = data.code;
+    if (data.name !== undefined) updateData.nombre = data.name;
+    if (data.category_id !== undefined) updateData.categoria_id = data.category_id;
+    if (data.price !== undefined) updateData.precio = data.price;
+    if (data.commission !== undefined) updateData.comision = data.commission;
+    if (data.description !== undefined) updateData.descripcion = data.description;
+    if (data.status !== undefined) updateData.estado = data.status;
+    if (foto !== undefined) updateData.foto = foto;
+
+    await BaseRepository.update(query, 'productos', 'id_producto', id, updateData);
     return await this.getById(id);
   }
 

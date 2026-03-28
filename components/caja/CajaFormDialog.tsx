@@ -157,81 +157,79 @@ export const CajaFormDialog = ({
       <DialogTrigger asChild>
         <Button
           size='sm'
-          variant='outline'
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
+          variant='default'
+          className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 py-2 h-11'
           disabled={loading || disabled}
         >
-          <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-          Abrir Caja
+          <Plus className='w-4 h-4 mr-2' />
+          Abrir Nueva Caja
         </Button>
       </DialogTrigger>
-      <DialogContent className='sm:max-w-md w-[95vw] max-w-[95vw] sm:w-auto max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
-          <DialogTitle className='text-lg sm:text-xl'>Nueva Caja</DialogTitle>
+      <DialogContent className='max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-900 rounded-[2rem] p-0 overflow-hidden'>
+        <DialogHeader className="px-8 pt-8 pb-4 border-b border-slate-100 dark:border-white/5">
+          <DialogTitle className='text-xl font-black tracking-tight'>Apertura de Caja</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className='space-y-4 sm:space-y-6'>
-              <div>
-                <Label htmlFor='monto_apertura' className='text-sm sm:text-base'>
-                  Monto de Apertura
-                </Label>
-                <div className='relative'>
-                  <Input
-                    id='monto_apertura'
-                    type='text'
-                    placeholder='0'
-                    value={displayValue}
-                    onChange={e => handleInputChange(e.target.value)}
-                    className='pl-10 text-sm sm:text-base'
-                  />
-                  <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-                </div>
-                {errors.monto_apertura && (
-                  <p className='text-xs sm:text-sm text-red-600 mt-1'>{errors.monto_apertura}</p>
-                )}
+        <form onSubmit={handleSubmit} className='flex flex-col'>
+          <div className="px-8 py-6 space-y-6">
+            <div className="space-y-3">
+              <Label htmlFor='monto_apertura' className='text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1'>
+                Monto Inicial en Efectivo
+              </Label>
+              <div className='relative group'>
+                <DollarSign className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-black transition-colors' />
+                <Input
+                  id='monto_apertura'
+                  type='text'
+                  placeholder='0'
+                  value={displayValue}
+                  onChange={e => handleInputChange(e.target.value)}
+                  className='pl-12 h-14 bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10 rounded-2xl text-lg font-bold tabular-nums focus-visible:ring-black transition-all'
+                />
               </div>
-              <div>
-                <Label htmlFor='fecha_apertura' className='text-sm sm:text-base'>
-                  Fecha y Hora de Apertura
-                </Label>
-                <div className='relative'>
-                  <Input
-                    id='fecha_apertura'
-                    type='text'
-                    value={`${formatDateTimeDmyLabel(currentDateTime.toISOString()).date} ${formatDateTimeDmyLabel(currentDateTime.toISOString()).time}`}
-                    readOnly
-                    className='pl-10 text-sm sm:text-base'
-                  />
-                  <Calendar className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-                </div>
+              {errors.monto_apertura && (
+                <p className='text-xs font-bold text-rose-500 mt-1 ml-1'>{errors.monto_apertura}</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label className='text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1'>
+                Fecha y Hora de Registro
+              </Label>
+              <div className='relative'>
+                <Calendar className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300' />
+                <Input
+                  readOnly
+                  value={`${formatDateTimeDmyLabel(currentDateTime.toISOString()).date} ${formatDateTimeDmyLabel(currentDateTime.toISOString()).time}`}
+                  className='pl-12 h-14 bg-slate-100/50 dark:bg-white/5 border-transparent rounded-2xl text-sm font-medium text-slate-500'
+                />
               </div>
             </div>
           </div>
 
-          <div className="flex-shrink-0 border-t px-6 py-4">
-            <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
-              <Button
-                type='button'
-                size='sm'
-                variant='outline'
-                className='rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
-                onClick={() => setOpen(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size='sm'
-                variant='outline'
-                className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
-                type='submit'
-                disabled={loading}
-              >
-                {loading && <Loader2 className='h-3 w-3 sm:h-4 sm:w-4 mr-1 animate-spin' />}
-                Abrir Caja
-              </Button>
-            </div>
+          <div className="px-8 py-6 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-3">
+            <Button
+              type='button'
+              variant='ghost'
+              className='flex-1 h-12 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all'
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type='submit'
+              className='flex-[2] h-12 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg shadow-black/10'
+              disabled={loading}
+            >
+              {loading ? (
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  <span>Procesando...</span>
+                </div>
+              ) : (
+                <span>Confirmar Apertura</span>
+              )}
+            </Button>
           </div>
         </form>
       </DialogContent>

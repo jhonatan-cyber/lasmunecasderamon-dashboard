@@ -1,4 +1,4 @@
-import { query, generateUUID, withTransaction } from '@/lib/database/db';
+import { generateUUID, withTransaction } from '@/lib/database/db';
 import { ServiceCreateSchema } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
@@ -14,15 +14,14 @@ export class ServiceService {
     const v = ServiceCreateSchema.parse(body);
     const servicioId = generateUUID();
     const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const now = getNowInBusinessTimezone();
+    const now = getNowInBusinessTimezone(v.device_date);
     
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
+    const numAnfitrionas = Math.max(1, v.usuarios.length);
+    const precioServicioTotal = Number(v.precio_servicio || 0);
+    const precioServicioUnitario = Math.floor(precioServicioTotal / numAnfitrionas);
 
     // Obtener configuración de comisión de la habitación
-    const hResult = await query<any[]>('SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [v.habitacion_id]);
-    const roomComision = Number(hResult[0]?.comision_anfitriona || 0);
-    const hasRoomComision = roomComision > 0;
-
     const result = await withTransaction(async (trx) => {
       // 1. Deducción de Prepago
       if (v.metodo_pago === 'prepago' && v.cliente_id) {
@@ -56,18 +55,22 @@ export class ServiceService {
       await RoomManager.pauseConflictingServices(trx, v.usuarios, servicioId);
 
       // 4. Cálculo y Distribución de Comisiones
-      const numAnfitrionas = v.usuarios.length;
-      let comisionPerAnfitriona = hasRoomComision 
-        ? Math.floor(roomComision / numAnfitrionas)
-        : Math.floor((v.sub_total - v.precio_habitacion) / numAnfitrionas);
+      const commissionId = generateUUID();
+      await trx(
+        'INSERT INTO comisiones (id_comision, servicio_id, monto, estado, fecha_crea) VALUES (?, ?, ?, 1, ?)',
+        [commissionId, servicioId, precioServicioTotal, now]
+      );
 
       for (const uId of v.usuarios) {
-        if (comisionPerAnfitriona > 0) {
-          const commId = generateUUID();
-          await trx('INSERT INTO comisiones (id_comision, servicio_id, monto, estado) VALUES (?, ?, ?, 1)', [commId, servicioId, comisionPerAnfitriona]);
-          await trx('INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado) VALUES (?, ?, ?, ?, 1)', [generateUUID(), commId, uId, comisionPerAnfitriona]);
-        }
-        await trx('INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision) VALUES (?, ?, ?, ?)', [generateUUID(), uId, servicioId, comisionPerAnfitriona]);
+        await trx(
+          'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado, fecha_crea) VALUES (?, ?, ?, ?, 1, ?)',
+          [generateUUID(), commissionId, uId, precioServicioUnitario, now]
+        );
+
+        await trx(
+          'INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision, fecha_crea) VALUES (?, ?, ?, ?, ?)',
+          [generateUUID(), uId, servicioId, precioServicioUnitario, now]
+        );
       }
 
       // 5. Actualizar disponibilidad de anfitrionas
@@ -75,9 +78,7 @@ export class ServiceService {
 
       // 6. Actualizar Balances de Caja
       if (cajaId) {
-        const commToCaja = hasRoomComision 
-          ? roomComision 
-          : (comisionPerAnfitriona * numAnfitrionas);
+        const commToCaja = precioServicioTotal;
 
         await CashRegisterRepository.updateBalances(trx, cajaId, {
           servicio: v.total - v.iva,

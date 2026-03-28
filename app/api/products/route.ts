@@ -2,14 +2,11 @@ import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { ProductService } from '@/lib/services/ProductService';
-import path from 'path';
-import fs from 'fs/promises';
-
-const PRODUCT_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'products');
+import { processAndSaveImage } from '@/lib/utils/image-utils';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
-  const categoryId = searchParams.get('categoryId') || undefined;
+  const categoryId = searchParams.get('category_id') || searchParams.get('categoryId') || undefined;
   const term = searchParams.get('term');
   const id = searchParams.get('id');
 
@@ -33,8 +30,36 @@ export const GET = withAppApiWrapper(async (request: Request) => {
 });
 
 export const POST = withAppApiWrapper(async (request: Request) => {
-  const body = await request.json();
-  const data = await ProductService.createProduct(body);
+  const contentType = request.headers.get('content-type') || '';
+  let payload: any = {};
+  let fotoName = 'default.png';
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    formData.forEach((value, key) => {
+      if (key !== 'foto' && key !== 'fotoUrl') payload[key] = value;
+    });
+
+    const fotoFile = formData.get('foto') as File | null;
+    const fotoUrl = formData.get('fotoUrl') as string | null;
+
+    if (fotoFile && fotoFile.name && fotoFile.size > 0) {
+      const bytes = await fotoFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      fotoName = await processAndSaveImage(buffer, 'product');
+    } else if (fotoUrl && fotoUrl.startsWith('http')) {
+      fotoName = await processAndSaveImage(fotoUrl, 'product');
+    }
+  } else {
+    payload = await request.json();
+    fotoName = payload.foto || 'default.png';
+    if (fotoName.startsWith('http')) {
+      fotoName = await processAndSaveImage(fotoName, 'product');
+    }
+  }
+
+  // Usamos el servicio para aplicar lógica de negocio (duplicados, etc.)
+  const data = await ProductService.createProduct(payload, fotoName);
 
   return NextResponse.json(
     { success: true, message: 'Producto creado correctamente', data },
@@ -47,7 +72,7 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
   const id = searchParams.get('id');
 
   let targetId = id;
-  let fields: any = {};
+  let payload: any = {};
   let fotoName: string | undefined;
 
   const contentType = request.headers.get('content-type') || '';
@@ -57,32 +82,37 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
     targetId = targetId || (formData.get('id') as string);
 
     formData.forEach((value, key) => {
-      if (key !== 'foto' && key !== 'id') fields[key] = value;
+      if (key !== 'foto' && key !== 'fotoUrl' && key !== 'id') payload[key] = value;
     });
 
     const fotoFile = formData.get('foto') as File | null;
-    fotoName = fields.foto || 'default.png';
+    const fotoUrl = formData.get('fotoUrl') as string | null;
+    fotoName = payload.foto;
 
-    if (fotoFile && fotoFile.name) {
-      const ext = path.extname(fotoFile.name);
-      fotoName = `product_${Date.now()}${ext}`;
+    if (fotoFile && fotoFile.name && fotoFile.size > 0) {
       const bytes = await fotoFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      await fs.mkdir(PRODUCT_UPLOAD_DIR, { recursive: true });
-      await fs.writeFile(path.join(PRODUCT_UPLOAD_DIR, fotoName), buffer);
+      fotoName = await processAndSaveImage(buffer, `product_${targetId}`);
+    } else if (fotoUrl && fotoUrl.startsWith('http')) {
+      fotoName = await processAndSaveImage(fotoUrl, `product_${targetId}`);
     }
   } else {
-    const body = await request.json();
-    targetId = targetId || body.id;
-    fields = { ...body };
-    delete fields.id;
-    fotoName = fields.foto;
+    payload = await request.json();
+    targetId = targetId || payload.id;
+    delete payload.id;
+    fotoName = payload.foto;
+    
+    if (fotoName && fotoName.startsWith('http')) {
+      fotoName = await processAndSaveImage(fotoName, `product_${targetId}`);
+    }
   }
 
   if (!targetId)
     return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
 
-  const data = await ProductRepository.update(targetId, fields, fotoName || 'default.png');
+  // Usamos el servicio para aplicar lógica de negocio
+  const data = await ProductService.updateProduct(targetId, payload, fotoName);
+
   return NextResponse.json({ success: true, message: 'Producto actualizado correctamente', data });
 });
 

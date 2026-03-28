@@ -1,5 +1,6 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { Search, Eraser } from "lucide-react";
+import { Trash2, SortAsc, SortDesc } from "lucide-react";
+import SearchInput from "@/components/ui/SearchInput";
 
 interface SalesFiltersProps {
   searchTerm: string;
@@ -19,6 +20,10 @@ interface SalesFiltersProps {
   setFilterStatus: (status: string) => void;
   filterMetodoPago: string;
   setFilterMetodoPago: (method: string) => void;
+  sortBy: string;
+  setSortBy: (sort: string) => void;
+  sortOrder: "asc" | "desc";
+  setSortOrder: (order: "asc" | "desc") => void;
   onClearFilters: () => void;
   rowsPerPage: number;
   setRowsPerPage: (value: number) => void;
@@ -32,112 +37,135 @@ export function SalesFilters({
   setFilterStatus,
   filterMetodoPago,
   setFilterMetodoPago,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
   onClearFilters,
   rowsPerPage,
   setRowsPerPage,
   setPage,
 }: SalesFiltersProps) {
   return (
-    <Card className='shadow-sm'>
-      <CardContent className="mt-3 p-4 sm:p-6">
-        <div className="flex flex-col gap-4">
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
+      <CardContent className='p-6'>
+        <div className='flex flex-col lg:flex-row gap-4 items-end'>
           {/* Búsqueda */}
-          <div className="w-full">
-            <Label htmlFor="search" className="mb-2 text-sm sm:text-base">
+          <div className='w-full lg:flex-1'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Buscar
             </Label>
-            <div className="relative">
-              <Input
-                id="search"
-                type="text"
-                placeholder="Buscar por código, cliente, habitación o anfitriona..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 text-sm sm:text-base"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-3 h-3 sm:w-4 sm:h-4" />
-            </div>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar por código, cliente, habitación o anfitriona..."
+              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+            />
           </div>
 
-          {/* Filtros y controles - Responsive */}
-          <div className="flex flex-col lg:flex-row gap-4 items-end lg:justify-center">
-            {/* Estados */}
-            <div className="w-full lg:w-[160px]">
-              <Label htmlFor="list" className="mb-2 text-sm sm:text-base">
-                Estados
-              </Label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger id="status" className="w-full rounded-full text-sm sm:text-base">
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="1">Completado</SelectItem>
-                  <SelectItem value="2">En Proceso</SelectItem>
-                  <SelectItem value="3">Pdte. Anulación</SelectItem>
-                  <SelectItem value="0">Anulado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Estado */}
+          <div className='w-full lg:w-[130px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Estados
+            </Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="1">Completado</SelectItem>
+                <SelectItem value="2">En Proceso</SelectItem>
+                <SelectItem value="3">Pdte. Anulación</SelectItem>
+                <SelectItem value="0">Anulado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Listado por página */}
-            <div className="w-full lg:w-[160px]">
-              <Label htmlFor="list" className="mb-2 text-sm sm:text-base">
-                Listado
-              </Label>
-              <Select
-                value={String(rowsPerPage)}
-                onValueChange={(v) => {
-                  setRowsPerPage(Number(v));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="rowsPerPage" className="w-full rounded-full text-sm sm:text-base">
+          {/* Método de Pago */}
+          <div className='w-full lg:w-[130px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Método
+            </Label>
+            <Select
+              value={filterMetodoPago}
+              onValueChange={setFilterMetodoPago}
+            >
+              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                <SelectValue placeholder="Método" />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="efectivo">Efectivo</SelectItem>
+                <SelectItem value="tarjeta">Tarjeta</SelectItem>
+                <SelectItem value="transferencia">Transferencia</SelectItem>
+                <SelectItem value="prepago">Prepago</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Ordenar por */}
+          <div className='w-full lg:w-[180px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Ordenar por
+            </Label>
+            <div className="flex gap-1">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className='w-full text-xs rounded-l-2xl rounded-r-none bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 elementos</SelectItem>
-                  <SelectItem value="10">10 elementos</SelectItem>
-                  <SelectItem value="20">20 elementos</SelectItem>
-                  <SelectItem value="40">40 elementos</SelectItem>
+                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                  <SelectItem value='fecha_crea'>Fecha</SelectItem>
+                  <SelectItem value='total'>Monto</SelectItem>
+                  <SelectItem value='cliente_nombre'>Cliente</SelectItem>
+                  <SelectItem value='codigo'>Código</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Método de pago */}
-            <div className="w-full lg:w-[160px]">
-              <Label htmlFor="payment" className="mb-2 text-sm sm:text-base">
-                Método
-              </Label>
-              <Select
-                value={filterMetodoPago}
-                onValueChange={setFilterMetodoPago}
-              >
-                <SelectTrigger id="payment" className="w-full rounded-full text-sm sm:text-base">
-                  <SelectValue placeholder="Método" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="tarjeta">Tarjeta</SelectItem>
-                  <SelectItem value="transferencia">Transferencia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Botón limpiar filtros */}
-            <div className="w-full lg:w-auto">
               <Button
-                onClick={onClearFilters}
-                size="sm"
                 variant="outline"
-                className="w-full lg:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
+                size="icon"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="h-10 w-10 rounded-r-2xl border-l-0 border-gray-200 dark:border-gray-800 bg-gray-50/50 rounded-l-none"
               >
-                <Eraser className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Limpiar
+                {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
               </Button>
             </div>
           </div>
+
+          {/* Mostrar (PageSize) */}
+          <div className='w-full lg:w-[100px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Listado
+            </Label>
+            <Select 
+              value={String(rowsPerPage)} 
+              onValueChange={(v) => {
+                setRowsPerPage(Number(v));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10 font-bold'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="40">40</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Botón Limpiar con ícono trash */}
+          <Button
+            onClick={onClearFilters}
+            variant='outline'
+            size="icon"
+            className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+            title="Limpiar filtros"
+          >
+            <Trash2 className='w-4 h-4' />
+          </Button>
         </div>
       </CardContent>
     </Card>

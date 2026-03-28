@@ -10,6 +10,12 @@ export class ServiceRepository {
 
   private static mapServiceFromDB(row: any): ServiceType {
     if (!row) return null as any;
+    const creatorName = row.creator_nick
+      || [row.creator_nombre, row.creator_apellido].filter(Boolean).join(' ').trim()
+      || row.usuario_nick
+      || [row.creator_name, row.creator_last_name].filter(Boolean).join(' ').trim()
+      || null;
+
     return ServiceSchema.parse({
       id: row.id_servicio,
       cliente_id: row.cliente_id,
@@ -26,7 +32,14 @@ export class ServiceRepository {
       fecha_mod: row.fecha_mod,
       habitacion_nombre: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
       anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas,
-      anfitrionas_ids: row.anfitrionas_ids
+      anfitrionas_ids: row.anfitrionas_ids,
+      created_by: row.created_by,
+      creator_nick: row.creator_nick || null,
+      creator_nombre: row.creator_nombre || null,
+      creator_apellido: row.creator_apellido || null,
+      creator_foto: row.creator_foto || null,
+      waiter_name: creatorName,
+      waiter_foto: row.creator_foto || null
     });
   }
 
@@ -49,10 +62,12 @@ export class ServiceRepository {
     const sql = `
       SELECT 
         s.*, h.nombre as habitacion_numero, h.comision_anfitriona as habitacion_comision,
+        cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
         GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres,
         GROUP_CONCAT(DISTINCT u.id_usuario SEPARATOR ',') as anfitrionas_ids
       FROM servicios s
       LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
+      LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
       LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
       LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
       ${where}
@@ -79,6 +94,7 @@ export class ServiceRepository {
     const validated = ServiceCreateSchema.partial().parse(body);
     const [prev] = await query<any[]>('SELECT iva FROM servicios WHERE id_servicio = ?', [id]);
     const ivaDelta = Number(validated.iva || 0) - Number(prev?.iva || 0);
+    const now = getNowInBusinessTimezone(validated.device_date);
 
     await withTransaction(async (trx) => {
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
@@ -90,7 +106,7 @@ export class ServiceRepository {
           sub_total: validated.sub_total,
           total: validated.total,
           tiempo: validated.tiempo,
-          fecha_mod: getNowInBusinessTimezone()
+          fecha_mod: now
       });
       
       if (ivaDelta !== 0) {
@@ -101,7 +117,10 @@ export class ServiceRepository {
       if (validated.usuarios) {
         await trx('DELETE FROM detalle_servicios WHERE servicio_id = ?', [id]);
         for (const uId of validated.usuarios) {
-          await trx('INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision) VALUES (?, ?, ?, 0)', [generateUUID(), uId, id]);
+          await trx(
+            'INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision, fecha_crea) VALUES (?, ?, ?, 0, ?)',
+            [generateUUID(), uId, id, now]
+          );
         }
       }
     });
@@ -155,9 +174,11 @@ export class ServiceRepository {
   static async getByDates(startDate: string, endDate: string): Promise<ServiceType[]> {
     const results = await query<any[]>(`
       SELECT s.*, h.nombre as habitacion_nombre, cl.nombre as cliente_nombre
+      , cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto
       FROM servicios s
       LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
       LEFT JOIN clientes cl ON s.cliente_id = cl.id_cliente
+      LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
       WHERE DATE(s.fecha_crea) BETWEEN ? AND ?
       ORDER BY s.fecha_crea DESC
     `, [startDate, endDate]);
@@ -178,6 +199,7 @@ export class ServiceRepository {
   static async getById(id: string): Promise<ServiceType | null> {
     const res = await query<any[]>(`
       SELECT s.*, h.nombre as habitacion_name, cl.nombre as cliente_name,
+             cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
              GROUP_CONCAT(DISTINCT 
                CASE 
                  WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
@@ -189,6 +211,7 @@ export class ServiceRepository {
       FROM servicios s
       LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
       LEFT JOIN clientes cl ON s.cliente_id = cl.id_cliente
+      LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
       LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
       LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
       WHERE s.id_servicio = ?

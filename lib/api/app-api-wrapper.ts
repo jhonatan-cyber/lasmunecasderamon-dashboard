@@ -5,6 +5,7 @@ import { AuditRepository } from '@/lib/repositories/AuditRepository';
 import { getAuth } from '@/lib/auth/auth-app';
 import { AuthenticatedUser, UserPermissions } from '@/lib/middleware/auth';
 import { ApiResponse } from './api-response';
+import { normalizeJsonResponseDates } from './date-response';
 
 type AppRouteHandler = (
   request: Request,
@@ -19,15 +20,17 @@ type AuthenticatedAppRouteHandler = (
 export function withAppApiWrapper(handler: AppRouteHandler) {
   return async (request: Request, context: { params: any }) => {
     try {
-      return await handler(request, context);
+      const response = await handler(request, context);
+      return await normalizeJsonResponseDates(response);
     } catch (error: any) {
       const url = new URL(request.url);
       const method = request.method;
+      const params = await context.params;
 
       logger.error(`[APP API ERROR] ${method} ${url.pathname}`, {
         message: error.message,
         stack: error.stack,
-        params: context.params,
+        params,
       });
 
       try {
@@ -41,7 +44,7 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
       }
 
       if (error instanceof ZodError) {
-        return ApiResponse.validationError('Error de validación de datos', error.issues.map((e) => ({
+        return ApiResponse.validationError('Error de validación de datos', error.issues.map((e: any) => ({
           path: e.path.join('.'),
           message: e.message,
         })));
@@ -62,6 +65,10 @@ export function withAppAuth(
     if (!user) {
       return ApiResponse.unauthorized();
     }
+    
+    // Await params for audit log
+    const params = await context.params;
+
     if (requiredPermission) {
       const isAdministrator = user.role?.toLowerCase() === 'administrador';
 
@@ -71,7 +78,7 @@ export function withAppAuth(
       const hasPermission = isAdministrator || (userPermissions && (userPermissions as any)[action] === true);
 
       if (!hasPermission) {
-        return ApiResponse.unauthorized('Permisos insuficientes');
+        return ApiResponse.forbidden('Permisos insuficientes');
       }
     }
 
@@ -86,13 +93,13 @@ export function withAppAuth(
           action: `${request.method} ${url.pathname}`,
           resource_type: requiredPermission?.module || 'system',
           ip_address: ip,
-          details: { params: context.params }
+          details: { params }
         });
       } catch (auditError) {
         console.error('Error recording audit log:', auditError);
       }
     }
 
-    return handler(request, { ...context, user });
+    return handler(request, { ...context, params: Promise.resolve(params), user });
   });
 }

@@ -3,7 +3,15 @@ import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
   images: {
-    formats: ['image/avif', 'image/webp']
+    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**'
+      }
+    ]
   },
   reactStrictMode: true,
 

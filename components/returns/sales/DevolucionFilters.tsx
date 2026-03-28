@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Search, Eraser } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { DevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
 
 interface DevolucionFiltersProps {
@@ -89,12 +89,12 @@ export const DevolucionFiltersComponent = ({
           <div className='flex-1 sm:flex-none'>
             <Button
               onClick={clearFilters}
-              size='sm'
               variant='outline'
-              className='w-full sm:w-auto rounded-full px-4 sm:px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base'
+              size="icon"
+              className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+              title="Limpiar filtros"
             >
-              <Eraser className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Limpiar 
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>

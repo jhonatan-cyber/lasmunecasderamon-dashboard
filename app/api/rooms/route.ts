@@ -48,7 +48,7 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
 export const PATCH = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-  const { action } = await request.json();
+  const action = searchParams.get('action');
 
   if (!id || !action)
     return NextResponse.json(

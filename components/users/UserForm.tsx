@@ -19,6 +19,11 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/alert';
+import {
   CreditCard,
   UserCircle,
   User,
@@ -29,7 +34,8 @@ import {
   Home,
   DollarSign,
   Coins,
-  Users
+  Users,
+  Info
 } from 'lucide-react';
 import { FormFieldWithIcon } from './FormFieldWithIcon';
 import { ImageUploadField } from './ImageUploadField';
@@ -71,6 +77,14 @@ export function UserForm({
         onSubmit={handleFormSubmit}
         className='space-y-4 sm:space-y-6'
       >
+        <Alert className='bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/10 dark:border-blue-900/30 dark:text-blue-300 rounded-2xl'>
+          <Info className='h-5 w-5 text-blue-600 dark:text-blue-400' />
+          <AlertTitle className='text-sm font-bold'>Credenciales de Acceso</AlertTitle>
+          <AlertDescription className='text-xs opacity-90'>
+            Por seguridad y simplicidad, la **contraseña** del usuario será exactamente igual a su **RUN**.
+          </AlertDescription>
+        </Alert>
+
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
           <div className='flex flex-col gap-4 sm:gap-6'>
             {/* RUN */}
@@ -232,7 +246,7 @@ export function UserForm({
                       {!isLoadingRoles && roles && roles.length > 0 ? (
                         roles
                           .filter(role => role.status === 1)
-                          .map(role => (
+                          .map((role: any) => (
                             <SelectItem key={role.id} value={role.id.toString()}>
                               {role.name}
                             </SelectItem>
@@ -310,7 +324,7 @@ export function UserForm({
             <Button
               type='button'
               size='default'
-              className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-sm sm:text-base w-full sm:w-auto'
+              className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black text-sm sm:text-base w-full sm:w-auto'
               variant='outline'
               onClick={onCancel}
               disabled={isSubmitting}
@@ -321,7 +335,7 @@ export function UserForm({
               type='submit'
               disabled={isSubmitting}
               size='default'
-              className='flex items-center bg-black text-white gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+              className='flex items-center bg-black text-white dark:bg-white dark:text-black gap-2 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto dark:hover:bg-gray-200'
               variant='outline'
             >
               {isSubmitting ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Guardar'}
@@ -332,4 +346,3 @@ export function UserForm({
     </Form>
   );
 }
-

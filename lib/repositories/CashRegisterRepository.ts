@@ -6,7 +6,7 @@ import { BaseRepository } from './BaseRepository';
 export class CashRegisterRepository {
   private static mapCajaFromDB(row: any): CajaType {
     return CajaSchema.parse({
-      id: row.id_caja,
+      id_caja: row.id_caja,
       fecha_apertura: row.fecha_apertura,
       usuario_id_apertura: row.usuario_id_apertura,
       monto_apertura: row.monto_apertura,
@@ -24,7 +24,6 @@ export class CashRegisterRepository {
       propina: row.propina ?? 0,
       cuenta: row.cuenta ?? 0,
       anticipo: row.anticipo ?? 0,
-      egreso: row.egreso ?? 0,
       iva: row.iva ?? 0,
       comision: row.comision ?? 0,
       usuario_apertura: row.usuario_apertura,
@@ -69,7 +68,6 @@ export class CashRegisterRepository {
       transferencia: 'transferencia',
       prepago: 'prepago',
       anticipo: 'anticipo',
-      egreso: 'egreso',
       iva: 'iva',
       comision: 'comision',
       propina: 'propina',

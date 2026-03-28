@@ -20,6 +20,8 @@ export const GET = withAppApiWrapper(async () => {
       apellido: userData.lastName,
       email: userData.email,
       telefono: userData.phone,
+      direccion: userData.address,
+      estado_civil: userData.maritalStatus,
       run: userData.run,
       nick: userData.nick,
       rol_id: userData.rol_id,
