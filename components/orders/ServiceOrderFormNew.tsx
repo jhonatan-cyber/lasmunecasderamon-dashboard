@@ -9,7 +9,7 @@ import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
-import { useClientes } from '@/hooks/clientes/useClients';
+import { useClients } from '@/hooks/clientes/useClients';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import {
   Select,
@@ -37,7 +37,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const { user } = useCurrentUser();
   const { anfitrionas } = useAnfitrionas();
   const { habitaciones } = useHabitaciones();
-  const { clientes: clientesDB } = useClientes();
+  const { allClients: clientesDB = [] } = useClients();
 
   // Filtrar solo habitaciones disponibles (estado = 1)
   const habitacionesDisponibles = habitaciones?.filter(h => h.estado === 1 || h.status === 1) || [];
