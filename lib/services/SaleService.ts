@@ -17,7 +17,7 @@ export class SaleService {
     const validated = SaleCreateSchema.parse(body);
     const ventaId = generateUUID();
     const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
-    const now = getNowInBusinessTimezone();
+    const now = getNowInBusinessTimezone(validated.device_date);
 
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
 
@@ -69,40 +69,41 @@ export class SaleService {
       }
 
       // 5. Detalles y Comisiones (Lógica de Desglose)
-      for (const d of validated.detalles) {
-        const hostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : (d.hostess_id ? [d.hostess_id] : [null]);
-        const numAnfs = hostesses.length;
-        const totalComm = Math.round(d.comision || 0);
-        const commBase = Math.floor(totalComm / numAnfs);
-        const remainder = totalComm % numAnfs;
+        for (const d of validated.detalles) {
+          const hostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : (d.hostess_id ? [d.hostess_id] : [null]);
+          const numAnfs = hostesses.length;
+          const totalComm = Math.round(d.comision || 0);
+          const commBase = Math.floor(totalComm / numAnfs);
+          const remainder = totalComm % numAnfs;
 
-        for (let i = 0; i < numAnfs; i++) {
-          const hostessId = hostesses[i];
-          const commPart = commBase + (i === 0 ? remainder : 0);
-          const qtyPart = (i === 0) ? d.cantidad : 0;
-          const subPart = (i === 0) ? (d.sub_total || (d.precio * d.cantidad)) : 0;
+          for (let i = 0; i < numAnfs; i++) {
+            const hostessId = hostesses[i];
+            const commPart = commBase + (i === 0 ? remainder : 0);
+            const qtyPart = (i === 0) ? d.cantidad : 0;
+            const subPart = (i === 0) ? (d.sub_total || (d.precio * d.cantidad)) : 0;
 
-          await SaleRepository.insertDetail(trx, {
-            id: generateUUID(),
-            venta_id: ventaId,
-            producto_id: d.producto_id,
-            precio: d.precio,
-            comision: commPart,
-            cantidad: qtyPart,
-            sub_total: subPart,
-            hostess_id: hostessId
-          });
-
-          // Registro de comisiones usando el repositorio especializado
-          if (hostessId && commPart > 0) {
-            await CommissionRepository.createWithDetail(trx, {
+            await SaleRepository.insertDetail(trx, {
+              id_detalle_venta: generateUUID(),
               venta_id: ventaId,
-              usuario_id: hostessId,
-              monto: commPart
+              producto_id: d.producto_id,
+              precio: d.precio,
+              comision: commPart,
+              cantidad: qtyPart,
+              sub_total: subPart,
+              hostess_id: hostessId,
+              fecha_crea: now
             });
+
+            // Registro de comisiones usando el repositorio especializado
+            if (hostessId && commPart > 0) {
+              await CommissionRepository.createWithDetail(trx, {
+                venta_id: ventaId,
+                usuario_id: hostessId,
+                monto: commPart
+              });
+            }
           }
         }
-      }
 
       // 6. Actualización de Caja
       if (cajaId) {

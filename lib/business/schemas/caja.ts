@@ -3,16 +3,17 @@ import { z } from 'zod';
 export const CashRegisterStatusSchema = z.object({
   hasOpenCaja: z.boolean().nullable(),
   cajaInfo: z.object({
-    id_caja: z.string(),
-    usuario_id_apertura: z.string(),
-    fecha_apertura: z.string(),
+    id_caja: z.string().or(z.number()),
+    usuario_id_apertura: z.string().or(z.number()).nullable(),
+    fecha_apertura: z.string().nullable(),
+    efectivo_en_caja: z.number().optional().default(0),
   }).nullable(),
 });
 
 export type CashRegisterStatusType = z.infer<typeof CashRegisterStatusSchema>;
 
 export const CajaSchema = z.object({
-  id: z.string().optional(),
+  id_caja: z.string().or(z.number()).optional(),
   fecha_apertura: z.string().or(z.date()).optional(),
   usuario_id_apertura: z.string().optional(),
   monto_apertura: z.number().optional().default(0),
@@ -45,7 +46,7 @@ export const CajaOpenSchema = z.object({
 });
 
 export const CajaUpdateSchema = z.object({
-  id: z.string().min(1),
+  id_caja: z.string().or(z.number()).optional(),
   ventas: z.number().optional(),
   efectivo: z.number().optional(),
   tarjeta: z.number().optional(),

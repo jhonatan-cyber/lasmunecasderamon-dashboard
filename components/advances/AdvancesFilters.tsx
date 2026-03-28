@@ -1,88 +1,138 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import SelectElements from "@/components/ui/select-elements";
 import { Button } from "@/components/ui/button";
-import { Eraser } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Trash2, SortAsc, SortDesc } from "lucide-react";
+import SearchInput from "@/components/ui/SearchInput";
 
 interface AdvancesFiltersProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  rowsPerPage: number;
-  setRowsPerPage: (size: number) => void;
-  setPage: (page: number) => void;
-  filterStatus?: string;
-  setFilterStatus?: (v: string) => void;
-  filterAnfitriona?: string;
-  setFilterAnfitriona?: (v: string) => void;
-  onClearFilters?: () => void;
+  statusFilter: string;
+  setStatusFilter: (status: string) => void;
+  sortBy: string;
+  setSortBy: (sort: string) => void;
+  sortOrder: "asc" | "desc";
+  setSortOrder: (order: "asc" | "desc") => void;
+  pageSize: number;
+  setPageSize: (size: number) => void;
+  onClearFilters: () => void;
+  loading: boolean;
+  isAdmin?: boolean;
 }
 
 export default function AdvancesFilters({
   searchTerm,
   setSearchTerm,
-  rowsPerPage,
-  setRowsPerPage,
-  setPage,
-  onClearFilters
+  statusFilter,
+  setStatusFilter,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
+  pageSize,
+  setPageSize,
+  onClearFilters,
+  loading,
+  isAdmin = false,
 }: AdvancesFiltersProps) {
-  const handleClear = () => {
-    if (onClearFilters) {
-      onClearFilters();
-    } else {
-      setSearchTerm("");
-      setPage(1);
-    }
-  };
-
-  const handleRowsPerPageChange = (value: number) => {
-    setRowsPerPage(value);
-    setPage(1);
-  };
-
   return (
-    <Card className="mb-4 sm:mb-6 shadow-sm">
-      <CardContent className="mt-3 p-4 sm:p-6">
-        <div className="flex flex-col gap-4 sm:gap-6">
-          {/* Búsqueda - Ocupa todo el ancho en móviles */}
-          <div className="w-full">
-            <Label htmlFor="search" className="mb-2 text-sm sm:text-base">
-              Buscar
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
+      <CardContent className='p-6'>
+        <div className='flex flex-col lg:flex-row gap-4 items-end'>
+          {/* Búsqueda */}
+          <div className='w-full lg:flex-1'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              {isAdmin ? "Filtrar por Usuario" : "Buscar en anticipos"}
             </Label>
-            <Input
-              id="search"
-              placeholder="Buscar por usuario..."
+            <SearchInput
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-sm sm:text-base"
+              onChange={setSearchTerm}
+              placeholder={isAdmin ? "Nombre o monto..." : "Buscar..."}
+              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
             />
           </div>
 
-          {/* Filtros y controles - Responsive layout */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end justify-center">
-            {/* Anticipos por página */}
-            <div className="flex-1 sm:flex-none sm:w-auto">
-              <SelectElements
-                value={rowsPerPage}
-                onChange={handleRowsPerPageChange}
-                options={[5, 10, 20, 40]}
-                label="Anticipos por página"
-              />
-            </div>
+          {/* Estado */}
+          <div className='w-full sm:w-auto min-w-[140px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Estado
+            </Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectItem value='all'>Todos</SelectItem>
+                <SelectItem value='por_cobrar'>Por cobrar</SelectItem>
+                <SelectItem value='pagado'>Pagado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Botón limpiar filtros */}
-            <div className="flex-1 sm:flex-none sm:w-auto">
+          {/* Ordenar */}
+          <div className='w-full sm:w-auto min-w-[180px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Ordenar por
+            </Label>
+            <div className="flex gap-1">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className='w-full text-xs rounded-l-2xl rounded-r-none bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                  <SelectItem value='fecha_crea'>Fecha Creación</SelectItem>
+                  <SelectItem value='monto'>Monto</SelectItem>
+                  <SelectItem value='usuario'>Usuario</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
-                onClick={handleClear}
-                size="sm"
                 variant="outline"
-                className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base"
+                size="icon"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="h-10 w-10 rounded-r-2xl border-l-0 border-gray-200 dark:border-gray-800 bg-gray-50/50 rounded-l-none"
               >
-                              <Eraser className="mr-2" />
-              Limpiar 
+                {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
               </Button>
             </div>
           </div>
+
+          {/* Mostrar (PageSize) */}
+          <div className='w-full sm:w-auto min-w-[100px]'>
+            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+              Mostrar
+            </Label>
+            <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
+              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10 font-bold'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectItem value='5'>5</SelectItem>
+                <SelectItem value='10'>10</SelectItem>
+                <SelectItem value='20'>20</SelectItem>
+                <SelectItem value='50'>50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Botón Limpiar con ícono trash */}
+          <Button
+            onClick={onClearFilters}
+            variant='outline'
+            size="icon"
+            className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+            title="Limpiar filtros"
+          >
+            <Trash2 className='w-4 h-4' />
+          </Button>
         </div>
       </CardContent>
     </Card>

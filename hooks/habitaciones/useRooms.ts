@@ -9,6 +9,7 @@ interface UseRooms {
   rooms: Room[];
   filteredRooms: Room[];
   isLoading: boolean;
+  isMutating: boolean;
   error: string | null;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -21,7 +22,7 @@ interface UseRooms {
     room: Omit<Room, 'id' | 'status' | 'fecha_crea' | 'fecha_mod' | 'fecha_elim'>
   ) => Promise<void>;
   deleteRoom: (id: string | number) => Promise<void>;
-  activateRoom: (id: string | number) => Promise<void>;
+  activateRoom: (id: string | number, subAction?: 'activate' | 'liberate') => Promise<void>;
   deactivateRoom: (id: string | number) => Promise<void>;
   occupyRoom: (id: string | number) => Promise<void>;
   reorderRooms: (reorderedRooms: Room[]) => Promise<void>;
@@ -42,7 +43,7 @@ export default function useRooms(): UseRooms {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const { create, update, remove } = useGenericMutations<Room>('/api/rooms', {
+  const { create, update, remove, isLoading: crudMutating } = useGenericMutations<Room>('/api/rooms', {
     onSuccess: () => {
       refetch();
     },
@@ -85,7 +86,7 @@ export default function useRooms(): UseRooms {
   const queryClient = useQueryClient();
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: string | number; action: string }) => {
+    mutationFn: async ({ id, action }: { id: string | number; action: string; subAction?: string }) => {
       const res = await fetch(`/api/rooms?id=${id}&action=${action}`, { method: 'PATCH' });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Error en la operación');
@@ -121,14 +122,22 @@ export default function useRooms(): UseRooms {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
     },
-    onSuccess: data => {
-      showSuccessToast(data.message || 'Habitación actualizada correctamente');
+    onSuccess: (_, variables) => {
+      const { action, subAction } = variables;
+      let message = 'Estado de habitación actualizado';
+      
+      if (subAction === 'liberate') message = 'Habitación liberada correctamente';
+      else if (action === 'activate') message = 'Habitación activada correctamente';
+      else if (action === 'deactivate') message = 'Habitación desactivada correctamente';
+      else if (action === 'occupy') message = 'Habitación marcada como ocupada';
+      
+      showSuccessToast(message);
     }
   });
 
   const activateRoom = useCallback(
-    async (id: string | number) => {
-      await statusMutation.mutateAsync({ id, action: 'activate' });
+    async (id: string | number, subAction?: 'activate' | 'liberate') => {
+      await statusMutation.mutateAsync({ id, action: 'activate', subAction });
     },
     [statusMutation]
   );
@@ -181,6 +190,7 @@ export default function useRooms(): UseRooms {
     rooms: rooms || (EMPTY_ARRAY as Room[]),
     filteredRooms,
     isLoading,
+    isMutating: crudMutating || statusMutation.isPending,
     error,
     searchTerm,
     setSearchTerm,

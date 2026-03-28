@@ -1,16 +1,13 @@
 import { query } from '@/lib/database/db';
-import { 
-  StatsGeneralSchema, type StatsGeneralType, 
-  MonthlySalesSchema, type MonthlySalesType, 
-  WeeklySalesSchema, type WeeklySalesType 
+import {
+  StatsGeneralSchema, type StatsGeneralType,
+  MonthlySalesSchema, type MonthlySalesType,
+  WeeklySalesSchema, type WeeklySalesType
 } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export class StatsRepository {
-  /**
-   * Obtiene las estadísticas de habitaciones y distribuye las comisiones
-   * de venta proporcionalmente según la cantidad de servicios.
-   */
+
   static async getHabitacionesStats(cajaId: string) {
     const habitacionesStats = (await query(`
       SELECT 
@@ -40,10 +37,10 @@ export class StatsRepository {
 
     const totalComisionesVenta = (comisionesVentas as any)[0]?.total_comisiones_venta || 0;
     const totalServicios = habitacionesStats.reduce((sum: number, h: any) => sum + h.total_servicios, 0);
-    
+
     return habitacionesStats.map((habitacion: any) => ({
       ...habitacion,
-      comisiones_venta: totalServicios > 0 
+      comisiones_venta: totalServicios > 0
         ? Math.round((habitacion.total_servicios / totalServicios) * totalComisionesVenta)
         : 0
     }));
@@ -118,13 +115,13 @@ export class StatsRepository {
       total_comision: parseFloat(cajaRow?.comision || '0'),
       total_propina: parseFloat(cajaRow?.propina || '0'),
       total_iva: parseFloat(cajaRow?.iva || '0'),
-      
+
       total_ventas: parseFloat(ventasStats[0]?.total_ventas || '0'),
       cantidad_ventas: parseInt(ventasStats[0]?.cantidad_ventas || '0'),
       total_servicios: parseFloat(serviciosStats[0]?.total_servicios || '0'),
       cantidad_servicios: parseInt(serviciosStats[0]?.cantidad_servicios || '0'),
       balance_total: parseFloat(balanceStats[0]?.balance_total || '0'),
-      
+
       tiempo_abierta_horas: cajaRow?.horas_abierta || 0,
       tiempo_abierta_minutos: cajaRow?.minutos_abierta || 0,
       fecha_apertura_raw: cajaRow?.fecha_apertura || null,
@@ -201,7 +198,7 @@ export class StatsRepository {
 
     return {
       year: parseInt(now.substring(0, 4)),
-      data: data.sort((a, b) => a.mes.localeCompare(b.mes)), // Ordenar cronolÃ³gicamente ascendente
+      data: data.sort((a, b) => a.mes.localeCompare(b.mes)),
       summary: {
         totalVentas,
         totalCantidad,
@@ -266,6 +263,98 @@ export class StatsRepository {
         diaMaxVentas: maxDia?.dia_espanol || 'N/A',
         diaMinVentas: minDia?.dia_espanol || 'N/A'
       }
+    };
+  }
+
+
+  static async getUserDashboardSummary(userId: string, role: string) {
+    const roleLower = role.toLowerCase();
+
+    const userRes = await query<any[]>('SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?', [userId]);
+    if (userRes.length === 0) throw new Error('Usuario no encontrado');
+    const userBase = userRes[0];
+
+
+    const [
+      asistencias,
+      anticipos,
+      propinas,
+      horasExtras,
+      pedidos,
+      servicios,
+      comisiones,
+      semanasAsistencia
+    ] = await Promise.all([
+
+      query('SELECT * FROM asistencias WHERE usuario_id = ? AND estado = 1', [userId]) as Promise<any[]>,
+      query('SELECT * FROM anticipos WHERE usuario_id = ?', [userId]) as Promise<any[]>,
+      query(`
+        SELECT P.id_propina, P.estado, DP.monto 
+        FROM propinas P 
+        INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina 
+        WHERE DP.usuario_id = ?`, [userId]) as Promise<any[]>,
+      query('SELECT * FROM horas_extras WHERE usuario_id = ?', [userId]) as Promise<any[]>,
+      roleLower === 'garzon'
+        ? query('SELECT id_pedido, estado FROM pedidos WHERE mesero_id = ?', [userId]) as Promise<any[]>
+        : query('SELECT P.id_pedido, P.estado FROM pedidos P INNER JOIN pedidos_usuarios PU ON P.id_pedido = PU.pedido_id WHERE PU.usuario_id = ?', [userId]) as Promise<any[]>,
+      query('SELECT S.* FROM servicios S INNER JOIN detalle_servicios DS ON S.id_servicio = DS.servicio_id WHERE DS.usuario_id = ?', [userId]) as Promise<any[]>,
+      query('SELECT * FROM detalle_comisiones WHERE usuario_id = ?', [userId]) as Promise<any[]>,
+      query(`
+        SELECT COUNT(DISTINCT YEARWEEK(fecha, 1)) as semanas 
+        FROM asistencias 
+        WHERE usuario_id = ? AND estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)`, [userId]) as Promise<any[]>
+    ]);
+
+    const filterEstado1 = (arr: any[]) => arr.filter(i => i.estado === 1);
+
+    const anticiposPendientesArr = filterEstado1(anticipos);
+    const totalAnticiposPendientes = anticiposPendientesArr.reduce((s, a) => s + (a.monto || 0), 0);
+
+    const propinasPendientesArr = filterEstado1(propinas);
+    const totalPropinasPendientes = propinasPendientesArr.reduce((s, p) => s + (p.monto || 0), 0);
+
+    const horasExtrasPendientesArr = filterEstado1(horasExtras);
+    const totalHorasExtrasPendientes = horasExtrasPendientesArr.reduce((s, h) => s + (h.total || 0), 0);
+
+    const totalAsistenciasCount = asistencias.length;
+    const totalSueldoAsistencias = totalAsistenciasCount * (userBase.sueldo || 0);
+    const totalAporteAsistencias = totalAsistenciasCount * (userBase.aporte || 0);
+    const totalDescuentoAsistencias = (semanasAsistencia[0]?.semanas || 0) * (userBase.descuento || 0);
+
+    let totalACobrar = 0;
+
+    if (roleLower === 'garzon') {
+      const totalACobrarAsistencias = totalSueldoAsistencias + totalAporteAsistencias - totalDescuentoAsistencias;
+      totalACobrar = totalACobrarAsistencias + totalPropinasPendientes + totalHorasExtrasPendientes - totalAnticiposPendientes;
+    }
+    else if (roleLower === 'anfitriona') {
+      const totalACobrarAsistencias = Math.max(0, totalSueldoAsistencias - totalAporteAsistencias - totalDescuentoAsistencias);
+
+      const comisionesVentas = comisiones.filter(c => c.tipo === 'venta' && c.estado === 1);
+      const totalComisionesVentas = comisionesVentas.reduce((s, c) => s + (c.comision || 0), 0);
+
+      const comisionesServicios = comisiones.filter(c => c.tipo === 'servicio' && c.estado === 1);
+      const totalGanadoServicios = comisionesServicios.reduce((s, c) => s + (c.comision || 0), 0);
+
+      totalACobrar = totalACobrarAsistencias + totalComisionesVentas + totalGanadoServicios - totalAnticiposPendientes;
+    }
+    else if (roleLower === 'cajero') {
+      totalACobrar = (totalSueldoAsistencias - totalAporteAsistencias) - totalAnticiposPendientes + totalPropinasPendientes + totalHorasExtrasPendientes;
+    }
+
+    return {
+      totalAsistencias: totalAsistenciasCount,
+      totalAnticipos: anticipos.length,
+      totalPropinas: propinas.length,
+      totalHorasExtras: horasExtras.length,
+      totalPedidos: pedidos.length,
+      totalComisiones: comisiones.length,
+      totalServicios: servicios.length,
+      totalACobrar,
+      anticiposPendientes: anticiposPendientesArr.length,
+      propinasPendientes: propinasPendientesArr.length,
+      horasExtrasPendientes: horasExtrasPendientesArr.length,
+      comisionesPendientes: comisiones.filter(c => c.estado === 1).length
     };
   }
 }

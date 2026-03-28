@@ -1,39 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, DollarSign } from 'lucide-react';
-import SelectElements from '@/components/ui/select-elements';
+import { ArrowLeft, Landmark } from 'lucide-react';
+import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
+import OvertimeFilters from '@/components/overtime/OvertimeFilters';
+import OvertimeTable from '@/components/overtime/OvertimeTable';
 import Paginate from '@/components/ui/paginate';
-import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
-
-interface Overtime {
-  id_horas_extras?: number;
-  fecha_crea: string;
-  fecha_mod: string;
-  hora: number;
-  total: number;
-  estado: number;
-  usuario_id: number;
-}
 
 export default function CajeroHorasExtrasPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
-  const [overtime, setOvertime] = useState<Overtime[]>([]);
+  const [overtime, setOvertime] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Estados de Filtros y Tabla
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
 
-  // Fetch horas extras
   const fetchOvertime = async () => {
     setLoading(true);
     try {
@@ -41,8 +31,6 @@ export default function CajeroHorasExtrasPage() {
       const data = await res.json();
       if (data.success) {
         setOvertime(data.data || []);
-      } else {
-        console.error('Error fetching overtime:', data.message);
       }
     } catch (error) {
       console.error('Error fetching overtime:', error);
@@ -57,12 +45,53 @@ export default function CajeroHorasExtrasPage() {
     }
   }, [user, userLoading]);
 
+  // Lógica de Filtrado y Ordenamiento
+  const processedOvertime = useMemo(() => {
+    const data = overtime || [];
+
+    // 1. Filtrado
+    const filtered = data.filter(item => {
+      const matchesSearch =
+        item.total?.toString().includes(searchTerm) || item.hora?.toString().includes(searchTerm);
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'por_cobrar' && item.estado === 1) ||
+        (statusFilter === 'cobrado' && item.estado === 0);
+      return matchesSearch && matchesStatus;
+    });
+
+    // 2. Ordenamiento
+    return [...filtered].sort((a, b) => {
+      let aValue: any = a[sortBy];
+      let bValue: any = b[sortBy];
+
+      if (sortBy === 'fecha_crea' || sortBy === 'fecha_mod') {
+        aValue = new Date(aValue || 0).getTime();
+        bValue = new Date(bValue || 0).getTime();
+      }
+
+      if (sortOrder === 'asc') return aValue > bValue ? 1 : -1;
+      return aValue < bValue ? 1 : -1;
+    });
+  }, [overtime, searchTerm, statusFilter, sortBy, sortOrder]);
+
+  const totalPages = Math.ceil(processedOvertime.length / pageSize) || 1;
+  const paginatedOvertime = processedOvertime.slice((page - 1) * pageSize, page * pageSize);
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setSortBy('fecha_crea');
+    setSortOrder('desc');
+    setPage(1);
+  };
+
   if (userLoading) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Cargando...</p>
+        <div className='flex flex-col items-center gap-4'>
+          <div className='h-12 w-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin' />
+          <p className='font-black text-gray-400 uppercase tracking-tighter'>Cargando...</p>
         </div>
       </div>
     );
@@ -71,252 +100,73 @@ export default function CajeroHorasExtrasPage() {
   // Verificar que el usuario sea cajero
   if (user?.role?.toLowerCase() !== 'cajero') {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
-          <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
+      <div className='p-6 flex flex-col items-center justify-center min-h-[60vh] gap-4'>
+        <div className='h-16 w-16 bg-red-100 rounded-3xl flex items-center justify-center'>
+          <ArrowLeft className='h-8 w-8 text-red-600' />
         </div>
+        <h1 className='text-2xl font-black text-gray-900 uppercase tracking-tight'>
+          Acceso Denegado
+        </h1>
+        <p className='text-gray-500 font-medium'>No tienes permisos para acceder a esta área.</p>
+        <Button onClick={() => router.back()} className='rounded-2xl bg-black text-white px-8'>
+          Regresar
+        </Button>
       </div>
     );
   }
 
-  // Filtrado
-  const filteredOvertime = overtime.filter(item => {
-    const matchesSearch =
-      item.total.toString().includes(searchTerm) || item.hora.toString().includes(searchTerm);
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'por_cobrar' && item.estado === 1) ||
-      (statusFilter === 'cobrado' && item.estado === 0);
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Ordenamiento
-  const sortedOvertime = [...filteredOvertime].sort((a, b) => {
-    let aValue: any = a[sortBy as keyof Overtime];
-    let bValue: any = b[sortBy as keyof Overtime];
-
-    if (sortBy === 'fecha_crea' || sortBy === 'fecha_mod') {
-      aValue = new Date(aValue || 0);
-      bValue = new Date(bValue || 0);
-    }
-
-    if (sortOrder === 'asc') {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
-    }
-  });
-
-  // Paginación
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedOvertime = sortedOvertime.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(sortedOvertime.length / rowsPerPage);
-
-  // Cálculos
-  const totalToCollect = overtime
-    .filter(item => item.estado === 1)
-    .reduce((sum, item) => sum + (item.total || 0), 0);
-
-  const totalHours = overtime
-    .filter(item => item.estado === 1)
-    .reduce((sum, item) => sum + (item.hora || 0), 0);
-
-  // Obtener badge de estado
-  const getStatusBadge = (estado: number) => {
-    if (estado === 1) {
-      return (
-        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
-          Por cobrar
-        </span>
-      );
-    } else {
-      return (
-        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700'>
-          Cobrado
-        </span>
-      );
-    }
-  };
-
   return (
-    <div className='p-6 space-y-6'>
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Listado de Horas Extras</h1>
-          <p className='text-gray-600'>
-            Horas extras de {user?.name} {user?.lastName}
-          </p>
+    <div className='p-6 lg:p-10 space-y-8 max-w-[1600px] mx-auto overflow-hidden'>
+      {/* Header Premium */}
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+        <div className='flex flex-col'>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Mis Horas Extras</h1>
+          <div className='flex items-center gap-2 text-gray-600 font-medium'>
+            <Landmark className='h-4 w-4 text-purple-500' />
+            <span>Resumen personal de {user.name} {user.lastName}</span>
+          </div>
         </div>
-        <Button
-          variant='outline'
-          onClick={() => router.back()}
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-        >
-          <ArrowLeft className='w-4 h-4 mr-2' />
-          Atrás
-        </Button>
-      </div>
 
-      {/* Totales centrados */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-        <div className='text-center'>
-          <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
-          <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToCollect)}</p>
-        </div>
-        <div className='text-center'>
-          <p className='text-sm text-gray-500'>TOTAL HORAS</p>
-          <p className='text-2xl font-bold text-gray-900'>{totalHours.toFixed(1)} hrs</p>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
-          <input
-            type='text'
-            placeholder='Buscar por monto o horas...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Estado</label>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500'
+        <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => router.back()}
+            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
           >
-            <option value='all'>Todos</option>
-            <option value='por_cobrar'>Por cobrar</option>
-            <option value='cobrado'>Cobrado</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Ordenar por</label>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='fecha_crea'>Fecha creación</option>
-            <option value='fecha_mod'>Fecha pago</option>
-            <option value='total'>Monto</option>
-            <option value='hora'>Horas</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Orden</label>
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className='w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='desc'>Descendente</option>
-            <option value='asc'>Ascendente</option>
-          </select>
+            <ArrowLeft className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+            Atrás
+          </Button>
         </div>
       </div>
 
-      {/* Selector de filas por página */}
-      <div className='flex justify-between items-center'>
-        <SelectElements
-          value={rowsPerPage}
-          onChange={value => {
-            setRowsPerPage(value);
-            setCurrentPage(1);
-          }}
-          options={[
-            { value: 5, label: '5 por página' },
-            { value: 10, label: '10 por página' },
-            { value: 20, label: '20 por página' },
-            { value: 50, label: '50 por página' }
-          ]}
-        />
-      </div>
+      {/* Stats Section */}
+      <OvertimeStatsCards overtime={overtime} />
 
-      {/* Tabla */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Horas Extras ({filteredOvertime.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className='text-center py-8'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p className='mt-2 text-gray-600'>Cargando horas extras...</p>
-            </div>
-          ) : (
-            <div className='overflow-x-auto'>
-              <table className='w-full'>
-                <thead>
-                  <tr className='border-b border-gray-200'>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>#</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>
-                      FECHA CREACIÓN
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>FECHA PAGO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>HORAS</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>ESTADO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedOvertime.map((item, index) => {
-                    const creacionDate = formatDateTimeDmyLabel(item.fecha_crea);
-                    const pagoDate = formatDateTimeDmyLabel(item.fecha_mod);
-                    return (
-                      <tr
-                        key={`${item.id_horas_extras || index}`}
-                        className='border-b border-gray-100 hover:bg-gray-50'
-                      >
-                        <td className='py-3 px-4'>
-                          <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm'>
-                            {startIndex + index + 1}
-                          </div>
-                        </td>
-                        <td className='py-3 px-4'>
-                          <div>
-                            <div className='font-medium text-gray-900'>{creacionDate.date}</div>
-                            <div className='text-sm text-gray-500'>{creacionDate.time}</div>
-                          </div>
-                        </td>
-                        <td className='py-3 px-4'>
-                          {item.fecha_mod ? (
-                            <div>
-                              <div className='font-medium text-gray-900'>{pagoDate.date}</div>
-                              <div className='text-sm text-gray-500'>{pagoDate.time}</div>
-                            </div>
-                          ) : (
-                            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
-                              Por cobrar
-                            </span>
-                          )}
-                        </td>
-                        <td className='py-3 px-4 text-gray-900'>{item.hora?.toFixed(1)} hrs</td>
-                        <td className='py-3 px-4 text-gray-900'>
-                          {formatCurrencyCLP(item.total || 0)}
-                        </td>
-                        <td className='py-3 px-4'>{getStatusBadge(item.estado)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Filtros Section */}
+      <OvertimeFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        pageSize={pageSize}
+        setPageSize={setPageSize}
+        onClearFilters={handleClearFilters}
+        loading={loading}
+        isAdmin={false}
+      />
 
-      {/* Paginación */}
+      {/* Tabla Section */}
+      <OvertimeTable loading={loading} rows={paginatedOvertime} pageSize={pageSize} isAdmin={false} />
+
+      {/* Paginador Section */}
       {totalPages > 1 && (
-        <div className='flex justify-center'>
-          <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
+        <div className='flex justify-center pt-4'>
+          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
         </div>
       )}
     </div>

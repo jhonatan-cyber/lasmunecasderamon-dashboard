@@ -10,17 +10,18 @@ export interface ProductFormValues {
   commission: string;
   description: string;
   foto: File | null;
+  fotoUrl: string;
 }
 
 const formatNumber = (value: string) => value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const getNumericValue = (v: string) => v.replace(/\./g, '');
 
-const initialFormState: ProductFormValues = { code: '', name: '', price: '', commission: '', description: '', foto: null };
+const initialFormState: ProductFormValues = { code: '', name: '', price: '', commission: '', description: '', foto: null, fotoUrl: '' };
 
 interface UseProductFormProps {
   open: boolean;
   initialValues?: Product | null;
-  categoryId: number;
+  categoryId: string | number;
   onSubmit: (form: FormData) => void;
 }
 
@@ -34,12 +35,20 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
       setForm({
         code: initialValues.code || '',
         name: initialValues.name || '',
-        price: initialValues.price ? formatNumber(String(initialValues.price)) : '',
-        commission: initialValues.commission ? formatNumber(String(initialValues.commission)) : '',
+        price: initialValues.price !== undefined && initialValues.price !== null ? formatNumber(String(initialValues.price)) : '',
+        commission: initialValues.commission !== undefined && initialValues.commission !== null ? formatNumber(String(initialValues.commission)) : '',
         description: initialValues.description || '',
         foto: null,
+        fotoUrl: '',
       });
-      setImagePreview(initialValues.foto && initialValues.foto !== 'default.png' ? `/img/products/${initialValues.foto}` : '');
+      if (initialValues.foto && initialValues.foto !== 'default.png') {
+        const url = initialValues.foto.startsWith('http') 
+          ? initialValues.foto 
+          : `/img/products/${initialValues.foto}`;
+        setImagePreview(url);
+      } else {
+        setImagePreview('');
+      }
     } else if (open) {
       setForm({ ...initialFormState, code: generateRandomCode() });
       setImagePreview('');
@@ -61,20 +70,28 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, files } = e.target;
-    if (name === 'foto' && files?.[0]) {
-      const file = files[0];
-      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type)) {
-        setErrors(prev => ({ ...prev, foto: 'Solo se permiten archivos JPG, PNG o GIF' })); return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, foto: 'La imagen no puede superar los 5MB' })); return;
-      }
-      setForm(prev => ({ ...prev, foto: file }));
-      setImagePreview(URL.createObjectURL(file));
-      setErrors(prev => { const { foto: _, ...rest } = prev; return rest; });
-    } else if (name === 'name') {
+  const processFile = (file: File) => {
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      setErrors(prev => ({ ...prev, foto: 'Solo se permiten archivos JPG, PNG, GIF o WEBP' })); return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, foto: 'La imagen no puede superar los 5MB' })); return;
+    }
+    setForm(prev => ({ ...prev, foto: file, fotoUrl: '' }));
+    setImagePreview(URL.createObjectURL(file));
+    setErrors(prev => { const { foto: _, ...rest } = prev; return rest; });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (e.target instanceof HTMLInputElement && e.target.type === 'file') {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) processFile(file);
+      return;
+    }
+
+    if (name === 'name') {
       setForm(prev => ({ ...prev, name: value.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') }));
     } else if (name === 'description') {
       setForm(prev => ({ ...prev, description: value ? value.charAt(0).toUpperCase() + value.slice(1) : value }));
@@ -86,21 +103,41 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
   const handlePriceChange = (value: string) => setForm(prev => ({ ...prev, price: formatNumber(value) }));
   const handleCommissionChange = (value: string) => setForm(prev => ({ ...prev, commission: formatNumber(value) }));
 
+  const handleUrlChange = (url: string) => {
+    setForm(prev => ({ ...prev, fotoUrl: url, foto: null }));
+    if (url) setImagePreview(url);
+    else setImagePreview('');
+  };
+
+  const handleFileDrop = (file: File) => processFile(file);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) return;
     const data = new FormData();
     data.append('code', form.code);
     data.append('name', form.name);
-    data.append('category_id', String(categoryId));
+    
+    const finalCategoryId = initialValues?.category_id ?? categoryId;
+    
+    if (finalCategoryId !== undefined && finalCategoryId !== null && String(finalCategoryId) !== 'NaN') {
+      data.append('category_id', String(finalCategoryId));
+    } else {
+      console.warn('[useProductForm] Intento de submit sin category_id válido:', { 
+        initialCategoryId: initialValues?.category_id, 
+        propCategoryId: categoryId 
+      });
+    }
+    
     data.append('price', getNumericValue(form.price));
     data.append('commission', getNumericValue(form.commission) || '0');
     data.append('description', form.description);
     data.append('status', '1');
     if (form.foto) data.append('foto', form.foto);
+    if (form.fotoUrl) data.append('fotoUrl', form.fotoUrl);
     if (initialValues?.id) data.append('id', String(initialValues.id));
     onSubmit(data);
   };
 
-  return { form, errors, imagePreview, handleChange, handlePriceChange, handleCommissionChange, handleSubmit };
+  return { form, errors, imagePreview, handleChange, handlePriceChange, handleCommissionChange, handleUrlChange, handleFileDrop, handleSubmit };
 }

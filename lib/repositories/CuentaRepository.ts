@@ -232,8 +232,14 @@ export class CuentaRepository {
       for (const d of detalles) {
         if (d.hostess_id && d.comision > 0) {
           const commId = generateUUID();
-          await trx('INSERT INTO comisiones (id_comision, cuenta_id, monto, estado) VALUES (?, ?, ?, 1)', [commId, id, d.comision]);
-          await trx('INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado) VALUES (?, ?, ?, ?, 1)', [generateUUID(), commId, d.hostess_id, d.comision]);
+          await trx(
+            'INSERT INTO comisiones (id_comision, cuenta_id, monto, estado, fecha_crea) VALUES (?, ?, ?, 1, ?)',
+            [commId, id, d.comision, now]
+          );
+          await trx(
+            'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado, fecha_crea) VALUES (?, ?, ?, ?, 1, ?)',
+            [generateUUID(), commId, d.hostess_id, d.comision, now]
+          );
         }
       }
 

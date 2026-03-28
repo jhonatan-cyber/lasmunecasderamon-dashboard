@@ -2,20 +2,22 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 interface DeleteCategoryConfirmModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   categoryName: string;
+  isLoading?: boolean;
 }
 
 export function DeleteCategoryConfirmModal({
   open,
   onOpenChange,
   onConfirm,
-  categoryName
+  categoryName,
+  isLoading = false,
 }: DeleteCategoryConfirmModalProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -28,49 +30,54 @@ export function DeleteCategoryConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-          <DialogTitle className='flex items-center gap-2 mb-4'>
-            <AlertCircle className='text-red-500' />
+      <DialogContent className='sm:max-w-[425px] flex flex-col p-0 overflow-hidden rounded-2xl'>
+        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
+          <DialogTitle className='flex items-center gap-2'>
+            <AlertTriangle className='text-red-500 w-5 h-5' />
             <span className='text-gray-900 dark:text-neutral-100'>Confirmar Eliminación</span>
           </DialogTitle>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='flex-1 px-6 py-6'>
           <div className='text-left'>
-            <div>
-              <p className='font-medium text-gray-900 dark:text-neutral-100 mb-3'>
-                ¿Estás seguro de que quieres eliminar la categoría?
-              </p>
-              <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-lg border border-red-200 dark:border-red-800'>
-                <div className='space-y-2 text-sm text-red-900 dark:text-red-100'>
-                  <p>
-                    <strong>Categoría:</strong> {categoryName}
-                  </p>
-                </div>
+            <p className='font-medium text-gray-900 dark:text-neutral-100 mb-4 text-center'>
+              ¿Estás seguro de que quieres eliminar la categoría?
+            </p>
+            <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-xl border border-red-200 dark:border-red-800'>
+              <div className='space-y-2 text-sm text-red-900 dark:text-red-100 text-center'>
+                <p>
+                  <strong className='opacity-70 text-xs uppercase tracking-widest block mb-1'>Categoría</strong>
+                  <span className='text-base font-bold'>{categoryName}</span>
+                </p>
               </div>
-              <p className='mt-3 text-sm text-red-400 dark:text-red-300 font-medium text-center'>
-                Esta acción no se puede revertir. La categoría será eliminada permanentemente.
-              </p>
             </div>
+            <p className='mt-4 text-xs text-red-500 dark:text-red-400 font-medium text-center uppercase tracking-wider'>
+              Esta acción no se puede revertir
+            </p>
           </div>
         </div>
-        <div className='flex-shrink-0 border-t px-6 py-4'>
-          <div className='flex justify-center items-center gap-4'>
+        <div className='flex-shrink-0 border-t dark:border-slate-800 px-6 py-4 bg-gray-50 dark:bg-slate-900/50'>
+          <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 w-full'>
             <Button
               onClick={handleCancel}
               variant='outline'
-              size='sm'
-              className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
+              className='flex items-center gap-2 rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black w-full sm:w-auto text-sm sm:text-base'
             >
               Cancelar
             </Button>
             <Button
               onClick={handleConfirm}
-              size='sm'
               variant='outline'
-              className='rounded-full px-6 bg-black text-white hover:scale-105 transition-all duration-200'
+              disabled={isLoading}
+              className='flex items-center bg-black text-white dark:bg-white dark:text-black gap-2 rounded-full px-6 hover:scale-105 transition-all duration-200 w-full sm:w-auto dark:hover:bg-gray-200 text-sm sm:text-base'
             >
-              Eliminar
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Eliminando...</span>
+                </div>
+              ) : (
+                'Eliminar'
+              )}
             </Button>
           </div>
         </div>

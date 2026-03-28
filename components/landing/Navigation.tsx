@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
@@ -25,6 +25,10 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
     setIsMobileMenuOpen(false);
   };
 
+  const handleMobileItemClickReal = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <nav
       aria-label='Navegacion principal'
@@ -45,23 +49,23 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
                   : 'invisible -translate-y-10 scale-90 opacity-0'
               }`}
             >
-              <Image
+              <NextImage
                 src='/img/system/logo2.png'
                 alt='Las Munecas de Ramon - Nightclub exclusivo en Linares'
                 width={384}
                 height={128}
-                sizes='(min-width: 1024px) 384px, 0px'
-                className='mt-4 hidden h-32 w-auto object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110 lg:block'
-                priority
+                sizes='(min-width: 1024px) 25vw, 0px'
+                className='mt-4 hidden lg:block object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110'
+                style={{ width: 'auto', height: '128px' }}
               />
-              <Image
+              <NextImage
                 src='/img/system/logo1.png'
                 alt='Las Munecas de Ramon - Nightclub exclusivo en Linares'
                 width={128}
                 height={64}
-                sizes='(max-width: 1023px) 128px, 0px'
-                className='mt-4 h-16 w-auto object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110 lg:hidden'
-                priority
+                sizes='(max-width: 1023px) 30vw, 0px'
+                className='mt-4 lg:hidden object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110'
+                style={{ width: 'auto', height: '64px' }}
               />
             </a>
           </div>

@@ -26,7 +26,7 @@ export default function useProducts(categoryId?: string) {
     }
   });
 
-  const { create, update, remove } = useGenericMutations<Product>('/api/products', {
+  const { create, update, remove, isLoading: isMutating } = useGenericMutations<Product>('/api/products', {
     onSuccess: () => { refetch(); },
     showToasts: true,
     entityName: 'Producto',
@@ -107,6 +107,7 @@ export default function useProducts(categoryId?: string) {
   return {
     products,
     isLoading,
+    isMutating,
     error,
     searchTerm,
     setSearchTerm,

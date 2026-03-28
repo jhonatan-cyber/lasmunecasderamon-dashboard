@@ -7,9 +7,9 @@ export const RoomSchema = z.object({
   time: z.preprocess((v) => Number(v), z.number()),
   comision_anfitriona: z.preprocess((v) => (v === '' || v === null || v === undefined) ? null : Number(v), z.number().nullable().optional()),
   status: z.number().optional().default(1),
-  display_order: z.number().optional(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional()
+  display_order: z.number().nullable().optional(),
+  created_at: z.string().nullable().optional(),
+  updated_at: z.string().nullable().optional()
 });
 
 export type RoomType = z.infer<typeof RoomSchema>;

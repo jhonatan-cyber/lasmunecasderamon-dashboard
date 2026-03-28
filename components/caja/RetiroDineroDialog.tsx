@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CajaWithUser, CajaRetiro } from '@/types/caja';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wallet, Info } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 // Función para obtener el día de la semana en español
@@ -48,12 +48,8 @@ export function RetiroDineroDialog({
 
     // Función para formatear el monto con puntos de miles
     const formatMonto = (value: string) => {
-        // Remover todo excepto números
         const numericValue = value.replace(/[^\d]/g, '');
-        
         if (numericValue === '') return '';
-        
-        // Formatear con puntos de miles manualmente
         const number = parseInt(numericValue);
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     };
@@ -68,20 +64,13 @@ export function RetiroDineroDialog({
         const formatted = formatMonto(inputValue);
         const numericValue = getNumericValue(formatted);
         
-        // Validar que no exceda el monto disponible
         if (caja && numericValue > 0) {
-            const disponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
-            if (numericValue > disponible) {
-                // No actualizar si excede el disponible
-                return;
-            }
+            const disponible = caja.monto_apertura + (caja.efectivo || 0) - (caja.devoluciones || 0) - (caja.anticipo || 0);
+            if (numericValue > disponible) return;
         }
         
         setMonto(formatted);
-        // Limpiar error si existe
-        if (errors.monto) {
-            setErrors(prev => ({ ...prev, monto: '' }));
-        }
+        if (errors.monto) setErrors(prev => ({ ...prev, monto: '' }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -104,7 +93,7 @@ export function RetiroDineroDialog({
             return;
         }
 
-        const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
+        const montoDisponible = caja.monto_apertura + (caja.efectivo || 0) - (caja.devoluciones || 0) - (caja.anticipo || 0);
         if (montoNum > montoDisponible) {
             setErrors({ monto: `El monto no puede ser mayor al disponible (${formatCurrencyCLP(montoDisponible)})` });
             return;
@@ -133,117 +122,109 @@ export function RetiroDineroDialog({
 
     if (!caja) return null;
 
-    const montoDisponible = caja.monto_apertura + caja.efectivo - caja.devoluciones - (caja.anticipo || 0);
+    const montoDisponible = caja.monto_apertura + (caja.efectivo || 0) - (caja.devoluciones || 0) - (caja.anticipo || 0);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-md'>
-                <DialogHeader>
-                    <DialogTitle>
+            <DialogContent className='max-w-md border-none bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden p-0 flex flex-col'>
+                <DialogHeader className='p-8 pb-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-slate-900'>
+                    <DialogTitle className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3'>
+                        <Wallet className="w-6 h-6 text-gray-900 dark:text-white" />
                         Retirar Dinero - Caja {getDiaSemana(caja.fecha_apertura)}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className='space-y-4'>
-                    {/* Resumen de la caja */}
-                    <div className='bg-gray-50 p-1 px-2 rounded-lg space-y-2'>
-                        <h4 className='font-medium text-sm'>Información de la caja:</h4>
-                        <div className='grid grid-cols-2 gap-2 text-sm'>
-                            <div>
-                                <span className='text-gray-500'>Cajero:</span>
-                                <span className='ml-2 mr-2 font-medium'>{caja.cajero_nombre}</span>
+                <div className='flex-1 overflow-y-auto px-8 py-6 custom-scrollbar bg-white dark:bg-slate-900'>
+                    <div className='space-y-8'>
+                        {/* Resumen de la caja - Estilo Premium Limpio */}
+                        <div className='bg-gray-50/50 dark:bg-gray-800/20 p-6 rounded-2xl border border-gray-100 dark:border-gray-800'>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Info className="w-4 h-4 text-gray-400" />
+                                <h4 className='font-bold text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500'>Información de la caja</h4>
                             </div>
-                            <div>
-                                <span className='text-gray-500'>Apertura:</span>
-                                <span className='ml-2 mr-2 font-medium'>
-                                    {formatCurrencyCLP(caja.monto_apertura)}
-                                </span>
-                            </div>
-                            <div>
-                                <span className='text-gray-500'>Efectivo:</span>
-                                <span className='ml-2 mr-2 font-medium'>
-                                    {formatCurrencyCLP(caja.efectivo)}
-                                </span>
-                            </div>
-                            <div>
-                                <span className='text-gray-500'>Disponible:</span>
-                                <span className='ml-2 mr-2 font-medium text-green-600'>
-                                    {formatCurrencyCLP(montoDisponible)}
-                                </span>
+                            <div className='grid grid-cols-2 gap-y-5 gap-x-6 text-sm'>
+                                <div className="flex flex-col gap-1">
+                                    <span className='text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest'>Cajero</span>
+                                    <span className='font-bold text-gray-900 dark:text-white truncate'>{caja.cajero_nombre}</span>
+                                </div>
+                                <div className="flex flex-col gap-1 text-right">
+                                    <span className='text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest'>Disponible</span>
+                                    <span className='font-black text-lg text-emerald-600 dark:text-emerald-400'>
+                                        {formatCurrencyCLP(montoDisponible)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
+
+                        <form onSubmit={handleSubmit} className='space-y-6'>
+                            {/* Monto a retirar */}
+                            <div className="space-y-2">
+                                <Label htmlFor='monto' className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 ml-1'>
+                                    Monto a Retirar ($)
+                                </Label>
+                                <Input
+                                    id='monto'
+                                    type='text'
+                                    value={monto}
+                                    onChange={handleMontoChange}
+                                    placeholder='Ingresa el monto...'
+                                    className='rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-12 text-base font-bold text-gray-900 dark:text-white placeholder:text-gray-400 focus-visible:ring-black'
+                                    disabled={loading}
+                                />
+                                {errors.monto && (
+                                    <p className='text-xs text-red-500 font-bold mt-1 ml-1'>{errors.monto}</p>
+                                )}
+                            </div>
+
+                            {/* Motivo */}
+                            <div className="space-y-2">
+                                <Label htmlFor='motivo' className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 ml-1'>
+                                    Motivo del Retiro
+                                </Label>
+                                <Textarea
+                                    id='motivo'
+                                    value={motivo}
+                                    onChange={(e) => setMotivo(e.target.value)}
+                                    placeholder='Ej: Pago a proveedor, Gastos operacionales...'
+                                    rows={3}
+                                    className='rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus-visible:ring-black'
+                                    disabled={loading}
+                                />
+                                {errors.motivo && (
+                                    <p className='text-xs text-red-500 font-bold mt-1 ml-1'>{errors.motivo}</p>
+                                )}
+                            </div>
+
+                            {/* Error general */}
+                            {errors.general && (
+                                <div className='text-xs text-red-600 text-center font-bold bg-red-50 dark:bg-red-900/10 p-3 rounded-2xl border border-red-100 dark:border-red-900/30'>
+                                    {errors.general}
+                                </div>
+                            )}
+                        </form>
                     </div>
+                </div>
 
-                    <form onSubmit={handleSubmit} className='space-y-4'>
-                        {/* Monto a retirar */}
-                        <div>
-                            <Label htmlFor='monto' className='text-sm'>
-                                Monto a Retirar ($)
-                            </Label>
-                            <Input
-                                id='monto'
-                                type='text'
-                                value={monto}
-                                onChange={handleMontoChange}
-                                placeholder='0'
-                                className='text-sm'
-                                disabled={loading}
-                            />
-                            {errors.monto && (
-                                <p className='text-xs text-red-600 mt-1'>{errors.monto}</p>
-                            )}
-                        </div>
-
-                        {/* Motivo */}
-                        <div>
-                            <Label htmlFor='motivo' className='text-sm'>
-                                Motivo del Retiro
-                            </Label>
-                            <Textarea
-                                id='motivo'
-                                value={motivo}
-                                onChange={(e) => setMotivo(e.target.value)}
-                                placeholder='Ej: Pago a proveedor, Gastos operacionales, etc.'
-                                rows={3}
-                                className='text-sm'
-                                disabled={loading}
-                            />
-                            {errors.motivo && (
-                                <p className='text-xs text-red-600 mt-1'>{errors.motivo}</p>
-                            )}
-                        </div>
-
-                        {/* Error general */}
-                        {errors.general && (
-                            <div className='text-xs text-red-600 text-center bg-red-50 p-2 rounded'>
-                                {errors.general}
-                            </div>
-                        )}
-
-                        {/* Buttons */}
-                        <div className='flex justify-center gap-2 pt-4 text-center'>
-                            <Button
-                                type='button'
-                                size='sm'
-                                variant='outline'
-                                className='rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200'
-                                onClick={handleClose}
-                                disabled={loading}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type='submit'
-                                disabled={loading}
-                                size='sm'
-                                variant='outline'
-                                className='rounded-full px-6 bg-green-600 text-white hover:scale-110 transition-all duration-200'
-                            >
-                                {loading && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
-                                Confirmar Retiro
-                            </Button>
-                        </div>
-                    </form>
+                {/* Footer Premium */}
+                <div className='flex-shrink-0 border-t border-gray-100 dark:border-gray-800 p-6 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-4'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        className='rounded-full px-8 h-10 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 font-bold text-xs uppercase tracking-widest transition-all'
+                        onClick={handleClose}
+                        disabled={loading}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type='submit'
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className='rounded-full px-8 h-10 bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-all duration-200 font-bold text-xs uppercase tracking-widest'
+                    >
+                        {loading && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                        Confirmar Retiro
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

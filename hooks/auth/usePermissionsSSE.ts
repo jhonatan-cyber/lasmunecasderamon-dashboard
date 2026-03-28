@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 export function usePermissionsSSE() {
   const { user, refreshPermissions } = useAuth();
 
-  const sseUrl = (!user || user.role?.toLowerCase() === 'administrador') ? null : '/api/permissions/sse';
+  const sseUrl = (!user || user.role?.toLowerCase() === 'administrador') ? null : '/api/notifications/sse';
 
   useSSE(sseUrl, (data) => {
     if (data.type === 'connected') return;

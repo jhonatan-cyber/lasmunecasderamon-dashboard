@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { getAuth } from '@/lib/auth/auth-app';
+import { jsonWithNormalizedDates } from '@/lib/api/date-response';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const id = (await params).id;
     const client = await ClientRepository.getById(id);
     if (!client) return NextResponse.json({ message: 'Cliente no encontrado' }, { status: 404 });
-    return NextResponse.json(client);
+    return jsonWithNormalizedDates(client);
   } catch (error: any) {
     return NextResponse.json(
       { message: 'Error interno del servidor', error: error.message },

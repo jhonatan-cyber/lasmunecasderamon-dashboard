@@ -1,34 +1,43 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
-import path from 'path';
-import fs from 'fs/promises';
-
-const PRODUCT_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'products');
+import { ProductService } from '@/lib/services/ProductService';
+import { processAndSaveImage } from '@/lib/utils/image-utils';
 
 export const PUT = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
-    const formData = await request.formData();
+    const contentType = request.headers.get('content-type') || '';
+    let payload: any = {};
+    let fotoName: string | undefined;
 
-    const fields: any = {};
-    formData.forEach((value, key) => {
-      if (key !== 'foto') fields[key] = value;
-    });
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      formData.forEach((value, key) => {
+        if (key !== 'foto' && key !== 'fotoUrl') payload[key] = value;
+      });
 
-    const fotoFile = formData.get('foto') as File | null;
-    let fotoName = fields.foto || 'default.png';
+      const fotoFile = formData.get('foto') as File | null;
+      const fotoUrl = formData.get('fotoUrl') as string | null;
+      fotoName = payload.foto;
 
-    if (fotoFile && fotoFile.name) {
-      const ext = path.extname(fotoFile.name);
-      fotoName = `product_${Date.now()}${ext}`;
-      const bytes = await fotoFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await fs.writeFile(path.join(PRODUCT_UPLOAD_DIR, fotoName), buffer);
+      if (fotoFile && fotoFile.name && fotoFile.size > 0) {
+        const bytes = await fotoFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        fotoName = await processAndSaveImage(buffer, `product_${id}`);
+      } else if (fotoUrl && fotoUrl.startsWith('http')) {
+        fotoName = await processAndSaveImage(fotoUrl, `product_${id}`);
+      }
+    } else {
+      payload = await request.json();
+      fotoName = payload.foto;
+      if (fotoName && fotoName.startsWith('http')) {
+        fotoName = await processAndSaveImage(fotoName, `product_${id}`);
+      }
     }
 
-    await ProductRepository.update(id, fields, fotoName);
-    return NextResponse.json({ success: true, message: 'Producto actualizado' });
+    const data = await ProductService.updateProduct(id, payload, fotoName);
+    return NextResponse.json({ success: true, message: 'Producto actualizado', data });
   }
 );
 

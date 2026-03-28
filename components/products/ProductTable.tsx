@@ -7,7 +7,8 @@ import {
   Trash, 
   Check, 
   Power,
-  GripVertical
+  GripVertical,
+  Image as ImageIcon
 }  from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ interface ProductTableProps {
   onDeactivate: (product: Product) => void;
   onReorder?: (products: Product[]) => void;
   isLoading: boolean;
+  isMutating: boolean;
   currentPage: number;
   pageSize: number;
 }
@@ -128,6 +130,27 @@ const SortableRow: React.FC<SortableRowProps> = ({
         <Badge className='bg-purple-100 text-purple-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
           {(currentPage - 1) * pageSize + idx + 1}
         </Badge>
+      </TableCell>
+      <TableCell className='py-3 px-2 sm:px-4 text-center'>
+        <div className='w-12 h-12 rounded-xl overflow-hidden border border-gray-100 mx-auto bg-gray-50 flex items-center justify-center shrink-0 shadow-sm group-hover:shadow transition-all relative'>
+          <img 
+            src={
+              !product.foto || product.foto === 'default.png' || product.foto === ''
+                ? '/img/products/default.png'
+                : product.foto.startsWith('http') 
+                  ? product.foto 
+                  : `/img/products/${product.foto}`
+            } 
+            alt={product.name} 
+            className='w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110'
+            onError={e => {
+              const target = e.target as HTMLImageElement;
+              if (!target.src.endsWith('/img/products/default.png')) {
+                target.src = '/img/products/default.png';
+              }
+            }}
+          />
+        </div>
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>{product.code}</TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>{product.name}</TableCell>
@@ -256,6 +279,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
   onDeactivate,
   onReorder,
   isLoading,
+  isMutating,
   currentPage,
   pageSize
 }) => {
@@ -332,6 +356,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 <TableRow>
                   <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400 w-12'></TableHead>
                   <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>#</TableHead>
+                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>Foto</TableHead>
                   <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
                     Código
                   </TableHead>
@@ -355,7 +380,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <TableBody>
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
-                    <TableCell colSpan={8} className='text-center py-8 text-gray-400 bg-white text-sm sm:text-base'>
+                    <TableCell colSpan={9} className='text-center py-8 text-gray-400 bg-white text-sm sm:text-base'>
                       No hay productos
                     </TableCell>
                   </TableRow>
@@ -395,6 +420,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleConfirmDelete}
         productName={productToDelete?.name || ''}
+        isLoading={isMutating}
       />
     </TooltipProvider>
   );

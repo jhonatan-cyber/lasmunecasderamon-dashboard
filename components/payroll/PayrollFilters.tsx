@@ -4,7 +4,7 @@ import SearchInput from "@/components/ui/SearchInput";
 import SelectElements from "@/components/ui/select-elements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eraser } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 interface PayrollFiltersProps {
   searchTerm: string;
@@ -56,12 +56,12 @@ export default function PayrollFilters({
           <div className="w-full lg:w-auto">
             <Button
               onClick={onClear}
-              size="sm"
               variant="outline"
-              className="w-full lg:w-auto rounded-full px-4 text-sm"
+              size="icon"
+              className="w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm"
+              title="Limpiar filtros"
             >
-              <Eraser className="w-3 h-3 mr-1" />
-              Limpiar
+              <Trash2 className="w-3 h-3" />
             </Button>
           </div>
         </div>

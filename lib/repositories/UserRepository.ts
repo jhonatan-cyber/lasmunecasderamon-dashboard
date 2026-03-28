@@ -33,26 +33,79 @@ export class UserRepository {
     return UserSchema.parse(user);
   }
 
-  static async getAll(anfitrionas?: string): Promise<UserType[]> {
-    let sql = `
+  static async getAll(params?: { 
+    anfitrionas?: string, 
+    search?: string, 
+    status?: string | number, 
+    role?: string,
+    limit?: number,
+    offset?: number 
+  }): Promise<{ data: UserType[], total: number }> {
+    let where = 'WHERE 1=1';
+    let sqlParams: any[] = [];
+    
+    if (params?.anfitrionas === '1') {
+      where += " AND r.nombre = 'anfitriona'";
+    }
+
+    if (params?.search) {
+      where += " AND (u.nombre LIKE ? OR u.apellido LIKE ? OR u.nick LIKE ? OR u.run LIKE ? OR u.email LIKE ?)";
+      const search = `%${params.search}%`;
+      sqlParams.push(search, search, search, search, search);
+    }
+
+    if (params?.status !== undefined && params?.status !== 'all') {
+      where += " AND u.estado = ?";
+      const isStatusActive = params.status === 'active' || Number(params.status) === 1;
+      sqlParams.push(isStatusActive ? 1 : 0);
+    }
+
+    if (params?.role && params?.role !== 'all') {
+      where += " AND r.nombre = ?";
+      sqlParams.push(params.role);
+    }
+
+    const countSql = `
+      SELECT COUNT(*) as total 
+      FROM usuarios u 
+      LEFT JOIN roles r ON u.rol_id = r.id_rol
+      ${where}
+    `;
+
+    const dataSql = `
       SELECT u.*, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol
+      ${where}
+      ORDER BY u.fecha_crea DESC
+      ${params?.limit !== undefined ? 'LIMIT ? OFFSET ?' : ''}
     `;
-    
-    if (anfitrionas === '1') {
-      sql += " WHERE r.nombre = 'anfitriona'";
-    }
 
-    const data = await query<any[]>(sql);
-    if (!data || !Array.isArray(data)) return [];
+    const countRes = await query<any[]>(countSql, sqlParams);
+    const total = countRes[0]?.total || 0;
+
+    const queryParams = params?.limit !== undefined 
+      ? [...sqlParams, params.limit, params.offset || 0] 
+      : sqlParams;
+
+    const data = await query<any[]>(dataSql, queryParams);
+    if (!data || !Array.isArray(data)) return { data: [], total: 0 };
     
-    return data.map(row => this.mapUserFromDB(row));
+    return {
+      data: data.map(row => this.mapUserFromDB(row)),
+      total
+    };
   }
 
   static async getById(id: string): Promise<UserType | null> {
-    const row = await BaseRepository.findOne<any>(query, this.TABLE, this.ID_COL, id);
-    return row ? this.mapUserFromDB(row) : null;
+    const results = await query<any[]>(`
+      SELECT u.*, r.nombre as rol_nombre, r.id_rol 
+      FROM usuarios u 
+      LEFT JOIN roles r ON u.rol_id = r.id_rol
+      WHERE u.id_usuario = ?
+    `, [id]);
+    
+    return results.length > 0 ? this.mapUserFromDB(results[0]) : null;
   }
 
   static async getByRun(run: string): Promise<UserType | null> {
@@ -132,33 +185,18 @@ export class UserRepository {
     await BaseRepository.delete(query, this.TABLE, this.ID_COL, id);
   }
 
-  static async getAnfitrionasActivas(): Promise<UserType[]> {
-    const data = await query<any[]>(`
-      SELECT u.*, r.nombre as rol_nombre, r.id_rol
-      FROM usuarios u
-      LEFT JOIN roles r ON u.rol_id = r.id_rol
-      WHERE r.nombre = 'anfitriona' AND u.estado = 1
-    `);
-    return data.map(row => this.mapUserFromDB(row));
-  }
-
   static async getStaff(): Promise<UserType[]> {
     const results = await query<any[]>(`
       SELECT 
         U.*, R.nombre as rol_nombre, R.id_rol
       FROM usuarios U
       INNER JOIN roles R ON R.id_rol = U.rol_id
-      WHERE U.estado = 1
+      WHERE U.estado = 1 
+      AND (LOWER(R.nombre) LIKE '%garzon%' OR LOWER(R.nombre) LIKE '%mesero%' OR LOWER(R.nombre) LIKE '%cajero%' OR LOWER(R.nombre) LIKE '%anfitriona%')
       ORDER BY U.nombre, U.apellido
     `);
 
-    return results
-      .filter((user: any) => {
-        const roleLower = user.rol_nombre?.toLowerCase() || '';
-        return roleLower.includes('garzon') || roleLower.includes('mesero') || 
-               roleLower.includes('cajero') || roleLower.includes('anfitriona');
-      })
-      .map(row => this.mapUserFromDB(row));
+    return results.map(row => this.mapUserFromDB(row));
   }
 
   static async getAvailableAnfitrionas(): Promise<UserType[]> {

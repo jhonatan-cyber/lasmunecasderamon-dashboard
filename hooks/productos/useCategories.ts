@@ -5,7 +5,7 @@ import { useGenericMutations } from '../shared/useGenericMutations';
 import React from 'react';
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   description: string;
   status: number;
@@ -19,18 +19,19 @@ interface UseCategoriesReturn {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   isLoading: boolean;
+  isMutating: boolean;
   error: string | null;
   createCategory: (category: {
     name: string;
     description: string;
   }) => Promise<{ success: boolean; message: string }>;
   updateCategory: (
-    id: number,
+    id: string,
     category: { name: string; description: string }
   ) => Promise<{ success: boolean; message: string }>;
-  deleteCategory: (id: number) => Promise<{ success: boolean; message: string }>;
-  activateCategory: (id: number) => Promise<{ success: boolean; message: string }>;
-  deactivateCategory: (id: number) => Promise<{ success: boolean; message: string }>;
+  deleteCategory: (id: string) => Promise<{ success: boolean; message: string }>;
+  activateCategory: (id: string) => Promise<{ success: boolean; message: string }>;
+  deactivateCategory: (id: string) => Promise<{ success: boolean; message: string }>;
   reorderCategories: (categories: Category[]) => Promise<{ success: boolean; message: string }>;
 }
 
@@ -51,7 +52,7 @@ export function useCategories(): UseCategoriesReturn {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { create, update, remove } = useGenericMutations<Category>('/api/categories', {
+  const { create, update, remove, isLoading: isMutating } = useGenericMutations<Category>('/api/categories', {
     onSuccess: refetchCategories,
     showToasts: false
   });
@@ -59,12 +60,12 @@ export function useCategories(): UseCategoriesReturn {
   const filteredCategories = useMemo(() => {
     if (!categories || categories.length === 0) return [];
 
-    const seen = new Set<number>();
+    const seen = new Set<string>();
     const unique = (categories || []).filter(cat => {
-      if (seen.has(cat.id)) {
+      if (seen.has(String(cat.id))) {
         return false;
       }
-      seen.add(cat.id);
+      seen.add(String(cat.id));
       return true;
     });
 
@@ -94,10 +95,10 @@ export function useCategories(): UseCategoriesReturn {
           };
           setData((prev: Category[] | undefined) => {
             const merged = [newClient, ...(prev || [])];
-            const seen = new Set<number>();
+            const seen = new Set<string>();
             return merged.filter(i => {
-              if (seen.has(i.id)) return false;
-              seen.add(i.id);
+              if (seen.has(String(i.id))) return false;
+              seen.add(String(i.id));
               return true;
             });
           });
@@ -113,13 +114,13 @@ export function useCategories(): UseCategoriesReturn {
   );
 
   const updateCategory = useCallback(
-    async (id: number, category: { name: string; description: string }) => {
+    async (id: string, category: { name: string; description: string }) => {
       try {
         const res = await update({ id, ...category });
         if (setData) {
           setData((prev: Category[] | undefined) =>
             (prev || []).map((c: Category) =>
-              c.id === id ? { ...c, ...category, updated_at: new Date().toISOString() } : c
+              String(c.id) === String(id) ? { ...c, ...category, updated_at: new Date().toISOString() } : c
             )
           );
         } else {
@@ -134,11 +135,11 @@ export function useCategories(): UseCategoriesReturn {
   );
 
   const deleteCategory = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       try {
         const res = await remove(id);
         if (setData) {
-          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => c.id !== id));
+          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => String(c.id) !== String(id)));
         } else {
           await refetchCategories();
         }
@@ -151,11 +152,11 @@ export function useCategories(): UseCategoriesReturn {
   );
 
   const activateCategory = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       const previous = categories ? [...categories] : [];
       try {
         if (setData) {
-          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, status: 1 } : c)));
+          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (String(c.id) === String(id) ? { ...c, status: 1 } : c)));
         }
 
         const res = await fetch(`/api/categories?id=${id}&action=activate`, { method: 'PATCH' });
@@ -188,11 +189,11 @@ export function useCategories(): UseCategoriesReturn {
   );
 
   const deactivateCategory = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       const previous = categories ? [...categories] : [];
       try {
         if (setData) {
-          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, status: 0 } : c)));
+          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (String(c.id) === String(id) ? { ...c, status: 0 } : c)));
         }
 
         const res = await fetch(`/api/categories?id=${id}&action=deactivate`, { method: 'PATCH' });
@@ -231,11 +232,11 @@ export function useCategories(): UseCategoriesReturn {
         if (setData) {
           const optimistic = (newOrder || []).map((c, idx) => ({ ...c, display_order: idx }));
        
-          const seen = new Set<number>();
+          const seen = new Set<string>();
           setData(
             optimistic.filter(item => {
-              if (seen.has(item.id)) return false;
-              seen.add(item.id);
+              if (seen.has(String(item.id))) return false;
+              seen.add(String(item.id));
               return true;
             })
           );
@@ -305,10 +306,10 @@ export function useCategories(): UseCategoriesReturn {
           };
           setData((prev: Category[] | undefined) => {
             const merged = [newItem, ...(prev || [])];
-            const seen = new Set<number>();
+            const seen = new Set<string>();
             return merged.filter(i => {
-              if (seen.has(i.id)) return false;
-              seen.add(i.id);
+              if (seen.has(String(i.id))) return false;
+              seen.add(String(i.id));
               return true;
             });
           });
@@ -318,22 +319,22 @@ export function useCategories(): UseCategoriesReturn {
         if (action === 'updated') {
           setData((prev: Category[] | undefined) =>
             (prev || []).map((c: Category) =>
-              c.id === payload.id ? { ...c, name: payload.name ?? c.name } : c
+              String(c.id) === String(payload.id) ? { ...c, name: payload.name ?? c.name } : c
             )
           );
           return;
         }
 
         if (action === 'deleted') {
-          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => c.id !== payload.id));
+          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => String(c.id) !== String(payload.id)));
           return;
         }
 
         if (action === 'reordered' && Array.isArray(payload.order)) {
           setData((prev: Category[] | undefined) => {
-            const prevMap = new Map<number, Category>((prev || []).map((p: Category) => [p.id, p]));
+            const prevMap = new Map<string, Category>((prev || []).map((p: Category) => [p.id, p]));
             const reordered: Category[] = payload.order
-              .map((id: number, idx: number) => {
+              .map((id: string, idx: number) => {
                 const found = prevMap.get(id);
                 if (!found) return null;
                 return { ...found, display_order: idx } as Category;
@@ -347,7 +348,7 @@ export function useCategories(): UseCategoriesReturn {
         if (action === 'activated' || action === 'deactivated') {
           const newStatus = action === 'activated' ? 1 : 0;
           setData((prev: Category[] | undefined) =>
-            (prev || []).map((c: Category) => (c.id === payload.id ? { ...c, status: newStatus } : c))
+            (prev || []).map((c: Category) => (String(c.id) === String(payload.id) ? { ...c, status: newStatus } : c))
           );
           return;
         }
@@ -367,6 +368,7 @@ export function useCategories(): UseCategoriesReturn {
     searchTerm,
     setSearchTerm,
     isLoading,
+    isMutating,
     error,
     createCategory,
     updateCategory,

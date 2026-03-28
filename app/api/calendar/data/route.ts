@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CalendarRepository } from '@/lib/repositories/CalendarRepository';
+import { jsonWithNormalizedDates } from '@/lib/api/date-response';
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
     if (!startDate || !endDate || !type) return NextResponse.json({ message: 'Parámetros faltantes' }, { status: 400 });
 
     const data = await CalendarRepository.getData(startDate, endDate, type);
-    return NextResponse.json({ data, type });
+    return jsonWithNormalizedDates({ data, type });
   } catch (error: any) {
     return NextResponse.json({ message: 'Error interno del servidor', error: error.message }, { status: 500 });
   }

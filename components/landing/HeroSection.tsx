@@ -1,4 +1,5 @@
 /* eslint-disable */
+import NextImage from 'next/image';
 import { Sparkles, Music, Users, Wine, ChevronDown } from 'lucide-react';
 
 export default function HeroSection({ scrollY }: { scrollY: number }) {
@@ -24,10 +25,15 @@ export default function HeroSection({ scrollY }: { scrollY: number }) {
             transition: 'transform 0.1s linear, opacity 0.1s linear'
           }}
         >
-          <img
+          <NextImage
             src='/img/system/logo2.png'
             alt='Las Muñecas de Ramón'
-            className='w-full max-w-[680px] md:max-w-[780px] lg:max-w-[950px] h-auto object-contain drop-shadow-[0_0_25px_rgba(217,119,6,0.3)] animate-in fade-in zoom-in duration-1000 px-2 sm:px-0'
+            width={960}
+            height={320}
+            priority
+            loading="eager"
+            className='max-w-[680px] md:max-w-[780px] lg:max-w-[950px] object-contain drop-shadow-[0_0_25px_rgba(217,119,6,0.3)] animate-in fade-in zoom-in duration-1000 px-2 sm:px-0'
+            style={{ width: '100%', height: 'auto' }}
           />
         </div>
 

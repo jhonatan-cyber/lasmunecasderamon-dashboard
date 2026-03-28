@@ -42,7 +42,8 @@ export function useGenericMutations<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error con ${entityName}`);
+      const message = errorData.message || errorData.error?.message || errorData.error || `Error con ${entityName}`;
+      throw new Error(message);
     }
 
     return response.json();

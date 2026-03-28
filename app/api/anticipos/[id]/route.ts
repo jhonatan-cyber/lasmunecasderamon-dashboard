@@ -18,7 +18,14 @@ export const PUT = withAppApiWrapper(
         { status: 400 }
       );
 
-    await AnticipoRepository.updateStatus(id, estado ?? 0);
-    return NextResponse.json({ success: true, message: 'Anticipo actualizado correctamente' });
+    if (Number(estado) === 1) {
+      await AnticipoRepository.processSolicitud(id, 'approve');
+    } else if (Number(estado) === 3) {
+      await AnticipoRepository.processSolicitud(id, 'reject');
+    } else {
+      await AnticipoRepository.updateStatus(id, Number(estado ?? 0));
+    }
+
+    return NextResponse.json({ success: true, message: 'Anticipo procesado correctamente' });
   }
 );

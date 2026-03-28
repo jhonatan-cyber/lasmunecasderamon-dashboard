@@ -142,9 +142,9 @@ export const CerrarCajaDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
-          <DialogTitle>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0 border-none bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <DialogHeader className="flex-shrink-0 px-8 pt-8 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <DialogTitle className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Cerrar Caja {getDiaSemana(caja.fecha_apertura)}
           </DialogTitle>
         </DialogHeader>
