@@ -143,7 +143,7 @@ export default function AttendancePage() {
     setSortOrder('asc');
   };
 
-  const handleGenerateQR = async (userId: number) => {
+  const handleGenerateQR = async (userId: string) => {
     try {
       setIsGeneratingToken(true);
       const response = await fetch('/api/users/generate-qr', {

@@ -38,7 +38,9 @@ export function useClients() {
 
   const filters = useGenericFilters(data, {
     searchFields: ['name', 'lastName', 'run', 'phone'],
-    initialPageSize: 5
+    initialPageSize: 5,
+    initialSortBy: 'created_at',
+    initialSortOrder: 'desc'
   });
 
   const createClient = async (payload: any) => {
@@ -82,6 +84,14 @@ export function useClients() {
     }
   };
 
+  const updateClientSaldo = (id: string | number, nuevoSaldo: number) => {
+    setData((prev: Client[] | undefined) =>
+      (prev || []).map((c: Client) =>
+        String(c.id) === String(id) ? { ...c, saldo: nuevoSaldo } : c
+      )
+    );
+  };
+
   return {
     clients: filters.paginatedData,
     allClients: data,
@@ -95,6 +105,10 @@ export function useClients() {
     setSearchTerm: filters.setSearchTerm,
     filterStatus: filters.filterStatus,
     setFilterStatus: filters.setFilterStatus,
+    sortBy: filters.sortBy,
+    setSortBy: filters.setSortBy,
+    sortOrder: filters.sortOrder,
+    setSortOrder: filters.setSortOrder,
 
     page: filters.page,
     setPage: filters.setPage,
@@ -105,7 +119,8 @@ export function useClients() {
     fetchClients: refetch,
     createClient,
     updateClient,
-    deleteClient
+    deleteClient,
+    updateClientSaldo
   };
 }
 

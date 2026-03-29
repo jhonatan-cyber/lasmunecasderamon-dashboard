@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { getAuth } from '@/lib/auth/auth-app';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 
+// GET sin verificación de permisos - solo requiere autenticación
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const user = await getAuth();
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
+    }
+
     const id = (await params).id;
     const data = await UserRepository.getById(id);
     if (!data)

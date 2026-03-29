@@ -29,7 +29,8 @@ export class OrderRepository {
       fecha_crea: row.fecha_crea,
       cliente_nombre: row.cliente || row.cliente_nombre,
       mesero_nombre: row.garzon || row.mesero_nombre,
-      nicks: row.nicks
+      mesero_nick: row.garzon_nick,
+      nicks: row.nicks || null
     });
   }
 
@@ -40,6 +41,7 @@ export class OrderRepository {
         COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, 
         P.codigo, 
         CONCAT(U.nombre, ' ', U.apellido) AS garzon,
+        U.nick as garzon_nick,
         (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') 
          FROM pedidos_usuarios PU 
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
@@ -48,9 +50,10 @@ export class OrderRepository {
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
-      WHERE P.estado = 1
+      WHERE P.estado IN (1, 2)
       ORDER BY P.fecha_crea DESC
     `);
+    console.log('[OrderRepository.getAll] Raw results:', results.length);
     return results.map(row => this.mapOrderFromDB(row));
   }
 
@@ -191,7 +194,7 @@ export class OrderRepository {
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
          WHERE PU.pedido_id = P.id_pedido) AS anfitrionaIds,
         DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
-        PROD.nombre AS producto_nombre, PROD.categoria, DP.hostess_id, DP.habitacion_id
+        PROD.nombre AS producto_nombre, DP.hostess_id, DP.habitacion_id
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id

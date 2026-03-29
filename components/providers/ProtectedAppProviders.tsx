@@ -12,6 +12,7 @@ import AnulacionNotificationModal from '@/components/AnulacionNotificationModal'
 import { FetchInterceptorInit } from '@/components/FetchInterceptorInit';
 import { PermissionsSSEListener } from '@/components/PermissionsSSEListener';
 import { SyncProvider } from '@/contexts/SyncContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function ProtectedAppProviders({ children }: { children: ReactNode }) {
   return (
@@ -25,8 +26,10 @@ export function ProtectedAppProviders({ children }: { children: ReactNode }) {
               <ServicioAnfitrionasProvider>
                 <NotificationsProvider>
                   <NotificationProvider>
-                    {children}
-                    <AnulacionNotificationModal />
+                    <TooltipProvider>
+                      {children}
+                      <AnulacionNotificationModal />
+                    </TooltipProvider>
                   </NotificationProvider>
                 </NotificationsProvider>
               </ServicioAnfitrionasProvider>

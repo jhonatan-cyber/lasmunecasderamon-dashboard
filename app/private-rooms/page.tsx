@@ -94,9 +94,9 @@ export default function ServiciosPage() {
             <Button
               onClick={handleCreateServicioWithCheck}
               disabled={cajaLoading || !hasOpenCaja}
-              className={`whitespace-nowrap inline-flex items-center rounded-full transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
+              className={`whitespace-nowrap inline-flex items-center rounded-full px-6 py-2 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto ${
                 hasOpenCaja
-                  ? 'bg-black text-white hover:scale-105 shadow-md dark:hover:bg-zinc-800'
+                  ? 'bg-black text-white hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 shadow-md'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >

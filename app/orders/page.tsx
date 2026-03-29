@@ -532,9 +532,9 @@ export default function OrdersPage() {
               <Button
                 onClick={handleCreateOrder}
                 disabled={cajaLoading || !hasOpenCaja}
-                className={`rounded-full transition-all duration-200 ${
+                className={`rounded-full px-6 py-2 transition-all duration-200 ${
                   hasOpenCaja
-                    ? 'bg-black text-white hover:scale-105'
+                    ? 'bg-black text-white hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >

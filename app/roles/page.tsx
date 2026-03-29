@@ -344,7 +344,7 @@ export default function RolesPage() {
               </div>
               <PermissionGuard module='roles' action='create' fallback={null}>
                 <button
-                  className='whitespace-nowrap inline-flex items-center px-4 py-2 bg-black text-white rounded-full hover:bg-zinc-900 transition-colors hover:scale-110 duration-200 text-sm sm:text-base w-full sm:w-auto'
+                  className='whitespace-nowrap inline-flex items-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
                   onClick={() => {
                     setIsAddRoleModalOpen(true);
                     setIsEditMode(false);
