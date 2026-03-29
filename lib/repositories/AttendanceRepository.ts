@@ -65,8 +65,19 @@ export class AttendanceRepository {
       }
     }
 
-    if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
+if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
 
+    const nowStr = getNowInBusinessTimezone();
+    const hour = parseInt(nowStr.substring(11, 13), 10);
+    
+    // Allow registration only during business hours (until 23:00)
+    if (hour >= 23) return { success: false, message: 'Horario cerrado (después de las 23:00)' };
+
+    const fechaHoy = nowStr.substring(0, 10);
+    const existing = await query<any[]>('SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?', [targetUser.id_usuario, fechaHoy]);
+    const alreadyRegistered = existing.length > 0;
+
+    // SIEMPRE regeneramos el QR porque es de un solo uso
     if (isSystemCode) {
       const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
       await regenerateAttendanceCode();
@@ -77,15 +88,10 @@ export class AttendanceRepository {
       });
     }
 
-    const nowStr = getNowInBusinessTimezone();
-    const hour = parseInt(nowStr.substring(11, 13), 10);
-    
-    // Allow registration only during business hours (until 23:00)
-    if (hour >= 23) return { success: false, message: 'Horario cerrado (después de las 23:00)' };
-
-    const fechaHoy = nowStr.substring(0, 10);
-    const existing = await query<any[]>('SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?', [targetUser.id_usuario, fechaHoy]);
-    if (existing.length > 0) return { success: true, alreadyRegistered: true, message: `${targetUser.nombre} ya tiene asistencia hoy` };
+    // Si ya tiene asistencia, retornamos sin crear nuevo registro
+    if (alreadyRegistered) {
+      return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencia registrada hoy' };
+    }
 
     const timeStr = nowStr.substring(11, 19);
 
@@ -105,7 +111,7 @@ export class AttendanceRepository {
 
     return { 
       success: true, 
-      message: `Asistencia registrada para ${targetUser.nombre}`, 
+      message: `Tu asistencia ha sido registrada`, 
       user: { id: targetUser.id_usuario, nombre: targetUser.nombre, apellido: targetUser.apellido } 
     };
   }

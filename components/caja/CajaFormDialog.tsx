@@ -158,7 +158,7 @@ export const CajaFormDialog = ({
         <Button
           size='sm'
           variant='default'
-          className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 py-2 h-11'
+          className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full px-6 py-2 hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
           disabled={loading || disabled}
         >
           <Plus className='w-4 h-4 mr-2' />
@@ -209,8 +209,8 @@ export const CajaFormDialog = ({
           <div className="px-8 py-6 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-3">
             <Button
               type='button'
-              variant='ghost'
-              className='flex-1 h-12 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all'
+              variant='outline'
+              className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
               onClick={() => setOpen(false)}
               disabled={loading}
             >
@@ -218,7 +218,7 @@ export const CajaFormDialog = ({
             </Button>
             <Button
               type='submit'
-              className='flex-[2] h-12 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:scale-[1.02] active:scale-95 transition-all font-bold shadow-lg shadow-black/10'
+              className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 transition-all hover:scale-105'
               disabled={loading}
             >
               {loading ? (

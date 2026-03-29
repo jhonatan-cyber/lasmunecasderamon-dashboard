@@ -1,9 +1,19 @@
+'use client';
+
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { CreditCard, User, FileSignature, Phone } from 'lucide-react';
 import { useClientForm } from '@/hooks/personal/useClientForm';
-import type { ClientFormValues } from '@/hooks/personal/useClientForm';
+import { type ClientFormValues } from '@/hooks/personal/useClientForm';
 
 interface ClientFormProps {
   clientData: ClientFormValues;
@@ -15,7 +25,7 @@ interface ClientFormProps {
   hideButtons?: boolean;
 }
 
-export function ClientForm({
+function ClientForm({
   clientData,
   open,
   onSubmit,
@@ -144,3 +154,83 @@ export function ClientForm({
     </form>
   );
 }
+
+interface ClientFormModalProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    isEditMode: boolean;
+    clientData: { run: string; name: string; lastName: string; phone: string };
+    onSubmit: (data: ClientFormValues) => Promise<void>;
+    onCancel: () => void;
+    isLoading: boolean;
+}
+
+export function ClientFormModal({
+    isOpen,
+    onOpenChange,
+    isEditMode,
+    clientData,
+    onSubmit,
+    onCancel,
+    isLoading
+}: ClientFormModalProps) {
+    const handleCancel = () => {
+        onCancel();
+        onOpenChange(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+                <DialogHeader className='p-6 pb-2 border-b'>
+                    <DialogTitle className='text-xl font-bold'>
+                        {isEditMode ? 'Editar Cliente' : 'Nuevo Cliente'}
+                    </DialogTitle>
+                    <DialogDescription className='sr-only'>
+                        {isEditMode ? 'Formulario para editar cliente' : 'Formulario para crear nuevo cliente'}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className='flex-1 overflow-y-auto p-6'>
+                    <ClientForm
+                        clientData={clientData}
+                        open={isOpen}
+                        onSubmit={onSubmit}
+                        onCancel={handleCancel}
+                        isEditMode={isEditMode}
+                        isLoading={isLoading}
+                        hideButtons={true}
+                    />
+                </div>
+
+                <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+                    <Button
+                        variant='outline'
+                        onClick={handleCancel}
+                        className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                        disabled={isLoading}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type='submit'
+                        form='client-form'
+                        className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <div className='flex items-center gap-2'>
+                                <Loader2 className='w-4 h-4 animate-spin' />
+                                <span>{isEditMode ? 'Actualizando...' : 'Guardando...'}</span>
+                            </div>
+                        ) : (
+                            <span>{isEditMode ? 'Actualizar Cambios' : 'Guardar Cliente'}</span>
+                        )}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export { ClientForm };

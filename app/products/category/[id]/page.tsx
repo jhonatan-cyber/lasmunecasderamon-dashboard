@@ -256,7 +256,7 @@ const ProductCategoryPage = () => {
               <PermissionGuard module='products' action='create' fallback={null}>
                 <Button
                   variant='outline'
-                  className='whitespace-nowrap inline-flex items-center bg-black text-white dark:bg-white dark:text-black rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto dark:hover:bg-gray-200 mt-2 sm:mt-0'
+                  className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full px-6 py-2 hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto mt-2 sm:mt-0'
                   onClick={() => {
                     setEditProduct(null);
                     setOpenDialog(true);

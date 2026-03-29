@@ -1,11 +1,12 @@
-import { generateUUID, withTransaction } from '@/lib/database/db';
-import { SaleCreateSchema } from '@/lib/business/schemas';
+import { generateUUID, withTransaction, query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { SaleCreateSchema } from '@/lib/business/schemas';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
+import { TipRepository } from '@/lib/repositories/TipRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 
 export class SaleService {
@@ -14,7 +15,16 @@ export class SaleService {
    * gestión de conflictos de habitación/anfitrionas y actualización de caja.
    */
   static async createSale(body: any, createdBy: string) {
+    console.log('[SaleService] createSale - body:', JSON.stringify(body));
     const validated = SaleCreateSchema.parse(body);
+    console.log('[SaleService] validated:', JSON.stringify(validated));
+    
+    // Usar el body original si validated no tiene pedido_id
+    const pedidoId = validated.pedido_id || body.pedido_id || body.id_pedido;
+    const clienteId = validated.cliente_id || body.cliente_id;
+    
+    console.log('[SaleService] pedidoId:', pedidoId, 'clienteId:', clienteId);
+    
     const ventaId = generateUUID();
     const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
     const now = getNowInBusinessTimezone(validated.device_date);
@@ -23,25 +33,27 @@ export class SaleService {
 
     const result = await withTransaction(async (trx) => {
       // 1. Deducción de Prepago (Usa método del repositorio)
-      if (validated.metodo_pago === 'prepago' && validated.cliente_id) {
-        const client = await ClientRepository.getByIdForUpdate(trx, validated.cliente_id);
+      const montoPrepago = validated.monto_prepago || 0;
+      if (montoPrepago > 0 && clienteId) {
+        const client = await ClientRepository.getByIdForUpdate(trx, clienteId);
         
-        if (!client || (client.saldo || 0) < validated.total) {
+        if (!client || (client.saldo || 0) < montoPrepago) {
           throw new Error('Saldo insuficiente en cuenta de prepago');
         }
         
-        await ClientRepository.updateBalance(trx, validated.cliente_id, -validated.total);
+        await ClientRepository.updateBalance(trx, clienteId, -montoPrepago);
       }
 
       // 2. Determinar estado inicial (2: en servicio si tiene habitación y tiempo, 1: completado)
       const estado = (validated.habitacion_id && validated.tiempo > 0) ? 2 : 1;
 
       // 3. Persistencia de la venta (vía Repository)
+      console.log('[SaleService] Insertando venta - propina:', validated.propina, 'total:', validated.total);
       await SaleRepository.rawInsert(trx, {
         id_venta: ventaId,
         codigo,
-        cliente_id: validated.cliente_id,
-        pedido_id: validated.pedido_id,
+        cliente_id: clienteId,
+        pedido_id: pedidoId,
         habitacion_id: validated.habitacion_id,
         metodo_pago: validated.metodo_pago,
         propina: validated.propina,
@@ -126,6 +138,43 @@ export class SaleService {
         resource_id: ventaId,
         details: { total: validated.total, metodo_pago: validated.metodo_pago, codigo }
       }, trx);
+
+      // 7b. Registrar propina si existe
+      if (validated.propina && validated.propina > 0) {
+        console.log('[SaleService] Registrando propina:', validated.propina);
+        try {
+          await TipRepository.register({
+            venta_id: ventaId,
+            monto: validated.propina
+          });
+          console.log('[SaleService] Propina registrada correctamente');
+        } catch (tipError) {
+          console.error('[SaleService] Error al registrar propina:', tipError);
+        }
+      }
+
+      // 8. Actualizar estado del pedido a procesado (estado = 0)
+      console.log('[SaleService] Actualizando pedido:', pedidoId, 'a estado 0');
+      if (pedidoId) {
+        const result = await trx('UPDATE pedidos SET estado = 0, fecha_mod = ? WHERE id_pedido = ?', [now, pedidoId]);
+        console.log('[SaleService] Resultado update pedido:', result);
+      }
+
+      // 9. Registrar movimiento en historial de prepago
+      if (montoPrepago > 0 && clienteId) {
+        await trx(`
+          INSERT INTO clientes_prepago_movimientos 
+          (id_movimiento, cliente_id, tipo, monto, metodo_pago, usuario_id, fecha_crea, metadatos)
+          VALUES (?, ?, 'consumo', ?, 'prepago', ?, ?, ?)
+        `, [
+          generateUUID(),
+          clienteId,
+          montoPrepago,
+          createdBy,
+          now,
+          JSON.stringify({ venta_id: ventaId, pedido_id: pedidoId, codigo })
+        ]);
+      }
 
       return { id: ventaId, codigo, total: validated.total };
     });
