@@ -81,7 +81,7 @@ const rolePermissions: Record<string, UserPermissions> = {
     advances: { read: true, write: true, delete: true, process: true }
   },
   cajero: {
-    users: { read: false, write: false, delete: false },
+    users: { read: true, write: true, delete: true },
     sales: { read: true, write: true, delete: false, anulate: false },
     products: { read: true, write: false, delete: false },
     clients: { read: true, write: true, delete: false },

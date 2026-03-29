@@ -13,7 +13,8 @@ export const OrderSchema = z.object({
   fecha_crea: z.string().or(z.date()).optional(),
   cliente_nombre: z.string().optional(),
   mesero_nombre: z.string().optional(),
-  nicks: z.string().optional(),
+  mesero_nick: z.string().optional(),
+  nicks: z.string().nullable().optional(),
 });
 
 export type OrderType = z.infer<typeof OrderSchema>;

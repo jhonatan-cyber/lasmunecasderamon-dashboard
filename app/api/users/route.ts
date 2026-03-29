@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { getAuth } from '@/lib/auth/auth-app';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 import { UserService } from '@/lib/services/UserService';
 import path from 'path';
@@ -10,23 +11,26 @@ import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAppAuth(
-  async (request: Request) => {
-    const { searchParams } = new URL(request.url);
-    const params = {
-      anfitrionas: searchParams.get('anfitrionas') || undefined,
-      search: searchParams.get('search') || undefined,
-      status: searchParams.get('status') || undefined,
-      role: searchParams.get('role') || undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
-    };
+// GET sin verificación de permisos - solo requiere autenticación
+export const GET = withAppApiWrapper(async (request: Request) => {
+  const user = await getAuth();
+  if (!user) {
+    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
+  }
 
-    const { data, total } = await UserRepository.getAll(params);
-    return NextResponse.json({ success: true, data, total });
-  },
-  { module: 'users', action: 'read' }
-);
+  const { searchParams } = new URL(request.url);
+  const params = {
+    anfitrionas: searchParams.get('anfitrionas') || undefined,
+    search: searchParams.get('search') || undefined,
+    status: searchParams.get('status') || undefined,
+    role: searchParams.get('role') || undefined,
+    limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
+    offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
+  };
+
+  const { data, total } = await UserRepository.getAll(params);
+  return NextResponse.json({ success: true, data, total });
+});
 
 export const POST = withAppAuth(
   async (request: Request) => {

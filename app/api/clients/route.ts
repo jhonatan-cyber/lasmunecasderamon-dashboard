@@ -3,7 +3,18 @@ import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { ClientService } from '@/lib/services/ClientService';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withAppApiWrapper(async (request: Request) => {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  
+  // Si se pasa un ID, devolver solo ese cliente
+  if (id) {
+    const client = await ClientRepository.getById(id);
+    if (!client) return NextResponse.json({ success: false, message: 'Cliente no encontrado' });
+    return NextResponse.json({ success: true, data: client });
+  }
+  
+  // Si no hay ID, devolver todos
   const data = await ClientRepository.getAll();
   return NextResponse.json({ success: true, data });
 });

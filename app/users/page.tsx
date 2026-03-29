@@ -193,7 +193,7 @@ export default function Users() {
             <ExportButtons users={users || []} />
             <PermissionGuard module='users' action='create' fallback={null}>
               <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
-                className='bg-black text-white rounded-full px-6 py-2'>
+                className='bg-black text-white rounded-full px-6 py-2 hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200'>
                 <Plus className='w-4 h-4 mr-1' /> Nuevo Usuario
               </Button>
             </PermissionGuard>

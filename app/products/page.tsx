@@ -192,7 +192,7 @@ const ProductsPage = () => {
               </Button>
               <PermissionGuard module="products" action="create" fallback={null}>
                 <Button
-                  className="bg-black text-white dark:bg-white dark:text-black rounded-full hover:scale-105 transition-all text-sm"
+                  className="bg-black text-white rounded-full px-6 py-2 hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm"
                   onClick={() => { setEditProduct(null); setOpenDialog(true); }}
                 >
                   <Plus className="w-4 h-4 mr-1" /> Nuevo

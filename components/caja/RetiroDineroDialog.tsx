@@ -210,7 +210,7 @@ export function RetiroDineroDialog({
                     <Button
                         type='button'
                         variant='outline'
-                        className='rounded-full px-8 h-10 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 font-bold text-xs uppercase tracking-widest transition-all'
+                        className='rounded-full px-8 h-10 dark:hover:bg-white dark:hover:text-black font-bold text-xs uppercase tracking-widest transition-all hover:scale-105'
                         onClick={handleClose}
                         disabled={loading}
                     >

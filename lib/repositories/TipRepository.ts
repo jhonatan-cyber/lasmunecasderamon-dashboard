@@ -25,6 +25,7 @@ export class TipRepository {
         id_propina: id,
         venta_id,
         propina: monto,
+        estado: 1, // 1 = por cobrar, 0 = cobrado
         fecha_crea: now
       });
 
@@ -34,6 +35,7 @@ export class TipRepository {
           propina_id: id,
           usuario_id: u.id_usuario,
           monto: montoPorUsuario,
+          estado: 1, // 1 = por cobrar, 0 = cobrado
           fecha_crea: now
         });
       }
@@ -74,7 +76,7 @@ export class TipRepository {
 
   static async getByUser(userId: string) {
     return await query(`
-      SELECT P.id_propina, P.fecha_crea AS fecha_hora, V.codigo AS codigo_venta, DP.monto,
+      SELECT P.id_propina, P.fecha_crea AS fecha_hora, P.fecha_crea, V.codigo AS codigo_venta, DP.monto,
              P.estado, CASE WHEN P.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
       FROM propinas P 
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
@@ -86,7 +88,7 @@ export class TipRepository {
   static async getDetails(usuario_id: string, startDate?: string, endDate?: string) {
     let sql = `
       SELECT 
-        v.fecha_crea, v.total, dp.monto, v.metodo_pago, v.codigo
+        v.fecha_crea, v.total, dp.monto, COALESCE(p.estado, 1) as estado, v.metodo_pago, v.codigo
       FROM ventas v
       INNER JOIN propinas p ON p.venta_id = v.id_venta
       INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina
