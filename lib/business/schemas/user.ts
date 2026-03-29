@@ -22,6 +22,7 @@ export const UserSchema = z.object({
   estado_servicio: z.coerce.number().optional().default(0),
   created_at: z.string().nullable().optional(),
   updated_at: z.string().nullable().optional(),
+  qr_token: z.string().nullable().optional(),
 });
 
 export const UserCreateSchema = UserSchema.omit({ id: true });

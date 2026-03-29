@@ -223,7 +223,7 @@ export const CerrarCajaDialog = ({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="rounded-full px-6 bg-black text-white hover:scale-110 transition-all duration-200"
+                className="rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105"
                 onClick={handleClose}
                 disabled={loading}
               >
@@ -233,8 +233,8 @@ export const CerrarCajaDialog = ({
                 type="submit"
                 disabled={loading || usersLoading}
                 size="sm"
-                variant="outline"
-                className="rounded-full px-6 bg-red-600 text-white hover:scale-110 transition-all duration-200"
+                variant="default"
+                className="rounded-full px-8 bg-red-600 text-white hover:bg-red-700 transition-all hover:scale-105"
               >
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Cerrar Caja

@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2 } from "lucide-react";
+import { Trash2, SortAsc, SortDesc } from "lucide-react";
 import SearchInput from "@/components/ui/SearchInput";
 import SelectElements from "@/components/ui/select-elements";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -20,6 +20,10 @@ interface ClientFiltersProps {
   setSearchTerm: (term: string) => void;
   filterStatus: number | null;
   setFilterStatus: (status: number | null) => void;
+  sortBy: string;
+  setSortBy: (sort: string) => void;
+  sortOrder: "asc" | "desc";
+  setSortOrder: (order: "asc" | "desc") => void;
   onClearFilters: () => void;
   pageSize: number;
   setPageSize: (size: number) => void;
@@ -31,6 +35,10 @@ export function ClientFilters({
   setSearchTerm,
   filterStatus,
   setFilterStatus,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
   onClearFilters,
   pageSize,
   setPageSize,
@@ -81,6 +89,36 @@ export function ClientFilters({
                   <SelectItem value='0'>Inactivos</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Ordenar */}
+            <div className='w-full sm:w-auto min-w-[180px]'>
+              <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                Ordenar por
+              </Label>
+              <div className="flex gap-1">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className='w-full text-xs rounded-l-2xl rounded-r-none bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                    <SelectItem value='name'>Nombre</SelectItem>
+                    <SelectItem value='lastName'>Apellido</SelectItem>
+                    <SelectItem value='run'>RUT</SelectItem>
+                    <SelectItem value='phone'>Teléfono</SelectItem>
+                    <SelectItem value='saldo_prepago'>Saldo Prepago</SelectItem>
+                    <SelectItem value='created_at'>Fecha Creación</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="h-10 w-10 rounded-r-2xl border-l-0 border-gray-200 dark:border-gray-800 bg-gray-50/50 rounded-l-none"
+                >
+                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             {/* Elementos por página */}

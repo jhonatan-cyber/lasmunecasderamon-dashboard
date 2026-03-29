@@ -18,6 +18,9 @@ export class SaleRepository {
         pedido_id: row.pedido_id,
         habitacion_id: row.habitacion_id,
         metodo_pago: row.metodo_pago,
+        metodologia_pago: row.metodo_pago_adicional,
+        monto_prepago: row.monto_prepago,
+        monto_adicional: row.monto_adicional,
         propina: Number(row.propina || 0),
         sub_total: Number(row.sub_total || 0),
         total: Number(row.total || 0),
@@ -25,6 +28,7 @@ export class SaleRepository {
         tiempo: Number(row.tiempo || 0),
         caja_id: row.caja_id,
         created_by: row.created_by,
+        cajero_nick: row.staff_nick,
         estado: Number(row.estado ?? 1),
         fecha_crea: row.fecha_crea,
         fecha_mod: row.fecha_mod,
@@ -84,6 +88,7 @@ export class SaleRepository {
       SELECT v.*,
         c.nombre as cliente_nombre,
         u.nick as staff_nick,
+        u.nombre as cajero_nombre,
         h.nombre as habitacion_nombre,
         (SELECT COUNT(*) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
         (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
@@ -130,10 +135,12 @@ export class SaleRepository {
     // 1. Fetch main venta data
     const res = await query<any[]>(`
       SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_nombre,
+             u.nick as cajero_nick, u.nombre as cajero_nombre,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
       FROM ventas v
       LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
       LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
+      LEFT JOIN usuarios u ON u.id_usuario = v.created_by
       LEFT JOIN detalle_ventas dv ON dv.venta_id = v.id_venta
       LEFT JOIN productos p ON p.id_producto = dv.producto_id
       WHERE v.id_venta = ?
@@ -165,6 +172,8 @@ export class SaleRepository {
 
     return {
       ...venta,
+      cajero_nick: res[0].cajero_nick,
+      cajero_nombre: res[0].cajero_nombre,
       detalles: detalles.map(d => ({
         id: d.id,
         venta_id: d.venta_id,

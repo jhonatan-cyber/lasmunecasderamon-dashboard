@@ -28,6 +28,7 @@ export class UserRepository {
       status: row.estado,
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod,
+      qr_token: row.qr_token,
     };
 
     return UserSchema.parse(user);

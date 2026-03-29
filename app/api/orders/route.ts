@@ -4,7 +4,9 @@ import { OrderRepository } from '@/lib/repositories/OrderRepository';
 import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(async () => {
+  console.log('[orders] Fetching all orders...');
   const orders = await OrderRepository.getAll();
+  console.log('[orders] Found orders:', orders.length);
   return NextResponse.json({ success: true, data: orders });
 });
 

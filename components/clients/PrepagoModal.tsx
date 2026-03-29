@@ -1,10 +1,18 @@
 'use client';
 
+import { Wallet, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Client } from '@/types/client';
-import { Wallet, User, CreditCard } from 'lucide-react';
+import { User, CreditCard } from 'lucide-react';
 
 interface PrepagoFormProps {
   client: Client | null;
@@ -16,7 +24,7 @@ interface PrepagoFormProps {
   hideButtons?: boolean;
 }
 
-export function PrepagoForm({ 
+function PrepagoForm({ 
   client, 
   amount, 
   onAmountChange, 
@@ -106,3 +114,90 @@ export function PrepagoForm({
     </form>
   );
 }
+
+interface PrepagoModalProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    client: Client | null;
+    amount: string;
+    onAmountChange: (amount: string) => void;
+    onSubmit: (e: React.FormEvent) => Promise<boolean>;
+    isSubmitting: boolean;
+}
+
+export function PrepagoModal({
+    isOpen,
+    onOpenChange,
+    client,
+    amount,
+    onAmountChange,
+    onSubmit,
+    isSubmitting
+}: PrepagoModalProps) {
+    const handleCancel = () => {
+        onOpenChange(false);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        const success = await onSubmit(e);
+        if (success) {
+            onOpenChange(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+                <DialogHeader className='p-6 pb-2 border-b'>
+                    <DialogTitle className='text-xl font-bold flex items-center gap-2'>
+                        <Wallet className='w-5 h-5 text-green-600' />
+                        <span>Cargar Saldo Prepago</span>
+                    </DialogTitle>
+                    <DialogDescription className='sr-only'>
+                        Formulario para cargar saldo al cliente
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className='flex-1 overflow-y-auto p-6'>
+                    <PrepagoForm
+                        client={client}
+                        amount={amount}
+                        onAmountChange={onAmountChange}
+                        onSubmit={handleSubmit}
+                        onCancel={handleCancel}
+                        isSubmitting={isSubmitting}
+                        hideButtons={true}
+                    />
+                </div>
+
+                <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+                    <Button
+                        variant='outline'
+                        onClick={handleCancel}
+                        className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                        disabled={isSubmitting}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type='submit'
+                        form='prepago-form'
+                        className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+                        disabled={isSubmitting || !amount}
+                    >
+                        {isSubmitting ? (
+                            <div className='flex items-center gap-2'>
+                                <Loader2 className='w-4 h-4 animate-spin' />
+                                <span>Guardando...</span>
+                            </div>
+                        ) : (
+                            <span>Guardar</span>
+                        )}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export { PrepagoForm };
