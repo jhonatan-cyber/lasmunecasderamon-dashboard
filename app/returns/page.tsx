@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShoppingCart, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { BackgroundGradient } from '@/components/ui/background-gradient';
+import { BackgroundGradient } from '@/components/shared/background-gradient';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function ReturnsPage() {

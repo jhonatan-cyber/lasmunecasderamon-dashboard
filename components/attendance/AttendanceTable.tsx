@@ -3,14 +3,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Table } from '@/components/ui/table';
-import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import useAsistencias from '@/hooks/personal/useAsistencias';
 import { Badge } from '../ui/badge';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, User, Calendar, DollarSign, Coins, MinusCircle, Calculator } from 'lucide-react';
+import { Eye, Calendar } from 'lucide-react';
 import { AsistenciaResumen } from '@/types/asistencia';
 import { Button } from '@/components/ui/button';
 import AttendanceDetailModal from './AttendanceDetailModal';
@@ -94,115 +92,38 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
     );
   }
 
-  // Vista de tarjetas para móviles
-  const MobileCardView = () => (
-    <div className='space-y-4 lg:hidden'>
-      {data.map(item => (
-        <Card key={item.id_usuario} className='shadow-sm hover:shadow-md transition-shadow'>
-          <CardContent className='p-4'>
-            <div className='space-y-3'>
-              {/* Header con nombre y nick */}
-              <div className='flex items-center justify-between'>
-                <h3 className='font-semibold text-lg text-gray-900'>{item.nombre_completo}</h3>
-                <Badge variant='outline' className='text-xs'>
-                  {item.nick}
-                </Badge>
-              </div>
-
-              {/* Información de asistencia */}
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
-                <div className='flex items-center gap-2'>
-                  <Calendar className='text-gray-500 w-4' />
-                  <span className='font-medium'>Asistencias:</span>
-                  <Badge variant='success' className='bg-green-400 text-xs'>
-                    {item.total_asistencias} Días
-                  </Badge>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <DollarSign className='text-gray-500 w-4' />
-                  <span className='font-medium'>Sueldo:</span>
-                  <span className='text-gray-700 font-semibold'>
-                    {formatCurrencyNoDecimals(item.sueldo_total)}
-                  </span>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <Coins className='text-gray-500 w-4' />
-                  <span className='font-medium'>Aporte AFP:</span>
-                  <span className='text-gray-700'>
-                    {formatCurrencyNoDecimals(item.aporte_total)}
-                  </span>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <MinusCircle className='text-gray-500 w-4' />
-                  <span className='font-medium'>Descuento Habitación:</span>
-                  <span className='text-gray-700'>
-                    {formatCurrencyNoDecimals(item.descuento_total)}
-                  </span>
-                </div>
-
-                <div className='flex items-center gap-2 sm:col-span-2'>
-                  <Calculator className='text-gray-500 w-4' />
-                  <span className='font-medium'>Total a Pagar:</span>
-                  <span className='text-gray-700 font-bold text-lg'>
-                    {formatCurrencyNoDecimals(item.total_final)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Acción */}
+  // Vista de tabla
+  const TableView = () => (
+    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='overflow-x-auto'>
+        <Table className='min-w-full text-base text-center'>
+          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nick</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Asistencias</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldo</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Aporte AFP</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Descuento</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total</TableHead>
               {canViewDetail && (
-                <div className='flex justify-center pt-2 border-t border-gray-100'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
-                    onClick={() => handleViewDetail(item)}
-                  >
-                    <Eye className='w-3 h-3 mr-1' />
-                    Ver Detalle
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-
-  // Vista de tabla para pantallas grandes
-  const DesktopTableView = () => (
-    <div className='hidden lg:block'>
-      <div className='w-full overflow-x-auto'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className='text-start text-sm'>Nombre</TableHead>
-              <TableHead className='text-center text-sm'>Nick</TableHead>
-              <TableHead className='text-center text-sm'>Asistencias</TableHead>
-              <TableHead className='text-center text-sm'>Sueldo</TableHead>
-              <TableHead className='text-center text-sm'>
-                Aporte <br /> AFP
-              </TableHead>
-              <TableHead className='text-center text-sm'>
-                Descuento <br /> Habitación
-              </TableHead>
-              <TableHead className='text-center text-sm'>Total</TableHead>
-              {canViewDetail && (
-                <TableHead className='text-center text-sm'>Detalles</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Detalles</TableHead>
               )}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map(item => (
-              <TableRow key={item.id_usuario}>
+            {data.map((item, idx) => (
+              <TableRow key={item.id_usuario} className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === data.length - 1 ? 'last:rounded-b-xl' : ''}`}>
                 <TableCell className='font-medium text-start text-sm'>
                   {item.nombre_completo}
                 </TableCell>
                 <TableCell className='text-sm text-center'>{item.nick}</TableCell>
+                <TableCell className='text-sm text-center'>
+                  <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-1 text-xs font-medium'>
+                    {item.rol || 'Sin rol'}
+                  </Badge>
+                </TableCell>
                 <TableCell className='text-center'>
                   <Badge variant='success' className='bg-green-400 text-xs'>
                     {item.total_asistencias} Días
@@ -221,12 +142,12 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                   {formatCurrencyNoDecimals(item.total_final)}
                 </TableCell>
                 {canViewDetail && (
-                  <TableCell className='text-center hover:text-blue-700 cursor-pointer'>
+                  <TableCell className='text-center'>
                     <Button
                       variant='ghost'
                       size='sm'
                       onClick={() => handleViewDetail(item)}
-                      className='h-8 w-8 p-0 hover:bg-blue-50'
+                      className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'
                     >
                       <Eye className='w-4 h-4' />
                     </Button>
@@ -242,8 +163,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
 
   return (
     <>
-      <MobileCardView />
-      <DesktopTableView />
+      <TableView />
 
       {/* Modal de detalle */}
       {selectedUser && (

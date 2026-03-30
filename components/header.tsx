@@ -45,7 +45,7 @@ import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { CodigoVerificacionHeader } from '@/components/dashboard/CodigoVerificacionHeader';
-import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
+import ThemeSwitcher from '@/components/shared/ThemeSwitcher';
 
 // Lazy load del modal de detalle de pedido
 const OrderDetailModal = dynamic(

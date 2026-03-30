@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, Users, DollarSign, Calendar } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ReportSkeleton } from '@/components/ui/skeletons';
+import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 // Lazy loading de reportes pesados

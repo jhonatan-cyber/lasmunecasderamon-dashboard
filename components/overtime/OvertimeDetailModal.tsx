@@ -17,8 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrencyCLP } from "@/lib/utils/formatters";
 import { formatDateTimeDmyLabel } from "@/lib/utils/calendarUtils";
 import { Clock, Calendar, DollarSign, Timer, CheckCircle2, User } from "lucide-react";
-import SelectElements from "@/components/ui/select-elements";
-import Paginate from "@/components/ui/paginate";
+import SelectElements from "@/components/shared/SelectElements";
+import Paginate from "@/components/shared/Paginate";
 
 interface OvertimeDetailModalProps {
   isOpen: boolean;

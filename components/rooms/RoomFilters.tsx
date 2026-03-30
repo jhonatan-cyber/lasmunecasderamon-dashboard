@@ -13,8 +13,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Trash2 } from 'lucide-react';
-import SearchInput from '@/components/ui/SearchInput';
-import SelectElements from '@/components/ui/select-elements';
+import SearchInput from '@/components/shared/SearchInput';
+import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RoomFiltersProps {

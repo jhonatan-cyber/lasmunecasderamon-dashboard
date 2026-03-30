@@ -12,10 +12,12 @@ import {
 
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
-import Paginate from '@/components/ui/paginate';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import Paginate from '@/components/shared/Paginate';
 import type { PayrollRow } from '@/hooks/personal/usePayroll';
 import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -106,85 +108,115 @@ export default function PayrollTable({
   return (
     <div>
       {error && <div className='text-red-600 text-sm mb-3'>{error}</div>}
-      {loading ? (
-        <div className='text-sm text-gray-500'>Cargando...</div>
-      ) : (
-        <div className='mt-4 sm:mt-6 rounded-xl border bg-white overflow-hidden shadow-md'>
-          <div className='overflow-x-auto'>
-            <Table className='min-w-full rounded-xl overflow-hidden text-center'>
-              <TableHeader>
+      <div className='mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+        <div className='overflow-x-auto'>
+          <Table className='min-w-full text-base text-center'>
+            <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+              <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-start'>
+                  Nombre(s) / Apellido(s)
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldos</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Desc. AFP</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Com. Ventas</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Servicios</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Propinas</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Desc. Hab.</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Hs. Extras</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Gratif.</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Anticipos</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total a Pagar</TableHead>
+                {canPay && (
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acciones</TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
+                    {Array.from({ length: canPay ? 13 : 12 }).map((_, j) => (
+                      <TableCell key={j} className='py-4 px-5'>
+                        <Skeleton className='h-4 w-16 rounded mx-auto' />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableHead className='text-center'>Nombre(s) <br /> Apellido(s)</TableHead>
-                  <TableHead className='text-center'>Rol</TableHead>
-                  <TableHead className='text-right'>Sueldos</TableHead>
-                  <TableHead className='text-right'>Descuento AFP</TableHead>
-                  <TableHead className='text-right'>
-                    Comisiones <br /> Ventas
-                  </TableHead>
-                  <TableHead className='text-right'>Servicios</TableHead>
-                  <TableHead className='text-right'>Propinas</TableHead>
-                  <TableHead className='text-right'>
-                    Descuentos <br /> Habitacion
-                  </TableHead>
-                  <TableHead className='text-right'>
-                    Horas <br />
-                    Extras
-                  </TableHead>
-                  <TableHead className='text-right'>Gratificaciones</TableHead>
-                  <TableHead className='text-right'>Anticipos</TableHead>
-                  <TableHead className='text-right'>Total a Pagar</TableHead>
-                  {canPay && <TableHead className='text-right'>Acciones</TableHead>}
+                  <TableCell colSpan={canPay ? 13 : 12} className='py-16 text-center'>
+                    <div className='flex flex-col items-center gap-3'>
+                      <div className='w-14 h-14 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center'>
+                        <span className='text-2xl'>💰</span>
+                      </div>
+                      <p className='text-sm font-medium text-gray-500'>No hay registros de pagos</p>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map(r => (
-                  <TableRow key={r.id_usuario}>
-                    <TableCell>{r.usuario}</TableCell>
-                    <TableCell>{r.rol}</TableCell>
-                    <TableCell className='text-right'>
+              ) : (
+                rows.map((r, idx) => (
+                  <TableRow
+                    key={r.id_usuario}
+                    className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
+                  >
+                    <TableCell className='font-medium text-start text-sm py-4 px-5'>
+                      {r.usuario}
+                    </TableCell>
+                    <TableCell className='text-center py-4 px-5'>
+                      <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-1 text-xs font-medium'>
+                        {r.rol}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.sueldos)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.aportes)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.ventas)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.servicios)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.propinas)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.descuentos)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.total_monto_horas)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.gratificaciones)}
                     </TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell className='text-center text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.anticipos)}
                     </TableCell>
-                    <TableCell className='text-right font-bold'>
+                    <TableCell className='text-center font-bold text-sm py-4 px-5'>
                       {formatCurrencyNoDecimals(r.total)}
                     </TableCell>
                     {canPay && (
-                      <TableCell className='text-right'>
-                        <Button size='sm' variant='outline' className='rounded-full' onClick={() => handlePay(r)}>
+                      <TableCell className='text-center py-4 px-5'>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() => handlePay(r)}
+                          className='h-8 px-3 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors duration-200 text-xs font-semibold'
+                        >
                           Pagar
                         </Button>
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
-      )}
+      </div>
       {totalPages > 1 && (
         <div className='flex justify-center mt-4'>
           <Paginate page={page} totalPages={totalPages} setPage={setPage} />

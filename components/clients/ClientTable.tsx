@@ -291,7 +291,7 @@ const DesktopTableView = React.memo(({
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
         <Table>
-          <TableHeader className='bg-gray-50/60 dark:bg-slate-900/60'>
+          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
             <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>RUN</TableHead>
@@ -321,7 +321,7 @@ const DesktopTableView = React.memo(({
               clients.map((client, idx) => (
                 <TableRow
                   key={client.id}
-                  className={`border-b transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-800/50 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === clients.length - 1 ? 'last:rounded-b-xl' : ''}`}
+                  className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === clients.length - 1 ? 'last:rounded-b-xl' : ''}`}
                 >
                   <TableCell className='py-3 px-4 text-center text-sm text-gray-600 font-medium'>
                     <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>

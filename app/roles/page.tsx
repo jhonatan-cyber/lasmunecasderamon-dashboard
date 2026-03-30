@@ -15,7 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-import { StatsCard } from '@/components/ui/stats-card';
+import { StatsCard } from '@/components/roles/RoleStatsCard';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';

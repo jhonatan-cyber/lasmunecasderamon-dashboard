@@ -1,7 +1,7 @@
  
 import React from "react";
 import { Shield, Edit, Trash2, CheckCircle, Users as UsersIcon, XCircle, Power } from "lucide-react";
-import { ActionButtonWithTooltip } from "@/components/ui/ActionButtonWithTooltip";
+import { ActionButtonWithTooltip } from "@/components/roles/ActionButtonWithTooltip";
 import { useUserPermissions } from "@/hooks/auth/useUserPermissions";
 
 export function RoleCard({

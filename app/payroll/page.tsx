@@ -1,20 +1,19 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import PayrollTable from '@/components/payroll/PayrollTable';
 import PayrollFilters from '@/components/payroll/PayrollFilters';
 import PayrollRoleButtons from '@/components/payroll/PayrollRoleButtons';
 import usePayroll from '@/hooks/personal/usePayroll';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { ReportSkeleton } from '@/components/ui/skeletons';
+import { ReportSkeleton } from '@/components/shared/Skeletons';
 
 export default function PayrollPage() {
   const {
-    // data
     paginated,
     loading,
     error,
-    // filters
     roleFilter,
     setRoleFilter,
     searchTerm,
@@ -28,7 +27,28 @@ export default function PayrollPage() {
     fetchPayroll
   } = usePayroll();
 
+  const [sortBy, setSortBy] = useState('usuario');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
   const { userPermissions } = useUserPermissions();
+
+  const handleClear = () => {
+    setSortBy('usuario');
+    setSortOrder('asc');
+    clearFilters();
+  };
+
+  const sortedRows = useMemo(() => {
+    return [...paginated].sort((a: any, b: any) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [paginated, sortBy, sortOrder]);
 
   if (loading) return <ReportSkeleton />;
 
@@ -46,15 +66,19 @@ export default function PayrollPage() {
         <PayrollFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           rowsPerPage={rowsPerPage}
           setRowsPerPage={setRowsPerPage}
           setPage={setPage}
-          onClear={clearFilters}
+          onClear={handleClear}
         />
         <PayrollRoleButtons roleFilter={roleFilter} setRoleFilter={setRoleFilter} />
         <PayrollTable
           key={`payroll-${userPermissions.length}`}
-          rows={paginated}
+          rows={sortedRows}
           loading={loading}
           error={error}
           page={page}

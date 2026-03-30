@@ -10,14 +10,16 @@ import { PropinaResumen } from '@/types/propina';
 import TipsTable from '@/components/propinas/TipsTable';
 import TipsFilters from '@/components/propinas/TipsFilters';
 import TipsStatsCards from '@/components/propinas/TipsStatsCards';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function TipsPage() {
-  const { data: tips, loading, fetchTipsResumen } = useTipsResumen();
+  const { data: tips, loading, error, fetchTipsResumen } = useTipsResumen();
   const [selectedUsuario, setSelectedUsuario] = useState<PropinaResumen | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('nombre_completo');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
   const [tipsCajaActiva, setTipsCajaActiva] = useState<PropinaResumen[]>([]);
@@ -42,18 +44,30 @@ export default function TipsPage() {
     }
   };
 
-  // Filtrar datos por término de búsqueda
+  // Filtrar y ordenar datos por término de búsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
 
-    return tips.filter((tip: any) => {
+    const filtered = tips.filter((tip: any) => {
       const searchLower = searchTerm.toLowerCase();
       return (
         tip.nombre_completo?.toLowerCase().includes(searchLower) ||
         tip.nick?.toLowerCase().includes(searchLower)
       );
     });
-  }, [tips, searchTerm]);
+
+    return [...filtered].sort((a: any, b: any) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [tips, searchTerm, sortBy, sortOrder]);
 
   const filteredTipsCajaActiva = useMemo(() => {
     if (!tipsCajaActiva) return [];
@@ -118,6 +132,8 @@ export default function TipsPage() {
 
   const handleClearFilters = () => {
     setSearchTerm('');
+    setSortBy('nombre_completo');
+    setSortOrder('asc');
     setRowsPerPage(10);
     setPage(1);
   };
@@ -152,15 +168,25 @@ export default function TipsPage() {
             formatCurrency={formatCurrency}
           />
 
+          {/* Error */}
+          {error && (
+            <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm'>
+              <strong>Error al cargar propinas:</strong> {error}
+            </div>
+          )}
+
           {/* Filtros */}
           <TipsFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
             rowsPerPage={rowsPerPage}
             setRowsPerPage={setRowsPerPage}
             setPage={setPage}
-            loading={loading}
-            onRefresh={handleRefresh}
+            onClearFilters={handleClearFilters}
           />
 
           {/* Lista de tips */}
@@ -188,4 +214,3 @@ export default function TipsPage() {
     </PermissionGuard>
   );
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Users, DollarSign, TrendingUp, Timer } from 'lucide-react';
+import { CheckCircle2, Clock, Users, TrendingUp } from 'lucide-react';
 import { Overtime } from '@/types/overtime';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
@@ -10,88 +10,122 @@ interface OvertimeStatsCardsProps {
 }
 
 export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps) {
-  // Cálculos precisos basados en los requerimientos del usuario
   const stats = {
-    totalHoras: overtime.reduce((acc, o) => acc + (o.hora || 0), 0),
-    totalMonto: overtime.reduce((acc, o) => acc + (o.total || 0), 0),
-    totalAPagar: overtime.filter(o => o.estado === 1).reduce((acc, o) => acc + (o.total || 0), 0),
+    cobrados: (overtime || []).filter(o => Number(o.estado) === 0),
+    porCobrar: (overtime || []).filter(o => Number(o.estado) === 1),
+    totalHoras: overtime.reduce((acc, o) => acc + Number(o.hora || 0), 0),
+    totalMonto: overtime.reduce((acc, o) => acc + Number(o.total || 0), 0),
+    totalAPagar: (overtime || []).filter(o => Number(o.estado) === 1).reduce((acc, o) => acc + Number(o.total || 0), 0),
     usuariosUnicos: new Set(overtime.map(o => o.usuario_id || o.id_usuario)).size,
   };
 
   const promedioPorHora = stats.totalHoras > 0 ? stats.totalMonto / stats.totalHoras : 0;
+  const totalHorasPorCobrar = stats.porCobrar.reduce((acc, o) => acc + Number(o.hora || 0), 0);
 
   return (
-    <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
+    <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6'>
       {/* Total a Pagar (Pendientes de Cobro) */}
-      <Card className='shadow-md border-none bg-emerald-600 dark:bg-emerald-900 backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'>
-        <CardContent className='p-6'>
+      <Card 
+        style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
-            <div className='p-3 bg-white/20 rounded-2xl'>
-              <DollarSign className='h-5 w-5 text-white' />
+            <div className='p-2.5 bg-emerald-500/20 rounded-2xl'>
+              <CheckCircle2 className='h-4 w-4 text-emerald-600' />
             </div>
-            <span className='text-[10px] font-black uppercase tracking-tighter text-white bg-white/10 px-2 py-1 rounded-full'>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-full'>
               Por Pagar
             </span>
           </div>
-          <div className='space-y-1'>
-            <p className='text-xs font-bold text-emerald-100 uppercase tracking-wider opacity-80'>Total a Pagar</p>
-            <h3 className='text-2xl font-black text-white'>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-emerald-700/60 uppercase tracking-widest'>Total Pendiente</p>
+            <h3 className='text-xl font-black text-emerald-900 dark:text-emerald-100'>
               {formatCurrencyCLP(stats.totalAPagar)}
             </h3>
-            <p className='text-[10px] text-emerald-50/60 font-medium uppercase tracking-tighter italic'>Monto pendiente en sistema</p>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="text-emerald-700 font-black text-sm">{stats.porCobrar.length}</span>
+              <span className="text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic">Registros</span>
+              <span className="text-emerald-700/40">•</span>
+              <span className="text-emerald-700 font-black text-xs">{totalHorasPorCobrar.toFixed(1)} hrs</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Total Horas Registradas */}
-      <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'>
-        <CardContent className='p-6'>
+      <Card 
+        style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
-            <div className='p-3 bg-amber-50 dark:bg-amber-900/30 rounded-2xl'>
-              <Clock className='h-5 w-5 text-amber-600' />
+            <div className='p-2.5 bg-amber-500/20 rounded-2xl'>
+              <Clock className='h-4 w-4 text-amber-600' />
             </div>
-            <span className='text-[10px] font-black uppercase tracking-tighter text-amber-500 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded-full'>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-amber-700 bg-amber-500/10 px-2 py-1 rounded-full'>
               Histórico
             </span>
           </div>
-          <div className='space-y-1'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>Total Horas</p>
-            <h3 className='text-2xl font-black text-gray-900 dark:text-white'>
-              {stats.totalHoras.toFixed(1)} <span className='text-sm font-normal text-gray-400'>hrs</span>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-amber-700/60 uppercase tracking-widest'>Total Horas</p>
+            <h3 className='text-xl font-black text-amber-900 dark:text-amber-100'>
+              {stats.totalHoras.toFixed(1)} <span className='text-sm font-normal text-amber-700/50'>hrs</span>
             </h3>
-            <p className='text-[10px] text-gray-400 font-medium uppercase tracking-tighter'>Suma global de registros</p>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="text-amber-700 font-black text-sm">{stats.usuariosUnicos}</span>
+              <span className="text-[10px] text-amber-700/50 font-medium uppercase tracking-tighter italic">Personal</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Usuarios con Horas Extras */}
-      <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'>
-        <CardContent className='p-6'>
+      {/* Personal con Horas Extras */}
+      <Card 
+        style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)' }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
-            <div className='p-3 bg-purple-50 dark:bg-purple-900/30 rounded-2xl'>
-              <Users className='h-5 w-5 text-purple-600' />
+            <div className='p-2.5 bg-purple-500/20 rounded-2xl'>
+              <Users className='h-4 w-4 text-purple-600' />
             </div>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-purple-700 bg-purple-500/10 px-2 py-1 rounded-full'>
+              Personal
+            </span>
           </div>
-          <div className='space-y-1'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>Personal con Horas</p>
-            <h3 className='text-2xl font-black text-gray-900 dark:text-white'>{stats.usuariosUnicos}</h3>
-            <p className='text-[10px] text-gray-400 font-medium uppercase tracking-tighter'>Usuarios con registros</p>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-purple-700/60 uppercase tracking-widest'>Con Horas</p>
+            <h3 className='text-xl font-black text-purple-900 dark:text-purple-100'>{stats.usuariosUnicos}</h3>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="text-purple-700 font-black text-sm">{stats.totalHoras.toFixed(1)}</span>
+              <span className="text-[10px] text-purple-700/50 font-medium uppercase tracking-tighter italic">Hrs Totales</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Promedio por Hora */}
-      <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'>
-        <CardContent className='p-6'>
+      <Card 
+        style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
-            <div className='p-3 bg-blue-50 dark:bg-blue-900/30 rounded-2xl'>
-              <TrendingUp className='h-5 w-5 text-blue-600' />
+            <div className='p-2.5 bg-blue-500/20 rounded-2xl'>
+              <TrendingUp className='h-4 w-4 text-blue-600' />
             </div>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-blue-700 bg-blue-500/10 px-2 py-1 rounded-full'>
+              Promedio
+            </span>
           </div>
-          <div className='space-y-1'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>Promedio por Hora</p>
-            <h3 className='text-2xl font-black text-gray-900 dark:text-white'>{formatCurrencyCLP(promedioPorHora)}</h3>
-            <p className='text-[10px] text-gray-400 font-medium uppercase tracking-tighter'>Valor hora promedio sistema</p>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-blue-700/60 uppercase tracking-widest'>Por Hora</p>
+            <h3 className='text-xl font-black text-blue-900 dark:text-blue-100'>{formatCurrencyCLP(promedioPorHora)}</h3>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="text-blue-700 font-black text-sm">{formatCurrencyCLP(stats.totalMonto)}</span>
+              <span className="text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic">Monto Total</span>
+            </div>
           </div>
         </CardContent>
       </Card>

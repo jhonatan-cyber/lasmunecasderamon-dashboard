@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import SelectElements from '@/components/ui/select-elements';
-import Paginate from '@/components/ui/paginate';
+import SelectElements from '@/components/shared/SelectElements';
+import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 

@@ -7,9 +7,9 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { ArrowLeft, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
-import SelectElements from '@/components/ui/select-elements';
-import Paginate from '@/components/ui/paginate';
-import { RoleTableSkeleton } from '@/components/ui/skeletons';
+import SelectElements from '@/components/shared/SelectElements';
+import Paginate from '@/components/shared/Paginate';
+import { RoleTableSkeleton } from '@/components/shared/Skeletons';
 import { formatDateTimeLabel, formatDateLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 

@@ -50,9 +50,11 @@ export class CuentaRepository {
       if (cuentaRes.length === 0) return null;
 
       const detalles = await trx(`
-        SELECT DC.*, H.nick as hostess_nick, H.foto as hostess_foto, U.nick as added_by, U.foto as added_by_foto, PR.nombre AS producto
+        SELECT DC.*, H.nick as hostess_nick, H.foto as hostess_foto, U.nick as added_by, U.foto as added_by_foto,
+               PR.nombre AS producto, C.nombre AS categoria
         FROM detalle_cuentas DC 
         LEFT JOIN productos PR ON PR.id_producto = DC.producto_id
+        LEFT JOIN categorias C ON C.id_categoria = PR.categoria_id
         LEFT JOIN usuarios H ON H.id_usuario = DC.hostess_id
         LEFT JOIN usuarios U ON U.id_usuario = DC.created_by
         WHERE DC.cuenta_id = ?
@@ -89,11 +91,13 @@ export class CuentaRepository {
       });
 
       for (const d of body.detalles) {
+        const hasAnfitrionas = body.usuarios?.length > 0;
         const selectedHostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : [null];
         const isSpecial = d.isChampagne || d.precio >= 160000;
+        const comision = hasAnfitrionas ? (d.comision || 0) : 0;
 
         if (isSpecial) {
-          const totalComm = Math.round(d.comision || 0);
+          const totalComm = Math.round(comision);
           const commBase = Math.floor(totalComm / selectedHostesses.length);
           const remainder = totalComm % selectedHostesses.length;
           for (let i = 0; i < selectedHostesses.length; i++) {
@@ -108,7 +112,7 @@ export class CuentaRepository {
             remainingQty -= qty;
             if (qty > 0 || selectedHostesses.length === 1) {
               await trx(`INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, d.comision || 0, selectedHostesses[i], now, createdBy]);
+                [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, comision, selectedHostesses[i], now, createdBy]);
             }
           }
         }
@@ -149,10 +153,12 @@ export class CuentaRepository {
         await trx('UPDATE cuentas SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = ? WHERE id_cuenta = ?', [finalSub, finalComm, finalSub, bizNow, id]);
 
         for (const d of body.detalles) {
+          const hasAnfitrionas = body.usuarios?.length > 0;
           const selectedHostesses = (d.hostesses?.length) ? d.hostesses : [null];
           const isSpecial = d.isChampagne || d.precio >= 160000;
+          const comision = hasAnfitrionas ? (d.comision || 0) : 0;
           if (isSpecial) {
-             const tComm = Math.round(d.comision || 0);
+             const tComm = Math.round(comision);
              const base = Math.floor(tComm / selectedHostesses.length);
              const rem = tComm % selectedHostesses.length;
              for (let i = 0; i < selectedHostesses.length; i++) {
@@ -167,7 +173,7 @@ export class CuentaRepository {
                remQty -= qty;
                if (qty > 0 || selectedHostesses.length === 1) {
                  await trx('INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, d.comision || 0, selectedHostesses[i], bizNow, createdBy]);
+                   [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, comision, selectedHostesses[i], bizNow, createdBy]);
                }
              }
           }
@@ -208,40 +214,35 @@ export class CuentaRepository {
       if (cuenta[0].estado !== 1) throw new Error('La cuenta ya fue procesada');
 
       const now = getNowInBusinessTimezone();
-      await trx('UPDATE cuentas SET estado = 2, metodo_pago = ?, cobrado_por = ?, fecha_mod = ? WHERE id_cuenta = ?', [body.metodoPago, cobradoPor, now, id]);
+      const montoFinal = Number(body.montoFinal ?? body.total_cobrado ?? cuenta[0].total ?? 0);
+      const propinaFinal = Number(body.propinaFinal ?? body.propina ?? 0);
+      const tipoPago = body.tipoPago ?? body.metodoPago ?? body.metodo_pago ?? 'efectivo';
+      const metodoPago = body.metodoPago ?? body.metodo_pago ?? tipoPago;
 
-      if (body.metodoPago === 'prepago') {
+      await trx('UPDATE cuentas SET estado = 2, metodo_pago = ?, cobrado_por = ?, fecha_mod = ? WHERE id_cuenta = ?', [metodoPago, cobradoPor, now, id]);
+
+      if (tipoPago === 'prepago') {
         const client = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [cuenta[0].cliente_id]);
-        if (!client.length || client[0].saldo < body.montoFinal) throw new Error('Saldo insuficiente');
-        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [body.montoFinal, cuenta[0].cliente_id]);
+        if (!client.length || client[0].saldo < montoFinal) throw new Error('Saldo insuficiente');
+        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [montoFinal, cuenta[0].cliente_id]);
       }
 
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
       if (idCaja) {
         await CashRegisterRepository.updateBalances(trx, idCaja, {
-          cuenta: body.montoFinal - body.propinaFinal,
-          propina: body.propinaFinal,
-          efectivo: body.tipoPago === 'efectivo' ? body.montoFinal : 0,
-          tarjeta: body.tipoPago === 'tarjeta' ? body.montoFinal : 0,
-          transferencia: body.tipoPago === 'transferencia' ? body.montoFinal : 0,
-          prepago: body.tipoPago === 'prepago' ? body.montoFinal : 0
+          // `cajas` no tiene columna `cuenta`; las cuentas se contabilizan como venta
+          venta: montoFinal - propinaFinal,
+          propina: propinaFinal,
+          efectivo: tipoPago === 'efectivo' ? montoFinal : 0,
+          tarjeta: tipoPago === 'tarjeta' ? montoFinal : 0,
+          transferencia: tipoPago === 'transferencia' ? montoFinal : 0,
+          prepago: tipoPago === 'prepago' ? montoFinal : 0
         });
       }
 
-      const detalles = await trx<any[]>('SELECT * FROM detalle_cuentas WHERE cuenta_id = ?', [id]);
-      for (const d of detalles) {
-        if (d.hostess_id && d.comision > 0) {
-          const commId = generateUUID();
-          await trx(
-            'INSERT INTO comisiones (id_comision, cuenta_id, monto, estado, fecha_crea) VALUES (?, ?, ?, 1, ?)',
-            [commId, id, d.comision, now]
-          );
-          await trx(
-            'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado, fecha_crea) VALUES (?, ?, ?, ?, 1, ?)',
-            [generateUUID(), commId, d.hostess_id, d.comision, now]
-          );
-        }
-      }
+      // Nota: el registro de comisiones y propinas se delega a SaleService.createSale()
+      // que se invoca en la segunda llamada del hook useCuentaCobro (POST /api/sales).
+      // Aquí solo se actualiza la caja y se libera la habitación.
 
       if (cuenta[0].habitacion_id) {
         await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [cuenta[0].habitacion_id]);

@@ -13,7 +13,16 @@ export const POST = withAppApiWrapper(
     const body = await request.json();
     const cobradoPor = user.id;
 
-    await CuentaRepository.cobrar(id, body, cobradoPor);
+    // Normalizar campos del body al formato que espera el repository
+    const normalizedBody = {
+      metodoPago: body.metodoPago ?? body.metodo_pago,
+      tipoPago: body.tipoPago ?? body.metodo_pago,
+      montoFinal: body.montoFinal ?? body.total_cobrado ?? 0,
+      propinaFinal: body.propinaFinal ?? body.propina ?? 0,
+      habitacion_id: body.habitacion_id ?? null,
+    };
+
+    await CuentaRepository.cobrar(id, normalizedBody, cobradoPor);
     return NextResponse.json({ success: true, message: 'Cuenta cobrada exitosamente' });
   }
 );

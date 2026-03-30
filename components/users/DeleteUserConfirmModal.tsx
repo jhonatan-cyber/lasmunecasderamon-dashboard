@@ -68,14 +68,14 @@ export function DeleteUserConfirmModal({
               onClick={handleCancel}
               variant='outline'
               size='sm'
-              className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black text-sm sm:text-base w-full sm:w-auto'
+              className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black text-sm sm:text-base w-full sm:w-auto border-2'
             >
               Cancelar
             </Button>
             <Button
               onClick={handleConfirm}
               disabled={isLoading}
-              className='rounded-full bg-black text-white dark:bg-white dark:text-black hover:scale-105 transition-all duration-200 dark:hover:bg-gray-200 text-sm sm:text-base w-full sm:w-auto'
+              className='rounded-full bg-black text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all hover:bg-white hover:text-black duration-200 dark:hover:bg-gray-200 text-sm sm:text-base w-full sm:w-auto border-2'
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">

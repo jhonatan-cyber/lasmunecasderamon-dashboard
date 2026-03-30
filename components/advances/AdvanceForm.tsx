@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Loader2, AlertCircle } from 'lucide-react';
 import { useAdvanceForm } from '@/hooks/personal/useAdvanceForm';
-import UserSelect from '@/components/ui/UserSelect';
+import UserSelect from '@/components/shared/selects/UserSelect';
 
 interface AdvanceFormProps {
   open: boolean;

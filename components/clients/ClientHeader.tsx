@@ -27,7 +27,7 @@ export function ClientHeader({ allClients, onCreateClick }: ClientHeaderProps) {
             onClick={onCreateClick}
             size='sm'
             variant='outline'
-            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full px-6 py-2 hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto border-2'
           >
             <Plus className='w-4 h-4 mr-1' />
             Nuevo Cliente

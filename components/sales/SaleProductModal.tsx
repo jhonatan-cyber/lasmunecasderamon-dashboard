@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   Dialog,
   DialogContent,
@@ -19,8 +18,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import HostessMultiSelect from "@/components/orders/HostessMultiSelect";
-import IndividualHostessSelect from "@/components/ui/IndividualHostessSelect";
-import Paginate from "@/components/ui/paginate";
+import IndividualHostessSelect from "@/components/shared/selects/IndividualHostessSelect";
+import Paginate from "@/components/shared/Paginate";
+import {
+  CUENTA_TABLE_CARD_CLASS,
+  CUENTA_TABLE_CELL_CLASS,
+  CUENTA_TABLE_CLASS,
+  CUENTA_TABLE_HEAD_CLASS,
+  CUENTA_TABLE_HEADER_CLASS,
+  CUENTA_TABLE_HEADER_ROW_CLASS,
+  CUENTA_TABLE_ROW_CLASS,
+} from "@/components/cuentas/tables/cuentaTableStyles";
 
 interface SaleProductModalProps {
   open: boolean;
@@ -178,194 +186,205 @@ export default function SaleProductModal({
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>PRODUCTO</TableHead>
-                          <TableHead className="text-center">PRECIO</TableHead>
-                          <TableHead className="text-center">COMISIÓN</TableHead>
-                          <TableHead className="text-center">CANTIDAD</TableHead>
-                          <TableHead className="text-center">ANFITRIONA</TableHead>
-                          <TableHead className="text-center">AGREGAR</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {currentProductos.map((p) => {
-                          const id = String(p.id_producto || p.id);
-                          const isChampagne = isChampagneProduct(p);
-                          const hasComm = hasCommission(p);
+                  <div className={CUENTA_TABLE_CARD_CLASS}>
+                    <div className="overflow-x-auto">
+                      <Table className={CUENTA_TABLE_CLASS}>
+                        <TableHeader className={CUENTA_TABLE_HEADER_CLASS}>
+                          <TableRow className={CUENTA_TABLE_HEADER_ROW_CLASS}>
+                            <TableHead className={CUENTA_TABLE_HEAD_CLASS}>Producto</TableHead>
+                            <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
+                              Precio
+                            </TableHead>
+                            <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
+                              Comisión
+                            </TableHead>
+                            <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
+                              Cantidad
+                            </TableHead>
+                            <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
+                              Anfitriona
+                            </TableHead>
+                            <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
+                              Agregar
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {currentProductos.map((p, index) => {
+                            const id = String(p.id_producto || p.id);
+                            const isChampagne = isChampagneProduct(p);
+                            const hasComm = hasCommission(p);
 
-                          return (
-                            <TableRow key={id}>
-                              <TableCell>{p.nombre || p.name}</TableCell>
-                              <TableCell className="text-center">
-                                {formatCurrencyNoDecimals(p.price || p.precio)}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {formatCurrencyNoDecimals(
-                                  p.commission || p.comision || 0
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      const currentCantidad = cantidades[id] || 1;
-                                      if (currentCantidad > 1) {
-                                        handleCantidadChange(
-                                          id,
-                                          (currentCantidad - 1).toString()
-                                        );
-                                      }
-                                    }}
-                                    className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
-                                    disabled={(cantidades[id] || 1) <= 1}
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </Button>
-                                  <span className="w-8 text-center">
-                                    {cantidades[id] || 1}
-                                  </span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      const currentCantidad = cantidades[id] || 1;
-                                      handleCantidadChange(
-                                        id,
-                                        (currentCantidad + 1).toString()
-                                      );
-                                    }}
-                                    className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {hasComm ? (
-                                  isChampagne ? (
-                                    // Para champañas: usar HostessMultiSelect de shadcn/ui
-                                    <div className="space-y-2">
-                                      <div className="w-full">
-                                        <HostessMultiSelect
-                                          anfitrionas={getAvailableHostessesForChampagne(id)}
-                                          value={champagneHostessSelections[id] || []}
-                                          onChange={(selectedIds) => {
-                                            // Calcular límite según precio de la champaña
-                                            const currentProduct = productos.find(p => String(p.id_producto || p.id) === id);
-                                            const precio = Number(currentProduct?.precio || currentProduct?.price || 0);
+                            return (
+                              <TableRow
+                                key={id}
+                                className={`${CUENTA_TABLE_ROW_CLASS} ${index === 0 ? 'first:rounded-t-xl' : ''} ${index === currentProductos.length - 1 ? 'last:rounded-b-xl' : ''}`}
+                              >
+                                <TableCell className={CUENTA_TABLE_CELL_CLASS}>
+                                  <div className="font-medium">{p.nombre || p.name}</div>
+                                </TableCell>
+                                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                                  {formatCurrencyNoDecimals(p.price || p.precio)}
+                                </TableCell>
+                                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                                  {formatCurrencyNoDecimals(p.commission || p.comision || 0)}
+                                </TableCell>
+                                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const currentCantidad = cantidades[id] || 1;
+                                        if (currentCantidad > 1) {
+                                          handleCantidadChange(id, (currentCantidad - 1).toString());
+                                        }
+                                      }}
+                                      className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
+                                      disabled={(cantidades[id] || 1) <= 1}
+                                    >
+                                      <Minus className="w-3 h-3" />
+                                    </Button>
+                                    <span className="w-8 text-center">{cantidades[id] || 1}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const currentCantidad = cantidades[id] || 1;
+                                        handleCantidadChange(id, (currentCantidad + 1).toString());
+                                      }}
+                                      className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                                  {hasComm ? (
+                                    isChampagne ? (
+                                      <div className="space-y-2">
+                                        <div className="w-full">
+                                          <HostessMultiSelect
+                                            anfitrionas={getAvailableHostessesForChampagne(id)}
+                                            value={champagneHostessSelections[id] || []}
+                                            onChange={(selectedIds) => {
+                                              onChampagneHostessChange(id, selectedIds);
+                                            }}
+                                            searchValue={hostessSearchValues[id] || ''}
+                                            onSearchChange={(searchValue) => {
+                                              setHostessSearchValues(prev => ({
+                                                ...prev,
+                                                [id]: searchValue,
+                                              }));
+                                            }}
+                                            maxSelection={(() => {
+                                              const currentProduct = productos.find(
+                                                p => String(p.id_producto || p.id) === id
+                                              );
+                                              const precio = Number(
+                                                currentProduct?.precio || currentProduct?.price || 0
+                                              );
+                                              if (precio >= 240000) return 5;
+                                              if (precio >= 200000) return 4;
+                                              if (precio >= 140000) return 3;
+                                              if (precio >= 120000) return 2;
+                                              return 1;
+                                            })()}
+                                          />
+                                        </div>
+
+                                        <div className="text-xs text-gray-500">
+                                          {(() => {
+                                            const currentProduct = productos.find(
+                                              p => String(p.id_producto || p.id) === id
+                                            );
+                                            const precio = Number(
+                                              currentProduct?.precio || currentProduct?.price || 0
+                                            );
                                             let champagneLimit = 1;
                                             if (precio >= 240000) champagneLimit = 5;
                                             else if (precio >= 200000) champagneLimit = 4;
                                             else if (precio >= 140000) champagneLimit = 3;
                                             else if (precio >= 120000) champagneLimit = 2;
 
-                                            // El componente ya maneja el límite internamente
-                                            onChampagneHostessChange(id, selectedIds);
-                                          }}
-                                          searchValue={hostessSearchValues[id] || ''}
-                                          onSearchChange={(searchValue) => {
-                                            setHostessSearchValues(prev => ({
-                                              ...prev,
-                                              [id]: searchValue
-                                            }));
-                                          }}
-                                          maxSelection={(() => {
-                                            const currentProduct = productos.find(p => String(p.id_producto || p.id) === id);
-                                            const precio = Number(currentProduct?.precio || currentProduct?.price || 0);
-                                            if (precio >= 240000) return 5;
-                                            else if (precio >= 200000) return 4;
-                                            else if (precio >= 140000) return 3;
-                                            else if (precio >= 120000) return 2;
-                                            return 1;
+                                            const currentCount = champagneHostessSelections[id]?.length || 0;
+                                            return `${currentCount} de ${champagneLimit} seleccionadas`;
                                           })()}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <IndividualHostessSelect
+                                          anfitrionas={getAvailableHostessesForOtherProducts(id)}
+                                          value={otherProductHostessSelections[id]?.[0] || ''}
+                                          onChange={(selectedValue) => {
+                                            onOtherProductHostessChange(
+                                              id,
+                                              selectedValue ? [selectedValue] : []
+                                            );
+                                          }}
+                                          placeholder={
+                                            getAvailableHostessesForOtherProducts(id).length === 0
+                                              ? 'No hay anfitrionas disponibles'
+                                              : 'Seleccionar anfitriona'
+                                          }
+                                          className="w-full"
                                         />
+                                        {otherProductHostessSelections[id]?.length > 0 ? (
+                                          <div className="text-xs text-green-600 font-medium">
+                                            ✓ Asignada: {(() => {
+                                              const hostessId = otherProductHostessSelections[id][0];
+                                              const hostess = availableHostesses.find(
+                                                h => String(h.id || h.id_usuario) === hostessId
+                                              );
+                                              return hostess?.nick || hostess?.name || hostess?.nombre || hostessId;
+                                            })()}
+                                          </div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500">
+                                            Una anfitriona por bebida
+                                          </div>
+                                        )}
                                       </div>
-
-                                      <div className="text-xs text-gray-500">
-                                        {(() => {
-                                          const currentProduct = productos.find(p => String(p.id_producto || p.id) === id);
-                                          const precio = Number(currentProduct?.precio || currentProduct?.price || 0);
-                                          let champagneLimit = 1;
-                                          if (precio >= 240000) champagneLimit = 5;
-                                          else if (precio >= 200000) champagneLimit = 4;
-                                          else if (precio >= 140000) champagneLimit = 3;
-                                          else if (precio >= 120000) champagneLimit = 2;
-
-                                          const currentCount = champagneHostessSelections[id]?.length || 0;
-                                          return `${currentCount} de ${champagneLimit} seleccionadas`;
-                                        })()}
-                                      </div>
-                                    </div>
+                                    )
                                   ) : (
-                                    // Para otras bebidas con comisión: usar IndividualHostessSelect
-                                    <div className="space-y-2">
-                                      <IndividualHostessSelect
-                                        anfitrionas={getAvailableHostessesForOtherProducts(id)}
-                                        value={otherProductHostessSelections[id]?.[0] || ''}
-                                        onChange={(selectedValue) => {
-                                          onOtherProductHostessChange(id, selectedValue ? [selectedValue] : []);
-                                        }}
-                                        placeholder={
-                                          getAvailableHostessesForOtherProducts(id).length === 0
-                                            ? "No hay anfitrionas disponibles"
-                                            : "Seleccionar anfitriona"
-                                        }
-                                        className="w-full"
-                                      />
-                                      {otherProductHostessSelections[id]?.length > 0 ? (
-                                        <div className="text-xs text-green-600 font-medium">
-                                          ✓ Asignada: {(() => {
-                                            const hostessId = otherProductHostessSelections[id][0];
-                                            const hostess = availableHostesses.find(h => String(h.id || h.id_usuario) === hostessId);
-                                            return hostess?.nick || hostess?.name || hostess?.nombre || hostessId;
-                                          })()}
-                                        </div>
-                                      ) : (
-                                        <div className="text-xs text-gray-500">
-                                          Una anfitriona por bebida
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                ) : (
-                                  <div className="text-xs text-gray-400">Sin comisión</div>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  className="rounded-full bg-black text-white hover:scale-110 transition-all duration-200"
-                                  onClick={() => {
-                                    // Agregar información de anfitriona seleccionada al producto
-                                    const productWithHostess = {
-                                      ...p,
-                                      selectedHostesses: isChampagne
-                                        ? champagneHostessSelections[id] || []
-                                        : otherProductHostessSelections[id] || [],
-                                      isChampagne: isChampagne
-                                    };
-                                    console.log("Producto desde SaleProductModal:", productWithHostess);
-                                    handleAgregarProducto(productWithHostess);
-                                  }}
-                                  disabled={hasComm && (
-                                    (isChampagne && (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
-                                    (!isChampagne && (!otherProductHostessSelections[id] || otherProductHostessSelections[id].length === 0))
+                                    <div className="text-xs text-gray-400">Sin comisión</div>
                                   )}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                                </TableCell>
+                                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="rounded-full bg-black text-white hover:scale-110 transition-all duration-200"
+                                    onClick={() => {
+                                      const productWithHostess = {
+                                        ...p,
+                                        selectedHostesses: isChampagne
+                                          ? champagneHostessSelections[id] || []
+                                          : otherProductHostessSelections[id] || [],
+                                        isChampagne: isChampagne,
+                                      };
+                                      handleAgregarProducto(productWithHostess);
+                                    }}
+                                    disabled={
+                                      hasComm &&
+                                      ((isChampagne &&
+                                        (!champagneHostessSelections[id] ||
+                                          champagneHostessSelections[id].length === 0)) ||
+                                        (!isChampagne &&
+                                          (!otherProductHostessSelections[id] ||
+                                            otherProductHostessSelections[id].length === 0)))
+                                    }
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
 
                   {/* Paginador */}

@@ -1,4 +1,4 @@
-import { RoleDashboardSkeleton } from '@/components/ui/skeletons';
+import { RoleDashboardSkeleton } from '@/components/shared/Skeletons';
 
 export default function Loading() {
   return <RoleDashboardSkeleton />;

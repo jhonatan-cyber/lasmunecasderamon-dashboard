@@ -10,9 +10,9 @@ import { ClientHeader } from '@/components/clients/ClientHeader';
 import { ClientModals } from '@/components/clients/ClientModals';
 import { ClientStatsCards } from '@/components/clients/ClientStatsCards';
 import { useClientModals } from '@/hooks/clients/useClientModals';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ClientsSkeleton } from '@/components/ui/skeletons';
+import { ClientsSkeleton } from '@/components/shared/Skeletons';
 import { type ClientFormValues } from '@/hooks/personal/useClientForm';
 
 export default function Clients() {

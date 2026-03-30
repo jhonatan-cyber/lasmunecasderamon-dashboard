@@ -18,7 +18,7 @@ export function CategoryHeader({ onCreateClick }: CategoryHeaderProps) {
       <PermissionGuard module='categories' action='create' fallback={null}>
         <Button
           variant='outline'
-          className='flex items-center gap-2 rounded-full bg-black text-white dark:bg-white dark:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 w-full sm:w-auto dark:hover:bg-gray-200'
+          className='flex items-center gap-2 rounded-full bg-black text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 w-full sm:w-auto border-2'
           type='button'
           onClick={onCreateClick}
         >

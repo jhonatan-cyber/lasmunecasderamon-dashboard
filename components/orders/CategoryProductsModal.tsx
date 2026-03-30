@@ -20,9 +20,9 @@ import {
   TableRow
 } from '@/components/ui/table';
 import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
-import IndividualHostessSelect from '@/components/ui/IndividualHostessSelect';
-import Paginate from '@/components/ui/paginate';
-import RoomSelect from '@/components/ui/RoomSelect';
+import IndividualHostessSelect from '@/components/shared/selects/IndividualHostessSelect';
+import Paginate from '@/components/shared/Paginate';
+import RoomSelect from '@/components/shared/selects/RoomSelect';
 
 interface CategoryProductsModalProps {
   open: boolean;

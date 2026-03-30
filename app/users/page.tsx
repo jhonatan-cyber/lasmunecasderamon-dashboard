@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 
 import { useUsers } from '@/hooks/personal/useUsers';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -15,14 +14,15 @@ import { useUserImage } from '@/contexts/UserImageContext';
 import { User } from '@/types/user';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 
-import { UserDetails } from '@/components/users/UserDetails';
 import { UserTable } from '@/components/users/UserTable';
 import { UserFilters } from '@/components/users/UserFilters';
-import { UserForm, type UserFormValues } from '@/components/users/UserForm';
+import { type UserFormValues } from '@/hooks/personal/useUserForm';
 import { DeleteUserConfirmModal } from '@/components/users/DeleteUserConfirmModal';
+import { UserDetailsModal } from '@/components/users/UserDetailsModal';
+import { UserFormModal } from '@/components/users/UserFormModal';
 import { ExportButtons } from '@/components/users/ExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { UsersSkeleton } from '@/components/ui/skeletons';
+import { UsersSkeleton } from '@/components/shared/Skeletons';
 
 export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -193,7 +193,7 @@ export default function Users() {
             <ExportButtons users={users || []} />
             <PermissionGuard module='users' action='create' fallback={null}>
               <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
-                className='bg-black text-white rounded-full px-6 py-2 hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200'>
+                className='bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'>
                 <Plus className='w-4 h-4 mr-1' /> Nuevo Usuario
               </Button>
             </PermissionGuard>
@@ -213,58 +213,27 @@ export default function Users() {
 
         {totalPages > 1 && <div className='flex justify-center mt-6'><Paginate page={page} totalPages={totalPages} setPage={setPage} /></div>}
 
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className='max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden'>
-            <DialogHeader className='p-6 border-b'>
-              <DialogTitle className='text-xl font-bold'>Detalles del Usuario</DialogTitle>
-              <DialogDescription className='sr-only'>Información detallada del usuario seleccionado</DialogDescription>
-            </DialogHeader>
-            <div className='flex-1 overflow-y-auto p-6'>
-              {selectedUser && <UserDetails user={selectedUser} />}
-            </div>
-            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl'>
-              <Button onClick={() => setIsDetailsOpen(false)} className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 transition-all hover:scale-105'>
-                Cerrar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <UserDetailsModal
+          user={selectedUser}
+          isOpen={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
+        />
 
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden'>
-            <DialogHeader className='p-6 pb-2 border-b'>
-              <DialogTitle className='text-xl font-bold'>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
-              <DialogDescription className='sr-only'>Formulario para crear o editar usuarios</DialogDescription>
-            </DialogHeader>
+        <UserFormModal
+          user={selectedUser}
+          isOpen={isFormOpen}
+          isEditing={isEditing}
+          isMutating={isMutating}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+        />
 
-            <div className='flex-1 overflow-y-auto p-6'>
-              <UserForm user={selectedUser || undefined} onSubmit={handleFormSubmit} onCancel={handleFormCancel} isEditMode={isEditing} hideButtons={true} />
-            </div>
-
-            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
-              <Button onClick={handleFormCancel} variant='outline' className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105' disabled={isMutating}>
-                Cancelar
-              </Button>
-              <Button type='submit' form='user-form' className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105' disabled={isMutating}>
-                {isMutating ? (
-                  <div className='flex items-center gap-2'>
-                    <Loader2 className='w-4 h-4 animate-spin' />
-                    <span>{isEditing ? 'Actualizando...' : 'Guardando...'}</span>
-                  </div>
-                ) : (
-                  <span>{isEditing ? 'Actualizar Cambios' : 'Guardar Usuario'}</span>
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <DeleteUserConfirmModal 
-          open={deleteModalOpen} 
-          onOpenChange={setDeleteModalOpen} 
+        <DeleteUserConfirmModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
           onConfirm={handleConfirmDelete}
           userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
-          isLoading={isMutating} 
+          isLoading={isMutating}
         />
       </div>
     </PermissionGuard>

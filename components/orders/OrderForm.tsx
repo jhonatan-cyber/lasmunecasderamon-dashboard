@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import OrderProductTable from './OrderProductTable';
-import CustomerSelect from '@/components/ui/CustomerSelect';
+import CustomerSelect from '@/components/shared/selects/CustomerSelect';
 import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
-import CategoryCardList from '@/components/ui/CategoryCardList';
+import CategoryCardList from '@/components/shared/CategoryCardList';
 import { useOrderForm, type OrderProducto, type OrderCategory, type OrderProductoPayload } from '@/hooks/personal/useOrderForm';
 
 const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {

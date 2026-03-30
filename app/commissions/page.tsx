@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { CommissionsFilters, CommissionsList } from '@/components/commissions';
 import CommissionsDetalleModal from '@/components/commissions/CommissionsDetalleModal';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
+import CommissionsStatsCards from '@/components/commissions/CommissionsStatsCards';
 
 import { useCommissions } from '@/hooks/personal/useCommissions';
 import useCommissionStats from '@/hooks/personal/useCommissionStats';
@@ -19,11 +18,15 @@ export default function CommissionsPage() {
 
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('employeeName');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedCommission, setSelectedCommission] = useState<Commission | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   const handleClearFilters = () => {
     setSearchTerm('');
+    setSortBy('employeeName');
+    setSortOrder('asc');
     setRowsPerPage(5);
     setPage(1);
   };
@@ -51,9 +54,22 @@ export default function CommissionsPage() {
     }
   };
 
+  // Ordenar comisiones
+  const sortedCommissions = useMemo(() => {
+    return [...filteredCommissions].sort((a: any, b: any) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredCommissions, sortBy, sortOrder]);
+
   // Paginación
-  const totalPages = Math.ceil(filteredCommissions.length / rowsPerPage);
-  const paginatedCommissions = filteredCommissions.slice(
+  const totalPages = Math.ceil(sortedCommissions.length / rowsPerPage);
+  const paginatedCommissions = sortedCommissions.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
@@ -73,68 +89,24 @@ export default function CommissionsPage() {
         </div>
 
         {/* Estadísticas */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-          <Card className='bg-white shadow-sm border-slate-100'>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-gray-500'>Total Comisiones</CardTitle>
-              <DollarSign className='h-4 w-4 text-blue-600' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : formatCurrencyCLP(stats?.total_comisiones || 0)}
-              </div>
-              <p className='text-xs text-gray-400 mt-1'>Acumulado en caja activa</p>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-white shadow-sm border-slate-100'>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-gray-500'>Por Ventas</CardTitle>
-              <TrendingUp className='h-4 w-4 text-green-600' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : formatCurrencyCLP(stats?.comision_ventas || 0)}
-              </div>
-              <p className='text-xs text-gray-400 mt-1'>
-                {stats?.porcentaje_ventas || 0}% del total
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-white shadow-sm border-slate-100'>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-gray-500'>Por Servicios</CardTitle>
-              <Clock className='h-4 w-4 text-purple-600' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : formatCurrencyCLP(stats?.comision_servicios || 0)}
-              </div>
-              <p className='text-xs text-gray-400 mt-1'>
-                {stats?.porcentaje_servicios || 0}% del total
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-white shadow-sm border-slate-100'>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-gray-500'>Anfitrionas</CardTitle>
-              <CheckCircle2 className='h-4 w-4 text-orange-600' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-gray-900'>
-                {isLoadingStats ? '...' : stats?.cantidad_comisiones || 0}
-              </div>
-              <p className='text-xs text-gray-400 mt-1'>Con comisiones registradas</p>
-            </CardContent>
-          </Card>
-        </div>
+        <CommissionsStatsCards
+          totalComisiones={stats?.total_comisiones || 0}
+          comisionVentas={stats?.comision_ventas || 0}
+          comisionServicios={stats?.comision_servicios || 0}
+          cantidadComisiones={stats?.cantidad_comisiones || 0}
+          porcentajeVentas={stats?.porcentaje_ventas || 0}
+          porcentajeServicios={stats?.porcentaje_servicios || 0}
+          isLoading={isLoadingStats}
+        />
 
         {/* Filtros y búsqueda */}
         <CommissionsFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           onClearFilters={handleClearFilters}
           rowsPerPage={rowsPerPage}
           setRowsPerPage={setRowsPerPage}
