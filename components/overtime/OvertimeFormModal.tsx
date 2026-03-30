@@ -10,10 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import UserSelect from "@/components/ui/UserSelect";
+import UserSelect from "@/components/shared/selects/UserSelect";
 import { formatCurrencyCLP } from "@/lib/utils/formatters";
 import { useOvertimeForm } from "@/hooks/personal/useOvertimeForm";
-import { Clock, Timer, Banknote, Calculator, Loader2 } from "lucide-react";
+import { Timer, Banknote, Calculator, Loader2 } from "lucide-react";
 
 interface OvertimeFormModalProps {
   isOpen: boolean;
@@ -45,7 +45,6 @@ export default function OvertimeFormModal({
       <DialogContent className="max-w-lg p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl">
         <DialogHeader className="p-6 sm:p-8 pb-4 border-b bg-white dark:bg-slate-900">
           <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
             <span>Registrar Hora Extra</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -90,7 +89,7 @@ export default function OvertimeFormModal({
                     value={hora}
                     onChange={(e) => setHora(e.target.value)}
                     placeholder="Ej: 4.5"
-                    className="pl-10 rounded-full bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500 h-10 sm:h-11"
+                    className="pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 focus:ring-purple-500 h-10 sm:h-11"
                     disabled={isLoading}
                   />
                 </div>
@@ -112,7 +111,7 @@ export default function OvertimeFormModal({
                     value={montoDisplay}
                     onChange={handleMontoChange}
                     placeholder="$ 0"
-                    className="pl-10 rounded-full bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500 h-10 sm:h-11"
+                    className="pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 focus:ring-purple-500 h-10 sm:h-11"
                     disabled={isLoading}
                   />
                 </div>
@@ -121,7 +120,7 @@ export default function OvertimeFormModal({
 
             {/* Resultado Calculado */}
             {hora && montoDisplay && (
-              <div className="p-4 bg-gray-50/50 dark:bg-slate-900/50 rounded-full border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+              <div className="p-4 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-300 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calculator className="h-4 w-4 text-gray-400" />
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</span>
@@ -145,8 +144,7 @@ export default function OvertimeFormModal({
               </Button>
               <Button
                 type='submit'
-                variant='outline'
-                className='flex items-center bg-black text-white dark:bg-white dark:text-black gap-2 rounded-full px-8 hover:scale-105 transition-all duration-200 w-full sm:w-auto dark:hover:bg-gray-200 text-sm sm:text-base font-bold border-none'
+                className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
                 disabled={isLoading || !selectedUser || !hora || !montoDisplay}
               >
                 {isLoading ? (

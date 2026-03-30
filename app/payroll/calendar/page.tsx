@@ -19,9 +19,9 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import SearchInput from '@/components/ui/SearchInput';
-import SelectElements from '@/components/ui/select-elements';
-import Paginate from '@/components/ui/paginate';
+import SearchInput from '@/components/shared/SearchInput';
+import SelectElements from '@/components/shared/SelectElements';
+import Paginate from '@/components/shared/Paginate';
 import { useCalendarActions } from '@/hooks/calendario/useCalendarActions';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';

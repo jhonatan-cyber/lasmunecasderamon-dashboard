@@ -2,7 +2,7 @@
 
 import { Tag, Package, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { CardContainer, CardBody } from '@/components/ui/3d-card';
+import { CardContainer, CardBody } from '@/components/shared/3d-card';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface CategoryCardProps {

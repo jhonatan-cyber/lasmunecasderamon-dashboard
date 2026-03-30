@@ -8,7 +8,7 @@ import { ArrowLeft, Landmark } from 'lucide-react';
 import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
 import OvertimeFilters from '@/components/overtime/OvertimeFilters';
 import OvertimeTable from '@/components/overtime/OvertimeTable';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 
 export default function CajeroHorasExtrasPage() {
   const { user, loading: userLoading } = useCurrentUser();

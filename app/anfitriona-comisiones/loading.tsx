@@ -1,4 +1,4 @@
-import { RoleTableSkeleton } from '@/components/ui/skeletons';
+import { RoleTableSkeleton } from '@/components/shared/Skeletons';
 
 export default function Loading() {
   return <RoleTableSkeleton />;

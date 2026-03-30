@@ -17,8 +17,9 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import Pagination from '@/components/ui/Pagination';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import Pagination from '@/components/gratificaciones/Pagination';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import SelectElements from '@/components/shared/SelectElements';
 import { useGratificaciones } from '@/hooks/personal/useGratificaciones';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -42,6 +43,9 @@ export default function GratificacionesPage() {
 
   // States
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('fecha_hora');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -54,14 +58,59 @@ export default function GratificacionesPage() {
   const [gratificacionToDelete, setGratificacionToDelete] = useState<Gratificacion | null>(null);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
-  // Filters logic
+  // Filters and sorting logic
   const filteredData = useMemo(() => {
-    if (!searchTerm) return gratificaciones;
-    const lowerSearch = searchTerm.toLowerCase();
-    return gratificaciones.filter(
-      g => g.usuario.toLowerCase().includes(lowerSearch) || String(g.id).includes(lowerSearch)
-    );
-  }, [gratificaciones, searchTerm]);
+    let result = [...gratificaciones];
+
+    // Filter by search term
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter(
+        g => g.usuario.toLowerCase().includes(lowerSearch) || String(g.id).includes(lowerSearch)
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      result = result.filter(g => {
+        if (statusFilter === 'pagado') return g.estado === 0;
+        if (statusFilter === 'por_pagar') return g.estado === 1;
+        return true;
+      });
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortBy) {
+        case 'fecha_hora':
+          aValue = new Date(a.fecha_hora || 0);
+          bValue = new Date(b.fecha_hora || 0);
+          break;
+        case 'monto':
+          aValue = a.monto;
+          bValue = b.monto;
+          break;
+        case 'usuario':
+          aValue = a.usuario.toLowerCase();
+          bValue = b.usuario.toLowerCase();
+          break;
+        default:
+          aValue = a.fecha_hora;
+          bValue = b.fecha_hora;
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return result;
+  }, [gratificaciones, searchTerm, statusFilter, sortBy, sortOrder]);
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
   const paginatedData = filteredData.slice(
@@ -139,6 +188,12 @@ export default function GratificacionesPage() {
     }
   };
 
+  const formatCurrency = (amount: number) => formatCurrencyNoDecimals(amount);
+
+  // Cálculos para stats
+  const totalPagado = gratificaciones.filter(g => g.estado === 0).reduce((acc, g) => acc + g.monto, 0);
+  const totalPorPagar = gratificaciones.filter(g => g.estado === 1).reduce((acc, g) => acc + g.monto, 0);
+
   if (error) {
     return (
       <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
@@ -156,54 +211,109 @@ export default function GratificacionesPage() {
   }
 
   return (
-    <div className='p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-700 bg-white dark:bg-neutral-900 min-h-screen'>
-      {/* Header Premium */}
-      <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-zinc-50 dark:bg-neutral-800/50 p-6 rounded-[2.5rem] border border-zinc-100 dark:border-neutral-800'>
-        <div className='flex items-center gap-5'>
-          <div>
-            <h1 className='text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter'>
-              Gratificaciones
-            </h1>
-            <p className='text-zinc-500 text-sm font-semibold mt-1 uppercase tracking-widest'>
-              Control de bonificaciones de personal
-            </p>
-          </div>
+    <div className='p-6 space-y-6'>
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <div>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Listado de Gratificaciones</h1>
+          <p className='text-gray-600 dark:text-gray-400'>
+            Control de bonificaciones de personal
+          </p>
         </div>
+        {hasPermission('gratificaciones', 'create') && (
+          <Button
+            onClick={handleOpenForm}
+            disabled={!hasOpenCaja || cajaLoading}
+            className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
+          >
+            <Plus className='w-4 h-4 mr-2' />
+            Nueva gratificación
+          </Button>
+        )}
+      </div>
 
-        <div className='flex items-center gap-3 w-full md:w-auto'>
-          {!hasOpenCaja && !cajaLoading && (
-            <div className='hidden xl:flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-full text-xs font-bold border border-amber-100'>
-              <AlertCircle className='h-4 w-4' />
-              Apertura de caja requerida
-            </div>
-          )}
-          {hasPermission('gratificaciones', 'create') && (
-            <Button
-              onClick={handleOpenForm}
-              disabled={!hasOpenCaja || cajaLoading}
-              className='w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-zinc-800 transition-all shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 font-bold text-sm'
-            >
-              <Plus className='h-4 w-4' />
-              Nueva gratificación
-            </Button>
-          )}
+      {/* Total a pagar centrado */}
+      <div className='text-center'>
+        <p className='text-sm text-gray-500'>TOTAL POR PAGAR</p>
+        <p className='text-2xl font-bold text-gray-900 dark:text-gray-100'>{formatCurrency(totalPorPagar)}</p>
+      </div>
+
+      {/* Filtros */}
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-white dark:bg-gray-800 rounded-3xl shadow-md border-none'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Buscar</label>
+          <input
+            type='text'
+            placeholder='Buscar por nombre o ID...'
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Estado</label>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            <option value='all'>Todos</option>
+            <option value='pagado'>Pagado</option>
+            <option value='por_pagar'>Por pagar</option>
+          </select>
+        </div>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Ordenar por</label>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            <option value='fecha_hora'>Fecha</option>
+            <option value='monto'>Monto</option>
+            <option value='usuario'>Usuario</option>
+          </select>
+        </div>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Orden</label>
+          <select
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            <option value='desc'>Descendente</option>
+            <option value='asc'>Ascendente</option>
+          </select>
+        </div>
+        <div className='flex items-center'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => getGratificaciones()}
+            disabled={loading}
+            className='rounded-full'
+          >
+            {loading ? 'Cargando...' : 'Actualizar'}
+          </Button>
         </div>
       </div>
 
-      <GratificacionesStatsCards
-        gratificaciones={gratificaciones}
-        formatCurrency={formatCurrencyNoDecimals}
-      />
-
-      <GratificacionesFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        setPage={setCurrentPage}
-        loading={loading}
-        onRefresh={getGratificaciones}
-      />
+      {/* Selector de filas por página */}
+      <div className='flex justify-between items-center'>
+        <SelectElements
+          value={rowsPerPage}
+          onChange={value => {
+            setRowsPerPage(value);
+            setCurrentPage(1);
+          }}
+          options={[
+            { value: 5, label: '5' },
+            { value: 10, label: '10' },
+            { value: 20, label: '20' },
+            { value: 50, label: '50' }
+          ]}
+        />
+      </div>
 
       <GratificacionesTable
         loading={loading}

@@ -1,10 +1,9 @@
- 
+
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
@@ -18,10 +17,9 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronDown } from 'lucide-react';
-import CustomersSelect from '@/components/ui/CustomersSelect';
-import HostessSelect from '@/components/ui/HostessSelect';
+
+import CustomersSelect from '@/components/shared/selects/CustomersSelect';
+import HostessSelect from '@/components/shared/selects/HostessSelect';
 
 interface ServiceOrderFormProps {
   clientes: any[];
@@ -76,10 +74,10 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const maxTotalPersonas = 4;
 
   // Calcular límites dinámicos
-  const maxAnfitrionasSegunClientes = tempForm.comision_anfitriona > 0 
+  const maxAnfitrionasSegunClientes = tempForm.comision_anfitriona > 0
     ? 3 // Máximo 3 anfitrionas para habitaciones con comisión
     : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); // Máximo 3 anfitrionas si hay comisión
-  
+
   const maxClientesSegunAnfitrionas = tempForm.comision_anfitriona > 0
     ? 1 // Máximo 1 cliente para habitaciones con comisión
     : Math.max(0, maxTotalPersonas - tempForm.anfitrionas_ids.length);
@@ -96,9 +94,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   // Determinar límite final según la combinación actual
   const maxAnfitrionasFinal = tempForm.comision_anfitriona > 0
     ? (tempForm.clientes_ids.length === 0 ? 3 // Máximo 3 anfitrionas sin clientes
-       : tempForm.clientes_ids.length === 1 ? maxAnfitrionasCon1Cliente
-       : tempForm.clientes_ids.length === 2 ? maxClientesCon2Anfitrionas
-       : maxClientesSegunAnfitrionas)
+      : tempForm.clientes_ids.length === 1 ? maxAnfitrionasCon1Cliente
+        : tempForm.clientes_ids.length === 2 ? maxClientesCon2Anfitrionas
+          : maxClientesSegunAnfitrionas)
     : maxAnfitrionasSegunClientes;
 
   const haAlcanzadoMaxAnfitrionas = tempForm.anfitrionas_ids.length >= maxAnfitrionasFinal;
@@ -285,12 +283,12 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     const numAnfitrionas = tempForm.anfitrionas_ids.length;
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
     const tieneComision = tempForm.comision_anfitriona > 0;
-    
+
     // Para habitaciones con comisión, IVA siempre es 0 (incluso con tarjeta)
     if (tieneComision) {
       return 0;
     }
-    
+
     return calculateIVA(
       tempForm.precio_servicio * multiplicador,
       tempForm.metodo_pago,

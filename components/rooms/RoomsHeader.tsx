@@ -46,7 +46,7 @@ export function RoomsHeader({
             variant='outline'
             size='sm'
             onClick={onNew}
-            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2'
+            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
           >
             <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
             Nueva Habitacion

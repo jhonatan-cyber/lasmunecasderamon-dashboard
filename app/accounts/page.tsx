@@ -5,11 +5,11 @@ import { useCuentas } from '@/hooks/caja/useCuentas';
 import useOrders from '@/hooks/servicios/useOrders';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from '@/components/cuentas';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { AlertCircle } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ReportSkeleton } from '@/components/ui/skeletons';
+import { ReportSkeleton } from '@/components/shared/Skeletons';
 
 export default function AccountsPage() {
   const { cuentas, isLoading, error, getCuentas } = useCuentas();
@@ -24,7 +24,6 @@ export default function AccountsPage() {
     return <ReportSkeleton />;
   }
 
-  // Asegurar que cuentas sea siempre un array
   const cuentasData = cuentas || [];
 
   const filteredCuentas = cuentasData.filter(cuenta => {

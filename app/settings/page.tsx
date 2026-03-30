@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Key, Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ClientsSkeleton } from '@/components/ui/skeletons';
+import { ClientsSkeleton } from '@/components/shared/Skeletons';
 
 interface Permission {
   id: number;

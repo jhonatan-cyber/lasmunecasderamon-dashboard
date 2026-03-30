@@ -5,11 +5,11 @@ import useRooms from '@/hooks/habitaciones/useRooms';
 import { type RoomFormValues } from '@/hooks/personal/useRoomForm';
 import RoomTable from '@/components/rooms/RoomTable';
 import { RoomFilters } from '@/components/rooms/RoomFilters';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { Room } from '@/types/room';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { RoomsSkeleton } from '@/components/ui/skeletons';
+import { RoomsSkeleton } from '@/components/shared/Skeletons';
 import { toTitleCase } from '@/lib/utils/formatters';
 
 // Nuevos componentes refactorizados

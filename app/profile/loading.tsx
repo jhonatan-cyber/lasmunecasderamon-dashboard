@@ -1,4 +1,4 @@
-import { ProfileSkeleton } from '@/components/ui/skeletons';
+import { ProfileSkeleton } from '@/components/shared/Skeletons';
 
 export default function Loading() {
   return <ProfileSkeleton />;

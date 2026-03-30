@@ -27,8 +27,8 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
-import RoomSelect from '@/components/ui/RoomSelect';
+import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
+import RoomSelect from '@/components/shared/selects/RoomSelect';
 import {
   Select,
   SelectContent,
@@ -824,7 +824,7 @@ export default function OrderDetailModal({
                           placeholder='Seleccione una habitación'
                           searchPlaceholder='Buscar habitación...'
                           filterByStatus={1}
-                          includeRoomIds={habitacionId ? [parseInt(habitacionId)] : []}
+                          includeRoomIds={habitacionId ? [habitacionId] : []}
                           showTime={true}
                         />
                         {habitacionId && (

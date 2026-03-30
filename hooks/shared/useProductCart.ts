@@ -8,6 +8,7 @@ interface ProductoCarrito {
   cantidad: number;
   sub_total: number;
   categoria_nombre: string;
+  comision: number;
 }
 
 interface ProductoInput {
@@ -20,6 +21,8 @@ interface ProductoInput {
   categoria_nombre?: string;
   categoria?: string;
   category?: string;
+  comision?: number;
+  commission?: number;
 }
 
 export function useProductCart() {
@@ -34,6 +37,7 @@ export function useProductCart() {
         id_producto: producto.id_producto || producto.id || 0,
         nombre: producto.nombre || producto.name || '',
         precio: producto.precio || producto.price || 0,
+        comision: producto.commission ?? producto.comision ?? 0,
         categoria_nombre:
           producto.categoria_nombre || producto.categoria || producto.category || 'Sin categoría'
       };
@@ -60,7 +64,8 @@ export function useProductCart() {
             precio: productoNormalizado.precio,
             cantidad: cantidad,
             sub_total: productoNormalizado.precio * cantidad,
-            categoria_nombre: productoNormalizado.categoria_nombre
+            categoria_nombre: productoNormalizado.categoria_nombre,
+            comision: productoNormalizado.comision
           };
           return [...prev, nuevoProducto];
         }

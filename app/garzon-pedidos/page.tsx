@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import SelectElements from '@/components/ui/select-elements';
-import Paginate from '@/components/ui/paginate';
+import SelectElements from '@/components/shared/SelectElements';
+import Paginate from '@/components/shared/Paginate';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 

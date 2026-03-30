@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ErrorLogsSkeleton } from '@/components/ui/skeletons';
+import { ErrorLogsSkeleton } from '@/components/shared/Skeletons';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 export default function ErrorLogsPage() {
