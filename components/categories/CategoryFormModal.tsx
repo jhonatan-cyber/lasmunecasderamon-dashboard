@@ -49,7 +49,6 @@ export function CategoryFormModal({
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
         <DialogHeader className='p-6 pb-2 border-b'>
           <DialogTitle className='text-xl font-bold flex items-center gap-2'>
-            <Tag className='w-5 h-5 text-purple-600' />
             <span>{isEditMode ? 'Editar Categoría' : 'Nueva Categoría'}</span>
           </DialogTitle>
           <DialogDescription className='sr-only'>
@@ -69,7 +68,7 @@ export function CategoryFormModal({
                   id='categoryName'
                   {...register('name')}
                   placeholder='Nombre de la categoría'
-                  className={`text-sm sm:text-base pl-10 rounded-full bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500 ${errors.name ? 'border-red-500' : ''}`}
+                  className={`pl-10 ${errors.name ? 'border-red-500' : ''}`}
                 />
               </div>
               {errors.name && <span className='text-red-500 text-xs sm:text-sm mt-1'>{errors.name.message}</span>}
@@ -85,7 +84,7 @@ export function CategoryFormModal({
                   {...register('description')}
                   placeholder='Ingresa una descripción para la categoría...'
                   rows={3}
-                  className='text-sm sm:text-base pl-10 rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500'
+                  className='text-sm sm:text-base pl-10'
                 />
               </div>
             </div>
@@ -104,7 +103,7 @@ export function CategoryFormModal({
           <Button
             type='submit'
             form='category-form'
-            className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
+          className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
             disabled={isMutating}
           >
             {isMutating ? (
@@ -113,7 +112,7 @@ export function CategoryFormModal({
                 <span>{isEditMode ? 'Actualizando...' : 'Guardando...'}</span>
               </div>
             ) : (
-              <span>{isEditMode ? 'Actualizar Cambios' : 'Guardar Categoría'}</span>
+              <span>{isEditMode ? 'Actualizar ' : 'Guardar'}</span>
             )}
           </Button>
         </div>

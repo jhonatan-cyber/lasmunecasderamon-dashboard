@@ -113,7 +113,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={`border-b bg-white group ${
+      className={`border-b bg-white group hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors ${
         idx === 0 ? 'first:rounded-t-xl' : ''
       } ${isLastRow ? 'last:rounded-b-xl' : ''}`}
     >
@@ -344,35 +344,35 @@ const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <TooltipProvider>
-      <div className='rounded-xl border bg-white overflow-hidden shadow-md'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <Table className='min-w-full text-base bg-white rounded-xl overflow-hidden text-center'>
-              <TableHeader className='border-b last:border-b-0 bg-white group'>
-                <TableRow>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400 w-12'></TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>#</TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>Foto</TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+            <Table className='min-w-full text-base text-center'>
+              <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'>Orden</TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Foto</TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Código
                   </TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Nombre
                   </TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Precio
                   </TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Comisión
                   </TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Estado
                   </TableHead>
-                  <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Acciones
                   </TableHead>
                 </TableRow>

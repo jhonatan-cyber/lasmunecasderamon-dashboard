@@ -11,7 +11,7 @@ import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import { useTimer } from '@/contexts/TimerContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { ServicioDetailModal } from '@/components/servicios/ServicioDetailModal';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/services/DevolucionHeader';

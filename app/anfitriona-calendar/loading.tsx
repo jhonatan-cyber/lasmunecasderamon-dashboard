@@ -1,4 +1,4 @@
-import { RoleCalendarSkeleton } from '@/components/ui/skeletons';
+import { RoleCalendarSkeleton } from '@/components/shared/Skeletons';
 
 export default function Loading() {
   return <RoleCalendarSkeleton />;

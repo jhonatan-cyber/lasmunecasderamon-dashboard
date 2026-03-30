@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle } from 'lucide-react';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import ServicioCard from '@/components/servicios/ServicioCard';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import ServiceStats from '@/components/servicios/ServiceStats';
 import ServiceFilters from '@/components/servicios/ServiceFilters';
 import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StatsCardSkeleton, CardSkeleton } from '@/components/ui/skeletons';
+import { StatsCardSkeleton, CardSkeleton } from '@/components/shared/Skeletons';
 
 export default function ServiciosPage() {
   const { habitaciones, loading: habitacionLoading } = useHabitaciones();

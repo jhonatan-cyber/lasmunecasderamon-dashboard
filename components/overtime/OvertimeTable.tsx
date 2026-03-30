@@ -48,14 +48,14 @@ export default function OvertimeTable({
     if (estado === 1) {
       return (
         <Badge className="rounded-full px-3 py-1 bg-amber-100 text-amber-700 border-none hover:bg-amber-100 flex items-center gap-1 w-fit mx-auto font-bold uppercase tracking-tighter text-[10px]">
-      
+
           Por pagar
         </Badge>
       );
     }
     return (
       <Badge className="rounded-full px-3 py-1 bg-emerald-100 text-emerald-700 border-none hover:bg-emerald-100 flex items-center gap-1 w-fit mx-auto font-bold uppercase tracking-tighter text-[10px]">
-   
+
         Pagado
       </Badge>
     );
@@ -131,7 +131,7 @@ export default function OvertimeTable({
     <div className="hidden lg:block">
       <div className="bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden">
         <Table>
-          <TableHeader className="bg-gray-50/50 dark:bg-slate-900/50">
+          <TableHeader className="bg-gray-100 dark:bg-slate-900/50">
             <TableRow className="hover:bg-transparent border-gray-100 dark:border-gray-800">
               {isAdmin && <TableHead className="py-5 px-6 font-bold text-xs uppercase text-gray-500">Usuario</TableHead>}
               <TableHead className="py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center">Última Actividad</TableHead>
@@ -157,7 +157,7 @@ export default function OvertimeTable({
               rows.map((overtime) => {
                 const creacion = formatDateTimeDmyLabel(overtime.fecha_crea);
                 return (
-                  <TableRow key={overtime.id_hora_extra} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors border-gray-100 dark:border-gray-800">
+                  <TableRow key={overtime.id_hora_extra} className="border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30">
                     {isAdmin && (
                       <TableCell className="py-4 px-6">
                         <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export default function OvertimeTable({
         </Table>
       </div>
     </div>
-  );
+  ); 
 
   return (
     <div className="space-y-4">

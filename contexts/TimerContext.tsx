@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSignals } from '@preact/signals-react/runtime';
 import { toast } from 'sonner';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
 import { TimerExpiredModal } from '@/components/notifications';
 import { parseDateSafe, calculateRemainingTime, formatTime } from '@/lib/utils/timeUtils';

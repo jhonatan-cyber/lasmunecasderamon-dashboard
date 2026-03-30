@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowDownCircle, ShoppingCart, Home, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { 
   formatCurrencyCLP, 
   formatCurrencyNoDecimals, 

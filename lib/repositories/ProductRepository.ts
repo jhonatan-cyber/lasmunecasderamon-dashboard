@@ -4,21 +4,28 @@ import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
 
 export class ProductRepository {
-  private static mapProductFromDB(row: any): ProductType {
-    return ProductSchema.parse({
-      id: row.id_producto,
-      code: row.codigo,
-      name: row.nombre,
-      category_id: row.categoria_id,
-      price: row.precio,
-      commission: row.comision,
-      description: row.descripcion,
-      status: row.estado,
-      foto: row.foto,
-      display_order: row.display_order,
-      created_at: row.fecha_crea,
-      updated_at: row.fecha_mod
-    });
+  private static mapProductFromDB(row: any): ProductType & { categoria?: string } {
+    return {
+      ...ProductSchema.parse({
+        id: row.id_producto,
+        code: row.codigo,
+        name: row.nombre,
+        category_id: row.categoria_id,
+        price: row.precio,
+        commission: row.comision,
+        description: row.descripcion,
+        status: row.estado,
+        foto: row.foto,
+        display_order: row.display_order,
+        created_at: row.fecha_crea,
+        updated_at: row.fecha_mod
+      }),
+      categoria: row.categoria,
+      nombre: row.nombre,
+      precio: row.precio,
+      comision: row.comision,
+      id_producto: row.id_producto,
+    };
   }
 
   static async getAll(categoryId?: string): Promise<ProductType[]> {

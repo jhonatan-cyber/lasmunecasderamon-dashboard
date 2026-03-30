@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, SortAsc, SortDesc } from "lucide-react";
-import SearchInput from "@/components/ui/SearchInput";
+import SearchInput from "@/components/shared/SearchInput";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OvertimeFiltersProps {
@@ -46,7 +46,7 @@ export default function OvertimeFilters({
   isAdmin = false,
 }: OvertimeFiltersProps) {
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
           {/* Búsqueda */}
@@ -58,7 +58,7 @@ export default function OvertimeFilters({
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder={isAdmin ? "Nombre..." : "Motivo..."}
-              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+              className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
             />
           </div>
 
@@ -68,7 +68,7 @@ export default function OvertimeFilters({
               Estado
             </Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+              <SelectTrigger className='w-full text-xs rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10 font-bold'>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
@@ -86,7 +86,7 @@ export default function OvertimeFilters({
             </Label>
             <div className="flex gap-1">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className='w-full text-xs rounded-l-2xl rounded-r-none bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                <SelectTrigger className='w-full text-xs rounded-full rounded-r-none border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 h-10'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
@@ -100,7 +100,7 @@ export default function OvertimeFilters({
                 variant="outline"
                 size="icon"
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="h-10 w-10 rounded-r-2xl border-l-0 border-gray-200 dark:border-gray-800 bg-gray-50/50 rounded-l-none"
+                className="h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
               </Button>
@@ -113,7 +113,7 @@ export default function OvertimeFilters({
               Mostrar
             </Label>
             <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
-              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10 font-bold'>
+              <SelectTrigger className='w-full text-xs rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10 font-bold'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
@@ -133,7 +133,7 @@ export default function OvertimeFilters({
             onClick={onClearFilters}
             variant='outline'
             size="icon"
-            className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm mb-[1px]'
+            className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
             
           >
             <Trash2 className='w-4 h-4' />

@@ -8,7 +8,7 @@ import { useTimer } from '@/contexts/TimerContext';
 import { VentaWithDetails } from '@/types/venta';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toastUtils';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 import {
@@ -33,7 +33,7 @@ import {
 } from '@/lib/business/salesUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
-import { SalesSkeleton } from '@/components/ui/skeletons';
+import { SalesSkeleton } from '@/components/shared/Skeletons';
 
 export default function Sales() {
   const { ventas, loading, error, getVentas, getResumen } = useSales();

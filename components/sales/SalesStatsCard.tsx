@@ -1,5 +1,5 @@
 import { DollarSign, TrendingUp } from "lucide-react";
-import { StatsCard, StatCard } from "@/components/ui/StatsCard";
+import { StatsCard, StatCard } from "@/components/shared/StatsCard";
 import { useStats } from "@/hooks/estadisticas/useStats";
 
 interface SalesStats {

@@ -19,7 +19,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
 import { formatDateLabel } from '@/lib/utils/calendarUtils';
-import { ProfileSkeleton } from '@/components/ui/skeletons';
+import { ProfileSkeleton } from '@/components/shared/Skeletons';
 import { QRCodeSVG } from 'qrcode.react';
 
 export default function ProfilePage() {

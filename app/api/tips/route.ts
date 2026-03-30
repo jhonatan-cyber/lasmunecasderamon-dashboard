@@ -13,7 +13,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const usuario_id = searchParams.get('usuario_id');
   const caja_activa = searchParams.get('caja_activa') === '1';
 
-  const isAdmin = userAuth.role === 'administrador';
+  const isAdmin = userAuth.role?.toLowerCase() === 'administrador';
 
   if (tipo === 'resumen') {
     const data = await TipRepository.getSummary(isAdmin, userAuth.id, caja_activa);

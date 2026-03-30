@@ -5,13 +5,6 @@ import { useOvertime } from '@/hooks/personal/useOvertime';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOvertimeTable } from '@/hooks/personal/useOvertimeTable';
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
-} from '@/components/ui/dialog';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -23,7 +16,7 @@ import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
 import OvertimeTable from '@/components/overtime/OvertimeTable';
 import OvertimeFormModal from '@/components/overtime/OvertimeFormModal';
 import OvertimeDetailModal from '@/components/overtime/OvertimeDetailModal';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 
 // --- SUB-COMPONENTS ---
 
@@ -47,21 +40,15 @@ const CajaAviso = ({ loading, hasOpenCaja }: { loading: boolean; hasOpenCaja: bo
 export default function OvertimePage() {
   const { overtime: data, loading, error, getOvertime, createOvertime } = useOvertime();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
-  
-  // Custom hook para toda la lógica de la tabla (Filtros, Ordenamiento, Paginación)
   const table = useOvertimeTable({ overtime: data });
-
-  // --- ESTADOS DE MODALES ---
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
 
-  // --- EFECTOS ---
   useEffect(() => {
     if (error) toast.error(`Error: ${error}`);
   }, [error]);
 
-  // --- HANDLERS ---
   const handleOpenFormDialog = useCallback(() => {
     if (!hasOpenCaja) {
       toast.error('No se puede crear horas extras sin caja abierta.');
@@ -89,11 +76,11 @@ export default function OvertimePage() {
   return (
     <PermissionGuard module='overtime' action='view'>
       <div className='p-6 lg:p-10 space-y-8 max-w-[1600px] mx-auto'>
-        
+
         {/* HEADER SECTION */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div className='flex flex-col'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>Gestión de Horas Extras</h1>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>Horas Extras</h1>
             <p className='text-sm sm:text-base text-gray-500'>
               Supervisión de registros, pagos y balances históricos del personal.
             </p>
@@ -101,10 +88,11 @@ export default function OvertimePage() {
           <Button
             onClick={handleOpenFormDialog}
             disabled={cajaLoading || !hasOpenCaja}
-            size='sm'
-            className='whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 w-full sm:w-auto'
+            variant='outline'
+            type='button'
+            className='flex items-center gap-2 rounded-full bg-black text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 w-full sm:w-auto border-2'
           >
-            <Plus className='w-4 h-4 mr-2' />
+            <Plus className='w-4 h-4 ' />
             Nueva Hora Extra
           </Button>
         </div>
@@ -113,9 +101,11 @@ export default function OvertimePage() {
         <CajaAviso loading={!!cajaLoading} hasOpenCaja={hasOpenCaja === true} />
 
         {/* DATA SECTION */}
-        <div className='grid gap-8'>
+        <div className='px-4 sm:px-8'>
           <OvertimeStatsCards overtime={data} />
-          
+        </div>
+
+        <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
           <OvertimeFilters
             searchTerm={table.searchTerm}
             setSearchTerm={table.setSearchTerm}

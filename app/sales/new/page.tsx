@@ -15,17 +15,17 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
-import IndividualHostessSelect from '@/components/ui/IndividualHostessSelect';
+import IndividualHostessSelect from '@/components/shared/selects/IndividualHostessSelect';
 
 import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
 import { formatCurrencyCLP, formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import SaleProductModal from '@/components/sales/SaleProductModal';
 import { useRef } from 'react';
-import CustomerSelect from '@/components/ui/CustomerSelect';
-import CategoryCardList from '@/components/ui/CategoryCardList';
-import RoomSelect from '@/components/ui/RoomSelect';
-import PaymentMethodSelect from '@/components/ui/PaymentMethodSelect';
+import CustomerSelect from '@/components/shared/selects/CustomerSelect';
+import CategoryCardList from '@/components/shared/CategoryCardList';
+import RoomSelect from '@/components/shared/selects/RoomSelect';
+import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
 import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTimer } from '@/contexts/TimerContext';
@@ -273,7 +273,10 @@ export default function NewSale() {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/products/search?name=${encodeURIComponent(searchProducto)}`);
+        const res = await fetch(`/api/products?term=${encodeURIComponent(searchProducto)}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
         if (data.success) setSearchResults(data.data);
         else setSearchResults([]);
@@ -367,25 +370,25 @@ export default function NewSale() {
 
     const productoExistente = Array.isArray(productos)
       ? productos.find(
-          p =>
-            p?.id === productoNormalizado.id &&
-            areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
-        )
+        p =>
+          p?.id === productoNormalizado.id &&
+          areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
+      )
       : null;
 
     if (productoExistente) {
       setProductos(prev =>
         Array.isArray(prev)
           ? prev.map(p =>
-              p?.id === productoNormalizado.id &&
+            p?.id === productoNormalizado.id &&
               areHostessesSame(p?.selectedHostesses || [], productoNormalizado.selectedHostesses)
-                ? {
-                    ...p,
-                    cantidad: (p?.cantidad || 0) + cantidad,
-                    subtotal: precio * ((p?.cantidad || 0) + cantidad)
-                  }
-                : p
-            )
+              ? {
+                ...p,
+                cantidad: (p?.cantidad || 0) + cantidad,
+                subtotal: precio * ((p?.cantidad || 0) + cantidad)
+              }
+              : p
+          )
           : []
       );
     } else {
@@ -436,14 +439,14 @@ export default function NewSale() {
     setProductos(prev => {
       const newProductos = Array.isArray(prev)
         ? prev.map((p, i) =>
-            i === index
-              ? {
-                  ...p,
-                  cantidad: nuevaCantidad,
-                  subtotal: (p?.precio || p?.price || 0) * nuevaCantidad
-                }
-              : p
-          )
+          i === index
+            ? {
+              ...p,
+              cantidad: nuevaCantidad,
+              subtotal: (p?.precio || p?.price || 0) * nuevaCantidad
+            }
+            : p
+        )
         : [];
 
       // Si no quedan productos, limpiar selectores
@@ -530,17 +533,17 @@ export default function NewSale() {
         total_comision: total_comision,
         detalles: Array.isArray(productos)
           ? productos.map(p => ({
-              producto_id: p?.id,
-              precio: p?.precio || 0,
-              comision: (p?.comision || 0) * (p?.cantidad || 1),
-              cantidad: p?.cantidad || 0,
-              sub_total: p?.subtotal || 0,
-              hostesses: p?.selectedHostesses || [],
-              hostess_id:
-                p?.selectedHostesses && p.selectedHostesses.length > 0
-                  ? p.selectedHostesses[0]
-                  : null
-            }))
+            producto_id: p?.id,
+            precio: p?.precio || 0,
+            comision: (p?.comision || 0) * (p?.cantidad || 1),
+            cantidad: p?.cantidad || 0,
+            sub_total: p?.subtotal || 0,
+            hostesses: p?.selectedHostesses || [],
+            hostess_id:
+              p?.selectedHostesses && p.selectedHostesses.length > 0
+                ? p.selectedHostesses[0]
+                : null
+          }))
           : [],
         usuarios: anfitrionasUnicas,
         tiempo:
@@ -577,8 +580,7 @@ export default function NewSale() {
 
             if (dataPropina.success) {
               toast.success(
-                `Propina de ${formatCurrencyCLP(propina)} registrada y distribuida entre ${
-                  dataPropina.data.usuarios_distribucion
+                `Propina de ${formatCurrencyCLP(propina)} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
                 } usuarios`
               );
             } else {
@@ -879,7 +881,7 @@ export default function NewSale() {
                             <Button
                               size='icon'
                               variant='ghost'
-                              className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
+                              className='bg-black text-white dark:bg-white dark:text-black rounded-full hover:!bg-white hover:!text-black dark:hover:!bg-black dark:hover:!text-white hover:scale-105 transition-all duration-200'
                               onClick={() => {
                                 // Agregar información de anfitriona seleccionada al producto
                                 const productWithHostess = {
@@ -1023,13 +1025,12 @@ export default function NewSale() {
         {false && Array.isArray(productos) && productos.length > 0 && (
           <div className='w-full flex justify-center mt-2 mb-2'>
             <div
-              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${
-                hasChampagneProducts && maxChampagnePrice >= 120000
+              className={`text-xs p-2 rounded-md max-w-xl w-full text-center ${hasChampagneProducts && maxChampagnePrice >= 120000
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : hasChampagneProducts
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : 'bg-orange-50 text-orange-700 border border-orange-200'
-              }`}
+                }`}
             >
               {hasChampagneProducts && maxChampagnePrice >= 240000
                 ? `Champaña de ${formatCurrencyCLP(maxChampagnePrice)}: Puedes seleccionar hasta 7 anfitrionas. Las primeras 5 incluidas, la 6ta y 7ma suman ${formatCurrencyCLP(40000)} cada una.`
@@ -1169,7 +1170,7 @@ export default function NewSale() {
                           variant='ghost'
                           size='sm'
                           onClick={() => handleRemoveProducto(index)}
-                          className='text-red-500 hover:text-red-700'
+                          className='text-red-500 hover:!bg-red-100 hover:!text-red-600 dark:text-red-400 dark:hover:!bg-red-500/20 dark:hover:!text-red-300 rounded-full transition-all duration-200'
                         >
                           <Trash />
                         </Button>

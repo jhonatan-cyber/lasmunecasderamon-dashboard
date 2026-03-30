@@ -33,7 +33,6 @@ export function PermissionGuard({
     permissionsLoaded
   } = useAuth();
 
-  // Evitar hydration mismatch: renderizar solo tras montar en el cliente
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -43,12 +42,8 @@ export function PermissionGuard({
     return null;
   }
 
-  // Mostrar loading mientras se carga el usuario o durante el gap antes de cargar permisos
   const isSuperAdmin = user?.role?.toLowerCase() === 'administrador';
   const isDashboardModule = module === 'dashboard' || module === 'Dashboard';
-
-  // Si no es admin ni dashboard, y el usuario existe pero aún no se empiezan a cargar los permisos 
-  // o los permisos están cargando, mostramos loading
   const waitingForPermissions = user && !isSuperAdmin && !isDashboardModule && !permissionsLoaded;
 
   if (userLoading || waitingForPermissions) {
@@ -62,10 +57,8 @@ export function PermissionGuard({
     );
   }
 
-  // El administrador siempre tiene acceso a todo
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
 
-  // Si es administrador o es el módulo dashboard, mostrar contenido inmediatamente
   if (isAdmin || isDashboardModule) {
     return <>{children}</>;
   }
@@ -75,10 +68,7 @@ export function PermissionGuard({
   if (requireAll && actions.length > 0) {
     hasAccess = hasAllPermissions(module, actions);
   } else if (action) {
-    // Los nombres de módulos y acciones deben coincidir con la tabla 'permissions' en la BD
-    // La BD usa nombres en inglés: orders, users, clients, products, etc.
-    // y acciones: view, create, edit, delete, etc.
-    // NO se necesita mapeo ya que los componentes usan los mismos nombres que la BD
+
     hasAccess = hasPermission(module, action);
   } else {
     hasAccess = hasAnyPermission(module);

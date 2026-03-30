@@ -1,5 +1,5 @@
 import { DollarSign, TrendingUp, Activity, CreditCard, ArrowUpDown } from "lucide-react";
-import { StatsCard, StatCard } from "@/components/ui/StatsCard";
+import { StatsCard, StatCard } from "@/components/shared/StatsCard";
 import { useCashRegister } from "@/hooks/caja/useCashRegister";
 import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
 

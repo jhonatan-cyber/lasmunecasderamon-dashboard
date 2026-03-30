@@ -1,0 +1,130 @@
+'use client';
+
+import { Card, CardContent } from '@/components/ui/card';
+import { CuentaWithDetails } from '@/types/cuenta';
+import { Receipt, DollarSign, Users, Building2 } from 'lucide-react';
+import { useCuentaStatsCalculations } from '@/hooks/cuentas';
+
+interface CuentaStatsCardsProps {
+  cuentas: CuentaWithDetails[];
+  formatCurrency: (value: number) => string;
+}
+
+export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStatsCardsProps) {
+  const { totalCuentas, cuentasActivas, totalIngresos, totalComisiones } =
+    useCuentaStatsCalculations(cuentas);
+
+  return (
+    <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
+      {/* Total Cuentas */}
+      <Card
+        style={{
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.2)'
+        }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
+          <div className='flex items-center justify-between mb-4'>
+            <div className='p-2.5 bg-blue-500/20 rounded-2xl'>
+              <Receipt className='h-4 w-4 text-blue-600' />
+            </div>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-blue-700 bg-blue-500/10 px-2 py-1 rounded-full'>
+              Total
+            </span>
+          </div>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-blue-700/60 uppercase tracking-widest'>
+              Cuentas
+            </p>
+            <h3 className='text-xl font-black text-blue-900 dark:text-blue-100'>{totalCuentas}</h3>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cuentas Activas */}
+      <Card
+        style={{
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          border: '1px solid rgba(16, 185, 129, 0.2)'
+        }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
+          <div className='flex items-center justify-between mb-4'>
+            <div className='p-2.5 bg-emerald-500/20 rounded-2xl'>
+              <Users className='h-4 w-4 text-emerald-600' />
+            </div>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-full'>
+              Activas
+            </span>
+          </div>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-emerald-700/60 uppercase tracking-widest'>
+              Abiertas
+            </p>
+            <h3 className='text-xl font-black text-emerald-900 dark:text-emerald-100'>
+              {cuentasActivas}
+            </h3>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Total Ingresos */}
+      <Card
+        style={{
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          border: '1px solid rgba(139, 92, 246, 0.2)'
+        }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
+          <div className='flex items-center justify-between mb-4'>
+            <div className='p-2.5 bg-violet-500/20 rounded-2xl'>
+              <DollarSign className='h-4 w-4 text-violet-600' />
+            </div>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-violet-700 bg-violet-500/10 px-2 py-1 rounded-full'>
+              Ingresos
+            </span>
+          </div>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-violet-700/60 uppercase tracking-widest'>
+              Total
+            </p>
+            <h3 className='text-xl font-black text-violet-900 dark:text-violet-100'>
+              {formatCurrency(totalIngresos)}
+            </h3>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Total Comisiones */}
+      <Card
+        style={{
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          border: '1px solid rgba(245, 158, 11, 0.2)'
+        }}
+        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+      >
+        <CardContent className='p-5'>
+          <div className='flex items-center justify-between mb-4'>
+            <div className='p-2.5 bg-amber-500/20 rounded-2xl'>
+              <Building2 className='h-4 w-4 text-amber-600' />
+            </div>
+            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-amber-700 bg-amber-500/10 px-2 py-1 rounded-full'>
+              Comisiones
+            </span>
+          </div>
+          <div className='space-y-0.5'>
+            <p className='text-[10px] font-bold text-amber-700/60 uppercase tracking-widest'>
+              Generadas
+            </p>
+            <h3 className='text-xl font-black text-amber-900 dark:text-amber-100'>
+              {formatCurrency(totalComisiones)}
+            </h3>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

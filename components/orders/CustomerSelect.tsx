@@ -2,7 +2,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { User } from "lucide-react";
-import SearchInput from "@/components/ui/SearchInput";
+import SearchInput from "@/components/shared/SearchInput";
 import React from "react";
 
 interface CustomerSelectProps {
