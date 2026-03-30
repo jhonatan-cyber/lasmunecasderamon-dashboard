@@ -9,8 +9,8 @@ import { CategoryFilters } from '@/components/categories/CategoryFilters';
 import { CategoryGrid } from '@/components/categories/CategoryGrid';
 import { CategoryFormModal } from '@/components/categories/CategoryFormModal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { CategoriesSkeleton } from '@/components/ui/skeletons';
-import Paginate from '@/components/ui/paginate';
+import { CategoriesSkeleton } from '@/components/shared/Skeletons';
+import Paginate from '@/components/shared/Paginate';
 import { type CategoryFormValues } from '@/components/categories/CategoryFormModal';
 
 export default function Categories() {

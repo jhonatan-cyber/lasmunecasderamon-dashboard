@@ -3,8 +3,8 @@
 
 import { Button } from '@/components/ui/button';
 
-import SelectElements from '@/components/ui/select-elements';
-import SearchInput from '@/components/ui/SearchInput';
+import SelectElements from '@/components/shared/SelectElements';
+import SearchInput from '@/components/shared/SearchInput';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface ServiceFiltersProps {

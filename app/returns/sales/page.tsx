@@ -6,7 +6,7 @@ import { useSales } from '@/hooks/caja/useSales';
 import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
 import { useDevolucionVentasLogic } from '@/hooks/servicios/useDevolucionVentasLogic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Paginate from '@/components/ui/paginate';
+import Paginate from '@/components/shared/Paginate';
 import { SalesDetailModal } from '@/components/sales';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/sales/DevolucionHeader';

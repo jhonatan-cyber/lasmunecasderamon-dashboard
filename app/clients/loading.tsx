@@ -1,4 +1,4 @@
-import { ClientsSkeleton } from '@/components/ui/skeletons';
+import { ClientsSkeleton } from '@/components/shared/Skeletons';
 
 export default function Loading() {
   return <ClientsSkeleton />;

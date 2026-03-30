@@ -1,4 +1,4 @@
-import { ErrorLogsSkeleton } from '@/components/ui/skeletons';
+import { ErrorLogsSkeleton } from '@/components/shared/Skeletons';
 
 export default function Loading() {
   return <ErrorLogsSkeleton />;

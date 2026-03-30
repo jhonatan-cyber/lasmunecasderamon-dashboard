@@ -71,12 +71,27 @@ export class CashRegisterRepository {
       iva: 'iva',
       comision: 'comision',
       propina: 'propina',
-      cuenta: 'cuenta',
+      // La tabla `cajas` no expone una columna `cuenta`; ese importe se contabiliza en `venta`
+      cuenta: 'venta',
       devolucion: 'devolucion'
     };
 
-    const setClause = entries.map(([k]) => `${columnMap[k] || k} = ${columnMap[k] || k} + ?`).join(', ');
-    const values = entries.map(([_, v]) => v);
+    // Only include entries that have a known column mapping; skip unknowns to avoid SQL errors
+    const knownEntries = entries.filter(([k]) => k in columnMap);
+    if (knownEntries.length === 0) return;
+
+    // Deduplicate by mapped column name (e.g. both 'venta' and 'cuenta' → 'venta'), summing their values
+    const colTotals: Record<string, number> = {};
+    for (const [k, v] of knownEntries) {
+      const col = columnMap[k];
+      colTotals[col] = (colTotals[col] ?? 0) + (v as number);
+    }
+
+    const dedupedEntries = Object.entries(colTotals).filter(([_, v]) => v !== 0);
+    if (dedupedEntries.length === 0) return;
+
+    const setClause = dedupedEntries.map(([col]) => `${col} = ${col} + ?`).join(', ');
+    const values = dedupedEntries.map(([_, v]) => v);
 
     await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [...values, id_caja]);
   }

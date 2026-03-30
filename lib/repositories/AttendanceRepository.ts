@@ -1,26 +1,27 @@
 import { query, rawQuery, generateUUID } from '@/lib/database/db';
-import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { toDateKey } from '@/lib/utils/calendarUtils';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
 
 export class AttendanceRepository {
   static async getSummary() {
     const sql = `
-      SELECT 
+     SELECT
         U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+        R.nombre AS rol,
         COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
         COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
         COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0) AS aporte_total,
         COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0) AS descuento_total,
-        (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0)) - 
-        (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0)) - 
+        (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0)) -
+        (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0)) -
         (COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0)) AS total_final
       FROM usuarios U
+      INNER JOIN roles R ON U.rol_id = R.id_rol
       LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS ASIS ON ASIS.usuario_id = U.id_usuario
       LEFT JOIN (SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas FROM asistencias WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1) GROUP BY usuario_id) AS SEM ON SEM.usuario_id = U.id_usuario
       WHERE COALESCE(ASIS.total_asistencias, 0) > 0
-      ORDER BY nombre_completo
+      ORDER BY nombre_completo;
     `;
     return await rawQuery(sql);
   }
@@ -34,15 +35,15 @@ export class AttendanceRepository {
     const totalUsuariosRes = await query<any[]>("SELECT COUNT(*) as total FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id WHERE r.nombre != 'administrador' AND u.estado = 1");
     const totalUsuarios = Number(totalUsuariosRes[0]?.total || 0);
 
-    const asistenciasHoy = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha = ? AND estado = 1', [fechaHoy]);
-    const presentesHoy = asistenciasHoy.length;
+    const asistenciaHoy = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha = ? AND estado = 1', [fechaHoy]);
+    const presentesHoy = asistenciaHoy.length;
 
-    let stats = { presentes: presentesHoy, ausentes: totalUsuarios - presentesHoy, porcentaje: totalUsuarios > 0 ? Math.round((presentesHoy/totalUsuarios)*100) : 0, fechaApertura: fechaHoy, fechaCierre: fechaHoy };
+    let stats = { presentes: presentesHoy, ausentes: totalUsuarios - presentesHoy, porcentaje: totalUsuarios > 0 ? Math.round((presentesHoy / totalUsuarios) * 100) : 0, fechaApertura: fechaHoy, fechaCierre: fechaHoy };
 
     if (caja) {
       const perCaja = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha >= ? AND (fecha <= ? OR ? IS NULL) AND estado = 1', [caja.fecha_apertura, caja.fecha_cierre, caja.fecha_cierre]);
       if (presentesHoy === 0 && perCaja.length > 0) {
-        stats = { presentes: perCaja.length, ausentes: totalUsuarios - perCaja.length, porcentaje: totalUsuarios > 0 ? Math.round((perCaja.length/totalUsuarios)*100) : 0, fechaApertura: caja.fecha_apertura, fechaCierre: caja.fecha_cierre || fechaHoy };
+        stats = { presentes: perCaja.length, ausentes: totalUsuarios - perCaja.length, porcentaje: totalUsuarios > 0 ? Math.round((perCaja.length / totalUsuarios) * 100) : 0, fechaApertura: caja.fecha_apertura, fechaCierre: caja.fecha_cierre || fechaHoy };
       }
     }
 
@@ -65,13 +66,13 @@ export class AttendanceRepository {
       }
     }
 
-if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
+    if (!targetUser) throw new Error('Codigo invalido, expirado o ya utilizado');
 
     const nowStr = getNowInBusinessTimezone();
     const hour = parseInt(nowStr.substring(11, 13), 10);
-    
+
     // Allow registration only during business hours (until 23:00)
-    if (hour >= 23) return { success: false, message: 'Horario cerrado (después de las 23:00)' };
+    if (hour >= 23) return { success: false, message: 'Horario cerrado (despues de las 23:00)' };
 
     const fechaHoy = nowStr.substring(0, 10);
     const existing = await query<any[]>('SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?', [targetUser.id_usuario, fechaHoy]);
@@ -90,7 +91,7 @@ if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
 
     // Si ya tiene asistencia, retornamos sin crear nuevo registro
     if (alreadyRegistered) {
-      return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencia registrada hoy' };
+      return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencias registrada hoy' };
     }
 
     const timeStr = nowStr.substring(11, 19);
@@ -106,22 +107,45 @@ if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
 
     await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
       en_local: 1,
-    }); // Nota: Esto asume un UPDATE genérico, pero logins puede tener varios registros activos. 
-       // Sin embargo, por consistencia con el código anterior, lo mantenemos así.
-
-    return { 
-      success: true, 
-      message: `Tu asistencia ha sido registrada`, 
-      user: { id: targetUser.id_usuario, nombre: targetUser.nombre, apellido: targetUser.apellido } 
+    });
+    return {
+      success: true,
+      message: `Tu asistencia ha sido registrada`,
+      user: { id: targetUser.id_usuario, nombre: targetUser.nombre, apellido: targetUser.apellido }
     };
   }
 
   static async getByUser(userId: string, tipo?: string, startDate?: string, endDate?: string) {
     if (tipo === 'detalle') {
       let sql = `
-        SELECT 
+        SELECT
           A.id_asistencia, A.usuario_id, A.fecha, A.hora, A.fecha_pago,
-          U.sueldo, U.aporte, (U.sueldo - U.aporte) AS total, A.estado
+          A.estado,
+          U.sueldo, U.aporte, U.descuento,
+          (U.sueldo - U.aporte) AS total,
+          (
+            SELECT COUNT(DISTINCT YEARWEEK(A2.fecha, 1))
+            FROM asistencias A2
+            WHERE A2.usuario_id = A.usuario_id
+              AND A2.estado = 1
+              AND DAYOFWEEK(A2.fecha) IN (3,4,5,6,7,1)
+          ) AS semanas_con_descuento,
+          (
+            SELECT COUNT(DISTINCT YEARWEEK(A2.fecha, 1))
+            FROM asistencias A2
+            WHERE A2.usuario_id = A.usuario_id
+              AND A2.estado = 1
+              AND DAYOFWEEK(A2.fecha) IN (3,4,5,6,7,1)
+          ) * COALESCE(U.descuento, 0) AS descuento_total,
+          (U.sueldo - U.aporte) - (
+            (
+              SELECT COUNT(DISTINCT YEARWEEK(A2.fecha, 1))
+              FROM asistencias A2
+              WHERE A2.usuario_id = A.usuario_id
+                AND A2.estado = 1
+                AND DAYOFWEEK(A2.fecha) IN (3,4,5,6,7,1)
+            ) * COALESCE(U.descuento, 0) / GREATEST((SELECT COUNT(*) FROM asistencias A3 WHERE A3.usuario_id = A.usuario_id AND A3.estado = 1), 1)
+          ) AS total_final
         FROM asistencias A
         INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
         WHERE A.usuario_id = ?
@@ -136,14 +160,14 @@ if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
     }
 
     const sql = `
-      SELECT 
+      SELECT
         U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
         COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) AS total_asistencias,
         COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
         COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0) AS aporte_total,
         COALESCE((SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0) AS descuento_total,
-        (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0)) - 
-        (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0)) - 
+        (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0)) -
+        (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0)) -
         (COALESCE((SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0)) AS total_final
       FROM usuarios U
       WHERE U.id_usuario = ?
@@ -154,7 +178,7 @@ if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
   static async getHoy() {
     const fechaHoy = getNowInBusinessTimezone().substring(0, 10);
     return await query(`
-      SELECT 
+      SELECT
         A.id_asistencia, A.fecha, A.hora,
         U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) as nombre_completo,
         R.nombre as rol
@@ -169,7 +193,7 @@ if (!targetUser) throw new Error('Código inválido, expirado o ya utilizado');
   static async getByDates(userId: string, dates: string[]) {
     if (dates.length === 0) return [];
     return await query(`
-      SELECT * FROM asistencias 
+      SELECT * FROM asistencias
       WHERE usuario_id = ? AND DATE(fecha) IN (?)
       ORDER BY fecha DESC
     `, [userId, dates]);

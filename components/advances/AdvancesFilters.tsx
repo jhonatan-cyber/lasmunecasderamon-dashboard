@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, SortAsc, SortDesc } from "lucide-react";
-import SearchInput from "@/components/ui/SearchInput";
+import SearchInput from "@/components/shared/SearchInput";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AdvancesFiltersProps {

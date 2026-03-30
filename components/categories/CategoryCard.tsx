@@ -24,7 +24,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { DeleteCategoryConfirmModal } from './DeleteCategoryConfirmModal';
-import { CardContainer, CardBody } from '@/components/ui/3d-card';
+import { CardContainer, CardBody } from '@/components/shared/3d-card';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
 interface CategoryCardProps {

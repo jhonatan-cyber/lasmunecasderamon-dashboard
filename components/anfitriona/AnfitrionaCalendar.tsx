@@ -616,7 +616,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2 bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2"
+                  className="flex items-center gap-2 bg-black text-white rounded-full hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Volver
@@ -863,7 +863,7 @@ export default function AnfitrionaCalendar({ userId }: AnfitrionaCalendarProps) 
             <div className="flex justify-center">
               <Button
                 variant="outline"
-                className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 sm:px-8 py-3"
+                className="bg-black text-white rounded-full hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 sm:px-8 py-3 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white"
                 onClick={() => setIsModalOpen(false)}
               >
                 Cerrar

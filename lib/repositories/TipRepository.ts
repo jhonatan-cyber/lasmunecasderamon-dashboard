@@ -14,13 +14,14 @@ export class TipRepository {
       WHERE l.estado = 1 AND l.en_local = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
     `);
 
-    if (logueados.length === 0) throw new Error('No hay usuarios logueados disponibles para distribuir la propina');
+    if (logueados.length === 0)
+      throw new Error('No hay usuarios logueados disponibles para distribuir la propina');
 
     const montoPorUsuario = monto / logueados.length;
     const now = getNowInBusinessTimezone();
     const id = generateUUID();
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await BaseRepository.insert(trx, 'propinas', {
         id_propina: id,
         venta_id,
@@ -41,7 +42,12 @@ export class TipRepository {
       }
     });
 
-    return { id, montoPorUsuario, count: logueados.length, usuarios_distribucion: logueados.length };
+    return {
+      id,
+      montoPorUsuario,
+      count: logueados.length,
+      usuarios_distribucion: logueados.length
+    };
   }
 
   static async getSummary(isAdmin: boolean, userId: string, cajaActiva: boolean) {
@@ -54,54 +60,74 @@ export class TipRepository {
     }
 
     if (cajaActiva) {
-      const active = await query<any[]>('SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1');
+      const active = await query<any[]>(
+        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+      );
       if (active.length > 0) {
-        where += (where ? ' AND ' : 'WHERE ') + 'V.caja_id = ?';
+        // Filtramos por caja activa usando LEFT JOIN y verificamos que la venta pertenezca a esa caja
+        // O que la propina no tenga venta asociada (propinas manuales)
+        where += (where ? ' AND ' : 'WHERE ') + '(V.caja_id = ? OR V.id_venta IS NULL)';
         params.push(active[0].id_caja);
       } else {
         return [];
       }
     }
 
-    return await query(`
+    return await query(
+      `
       SELECT U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
-             MAX(DP.fecha_crea) AS fecha_crea, SUM(CASE WHEN P.estado = 1 THEN DP.monto ELSE 0 END) AS total_propinas
+             MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea, 
+             SUM(DP.monto) AS total_propinas,
+             SUM(CASE WHEN DP.estado = 1 THEN DP.monto ELSE 0 END) AS propinas_pendientes,
+             SUM(CASE WHEN DP.estado = 0 THEN DP.monto ELSE 0 END) AS propinas_cobradas
       FROM propinas P 
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
-      INNER JOIN ventas V ON V.id_venta = P.venta_id
+      LEFT JOIN ventas V ON V.id_venta = P.venta_id
       ${where} GROUP BY U.id_usuario ORDER BY total_propinas DESC
-    `, params);
+    `,
+      params
+    );
   }
 
   static async getByUser(userId: string) {
-    return await query(`
-      SELECT P.id_propina, P.fecha_crea AS fecha_hora, P.fecha_crea, V.codigo AS codigo_venta, DP.monto,
+    return await query(
+      `
+      SELECT P.id_propina, P.fecha_crea AS fecha_hora, 
+             COALESCE(V.fecha_crea, P.fecha_crea) AS fecha_crea, 
+             V.codigo AS codigo_venta, DP.monto,
              P.estado, CASE WHEN P.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
       FROM propinas P 
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
-      INNER JOIN ventas V ON V.id_venta = P.venta_id
-      WHERE DP.usuario_id = ? ORDER BY P.fecha_crea DESC
-    `, [userId]);
+      LEFT JOIN ventas V ON V.id_venta = P.venta_id
+      WHERE DP.usuario_id = ? ORDER BY COALESCE(V.fecha_crea, P.fecha_crea) DESC
+    `,
+      [userId]
+    );
   }
 
   static async getDetails(usuario_id: string, startDate?: string, endDate?: string) {
     let sql = `
       SELECT 
-        v.fecha_crea, v.total, dp.monto, COALESCE(p.estado, 1) as estado, v.metodo_pago, v.codigo
-      FROM ventas v
-      INNER JOIN propinas p ON p.venta_id = v.id_venta
+        COALESCE(v.fecha_crea, p.fecha_crea) as fecha_crea, 
+        v.total, 
+        dp.monto, 
+        COALESCE(p.estado, 1) as estado, 
+        v.metodo_pago, 
+        v.codigo
+      FROM propinas p
+      LEFT JOIN ventas v ON v.id_venta = p.venta_id
       INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina
       WHERE dp.usuario_id = ?
     `;
     const params: any[] = [usuario_id];
 
     if (startDate && endDate) {
-      sql += ' AND DATE(v.fecha_crea) BETWEEN ? AND ?';
+      sql += ' AND DATE(COALESCE(v.fecha_crea, p.fecha_crea)) BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
-    sql += ' ORDER BY v.fecha_crea DESC';
+    sql += ' ORDER BY COALESCE(v.fecha_crea, p.fecha_crea) DESC';
     return await query(sql, params);
   }
 }

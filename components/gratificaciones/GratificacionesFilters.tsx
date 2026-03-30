@@ -1,8 +1,8 @@
  
 "use client";
 
-import SearchInput from "@/components/ui/SearchInput";
-import SelectElements from "@/components/ui/select-elements";
+import SearchInput from "@/components/shared/SearchInput";
+import SelectElements from "@/components/shared/SelectElements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";

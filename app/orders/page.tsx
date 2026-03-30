@@ -24,7 +24,7 @@ import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
-import { ReportSkeleton } from '@/components/ui/skeletons';
+import { ReportSkeleton } from '@/components/shared/Skeletons';
 
 // Lazy load del modal de detalle de pedido
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {

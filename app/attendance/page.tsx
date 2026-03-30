@@ -8,11 +8,11 @@ import { useAttendanceStats } from '@/hooks/personal/useAttendanceStats';
 import AttendanceTable from '@/components/attendance/AttendanceTable';
 import AttendanceFilters from '@/components/attendance/AttendanceFilters';
 import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';
+import AsistenciaForm from '@/components/attendance/AsistenciaForm';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ReportSkeleton } from '@/components/ui/skeletons';
+import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUsers } from '@/hooks/personal/useUsers';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { QRCodeSVG } from 'qrcode.react';
@@ -27,6 +27,7 @@ export default function AttendancePage() {
 
   // Estados para filtros y paginación
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState('nombre_completo');
@@ -206,6 +207,8 @@ export default function AttendancePage() {
             <AttendanceFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              filterRole={filterRole}
+              setFilterRole={setFilterRole}
               sortBy={sortBy}
               setSortBy={setSortBy}
               sortOrder={sortOrder}
@@ -217,7 +220,7 @@ export default function AttendancePage() {
             />
 
             <Tabs defaultValue='history' className='w-full'>
-              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-sm'>
+              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-sm'>
                 <TabsTrigger 
                   value='history' 
                   className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
@@ -244,71 +247,51 @@ export default function AttendancePage() {
               </TabsContent>
 
               <TabsContent value='personnel'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
                   {activePersonnel.map(person => (
                     <Card
                       key={person.id}
-                      className='group relative h-[450px] overflow-hidden rounded-[2.5rem] border-none shadow-2xl hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] dark:hover:shadow-[0_20px_50px_-12px_rgba(255,255,255,0.1)] transition-all duration-700 cursor-pointer active:scale-95'
+                      className='group relative overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer'
                       onClick={() => setSelectedUserForQR(person)}
                     >
-                      {/* Background Hero Image with Zoom and Filter */}
+                      {/* Background */}
                       <div className='absolute inset-0'>
                         <img
                           src={person.foto ? `/img/users/${person.foto}` : `/placeholder-user.jpg`}
                           alt={`${person.name} ${person.lastName}`}
-                          className='h-full w-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1 desaturate-[0.3] group-hover:desaturate-0'
+                          className='h-full w-full object-cover transition-all duration-500 group-hover:scale-105'
                           onError={(e) => {
                              e.currentTarget.src = '/placeholder-user.jpg';
                           }}
                         />
-                        {/* Premium Ultra-Dark Gradient Overlay */}
-                        <div className='absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-500' />
-                        
-                        {/* Shine Effect on Hover */}
-                        <div className='absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform [transition-duration:1500ms]' />
+                        <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity' />
                       </div>
-
-                      {/* Card Content Overlay */}
-                      <div className='absolute inset-0 flex flex-col justify-end p-8'>
-                        <div className='space-y-4 transform translate-y-6 group-hover:translate-y-0 transition-all duration-500 ease-out'>
-                          
-                          <div>
-                            <h3 className='text-3xl font-black text-white leading-tight tracking-tighter uppercase drop-shadow-2xl'>
-                              {person.name}
-                              <span className='block text-slate-300 opacity-80 group-hover:opacity-100 transition-opacity'>{person.lastName}</span>
-                            </h3>
-                          </div>
-
-                          <div className='flex items-center justify-between gap-6 pt-4 border-t border-white/10'>
-                            <div className='flex flex-col gap-1'>
-                              <span className='text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]'>Username</span>
-                              <span className='text-sm font-bold text-white antialiased tracking-wide'>@{person.nick}</span>
+              
+                      {/* Content */}
+                      <div className='relative h-[280px] flex flex-col justify-end p-5'>
+                        <div className='transform translate-y-2 group-hover:translate-y-0 transition-all duration-300'>
+                          <h3 className='text-2xl font-black text-white leading-tight tracking-tight uppercase drop-shadow-lg'>
+                            {person.name}
+                            <span className='block text-slate-300 font-bold'>{person.lastName}</span>
+                          </h3>
+              
+                          <div className='flex items-center justify-between mt-3 gap-2'>
+                            <div className='flex flex-col'>
+                              <span className='text-[9px] font-black text-slate-400 uppercase tracking-widest'>Username</span>
+                              <span className='text-sm font-bold text-white'>@{person.nick}</span>
                             </div>
-
-                            <Badge className='bg-white dark:bg-white text-black dark:text-black font-black text-[10px] px-4 py-2 rounded-xl border-none shadow-xl uppercase tracking-widest hover:scale-105 transition-transform'>
+                            <Badge className='bg-white/20 backdrop-blur-sm text-white font-black text-[10px] px-3 py-1.5 rounded-xl border border-white/20 uppercase tracking-wider'>
                               {person.role}
                             </Badge>
                           </div>
-
-                          {/* Animated Visual Accent Bar */}
-                          <div className='overflow-hidden w-full h-[2px] bg-white/10 rounded-full'>
-                             <div className='w-full h-full bg-white transform -translate-x-full group-hover:translate-x-0 transition-transform duration-1000 ease-in-out' />
-                          </div>
                         </div>
-                      </div>
-
-                      {/* Employee ID Chip */}
-                      <div className='absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-10px] group-hover:translate-y-0'>
-                         <div className='h-12 w-12 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/20 flex items-center justify-center shadow-2xl'>
-                            <span className='text-white font-black text-sm tracking-tighter'>#{person.id}</span>
-                         </div>
                       </div>
                     </Card>
                   ))}
                 </div>
-
+              
                 {activePersonnel.length === 0 && (
-                  <div className='text-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200'>
+                  <div className='text-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700'>
                     <p className='text-slate-500'>No se encontró personal activo registrado.</p>
                   </div>
                 )}

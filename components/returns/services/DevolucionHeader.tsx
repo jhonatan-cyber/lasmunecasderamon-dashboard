@@ -8,7 +8,7 @@ export const DevolucionHeader = () => (
       variant='outline'
       onClick={() => window.history.back()}
       size='sm'
-      className='w-full sm:w-auto bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
+      className='w-full sm:w-auto bg-black text-white rounded-full hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
     >
       <ArrowLeft className='mr-2' />
       Atrás
