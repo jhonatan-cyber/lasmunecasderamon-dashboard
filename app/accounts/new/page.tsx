@@ -40,10 +40,12 @@ export default function NewCuentaPage() {
     maxChampagnePrice,
     maxAnfitrionas,
     total,
+    selectedTime,
     setSelectedCliente,
     setSelectedAnfitrionas,
     setSelectedHabitacion,
     setSearchProducto,
+    setSelectedTime,
     handleCantidadChange,
     handleAddProducto,
     handleRemoveProducto,
@@ -149,12 +151,14 @@ export default function NewCuentaPage() {
           selectedCliente={selectedCliente}
           selectedAnfitrionas={selectedAnfitrionas}
           selectedHabitacion={selectedHabitacion}
+          selectedTime={selectedTime}
           hasCommissionProducts={hasCommissionProducts}
           maxAnfitrionas={maxAnfitrionas}
           loading={loading}
           onClienteChange={setSelectedCliente}
           onAnfitrionaChange={setSelectedAnfitrionas}
           onHabitacionChange={setSelectedHabitacion}
+          onTimeChange={setSelectedTime}
         />
 
         {Array.isArray(productos) && productos.length > 0 && (

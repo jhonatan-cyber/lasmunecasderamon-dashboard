@@ -26,7 +26,7 @@ export class TimerInstance {
   readonly id: string;
   readonly servicioId: string;
   readonly isTemporary: boolean;
-  
+
   // Signals para todas las propiedades que pueden cambiar
   readonly roomId = signal('');
   readonly roomName = signal('');
@@ -72,22 +72,62 @@ export class TimerInstance {
   update(serverOffset: number) {
     if (this.isPaused.value || !this.isActive.value) return;
 
+    const now = new Date(Date.now() + serverOffset);
+    const start = this.startTime.peek();
+
+    // Calculamos la vida útil real en el cliente.
+    // Si el timer acaba de ser creado o sincronizado, lifeSpanSeconds será pequeño.
+    const lifeSpanSeconds = Math.floor((Date.now() - start.getTime()) / 1000);
+
+    // Usamos el helper centralizado para consistencia
     const remaining = calculateRemainingTime(
       {
-        startTime: this.startTime.peek(),
+        startTime: start,
         duration: this.duration.peek(),
         isPaused: this.isPaused.value,
-        remainingTime: this.remainingSeconds.peek(),
+        remainingTime: this.remainingSeconds.peek()
       },
       serverOffset
     );
 
-    if (remaining !== this.remainingSeconds.peek()) {
-      this.remainingSeconds.value = remaining;
-      if (remaining <= 0) {
-        this.isActive.value = false;
+    // Si el cálculo da 0 o menos
+    if (remaining <= 0) {
+      // CRÍTICO: Solo protegemos timers muy nuevos (menos de 15s de vida)
+      // que no deberían expirar aún por error de sincronización.
+      // Si ya ha corrido por más de 15s, simplemente expiramos.
+      const isVeryNew = lifeSpanSeconds <= 15;
+      const hasValidDuration = this.duration.peek() > 0;
+
+      if (!isVeryNew || !hasValidDuration) {
+        // Timer ya tiene suficiente vida o no tiene duración válida -> EXPIRAR
+        console.warn(
+          `[TimerInstance] EXPIRACIÓN id:${this.id} (${this.roomName.peek()}) - lifeSpan:${lifeSpanSeconds}s, dur:${this.duration.peek()}m, remaining:${remaining}s, offset:${serverOffset}ms`
+        );
+
+        // Atómicamente marcamos como 0 e inactivo para que el evento se dispare una sola vez
+        batch(() => {
+          this.remainingSeconds.value = 0;
+          this.isActive.value = false;
+        });
+
+        // SOLO dispara si realmente expiró
         if (this.onExpire) this.onExpire(this);
         if (globalOnExpire) globalOnExpire(this);
+      } else {
+        // Timer muy nuevo que dice expirar -> PROTEGER
+        // Esto es solo para cuando se acaba de crear/sincronizar y el offset del servidor aún no se estabiliza
+        const originalSeconds = this.duration.peek() * 60;
+        if (this.remainingSeconds.peek() !== originalSeconds && originalSeconds > 0) {
+          console.log(
+            `[TimerInstance] Protegiendo timer NUEVO id:${this.id} (${this.roomName.peek()}) - restoring to ${originalSeconds}s. Calculado: ${remaining}s`
+          );
+          this.remainingSeconds.value = originalSeconds;
+        }
+      }
+    } else {
+      // SOLO actualizamos si es distinto para evitar ciclos reactivos innecesarios.
+      if (this.remainingSeconds.peek() !== remaining) {
+        this.remainingSeconds.value = remaining;
       }
     }
   }
@@ -128,7 +168,7 @@ export class TimerInstance {
       remainingTime: this.remainingSeconds.peek(),
       isTemporary: this.isTemporary,
       tipoTransaccion: this.tipoTransaccion.peek(),
-      anfitrionas: this.anfitrionas.peek(),
+      anfitrionas: this.anfitrionas.peek()
     };
   }
 }
@@ -154,7 +194,7 @@ export const startGlobalTimerLoop = () => {
     const timers = activeTimers.peek();
 
     batch(() => {
-      timers.forEach((t) => t.update(currentOffset));
+      timers.forEach(t => t.update(currentOffset));
     });
   }, 1000);
 };
@@ -171,20 +211,21 @@ export const stopGlobalTimerLoop = () => {
  */
 export const syncTimersWithSignals = (plainTimers: any[]) => {
   batch(() => {
-    const currentMap = new Map(activeTimers.peek().map((t) => [t.servicioId, t]));
+    const currentMap = new Map(activeTimers.peek().map(t => [t.servicioId, t]));
     const newList: TimerInstance[] = [];
 
-    plainTimers.forEach((pt) => {
+    plainTimers.forEach(pt => {
       let instance = currentMap.get(pt.servicioId);
 
       if (!instance) {
-          const initialRem = pt.remainingTime ?? calculateRemainingTime(pt, serverOffsetSignal.peek());
-          instance = new TimerInstance(pt, initialRem);
+        const initialRem =
+          pt.remainingTime ?? calculateRemainingTime(pt, serverOffsetSignal.peek());
+        instance = new TimerInstance(pt, initialRem);
       } else {
         // Actualizar datos atómicamente si vienen de afuera (ej. SSE)
         instance.patch(pt);
       }
-      
+
       newList.push(instance);
     });
 

@@ -557,40 +557,8 @@ export default function NewSale() {
       const resultado = await createVenta(ventaData);
 
       if (resultado && resultado.data) {
-        // Registrar propina si hay un monto
-        if (propina > 0) {
-          if (!resultado.data.id_venta) {
-            toast.error('Error: No se pudo obtener el ID de la venta para registrar la propina');
-            return;
-          }
-
-          try {
-            const resPropina = await fetch('/api/tips', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                venta_id: resultado.data.id_venta,
-                monto: propina
-              })
-            });
-
-            const dataPropina = await resPropina.json();
-
-            if (dataPropina.success) {
-              toast.success(
-                `Propina de ${formatCurrencyCLP(propina)} registrada y distribuida entre ${dataPropina.data.usuarios_distribucion
-                } usuarios`
-              );
-            } else {
-              toast.error('Error al registrar la propina');
-            }
-          } catch (error) {
-            console.error('Error al registrar propina:', error);
-            toast.error('Error al registrar la propina.');
-          }
-        }
+        // La propina ya se registra automáticamente en el backend (SaleService.createSale)
+        // No es necesario hacer una llamada separada a /api/tips
 
         if (selectedHabitacion && selectedRoomInfo) {
           try {

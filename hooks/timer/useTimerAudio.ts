@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Timer } from '@/contexts/TimerContext';
 import { announceVoice, playNotificationSound } from '@/lib/utils/audioUtils';
 import { activeTimers, serverOffsetSignal } from '@/lib/store/timerStore';
@@ -44,13 +44,13 @@ export function useTimerAudio(timers: Timer[], serverOffset: number) {
     return () => clearInterval(interval);
   }, []);
 
-  const playExpirationSound = () => {
+  const playExpirationSound = useCallback(() => {
     playNotificationSound();
-  };
+  }, []);
 
-  const announceExpiration = (roomName: string) => {
+  const announceExpiration = useCallback((roomName: string) => {
     announceVoice(`Servicio terminado en ${roomName}`);
-  };
+  }, []);
 
   return {
     playExpirationSound,

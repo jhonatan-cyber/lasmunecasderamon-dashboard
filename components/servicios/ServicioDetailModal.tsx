@@ -36,6 +36,11 @@ export function ServicioDetailModal({
   const hasAnfitrionas =
     selectedServicio.anfitrionas_nombres && selectedServicio.anfitrionas_nombres.length > 0;
 
+  // Mostrar botón editar si precio_servicio es 0 Y la habitación tiene comisión mayor a 0
+  const precioServicioInput = Number(selectedServicio.precio_servicio) || 0;
+  const habitacionComision = Number(selectedServicio.habitacion_comision) || 0;
+  const mostrarBotonEditar = precioServicioInput === 0 && habitacionComision > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-neutral-900'>
@@ -130,7 +135,7 @@ export function ServicioDetailModal({
             {/* Información financiera */}
             <div className='space-y-3'>
               <Label className='text-sm font-medium flex items-center gap-2 text-black dark:text-neutral-200'>
-                <DollarSign className='text-gray-500 dark:text-neutral-400 w-4' />
+                <DollarSign className="text-gray-500 dark:text-neutral-400 w-4" />
                 Información Financiera:
               </Label>
               <Table>
@@ -144,31 +149,44 @@ export function ServicioDetailModal({
                   <TableRow>
                     <TableCell className='text-black dark:text-neutral-100'>Precio Habitación</TableCell>
                     <TableCell className='text-right text-black dark:text-neutral-100'>
-                      {formatCurrency(selectedServicio.precio_habitacion)}
+                      {formatCurrency(Number(selectedServicio.precio_habitacion) || 0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className='text-black dark:text-neutral-100'>Precio Servicio</TableCell>
                     <TableCell className='text-right text-black dark:text-neutral-100'>
-                      {formatCurrency(selectedServicio.precio_servicio)}
+                      {formatCurrency((Number(selectedServicio.precio_servicio) || 0) * (Number(selectedServicio.total_usuarios) || 1))}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className='text-black dark:text-neutral-100'>IVA</TableCell>
                     <TableCell className='text-right text-black dark:text-neutral-100'>
-                      {formatCurrency(selectedServicio.iva)}
+                      {formatCurrency(Number(selectedServicio.iva) || 0)}
                     </TableCell>
                   </TableRow>
                   <TableRow className='font-semibold'>
                     <TableCell className='text-black dark:text-neutral-100'>Subtotal</TableCell>
                     <TableCell className='text-right text-black dark:text-neutral-100'>
-                      {formatCurrency(selectedServicio.sub_total)}
+                      {formatCurrency(Number(selectedServicio.sub_total) || 0)}
                     </TableCell>
                   </TableRow>
                   <TableRow className='font-bold bg-gray-50'>
                     <TableCell className='text-black dark:text-neutral-100'>Total</TableCell>
                     <TableCell className='text-right text-lg text-black dark:text-neutral-100'>
-                      {formatCurrency(selectedServicio.total)}
+                      {formatCurrency(Number(selectedServicio.total) || 0)}
+                    </TableCell>
+                  </TableRow>
+                  {/* Sección de Comisiones */}
+                  <TableRow className='bg-green-50 dark:bg-green-900/20'>
+                    <TableCell className='text-green-700 dark:text-green-400 font-semibold'>Total Comisión</TableCell>
+                    <TableCell className='text-right text-green-700 dark:text-green-400 font-bold'>
+                      {formatCurrency((Number(selectedServicio.precio_servicio) || 0) * (Number(selectedServicio.total_usuarios) || 1))}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className='bg-green-50 dark:bg-green-900/20'>
+                    <TableCell className='text-green-700 dark:text-green-400'>Comisión por Anfitriona</TableCell>
+                    <TableCell className='text-right text-green-700 dark:text-green-400 font-medium'>
+                      {formatCurrency(Number(selectedServicio.precio_servicio) || 0)} c/u
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -178,7 +196,19 @@ export function ServicioDetailModal({
         </div>
 
         <div className='flex-shrink-0 border-t px-6 py-4'>
-          <div className='flex justify-center'>
+          <div className='flex justify-center gap-4'>
+            {mostrarBotonEditar && (
+              <Button
+                variant='outline'
+                className='rounded-full hover:scale-105 transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700'
+                onClick={() => {
+                  // TODO: Implementar edición del servicio
+                  console.log('Editar servicio:', selectedServicio.id_servicio);
+                }}
+              >
+                Editar Servicio
+              </Button>
+            )}
             <Button
               variant='outline'
               onClick={() => onOpenChange(false)}

@@ -56,7 +56,7 @@ export function generateToken(userData: {
       lastName: userData.lastName,
       nick: userData.nick,
       email: userData.email,
-      role: userData.role,
+      role: userData.role
     },
     process.env.JWT_SECRET || 'default_secret',
     { expiresIn: '24h' }
@@ -76,26 +76,38 @@ export function extractToken(req: TokenRequest): string | null {
   return null;
 }
 
-export async function registrarLogin(usuarioId: string | number, ip?: string): Promise<void> {
-  try {
-    const ipLimpia = ip?.split(',')[0].trim() || null;
-    const lastLogin = getNowInBusinessTimezone();
-    const horaLocal = parseInt(lastLogin.substring(11, 13), 10);
-    const enLocal = horaLocal >= 23 ? 1 : 0;
+const ROLES_PARA_REGISTRAR = ['cajero', 'garzon', 'anfitriona'];
 
-    // We stop deleting old logins to maintain an audit trail
-    // await query('DELETE FROM logins WHERE usuario_id = ?', [usuarioId]);
+export async function registrarLogin(usuarioId: string | number): Promise<void> {
+  try {
+    const userRole = await query<any[]>(
+      `
+      SELECT r.nombre as rol_nombre 
+      FROM usuarios u 
+      INNER JOIN roles r ON u.rol_id = r.id_rol 
+      WHERE u.id_usuario = ?
+    `,
+      [usuarioId]
+    );
+
+    const rol = userRole[0]?.rol_nombre?.toLowerCase() || '';
+    if (!ROLES_PARA_REGISTRAR.includes(rol)) {
+      return;
+    }
+
+    const lastLogin = getNowInBusinessTimezone();
+
     await query(
-      'INSERT INTO logins (id_login, usuario_id, last_login, estado, ip_address, en_local) VALUES (?, ?, ?, 1, ?, ?)',
-      [generateUUID(), usuarioId, lastLogin, ipLimpia, enLocal]
+      'INSERT INTO logins (id_login, usuario_id, last_login, estado) VALUES (?, ?, ?, 1)',
+      [generateUUID(), usuarioId, lastLogin]
     );
   } catch (error) {
-    const exception = error instanceof Error ? error : new Error('Error desconocido al registrar login');
+    const exception =
+      error instanceof Error ? error : new Error('Error desconocido al registrar login');
     logger.error('Error al registrar login', {
       error: exception.message,
       stack: exception.stack,
-      usuarioId,
-      ip,
+      usuarioId
     });
   }
 }

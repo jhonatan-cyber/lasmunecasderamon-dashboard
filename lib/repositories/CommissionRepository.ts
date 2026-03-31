@@ -37,16 +37,34 @@ export class CommissionRepository {
     const summary = await query<any[]>(`
       SELECT 
         SUM(monto) as total_comisiones,
-        COUNT(*) as cantidad_comisiones
+        COUNT(*) as cantidad_comisiones,
+        SUM(CASE WHEN venta_id IS NOT NULL AND venta_id <> '' AND venta_id <> '0' THEN monto ELSE 0 END) as comision_ventas,
+        SUM(CASE WHEN servicio_id IS NOT NULL AND servicio_id <> '' AND servicio_id <> '0' THEN monto ELSE 0 END) as comision_servicios
       FROM comisiones
       WHERE estado = 1
     `);
-    return summary[0];
+    
+    const data = summary[0] || { total_comisiones: 0, cantidad_comisiones: 0, comision_ventas: 0, comision_servicios: 0 };
+    
+    // Calcular porcentajes
+    const total = data.total_comisiones || 1; // Evitar división por cero
+    data.porcentaje_ventas = Math.round(((data.comision_ventas || 0) / total) * 100);
+    data.porcentaje_servicios = Math.round(((data.comision_servicios || 0) / total) * 100);
+    
+    return data;
   }
 
   static async list(params: { status?: string, employeeId?: string, search?: string }): Promise<any[]> {
-    let where = 'WHERE c.estado = 1';
+    let where = 'WHERE 1=1';
     let sqlParams: any[] = [];
+
+    if (params.status && params.status !== 'all') {
+      const statusMap: Record<string, number> = { 'por_pagar': 1, 'pagado': 2, 'anulado': 0 };
+      if (statusMap[params.status] !== undefined) {
+        where += ' AND c.estado = ?';
+        sqlParams.push(statusMap[params.status]);
+      }
+    }
 
     if (params.employeeId) {
       where += ' AND dc.usuario_id = ?';
@@ -54,7 +72,22 @@ export class CommissionRepository {
     }
 
     const sql = `
-      SELECT c.*, dc.usuario_id, u.nick as usuario_nick, v.codigo as venta_codigo
+      SELECT 
+        c.id_comision AS id,
+        c.venta_id,
+        c.monto AS total,
+        COALESCE(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN c.monto ELSE 0 END, 0) AS venta,
+        COALESCE(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0' THEN c.monto ELSE 0 END, 0) AS servicio,
+        CASE 
+          WHEN c.estado = 1 THEN 'por_pagar'
+          WHEN c.estado = 2 THEN 'pagado'
+          ELSE 'anulado'
+        END AS status,
+        c.fecha_crea,
+        dc.usuario_id AS employeeId,
+        u.nick AS nick,
+        CONCAT(u.nombre, ' ', u.apellido) AS employeeName,
+        v.codigo AS venta_codigo
       FROM comisiones c
       INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
@@ -79,16 +112,54 @@ export class CommissionRepository {
   static async getDetails(usuarioId: string) {
     return await query(`
       SELECT 
-        c.*, 
-        v.codigo as venta_codigo,
-        u.nick as usuario_nick
+        c.id_comision AS id,
+        c.fecha_crea AS fecha_hora,
+        v.codigo AS codigo_venta,
+        NULL AS codigo_servicio,
+        'venta' AS tipo,
+        c.monto AS monto,
+        CASE 
+          WHEN c.estado = 1 THEN 'Por pagar'
+          WHEN c.estado = 2 THEN 'Pagado'
+          ELSE 'Anulado'
+        END AS estado,
+        p.nombre AS producto,
+        NULL AS fecha_pago,
+        v.codigo AS descripcion
       FROM comisiones c
       INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
       LEFT JOIN ventas v ON c.venta_id = v.id_venta
-      WHERE dc.usuario_id = ? AND c.estado = 1
-      ORDER BY c.fecha_crea DESC
-    `, [usuarioId]);
+      -- Intentamos unir con el detalle de venta para obtener el nombre del producto
+      LEFT JOIN detalle_ventas dv ON (v.id_venta = dv.venta_id AND dc.usuario_id = dv.hostess_id AND (c.monto = dv.comision OR c.monto = (dv.comision * dv.cantidad)))
+      LEFT JOIN productos p ON dv.producto_id = p.id_producto
+      WHERE dc.usuario_id = ? AND c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0'
+      
+      UNION ALL
+
+      SELECT 
+        c.id_comision AS id,
+        c.fecha_crea AS fecha_hora,
+        NULL AS codigo_venta,
+        s.codigo AS codigo_servicio,
+        'servicio' AS tipo,
+        c.monto AS monto,
+        CASE 
+          WHEN c.estado = 1 THEN 'Por pagar'
+          WHEN c.estado = 2 THEN 'Pagado'
+          ELSE 'Anulado'
+        END AS estado,
+        'Servicio de Acompañante' AS producto,
+        NULL AS fecha_pago,
+        s.codigo AS descripcion
+      FROM comisiones c
+      INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
+      INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
+      LEFT JOIN servicios s ON c.servicio_id = s.id_servicio
+      WHERE dc.usuario_id = ? AND c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0'
+      
+      ORDER BY fecha_hora DESC
+    `, [usuarioId, usuarioId]);
   }
 
   static async delete(id: string) {

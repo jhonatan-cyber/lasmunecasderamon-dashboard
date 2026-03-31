@@ -50,6 +50,8 @@ const RoomsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState('display_order');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [localRooms, setLocalRooms] = useState<Room[]>([]);
 
   useEffect(() => {
@@ -59,9 +61,36 @@ const RoomsPage = () => {
   }, [showTableView]);
 
   const filteredByStatus = useMemo(() => {
-    if (filterStatus === null) return filteredRooms;
-    return filteredRooms.filter(room => room.status === filterStatus);
-  }, [filteredRooms, filterStatus]);
+    let result = filteredRooms;
+    if (filterStatus !== null) {
+      result = result.filter(room => room.status === filterStatus);
+    }
+    // Aplicar ordenamiento
+    result = [...result].sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'nombre':
+          comparison = (a.name || '').localeCompare(b.name || '');
+          break;
+        case 'precio':
+          comparison = (a.price || 0) - (b.price || 0);
+          break;
+        case 'tiempo':
+          comparison = (a.time || 0) - (b.time || 0);
+          break;
+        case 'display_order':
+          comparison = (a.display_order || 0) - (b.display_order || 0);
+          break;
+        case 'created_at':
+          comparison = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    return result;
+  }, [filteredRooms, filterStatus, sortBy, sortOrder]);
 
   useEffect(() => {
     setLocalRooms(prev => (prev === filteredByStatus ? prev : filteredByStatus));
@@ -117,6 +146,8 @@ const RoomsPage = () => {
   const handleClearFilters = () => {
     setSearchTerm('');
     setFilterStatus(null);
+    setSortBy('display_order');
+    setSortOrder('asc');
     setPage(1);
   };
 
@@ -137,6 +168,10 @@ const RoomsPage = () => {
           setSearchTerm={setSearchTerm}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           onClearFilters={handleClearFilters}
           pageSize={pageSize}
           setPageSize={setPageSize}

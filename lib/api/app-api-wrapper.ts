@@ -76,7 +76,7 @@ export function withAppAuth(
       const userPermissions = (user.permissions as any)?.[module];
 
       const hasPermission = isAdministrator || (userPermissions && (userPermissions as any)[action] === true);
-
+      
       if (!hasPermission) {
         return ApiResponse.forbidden('Permisos insuficientes');
       }

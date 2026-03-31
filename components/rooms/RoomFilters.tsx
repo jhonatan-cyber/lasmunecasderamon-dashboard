@@ -1,5 +1,4 @@
- 
-'use client';
+"use client";
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -22,6 +21,10 @@ interface RoomFiltersProps {
   setSearchTerm: (term: string) => void;
   filterStatus: number | null;
   setFilterStatus: (status: number | null) => void;
+  sortBy: string;
+  setSortBy: (sort: string) => void;
+  sortOrder: 'asc' | 'desc';
+  setSortOrder: (order: 'asc' | 'desc') => void;
   onClearFilters: () => void;
   pageSize: number;
   setPageSize: (size: number) => void;
@@ -34,6 +37,10 @@ export function RoomFilters({
   setSearchTerm,
   filterStatus,
   setFilterStatus,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
   onClearFilters,
   pageSize,
   setPageSize,
@@ -65,13 +72,13 @@ export function RoomFilters({
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder='Nombre de habitación...'
-              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+              className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
             />
           </div>
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {/* Filtro de estado */}
-            <div className='w-full sm:w-auto min-w-[180px]'>
+            <div className='w-full sm:w-auto min-w-[160px]'>
               <Label htmlFor='status' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
                 Estado
               </Label>
@@ -81,7 +88,7 @@ export function RoomFilters({
               >
                 <SelectTrigger
                   id='status'
-                  className='w-full text-sm rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+                  className='w-full text-sm rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -94,13 +101,42 @@ export function RoomFilters({
               </Select>
             </div>
 
+            {/* Ordenar */}
+            <div className='w-full sm:w-auto min-w-[180px]'>
+              <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                Ordenar por
+              </Label>
+              <div className="flex gap-1">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className='w-full text-sm rounded-full rounded-r-none border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 h-10'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                    <SelectItem value='nombre'>Nombre</SelectItem>
+                    <SelectItem value='precio'>Precio</SelectItem>
+                    <SelectItem value='tiempo'>Tiempo</SelectItem>
+                    <SelectItem value='display_order'>Orden</SelectItem>
+                    <SelectItem value='created_at'>Fecha Creación</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
             {/* Elementos por página */}
             <div className='w-full sm:w-auto'>
               <SelectElements
                 value={pageSize}
                 onChange={handlePageSizeChange}
                 options={pageSizeOptions}
-                label='Mostrar'
+                label='LISTAR'
               />
             </div>
 
@@ -111,10 +147,8 @@ export function RoomFilters({
               <TooltipTrigger asChild>
                 <Button
                 onClick={onClearFilters}
-                variant='outline'
                 size="icon"
-                className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
-                
+                className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
               >
                 <Trash2 className='w-4 h-4' />
               </Button>

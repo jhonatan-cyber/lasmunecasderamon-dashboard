@@ -288,7 +288,19 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
                   <input
                     type='file'
                     accept='image/*'
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const fakeEvent = {
+                          target: {
+                            name: 'foto',
+                            type: 'file',
+                            files: [file]
+                          }
+                        } as any;
+                        handleChange(fakeEvent);
+                      }
+                    }}
                     disabled={isLoading}
                     className='hidden'
                   />

@@ -143,10 +143,9 @@ export function useCuentaCobro() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cuenta_id: cuentaId,
-          cliente_id: cuenta?.cliente_id ?? null,
-          pedido_id: cuenta?.pedido_id ?? null,
-          habitacion_id: cuenta?.habitacion_id ?? habitacionId ?? null,
+          cliente_id: cuenta?.cliente_id != null ? String(cuenta.cliente_id) : null,
+          pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
+          habitacion_id: cuenta?.habitacion_id != null ? String(cuenta.habitacion_id) : (habitacionId != null ? String(habitacionId) : null),
           metodo_pago: metodoPagoSeleccionado,
           propina: propinaFinal,
           sub_total: Number(cuenta?.sub_total ?? 0),
@@ -154,14 +153,28 @@ export function useCuentaCobro() {
           total_comision: Number(cuenta?.total_comision ?? 0),
           tiempo: Number(cuenta?.tiempo ?? 0),
           codigo: cuenta?.codigo,
-          fecha: new Date().toISOString(),
-          detalles: cuenta.detalles,
-          usuarios: cuenta?.usuarios?.map((u: any) => u.usuario_id ?? u.id_usuario ?? u) || []
+          detalles: cuenta.detalles?.map((d: any) => ({
+            producto_id: String(d.producto_id ?? d.id_producto),
+            precio: Number(d.precio ?? 0),
+            cantidad: Number(d.cantidad ?? 1),
+            sub_total: Number(d.sub_total ?? d.subtotal ?? 0),
+            comision: Number(d.comision ?? 0),
+            hostess_id: d.hostess_id != null ? String(d.hostess_id) : null
+          })) || [],
+          usuarios: cuenta?.usuarios?.map((u: any) => String(u.usuario_id ?? u.id_usuario ?? u)) || []
         })
       });
 
       if (!ventaRes.ok) {
-        throw new Error('Error al registrar la venta');
+        let errorMessage = 'Error al registrar la venta';
+        try {
+          const errorData = await ventaRes.json();
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+          console.error('[CobrarCuenta] Error del servidor:', errorData);
+        } catch {
+          console.error('[CobrarCuenta] No se pudo parsear error:', ventaRes.status);
+        }
+        throw new Error(errorMessage);
       }
 
       toast.success('Cuenta cobrada exitosamente');

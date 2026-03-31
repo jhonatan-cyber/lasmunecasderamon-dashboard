@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { logger } from '@/lib/utils/logger';
 
 const PUBLIC_PATHS = [
   '/',
@@ -101,7 +102,7 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/attendance': { module: 'attendance', action: 'view' },
   '/overtime': { module: 'overtime', action: 'view' },
   '/gratificaciones': { module: 'gratificaciones', action: 'view' },
-  '/cash-register': { module: 'cash_register', action: 'view' },
+  '/cash-register': { module: 'finances', action: 'view' },
   '/accounts': { module: 'accounts', action: 'view' },
   '/tips': { module: 'tips', action: 'view' },
   '/commissions': { module: 'commissions', action: 'view' },
@@ -172,26 +173,23 @@ async function checkUserPermission(
     });
 
     if (!response.ok) {
-      console.error(`[checkUserPermission] API error: ${response.status}`);
+    
       return false;
     }
 
     const result = await response.json();
-    console.log(
-      `[checkUserPermission] 🔐 ${module}.${action} para userId ${userId}: ${result.hasPermission ? '✅' : '❌'}`
-    );
-    if (!result.hasPermission) {
-      console.warn(`[checkUserPermission] 🚫 Acceso DENEGADO para userId ${userId} en ${module}.${action}`);
-    }
     return result.hasPermission === true;
   } catch (error) {
-    console.error('[checkUserPermission] Error:', error);
+   
     return false;
   }
 }
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const forwarded = request.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+
 
   const origin = request.headers.get('origin');
   const isApi = pathname.startsWith('/api/');
@@ -232,7 +230,7 @@ export default async function proxy(request: NextRequest) {
   });
 
   if (isPublicPath) {
-    return addApiHeaders(NextResponse.next());
+    return NextResponse.next();
   }
 
   const token =
@@ -276,15 +274,6 @@ export default async function proxy(request: NextRequest) {
 
     if (requiredPermission) {
       const [, { module, action }] = requiredPermission;
-
-      console.log('[Proxy] 🔍 Verificando ruta:', {
-        pathname,
-        module,
-        action,
-        userId,
-        userRole
-      });
-
       if (module === 'dashboard') {
         return addApiHeaders(NextResponse.next());
       }

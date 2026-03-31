@@ -9,18 +9,18 @@ export class AttendanceRepository {
      SELECT
         U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
         R.nombre AS rol,
-        COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
-        COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
-        COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0) AS aporte_total,
-        COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0) AS descuento_total,
-        (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0)) -
-        (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0)) -
-        (COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0)) AS total_final
-      FROM usuarios U
-      INNER JOIN roles R ON U.rol_id = R.id_rol
-      LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS ASIS ON ASIS.usuario_id = U.id_usuario
+COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
+         COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
+         COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0) AS aporte_total,
+         COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0) AS descuento_total,
+         (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0)) -
+         (COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.aporte, 0)) -
+         (COALESCE(SEM.semanas, 0) * COALESCE(U.descuento, 0)) AS total_final
+       FROM usuarios U
+       INNER JOIN roles R ON U.rol_id = R.id_rol
+LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS ASIS ON ASIS.usuario_id = U.id_usuario
       LEFT JOIN (SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas FROM asistencias WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1) GROUP BY usuario_id) AS SEM ON SEM.usuario_id = U.id_usuario
-      WHERE COALESCE(ASIS.total_asistencias, 0) > 0
+       WHERE COALESCE(ASIS.total_asistencias, 0) > 0
       ORDER BY nombre_completo;
     `;
     return await rawQuery(sql);
@@ -35,8 +35,8 @@ export class AttendanceRepository {
     const totalUsuariosRes = await query<any[]>("SELECT COUNT(*) as total FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id WHERE r.nombre != 'administrador' AND u.estado = 1");
     const totalUsuarios = Number(totalUsuariosRes[0]?.total || 0);
 
-    const asistenciaHoy = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha = ? AND estado = 1', [fechaHoy]);
-    const presentesHoy = asistenciaHoy.length;
+    const asistenciasHoy = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha = ? AND estado = 1', [fechaHoy]);
+    const presentesHoy = asistenciasHoy.length;
 
     let stats = { presentes: presentesHoy, ausentes: totalUsuarios - presentesHoy, porcentaje: totalUsuarios > 0 ? Math.round((presentesHoy / totalUsuarios) * 100) : 0, fechaApertura: fechaHoy, fechaCierre: fechaHoy };
 
@@ -50,19 +50,41 @@ export class AttendanceRepository {
     return { total: totalUsuarios, ...stats };
   }
 
-  static async register(body: any, currentUser?: { id: string }) {
+  static async register(body: any, currentUser?: { id: string }, ip?: string) {
     const { qrData } = AttendanceRegisterSchema.parse(body);
     let targetUser: any = null;
     let isSystemCode = false;
 
-    const users = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1', [qrData]);
-    if (users.length > 0) {
-      targetUser = users[0];
+    // Si tiene 8 o menos caracteres = código de sistema
+    // Si tiene más de 8 caracteres = QR del usuario
+    if (qrData.length <= 8) {
+      // Es código de sistema - verificar contra tabla codigos (solo buscar si es código de sistema)
+      const codes = await query<any[]>('SELECT codigo FROM codigos WHERE estado = 1 AND codigo = ? LIMIT 1', [qrData]);
+      
+      if (codes.length === 0) {
+        // Código NO encontrado - error inmediato, sin hacer nada más
+        throw new Error('Codigo invalido, expirado o ya utilizado');
+      }
+      
+      // Código encontrado - continuar solo si hay usuario logueado
+      if (!currentUser) {
+        throw new Error('Codigo invalido, expirado o ya utilizado');
+      }
+      
+      const logged = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1', [currentUser.id]);
+      if (logged.length > 0) { 
+        targetUser = logged[0]; 
+        isSystemCode = true; 
+      } else {
+        throw new Error('Codigo invalido, expirado o ya utilizado');
+      }
     } else {
-      const codes = await query<any[]>('SELECT codigo FROM codigos WHERE estado = 1 ORDER BY fecha_crea DESC LIMIT 1');
-      if (codes.length > 0 && codes[0].codigo === qrData && currentUser) {
-        const logged = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1', [currentUser.id]);
-        if (logged.length > 0) { targetUser = logged[0]; isSystemCode = true; }
+      // Es QR del usuario - buscar por qr_token
+      const users = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1', [qrData]);
+      if (users.length > 0) {
+        targetUser = users[0];
+      } else {
+        throw new Error('Codigo invalido, expirado o ya utilizado');
       }
     }
 
@@ -71,31 +93,24 @@ export class AttendanceRepository {
     const nowStr = getNowInBusinessTimezone();
     const hour = parseInt(nowStr.substring(11, 13), 10);
 
-    // Allow registration only during business hours (until 23:00)
     if (hour >= 23) return { success: false, message: 'Horario cerrado (despues de las 23:00)' };
 
     const fechaHoy = nowStr.substring(0, 10);
     const existing = await query<any[]>('SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?', [targetUser.id_usuario, fechaHoy]);
     const alreadyRegistered = existing.length > 0;
 
-    // SIEMPRE regeneramos el QR porque es de un solo uso
-    if (isSystemCode) {
-      const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
-      await regenerateAttendanceCode();
-    } else {
-      const crypto = await import('crypto');
-      await BaseRepository.update(query, 'usuarios', 'id_usuario', targetUser.id_usuario, {
-        qr_token: crypto.randomBytes(16).toString('hex')
-      });
-    }
-
-    // Si ya tiene asistencia, retornamos sin crear nuevo registro
     if (alreadyRegistered) {
-      return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencias registrada hoy' };
+      // Solo actualizar ubicación, no regenerar código
+      const ipLimpia = ip?.split(',')[0].trim() || null;
+      await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
+        en_local: 1,
+        ...(ipLimpia && { ip_address: ipLimpia }),
+      });
+      return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencias registrada hoy. Ubicacion actualizada.' };
     }
 
+    // Solo registrar y actualizar QR si es nuevo
     const timeStr = nowStr.substring(11, 19);
-
     const id = generateUUID();
     await BaseRepository.insert(query, 'asistencias', {
       id_asistencia: id,
@@ -105,9 +120,23 @@ export class AttendanceRepository {
       estado: 1
     });
 
+    // Actualizar login
+    const ipLimpia = ip?.split(',')[0].trim() || null;
     await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
       en_local: 1,
+      ...(ipLimpia && { ip_address: ipLimpia }),
     });
+
+    // Regenerar código solo si es código de sistema (al final, no bloquea respuesta)
+    if (isSystemCode) {
+      setTimeout(async () => {
+        try {
+          const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
+          await regenerateAttendanceCode();
+        } catch (e) { /* ignorado */ }
+      }, 100);
+    }
+
     return {
       success: true,
       message: `Tu asistencia ha sido registrada`,

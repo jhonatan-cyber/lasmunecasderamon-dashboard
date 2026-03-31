@@ -1,5 +1,5 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
@@ -188,7 +188,7 @@ export class CuentaRepository {
     if (body.extraTiempo > 0) {
       const c = await query<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
       if (c.length) {
-        const createTimeObj = new Date(c[0].fecha_crea.toString().replace(' ', 'T'));
+        const createTimeObj = parseBusinessDate(c[0].fecha_crea);
         const elapsed = Math.floor((nowObj.getTime() - createTimeObj.getTime()) / 1000);
         const remaining = Math.max(0, (c[0].tiempo * 60) - elapsed);
         const nuevoTiempo = Math.ceil(remaining / 60) + Number(body.extraTiempo);

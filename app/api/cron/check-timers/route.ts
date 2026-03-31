@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { query } from '@/lib/database/db';
+import { query, withTransaction } from '@/lib/database/db';
 import { sendPushNotification, sendPushByRole } from '@/lib/integrations/pushNotifications';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { RoomManager } from '@/lib/services/RoomManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,10 +79,24 @@ export const GET = withAppApiWrapper(async () => {
         type: item.type,
         room_name: item.room_name
       });
-      if (item.habitacion_id)
-        await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
-          item.habitacion_id
-        ]);
+      
+      // Liberar habitación y anfitrionas
+      if (item.habitacion_id) {
+        await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [item.habitacion_id]);
+        
+        // Si es un servicio, liberar las anfitrionas
+        if (item.type === 'servicio') {
+          await withTransaction(async (trx) => {
+            const anfsResult = await trx<any[]>('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [item.id]);
+            const hostessIds = anfsResult.map(a => a.usuario_id);
+            if (hostessIds.length > 0) {
+              await RoomManager.updateHostessServiceStatus(trx, hostessIds, item.id);
+            }
+            // Liberar la habitación usando el RoomManager
+            await RoomManager.resumeRoomLogic(trx, item.habitacion_id, item.id);
+          });
+        }
+      }
     }
   }
 

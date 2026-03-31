@@ -1,5 +1,5 @@
 import React from "react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "./tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
 
 interface ActionButtonWithTooltipProps {
   onClick: () => void;

@@ -1,17 +1,18 @@
 import { query } from '@/lib/database/db';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export class TimerRepository {
   static async getActive() {
-    const nowStr = getNowInBusinessTimezone();
-    const nowObj = new Date(nowStr.replace(' ', 'T'));
+    const now = new Date(); // Referencia real de tiempo
 
     const [activeServices, activeVentas, activeCuentas] = await Promise.all([
       query(`
         SELECT s.id_servicio as id, s.codigo, s.id_servicio as servicioId, h.nombre as roomName, 
                s.tiempo as duration, s.fecha_crea as startTime, s.estado, s.paused_at as pausedAt, 
                s.habitacion_id as roomId, 'servicio' as tipoTransaccion,
+               h.comision_anfitriona as habitacion_comision,
+               s.precio_servicio, s.precio_habitacion, s.iva, s.cliente_id,
                COALESCE(GROUP_CONCAT(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE CONCAT(u.nombre, ' ', u.apellido) END SEPARATOR ', '), 'Sin asignar') as anfitrionas,
                GROUP_CONCAT(DISTINCT ds.usuario_id SEPARATOR ',') as anfitrionas_ids,
                COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente') as clienteNombre,
@@ -24,7 +25,7 @@ export class TimerRepository {
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
         WHERE s.estado IN (2, 3) AND s.tiempo > 0 AND (s.estado = 3 OR TIMESTAMPDIFF(SECOND, s.fecha_crea, ?) < (s.tiempo * 60))
         GROUP BY s.id_servicio
-      `, [nowStr]),
+      `, [getNowInBusinessTimezone()]),
       query(`
         SELECT v.id_venta as id, v.codigo, v.id_venta as servicioId, h.nombre as roomName, 
                v.tiempo as duration, v.fecha_crea as startTime, v.estado, v.paused_at as pausedAt, 
@@ -41,21 +42,21 @@ export class TimerRepository {
         LEFT JOIN usuarios creator ON creator.id_usuario = v.created_by
         WHERE v.estado IN (2, 3) AND v.tiempo > 0 AND (v.estado = 3 OR TIMESTAMPDIFF(SECOND, v.fecha_crea, ?) < (v.tiempo * 60))
         GROUP BY v.id_venta
-      `, [nowStr]),
+      `, [getNowInBusinessTimezone()]),
       query(`
         SELECT c.id_cuenta as id, h.nombre as roomName, c.tiempo as duration, c.fecha_crea as startTime, 
                c.estado, NULL as pausedAt, c.habitacion_id as roomId, 'cuenta' as tipoTransaccion
         FROM cuentas c 
         JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
         WHERE c.estado = 1 AND c.tiempo > 0 AND TIMESTAMPDIFF(SECOND, c.fecha_crea, ?) < (c.tiempo * 60)
-      `, [nowStr])
+      `, [getNowInBusinessTimezone()])
     ]);
 
     const formatItem = (item: any) => {
-      const startTime = item.startTime ? new Date(item.startTime) : nowObj;
+      const startTime = parseBusinessDate(item.startTime);
       const isPaused = item.estado === 3;
       const duration = Number(item.duration || 0);
-      const elapsedSecs = Math.floor((nowObj.getTime() - startTime.getTime()) / 1000);
+      const elapsedSecs = Math.floor((now.getTime() - startTime.getTime()) / 1000);
       const remainingTime = isPaused ? duration * 60 : Math.max(0, duration * 60 - elapsedSecs);
 
       return {
@@ -102,7 +103,9 @@ export class TimerRepository {
     const [sP] = await query<any[]>('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId]);
 
     if (vP || sP) {
-      const resumeV = vP && (!sP || new Date(vP.paused_at.toString().replace(' ', 'T')) >= new Date(sP.paused_at.toString().replace(' ', 'T')));
+      const vPDate = vP ? parseBusinessDate(vP.paused_at) : null;
+      const sPDate = sP ? parseBusinessDate(sP.paused_at) : null;
+      const resumeV = vP && (!sP || (vPDate?.getTime() || 0) >= (sPDate?.getTime() || 0));
       if (resumeV) await query('UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_venta = ?', [nowStr, vP.id_venta]);
       else await query('UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_servicio = ?', [nowStr, sP.id_servicio]);
     } else {
