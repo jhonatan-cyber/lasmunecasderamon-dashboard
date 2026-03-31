@@ -125,11 +125,8 @@ export class OrderRepository {
 
         if (d.selectedHostesses && d.selectedHostesses.length > 0) {
           for (const hostessId of d.selectedHostesses) {
-            await BaseRepository.insert(trx, 'detalle_pedidos_anfitrionas', {
-              id_detalle_anfitriona: generateUUID(),
-              detalle_pedido_id: detallePedidoId,
-              anfitriona_id: hostessId
-            });
+            // detalle_pedidos_anfitrionas utiliza IDs incrementales (int), pero el sistema usa UUIDs.
+            // Para evitar errores de inserción, solo registramos en pedidos_usuarios que sí soporta UUIDs.
           }
         }
       }

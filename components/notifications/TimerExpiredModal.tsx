@@ -58,7 +58,9 @@ export default function TimerExpiredModal({
                     ? 'Servicio completado'
                     : tipoTransaccion === 'venta'
                       ? 'Venta completada'
-                      : 'Tiempo de cuenta vencido'}
+                      : tipoTransaccion === 'cuenta'
+                        ? 'Tiempo de cuenta vencido'
+                        : 'Tiempo terminado'}
               </p>
             </div>
           </div>
@@ -88,14 +90,22 @@ export default function TimerExpiredModal({
               {tipoTransaccion === 'servicio' ? (
                 <Home className='w-5 h-5 text-indigo-500' />
               ) : tipoTransaccion === 'venta' ? (
-                <ShoppingBag className='w-5 h-5 text-orange-500' />
+                <ShoppingBag className='w-5 h-5 text-emerald-500' />
+              ) : tipoTransaccion === 'cuenta' ? (
+                <Clock className='w-5 h-5 text-amber-500' />
               ) : (
-                <Clock className='w-5 h-5 text-yellow-500' />
+                <Clock className='w-5 h-5 text-gray-500' />
               )}
               <div>
                 <p className='text-sm text-gray-600 dark:text-gray-400'>Tipo</p>
                 <p className='font-medium text-gray-900 dark:text-gray-100 capitalize'>
-                  {tipoTransaccion}
+                  {tipoTransaccion === 'servicio'
+                    ? 'Servicio'
+                    : tipoTransaccion === 'venta'
+                      ? 'Venta'
+                      : tipoTransaccion === 'cuenta'
+                        ? 'Cuenta'
+                        : tipoTransaccion}
                 </p>
               </div>
             </div>
@@ -166,7 +176,11 @@ export default function TimerExpiredModal({
             <p className='font-medium'>
               {isTemporary
                 ? 'Timer temporal finalizado - Volviendo al servicio principal'
-                : `${tipoTransaccion === 'servicio' ? 'Servicio' : 'Venta'} finalizado - Habitación liberada automáticamente`}
+                : tipoTransaccion === 'servicio'
+                  ? 'Servicio finalizado - Habitación liberada automáticamente'
+                  : tipoTransaccion === 'venta'
+                    ? 'Venta finalizada - Habitación liberada automáticamente'
+                    : 'Cuenta finalizada - Habitación liberada automáticamente'}
             </p>
           </div>
         </div>

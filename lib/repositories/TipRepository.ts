@@ -7,6 +7,7 @@ export class TipRepository {
   static async register(body: any) {
     const { venta_id, monto } = TipRegisterSchema.parse(body);
 
+    // Intentar obtener usuarios logueados (cajero/garzón)
     const logueados = await query<any[]>(`
       SELECT DISTINCT u.id_usuario FROM logins l
       INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
@@ -14,10 +15,22 @@ export class TipRepository {
       WHERE l.estado = 1 AND l.en_local = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
     `);
 
-    if (logueados.length === 0)
-      throw new Error('No hay usuarios logueados disponibles para distribuir la propina');
+    // Si no hay usuarios logueados, distribuir entre todas las anfitrionas activas
+    let distribucionUsuarios = logueados;
+    if (logueados.length === 0) {
+      console.log('[TipRepository] No hay cajeros/garzones logueados, distribuyendo entre anfitrionas activas');
+      const anfitrionas = await query<any[]>(`
+        SELECT DISTINCT u.id_usuario FROM usuarios u
+        INNER JOIN roles r ON r.id_rol = u.rol_id
+        WHERE u.estado = 1 AND r.nombre IN ('anfitriona')
+      `);
+      if (anfitrionas.length === 0) {
+        throw new Error('No hay usuarios disponibles para distribuir la propina');
+      }
+      distribucionUsuarios = anfitrionas;
+    }
 
-    const montoPorUsuario = monto / logueados.length;
+    const montoPorUsuario = monto / distribucionUsuarios.length;
     const now = getNowInBusinessTimezone();
     const id = generateUUID();
 
@@ -30,13 +43,13 @@ export class TipRepository {
         fecha_crea: now
       });
 
-      for (const u of logueados) {
+      for (const u of distribucionUsuarios) {
         await BaseRepository.insert(trx, 'detalle_propinas', {
-          id_detalle_propina: generateUUID(), // Aseguramos que tenga ID si la tabla lo requiere
+          id_detalle_propina: generateUUID(),
           propina_id: id,
           usuario_id: u.id_usuario,
           monto: montoPorUsuario,
-          estado: 1, // 1 = por cobrar, 0 = cobrado
+          estado: 1,
           fecha_crea: now
         });
       }
@@ -45,8 +58,8 @@ export class TipRepository {
     return {
       id,
       montoPorUsuario,
-      count: logueados.length,
-      usuarios_distribucion: logueados.length
+      count: distribucionUsuarios.length,
+      usuarios_distribucion: distribucionUsuarios.length
     };
   }
 
@@ -93,10 +106,10 @@ export class TipRepository {
   static async getByUser(userId: string) {
     return await query(
       `
-      SELECT P.id_propina, P.fecha_crea AS fecha_hora, 
+      SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora, 
              COALESCE(V.fecha_crea, P.fecha_crea) AS fecha_crea, 
-             V.codigo AS codigo_venta, DP.monto,
-             P.estado, CASE WHEN P.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
+             V.codigo AS codigo_venta, DP.monto, V.id_venta AS venta_id,
+             DP.estado, CASE WHEN DP.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
       FROM propinas P 
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       LEFT JOIN ventas V ON V.id_venta = P.venta_id
@@ -109,12 +122,15 @@ export class TipRepository {
   static async getDetails(usuario_id: string, startDate?: string, endDate?: string) {
     let sql = `
       SELECT 
+        p.id_propina AS propina_id,
+        dp.id_detalle_propina,
         COALESCE(v.fecha_crea, p.fecha_crea) as fecha_crea, 
         v.total, 
         dp.monto, 
         COALESCE(p.estado, 1) as estado, 
         v.metodo_pago, 
-        v.codigo
+        v.codigo AS codigo_venta,
+        v.id_venta AS venta_id
       FROM propinas p
       LEFT JOIN ventas v ON v.id_venta = p.venta_id
       INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina
@@ -129,5 +145,33 @@ export class TipRepository {
 
     sql += ' ORDER BY COALESCE(v.fecha_crea, p.fecha_crea) DESC';
     return await query(sql, params);
+  }
+
+  static async getByIdWithParticipants(id: string) {
+    const tip = await query<any[]>(
+      `
+      SELECT id_propina, venta_id, propina AS monto_total, fecha_crea
+      FROM propinas WHERE id_propina = ?
+    `,
+      [id]
+    );
+
+    if (tip.length === 0) return null;
+
+    const participantes = await query<any[]>(
+      `
+      SELECT U.id_usuario, U.nick, U.nombre, DP.monto, DP.estado
+      FROM detalle_propinas DP
+      INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
+      WHERE DP.propina_id = ?
+    `,
+      [id]
+    );
+
+    return {
+      ...tip[0],
+      conteo_usuarios: participantes.length,
+      participantes
+    };
   }
 }

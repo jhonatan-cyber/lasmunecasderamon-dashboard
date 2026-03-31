@@ -13,10 +13,12 @@ import { Switch } from '@/components/ui/switch';
 import { NumberInputField } from '@/components/users/NumberInputField';
 import { DollarSign } from 'lucide-react';
 
+import { type UserFormValues } from '@/hooks/personal/useUserForm';
+
 interface HousingDiscountFieldProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
-  discountName: string;
+  control: Control<UserFormValues>;
+  watch: UseFormWatch<UserFormValues>;
+  discountName: keyof UserFormValues;
   formattedValue: string;
   onValueChange: (value: string, onChange: (value: number) => void) => void;
 }

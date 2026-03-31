@@ -136,7 +136,7 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
       FROM permissions p
       INNER JOIN role_permissions rp ON p.id = rp.permission_id
       WHERE rp.role_id = ? AND p.deleted_at IS NULL
-    `, [roleId]) as Array<{ module: keyof UserPermissions; action: string }>;
+    `, [String(roleId)]) as Array<{ module: keyof UserPermissions; action: string }>;
 
 
     const userPerms: UserPermissions = {
@@ -159,6 +159,9 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
       'view_details': 'read',
       'create': 'write',
       'edit': 'write',
+      'open': 'write',
+      'close': 'write',
+      'withdraw': 'write',
       'delete': 'delete',
       'export': 'export',
       'anulate': 'anulate',
@@ -167,7 +170,14 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
 
     permissions.forEach(perm => {
       const mappedAction = actionMap[perm.action] || perm.action;
-      const modulePerms = userPerms[perm.module as keyof UserPermissions];
+      
+      // Mapear nombres de módulos si son distintos entre la BD y el middleware
+      let moduleName = perm.module as string;
+      if (moduleName === 'cash_register' || moduleName === 'cashregister') {
+        moduleName = 'finances';
+      }
+
+      const modulePerms = userPerms[moduleName as keyof UserPermissions];
       if (modulePerms && mappedAction in modulePerms) {
         (modulePerms as any)[mappedAction] = true;
       }

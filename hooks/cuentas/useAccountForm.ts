@@ -16,6 +16,7 @@ export function useAccountForm() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const [cantidades, setCantidades] = useState<Record<string, number>>({});
+    const [selectedTime, setSelectedTime] = useState(60);
 
     useEffect(() => {
         const searchProducts = async () => {
@@ -162,7 +163,8 @@ export function useAccountForm() {
             time: number,
             timerKey: string,
             timerType: string,
-            notes: string
+            notes: string,
+            transactionType: 'servicio' | 'venta' | 'cuenta'
         ) => void,
         onSuccess: () => void
     ) => {
@@ -204,6 +206,21 @@ export function useAccountForm() {
                 comision: producto.comision ?? 0
             }));
 
+            // Calcular tiempo antes de crear la cuenta
+            let timerMinutes = 0;
+            let habitacionSeleccionada: any = null;
+            if (selectedHabitacion) {
+                habitacionSeleccionada = rooms.find(
+                    room => room.id.toString() === selectedHabitacion
+                );
+                if (habitacionSeleccionada) {
+                    const comision = habitacionSeleccionada.comision_anfitriona ?? 0;
+                    const roomTime = habitacionSeleccionada.time ?? habitacionSeleccionada.tiempo ?? 0;
+                    // Con comisión: usa tiempo de la habitación. Sin comisión: usa tiempo manual
+                    timerMinutes = comision > 0 ? (roomTime || 60) : selectedTime;
+                }
+            }
+
             const cuentaData: CreateCuentaRequest = {
                 codigo: generateRandomCode(),
                 cliente_id: selectedCliente && selectedCliente !== 'none' ? selectedCliente : null,
@@ -211,27 +228,24 @@ export function useAccountForm() {
                 sub_total: subTotal,
                 total: total,
                 ...(selectedHabitacion && { habitacion_id: selectedHabitacion }),
+                ...(timerMinutes > 0 && { tiempo: timerMinutes }),
                 detalles,
                 usuarios: selectedAnfitrionas
             };
 
             const result = await createCuenta(cuentaData);
 
-            if (selectedHabitacion) {
-                const habitacionSeleccionada = rooms.find(
-                    room => room.id.toString() === selectedHabitacion
+            if (habitacionSeleccionada && timerMinutes > 0) {
+                startTimer(
+                    String(result.id || 0),
+                    String(habitacionSeleccionada.id || 0),
+                    habitacionSeleccionada.name || habitacionSeleccionada.nombre || '',
+                    timerMinutes,
+                    `CUENTA_${result.id || Date.now()}`,
+                    'Cliente Cuenta',
+                    '',
+                    'cuenta' as const
                 );
-                if (habitacionSeleccionada) {
-                    startTimer(
-                        String(result.data?.cuenta_id || 0),
-                        String(habitacionSeleccionada.id || 0),
-                        habitacionSeleccionada.name,
-                        habitacionSeleccionada.time || 60,
-                        `CUENTA_${result.data?.cuenta_id || Date.now()}`,
-                        'Cliente Cuenta',
-                        ''
-                    );
-                }
             }
 
             toast.success('Cuenta creada exitosamente');
@@ -260,6 +274,9 @@ export function useAccountForm() {
         maxChampagnePrice,
         maxAnfitrionas,
         total: calculateTotal(),
+
+        selectedTime,
+        setSelectedTime,
 
         setSelectedCliente,
         setSelectedAnfitrionas,

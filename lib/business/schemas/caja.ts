@@ -41,12 +41,12 @@ export const CajaSchema = z.object({
 export type CajaType = z.infer<typeof CajaSchema>;
 
 export const CajaOpenSchema = z.object({
-  usuario_id_apertura: z.string().min(1, 'ID de usuario es requerido'),
+  usuario_id_apertura: z.union([z.string(), z.number()]).transform(val => String(val)),
   monto_apertura: z.number().min(0, 'El monto de apertura debe ser mayor o igual a 0')
 });
 
 export const CajaUpdateSchema = z.object({
-  id_caja: z.string().or(z.number()).optional(),
+  id_caja: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
   ventas: z.number().optional(),
   efectivo: z.number().optional(),
   tarjeta: z.number().optional(),
@@ -56,7 +56,7 @@ export const CajaUpdateSchema = z.object({
 });
 
 export const CajaCloseSchema = z.object({
-  id_caja: z.string().min(1, 'ID de caja es requerido'),
+  id_caja: z.union([z.string(), z.number()]).transform(val => String(val)),
   monto_cierre: z.number().min(0).optional(),
-  usuario_id_cierre: z.string().min(1, 'ID de usuario es requerido')
+  usuario_id_cierre: z.union([z.string(), z.number()]).transform(val => String(val))
 });

@@ -4,7 +4,13 @@ import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
 
 export class ProductRepository {
-  private static mapProductFromDB(row: any): ProductType & { categoria?: string } {
+  private static mapProductFromDB(row: any): ProductType & { 
+    categoria?: string,
+    nombre?: string,
+    precio?: number,
+    comision?: number,
+    id_producto?: string
+  } {
     return {
       ...ProductSchema.parse({
         id: row.id_producto,
@@ -89,7 +95,13 @@ export class ProductRepository {
     if (data.commission !== undefined) updateData.comision = data.commission;
     if (data.description !== undefined) updateData.descripcion = data.description;
     if (data.status !== undefined) updateData.estado = data.status;
-    if (foto !== undefined) updateData.foto = foto;
+    if (foto !== undefined) {
+      console.log('[ProductRepository] Updating foto:', foto);
+      updateData.foto = foto;
+    }
+
+    console.log('[ProductRepository] update - id:', id);
+    console.log('[ProductRepository] update - updateData:', JSON.stringify(updateData, null, 2));
 
     await BaseRepository.update(query, 'productos', 'id_producto', id, updateData);
     return await this.getById(id);

@@ -54,7 +54,7 @@ export default function CommissionsDetalleModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDetalles = async (usuarioId: number) => {
+  const fetchDetalles = async (usuarioId: string) => {
     if (!usuarioId) return;
 
     setLoading(true);
@@ -78,7 +78,7 @@ export default function CommissionsDetalleModal({
 
   useEffect(() => {
     if (open && usuario) {
-      fetchDetalles(Number(usuario.id_usuario));
+      fetchDetalles(usuario.id_usuario);
     }
   }, [open, usuario]);
 
@@ -145,115 +145,80 @@ export default function CommissionsDetalleModal({
             <h3 className='text-sm font-semibold mb-4 text-center text-gray-600 dark:text-gray-400'>
               Detalle de Comisiones
             </h3>
+          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
             <div className='overflow-x-auto'>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50/50 dark:bg-gray-900/50">
-                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>CÓDIGO</TableHead>
-                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>FECHA</TableHead>
-                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>TIPO</TableHead>
-                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>PRODUCTO</TableHead>
-                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>COMISIÓN</TableHead>
-                    <TableHead className='text-xs sm:text-sm text-center dark:text-gray-400'>ESTADO</TableHead>
-                    <TableHead className='text-xs sm:text-sm dark:text-gray-400'>FECHA PAGO</TableHead>
+              <Table className='min-w-full text-base text-center'>
+                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800 uppercase'>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500 text-start'>CÓDIGO</TableHead>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500'>FECHA</TableHead>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500'>TIPO</TableHead>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500'>PRODUCTO</TableHead>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500'>COMISIÓN</TableHead>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500'>ESTADO</TableHead>
+                    <TableHead className='py-4 px-5 text-xs text-gray-500'>FECHA PAGO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Skeleton className='h-6 w-20' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-24' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-16' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-32' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-20' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-16' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-24' />
-                        </TableCell>
+                      <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-4 w-20' /></TableCell>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-4 w-24' /></TableCell>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-4 w-16' /></TableCell>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-4 w-32' /></TableCell>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-4 w-20' /></TableCell>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-6 w-16 rounded-full mx-auto' /></TableCell>
+                        <TableCell className='py-4 px-5'><Skeleton className='h-4 w-24' /></TableCell>
                       </TableRow>
                     ))
                   ) : error ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className='text-center text-red-600 text-xs sm:text-sm'
-                      >
+                      <TableCell colSpan={7} className='text-center text-red-600 py-8'>
                         {error}
-                        <Button
-                          onClick={() => fetchDetalles(Number(usuario.id_usuario))}
-                          className='mt-2 ml-4 text-xs sm:text-sm'
-                          size='sm'
-                        >
+                        <Button onClick={() => fetchDetalles(usuario.id_usuario)} className='mt-2 ml-4' size='sm'>
                           Reintentar
                         </Button>
                       </TableCell>
                     </TableRow>
                   ) : detalles.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className='text-center text-gray-600 dark:text-gray-400 text-xs sm:text-sm py-8'
-                      >
+                      <TableCell colSpan={7} className='text-center text-gray-600 dark:text-gray-400 py-8'>
                         No hay detalles de comisiones para mostrar
                       </TableCell>
                     </TableRow>
                   ) : (
                     detalles.map((detalle, index) => (
-                      <TableRow key={index}>
-                        <TableCell className='font-mono text-xs sm:text-sm font-bold'>
+                      <TableRow key={index} className='border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800'>
+                        <TableCell className='py-4 px-5 font-mono text-sm font-bold text-start text-blue-600'>
                           {detalle.codigo_venta || detalle.codigo_servicio || '-'}
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm'>
-                          <div className='flex items-center gap-2'>
-                            <Calendar className='w-3 h-3 text-gray-400 dark:text-gray-500' />
-                            <div>
-                              <div className="dark:text-gray-200">{formatSoloFecha(detalle.fecha_hora)}</div>
-                              <div className='text-gray-500 dark:text-gray-400 flex items-center gap-1 text-[10px]'>
-                                <Clock className='w-2.5 h-2.5' />
-                                {formatSoloHora(detalle.fecha_hora)}
-                              </div>
-                            </div>
+                        <TableCell className='py-4 px-5 text-sm'>
+                          <div className='flex flex-col items-center gap-1'>
+                            <div className="font-medium">{formatSoloFecha(detalle.fecha_hora)}</div>
+                            <div className='text-gray-400 text-[10px]'>{formatSoloHora(detalle.fecha_hora)}</div>
                           </div>
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm'>
-                          <Badge variant='outline' className='capitalize text-[10px] px-1.5 py-0'>
+                        <TableCell className='py-4 px-5'>
+                          <Badge variant='outline' className='capitalize bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 text-[10px]'>
                             {detalle.tipo}
                           </Badge>
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm max-w-[150px]'>
+                        <TableCell className='py-4 px-5 text-sm max-w-[150px]'>
                           <div className='truncate font-medium dark:text-gray-300' title={detalle.producto}>
                             {detalle.producto || '-'}
                           </div>
                         </TableCell>
-                        <TableCell className='font-bold text-xs sm:text-sm text-green-600 dark:text-green-400'>
+                        <TableCell className='py-4 px-5 font-bold text-sm text-green-600 dark:text-green-400'>
                           {formatCurrencyNoDecimals(detalle.monto)}
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm text-center'>
-                          <Badge
-                            className={`${getEstadoColor(detalle.estado)} text-[10px] px-1.5 py-0`}
-                          >
+                        <TableCell className='py-4 px-5'>
+                          <Badge className={`${getEstadoColor(detalle.estado)} text-xs rounded-full px-2 py-1 font-medium mx-auto block w-fit`}>
                             {detalle.estado}
                           </Badge>
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm dark:text-gray-300'>
-                          {detalle.fecha_pago ? (
-                            formatSoloFecha(detalle.fecha_pago)
-                          ) : (
-                            <span className='text-gray-400 dark:text-gray-500'>Pendiente</span>
-                          )}
+                        <TableCell className='py-4 px-5 text-sm dark:text-gray-300'>
+                          {detalle.fecha_pago ? formatSoloFecha(detalle.fecha_pago) : <span className='text-gray-400'>Pendiente</span>}
                         </TableCell>
                       </TableRow>
                     ))
@@ -261,6 +226,7 @@ export default function CommissionsDetalleModal({
                 </TableBody>
               </Table>
             </div>
+          </div>
           </div>
         </div>
 

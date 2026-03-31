@@ -44,6 +44,7 @@ export interface CreateCuentaRequest {
   habitacion_id?: string | number | null;
   pedido_id?: string | number | null;
   servicio_id?: string | number | null;
+  tiempo?: number;
   detalles: CreateDetalleCuentaRequest[];
   usuarios?: Array<string | number>;
 }

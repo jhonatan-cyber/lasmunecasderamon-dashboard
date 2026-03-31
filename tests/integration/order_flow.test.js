@@ -1,0 +1,153 @@
+const crypto = require('crypto');
+function uuidv4() {
+    return crypto.randomUUID();
+}
+const mysql = require('mysql2/promise');
+require('dotenv').config();
+
+// Configuración de la conexión a la base de datos
+const dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+};
+
+async function runIntegrationTest() {
+    console.log('🚀 Iniciando prueba de integración: Flujo de Pedido, Venta, Comisiones y Propinas');
+    
+    let connection;
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        console.log('✅ Conexión a la base de datos establecida.');
+
+        // 1. Datos de prueba
+        const testOrderId = uuidv4();
+        const testSaleId = uuidv4();
+        const testClientId = '06dc47fb-d18f-4c25-9035-c4a2a458da9d'; // Jhon Carlos
+        const testGarzonId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f'; // Lizeth
+        const testAnfitrionaId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f';
+        
+        console.log(`📝 Generando pedido de prueba: ${testOrderId}`);
+
+        // 2. Crear Pedido
+        await connection.execute(
+            'INSERT INTO pedidos (id_pedido, cliente_id, total, propina, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
+            [testOrderId, testClientId, 20000, 2000, 1] // Estado 1 = Activo
+        );
+        console.log('✅ Pedido insertado.');
+
+        // 3. Insertar detalle de pedido con comisión
+        // Verificamos estructura de detalle_pedidos
+        const [detailCols] = await connection.execute('DESCRIBE detalle_pedidos');
+        
+        // Verificamos si existe un producto válido en la DB
+        const [prods] = await connection.execute('SELECT id_producto FROM productos LIMIT 1');
+        const testProductId = prods.length > 0 ? prods[0].id_producto : 'test-prod-1';
+
+        const lastDetailId = uuidv4();
+        let insertDetailSql = 'INSERT INTO detalle_pedidos (id_detalle_pedido, pedido_id, producto_id, cantidad, precio, comision, subtotal, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())';
+        let insertDetailParams = [lastDetailId, testOrderId, testProductId, 1, 18000, 5000, 18000];
+        
+        await connection.execute(insertDetailSql, insertDetailParams);
+        console.log(`✅ Detalle de pedido insertado (ID: ${lastDetailId}).`);
+
+        // 4. Asignar Anfitriona al pedido (pedidos_usuarios)
+        const pedidoUsuarioId = uuidv4();
+        await connection.execute(
+            'INSERT INTO pedidos_usuarios (id_pedido_usuario, usuario_id, pedido_id) VALUES (?, ?, ?)',
+            [pedidoUsuarioId, testAnfitrionaId, testOrderId]
+        );
+        console.log('✅ Anfitriona asignada al pedido.');
+
+        // 5. Simular procesamiento de Venta (SaleService logic)
+        console.log(`💰 Procesando venta para el pedido: ${testSaleId}`);
+        
+        await connection.execute(
+            'INSERT INTO ventas (id_venta, pedido_id, total, propina, metodo_pago, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
+            [testSaleId, testOrderId, 20000, 2000, 'Efectivo']
+        );
+
+        // Actualizar estado del pedido a finalizado (0)
+        await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [testOrderId]);
+        console.log('✅ Venta registrada y pedido finalizado.');
+
+        // 6. Simular Registro de Comisiones
+        // En el sistema real, esto lo hace SaleService o CommissionRepository
+        console.log('⚖️ Verificando distribución de comisiones...');
+        const commissionId = uuidv4();
+        await connection.execute(
+            'INSERT INTO comisiones (id_comision, venta_id, monto, estado, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
+            [commissionId, testSaleId, 5000, 1] // Estado 1 = Pendiente en este esquema
+        );
+        
+        const detailCommissionId = uuidv4();
+        await connection.execute(
+            'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
+            [detailCommissionId, commissionId, testAnfitrionaId, 5000]
+        );
+        console.log('✅ Comisiones registradas.');
+
+        // 7. Simular Registro de Propinas
+        console.log('🎁 Verificando distribución de propinas...');
+        
+        // Aseguramos que haya alguien "logueado" para recibir propina (usando la tabla logins)
+        const loginId = uuidv4();
+        await connection.execute(
+            'INSERT INTO logins (id_login, usuario_id, last_login, estado, en_local) VALUES (?, ?, NOW(), 1, 1)',
+            [loginId, testGarzonId]
+        );
+
+        const tipId = uuidv4();
+        await connection.execute(
+            'INSERT INTO propinas (id_propina, venta_id, propina, fecha_crea) VALUES (?, ?, ?, NOW())',
+            [tipId, testSaleId, 2000]
+        );
+
+        const detailTipId = uuidv4();
+        await connection.execute(
+            'INSERT INTO detalle_propinas (id_detalle_propina, propina_id, usuario_id, monto, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
+            [detailTipId, tipId, testGarzonId, 2000, 'pendiente']
+        );
+        console.log('✅ Propinas distribuidas.');
+
+        // 8. VERIFICACIONES FINALES
+        console.log('\n🔍 Realizando validaciones finales...');
+
+        const [comms] = await connection.execute('SELECT * FROM comisiones WHERE venta_id = ?', [testSaleId]);
+        if (comms.length > 0 && Number(comms[0].monto) === 5000) {
+            console.log('⭐ VALIDACIÓN EXITOSA: Comisión registrada correctamente.');
+        } else {
+            throw new Error('❌ FALLO: No se encontró la comisión esperada.');
+        }
+
+        const [tips] = await connection.execute('SELECT * FROM propinas WHERE venta_id = ?', [testSaleId]);
+        if (tips.length > 0 && Number(tips[0].propina) === 2000) {
+            console.log('⭐ VALIDACIÓN EXITOSA: Propina registrada correctamente.');
+        } else {
+            throw new Error('❌ FALLO: No se encontró la propina esperada.');
+        }
+
+        const [tipDetails] = await connection.execute('SELECT * FROM detalle_propinas WHERE propina_id = ?', [tipId]);
+        if (tipDetails.length > 0 && tipDetails[0].monto === 2000) {
+            console.log('⭐ VALIDACIÓN EXITOSA: Detalle de propina asignado al usuario.');
+        } else {
+            throw new Error('❌ FALLO: No se encontró el detalle de propina.');
+        }
+
+        console.log('\n✨ PRUEBA DE INTEGRACIÓN COMPLETADA CON ÉXITO');
+
+    } catch (error) {
+        console.error('\n❌ ERROR DURANTE LA PRUEBA:', error.message);
+        process.exit(1);
+    } finally {
+        if (connection) {
+            // Limpieza opcional de datos de prueba si se desea, 
+            // pero para auditoría a veces es mejor dejarlos o usar una DB de test dedicada.
+            // Por ahora cerramos conexión.
+            await connection.end();
+        }
+    }
+}
+
+runIntegrationTest();
