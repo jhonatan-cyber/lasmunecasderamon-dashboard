@@ -5,13 +5,19 @@ import { BaseRepository } from './BaseRepository';
 
 export class RoomRepository {
   private static mapRoomFromDB(row: any): RoomType {
+    // Estado de la habitación: 0=inactiva, 1=libre, 2=ocupada
+    // Se considera ocupada si hay servicios activos (estado = 2) o ventas activas (estado = 2) en esa habitación
+    const tieneServiciosActivos = row.servicios_activos > 0;
+    const tieneVentasActivas = row.ventas_activas > 0;
+    const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
+    
     return RoomSchema.parse({
       id: row.id_habitacion,
       name: row.nombre,
       price: row.precio,
       time: row.tiempo,
       comision_anfitriona: row.comision_anfitriona ?? null,
-      status: row.en_servicio > 0 ? 2 : row.estado,
+      status: estadoHabitacion,
       display_order: row.display_order,
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod
@@ -22,23 +28,43 @@ export class RoomRepository {
     let results: any[];
     if (status !== undefined) {
       if (status === '1') {
+        // Solo habitaciones libres (estado = 1 Y sin servicios/ventas activas)
         results = await query<any[]>(
-          `SELECT h.* FROM habitaciones h 
-           WHERE h.estado = ? 
+          `SELECT h.*, 
+            (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
+            (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
+           FROM habitaciones h 
+           WHERE h.estado = 1 
            AND NOT EXISTS (
              SELECT 1 FROM servicios s 
-             WHERE s.habitacion_id = h.id_habitacion 
-             AND s.estado = 1
+             WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2
            )
+           AND NOT EXISTS (
+             SELECT 1 FROM ventas v 
+             WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
+           )
+           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
+          []
+        );
+      } else {
+        results = await query<any[]>(
+          `SELECT h.*, 
+            (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
+            (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
+           FROM habitaciones h 
+           WHERE h.estado = ? 
            ORDER BY h.display_order ASC, h.id_habitacion ASC`,
           [status]
         );
-      } else {
-        results = await query<any[]>("SELECT * FROM habitaciones WHERE estado = ? ORDER BY display_order ASC, id_habitacion ASC", [status]);
       }
     } else {
+      // Obtener todas las habitaciones con conteo de servicios y ventas activas
       results = await query<any[]>(
-        "SELECT h.*, (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 1) as en_servicio FROM habitaciones h ORDER BY h.display_order ASC, h.id_habitacion ASC",
+        `SELECT h.*, 
+          (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
+          (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
+         FROM habitaciones h 
+         ORDER BY h.display_order ASC, h.id_habitacion ASC`,
         []
       );
     }

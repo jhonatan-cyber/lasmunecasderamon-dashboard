@@ -34,11 +34,11 @@ const cardPageSizes = [8, 12, 24, 48];
 const ProductCategoryPage = () => {
   const params = useParams();
   const rawId = params?.id;
+  // El categoryId ya es el UUID correcto de la categoría
   const categoryId = typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : '';
-  const numericCategoryId = isNaN(Number(categoryId)) ? 0 : Number(categoryId);
 
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
-  const category = filteredCategories.find(cat => String(cat.id) === String(numericCategoryId));
+  const category = filteredCategories.find(cat => String(cat.id) === String(categoryId));
 
   
   const {
@@ -55,7 +55,7 @@ const ProductCategoryPage = () => {
     setSearchTerm,
     filterStatus,
     setFilterStatus
-  } = useProducts(numericCategoryId > 0 ? String(numericCategoryId) : '');
+  } = useProducts(categoryId || '');
 
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -177,7 +177,7 @@ const ProductCategoryPage = () => {
     return <ProductsSkeleton />;
   }
 
-  if (!category && numericCategoryId > 0) {
+  if (!category && categoryId) {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
@@ -324,7 +324,7 @@ const ProductCategoryPage = () => {
             }
           }}
           initialValues={editProduct}
-          categoryId={numericCategoryId}
+          categoryId={categoryId}
           isLoading={isLoading}
           isMutating={isMutating}
           onSubmit={editProduct ? handleUpdate : handleCreate}

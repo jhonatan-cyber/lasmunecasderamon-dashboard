@@ -109,6 +109,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { playExpirationSound, announceExpiration } = useTimerAudio(timers, serverOffset);
 
   const showTimerExpiredNotification = useCallback((timer: Timer) => {
+    // PROTECCIÓN CRÍTICA: No mostrar notificación si el timer aún tiene tiempo.
+    // Esto previene que falsos positivos de sincronización disparen el modal.
+    if (timer.remainingTime > 0) {
+      console.warn(`[TimerContext] Ignorado modal expirado para id:${timer.id} (${timer.roomName}), tiene ${timer.remainingTime}s restantes.`);
+      return;
+    }
+
+    console.log(`[TimerContext] Abriendo modal para id:${timer.id} (${timer.roomName}) - tipo:${timer.tipoTransaccion}`);
     setTimerExpiredNotification({
       id: timer.id, roomName: timer.roomName, servicioCode: timer.servicioCode,
       clienteNombre: timer.clienteNombre, tiempoTotal: timer.duration,

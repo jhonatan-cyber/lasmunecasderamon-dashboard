@@ -18,9 +18,12 @@ export interface Servicio {
 export interface ServicioWithDetails extends Servicio {
   cliente_nombre?: string;
   habitacion_numero?: string;
-  habitacion_comision?: number;
+  habitacion_comision?: string | number;
   anfitrionas_nombres?: string;
+  anfitrionas_ids?: string;
   total_usuarios?: number;
+  total_comision?: number;
+  comision_individual?: number;
   created_by?: string;
   creator_name?: string;
 }

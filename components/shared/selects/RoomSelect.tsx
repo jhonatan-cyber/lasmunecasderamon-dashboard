@@ -190,15 +190,27 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                 filteredHabitaciones.map((habitacion) => {
                   const id = getHabitacionId(habitacion);
                   const displayName = getHabitacionDisplayName(habitacion);
+                  const estado = habitacion.estado || habitacion.status;
+                  const isOcupada = estado === 2;
+                  const isDisabled = disabled || isOcupada;
 
                   return (
                     <SelectItem
                       key={id}
                       value={id ? id.toString() : ""}
-                      disabled={disabled}
+                      disabled={isDisabled}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {displayName || "Sin nombre"}
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className={isOcupada ? "text-gray-400" : ""}>
+                          {displayName || "Sin nombre"}
+                        </span>
+                        {isOcupada && (
+                          <span className="text-xs text-red-500 font-medium">
+                            OCUPADA
+                          </span>
+                        )}
+                      </div>
                     </SelectItem>
                   );
                 })

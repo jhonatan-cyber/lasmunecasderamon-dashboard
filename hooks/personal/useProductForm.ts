@@ -82,11 +82,14 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     setErrors(prev => { const { foto: _, ...rest } = prev; return rest; });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any) => {
+    const target = e.target;
+    const name = target?.name;
+    const value = target?.value;
     
-    if (e.target instanceof HTMLInputElement && e.target.type === 'file') {
-      const file = (e.target as HTMLInputElement).files?.[0];
+    // Handle file input (either from native event or custom event)
+    if (target?.type === 'file' || (target?.files && target?.files?.length > 0)) {
+      const file = target.files?.[0];
       if (file) processFile(file);
       return;
     }
@@ -104,6 +107,7 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
   const handleCommissionChange = (value: string) => setForm(prev => ({ ...prev, commission: formatNumber(value) }));
 
   const handleUrlChange = (url: string) => {
+    console.log('[useProductForm] handleUrlChange:', url);
     setForm(prev => ({ ...prev, fotoUrl: url, foto: null }));
     if (url) setImagePreview(url);
     else setImagePreview('');
@@ -120,6 +124,17 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     
     const finalCategoryId = initialValues?.category_id ?? categoryId;
     
+    console.log('[useProductForm] Submitting - form:', { 
+      code: form.code, 
+      name: form.name, 
+      categoryId: finalCategoryId,
+      price: form.price,
+      commission: form.commission,
+      description: form.description,
+      foto: form.foto?.name || null,
+      fotoUrl: form.fotoUrl || null
+    });
+    
     if (finalCategoryId !== undefined && finalCategoryId !== null && String(finalCategoryId) !== 'NaN') {
       data.append('category_id', String(finalCategoryId));
     } else {
@@ -133,8 +148,14 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     data.append('commission', getNumericValue(form.commission) || '0');
     data.append('description', form.description);
     data.append('status', '1');
-    if (form.foto) data.append('foto', form.foto);
-    if (form.fotoUrl) data.append('fotoUrl', form.fotoUrl);
+    if (form.foto) {
+      console.log('[useProductForm] Appending foto file:', form.foto.name, form.foto.size);
+      data.append('foto', form.foto);
+    }
+    if (form.fotoUrl) {
+      console.log('[useProductForm] Appending fotoUrl:', form.fotoUrl);
+      data.append('fotoUrl', form.fotoUrl);
+    }
     if (initialValues?.id) data.append('id', String(initialValues.id));
     onSubmit(data);
   };

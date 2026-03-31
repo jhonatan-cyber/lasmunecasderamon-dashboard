@@ -32,7 +32,8 @@ export function useTimerSync({
       const timers = activeTimers.value.map(t => t.toPlainObject());
       // Limpiar duplicados antes de guardar
       const unique = timers.filter(
-        (t, i, self) => i === self.findIndex(x => x.roomId === t.roomId && x.servicioCode === t.servicioCode)
+        (t, i, self) =>
+          i === self.findIndex(x => x.roomId === t.roomId && x.servicioCode === t.servicioCode)
       );
       saveTimersToStorage(unique);
     }
@@ -45,7 +46,7 @@ export function useTimerSync({
     const performInitialSync = async () => {
       const stored = loadTimersFromStorage();
       const serverOffset = serverOffsetSignal.peek();
-      
+
       const aliveTimers = stored
         .map(t => ({
           ...t,
@@ -60,38 +61,42 @@ export function useTimerSync({
 
         if (success && Array.isArray(data)) {
           if (serverTime) {
+            // serverTime ahora viene en ISO (Z) para comparación absoluta correcta
             const newOffset = new Date(serverTime).getTime() - Date.now();
             setServerOffset(newOffset);
             serverOffsetSignal.value = newOffset;
           }
 
-          const finalTimers = data.map((dbT: any) => {
-            const now = new Date(Date.now() + serverOffsetSignal.peek()); 
-            const start = parseDateSafe(dbT.startTime);
-            const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
-            const durationSecs = Number(dbT.duration || 0) * 60;
-            let remaining = Math.max(0, durationSecs - elapsed);
+          const finalTimers = data
+            .map((dbT: any) => {
+              const currentOffset = serverOffsetSignal.peek();
+              const now = new Date(Date.now() + currentOffset);
+              const start = parseDateSafe(dbT.startTime);
+              const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+              const durationSecs = Number(dbT.duration || 0) * 60;
+              let remaining = Math.max(0, durationSecs - elapsed);
 
-            if (remaining === 0 && durationSecs > 0 && elapsed < 120) {
-              remaining = durationSecs;
-            }
+              if (remaining === 0 && durationSecs > 0 && elapsed < 120) {
+                remaining = durationSecs;
+              }
 
-            return {
-              id: `${dbT.servicioId}-${dbT.roomId}-${Date.now()}`,
-              servicioId: dbT.servicioId,
-              roomId: dbT.roomId,
-              roomName: dbT.roomName,
-              duration: dbT.duration,
-              remainingTime: remaining,
-              isActive: remaining > 0,
-              isPaused: dbT.isPaused === true,
-              startTime: start,
-              servicioCode: dbT.codigo,
-              clienteNombre: dbT.clienteNombre,
-              tipoTransaccion: dbT.tipoTransaccion || 'servicio',
-              anfitrionas: dbT.anfitrionas || ''
-            };
-          }).filter((t: any) => t.isActive);
+              return {
+                id: `${dbT.servicioId}-${dbT.roomId}-${Date.now()}`,
+                servicioId: dbT.servicioId,
+                roomId: dbT.roomId,
+                roomName: dbT.roomName,
+                duration: dbT.duration,
+                remainingTime: remaining,
+                isActive: remaining > 0,
+                isPaused: dbT.isPaused === true,
+                startTime: start,
+                servicioCode: dbT.codigo,
+                clienteNombre: dbT.clienteNombre,
+                tipoTransaccion: dbT.tipoTransaccion || 'servicio',
+                anfitrionas: dbT.anfitrionas || ''
+              };
+            })
+            .filter((t: any) => t.isActive);
 
           activeTimers.value = finalTimers.map(t => new TimerInstance(t, t.remainingTime));
         } else {
@@ -115,34 +120,44 @@ export function useTimerSync({
   }, []);
 
   // --- SINCRONIZACIÓN SSE (REAL TIME) ---
-  const sseUrl = (typeof window !== 'undefined' && !['/', '/login', '/landing'].includes(window.location.pathname))
-    ? '/api/notifications/sse' 
-    : null;
+  const sseUrl =
+    typeof window !== 'undefined' && !['/', '/login', '/landing'].includes(window.location.pathname)
+      ? '/api/notifications/sse'
+      : null;
 
-  useSSE(sseUrl, (payload) => {
+  useSSE(sseUrl, payload => {
     if (!payload?.type || !payload.data) return;
     const serverOffset = serverOffsetSignal.peek();
 
     switch (payload.type) {
       case 'timer_started': {
         const { servicioId, codigo, roomId, duration, startTime } = payload.data;
-        if (activeTimers.peek().some(t => t.servicioId === servicioId)) return;
+
+        // Verificar si ya existe un timer para este servicio (incluyendo locales y SSE)
+        const existing = activeTimers.peek().find(t => t.servicioId === servicioId);
+        if (existing) {
+          console.log(`[useTimerSync] Timer ${servicioId} ya existe, ignorando evento SSE`);
+          return;
+        }
 
         const start = parseDateSafe(startTime);
         const elapsed = Math.floor((Date.now() + serverOffset - start.getTime()) / 1000);
         const remaining = Math.max(0, (duration || 0) * 60 - elapsed);
 
         if (remaining > 0) {
-          const newT = new TimerInstance({
-            id: `${servicioId}-${roomId}-${Date.now()}`,
-            ...payload.data,
-            startTime: start,
-            isActive: true,
-            isPaused: false,
-            servicioCode: codigo,
-            clienteNombre: payload.data.clienteNombre || 'Sin Nombre'
-          }, remaining);
-          activeTimers.value = [...activeTimers.peek().filter(t => t.servicioId !== servicioId), newT];
+          const newT = new TimerInstance(
+            {
+              id: `${servicioId}-${roomId}-${Date.now()}`,
+              ...payload.data,
+              startTime: start,
+              isActive: true,
+              isPaused: false,
+              servicioCode: codigo,
+              clienteNombre: payload.data.clienteNombre || 'Sin Nombre'
+            },
+            remaining
+          );
+          activeTimers.value = [...activeTimers.peek(), newT];
         }
         break;
       }
@@ -177,24 +192,26 @@ export function useTimerSync({
       case 'timer_updated': {
         const { servicioId, duration, roomId, roomName, startTime, anfitrionas } = payload.data;
         const target = activeTimers.peek().find(t => t.servicioId === servicioId);
-        
-        if (target) {
-           const start = startTime ? parseDateSafe(startTime) : target.startTime.peek();
-           const dur = duration || target.duration.peek();
-           const elapsed = Math.floor((Date.now() + serverOffsetSignal.peek() - start.getTime()) / 1000);
-           const remaining = Math.max(0, dur * 60 - elapsed);
 
-           // ACTUALIZACIÓN QUIRÚRGICA: Solo los valores, sin tocar el array
-           batch(() => {
-             target.patch({ 
-                duration: dur, 
-                roomId, 
-                roomName, 
-                startTime: start, 
-                anfitrionas 
-             });
-             target.remainingSeconds.value = remaining;
-           });
+        if (target) {
+          const start = startTime ? parseDateSafe(startTime) : target.startTime.peek();
+          const dur = duration || target.duration.peek();
+          const elapsed = Math.floor(
+            (Date.now() + serverOffsetSignal.peek() - start.getTime()) / 1000
+          );
+          const remaining = Math.max(0, dur * 60 - elapsed);
+
+          // ACTUALIZACIÓN QUIRÚRGICA: Solo los valores, sin tocar el array
+          batch(() => {
+            target.patch({
+              duration: dur,
+              roomId,
+              roomName,
+              startTime: start,
+              anfitrionas
+            });
+            target.remainingSeconds.value = remaining;
+          });
         }
         break;
       }
@@ -204,18 +221,22 @@ export function useTimerSync({
   // --- FALLBACK POLLING (60s) ---
   useEffect(() => {
     if (!isInitialized || periodicSyncStartedRef.current) return;
-    
+
     const sync = async () => {
       try {
         const res = await fetch('/api/timers/active?source=poll');
         const data = await res.json();
         if (data.success) {
-          // Lógica de merge simplificada: 
+          // Lógica de merge simplificada:
           // 1. Agregar faltantes 2. Actualizar estados divergentes 3. Remover expirados
           const dbIds = new Set(data.data.map((t: any) => t.servicioId));
-          activeTimers.value = activeTimers.peek().filter(t => t.isTemporary || dbIds.has(t.servicioId));
+          activeTimers.value = activeTimers
+            .peek()
+            .filter(t => t.isTemporary || dbIds.has(t.servicioId));
         }
-      } catch (e) { console.error('Poll failed', e); }
+      } catch (e) {
+        console.error('Poll failed', e);
+      }
     };
 
     periodicSyncStartedRef.current = true;

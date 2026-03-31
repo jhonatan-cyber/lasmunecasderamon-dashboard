@@ -7,11 +7,13 @@ export const POST = withAppApiWrapper(async (request: Request) => {
   const user = await getAuth();
   const body = await request.json();
 
-  // Si viene como qr_data (snake_case), lo mapeamos a qrData para el esquema
   if (body.qr_data && !body.qrData) {
     body.qrData = body.qr_data;
   }
 
-  const result = await AttendanceService.registerAttendance(body, user || undefined);
+  const forwarded = request.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+
+  const result = await AttendanceService.registerAttendance(body, user || undefined, ip);
   return NextResponse.json(result);
 });
