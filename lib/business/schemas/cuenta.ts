@@ -20,6 +20,7 @@ export const CuentaSchema = z.object({
   habitacion_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
   servicio_id: z.string().nullable().optional(),
+  tiempo: z.number().optional(),
   detalles: z.array(DetalleCuentaSchema),
   usuarios: z.array(z.string()).optional(),
   estado: z.number().optional().default(1),

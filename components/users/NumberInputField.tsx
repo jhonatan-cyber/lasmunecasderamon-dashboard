@@ -13,7 +13,7 @@ import { type UserFormValues } from '@/hooks/personal/useUserForm';
 
 interface NumberInputFieldProps {
   control: Control<UserFormValues>;
-  name: 'salary' | 'contributions' | 'discount';
+  name: keyof UserFormValues;
   label: string;
   icon: LucideIcon;
   formattedValue: string;

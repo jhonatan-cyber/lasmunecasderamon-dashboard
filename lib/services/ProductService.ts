@@ -6,13 +6,19 @@ export class ProductService {
    * Procesa la creación de un nuevo producto.
    */
   static async createProduct(body: any, fotoName?: string) {
+    console.log('[ProductService] createProduct - body:', JSON.stringify(body, null, 2));
+    console.log('[ProductService] createProduct - fotoName:', fotoName);
+    
     // Normalizar nombres de campos comunes antes de validar
     const normalizedBody = {
       ...body,
       category_id: body.category_id ?? body.categoryId,
     };
 
+    console.log('[ProductService] normalizedBody:', JSON.stringify(normalizedBody, null, 2));
+
     const validated = ProductSchema.parse(normalizedBody);
+    console.log('[ProductService] validated.category_id:', validated.category_id);
 
     // Business Logic: Verificar duplicados en la misma categoría
     const existing = await ProductRepository.getByCodeOrName(
@@ -33,6 +39,10 @@ export class ProductService {
    * Actualiza un producto existente.
    */
   static async updateProduct(id: string, body: any, fotoName?: string) {
+    console.log('[ProductService] updateProduct - id:', id);
+    console.log('[ProductService] updateProduct - body:', JSON.stringify(body, null, 2));
+    console.log('[ProductService] updateProduct - fotoName:', fotoName);
+    
     // Normalizar nombres de campos comunes antes de validar
     const normalizedBody = {
       ...body,

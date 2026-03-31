@@ -173,13 +173,9 @@ export class CashRegisterRepository {
     const montoCierre = Number(caja.monto_apertura || 0) + Number(caja.efectivo || 0) + 
                         Number(caja.tarjeta || 0) + Number(caja.transferencia || 0) - Number(caja.devolucion || 0);
 
-    // closeNonAdminSessions
+    // Cerrar sesiones de todos los usuarios al cerrar caja
     await query(`
-      UPDATE logins l
-      INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
-      INNER JOIN roles r ON u.rol_id = r.id_rol
-      SET l.estado = 0
-      WHERE l.estado = 1 AND r.nombre NOT IN ('administrador', 'cajero')
+      UPDATE logins SET estado = 0 WHERE estado = 1
     `);
 
     const now = getNowInBusinessTimezone();

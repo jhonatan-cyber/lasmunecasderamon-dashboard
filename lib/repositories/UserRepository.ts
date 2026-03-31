@@ -10,7 +10,7 @@ export class UserRepository {
   private static mapUserFromDB(row: any): UserType {
     const user = {
       id: row.id_usuario,
-      run: row.run,
+      run: row.run || '',
       nick: row.nick,
       name: row.nombre,
       lastName: row.apellido,
@@ -26,6 +26,7 @@ export class UserRepository {
       discount: row.descuento,
       foto: row.foto,
       status: row.estado,
+      estado_servicio: row.estado_servicio,
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod,
       qr_token: row.qr_token,
@@ -46,7 +47,7 @@ export class UserRepository {
     let sqlParams: any[] = [];
     
     if (params?.anfitrionas === '1') {
-      where += " AND r.nombre = 'anfitriona'";
+      where += " AND LOWER(r.nombre) = 'anfitriona'";
     }
 
     if (params?.search) {
@@ -62,7 +63,7 @@ export class UserRepository {
     }
 
     if (params?.role && params?.role !== 'all') {
-      where += " AND r.nombre = ?";
+      where += " AND LOWER(r.nombre) = LOWER(?)";
       sqlParams.push(params.role);
     }
 
@@ -74,7 +75,7 @@ export class UserRepository {
     `;
 
     const dataSql = `
-      SELECT u.*, r.nombre as rol_nombre, r.id_rol 
+      SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol
       ${where}
@@ -205,7 +206,7 @@ export class UserRepository {
       SELECT u.*, r.nombre as rol_nombre, r.id_rol
       FROM usuarios u
       INNER JOIN roles r ON u.rol_id = r.id_rol
-      WHERE r.nombre = 'anfitriona' AND u.estado = 1 AND u.estado_servicio = 0
+      WHERE LOWER(r.nombre) = 'anfitriona' AND u.estado = 1 AND u.estado_servicio = 0
     `);
     return data.map(row => this.mapUserFromDB(row));
   }

@@ -297,7 +297,7 @@ export default function ServicioCard({
             <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>
               #{servicio.codigo}
             </span>
-            {Number(servicio.precio_servicio || 0) === 0 && !isEditing && (
+            {Number(servicio.habitacion_comision || 0) > 0 && !isEditing && (
               <>
                 <Button
                   variant='ghost'

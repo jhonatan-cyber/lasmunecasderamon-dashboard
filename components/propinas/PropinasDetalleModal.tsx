@@ -43,10 +43,6 @@ export default function PropinasDetalleModal({
     }
   }, [open, usuario]);
 
-  const getEstadoColor = (estado: string) => {
-    return estado === 'Por pagar' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800';
-  };
-
   if (!usuario) return null;
 
   return (
@@ -81,35 +77,35 @@ export default function PropinasDetalleModal({
             <h3 className='text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600'>
               Detalle de las Propinas
             </h3>
-            <div className='overflow-x-auto'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='text-xs sm:text-sm'>FECHA HORA</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>CODIGO VENTA</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>MONTO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>FECHA PAGO</TableHead>
-                    <TableHead className='text-xs sm:text-sm'>ESTADO</TableHead>
+            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border border-gray-100 dark:border-gray-800 shadow-md overflow-hidden'>
+              <Table className='min-w-full'>
+                <TableHeader className='bg-gray-100/50 dark:bg-slate-900/50'>
+                  <TableRow className='hover:bg-transparent border-b border-gray-100 dark:border-gray-800'>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-left'>FECHA HORA</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-left'>CODIGO VENTA</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-right'>MONTO</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-left'>FECHA PAGO</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-center'>ESTADO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
+                      <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800 last:border-0'>
+                        <TableCell className='py-4 px-5'>
                           <Skeleton className='h-6 w-32' />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className='py-4 px-5'>
                           <Skeleton className='h-6 w-24' />
                         </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-20' />
+                        <TableCell className='py-4 px-5'>
+                          <Skeleton className='h-6 w-20 ml-auto' />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className='py-4 px-5'>
                           <Skeleton className='h-6 w-24' />
                         </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-6 w-16' />
+                        <TableCell className='py-4 px-5'>
+                          <Skeleton className='h-6 w-16 mx-auto' />
                         </TableCell>
                       </TableRow>
                     ))
@@ -117,7 +113,7 @@ export default function PropinasDetalleModal({
                     <TableRow>
                       <TableCell
                         colSpan={5}
-                        className='text-center text-red-600 text-xs sm:text-sm'
+                        className='text-center py-8 text-red-600 text-xs sm:text-sm'
                       >
                         {error}
                         <Button
@@ -132,30 +128,39 @@ export default function PropinasDetalleModal({
                     <TableRow>
                       <TableCell
                         colSpan={5}
-                        className='text-center text-gray-600 text-xs sm:text-sm'
+                        className='text-center py-8 text-gray-600 text-xs sm:text-sm'
                       >
                         No hay detalles de tips para mostrar
                       </TableCell>
                     </TableRow>
                   ) : (
                     detalles.map((detalle, index) => (
-                      <TableRow key={index}>
-                        <TableCell className='text-xs sm:text-sm'>
-                          <div>{formatSoloFecha(detalle.fecha_hora)}</div>
-                          <div>{formatSoloHora(detalle.fecha_hora)}</div>
+                      <TableRow
+                        key={index}
+                        className='border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-800/30'
+                      >
+                        <TableCell className='py-3 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
+                          <div className='font-medium'>{formatSoloFecha(detalle.fecha_crea)}</div>
+                          <div className='text-xs text-gray-500'>{formatSoloHora(detalle.fecha_crea)}</div>
                         </TableCell>
-                        <TableCell className='font-mono text-xs sm:text-sm'>
+                        <TableCell className='py-3 px-5 text-left text-sm font-mono text-gray-600 dark:text-gray-400'>
                           {detalle.codigo_venta}
                         </TableCell>
-                        <TableCell className='font-semibold text-xs sm:text-sm'>
+                        <TableCell className='py-3 px-5 text-right text-sm font-bold text-green-600'>
                           {formatCurrencyNoDecimals(detalle.monto)}
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm'>
-                          {detalle.fecha_pago ? formatFechaLarga(detalle.fecha_pago) : 'Por pagar'}
+                        <TableCell className='py-3 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
+                          {detalle.fecha_pago ? (
+                            <div className='font-medium'>{formatSoloFecha(detalle.fecha_pago)}</div>
+                          ) : (
+                            <span className='text-xs text-amber-600 dark:text-amber-400 italic font-medium'>Pendiente</span>
+                          )}
                         </TableCell>
-                        <TableCell className='text-xs sm:text-sm'>
-                          <Badge className={`${getEstadoColor(detalle.estado)} text-xs sm:text-sm`}>
-                            {detalle.estado}
+                        <TableCell className='py-3 px-5 text-center'>
+                          <Badge
+                            className={`${detalle.estado === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'} rounded-full px-3 py-1 text-xs font-bold border-none shadow-none`}
+                          >
+                            {detalle.estado === 1 ? 'Por pagar' : 'Pagado'}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -174,7 +179,7 @@ export default function PropinasDetalleModal({
               size='sm'
               variant='outline'
               onClick={onClose}
-              className='rounded-full text-white bg-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
             >
               Cerrar
             </Button>

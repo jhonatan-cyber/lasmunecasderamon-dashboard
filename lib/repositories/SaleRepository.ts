@@ -126,7 +126,7 @@ export class SaleRepository {
    */
   static async insertUserRelation(trx: TransactionQuery, ventaId: string, usuarioId: string): Promise<void> {
     await trx(
-      'INSERT INTO ventas_usuarios (id_venta_usuario, venta_id, usuario_id) VALUES (?, ?, ?)',
+      'INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id, fecha_crea) VALUES (?, ?, ?, NOW())',
       [generateUUID(), ventaId, usuarioId]
     );
   }
@@ -136,11 +136,14 @@ export class SaleRepository {
     const res = await query<any[]>(`
       SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_nombre,
              u.nick as cajero_nick, u.nombre as cajero_nombre,
+             CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
       FROM ventas v
       LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
       LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
       LEFT JOIN usuarios u ON u.id_usuario = v.created_by
+      LEFT JOIN pedidos pe ON pe.id_pedido = v.pedido_id
+      LEFT JOIN usuarios ug ON ug.id_usuario = pe.mesero_id
       LEFT JOIN detalle_ventas dv ON dv.venta_id = v.id_venta
       LEFT JOIN productos p ON p.id_producto = dv.producto_id
       WHERE v.id_venta = ?
@@ -174,6 +177,7 @@ export class SaleRepository {
       ...venta,
       cajero_nick: res[0].cajero_nick,
       cajero_nombre: res[0].cajero_nombre,
+      garzon_nombre: res[0].garzon_nombre,
       detalles: detalles.map(d => ({
         id: d.id,
         venta_id: d.venta_id,

@@ -12,6 +12,7 @@ interface Hostess {
   apellido?: string;
   lastName?: string;
   nick?: string;
+  estado_servicio?: number;
 }
 
 interface HostessSelectProps {
@@ -147,7 +148,8 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                     const id = String(getHostessId(anfitriona));
                     const name = getHostessName(anfitriona);
                     const isSelected = value.includes(id);
-                    const isDisabled = !isSelected && value.length >= maxSelection;
+                    const isOcupada = Number(anfitriona.estado_servicio) === 1;
+                    const isDisabled = (!isSelected && value.length >= maxSelection) || isOcupada;
                     return (
                       <label
                         key={`${id}-${index}`}
@@ -159,7 +161,12 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                           onCheckedChange={() => handleToggleHostess(id)}
                           disabled={isDisabled}
                         />
-                        <span className="text-sm">{name || "Sin nombre"}</span>
+                        <div className="flex flex-col">
+                          <span className={isOcupada ? "text-gray-400" : "text-sm"}>{name || "Sin nombre"}</span>
+                          {isOcupada && (
+                            <span className="text-xs text-red-500 font-medium">OCUPADA</span>
+                          )}
+                        </div>
                       </label>
                     );
                   })

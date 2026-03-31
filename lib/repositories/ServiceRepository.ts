@@ -28,8 +28,8 @@ export class ServiceRepository {
       tiempo: Number(row.tiempo || 0),
       metodo_pago: row.metodo_pago,
       estado: row.estado,
-      fecha_crea: row.fecha_crea,
-      fecha_mod: row.fecha_mod,
+      fecha_crea: row.fecha_crea || null,
+      fecha_mod: row.fecha_mod || null,
       habitacion_nombre: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
       anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas,
       anfitrionas_ids: row.anfitrionas_ids,
@@ -39,7 +39,8 @@ export class ServiceRepository {
       creator_apellido: row.creator_apellido || null,
       creator_foto: row.creator_foto || null,
       waiter_name: creatorName,
-      waiter_foto: row.creator_foto || null
+      waiter_foto: row.creator_foto || null,
+      habitacion_comision: row.habitacion_comision ? Number(row.habitacion_comision) : null
     });
   }
 
@@ -187,9 +188,10 @@ export class ServiceRepository {
 
   static async getByUser(userId: string): Promise<ServiceType[]> {
     const results = await query<any[]>(`
-      SELECT s.*, ds.comision as mi_comision
+      SELECT s.*, ds.comision as mi_comision, h.comision_anfitriona as habitacion_comision
       FROM servicios s
       INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+      LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
       WHERE ds.usuario_id = ?
       ORDER BY s.fecha_crea DESC
     `, [userId]);
