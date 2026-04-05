@@ -24,6 +24,8 @@ type AnticipoRequestMessageInput = {
   montoMaximo: number;
   anticipoId: string;
   fecha?: Date;
+  baseUrl?: string;
+  token?: string;
 };
 
 type ServicioAnulacionMessageInput = {
@@ -49,14 +51,14 @@ type AnticipoProcessedMessageInput = {
 };
 
 type PendingSolicitudInput = {
-  tipo: 'venta' | 'servicio' | 'anticipo';
+  tipo: 'venta' | 'servicio' | 'cuenta' | 'anticipo';
   codigo: string;
   clienteNombre: string;
   total: number;
 };
 
 type SolicitudRespuestaInput = {
-  tipo: 'venta' | 'servicio';
+  tipo: 'venta' | 'servicio' | 'cuenta';
   codigo: string;
   clienteNombre: string;
   total: number;
@@ -83,7 +85,11 @@ export function buildAnticipoRequestMessage({
   montoMaximo,
   anticipoId,
   fecha = getNowDate(),
+  baseUrl,
+  token,
 }: AnticipoRequestMessageInput) {
+  const confirmUrl = baseUrl && token ? `${baseUrl}/confirmar-anticipo?token=${token}` : null;
+  
   return `💰 *NUEVA SOLICITUD DE ANTICIPO*
 
 👤 *Empleado:* ${nombreCompleto}
@@ -98,11 +104,16 @@ export function buildAnticipoRequestMessage({
 • Total: ${formatCurrencyCLP(montoMaximo)}
 
 ⏰ *Fecha:* ${formatLongDateEs(fecha)}
+${confirmUrl ? `
+✅ *Para procesar:* ${confirmUrl}
 
+_Haz clic en el link para aprobar o rechazar la solicitud_
+` : `
 ✅ *Para aprobar:* Responde "APROBAR ${anticipoId}"
 ❌ *Para rechazar:* Responde "RECHAZAR ${anticipoId}"
 
-_O también puedes aprobar/rechazar desde el panel administrativo_`;
+_O también puedes aprobar/rechazar desde el panel administrativo_`
+}`;
 }
 
 export function buildServicioAnulacionMessage({
@@ -173,7 +184,7 @@ export function buildMultipleSolicitudesPendingMessage(solicitudes: PendingSolic
   const listaSolicitudes = solicitudes
     .map(
       (s, index) =>
-        `${index + 1}. ${s.tipo === 'venta' ? 'VENTA' : s.tipo === 'servicio' ? 'SERVICIO' : 'ANTICIPO'} ${s.codigo} - ${s.clienteNombre} - ${formatCurrencyCLP(s.total || 0)}`
+        `${index + 1}. ${s.tipo === 'venta' ? 'VENTA' : s.tipo === 'servicio' ? 'SERVICIO' : s.tipo === 'cuenta' ? 'CUENTA' : 'ANTICIPO'} ${s.codigo} - ${s.clienteNombre} - ${formatCurrencyCLP(s.total || 0)}`
     )
     .join('\n');
 
@@ -197,29 +208,39 @@ export function buildSolicitudRespuestaMessage({
   action,
   estadoTexto,
 }: SolicitudRespuestaInput) {
-  const emoji = action === 'confirmar' ? '✅' : '❌';
+  const emoji = action === 'confirmar' ? 'OK' : 'NO';
   const titulo =
     action === 'confirmar'
       ? tipo === 'venta'
-        ? 'ANULACIÓN CONFIRMADA'
-        : 'DEVOLUCIÓN CONFIRMADA'
+        ? 'ANULACION CONFIRMADA'
+        : tipo === 'cuenta'
+          ? 'ANULACION CONFIRMADA'
+          : 'DEVOLUCION CONFIRMADA'
       : tipo === 'venta'
-        ? 'ANULACIÓN RECHAZADA'
-        : 'DEVOLUCIÓN RECHAZADA';
+        ? 'ANULACION RECHAZADA'
+        : tipo === 'cuenta'
+          ? 'ANULACION RECHAZADA'
+          : 'DEVOLUCION RECHAZADA';
+
+  const entidad = tipo === 'venta' ? 'Venta' : tipo === 'cuenta' ? 'Cuenta' : 'Servicio';
 
   return `${emoji} *${titulo}*
 
-📋 *${tipo === 'venta' ? 'Venta' : 'Servicio'} ${estadoTexto}:*
-• Código: ${codigo}
-• Cliente: ${clienteNombre}
-• Total: ${formatCurrencyCLP(total)}
+*${entidad} ${estadoTexto}:*
+- Codigo: ${codigo}
+- Cliente: ${clienteNombre}
+- Total: ${formatCurrencyCLP(total)}
 
 ${action === 'confirmar'
     ? tipo === 'venta'
       ? '_La venta ha sido anulada exitosamente._'
-      : '_El servicio ha sido devuelto exitosamente. Habitación liberada y caja actualizada._'
+      : tipo === 'cuenta'
+        ? '_La cuenta ha sido anulada exitosamente._'
+        : '_El servicio ha sido devuelto exitosamente. Habitacion liberada y caja actualizada._'
     : tipo === 'venta'
       ? '_La venta ha sido mantenida activa._'
-      : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
+      : tipo === 'cuenta'
+        ? '_La cuenta ha sido mantenida activa._'
+        : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
   }`;
 }

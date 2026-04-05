@@ -10,6 +10,8 @@ import ProductSearch from '@/components/cuentas/filters/ProductSearch';
 import { ProductCartTable } from '../tables/ProductCartTable';
 import { CartSummary } from '../stats/CartSummary';
 import { useProductCart } from '@/hooks/shared/useProductCart';
+import { useCuentaDetail } from '@/hooks/cuentas';
+import { useTimer } from '@/contexts/TimerContext';
 
 interface AgregarProductosModalProps {
   open: boolean;
@@ -46,6 +48,7 @@ export default function AgregarProductosModal({
   cuentaId,
   onProductosAgregados
 }: AgregarProductosModalProps) {
+  const cuentaIdStr = cuentaId ? String(cuentaId) : null;
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loadingAgregar, setLoadingAgregar] = useState(false);
 
@@ -55,6 +58,8 @@ export default function AgregarProductosModal({
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { cuenta: cuentaActual } = useCuentaDetail(cuentaIdStr, open);
+  const { startTimer, getTimerByServicioId } = useTimer();
 
   // Hook del carrito
   const {
@@ -139,25 +144,92 @@ export default function AgregarProductosModal({
 
     setLoadingAgregar(true);
     try {
+      let cuentaContext = cuentaActual;
+
+      if (!cuentaContext && cuentaIdStr) {
+        const cuentaResponse = await fetch(`/api/cuentas/${cuentaIdStr}`);
+        if (cuentaResponse.ok) {
+          const cuentaData = await cuentaResponse.json();
+          cuentaContext = cuentaData?.data ?? cuentaData;
+        }
+      }
+
       const detalles = productosCarrito.map(producto => ({
         producto_id: producto.id_producto,
         precio: producto.precio,
         cantidad: producto.cantidad,
         sub_total: producto.sub_total,
-        comision: producto.comision * producto.cantidad
+        comision: producto.comision * producto.cantidad,
+        hostesses: Array.isArray(producto.selectedHostesses) ? producto.selectedHostesses : [],
+        isChampagne: Boolean(producto.isChampagne)
       }));
+
+      const hostessIds = Array.from(
+        new Set(
+          productosCarrito.flatMap(producto =>
+            Array.isArray(producto.selectedHostesses)
+              ? producto.selectedHostesses.map((id: string | number) => String(id))
+              : []
+          )
+        )
+      );
+
+      const existingHostessIds = Array.isArray(cuentaContext?.usuarios)
+        ? cuentaContext.usuarios
+          .map((usuario: any) => usuario.usuario_id ?? usuario.id_usuario ?? usuario.id)
+          .filter(Boolean)
+          .map((id: string | number) => String(id))
+        : [];
+
+      const mergedHostessIds = Array.from(new Set([...existingHostessIds, ...hostessIds]));
+      const hasTimedAccountContext =
+        Boolean(cuentaContext?.habitacion_id) && Number(cuentaContext?.tiempo || 0) > 0;
+      const hasHostessProducts = hostessIds.length > 0;
+      const hasActiveTimer = cuentaIdStr ? Boolean(getTimerByServicioId(cuentaIdStr)) : false;
+      const shouldStartTimer = hasTimedAccountContext && hasHostessProducts && !hasActiveTimer;
+
+      const payload: Record<string, unknown> = {
+        detalles
+      };
+
+      if (mergedHostessIds.length > 0) {
+        payload.usuarios = mergedHostessIds;
+      }
+
+      if (shouldStartTimer) {
+        payload.habitacion_id = cuentaContext.habitacion_id;
+        payload.tiempo = Number(cuentaContext.tiempo || 0);
+      }
 
       const response = await fetch(`/api/cuentas/${cuentaId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          detalles: detalles
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
+        await response.json();
+
+        if (shouldStartTimer && cuentaIdStr) {
+          startTimer(
+            cuentaIdStr,
+            String(cuentaContext.habitacion_id),
+            cuentaContext.habitacion_numero || cuentaContext.habitacion_nombre || 'Habitacion',
+            Number(cuentaContext.tiempo || 0),
+            cuentaContext.codigo || `CUENTA_${cuentaIdStr}`,
+            cuentaContext.cliente_nombre || 'Cliente',
+            Array.isArray(cuentaContext?.usuarios)
+              ? cuentaContext.usuarios
+                .map((usuario: any) => usuario.usuario_nombre || usuario.nick)
+                .filter(Boolean)
+                .join(', ')
+              : '',
+            'cuenta'
+          );
+        }
+
         toast.success('Productos agregados exitosamente');
         limpiarCarrito();
         onProductosAgregados?.();
@@ -171,7 +243,17 @@ export default function AgregarProductosModal({
     } finally {
       setLoadingAgregar(false);
     }
-  }, [cuentaId, productosCarrito, limpiarCarrito, onProductosAgregados, onOpenChange]);
+  }, [
+    cuentaActual,
+    cuentaId,
+    cuentaIdStr,
+    getTimerByServicioId,
+    limpiarCarrito,
+    onOpenChange,
+    onProductosAgregados,
+    productosCarrito,
+    startTimer
+  ]);
 
   const handleClose = useCallback(() => {
     limpiarCarrito();

@@ -2,6 +2,8 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
+  allowedDevOrigins: ['e03a-192-223-121-195.ngrok-free.app', '*.ngrok-free.app'],
+  
   images: {
     unoptimized: true,
     formats: ['image/avif', 'image/webp'],

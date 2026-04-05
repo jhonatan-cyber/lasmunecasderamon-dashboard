@@ -70,6 +70,8 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     '/api-docs',
     '/confirmar-anulacion',
     '/confirmar-anulacion-servicio',
+    '/confirmar-anulacion-cuenta',
+    '/confirmar-anticipo',
     '/landing',
     '/',
     '/terminos-y-condiciones',

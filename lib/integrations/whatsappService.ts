@@ -45,6 +45,65 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
   }
 }
 
+export async function enviarMensajeSolicitudAnulacion(datos: {
+  numeroAdmin: string;
+  tipo: 'venta' | 'servicio' | 'cuenta';
+  codigo: string;
+  clienteNombre: string;
+  total: number;
+  motivo: string;
+  solicitadoPor: string;
+  montoSolicitado?: number;
+  habitacion?: string | null;
+  tiempo?: number | null;
+  token?: string;
+  baseUrl?: string;
+}): Promise<boolean> {
+  const titulo =
+    datos.tipo === 'venta'
+      ? 'SOLICITUD DE ANULACION DE VENTA'
+      : datos.tipo === 'cuenta'
+        ? 'SOLICITUD DE ANULACION DE CUENTA'
+        : 'SOLICITUD DE ANULACION DE SERVICIO';
+
+  const detalleExtra =
+    datos.tipo === 'cuenta'
+      ? `• Monto solicitado: ${formatCurrencyCLP(datos.montoSolicitado || 0)}\n• Total referencia: ${formatCurrencyCLP(datos.total || 0)}`
+      : datos.tipo === 'servicio'
+        ? `${datos.habitacion ? `• Habitacion: ${datos.habitacion}\n` : ''}${datos.tiempo ? `• Tiempo: ${datos.tiempo} minutos\n` : ''}• Total: ${formatCurrencyCLP(datos.total || 0)}`
+        : `• Monto solicitado: ${formatCurrencyCLP(datos.montoSolicitado || 0)}\n• Total referencia: ${formatCurrencyCLP(datos.total || 0)}`;
+
+  const routePath =
+    datos.tipo === 'venta'
+      ? '/confirmar-anulacion'
+      : datos.tipo === 'servicio'
+        ? '/confirmar-anulacion-servicio'
+        : '/confirmar-anulacion-cuenta';
+  const actionUrl =
+    datos.token && datos.baseUrl
+      ? `${datos.baseUrl}${routePath}?token=${encodeURIComponent(datos.token)}`
+      : null;
+
+  const mensaje = `*${titulo}*
+
+• Codigo: ${datos.codigo}
+• Cliente: ${datos.clienteNombre}
+${detalleExtra}
+
+*Motivo:*
+${datos.motivo || 'No especificado'}
+
+*Solicitado por:* ${datos.solicitadoPor}
+
+${actionUrl
+    ? `*Revisar solicitud:* ${actionUrl}`
+    : 'Responde "SI" para aprobar o "NO" para rechazar.'}
+
+Si hay varias solicitudes pendientes, responde "1 SI" o "1 NO" sobre la mas reciente.`;
+
+  return await enviarWhatsApp(datos.numeroAdmin, mensaje);
+}
+
 export async function enviarMensajeAnulacion(datos: {
   numeroAdmin: string;
   codigoVenta: string;

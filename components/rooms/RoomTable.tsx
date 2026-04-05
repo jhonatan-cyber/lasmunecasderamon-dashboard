@@ -1,9 +1,11 @@
- 
 import React, { useState, useMemo } from "react";
 import { Room } from "@/types/room";
 import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from "lucide-react";
 import {
   TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +34,16 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { formatCurrencyCLP } from "@/lib/utils/formatters";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface RoomTableProps {
   rooms: Room[];
@@ -51,6 +63,17 @@ interface RoomTableProps {
   currentPage?: number;
   pageSize?: number;
 }
+
+const getStatusBadge = (status: number) => {
+  switch (status) {
+    case 1:
+      return <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>Disponible</Badge>;
+    case 2:
+      return <Badge className='bg-red-100 text-red-700 rounded-full px-3 py-1'>Ocupada</Badge>;
+    default:
+      return <Badge className='bg-gray-100 text-gray-700 rounded-full px-3 py-1'>Inactiva</Badge>;
+  }
+};
 
 interface SortableRowProps {
   room: Room;
@@ -101,8 +124,12 @@ const SortableRow: React.FC<SortableRowProps> = ({
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className='border-b last:border-b-0 hover:bg-gray-50'>
-      <td className='py-3 px-2 sm:px-4 text-center'>
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className='border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
+    >
+      <TableCell className='py-3 px-4 text-center'>
         <div
           {...attributes}
           {...listeners}
@@ -110,113 +137,124 @@ const SortableRow: React.FC<SortableRowProps> = ({
         >
           <GripVertical className="w-4 h-4 text-gray-400" />
         </div>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600'>
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center'>
         <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>
           {absoluteIndex}
         </Badge>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center'>
-        <span className='font-medium text-gray-900 text-xs sm:text-sm'>{room.name}</span>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center'>
-        <span className='font-medium text-gray-900 text-xs sm:text-sm'>
-          {formatCurrencyCLP(room.price)}
-        </span>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center'>
-        <span className='text-gray-600 text-xs sm:text-sm'>{room.time} min</span>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center'>
-        <span className='text-gray-600 text-xs sm:text-sm'>
-          {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : (
-            <span className="text-gray-400 italic">sin comisión</span>
-          )}
-        </span>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center'>
-        <Badge
-          variant='secondary'
-          className={
-            room.status === 1
-              ? 'bg-green-100 text-green-800 text-xs sm:text-sm'
-              : room.status === 2
-              ? 'bg-red-100 text-red-800 text-xs sm:text-sm'
-              : 'bg-gray-100 text-gray-800 text-xs sm:text-sm'
-          }
-        >
-          {room.status === 1
-            ? 'Disponible'
-            : room.status === 2
-            ? 'Ocupada'
-            : 'Inactiva'}
-        </Badge>
-      </td>
-      <td className='py-3 px-2 sm:px-4 text-center'>
-        {/* Solo mostrar el menú si tiene al menos un permiso */}
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center font-medium'>
+        {room.name}
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center font-medium'>
+        {formatCurrencyCLP(room.price)}
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center'>
+        <span className="text-gray-600">{room.time} min</span>
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center'>
+        {room.comision_anfitriona ? (
+          <span className="text-gray-600">{formatCurrencyCLP(room.comision_anfitriona)}</span>
+        ) : (
+          <span className="text-gray-400 italic text-sm">sin comisión</span>
+        )}
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center'>
+        {getStatusBadge(room.status)}
+      </TableCell>
+      <TableCell className='py-3 px-4 text-center'>
         {(canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate) ? (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200'
-              >
-                <MoreVertical className='h-3 w-3 sm:h-4 sm:w-4' />
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200'
+                  >
+                    <MoreVertical className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent><p>Acciones</p></TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align='end'>
-            {canEdit && (
-              <DropdownMenuItem onClick={() => onEdit(room)}>
-                <Edit className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                Editar
-              </DropdownMenuItem>
-            )}
-            {room.status === 0 && canActivate ? (
-              <DropdownMenuItem onClick={() => onActivate(room)}>
-                <Check className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                Activar
-              </DropdownMenuItem>
-            ) : room.status === 1 ? (
-              <>
-                {canOccupy && (
-                  <DropdownMenuItem onClick={() => onOccupy(room)}>
-                    <Bed className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                    Ocupar
-                  </DropdownMenuItem>
-                )}
-                {canDeactivate && (
-                  <DropdownMenuItem onClick={() => onDeactivate(room)}>
-                    <Power className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                    Desactivar
-                  </DropdownMenuItem>
-                )}
-              </>
-            ) : room.status === 2 && canLiberate ? (
-              <DropdownMenuItem onClick={() => onActivate(room)}>
-                <Check className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                Liberar
-              </DropdownMenuItem>
-            ) : null}
-            {canDelete && (
-              <DropdownMenuItem
-                onClick={() => {
-                  setRoomToDelete(room);
-                  setConfirmOpen(true);
-                }}
-                className='text-red-600 focus:text-red-600'
-              >
-                <Trash2 className='mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                Eliminar
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {canEdit && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem onClick={() => onEdit(room)}>
+                      <Edit className='mr-2 h-4 w-4 text-purple-600' /> Editar
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent side='left'><p>Editar habitación</p></TooltipContent>
+                </Tooltip>
+              )}
+              {room.status === 0 && canActivate ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem onClick={() => onActivate(room)}>
+                      <Check className='mr-2 h-4 w-4 text-green-600' /> Activar
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent side='left'><p>Activar habitación</p></TooltipContent>
+                </Tooltip>
+              ) : room.status === 1 ? (
+                <>
+                  {canOccupy && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem onClick={() => onOccupy(room)}>
+                          <Bed className='mr-2 h-4 w-4 text-blue-600' /> Ocupar
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent side='left'><p>Ocupar habitación</p></TooltipContent>
+                    </Tooltip>
+                  )}
+                  {canDeactivate && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem onClick={() => onDeactivate(room)}>
+                          <Power className='mr-2 h-4 w-4 text-orange-600' /> Desactivar
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent side='left'><p>Desactivar habitación</p></TooltipContent>
+                    </Tooltip>
+                  )}
+                </>
+              ) : room.status === 2 && canLiberate ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem onClick={() => onActivate(room)}>
+                      <Check className='mr-2 h-4 w-4 text-green-600' /> Liberar
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent side='left'><p>Liberar habitación</p></TooltipContent>
+                </Tooltip>
+              ) : null}
+              {canDelete && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setRoomToDelete(room);
+                        setConfirmOpen(true);
+                      }}
+                      className='text-red-600 focus:text-red-600'
+                    >
+                      <Trash2 className='mr-2 h-4 w-4' /> Eliminar
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent side='left'><p>Eliminar habitación</p></TooltipContent>
+                </Tooltip>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <span className='text-xs text-gray-400'>Sin acciones</span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 };
 
@@ -242,7 +280,6 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [localRooms, setLocalRooms] = useState(rooms);
 
-  // Actualizar localRooms cuando rooms cambia
   React.useEffect(() => {
     setLocalRooms(rooms);
   }, [rooms]);
@@ -268,7 +305,6 @@ const RoomTable: React.FC<RoomTableProps> = ({
       const newRooms = arrayMove(localRooms, oldIndex, newIndex);
       setLocalRooms(newRooms);
 
-      // Llamar al callback de reordenamiento si está disponible
       if (onReorder) {
         onReorder(newRooms);
       }
@@ -277,74 +313,64 @@ const RoomTable: React.FC<RoomTableProps> = ({
 
   return (
     <TooltipProvider>
-      <div className='rounded-xl border bg-white overflow-hidden shadow-md'>
-        <div className='overflow-x-auto'>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <table className='min-w-full text-base bg-white rounded-xl overflow-hidden text-center'>
-              <thead className='border-b last:border-b-0 bg-white group'>
-                <tr>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400 w-12'></th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>#</th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
-                    Nombre
-                  </th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
-                    Precio
-                  </th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
-                    Tiempo
-                  </th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
-                    Comisión
-                  </th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
-                    Estado
-                  </th>
-                  <th className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-400'>
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {localRooms.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className='py-8 text-center text-gray-500 text-sm sm:text-base'>
-                      No hay habitaciones disponibles
-                    </td>
-                  </tr>
-                ) : (
-                  <SortableContext
-                    items={localRooms.map(r => r.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {localRooms.map((room, index) => (
-                      <SortableRow
-                        key={room.id}
-                        room={room}
-                        absoluteIndex={(currentPage - 1) * pageSize + index + 1}
-                        onEdit={onEdit}
-                        onActivate={onActivate}
-                        onDeactivate={onDeactivate}
-                        onOccupy={onOccupy}
-                        setRoomToDelete={setRoomToDelete}
-                        setConfirmOpen={setConfirmOpen}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        canActivate={canActivate}
-                        canDeactivate={canDeactivate}
-                        canOccupy={canOccupy}
-                        canLiberate={canLiberate}
-                      />
-                    ))}
-                  </SortableContext>
-                )}
-              </tbody>
-            </table>
-          </DndContext>
+      <div className='space-y-4'>
+        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+          <div className='overflow-x-auto'>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <Table>
+                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'></TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Precio</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Tiempo</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Comisión</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {localRooms.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className='py-8 text-center text-gray-500 text-sm'>
+                        No hay habitaciones disponibles
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <SortableContext
+                      items={localRooms.map(r => r.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {localRooms.map((room, index) => (
+                        <SortableRow
+                          key={room.id}
+                          room={room}
+                          absoluteIndex={(currentPage - 1) * pageSize + index + 1}
+                          onEdit={onEdit}
+                          onActivate={onActivate}
+                          onDeactivate={onDeactivate}
+                          onOccupy={onOccupy}
+                          setRoomToDelete={setRoomToDelete}
+                          setConfirmOpen={setConfirmOpen}
+                          canEdit={canEdit}
+                          canDelete={canDelete}
+                          canActivate={canActivate}
+                          canDeactivate={canDeactivate}
+                          canOccupy={canOccupy}
+                          canLiberate={canLiberate}
+                        />
+                      ))}
+                    </SortableContext>
+                  )}
+                </TableBody>
+              </Table>
+            </DndContext>
+          </div>
         </div>
       </div>
       <ConfirmDeleteRoomDialog

@@ -26,8 +26,12 @@ export const PUT = withAppApiWrapper(
     const body = await request.json();
     const createdBy = user.id;
 
-    await CuentaRepository.updateCuenta(id, body, createdBy);
-    return NextResponse.json({ success: true, message: 'Cuenta actualizada correctamente' });
+    const cuentaActualizada = await CuentaRepository.updateCuenta(id, body, createdBy);
+    return NextResponse.json({
+      success: true,
+      message: 'Cuenta actualizada correctamente',
+      data: cuentaActualizada
+    });
   }
 );
 

@@ -20,8 +20,8 @@ export class EventRepository {
         SELECT DP.fecha_crea as date, DP.monto as amount FROM detalle_propinas DP
         WHERE DP.usuario_id = ? AND DP.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
         UNION ALL
-        SELECT G.fecha_hora as date, G.monto as amount FROM gratificaciones G
-        WHERE G.usuario_id = ? AND G.fecha_hora >= DATE_SUB(?, INTERVAL 7 DAY)
+        SELECT G.fecha_crea as date, G.monto as amount FROM gratificaciones G
+        WHERE G.usuario_id = ? AND G.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
       ) as combined
       GROUP BY DATE(date)
       ORDER BY DATE(date) ASC
@@ -61,7 +61,7 @@ export class EventRepository {
       SELECT
         'gratificacion' as type,
         CAST(g.id AS CHAR) as id,
-        g.fecha_hora as date,
+        g.fecha_crea as date,
         g.monto as amount,
         COALESCE(g.descripcion, 'GRAT') as codigo,
         g.estado as estado,

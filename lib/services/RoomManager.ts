@@ -125,7 +125,8 @@ export class RoomManager {
   }
 
   /**
-   * Updates the service status of hostesses. Sets it to 0 if they don't have any pending room work.
+   * Keeps hostesses selectable across services, sales and accounts.
+   * Room occupancy is tracked via habitaciones, so estado_servicio stays free.
    */
   static async updateHostessServiceStatus(
     trx: TransactionQuery,
@@ -136,31 +137,7 @@ export class RoomManager {
     if (!hostessIds || hostessIds.length === 0) return;
 
     for (const hId of hostessIds) {
-      // Check for any active or paused service
-      const otherS = await trx<any[]>(`
-        SELECT COUNT(*) as cnt 
-        FROM detalle_servicios ds 
-        JOIN servicios s ON ds.servicio_id = s.id_servicio 
-        WHERE s.estado IN (2, 3, 4) 
-          ${excludeServiceId ? 'AND s.id_servicio != ?' : ''} 
-          AND ds.usuario_id = ?
-      `, excludeServiceId ? [excludeServiceId, hId] : [hId]);
-
-      // Check for any active or paused room-based sale
-      const otherV = await trx<any[]>(`
-        SELECT COUNT(*) as cnt 
-        FROM ventas_usuarios vu 
-        JOIN ventas v ON vu.venta_id = v.id_venta 
-        WHERE v.estado IN (2, 3, 4) 
-          ${excludeVentaId ? 'AND v.id_venta != ?' : ''} 
-          AND vu.usuario_id = ?
-      `, excludeVentaId ? [excludeVentaId, hId] : [hId]);
-
-      if ((otherS[0]?.cnt || 0) === 0 && (otherV[0]?.cnt || 0) === 0) {
-        await trx('UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario = ?', [hId]);
-      } else {
-        await trx('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [hId]);
-      }
+      await trx('UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario = ?', [hId]);
     }
   }
 }

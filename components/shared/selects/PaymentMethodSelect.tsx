@@ -7,10 +7,15 @@ import {
   SelectItem
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { CreditCard, DollarSign, Building2, Wallet } from 'lucide-react';
+import { CreditCard, DollarSign, Building2, Wallet, Split } from 'lucide-react';
 import { metodoPagoLabels } from '@/lib/business/salesUtils';
 
-export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
+export type PaymentMethod =
+  | 'efectivo'
+  | 'tarjeta'
+  | 'transferencia'
+  | 'prepago'
+  | 'mixto';
 
 interface PaymentMethodSelectProps {
   value: string;
@@ -20,41 +25,58 @@ interface PaymentMethodSelectProps {
   className?: string;
   required?: boolean;
   disabled?: boolean;
+  showPrepago?: boolean;
+  showMixto?: boolean;
+  disabledMethods?: PaymentMethod[];
 }
 
-const PAYMENT_METHODS = [
-  { value: 'efectivo', label: metodoPagoLabels.efectivo, icon: DollarSign },
-  { value: 'tarjeta', label: metodoPagoLabels.tarjeta, icon: CreditCard },
-  { value: 'transferencia', label: metodoPagoLabels.transferencia, icon: Building2 },
-  { value: 'prepago', label: metodoPagoLabels.prepago, icon: Wallet }
+const BASE_PAYMENT_METHODS: Array<{
+  value: PaymentMethod;
+  label: string;
+}> = [
+  { value: 'efectivo', label: metodoPagoLabels.efectivo },
+  { value: 'tarjeta', label: metodoPagoLabels.tarjeta },
+  { value: 'transferencia', label: metodoPagoLabels.transferencia }
 ];
 
 const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
   value,
   onChange,
-  label = 'Método de pago',
-  placeholder = 'Seleccionar método de pago',
+  label = 'Metodo de pago',
+  placeholder = 'Seleccionar metodo de pago',
   className = '',
   required = false,
-  disabled = false
+  disabled = false,
+  showPrepago = true,
+  showMixto = false,
+  disabledMethods = []
 }) => {
-  const handleValueChange = (newValue: string) => {
-    onChange(newValue);
-  };
+  const paymentMethods = [
+    ...BASE_PAYMENT_METHODS,
+    ...(showPrepago ? [{ value: 'prepago' as const, label: metodoPagoLabels.prepago }] : []),
+    ...(showMixto ? [{ value: 'mixto' as const, label: metodoPagoLabels.mixto }] : [])
+  ];
 
   const renderIcon = (methodValue: string) => {
     switch (methodValue) {
-      case 'efectivo': return <DollarSign className='w-4 h-4' />;
-      case 'tarjeta': return <CreditCard className='w-4 h-4' />;
-      case 'transferencia': return <Building2 className='w-4 h-4' />;
-      case 'prepago': return <Wallet className='w-4 h-4' />;
-      default: return <CreditCard className='w-4 h-4' />;
+      case 'efectivo':
+        return <DollarSign className='w-4 h-4' />;
+      case 'tarjeta':
+        return <CreditCard className='w-4 h-4' />;
+      case 'transferencia':
+        return <Building2 className='w-4 h-4' />;
+      case 'prepago':
+        return <Wallet className='w-4 h-4' />;
+      case 'mixto':
+        return <Split className='w-4 h-4' />;
+      default:
+        return <CreditCard className='w-4 h-4' />;
     }
   };
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label className='block text-xs font-medium text-gray-500 mb-1'>
+      <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide'>
         {label}
         {required && <span className='text-red-500'>*</span>}
       </Label>
@@ -63,20 +85,19 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
         <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10'>
           {renderIcon(value)}
         </span>
-        <Select value={value || ""} onValueChange={handleValueChange || (() => { })} disabled={disabled}>
+        <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
           <SelectTrigger
-            className='w-full pl-10 rounded-full'
+            className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11'
             disabled={disabled}
-            onClick={(e) => e.stopPropagation()}
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent onClick={(e) => e.stopPropagation()}>
-            {PAYMENT_METHODS.map(method => (
+          <SelectContent>
+            {paymentMethods.map(method => (
               <SelectItem
                 key={method.value}
                 value={method.value}
-                onClick={(e) => e.stopPropagation()}
+                disabled={disabledMethods.includes(method.value)}
               >
                 {method.label}
               </SelectItem>

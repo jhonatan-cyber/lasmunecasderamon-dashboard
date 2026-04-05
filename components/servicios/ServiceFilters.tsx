@@ -1,32 +1,29 @@
- 
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-
-import SelectElements from '@/components/shared/SelectElements';
-import SearchInput from '@/components/shared/SearchInput';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Trash2, RefreshCw } from "lucide-react";
+import SearchInput from "@/components/shared/SearchInput";
+import SelectElements from "@/components/shared/SelectElements";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ServiceFiltersProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  showAllServices: boolean;
-  onShowActiveServices: () => void;
-  onShowAllServices: () => void;
   itemsPerPage: number;
   setItemsPerPage: (items: number) => void;
   setCurrentPage: (page: number) => void;
+  onRefresh?: () => void;
 }
 
 export default function ServiceFilters({
   searchTerm,
   setSearchTerm,
-  showAllServices,
-  onShowActiveServices,
-  onShowAllServices,
   itemsPerPage,
   setItemsPerPage,
-  setCurrentPage
+  setCurrentPage,
+  onRefresh
 }: ServiceFiltersProps) {
   const handleItemsPerPageChange = (value: number) => {
     setItemsPerPage(value);
@@ -36,46 +33,86 @@ export default function ServiceFilters({
   // Verificar si hay filtros activos
   const hasActiveFilters = searchTerm.trim() !== '';
 
-  return (
-    <div className='mb-6'>
-      <div className='flex flex-col md:flex-row gap-4 items-stretch md:items-center'>
-        {/* Búsqueda */}
-        <div className='flex-1 group'>
-          <SearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder='Buscar servicios por código, cliente o anfitriona...'
-            className='w-full'
-          />
-        </div>
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
 
-        {/* Controles de Vista de Página */}
-        <div className='flex flex-wrap items-center gap-3'>
-          <div className='flex items-center gap-2 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm'>
-            <span className='pl-2 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest'>
-              Mostrar
-            </span>
-            <SelectElements
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              options={[8, 16, 24, 48]}
-              label=''
+  return (
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+      <CardContent className='p-6'>
+        <div className='flex flex-col lg:flex-row gap-6 items-end'>
+          {/* Búsqueda */}
+          <div className='w-full lg:flex-1'>
+            <Label htmlFor='search' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+              Buscar Servicios
+            </Label>
+            <SearchInput
+              id='search'
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder='Código, Cliente o Habitación...'
+              className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
             />
           </div>
 
-          {/* Botón limpiar filtros */}
-          {hasActiveFilters && (
-            <Button
-              onClick={() => setSearchTerm('')}
-              variant='outline'
-              className='h-10 px-4 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 gap-2 border-red-100 dark:border-red-900/30'
-            >
-              <div className='w-1.5 h-1.5 rounded-full bg-red-500' />
-              Limpiar
-            </Button>
-          )}
+          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
+            {/* Elementos por página */}
+            <div className='w-full sm:w-auto'>
+              <SelectElements
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                options={[8, 16, 24, 48]}
+                label='LISTAR'
+              />
+            </div>
+
+            {/* Botón actualizar */}
+            {onRefresh && (
+              <div className='w-full sm:w-auto'>
+                <TooltipProvider>
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={onRefresh}
+                        size="icon"
+                        className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-blue-500 hover:!text-white hover:!border-blue-500'
+                      >
+                        <RefreshCw className='w-4 h-4' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl">
+                      <p>Actualizar</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+
+            {/* Botón limpiar filtros */}
+            {hasActiveFilters && (
+              <div className='w-full sm:w-auto'>
+                <TooltipProvider>
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handleClearFilters}
+                        size="icon"
+                        className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
+                      >
+                        <Trash2 className='w-4 h-4' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl">
+                      <p>Limpiar filtros</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

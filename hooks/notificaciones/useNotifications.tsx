@@ -271,7 +271,7 @@ export function useNotifications() {
     if (payload?.type === 'service_assistance' && payload?.data) {
       const { roomName, assistanceType } = payload.data;
       toast.warning(`⚠️ SOLICITUD DE ASISTENCIA`, {
-        description: `Habitación ${roomName} solicita: ${assistanceType}`,
+        description: `Habitación ${roomName} solicita: ${assistanceType}`, 
         duration: 10000
       });
       playNotificationSound();
@@ -282,6 +282,24 @@ export function useNotifications() {
 
     if (payload?.type === 'anulacion_confirmada' || payload?.type === 'anulacion_rechazada') {
       window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+    }
+
+    if (payload?.type === 'anulacion_processed' && payload?.data) {
+      const approved = payload.data.accion === 'confirmar';
+      const tipo = payload.data.tipo;
+      toast[approved ? 'success' : 'error'](
+        `${approved ? 'Solicitud aprobada' : 'Solicitud rechazada'}`
+      , {
+        description: `${payload.data.codigo} - ${payload.data.clienteNombre}`,
+      });
+      if (tipo === 'cuenta') {
+        window.dispatchEvent(new CustomEvent('cuentasUpdated', { detail: payload.data }));
+      } else if (tipo === 'venta') {
+        window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+      } else if (tipo === 'servicio') {
+        window.dispatchEvent(new CustomEvent('updateServiceRequests'));
+      }
+      window.dispatchEvent(new CustomEvent('refreshNotifications'));
     }
   });
 
