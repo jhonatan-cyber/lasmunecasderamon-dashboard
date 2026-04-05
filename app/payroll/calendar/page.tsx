@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Grid3X3, ShoppingCart, Users, DollarSign, Clock, Gift, Zap } from 'lucide-react';
+import { Grid3X3, ShoppingCart, Users, DollarSign, Clock, Gift, Zap, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -61,6 +61,11 @@ export default function PayrollCalendarPage() {
   const [realVentasData, setRealVentasData] = useState<any[]>([]);
   const [realServiciosData, setRealServiciosData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Estado para modal de detalles
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItemType, setSelectedItemType] = useState<'venta' | 'servicio' | null>(null);
 
   // Hook para obtener acciones del calendario
   const { startDate, endDate } = getMonthDateRange(currentDate);
@@ -273,9 +278,18 @@ export default function PayrollCalendarPage() {
     setRealServiciosData([]);
     setSearchTerm('');
     setCurrentPage(1);
+    // Limpiar modal de detalles
+    setIsDetailModalOpen(false);
+    setSelectedItem(null);
+    setSelectedItemType(null);
   };
 
-  // Función para obtener datos del endpoint
+  // Función para abrir modal de detalles
+  const openDetailModal = (item: any, type: 'venta' | 'servicio') => {
+    setSelectedItem(item);
+    setSelectedItemType(type);
+    setIsDetailModalOpen(true);
+  };
   const fetchCalendarData = async (type: 'ventas' | 'servicios') => {
     if (selectedDates.length === 0) {
       console.log('No hay fechas seleccionadas');
@@ -755,8 +769,64 @@ export default function PayrollCalendarPage() {
                 </DialogHeader>
 
                 <div className='flex-1 overflow-y-auto px-6 py-4'>
-                  <div className='space-y-4 text-center'>
-                    <div className='flex justify-center gap-4'>
+                    <div className='space-y-4 text-center'>
+                      {/* Totales de Ventas y Servicios */}
+                      {realVentasData.length > 0 && realServiciosData.length > 0 && (
+                        <div className='flex justify-center gap-4 mb-4'>
+                          <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-2'>
+                            <div className='text-xs text-green-600 dark:text-green-400 uppercase font-semibold'>
+                              Total Ventas
+                            </div>
+                            <div className='text-lg font-bold text-green-700 dark:text-green-300'>
+                              {formatCurrencyCLP(
+                                realVentasData.reduce((sum, v) => sum + (v.total || 0), 0)
+                              )}
+                            </div>
+                          </div>
+                          <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2'>
+                            <div className='text-xs text-blue-600 dark:text-blue-400 uppercase font-semibold'>
+                              Total Servicios
+                            </div>
+                            <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
+                              {formatCurrencyCLP(
+                                realServiciosData.reduce((sum, s) => sum + (s.total || 0), 0)
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mostrar total individual cuando solo hay datos de uno */}
+                      {realVentasData.length > 0 && realServiciosData.length === 0 && !isLoading && (
+                        <div className='flex justify-center mb-4'>
+                          <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-2'>
+                            <div className='text-xs text-green-600 dark:text-green-400 uppercase font-semibold'>
+                              Total Ventas
+                            </div>
+                            <div className='text-lg font-bold text-green-700 dark:text-green-300'>
+                              {formatCurrencyCLP(
+                                realVentasData.reduce((sum, v) => sum + (v.total || 0), 0)
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {realServiciosData.length > 0 && realVentasData.length === 0 && !isLoading && (
+                        <div className='flex justify-center mb-4'>
+                          <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2'>
+                            <div className='text-xs text-blue-600 dark:text-blue-400 uppercase font-semibold'>
+                              Total Servicios
+                            </div>
+                            <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
+                              {formatCurrencyCLP(
+                                realServiciosData.reduce((sum, s) => sum + (s.total || 0), 0)
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className='flex justify-center gap-4'>
                       <Button
                         className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
                           showVentasTable
@@ -820,9 +890,9 @@ export default function PayrollCalendarPage() {
 
                     {/* Tabla de Ventas */}
                     {showVentasTable && (
-                      <div className='mt-6 border rounded-lg overflow-x-auto'>
+                      <div className='mt-6'>
                         {realVentasData.length === 0 ? (
-                          <div className='p-8 text-center'>
+                          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden p-8 text-center'>
                             <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
                               No hay datos de ventas
                             </div>
@@ -831,136 +901,119 @@ export default function PayrollCalendarPage() {
                             </div>
                           </div>
                         ) : (
-                          <>
-                            <Table className='min-w-full'>
-                              <TableHeader>
-                                <TableRow className='text-xs'>
-                                  <TableHead className='w-20 px-4 py-3'>Código</TableHead>
-                                  <TableHead className='w-40 px-4 py-3'>Cliente</TableHead>
-                                  <TableHead className='w-24 px-4 py-3'>Habitación</TableHead>
-                                  <TableHead className='w-28 px-4 py-3 text-right'>
-                                    Propina
-                                  </TableHead>
-                                  <TableHead className='w-32 px-4 py-3 text-right'>
-                                    Precio Hab.
-                                  </TableHead>
-                                  <TableHead className='w-28 px-4 py-3 text-right'>
-                                    Subtotal
-                                  </TableHead>
-                                  <TableHead className='w-28 px-4 py-3 text-right'>Total</TableHead>
-                                  <TableHead className='w-28 px-4 py-3 text-right'>
-                                    Comisión
-                                  </TableHead>
-                                  <TableHead className='w-32 px-4 py-3'>Fecha Venta</TableHead>
-                                  <TableHead className='w-24 px-4 py-3'>Estado</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {(() => {
-                                  const { data: paginatedData } =
-                                    getFilteredAndPaginatedData(realVentasData);
-                                  return paginatedData.map(venta => (
-                                    <TableRow key={venta.codigo} className='text-sm'>
-                                      <TableCell className='font-medium px-4 py-3'>
-                                        {venta.codigo}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>{venta.cliente}</TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {venta.habitacion || 'N/A'}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        {formatCurrencyCLP(venta.propina)}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        $
-                                        {formatCurrencyCLP(
-                                          venta.precio || venta.precioHabitacion || 0
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        {formatCurrencyCLP(venta.sub_total || venta.subtotal || 0)}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        {formatCurrencyCLP(venta.total)}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        $
-                                        {formatCurrencyCLP(
-                                          venta.total_comision || venta.comision || 0
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {venta.fecha_crea || venta.fechaVenta ? (
-                                          <div className='text-center'>
-                                            <div className='text-sm font-medium'>
-                                              {formatDateToSpanish(
-                                                venta.fecha_crea || venta.fechaVenta
-                                              )}
+                          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+                            <div className='overflow-x-auto'>
+                              <Table className='min-w-full'>
+                                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Código</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Cliente</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Habitación</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>Total</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Fecha</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Acciones</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {(() => {
+                                    const { data: paginatedData } =
+                                      getFilteredAndPaginatedData(realVentasData);
+                                    return paginatedData.map(venta => (
+                                      <TableRow key={venta.codigo} className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'>
+                                        <TableCell className='py-3 px-4 font-medium'>
+                                          {venta.codigo}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>{venta.cliente}</TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          {venta.habitacion || 'N/A'}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4 text-right font-medium'>
+                                          {formatCurrencyCLP(venta.total)}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          {venta.fecha_crea || venta.fechaVenta ? (
+                                            <div className='text-center'>
+                                              <div className='text-sm font-medium'>
+                                                {formatDateToSpanish(
+                                                  venta.fecha_crea || venta.fechaVenta
+                                                )}
+                                              </div>
+                                              <div className='text-xs text-gray-500 dark:text-gray-400'>
+                                                {formatTimeFromDate(
+                                                  venta.fecha_crea || venta.fechaVenta
+                                                )}
+                                              </div>
                                             </div>
-                                            <div className='text-xs text-gray-500 dark:text-gray-400'>
-                                              {formatTimeFromDate(
-                                                venta.fecha_crea || venta.fechaVenta
-                                              )}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          'N/A'
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        <span
-                                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                            venta.estado === 1
-                                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                          ) : (
+                                            'N/A'
+                                          )}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          <span
+                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                              venta.estado === 1
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                : venta.estado === 0
+                                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                  : venta.estado === 2
+                                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                    : venta.estado === 3
+                                                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                                            }`}
+                                          >
+                                            {venta.estado === 1
+                                              ? 'Completado'
                                               : venta.estado === 0
-                                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                ? 'Anulado'
                                                 : venta.estado === 2
-                                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                  ? 'En proceso'
                                                   : venta.estado === 3
-                                                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-                                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                                          }`}
-                                        >
-                                          {venta.estado === 1
-                                            ? 'Completado'
-                                            : venta.estado === 0
-                                              ? 'Anulado'
-                                              : venta.estado === 2
-                                                ? 'En proceso'
-                                                : venta.estado === 3
-                                                  ? 'Pendiente de anulación'
-                                                  : 'Desconocido'}
-                                        </span>
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })()}
-                              </TableBody>
-                            </Table>
+                                                    ? 'Pendiente de anulación'
+                                                    : 'Desconocido'}
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4 text-center'>
+                                          <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            className='h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            onClick={() => openDetailModal(venta, 'venta')}
+                                          >
+                                            <Eye className='w-4 h-4' />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ));
+                                  })()}
+                                </TableBody>
+                              </Table>
 
-                            {/* Paginador para Ventas */}
-                            {(() => {
-                              const { totalPages } = getFilteredAndPaginatedData(realVentasData);
-                              return totalPages > 1 ? (
-                                <div className='p-4 border-t'>
-                                  <Paginate
-                                    page={currentPage}
-                                    totalPages={totalPages}
-                                    setPage={setCurrentPage}
-                                  />
-                                </div>
-                              ) : null;
-                            })()}
-                          </>
+                              {/* Paginador para Ventas */}
+                              {(() => {
+                                const { totalPages } = getFilteredAndPaginatedData(realVentasData);
+                                return totalPages > 1 ? (
+                                  <div className='p-4 border-t border-gray-100 dark:border-gray-800'>
+                                    <Paginate
+                                      page={currentPage}
+                                      totalPages={totalPages}
+                                      setPage={setCurrentPage}
+                                    />
+                                  </div>
+                                ) : null;
+                              })()}
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
 
                     {/* Tabla de Servicios */}
                     {!showVentasTable && (
-                      <div className='mt-6 border rounded-lg overflow-x-auto'>
+                      <div className='mt-6'>
                         {realServiciosData.length === 0 ? (
-                          <div className='p-8 text-center'>
+                          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden p-8 text-center'>
                             <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
                               No hay datos de servicios
                             </div>
@@ -969,161 +1022,397 @@ export default function PayrollCalendarPage() {
                             </div>
                           </div>
                         ) : (
-                          <>
-                            <Table className='min-w-full'>
-                              <TableHeader>
-                                <TableRow className='text-xs'>
-                                  <TableHead className='w-20 px-4 py-3'>Código</TableHead>
-                                  <TableHead className='w-40 px-4 py-3'>Cliente</TableHead>
-                                  <TableHead className='w-48 px-4 py-3'>Anfitrionas</TableHead>
-                                  <TableHead className='w-24 px-4 py-3'>Habitación</TableHead>
-                                  <TableHead className='w-24 px-4 py-3'>Tiempo</TableHead>
-                                  <TableHead className='w-32 px-4 py-3 text-right'>
-                                    Precio Hab.
-                                  </TableHead>
-                                  <TableHead className='w-32 px-4 py-3 text-right'>
-                                    Precio Servicio
-                                  </TableHead>
-                                  <TableHead className='w-24 px-4 py-3 text-right'>IVA</TableHead>
-                                  <TableHead className='w-28 px-4 py-3 text-right'>
-                                    Subtotal
-                                  </TableHead>
-                                  <TableHead className='w-28 px-4 py-3 text-right'>Total</TableHead>
-                                  <TableHead className='w-28 px-4 py-3'>Método Pago</TableHead>
-                                  <TableHead className='w-36 px-4 py-3'>Fecha y Hora</TableHead>
-                                  <TableHead className='w-28 px-4 py-3'>Estado</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {(() => {
-                                  const { data: paginatedData } =
-                                    getFilteredAndPaginatedData(realServiciosData);
-                                  return paginatedData.map(servicio => (
-                                    <TableRow key={servicio.codigo} className='text-sm'>
-                                      <TableCell className='font-medium px-4 py-3'>
-                                        {servicio.codigo}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {servicio.cliente}
-                                      </TableCell>
-                                      <TableCell
-                                        className='px-4 py-3'
-                                        title={servicio.anfitriona || servicio.anfitrionas}
-                                      >
-                                        <div className='max-w-48 truncate'>
-                                          {servicio.anfitriona || servicio.anfitrionas || 'N/A'}
-                                        </div>
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {servicio.habitacion}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {servicio.tiempo}
-                                        {servicio.tiempo &&
-                                        !servicio.tiempo.toString().includes('hrs')
-                                          ? ' min'
-                                          : ''}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        $
-                                        {formatCurrencyCLP(
-                                          servicio.precio_habitacion ||
-                                            servicio.precioHabitacion ||
-                                            0
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        $
-                                        {formatCurrencyCLP(
-                                          servicio.precio_servicio || servicio.precioServicio || 0
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        {formatCurrencyCLP(servicio.iva)}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        $
-                                        {formatCurrencyCLP(
-                                          servicio.sub_total || servicio.subtotal || 0
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='text-right px-4 py-3'>
-                                        {formatCurrencyCLP(servicio.total)}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {servicio.metodo_pago || servicio.metodoPago}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        {servicio.fecha_crea || servicio.fechaHoraServicio ? (
-                                          <div className='text-center'>
-                                            <div className='text-sm font-medium'>
-                                              {formatDateToSpanish(
-                                                servicio.fecha_crea || servicio.fechaHoraServicio
-                                              )}
+                          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+                            <div className='overflow-x-auto'>
+                              <Table className='min-w-full'>
+                                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Código</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Cliente</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Habitación</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>Total</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Fecha</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Acciones</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {(() => {
+                                    const { data: paginatedData } =
+                                      getFilteredAndPaginatedData(realServiciosData);
+                                    return paginatedData.map(servicio => (
+                                      <TableRow key={servicio.codigo} className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'>
+                                        <TableCell className='py-3 px-4 font-medium'>
+                                          {servicio.codigo}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          {servicio.cliente}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          {servicio.habitacion}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4 text-right font-medium'>
+                                          {formatCurrencyCLP(servicio.total)}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          {servicio.fecha_crea || servicio.fechaHoraServicio ? (
+                                            <div className='text-center'>
+                                              <div className='text-sm font-medium'>
+                                                {formatDateToSpanish(
+                                                  servicio.fecha_crea || servicio.fechaHoraServicio
+                                                )}
+                                              </div>
+                                              <div className='text-xs text-gray-500 dark:text-gray-400'>
+                                                {formatTimeFromDate(
+                                                  servicio.fecha_crea || servicio.fechaHoraServicio
+                                                )}
+                                              </div>
                                             </div>
-                                            <div className='text-xs text-gray-500 dark:text-gray-400'>
-                                              {formatTimeFromDate(
-                                                servicio.fecha_crea || servicio.fechaHoraServicio
-                                              )}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          'N/A'
-                                        )}
-                                      </TableCell>
-                                      <TableCell className='px-4 py-3'>
-                                        <span
-                                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                            servicio.estado === 0
-                                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                          ) : (
+                                            'N/A'
+                                          )}
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4'>
+                                          <span
+                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                              servicio.estado === 0
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                : servicio.estado === 1
+                                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                  : servicio.estado === 2
+                                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+                                                    : servicio.estado === 3
+                                                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
+                                                      : servicio.estado === 4
+                                                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                                            }`}
+                                          >
+                                            {servicio.estado === 0
+                                              ? 'Pagado'
                                               : servicio.estado === 1
-                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                ? 'Finalizado'
                                                 : servicio.estado === 2
-                                                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                  ? 'En proceso'
                                                   : servicio.estado === 3
-                                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                    ? 'Solicitud de anulación'
                                                     : servicio.estado === 4
-                                                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
-                                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                                          }`}
-                                        >
-                                          {servicio.estado === 0
-                                            ? 'Finalizado'
-                                            : servicio.estado === 1
-                                              ? 'En proceso'
-                                              : servicio.estado === 2
-                                                ? 'Pendiente de anulación'
-                                                : servicio.estado === 3
-                                                  ? 'Anulado'
-                                                  : servicio.estado === 4
-                                                    ? 'Pagado'
-                                                    : 'Desconocido'}
-                                        </span>
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })()}
-                              </TableBody>
-                            </Table>
+                                                      ? 'Anulado'
+                                                      : 'Desconocido'}
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className='py-3 px-4 text-center'>
+                                          <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            className='h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            onClick={() => openDetailModal(servicio, 'servicio')}
+                                          >
+                                            <Eye className='w-4 h-4' />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ));
+                                  })()}
+                                </TableBody>
+                              </Table>
 
-                            {/* Paginador para Servicios */}
-                            {(() => {
-                              const { totalPages } = getFilteredAndPaginatedData(realServiciosData);
-                              return totalPages > 1 ? (
-                                <div className='p-4 border-t'>
-                                  <Paginate
-                                    page={currentPage}
-                                    totalPages={totalPages}
-                                    setPage={setCurrentPage}
-                                  />
-                                </div>
-                              ) : null;
-                            })()}
-                          </>
+                              {/* Paginador para Servicios */}
+                              {(() => {
+                                const { totalPages } = getFilteredAndPaginatedData(realServiciosData);
+                                return totalPages > 1 ? (
+                                  <div className='p-4 border-t border-gray-100 dark:border-gray-800'>
+                                    <Paginate
+                                      page={currentPage}
+                                      totalPages={totalPages}
+                                      setPage={setCurrentPage}
+                                    />
+                                  </div>
+                                ) : null;
+                              })()}
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="flex-shrink-0 border-t px-6 py-4">
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2"
+                      onClick={() => setIsModalOpen(false)}
+                    >
+                      Cerrar
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Modal de Detalles */}
+            <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+              <DialogContent className='max-w-2xl w-full max-h-[90vh] flex flex-col p-0'>
+                <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+                  <DialogTitle className='text-lg font-semibold'>
+                    {selectedItemType === 'venta' ? 'Detalle de Venta' : 'Detalle de Servicio'}
+                    <span className='ml-2 text-gray-500 font-normal'>{selectedItem?.codigo}</span>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className='flex-1 overflow-y-auto px-6 py-4'>
+                  {/* Información General */}
+                  <div className='grid grid-cols-2 gap-4 mb-4'>
+                    <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Cliente</div>
+                      <div className='font-medium'>{selectedItem?.cliente || 'N/A'}</div>
+                    </div>
+                    <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Habitación</div>
+                      <div className='font-medium'>{selectedItem?.habitacion || 'N/A'}</div>
+                    </div>
+                  </div>
+
+                  {/* Anfitrionas */}
+                  <div className='mb-4'>
+                    <div className='p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg'>
+                      <div className='text-xs text-purple-600 dark:text-purple-400 uppercase mb-2 font-semibold'>Anfitrionas Involucradas</div>
+                      <div className='flex flex-wrap gap-2'>
+                        {(selectedItem?.anfitrionas || selectedItem?.anfitriona || 'N/A').split(',').map((anfitriona: string, idx: number) => (
+                          <span key={idx} className='px-3 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium'>
+                            {anfitriona.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedItem && selectedItemType === 'venta' && (
+                    <div className='space-y-4'>
+                      {/* Detalles financieros de Venta */}
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Precio Habitación</div>
+                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.precio || selectedItem.precioHabitacion || 0)}</div>
+                        </div>
+                        <div className='p-4 bg-green-50 dark:bg-green-900/20 rounded-lg'>
+                          <div className='text-xs text-green-600 dark:text-green-400 uppercase mb-1'>Propina Total</div>
+                          <div className='font-medium text-green-600 dark:text-green-400'>{formatCurrencyCLP(selectedItem.propina_total || selectedItem.propina || 0)}</div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Subtotal</div>
+                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.sub_total || selectedItem.subtotal || 0)}</div>
+                        </div>
+                        <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                          <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>Comisión Total</div>
+                          <div className='font-medium text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(selectedItem.comision_total || selectedItem.total_comision || selectedItem.comision || 0)}</div>
+                        </div>
+                      </div>
+
+                      {/* Distribución de Propina por Anfitriona */}
+                      {selectedItem.distribucion_propina && (
+                        <div className='p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg'>
+                          <div className='text-sm font-semibold text-green-700 dark:text-green-300 mb-2'>Distribución de Propina</div>
+                          <div className='space-y-2'>
+                            {selectedItem.distribucion_propina.split('|').map((item: string, idx: number) => {
+                              const [nombre, monto] = item.split(':');
+                              return (
+                                <div key={idx} className='flex justify-between items-center'>
+                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>{nombre}</span>
+                                  <span className='font-semibold text-green-600 dark:text-green-400'>{formatCurrencyCLP(parseFloat(monto) || 0)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Comisión por Anfitriona */}
+                      {selectedItem.comision_por_anfitriona && (
+                        <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
+                          <div className='text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2'>Comisión por Anfitriona</div>
+                          <div className='space-y-2'>
+                            {selectedItem.comision_por_anfitriona.split('|').map((item: string, idx: number) => {
+                              const [nombre, monto] = item.split(':');
+                              return (
+                                <div key={idx} className='flex justify-between items-center'>
+                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>{nombre}</span>
+                                  <span className='font-semibold text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(parseFloat(monto) || 0)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Total */}
+                      <div className='p-4 bg-black text-white rounded-lg'>
+                        <div className='text-xs text-gray-400 uppercase mb-1'>Total Venta</div>
+                        <div className='text-2xl font-bold'>{formatCurrencyCLP(selectedItem.total || 0)}</div>
+                      </div>
+
+                      {/* Fecha y Estado */}
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Fecha de Venta</div>
+                          <div className='font-medium'>
+                            {selectedItem.fecha_crea || selectedItem.fechaVenta
+                              ? formatDateToSpanish(selectedItem.fecha_crea || selectedItem.fechaVenta)
+                              : 'N/A'}
+                          </div>
+                          <div className='text-sm text-gray-500'>
+                            {selectedItem.fecha_crea || selectedItem.fechaVenta
+                              ? formatTimeFromDate(selectedItem.fecha_crea || selectedItem.fechaVenta)
+                              : ''}
+                          </div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Estado</div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              selectedItem.estado === 1
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                : selectedItem.estado === 0
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                  : selectedItem.estado === 2
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                    : selectedItem.estado === 3
+                                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                            }`}
+                          >
+                            {selectedItem.estado === 1
+                              ? 'Completado'
+                              : selectedItem.estado === 0
+                                ? 'Anulado'
+                                : selectedItem.estado === 2
+                                  ? 'En proceso'
+                                  : selectedItem.estado === 3
+                                    ? 'Pendiente de anulación'
+                                    : 'Desconocido'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedItem && selectedItemType === 'servicio' && (
+                    <div className='space-y-4'>
+                      {/* Tiempo y Método de Pago */}
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Tiempo</div>
+                          <div className='font-medium'>
+                            {selectedItem.tiempo}
+                            {selectedItem.tiempo && !selectedItem.tiempo.toString().includes('hrs') ? ' min' : ''}
+                          </div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Método de Pago</div>
+                          <div className='font-medium'>{selectedItem.metodo_pago || selectedItem.metodoPago || 'N/A'}</div>
+                        </div>
+                      </div>
+
+                      {/* Detalles financieros de Servicio */}
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Precio Habitación</div>
+                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.precio_habitacion || selectedItem.precioHabitacion || 0)}</div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Precio Servicio</div>
+                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.precio_servicio || selectedItem.precioServicio || 0)}</div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>IVA</div>
+                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.iva || 0)}</div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Subtotal</div>
+                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.sub_total || selectedItem.subtotal || 0)}</div>
+                        </div>
+                      </div>
+
+                      {/* Comisión Total */}
+                      <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
+                        <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>Comisión Total</div>
+                        <div className='text-xl font-bold text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(selectedItem.comision_total || 0)}</div>
+                      </div>
+
+                      {/* Comisión por Anfitriona */}
+                      {selectedItem.comision_por_anfitriona && (
+                        <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
+                          <div className='text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2'>Comisión por Anfitriona</div>
+                          <div className='space-y-2'>
+                            {selectedItem.comision_por_anfitriona.split('|').map((item: string, idx: number) => {
+                              const [nombre, monto] = item.split(':');
+                              return (
+                                <div key={idx} className='flex justify-between items-center'>
+                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>{nombre}</span>
+                                  <span className='font-semibold text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(parseFloat(monto) || 0)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Total */}
+                      <div className='p-4 bg-black text-white rounded-lg'>
+                        <div className='text-xs text-gray-400 uppercase mb-1'>Total Servicio</div>
+                        <div className='text-2xl font-bold'>{formatCurrencyCLP(selectedItem.total || 0)}</div>
+                      </div>
+
+                      {/* Fecha y Estado */}
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Fecha y Hora</div>
+                          <div className='font-medium'>
+                            {selectedItem.fecha_crea || selectedItem.fechaHoraServicio
+                              ? formatDateToSpanish(selectedItem.fecha_crea || selectedItem.fechaHoraServicio)
+                              : 'N/A'}
+                          </div>
+                          <div className='text-sm text-gray-500'>
+                            {selectedItem.fecha_crea || selectedItem.fechaHoraServicio
+                              ? formatTimeFromDate(selectedItem.fecha_crea || selectedItem.fechaHoraServicio)
+                              : ''}
+                          </div>
+                        </div>
+                        <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Estado</div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              selectedItem.estado === 0
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                : selectedItem.estado === 1
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                  : selectedItem.estado === 2
+                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+                                    : selectedItem.estado === 3
+                                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
+                                      : selectedItem.estado === 4
+                                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                            }`}
+                          >
+                            {selectedItem.estado === 0
+                              ? 'Pagado'
+                              : selectedItem.estado === 1
+                                ? 'Finalizado'
+                                : selectedItem.estado === 2
+                                  ? 'En proceso'
+                                  : selectedItem.estado === 3
+                                    ? 'Solicitud de anulación'
+                                    : selectedItem.estado === 4
+                                      ? 'Anulado'
+                                      : 'Desconocido'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className='flex-shrink-0 border-t px-6 py-4'>
@@ -1131,7 +1420,7 @@ export default function PayrollCalendarPage() {
                     <Button
                       variant='outline'
                       className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
-                      onClick={() => setIsModalOpen(false)}
+                      onClick={() => setIsDetailModalOpen(false)}
                     >
                       Cerrar
                     </Button>

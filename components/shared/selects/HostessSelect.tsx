@@ -75,13 +75,14 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   };
 
   const handleToggleHostess = (id: string) => {
-    if (value.includes(id)) {
-      onChange(value.filter((x) => x !== id));
-    } else {
-      if (value.length < maxSelection) {
-        onChange([...value, id]);
-      }
-    }
+    const next = value.includes(id)
+      ? value.filter((x) => x !== id)
+      : value.length < maxSelection
+      ? [...value, id]
+      : value;
+
+    console.log('[HostessSelect] toggle', { id, previous: value, next });
+    onChange(next);
   };
 
   const selectedHostesses = anfitrionas.filter((a) =>
@@ -125,26 +126,26 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
             </button>
           </PopoverTrigger>
           {!disabled && (
-            <PopoverContent align="start" className="w-[280px] p-0">
-              {/* Barra de búsqueda */}
-              <div className="p-2 border-b">
-                <label htmlFor={`${uniqueId}-search`} className="sr-only">Buscar anfitriona</label>
-                <Input
-                  id={`${uniqueId}-search`}
-                  placeholder={searchPlaceholder}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              {/* Lista de anfitrionas */}
-              <div className="max-h-60 overflow-y-auto">
-                {filteredAnfitrionas.length === 0 ? (
-                  <div className="p-2 text-center text-gray-500 text-sm">
-                    {searchTerm ? "No se encontraron anfitrionas" : "No hay anfitrionas disponibles"}
-                  </div>
-                ) : (
-                  filteredAnfitrionas.map((anfitriona, index) => {
+            <PopoverContent align="start" className="w-[280px] p-0 z-[9999]">
+            {/* Barra de búsqueda */}
+            <div className="p-2 border-b">
+              <label htmlFor={`${uniqueId}-search`} className="sr-only">Buscar anfitriona</label>
+              <Input
+                id={`${uniqueId}-search`}
+                placeholder={searchPlaceholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            {/* Lista de anfitrionas */}
+            <div className="max-h-60 overflow-y-auto">
+              {filteredAnfitrionas.length === 0 ? (
+                <div className="p-2 text-center text-gray-500 text-sm">
+                  {searchTerm ? "No se encontraron anfitrionas" : "No hay anfitrionas disponibles"}
+                </div>
+              ) : (
+                filteredAnfitrionas.map((anfitriona, index) => {
                     const id = String(getHostessId(anfitriona));
                     const name = getHostessName(anfitriona);
                     const isSelected = value.includes(id);
@@ -170,15 +171,15 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                       </label>
                     );
                   })
-                )}
-              </div>
-              {/* Contador de selección */}
-              {maxSelection > 1 && (
-                <div className="p-2 border-t bg-gray-50 text-xs text-gray-500">
-                  Seleccionadas: {value.length} / Máximo: {maxSelection}
-                </div>
               )}
-            </PopoverContent>
+            </div>
+            {/* Contador de selección */}
+            {maxSelection > 1 && (
+              <div className="p-2 border-t bg-gray-50 text-xs text-gray-500">
+                Seleccionadas: {value.length} / Máximo: {maxSelection}
+              </div>
+            )}
+          </PopoverContent>
           )}
         </Popover>
       </div>

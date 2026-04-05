@@ -8,14 +8,14 @@ export const GET = withAppApiWrapper(async () => {
   if (!user)
     return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
 
-  // Get all pending requests (estado = 2 = pendiente)
+  // Get pending (estado = 2), approved (estado = 1), and rejected (estado = 3) requests for the user
   const solicitudes = await query(`
     SELECT A.*, CONCAT(U.nombre, ' ', U.apellido) AS usuario_nombre, U.nick
     FROM anticipos A
     INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
-    WHERE A.estado = 2
+    WHERE A.usuario_id = ? AND A.estado IN (1, 2, 3)
     ORDER BY A.fecha_crea DESC
-  `);
+  `, [user.id.toString()]);
 
   return NextResponse.json({ success: true, data: solicitudes });
 });
@@ -27,6 +27,9 @@ export const POST = withAppApiWrapper(async (request: Request) => {
 
   const body = await request.json();
   const { monto, motivo } = body;
+
+  console.log('[anticipos/solicitudes] body:', JSON.stringify(body));
+  console.log('[anticipos/solicitudes] user:', user.id);
 
   if (!monto || !motivo) {
     return NextResponse.json(
@@ -42,6 +45,7 @@ export const POST = withAppApiWrapper(async (request: Request) => {
       { status: 201 }
     );
   } catch (error: any) {
+    console.error('[anticipos/solicitudes] error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
 });

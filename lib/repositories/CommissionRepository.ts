@@ -34,14 +34,16 @@ export class CommissionRepository {
   }
 
   static async summary(): Promise<any> {
+    // Obtener totales agregados por tipo de comisión
     const summary = await query<any[]>(`
       SELECT 
-        SUM(monto) as total_comisiones,
-        COUNT(*) as cantidad_comisiones,
-        SUM(CASE WHEN venta_id IS NOT NULL AND venta_id <> '' AND venta_id <> '0' THEN monto ELSE 0 END) as comision_ventas,
-        SUM(CASE WHEN servicio_id IS NOT NULL AND servicio_id <> '' AND servicio_id <> '0' THEN monto ELSE 0 END) as comision_servicios
-      FROM comisiones
-      WHERE estado = 1
+        SUM(dc.comision) as total_comisiones,
+        COUNT(DISTINCT dc.usuario_id) as cantidad_comisiones,
+        SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN dc.comision ELSE 0 END) as comision_ventas,
+        SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0' THEN dc.comision ELSE 0 END) as comision_servicios
+      FROM comisiones c
+      INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
+      WHERE c.estado = 1 AND dc.estado = 1
     `);
     
     const data = summary[0] || { total_comisiones: 0, cantidad_comisiones: 0, comision_ventas: 0, comision_servicios: 0 };
@@ -71,29 +73,34 @@ export class CommissionRepository {
       sqlParams.push(params.employeeId);
     }
 
+    if (params.search) {
+      where += ' AND (u.nick LIKE ? OR CONCAT(u.nombre, " ", u.apellido) LIKE ?)';
+      const searchTerm = `%${params.search}%`;
+      sqlParams.push(searchTerm, searchTerm);
+    }
+
     const sql = `
       SELECT 
-        c.id_comision AS id,
-        c.venta_id,
-        c.monto AS total,
-        COALESCE(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN c.monto ELSE 0 END, 0) AS venta,
-        COALESCE(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0' THEN c.monto ELSE 0 END, 0) AS servicio,
-        CASE 
-          WHEN c.estado = 1 THEN 'por_pagar'
-          WHEN c.estado = 2 THEN 'pagado'
-          ELSE 'anulado'
-        END AS status,
-        c.fecha_crea,
+        dc.usuario_id AS id,
         dc.usuario_id AS employeeId,
         u.nick AS nick,
         CONCAT(u.nombre, ' ', u.apellido) AS employeeName,
-        v.codigo AS venta_codigo
-      FROM comisiones c
-      INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
+        SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN dc.comision ELSE 0 END) AS venta,
+        SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0' THEN dc.comision ELSE 0 END) AS servicio,
+        SUM(dc.comision) AS total,
+        MAX(c.estado) AS estado_int,
+        MAX(c.fecha_crea) AS fecha_crea,
+        CASE 
+          WHEN MAX(c.estado) = 1 THEN 'por_pagar'
+          WHEN MAX(c.estado) = 2 THEN 'pagado'
+          ELSE 'anulado'
+        END AS status
+      FROM detalle_comisiones dc
+      INNER JOIN comisiones c ON c.id_comision = dc.comision_id
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
-      LEFT JOIN ventas v ON c.venta_id = v.id_venta
       ${where}
-      ORDER BY c.fecha_crea DESC
+      GROUP BY dc.usuario_id, u.nick, u.nombre, u.apellido
+      ORDER BY SUM(dc.comision) DESC
     `;
     return await query<any[]>(sql, sqlParams);
   }

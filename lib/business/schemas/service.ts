@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const ServiceSchema = z.object({
   id: z.string().optional(),
+  codigo: z.string().optional(),
   cliente_id: z.string().nullable().optional(),
   habitacion_id: z.string().optional(),
   precio_habitacion: z.number().optional().default(0),
@@ -18,14 +19,18 @@ export const ServiceSchema = z.object({
   habitacion_nombre: z.string().optional(),
   anfitrionas_nombres: z.string().optional(),
   anfitrionas_ids: z.string().optional(),
+  total_usuarios: z.number().optional().default(0),
   creator_nick: z.string().nullable().optional(),
   creator_nombre: z.string().nullable().optional(),
   creator_apellido: z.string().nullable().optional(),
   creator_foto: z.string().nullable().optional(),
   waiter_name: z.string().nullable().optional(),
   waiter_foto: z.string().nullable().optional(),
+  cliente_nombre: z.string().nullable().optional(),
   pagos_mixtos: z.any().optional(),
   habitacion_comision: z.number().nullable().optional(),
+  total_comision: z.number().optional().default(0),
+  comision_individual: z.number().optional().default(0),
 });
 
 export const ServiceCreateSchema = z.object({

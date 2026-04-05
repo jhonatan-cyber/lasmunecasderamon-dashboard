@@ -41,13 +41,15 @@ interface ServicioCardProps {
   onStopTimer?: (servicioId: number) => void;
   onUpdate?: () => void;
   showAllServices?: boolean;
+  onShowDetail?: (servicio: ServicioWithDetails) => void;
 }
 
 export default function ServicioCard({
   servicio,
   onStopTimer,
   onUpdate,
-  showAllServices = false
+  showAllServices = false,
+  onShowDetail
 }: ServicioCardProps) {
   const {
     getTimerByServicioId,
@@ -64,8 +66,20 @@ export default function ServicioCard({
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
-  const globalTimer = getTimerByServicioId(String(servicio.id_servicio!));
-  const temporaryTimer = getTemporaryTimerByServicioId(String(servicio.id_servicio!));
+  // Debug: ver qué ID se usa y si hay timer
+  // El API devuelve "id" pero el tipo espera "id_servicio"
+  const rawId = servicio.id_servicio ?? servicio.id;
+  const servicioIdStr = String(rawId || 'NO-ID');
+  
+  console.log('[ServicioCard] Raw ID:', rawId, 'String:', servicioIdStr, 'Keys:', Object.keys(servicio));
+  
+  const globalTimer = getTimerByServicioId(servicioIdStr);
+  const temporaryTimer = getTemporaryTimerByServicioId(servicioIdStr);
+
+  // Debug: mostrar info del timer cada vez que cambia
+  useEffect(() => {
+    console.log('[ServicioCard] servicioId:', servicioIdStr, 'has globalTimer:', !!globalTimer, 'has tempTimer:', !!temporaryTimer, 'remaining:', globalTimer?.remainingTime, 'active:', globalTimer?.isActive);
+  }, [servicioIdStr, globalTimer, temporaryTimer]);
 
   const displayTimer = temporaryTimer || globalTimer;
   const isTemporaryActive = !!temporaryTimer;
@@ -134,7 +148,7 @@ export default function ServicioCard({
   useEffect(() => {
     setEditPrecio(servicio.precio_servicio || 0);
     setEditTiempo(servicio.tiempo || 0);
-  }, [servicio]);
+  }, [servicio.precio_servicio, servicio.tiempo]);
 
   const handleSaveEdit = async () => {
     if (editPrecio < 0 || editTiempo <= 0) {
@@ -211,6 +225,13 @@ export default function ServicioCard({
     }
   };
 
+  // Handler para mostrar detalle (solo en servicios finalizados)
+  const handleCardClick = () => {
+    if (showAllServices && onShowDetail) {
+      onShowDetail(servicio);
+    }
+  };
+
   const handleStopTimer = () => {
     setShowConfirm(true);
   };
@@ -270,7 +291,7 @@ export default function ServicioCard({
 
   return (
     <Card
-      className={`w-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-opacity-50 
+      className={`w-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-opacity-50 cursor-pointer ${showAllServices ? 'hover:cursor-pointer' : ''}
       ${
         isCriticalTime
           ? 'animate-pulse-red border-red-500 shadow-red-100 dark:shadow-red-900/20 shadow-lg'
@@ -280,6 +301,7 @@ export default function ServicioCard({
       } 
       ${isLowTime && !isCriticalTime ? 'bg-yellow-50/30 dark:bg-yellow-900/10' : 'bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm'} 
       ${isCriticalTime ? 'bg-red-50/30 dark:border-red-800 dark:bg-red-900/20' : ''}`}
+      onClick={handleCardClick}
     >
       <div className='p-4 space-y-4'>
         {/* Header Row */}
@@ -297,7 +319,8 @@ export default function ServicioCard({
             <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>
               #{servicio.codigo}
             </span>
-            {Number(servicio.habitacion_comision || 0) > 0 && !isEditing && (
+            {/* Botón editar solo para servicios NO finalizados */}
+            {Number(servicio.habitacion_comision || 0) > 0 && !isEditing && servicio.estado !== 1 && (
               <>
                 <Button
                   variant='ghost'
@@ -451,41 +474,42 @@ export default function ServicioCard({
             <div>
               <span className='text-gray-500 dark:text-gray-400'>Servicio: </span>
               {isEditing ? (
-                <Input
-                  type='number'
-                  value={editPrecio}
-                  onChange={e => setEditPrecio(Number(e.target.value))}
-                  className='h-6 w-20 text-xs inline-block ml-1'
-                  disabled={isSaving}
-                />
-              ) : (
+                  <Input
+                    type='number'
+                    value={editPrecio}
+                    onChange={e => setEditPrecio(Number(e.target.value))}
+                    className='h-6 w-20 text-xs inline-block ml-1'
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <span
+                    className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
+                  >
+                    {formatCurrencyNoDecimals(finalDisplayData.precio_servicio)}
+                    {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
+                  </span>
+                )}
+              </div>
+              <div>
+                <span className='text-gray-500 dark:text-gray-400'>Habitacion: </span>
                 <span
                   className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
                 >
-                  {formatCurrencyNoDecimals(finalDisplayData.precio_servicio)}
+                  {formatCurrencyNoDecimals(finalDisplayData.precio_habitacion)}
                   {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
                 </span>
-              )}
-            </div>
-            <div>
-              <span className='text-gray-500 dark:text-gray-400'>Habitacion: </span>
-              <span
-                className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
-              >
-                {formatCurrencyNoDecimals(finalDisplayData.precio_habitacion)}
-                {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
-              </span>
+              </div>
               {finalDisplayData.habitacion_comision &&
                 finalDisplayData.habitacion_comision > 0 &&
                 !isTemporaryActive && (
-                  <span className='text-xs text-gray-600 dark:text-gray-400 font-medium ml-2'>
-                    Comisión:{' '}
+                  <div>
+                    <span className='text-gray-500 dark:text-gray-400'>Comisión: </span>
                     <span
-                      className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
+                      className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}
                     >
                       {formatCurrencyNoDecimals(finalDisplayData.habitacion_comision)}
                     </span>
-                  </span>
+                  </div>
                 )}
             </div>
             {finalDisplayData.iva > 0 && (
@@ -500,35 +524,40 @@ export default function ServicioCard({
               </div>
             )}
           </div>
-          <div className='text-right'>
-            <div
-              className={`text-lg font-bold ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
-            >
-              {formatCurrencyNoDecimals(finalDisplayData.total)}
-              {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
-            </div>
-            <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400'>
-              <CreditCard className='w-3 h-3' />
-              <span className='capitalize'>{finalDisplayData.metodo_pago || 'efectivo'}</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Nota sobre valores temporales */}
-        {isTemporaryActive && (
-          <div className='text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border-t border-blue-200 dark:border-blue-800'>
-            <span className='font-medium'>* Valores temporales</span> - Precios se restaurarán,
-            anfitrionas se mantendrán cuando termine el timer temporal
+          {/* Total, Método de pago y Fecha en la misma línea */}
+          <div className='flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800'>
+            {/* Fecha a la izquierda */}
+            <div className='text-xs text-gray-500 dark:text-gray-400'>
+              <div>{formatSoloFecha(servicio.fecha_crea || '')}</div>
+              <div>{formatSoloHora(servicio.fecha_crea || '')}</div>
+            </div>
+            
+            {/* Total y método de pago a la derecha */}
+            <div className='text-right'>
+              <div
+                className={`text-lg font-bold ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
+              >
+                {formatCurrencyNoDecimals(finalDisplayData.total)}
+                {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
+              </div>
+              <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400'>
+                <CreditCard className='w-3 h-3' />
+                <span className='capitalize'>{finalDisplayData.metodo_pago || 'efectivo'}</span>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Date and Actions */}
-        <div className='flex items-center justify-between pt-2'>
-          <div className='text-xs text-gray-500 dark:text-gray-400'>
-            <div>{formatSoloFecha(servicio.fecha_crea || '')}</div>
-            <div>{formatSoloHora(servicio.fecha_crea || '')}</div>
-          </div>
-          <div className='flex gap-2'>
+          {/* Nota sobre valores temporales */}
+          {isTemporaryActive && (
+            <div className='text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border-t border-blue-200 dark:border-blue-800'>
+              <span className='font-medium'>* Valores temporales</span> - Precios se restaurarán,
+              anfitrionas se mantendrán cuando termine el timer temporal
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className='flex gap-2 pt-2'>
             {isEditing && (
               <>
                 <Button
@@ -563,9 +592,8 @@ export default function ServicioCard({
               )}
           </div>
         </div>
-      </div>
 
-      {/* Edit Service Modal */}
+        {/* Edit Service Modal */}
       <EditServiceModal
         open={showEditModal}
         onOpenChange={setShowEditModal}

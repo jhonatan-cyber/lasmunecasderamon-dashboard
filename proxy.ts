@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { logger } from '@/lib/utils/logger';
+import { env } from '@/lib/utils/env';
 
 const PUBLIC_PATHS = [
   '/',
@@ -12,6 +13,9 @@ const PUBLIC_PATHS = [
   '/politica-de-privacidad',
   '/confirmar-anulacion',
   '/confirmar-anulacion-servicio',
+  '/confirmar-anulacion-cuenta',
+  '/confirmar-anticipo',
+  '/confirmar-anticipo',
   '/api/auth/login',
   '/api/auth/reset-password',
   '/api/login',
@@ -26,10 +30,18 @@ const PUBLIC_PATHS = [
   '/api/health',
   '/api/reviews/create',
   '/api/whatsapp/webhook',
+  '/api/ventas/solicitud-anulacion',
+  '/api/ventas/procesar-anulacion',
+  '/api/servicios/solicitud-anulacion',
+  '/api/servicios/procesar-anulacion',
+  '/api/cuentas/solicitud-anulacion',
+  '/api/cuentas/procesar-anulacion',
   '/api/notifications/pending',
   '/api/notifications/sse',
   '/api/notifications/pending-count',
   '/api/timers/active',
+  '/api/anticipos/solicitud-detalles',
+  '/api/anticipos/aprobar',
   '/api/swagger',
   '/api-docs',
   '/api/docs',
@@ -145,7 +157,7 @@ const apiRoutePermissions: Record<string, { module: string; action: string }> = 
 
 async function verifyToken(token: string) {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret');
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     return payload;
   } catch (error) {

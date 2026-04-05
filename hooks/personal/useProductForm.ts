@@ -95,7 +95,7 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     }
 
     if (name === 'name') {
-      setForm(prev => ({ ...prev, name: value.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') }));
+      setForm(prev => ({ ...prev, name: value.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') }));
     } else if (name === 'description') {
       setForm(prev => ({ ...prev, description: value ? value.charAt(0).toUpperCase() + value.slice(1) : value }));
     } else {

@@ -7,7 +7,8 @@ import {
   DialogHeader, 
   DialogTitle, 
 } from '@/components/ui/dialog';
-import { Banknote } from 'lucide-react';
+import { Loader2, Banknote } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AdvanceForm } from './AdvanceForm';
 
 interface AdvancesDialogProps {
@@ -16,7 +17,7 @@ interface AdvancesDialogProps {
   onSubmit: (data: { usuario_id: string; monto: string; motivo: string }) => Promise<void>;
   isLoading: boolean;
   error: string | null;
-  efectivoEnCaja?: number; // Optional as it might not be ready
+  efectivoEnCaja?: number;
 }
 
 export function AdvancesDialog({ 
@@ -27,11 +28,15 @@ export function AdvancesDialog({
   error,
   efectivoEnCaja = 0
 }: AdvancesDialogProps) {
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-lg p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl'>
-        <DialogHeader className='p-6 sm:p-8 pb-4 border-b bg-white dark:bg-slate-900'>
-          <DialogTitle className='text-xl sm:text-2xl font-bold flex items-center gap-2 text-gray-900 dark:text-white'>
+      <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+        <DialogHeader className='p-6 pb-2 border-b'>
+          <DialogTitle className='text-xl font-bold flex items-center gap-2'>
             <Banknote className='w-5 h-5 sm:w-6 sm:h-6 text-emerald-500' />
             <span>Registrar Anticipo</span>
           </DialogTitle>
@@ -40,15 +45,42 @@ export function AdvancesDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className='p-6 sm:p-8 bg-white dark:bg-slate-900'>
+        <div className='flex-1 overflow-y-auto p-6'>
           <AdvanceForm
             open={open}
             onSubmit={onSubmit}
-            onCancel={() => onOpenChange(false)}
+            onCancel={handleCancel}
             isLoading={isLoading}
             error={error}
             efectivoEnCaja={efectivoEnCaja}
+            hideButtons={true}
           />
+        </div>
+
+        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+          <Button
+            variant='outline'
+            onClick={handleCancel}
+            className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+            disabled={isLoading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type='submit'
+            form='advance-form'
+            className='bg-black text-white dark:bg-white dark:text-black dark:hover:!bg-gray-200 dark:hover:!text-black rounded-full px-8 hover:!bg-gray-800 hover:!text-white transition-all hover:scale-105 border-2'
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className='flex items-center gap-2'>
+                <Loader2 className='w-4 h-4 animate-spin' />
+                <span>Guardando...</span>
+              </div>
+            ) : (
+              <span>Guardar</span>
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

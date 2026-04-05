@@ -42,9 +42,13 @@ export function useTimerSync({
   // --- SINCRONIZACIÓN INICIAL ---
   useEffect(() => {
     if (initialSyncExecutedRef.current) return;
+    initialSyncExecutedRef.current = true;
 
+    console.log('[useTimerSync] Performing initial sync...');
+    
     const performInitialSync = async () => {
       const stored = loadTimersFromStorage();
+      console.log('[useTimerSync] Stored timers from localStorage:', stored.length);
       const serverOffset = serverOffsetSignal.peek();
 
       const aliveTimers = stored
@@ -55,13 +59,17 @@ export function useTimerSync({
         }))
         .filter(t => t.isActive);
 
+      console.log('[useTimerSync] Alive timers from storage:', aliveTimers.length);
+
       try {
         const res = await fetch('/api/timers/active?source=web');
-        const { success, data, serverTime } = await res.json();
+        const json = await res.json();
+        console.log('[useTimerSync] API response:', json);
+
+        const { success, data, serverTime } = json;
 
         if (success && Array.isArray(data)) {
           if (serverTime) {
-            // serverTime ahora viene en ISO (Z) para comparación absoluta correcta
             const newOffset = new Date(serverTime).getTime() - Date.now();
             setServerOffset(newOffset);
             serverOffsetSignal.value = newOffset;

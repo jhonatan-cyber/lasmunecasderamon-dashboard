@@ -2,11 +2,354 @@ import { query, generateUUID, withTransaction, type TransactionQuery } from '@/l
 import { SaleSchema, type SaleType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
+import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
+
+type MixedPayment = {
+  metodo: string;
+  monto: number;
+};
+
+type AllocationRow<T> = T & {
+  currentAmount: number;
+  nextAmount?: number;
+};
 
 export class SaleRepository {
   private static readonly TABLE = 'ventas';
   private static readonly ID_COL = 'id_venta';
+
+  private static parseMixedPayments(raw: unknown): MixedPayment[] {
+    if (!raw) return [];
+
+    let parsed = raw;
+    if (typeof raw === 'string') {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return [];
+      }
+    }
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item: any) => ({
+        metodo: String(item?.metodo || ''),
+        monto: Number(item?.monto || 0),
+      }))
+      .filter((item: MixedPayment) => item.metodo && item.monto > 0);
+  }
+
+  private static allocateProportionally<T>(
+    rows: T[],
+    getAmount: (row: T) => number,
+    targetTotal: number
+  ): AllocationRow<T>[] {
+    const normalizedTarget = Math.max(0, Math.round(Number(targetTotal || 0)));
+    const baseRows = rows.map((row) => ({
+      ...row,
+      currentAmount: Math.max(0, Math.round(Number(getAmount(row) || 0))),
+    }));
+
+    const currentTotal = baseRows.reduce((sum, row) => sum + row.currentAmount, 0);
+    if (currentTotal <= 0 || normalizedTarget <= 0) {
+      return baseRows.map((row) => ({ ...row, nextAmount: 0 }));
+    }
+
+    const allocated = baseRows.map((row) => ({
+      ...row,
+      nextAmount: Math.floor((row.currentAmount * normalizedTarget) / currentTotal),
+    }));
+
+    let assigned = allocated.reduce((sum, row) => sum + Number(row.nextAmount || 0), 0);
+    let remainder = Math.max(0, normalizedTarget - assigned);
+    let cursor = 0;
+
+    while (remainder > 0 && allocated.length > 0) {
+      allocated[cursor % allocated.length].nextAmount =
+        Number(allocated[cursor % allocated.length].nextAmount || 0) + 1;
+      remainder -= 1;
+      cursor += 1;
+    }
+
+    return allocated;
+  }
+
+  private static async getVentaStateAfterRequest(trx: TransactionQuery, ventaId: string): Promise<number> {
+    const ventaRows = await trx<any[]>(
+      'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ? LIMIT 1',
+      [ventaId]
+    );
+
+    return ventaRows.length && ventaRows[0].habitacion_id && Number(ventaRows[0].tiempo || 0) > 0
+      ? 2
+      : 1;
+  }
+
+  static async approveAnulacion(
+    ventaId: string,
+    approvedBy: string,
+    requestedAmount: number
+  ): Promise<SaleType | null> {
+    const ventaRows = await query<any[]>(
+      `SELECT id_venta, estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, sub_total,
+              propina, total_comision, pagos_mixtos
+       FROM ventas
+       WHERE id_venta = ?
+       LIMIT 1`,
+      [ventaId]
+    );
+
+    if (!ventaRows.length) {
+      throw new Error('Venta no encontrada');
+    }
+
+    const venta = ventaRows[0];
+    const currentTotal = Math.max(0, Math.round(Number(venta.total || 0)));
+    const approvedAmount = Math.max(0, Math.round(Number(requestedAmount || 0)));
+
+    if (approvedAmount <= 0 || approvedAmount >= currentTotal) {
+      return this.updateStatus(ventaId, 0, approvedBy);
+    }
+
+    const currentPropina = Math.max(0, Math.round(Number(venta.propina || 0)));
+    const currentComision = Math.max(0, Math.round(Number(venta.total_comision || 0)));
+    const clienteId = venta.cliente_id;
+    const cajaId = venta.caja_id;
+    const pedidoId = venta.pedido_id;
+    const metodoPago = String(venta.metodo_pago || '');
+    const pagosMixtos = this.parseMixedPayments(venta.pagos_mixtos);
+
+    await withTransaction(async (trx) => {
+      const prepagoRows = clienteId
+        ? await trx<any[]>(
+            `SELECT COALESCE(SUM(monto), 0) as total_prepago
+             FROM clientes_prepago_movimientos
+             WHERE cliente_id = ?
+               AND UPPER(tipo) = 'CONSUMO'
+               AND (
+                 venta_id = ?
+                 OR JSON_UNQUOTE(JSON_EXTRACT(metadatos, '$.venta_id')) = ?
+               )`,
+            [clienteId, ventaId, ventaId]
+          )
+        : [];
+
+      const currentPrepago = Math.max(0, Math.round(Number(prepagoRows[0]?.total_prepago || 0)));
+      const newTotal = Math.max(0, currentTotal - approvedAmount);
+      const newPropina = currentTotal > 0
+        ? Math.max(0, Math.round((currentPropina * newTotal) / currentTotal))
+        : 0;
+      const newComision = currentTotal > 0
+        ? Math.max(0, Math.round((currentComision * newTotal) / currentTotal))
+        : 0;
+      const newSubTotal = Math.max(0, newTotal - newPropina);
+
+      const prepagoAllocation = this.allocateProportionally(
+        currentPrepago > 0 ? [{ key: 'prepago', amount: currentPrepago }] : [],
+        (row) => row.amount,
+        currentTotal > 0 ? Math.round((currentPrepago * newTotal) / currentTotal) : 0
+      );
+      const newPrepago = Number(prepagoAllocation[0]?.nextAmount || 0);
+      const prepagoRefund = Math.max(0, currentPrepago - newPrepago);
+
+      const mixedSourceRows =
+        metodoPago === 'mixto'
+          ? pagosMixtos.map((payment, index) => ({
+              key: `${payment.metodo}_${index}`,
+              metodo: payment.metodo,
+              amount: Math.max(0, Math.round(Number(payment.monto || 0))),
+            }))
+          : [
+              {
+                key: `${metodoPago || 'efectivo'}_principal`,
+                metodo: metodoPago || 'efectivo',
+                amount: Math.max(0, currentTotal - currentPrepago),
+              },
+            ];
+
+      const targetMixedTotal = Math.max(0, newTotal - newPrepago);
+      const updatedMixedRows = this.allocateProportionally(
+        mixedSourceRows,
+        (row) => row.amount,
+        targetMixedTotal
+      );
+
+      const methodRefunds = {
+        efectivo: 0,
+        tarjeta: 0,
+        transferencia: 0,
+      };
+
+      for (const row of updatedMixedRows) {
+        const refundAmount = Math.max(0, row.currentAmount - Number(row.nextAmount || 0));
+        if (row.metodo === 'efectivo') methodRefunds.efectivo += refundAmount;
+        if (row.metodo === 'tarjeta') methodRefunds.tarjeta += refundAmount;
+        if (row.metodo === 'transferencia') methodRefunds.transferencia += refundAmount;
+      }
+
+      if (clienteId && prepagoRefund > 0) {
+        await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [prepagoRefund, clienteId]);
+        await trx(
+          `INSERT INTO clientes_prepago_movimientos
+           (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
+           VALUES (?, ?, 'DEVOLUCION', ?, 'prepago', ?, ?, ?, ?)`,
+          [
+            generateUUID(),
+            clienteId,
+            prepagoRefund,
+            ventaId,
+            approvedBy || null,
+            getNowInBusinessTimezone(),
+            JSON.stringify({ concepto: `Anulacion parcial venta ${ventaId}` }),
+          ]
+        );
+      }
+
+      if (cajaId) {
+        await CashRegisterRepository.updateBalances(trx, cajaId, {
+          venta: -(approvedAmount - Math.max(0, currentPropina - newPropina)),
+          efectivo: -methodRefunds.efectivo,
+          tarjeta: -methodRefunds.tarjeta,
+          transferencia: -methodRefunds.transferencia,
+          prepago: -prepagoRefund,
+          propina: -(currentPropina - newPropina),
+          comision: -(currentComision - newComision),
+          devolucion: approvedAmount,
+        });
+      }
+
+      await trx(
+        `UPDATE ventas
+         SET total = ?, sub_total = ?, propina = ?, total_comision = ?, pagos_mixtos = ?, estado = ?, fecha_mod = ?
+         WHERE id_venta = ?`,
+        [
+          newTotal,
+          newSubTotal,
+          newPropina,
+          newComision,
+          JSON.stringify(
+            updatedMixedRows
+              .filter((row) => Number(row.nextAmount || 0) > 0)
+              .map((row) => ({ metodo: row.metodo, monto: Number(row.nextAmount || 0) }))
+          ),
+          await this.getVentaStateAfterRequest(trx, ventaId),
+          getNowInBusinessTimezone(),
+          ventaId,
+        ]
+      );
+
+      const detailRows = await trx<any[]>(
+        'SELECT id_detalle_venta, sub_total, comision FROM detalle_ventas WHERE venta_id = ? ORDER BY id_detalle_venta ASC',
+        [ventaId]
+      );
+
+      const updatedDetailSubtotals = this.allocateProportionally(
+        detailRows,
+        (row) => row.sub_total,
+        newSubTotal
+      );
+      const updatedDetailComisiones = this.allocateProportionally(
+        detailRows,
+        (row) => row.comision,
+        newComision
+      );
+      const comisionByDetailId = new Map(
+        updatedDetailComisiones.map((row) => [row.id_detalle_venta, Number(row.nextAmount || 0)])
+      );
+
+      for (const row of updatedDetailSubtotals) {
+        await trx(
+          'UPDATE detalle_ventas SET sub_total = ?, comision = ? WHERE id_detalle_venta = ?',
+          [
+            Number(row.nextAmount || 0),
+            comisionByDetailId.get(row.id_detalle_venta) || 0,
+            row.id_detalle_venta,
+          ]
+        );
+      }
+
+      const comisionRows = await trx<any[]>(
+        `SELECT c.id_comision, c.monto, dc.id_detalle_comision, dc.comision
+         FROM comisiones c
+         INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision
+         WHERE c.venta_id = ? AND c.estado = 1 AND dc.estado = 1
+         ORDER BY c.id_comision ASC`,
+        [ventaId]
+      );
+
+      const updatedComisiones = this.allocateProportionally(
+        comisionRows,
+        (row) => row.comision,
+        newComision
+      );
+
+      for (const row of updatedComisiones) {
+        await trx('UPDATE detalle_comisiones SET comision = ? WHERE id_detalle_comision = ?', [
+          Number(row.nextAmount || 0),
+          row.id_detalle_comision,
+        ]);
+        await trx('UPDATE comisiones SET monto = ? WHERE id_comision = ?', [
+          Number(row.nextAmount || 0),
+          row.id_comision,
+        ]);
+      }
+
+      const propinaHeaderRows = await trx<any[]>(
+        'SELECT id_propina, propina FROM propinas WHERE venta_id = ? AND estado = 1 ORDER BY id_propina ASC',
+        [ventaId]
+      );
+      const propinaDetailRows = await trx<any[]>(
+        `SELECT dp.id_detalle_propina, dp.propina_id, dp.monto
+         FROM detalle_propinas dp
+         INNER JOIN propinas p ON p.id_propina = dp.propina_id
+         WHERE p.venta_id = ? AND COALESCE(dp.estado, 1) = 1
+         ORDER BY dp.id_detalle_propina ASC`,
+        [ventaId]
+      );
+
+      const updatedPropinas = this.allocateProportionally(
+        propinaDetailRows,
+        (row) => row.monto,
+        newPropina
+      );
+      const propinaByHeaderId = new Map();
+
+      for (const row of updatedPropinas) {
+        await trx('UPDATE detalle_propinas SET monto = ? WHERE id_detalle_propina = ?', [
+          Number(row.nextAmount || 0),
+          row.id_detalle_propina,
+        ]);
+        propinaByHeaderId.set(
+          row.propina_id,
+          (propinaByHeaderId.get(row.propina_id) || 0) + Number(row.nextAmount || 0)
+        );
+      }
+
+      for (const header of propinaHeaderRows) {
+        await trx('UPDATE propinas SET propina = ?, fecha_mod = ? WHERE id_propina = ?', [
+          propinaByHeaderId.get(header.id_propina) || 0,
+          getNowInBusinessTimezone(),
+          header.id_propina,
+        ]);
+      }
+
+      if (pedidoId) {
+        await trx('UPDATE pedidos SET estado = 2 WHERE id_pedido = ?', [pedidoId]);
+      }
+
+      const { addVentaLog } = await import('@/lib/utils/logUtils');
+      await addVentaLog(
+        ventaId,
+        'ANULACION_PARCIAL',
+        `Venta ajustada por anulacion parcial de ${approvedAmount}.`,
+        approvedBy
+      );
+    });
+
+    return this.getById(ventaId);
+  }
 
   private static mapSaleFromDB(row: any): SaleType | null {
     if (!row) return null;
@@ -173,11 +516,55 @@ export class SaleRepository {
       WHERE vu.venta_id = ?
     `, [id]);
 
+    // 4. Fetch comisiones por anfitriona
+    const comisiones = await query<any[]>(`
+      SELECT u.nick, u.foto, SUM(dv.comision) as monto
+      FROM detalle_ventas dv
+      JOIN ventas_usuarios vu ON vu.venta_id = dv.venta_id AND vu.usuario_id = dv.hostess_id
+      JOIN usuarios u ON u.id_usuario = dv.hostess_id
+      WHERE dv.venta_id = ? AND dv.comision > 0
+      GROUP BY dv.hostess_id, u.nick, u.foto
+    `, [id]);
+
+    // 5. Fetch distribución de propinas
+    const propinas = await query<any[]>(`
+      SELECT
+        dp.usuario_id,
+        u.nick,
+        u.nombre,
+        u.apellido,
+        u.foto,
+        SUM(dp.monto) as monto
+      FROM propinas p
+      INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina
+      LEFT JOIN usuarios u ON u.id_usuario = dp.usuario_id
+      WHERE p.venta_id = ?
+      GROUP BY dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto
+      ORDER BY monto DESC
+    `, [id]);
+
+    const totalComision = comisiones.reduce((sum: number, c: any) => sum + Number(c.monto || 0), 0);
+
     return {
       ...venta,
       cajero_nick: res[0].cajero_nick,
       cajero_nombre: res[0].cajero_nombre,
       garzon_nombre: res[0].garzon_nombre,
+      habitacion_nombre: res[0].habitacion_nombre,
+      total_comision: totalComision,
+      comisiones_detalle: comisiones.map((c: any) => ({
+        nick: c.nick,
+        foto: c.foto,
+        monto: Number(c.monto || 0),
+      })),
+      propinas_detalle: propinas.map((p: any) => ({
+        usuario_id: p.usuario_id,
+        nick: p.nick,
+        nombre: p.nombre,
+        apellido: p.apellido,
+        foto: p.foto,
+        monto: Number(p.monto || 0),
+      })),
       detalles: detalles.map(d => ({
         id: d.id,
         venta_id: d.venta_id,
@@ -199,10 +586,21 @@ export class SaleRepository {
   }
 
   static async updateStatus(id: string, estado: number, userId?: string): Promise<SaleType | null> {
-    const prev = await query<any[]>('SELECT estado, habitacion_id FROM ventas WHERE id_venta = ?', [id]);
+    const prev = await query<any[]>(
+      'SELECT estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, propina, total_comision, pagos_mixtos FROM ventas WHERE id_venta = ?',
+      [id]
+    );
     if (prev.length === 0) throw new Error('Venta no encontrada');
     const estadoAnterior = prev[0].estado;
     const habitacionId = prev[0].habitacion_id;
+    const clienteId = prev[0].cliente_id;
+    const cajaId = prev[0].caja_id;
+    const pedidoId = prev[0].pedido_id;
+    const metodoPago = String(prev[0].metodo_pago || '');
+    const total = Number(prev[0].total || 0);
+    const propina = Number(prev[0].propina || 0);
+    const totalComision = Number(prev[0].total_comision || 0);
+    const pagosMixtos = this.parseMixedPayments(prev[0].pagos_mixtos);
 
     await withTransaction(async (trx) => {
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado, fecha_mod: getNowInBusinessTimezone() });
@@ -218,21 +616,107 @@ export class SaleRepository {
       const { addVentaLog } = await import('@/lib/utils/logUtils');
       if (estado === 1 && estadoAnterior !== 1) await addVentaLog(id, 'FINALIZADO', 'Venta finalizada manualmente.', userId);
       else if (estado === 0 && estadoAnterior !== 0) {
+        const prepagoRows = clienteId
+          ? await trx<any[]>(
+              `SELECT COALESCE(SUM(monto), 0) as total_prepago
+               FROM clientes_prepago_movimientos
+               WHERE cliente_id = ?
+                 AND UPPER(tipo) = 'CONSUMO'
+                 AND (
+                   venta_id = ?
+                   OR JSON_UNQUOTE(JSON_EXTRACT(metadatos, '$.venta_id')) = ?
+                 )`,
+              [clienteId, id, id]
+            )
+          : [];
+        const prepagoMonto = Number(prepagoRows[0]?.total_prepago || 0);
+
+        if (clienteId && prepagoMonto > 0) {
+          await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [prepagoMonto, clienteId]);
+          await trx(
+            `INSERT INTO clientes_prepago_movimientos
+             (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
+             VALUES (?, ?, 'DEVOLUCION', ?, 'prepago', ?, ?, ?, ?)`,
+            [
+              generateUUID(),
+              clienteId,
+              prepagoMonto,
+              id,
+              userId || null,
+              getNowInBusinessTimezone(),
+              JSON.stringify({ concepto: `Anulacion venta ${id}` }),
+            ]
+          );
+        }
+
+        if (cajaId) {
+          let efectivo = 0;
+          let tarjeta = 0;
+          let transferencia = 0;
+
+          if (metodoPago === 'mixto') {
+            for (const pago of pagosMixtos) {
+              if (pago.metodo === 'efectivo') efectivo += pago.monto;
+              if (pago.metodo === 'tarjeta') tarjeta += pago.monto;
+              if (pago.metodo === 'transferencia') transferencia += pago.monto;
+            }
+          } else {
+            const montoMetodoPrincipal = Math.max(0, total - prepagoMonto);
+            if (metodoPago === 'efectivo') efectivo = montoMetodoPrincipal;
+            if (metodoPago === 'tarjeta') tarjeta = montoMetodoPrincipal;
+            if (metodoPago === 'transferencia') transferencia = montoMetodoPrincipal;
+          }
+
+          await CashRegisterRepository.updateBalances(trx, cajaId, {
+            venta: -(total - propina),
+            efectivo: -efectivo,
+            tarjeta: -tarjeta,
+            transferencia: -transferencia,
+            prepago: -prepagoMonto,
+            propina: -propina,
+            comision: -totalComision,
+            devolucion: total,
+          });
+        }
+
         await addVentaLog(id, 'ANULADO', 'Venta anulada manualmente.', userId);
         await trx('UPDATE comisiones SET estado = 0 WHERE venta_id = ?', [id]);
+        await trx(
+          `UPDATE detalle_comisiones dc
+           INNER JOIN comisiones c ON c.id_comision = dc.comision_id
+           SET dc.estado = 0
+           WHERE c.venta_id = ?`,
+          [id]
+        );
+        await trx('DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)', [id]);
+        await trx('DELETE FROM propinas WHERE venta_id = ?', [id]);
+
+        if (pedidoId) {
+          await trx('UPDATE pedidos SET estado = 1 WHERE id_pedido = ?', [pedidoId]);
+        }
       }
     });
 
     return await this.getById(id);
   }
 
-  static async requestAnulacion(id: string, reason: string, requestedBy: string): Promise<string> {
+  static async requestAnulacion(
+    id: string,
+    reason: string,
+    requestedBy: string,
+    amount: number
+  ): Promise<string> {
     const idAnul = generateUUID();
-    await query(`
-      INSERT INTO solicitudes_anulacion_ventas (id, venta_id, motivo, requested_by, estado, fecha_crea)
-      VALUES (?, ?, ?, ?, 'pendiente', ?)
-    `, [idAnul, id, reason, requestedBy, getNowInBusinessTimezone()]);
-    return idAnul;
+    const token = generateUUID();
+    const now = getNowInBusinessTimezone();
+    await withTransaction(async (trx) => {
+      await trx(`
+        INSERT INTO solicitudes_anulacion_ventas (id, venta_id, token, estado, fecha_solicitud, solicitado_por, motivo, monto)
+        VALUES (?, ?, ?, 'pendiente', ?, ?, ?, ?)
+      `, [idAnul, id, token, now, requestedBy, reason, amount]);
+      await trx('UPDATE ventas SET estado = 3, fecha_mod = ? WHERE id_venta = ?', [now, id]);
+    });
+    return token;
   }
 
   static async processAnulacion(requestId: string, approvedBy: string, status: 'aprobado' | 'rechazado'): Promise<SaleType | null> {
@@ -241,21 +725,30 @@ export class SaleRepository {
 
     await withTransaction(async (trx) => {
       await trx('UPDATE solicitudes_anulacion_ventas SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?', [status, approvedBy, now, requestId]);
-      if (status === 'aprobado') {
-        const req = await trx<any[]>('SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?', [requestId]);
-        if (req.length > 0) {
-          ventaId = req[0].venta_id;
-          await trx('UPDATE ventas SET estado = 0, fecha_mod = ? WHERE id_venta = ?', [now, ventaId]);
-          // Restituir saldo if prepago
-          const v = await trx<any[]>('SELECT cliente_id, total, metodo_pago FROM ventas WHERE id_venta = ?', [ventaId]);
-          if (v.length > 0 && v[0].metodo_pago === 'prepago' && v[0].cliente_id) {
-            await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [v[0].total, v[0].cliente_id]);
-          }
+      const req = await trx<any[]>('SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?', [requestId]);
+      if (req.length > 0) {
+        ventaId = req[0].venta_id;
+        if (status === 'rechazado') {
+          const ventaRows = await trx<any[]>('SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ?', [ventaId]);
+          const nextState =
+            ventaRows.length && ventaRows[0].habitacion_id && Number(ventaRows[0].tiempo || 0) > 0
+              ? 2
+              : 1;
+          await trx('UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?', [nextState, now, ventaId]);
         }
       }
     });
 
-    return ventaId ? await this.getById(ventaId) : null;
+    if (!ventaId) return null;
+    if (status === 'aprobado') {
+      const requestRows = await query<any[]>(
+        'SELECT monto FROM solicitudes_anulacion_ventas WHERE id = ? LIMIT 1',
+        [requestId]
+      );
+      const approvedAmount = Number(requestRows[0]?.monto || 0);
+      await this.approveAnulacion(ventaId, approvedBy, approvedAmount);
+    }
+    return await this.getById(ventaId);
   }
 
   static async delete(id: string): Promise<void> {

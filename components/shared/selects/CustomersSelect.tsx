@@ -70,6 +70,8 @@ const CustomersSelect = ({
             : value.length < maxSelection
                 ? [...value, id]
                 : value;
+
+        console.log('[CustomersSelect] toggle', { id, previous: value, next: newValue });
         onChange(newValue);
     };
 
@@ -81,22 +83,18 @@ const CustomersSelect = ({
 
     return (
         <div className={`flex flex-col ${className}`}>
-            <Label htmlFor={uniqueId} className="block text-xs font-medium text-gray-500 mb-1 leading-none">
-                <Users className="inline mr-1 w-4 h-4" />
+            <Label htmlFor={uniqueId} className="block text-xs font-medium text-gray-500 mb-1 leading-none uppercase tracking-wide">
                 {label}
                 {required && <span className="text-red-500 ml-0.5">*</span>}
             </Label>
 
             <div className="relative">
-                <Users
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 w-4 h-4"
-                />
                 <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                         <button
                             id={uniqueId}
                             type="button"
-                            className="w-full pl-10 pr-8 border border-gray-300 focus:ring-1 focus:ring-black focus:border-black bg-transparent py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors"
+                            className="w-full pl-10 pr-8 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors"
                             onClick={() => !disabled && setOpen(!open)}
                             disabled={disabled}
                         >

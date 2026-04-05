@@ -3,6 +3,7 @@ import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { ProductService } from '@/lib/services/ProductService';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
+import { logger } from '@/lib/utils/logger';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -34,7 +35,7 @@ export const POST = withAppApiWrapper(async (request: Request) => {
   let payload: any = {};
   let fotoName = 'default.png';
 
-  console.log('[POST /api/products] Content-Type:', contentType);
+  logger.debug('[POST /api/products] Content-Type:', contentType);
 
   if (contentType.includes('multipart/form-data')) {
     const formData = await request.formData();
@@ -42,33 +43,33 @@ export const POST = withAppApiWrapper(async (request: Request) => {
       if (key !== 'foto' && key !== 'fotoUrl') payload[key] = value;
     });
 
-    console.log('[POST /api/products] FormData payload:', JSON.stringify(payload, null, 2));
+    logger.debug('[POST /api/products] FormData payload:', { payload });
 
     const fotoFile = formData.get('foto') as File | null;
     const fotoUrl = formData.get('fotoUrl') as string | null;
 
-    console.log('[POST /api/products] fotoFile:', fotoFile ? { name: fotoFile.name, size: fotoFile.size } : null);
-    console.log('[POST /api/products] fotoUrl:', fotoUrl);
+    logger.debug('[POST /api/products] fotoFile:', fotoFile ? { name: fotoFile.name, size: fotoFile.size } : null);
+    logger.debug('[POST /api/products] fotoUrl:', fotoUrl);
 
     if (fotoFile && fotoFile.name && fotoFile.size > 0) {
       const bytes = await fotoFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      console.log('[POST /api/products] Processing uploaded file, size:', buffer.length);
+      logger.debug('[POST /api/products] Processing uploaded file, size:', buffer.length);
       fotoName = await processAndSaveImage(buffer, 'product');
     } else if (fotoUrl && fotoUrl.startsWith('http')) {
-      console.log('[POST /api/products] Processing URL image');
+      logger.debug('[POST /api/products] Processing URL image');
       fotoName = await processAndSaveImage(fotoUrl, 'product');
     }
   } else {
     payload = await request.json();
-    console.log('[POST /api/products] JSON payload:', JSON.stringify(payload, null, 2));
+    logger.debug('[POST /api/products] JSON payload:', { payload });
     fotoName = payload.foto || 'default.png';
     if (fotoName.startsWith('http')) {
       fotoName = await processAndSaveImage(fotoName, 'product');
     }
   }
 
-  console.log('[POST /api/products] Final fotoName:', fotoName);
+  logger.debug('[POST /api/products] Final fotoName:', fotoName);
 
   // Usamos el servicio para aplicar lógica de negocio (duplicados, etc.)
   const data = await ProductService.createProduct(payload, fotoName);
@@ -89,7 +90,7 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
 
   const contentType = request.headers.get('content-type') || '';
 
-  console.log('[PUT /api/products] Content-Type:', contentType);
+  logger.debug('[PUT /api/products] Content-Type:', contentType);
 
   if (contentType.includes('multipart/form-data')) {
     const formData = await request.formData();
@@ -102,28 +103,28 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
     const fotoFile = formData.get('foto') as File | null;
     const fotoUrl = formData.get('fotoUrl') as string | null;
 
-    console.log('[PUT /api/products] fotoFile:', fotoFile ? { name: fotoFile.name, size: fotoFile.size } : null);
-    console.log('[PUT /api/products] fotoUrl:', fotoUrl);
+    logger.debug('[PUT /api/products] fotoFile:', fotoFile ? { name: fotoFile.name, size: fotoFile.size } : null);
+    logger.debug('[PUT /api/products] fotoUrl:', fotoUrl);
 
     if (fotoFile && fotoFile.name && fotoFile.size > 0) {
       const bytes = await fotoFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      console.log('[PUT /api/products] Processing uploaded file, size:', buffer.length);
+      logger.debug('[PUT /api/products] Processing uploaded file, size:', buffer.length);
       fotoName = await processAndSaveImage(buffer, `product_${targetId}`);
     } else if (fotoUrl && (fotoUrl.startsWith('http') || fotoUrl.startsWith('data:'))) {
-      console.log('[PUT /api/products] Processing URL/image data, type:', fotoUrl.startsWith('data:') ? 'base64' : 'http');
+      logger.debug('[PUT /api/products] Processing URL/image data, type:', fotoUrl.startsWith('data:') ? 'base64' : 'http');
       fotoName = await processAndSaveImage(fotoUrl, `product_${targetId}`);
     }
     // Si no hay nueva imagen, fotoName queda undefined y el servicio usará la imagen existente
   } else {
     payload = await request.json();
-    console.log('[PUT /api/products] JSON payload:', JSON.stringify(payload, null, 2));
+    logger.debug('[PUT /api/products] JSON payload:', { payload });
     targetId = targetId || payload.id;
     delete payload.id;
     fotoName = payload.foto;
     
     if (fotoName && fotoName.startsWith('http')) {
-      console.log('[PUT /api/products] Processing URL for existing product');
+      logger.debug('[PUT /api/products] Processing URL for existing product');
       fotoName = await processAndSaveImage(fotoName, `product_${targetId}`);
     }
   }
@@ -131,7 +132,7 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
   if (!targetId)
     return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
 
-  console.log('[PUT /api/products] Final fotoName:', fotoName);
+  logger.debug('[PUT /api/products] Final fotoName:', fotoName);
 
   // Usamos el servicio para aplicar lógica de negocio
   const data = await ProductService.updateProduct(targetId, payload, fotoName);

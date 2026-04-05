@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { query, generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { env } from '@/lib/utils/env';
 
 export interface AuthenticatedUser {
   id: string | number;
@@ -29,7 +30,7 @@ export function verifyToken(token: string): AuthenticatedUser | null {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'default_secret'
+      env.JWT_SECRET
     ) as AuthenticatedUser;
 
     return decoded;
@@ -58,7 +59,7 @@ export function generateToken(userData: {
       email: userData.email,
       role: userData.role
     },
-    process.env.JWT_SECRET || 'default_secret',
+    env.JWT_SECRET,
     { expiresIn: '24h' }
   );
 }
@@ -95,18 +96,40 @@ export async function registrarLogin(usuarioId: string | number): Promise<void> 
       return;
     }
 
-    const lastLogin = getNowInBusinessTimezone();
+    const now = getNowInBusinessTimezone();
+    const today = now.substring(0, 10); // YYYY-MM-DD
 
+    // Buscar si hay un login activo para este usuario
+    const existingLogin = await query<any[]>(
+      `SELECT id_login, last_login FROM logins WHERE usuario_id = ? AND estado = 1`,
+      [usuarioId]
+    );
+
+    if (existingLogin.length > 0) {
+      const lastLoginDate = existingLogin[0].last_login.toString().substring(0, 10);
+
+      // Si ya hay uno con fecha de hoy, no hacer nada
+      if (lastLoginDate === today) {
+        return;
+      }
+
+      // Si existe pero no es de hoy, cambiar estado a 0
+      await query(
+        `UPDATE logins SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
+        [usuarioId]
+      );
+    }
+
+    // Insertar nuevo login
     await query(
       'INSERT INTO logins (id_login, usuario_id, last_login, estado) VALUES (?, ?, ?, 1)',
-      [generateUUID(), usuarioId, lastLogin]
+      [generateUUID(), usuarioId, now]
     );
   } catch (error) {
     const exception =
-      error instanceof Error ? error : new Error('Error desconocido al registrar login');
+      error instanceof Error ? error.message : 'Error desconocido al registrar login';
     logger.error('Error al registrar login', {
-      error: exception.message,
-      stack: exception.stack,
+      error: exception,
       usuarioId
     });
   }

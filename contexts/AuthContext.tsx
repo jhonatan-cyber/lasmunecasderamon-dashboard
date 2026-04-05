@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isFetchingPermissionsRef = useRef(false);
   const sessionExpiredShownRef = useRef(false);
   const pendingPermissionsRefreshRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   // Páginas públicas que no requieren autenticación
   const isPublicPage =
@@ -142,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch del usuario actual
   const fetchUser = useCallback(async (silent = false) => {
-    if (isPublicPage || isFetchingUserRef.current) return;
+    if (!isMountedRef.current || isPublicPage || isFetchingUserRef.current) return;
 
     isFetchingUserRef.current = true;
     if (!silent || !user) {
@@ -182,12 +183,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserLoading(false);
       isFetchingUserRef.current = false;
     }
-  }, [isPublicPage]);
+  }, [isPublicPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch de permisos del usuario
   const fetchPermissions = useCallback(
     async (forceRefresh = false) => {
-      if (!user?.id || user.role?.toLowerCase() === 'administrador') {
+      if (!isMountedRef.current || !user?.id || user.role?.toLowerCase() === 'administrador') {
         return;
       }
 
@@ -219,8 +220,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const result = await response.json();
           if (result.success && result.data) {
             console.log('✅ [AuthContext] Permisos recibidos:', result.data.length);
-            // Crear un nuevo array para forzar re-render
-            setUserPermissions([...result.data]);
+            // Solo actualizar si está montado
+            if (isMountedRef.current) {
+              setUserPermissions([...result.data]);
+            }
             permissionsFetchedRef.current = true;
           }
         } else if (response.status === 401) {
@@ -235,13 +238,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isFetchingPermissionsRef.current = false;
 
         // Si hay un refresh pendiente, ejecutarlo
-        if (pendingPermissionsRefreshRef.current) {
+        if (pendingPermissionsRefreshRef.current && isMountedRef.current) {
           pendingPermissionsRefreshRef.current = false;
           setTimeout(() => fetchPermissions(true), 50);
         }
       }
     },
-    [user?.id, user?.role, handleSessionExpired]
+    [user?.id, user?.role, handleSessionExpired] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const hasPermission = useCallback(
@@ -317,6 +320,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fetchPermissions();
     }
   }, [user, fetchPermissions]);
+
+  // Cleanup al desmontar para evitar actualizaciones de estado en componentes desmontados
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Escuchar eventos SSE de sesión: force_logout y check_attendance
   useEffect(() => {

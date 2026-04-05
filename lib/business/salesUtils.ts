@@ -30,6 +30,7 @@ export const metodoPagoLabels = {
   tarjeta: 'Tarjeta',
   transferencia: 'Transferencia',
   prepago: 'Prepago',
+  mixto: 'Mixto',
 };
 
 export const anfitrionaColors = [
@@ -90,17 +91,19 @@ export const calculatePagination = <T extends VentaSearchRow>(
 
 export const solicitarAnulacionVenta = async (
   ventaId: string | number,
-  motivo?: string
+  motivo?: string,
+  monto?: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch(`/api/ventas/${ventaId}/solicitar-anulacion`, {
+    const response = await fetch('/api/ventas/anulacion', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        estado: 3,
+        ventaId,
         motivo: motivo || 'Solicitud de anulacion',
+        monto: monto || 0,
       }),
     });
 

@@ -3,10 +3,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { ArrowLeft, DollarSign, Coins, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, DollarSign, Coins, ShoppingCart, Wallet, Split } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -14,13 +13,21 @@ import { generateRandomCode } from '@/lib/utils/codeUtils';
 import CustomersSelect from '@/components/shared/selects/CustomersSelect';
 import HostessSelect from '@/components/shared/selects/HostessSelect';
 import RoomSelect from '@/components/shared/selects/RoomSelect';
-import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
+import PaymentMethodSelect, {
+  type PaymentMethod
+} from '@/components/shared/selects/PaymentMethodSelect';
 import { useClients } from '@/hooks/clientes/useClients';
 import { useAnfitrionasDisponibles } from '@/hooks/personal/useAnfitrionasDisponibles';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 
 export default function NuevoServicioPage() {
+  type MixedPayment = {
+    metodo: Exclude<PaymentMethod, 'mixto'>;
+    monto: number;
+    display: string;
+  };
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
@@ -42,9 +49,9 @@ export default function NuevoServicioPage() {
 
   // Form data
   const [formData, setFormData] = useState({
-    clientes: [] as number[], // Cambiado a array para soportar múltiples clientes
-    usuarios: [] as number[],
-    habitacion_id: null as number | null,
+    clientes: [] as string[], // UUID/text ID support
+    usuarios: [] as string[], // UUID/text ID support
+    habitacion_id: '' as string,
     precio_habitacion: 0,
     tiempo_habitacion: 0,
     precio_servicio: 0,
@@ -56,6 +63,7 @@ export default function NuevoServicioPage() {
   // Modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [servicioDataToSubmit, setServicioDataToSubmit] = useState<any>(null);
+  const [pagosMixtos, setPagosMixtos] = useState<MixedPayment[]>([]);
 
   // Calculated values
   const [precioHabitacion, setPrecioHabitacion] = useState(0);
@@ -65,8 +73,18 @@ export default function NuevoServicioPage() {
 
   // Dynamic limits calculation
   const selectedRoom = useMemo(() => {
-    return habitaciones.find(h => (h.id_habitacion || h.id) === formData.habitacion_id);
+    return habitaciones.find(
+      (h) =>
+        String(h.id_habitacion || h.id) === String(formData.habitacion_id)
+    );
   }, [formData.habitacion_id, habitaciones]);
+
+  const selectedClientData = useMemo(() => {
+    if (formData.clientes.length === 0) return null;
+    return clientes.find(
+      c => String(c.id_cliente ?? c.id ?? '') === String(formData.clientes[0])
+    );
+  }, [clientes, formData.clientes]);
 
   const hasComision = useMemo(() => {
     return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
@@ -89,14 +107,19 @@ export default function NuevoServicioPage() {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
+  const parseFormattedNumber = (value: string) => {
+    const numericValue = value.replace(/\./g, '').replace(/\D/g, '');
+    return numericValue === '' ? 0 : Math.max(0, parseInt(numericValue, 10) || 0);
+  };
+
   // Generate random code function
   const generateCode = generateRandomCode;
 
   // Calculate totals when form data changes
   useEffect(() => {
-    // Lógica: Si el número de clientes es mayor al de anfitrionas y la habitación NO tiene comisión,
-    // el precio de la habitación y el servicio se multiplican por el número de clientes seleccionados.
-    // En otros casos, se multiplica por el número de anfitrionas.
+    // Logica: si el numero de clientes es mayor al de anfitrionas y la habitacion NO tiene comision,
+    // el precio de la habitacion y el servicio se multiplican por el numero de clientes seleccionados.
+    // En otros casos, se multiplica por el numero de anfitrionas.
     const cantidadAnfitrionas = formData.usuarios.length || 1;
     const cantidadClientes = formData.clientes.length || 1;
     let multiplicadorServicio = cantidadAnfitrionas;
@@ -111,7 +134,7 @@ export default function NuevoServicioPage() {
       multiplicadorHabitacion = cantidadClientes;
     }
 
-    // Si la habitación tiene comisión mayor a cero, NO multiplicar el precio de la habitación
+    // Si la habitacion tiene comision mayor a cero, NO multiplicar el precio de la habitacion
     if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
       multiplicadorHabitacion = 1;
     }
@@ -174,13 +197,49 @@ export default function NuevoServicioPage() {
     }
   }, [formData.metodo_pago, formData.precio_servicio]);
 
+  useEffect(() => {
+    if (!selectedClientData || total <= 0) return;
+
+    const saldo = Number(selectedClientData.saldo || 0);
+
+    if (saldo >= total) {
+      setFormData(prev => ({
+        ...prev,
+        metodo_pago: 'prepago'
+      }));
+      setPagosMixtos([]);
+      return;
+    }
+
+    if (saldo > 0 && saldo < total && formData.metodo_pago !== 'mixto') {
+      setFormData(prev => ({ ...prev, metodo_pago: 'mixto' }));
+      setPagosMixtos([
+        {
+          metodo: 'prepago',
+          monto: saldo,
+          display: saldo.toLocaleString('es-CL')
+        }
+      ]);
+    }
+  }, [selectedClientData, total, formData.metodo_pago]);
+
+  useEffect(() => {
+    if (selectedClientData) return;
+
+    if (formData.metodo_pago === 'prepago') {
+      setFormData(prev => ({ ...prev, metodo_pago: '' }));
+    }
+
+    setPagosMixtos(prev => prev.filter(pago => pago.metodo !== 'prepago'));
+  }, [selectedClientData, formData.metodo_pago]);
+
   const handleSubmit = async () => {
     if (formData.usuarios.length === 0) {
       toast.error('Selecciona al menos una anfitriona');
       return;
     }
     if (!formData.habitacion_id) {
-      toast.error('Selecciona una habitación');
+      toast.error('Selecciona una habitacion');
       return;
     }
     if (formData.precio_servicio < 0) {
@@ -188,15 +247,59 @@ export default function NuevoServicioPage() {
       return;
     }
     if (!formData.metodo_pago) {
-      toast.error('Selecciona un método de pago');
+      toast.error('Selecciona un metodo de pago');
       return;
     }
 
+    if (formData.metodo_pago === 'prepago') {
+      if (!selectedClientData) {
+        toast.error('Selecciona un cliente para usar prepago');
+        return;
+      }
+
+      if (Number(selectedClientData.saldo || 0) < total) {
+        toast.error('El saldo prepago no cubre el total del servicio');
+        return;
+      }
+    }
+
+    if (formData.metodo_pago === 'mixto') {
+      const sumaPagos = pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0);
+
+      if (pagosMixtos.length < 2) {
+        toast.error('Agrega al menos 2 metodos para el pago mixto');
+        return;
+      }
+
+      if (Math.abs(sumaPagos - total) > 1) {
+        toast.error('La suma de los pagos mixtos debe ser igual al total');
+        return;
+      }
+
+      const prepagoMixto = pagosMixtos.find(pago => pago.metodo === 'prepago')?.monto || 0;
+      if (prepagoMixto > 0) {
+        if (!selectedClientData) {
+          toast.error('Selecciona un cliente para usar prepago en pago mixto');
+          return;
+        }
+
+        if (prepagoMixto > Number(selectedClientData.saldo || 0)) {
+          toast.error('El monto de prepago excede el saldo del cliente');
+          return;
+        }
+      }
+    }
+
     // Preparar datos del servicio
+    const normalizeId = (id: string) => {
+      const num = Number(id);
+      return Number.isNaN(num) ? id : num;
+    };
+
     const servicioData = {
       codigo: generateCode(),
-      cliente_id: formData.clientes.length > 0 ? formData.clientes[0] : null, // Enviamos el primero como principal
-      clientes: formData.clientes, // Enviamos todos los clientes
+      cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null, // Enviamos el primero como principal
+      clientes: formData.clientes.map(normalizeId), // Enviamos todos los clientes
       habitacion_id: formData.habitacion_id,
       precio_habitacion: precioHabitacion,
       precio_servicio: formData.precio_servicio,
@@ -205,14 +308,21 @@ export default function NuevoServicioPage() {
       total: total,
       tiempo: formData.tiempo,
       metodo_pago: formData.metodo_pago,
-      usuarios: formData.usuarios
+      pagos_mixtos:
+        formData.metodo_pago === 'mixto'
+          ? pagosMixtos.map(pago => ({
+              metodo: pago.metodo,
+              monto: pago.monto
+            }))
+          : undefined,
+      usuarios: formData.usuarios.map(normalizeId)
     };
 
     setServicioDataToSubmit(servicioData);
     setShowConfirmModal(true);
   };
 
-  // Función para enviar el servicio después de confirmar
+  // Funcion para enviar el servicio despues de confirmar
   const confirmAndSubmit = async () => {
     if (!servicioDataToSubmit) return;
 
@@ -230,7 +340,9 @@ export default function NuevoServicioPage() {
       const data = await response.json();
 
       if (data.success) {
-        if (selectedRoom) {
+        const createdServiceId = data.id ?? data.data?.id_servicio ?? data.data?.id;
+
+        if (selectedRoom && createdServiceId) {
           // Obtener nombres de anfitrionas seleccionadas
           const anfitrionasSeleccionadas = servicioDataToSubmit.usuarios
             .map((userId: number) => {
@@ -243,7 +355,7 @@ export default function NuevoServicioPage() {
             .join(', ');
 
           startTimer(
-            String(data.data.id_servicio),
+            String(createdServiceId),
             String(servicioDataToSubmit.habitacion_id),
             selectedRoom.nombre || selectedRoom.name || selectedRoom.numero || 'N/A',
             servicioDataToSubmit.tiempo,
@@ -279,7 +391,7 @@ export default function NuevoServicioPage() {
             Datos Servicio
           </h2>
           <div className='uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1'>
-            Las muñecas de Ramón
+            Las munecas de Ramon
           </div>
         </div>
 
@@ -291,63 +403,89 @@ export default function NuevoServicioPage() {
           type='button'
         >
           <ArrowLeft className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-          Atrás
+          Atras
         </Button>
       </div>
 
       <div className='p-4 sm:p-6 lg:p-8 bg-white mx-4 sm:mx-6 lg:mx-8 space-y-4 sm:space-y-6 shadow-md rounded-xl'>
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'>
-          {/* Habitación - AHORA PRIMERO */}
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
+          {/* Habitacion - AHORA PRIMERO */}
           <RoomSelect
             habitaciones={habitaciones}
             value={formData.habitacion_id ? formData.habitacion_id.toString() : ''}
-            onChange={value => setFormData({ ...formData, habitacion_id: parseInt(value) })}
-            label='Habitación'
-            placeholder='Seleccionar habitación'
+            onChange={value => {
+              console.log('[new/page] habitacion onChange', value);
+              setFormData(prev => ({
+                ...prev,
+                habitacion_id: value
+              }));
+            }}
+            label='HABITACION'
+            placeholder='Seleccionar habitacion'
             required={true}
             showPrice={true}
             showTime={true}
             filterByStatus={1} // Solo habitaciones disponibles
             className='w-full'
           />
-
           {/* Anfitrionas */}
           <HostessSelect
             anfitrionas={anfitrionas}
-            value={formData.usuarios.map(id => id.toString())}
-            onChange={value =>
-              setFormData({
-                ...formData,
-                usuarios: value.map(id => parseInt(id))
-              })
-            }
-            label='Anfitrionas'
+            value={formData.usuarios}
+            onChange={value => {
+              console.log('[new/page] anfitrionas onChange', value);
+              setFormData(prev => ({
+                ...prev,
+                usuarios: value
+              }));
+            }}
+            label='ANFITRIONAS'
             placeholder='Seleccionar anfitrionas'
             required={true}
             maxSelection={maxHostesses}
             className='w-full'
           />
-
-          {/* Cliente - AHORA OPCIONAL Y MÚLTIPLE */}
+          {/* Cliente - AHORA OPCIONAL Y MULTIPLE */}
           <CustomersSelect
             clientes={clientes}
-            value={formData.clientes.map(id => id.toString())}
-            onChange={value =>
-              setFormData({
-                ...formData,
-                clientes: value.map(id => parseInt(id))
-              })
-            }
-            label='Clientes (Opcional)'
+            value={formData.clientes}
+            onChange={value => {
+              console.log('[new/page] clientes onChange', value);
+              setFormData(prev => ({
+                ...prev,
+                clientes: value
+              }));
+            }}
+            label='CLIENTES'
             placeholder='Seleccionar cliente(s)'
             maxSelection={maxClients}
             className='w-full'
           />
+        </div>
 
+        {selectedClientData && (
+          <div className='rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/60 dark:bg-emerald-950/40'>
+            <div className='flex items-center justify-between gap-3'>
+              <div>
+                <p className='text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300'>
+                  Saldo Prepago
+                </p>
+                <p className='mt-1 text-xl font-extrabold text-emerald-950 dark:text-emerald-100'>
+                  {formatCurrencyCLP(Number(selectedClientData.saldo || 0))}
+                </p>
+              </div>
+              <div className='rounded-full bg-emerald-100 p-2 dark:bg-emerald-900/60'>
+                <Wallet className='h-5 w-5 text-emerald-700 dark:text-emerald-300' />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
           {/* Precio de servicio */}
           <div>
-            <Label className='block text-xs font-medium text-gray-500 mb-1'>
-              Precio de servicio
+            <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase'>
+              PRECIO DE SERVICIO
             </Label>
             <div className='relative'>
               <span className='absolute inset-y-0 left-3 flex items-center text-gray-400'>
@@ -376,26 +514,56 @@ export default function NuevoServicioPage() {
                       numericValue === '' ? 0 : Math.max(0, parseInt(numericValue) || 0)
                   });
                 }}
-                className='w-full bg-transparent py-1 pl-9 text-sm sm:text-base border border-gray-300 rounded-full h-[40px] focus:outline-none focus:border-black'
+                className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-none focus:border-black'
                 placeholder='0'
               />
             </div>
           </div>
 
-          {/* Método de pago */}
-          <PaymentMethodSelect
-            value={formData.metodo_pago}
-            onChange={value => setFormData({ ...formData, metodo_pago: value })}
-            label='Método de pago'
-            placeholder='Seleccionar método de pago'
-            required={true}
-            className='w-full'
-          />
+          {/* Metodo de pago */}
+          <div>
+            <PaymentMethodSelect
+              value={formData.metodo_pago}
+              onChange={value => {
+                setFormData(prev => ({
+                  ...prev,
+                  metodo_pago: value
+                }));
+
+                if (value !== 'mixto') {
+                  setPagosMixtos([]);
+                  return;
+                }
+
+                const saldo = Number(selectedClientData?.saldo || 0);
+                setPagosMixtos(
+                  saldo > 0
+                    ? [
+                        {
+                          metodo: 'prepago',
+                          monto: saldo,
+                          display: saldo.toLocaleString('es-CL')
+                        }
+                      ]
+                    : []
+                );
+              }}
+              label='METODO DE PAGO'
+              placeholder='Seleccionar metodo de pago'
+              required={true}
+              className='w-full'
+              showPrepago={!!selectedClientData}
+              showMixto={true}
+              disabledMethods={
+                Number(selectedClientData?.saldo || 0) <= 0 ? ['prepago'] : []
+              }
+            />
+          </div>
 
           {/* IVA */}
           <div>
-            <Label className='block text-xs font-medium text-gray-500 mb-1'>
-              Impuesto IVA (20%)
+            <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase'>
+              IMPUESTO IVA (20%)
             </Label>
             <div className='relative'>
               <span className='absolute inset-y-0 left-3 flex items-center text-gray-400'>
@@ -413,7 +581,7 @@ export default function NuevoServicioPage() {
                     });
                   }
                 }}
-                className='w-full bg-transparent py-1 pl-9 text-sm sm:text-base border border-gray-300 rounded-full h-[40px] focus:outline-none focus:border-black'
+                className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-none focus:border-black'
                 placeholder='0'
                 disabled={formData.metodo_pago !== 'tarjeta'}
               />
@@ -421,7 +589,127 @@ export default function NuevoServicioPage() {
           </div>
         </div>
 
-        {/* Total y botón centrados */}
+        {formData.metodo_pago === 'mixto' && (
+          <div className='rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60'>
+            <div className='mb-3 flex items-center gap-2'>
+              <Split className='h-4 w-4 text-slate-700 dark:text-slate-200' />
+              <p className='text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-200'>
+                Distribucion de pagos
+              </p>
+            </div>
+
+            <div className='space-y-3'>
+              {pagosMixtos.map((pago, index) => (
+                <div key={`${pago.metodo}-${index}`} className='flex items-center gap-2'>
+                  <div className='w-28 text-[11px] font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300'>
+                    {pago.metodo}
+                  </div>
+                  <div className='relative flex-1'>
+                    <span className='absolute inset-y-0 left-3 flex items-center text-slate-400 dark:text-slate-500'>
+                      <DollarSign className='h-4 w-4' />
+                    </span>
+                    <input
+                      type='text'
+                      value={pago.display}
+                      placeholder='0'
+                      onChange={e => {
+                        const monto = parseFormattedNumber(e.target.value);
+                        setPagosMixtos(prev =>
+                          prev.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  monto,
+                                  display: e.target.value.replace(/\D/g, '')
+                                }
+                              : item
+                          )
+                        );
+                      }}
+                      onBlur={() => {
+                        setPagosMixtos(prev =>
+                          prev.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  display:
+                                    item.monto > 0
+                                      ? item.monto.toLocaleString('es-CL')
+                                      : ''
+                                }
+                              : item
+                          )
+                        );
+                      }}
+                      className='w-full rounded-full border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-black focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-400'
+                    />
+                  </div>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={() =>
+                      setPagosMixtos(prev => prev.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                    className='rounded-full px-3 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
+                  >
+                    Quitar
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className='mt-4 flex flex-wrap gap-2'>
+              {(['efectivo', 'tarjeta', 'transferencia', 'prepago'] as const).map(metodo => {
+                if (pagosMixtos.some(pago => pago.metodo === metodo)) return null;
+
+                const sinSaldo = metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
+
+                return (
+                  <Button
+                    key={metodo}
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    disabled={sinSaldo}
+                    onClick={() =>
+                      setPagosMixtos(prev => [
+                        ...prev,
+                        { metodo, monto: 0, display: '' }
+                      ])
+                    }
+                    className='rounded-full uppercase dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
+                  >
+                    {metodo}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <div className='mt-4 border-t border-slate-200 pt-3 text-sm dark:border-slate-800'>
+              <div className='flex items-center justify-between text-slate-600 dark:text-slate-300'>
+                <span>Suma actual</span>
+                <span
+                  className={
+                    pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0) === total
+                      ? 'font-bold text-emerald-600'
+                      : 'font-bold text-red-500'
+                  }
+                >
+                  {formatCurrencyCLP(pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0))}
+                </span>
+              </div>
+              {pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0) !== total && (
+                <p className='mt-1 text-xs text-red-500'>
+                  Falta {formatCurrencyCLP(total - pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0))}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+
+        {/* Total y boton centrados */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
             TOTAL
@@ -442,15 +730,15 @@ export default function NuevoServicioPage() {
         </div>
       </div>
 
-      {/* Modal de confirmación */}
+      {/* Modal de confirmacion */}
       {showConfirmModal && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
           <div className='bg-white rounded-lg p-6 sm:p-8 shadow-lg max-w-md mx-4'>
             <h3 className='text-lg sm:text-xl font-bold text-gray-900 mb-2'>
-              Confirmar creación de servicio
+              Confirmar creacion de servicio
             </h3>
             <p className='text-sm sm:text-base text-gray-600 mb-6'>
-              ¿Deseas crear el servicio y comenzar el tiempo?
+              Deseas crear el servicio y comenzar el tiempo?
             </p>
             <div className='flex gap-3 justify-center'>
               <Button
