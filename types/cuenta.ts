@@ -28,11 +28,50 @@ export interface CuentaUsuario {
   usuario_id: string | number;
 }
 
+export interface CuentaRoomHistoryItem {
+  roomId: string;
+  roomName: string;
+  startedAt: string;
+  endedAt: string | null;
+  assignedMinutes: number;
+  consumedMinutes: number;
+  remainingMinutes?: number;
+  isActive?: boolean;
+  carriedFromPrevious?: boolean;
+  closedReason?: 'expired' | 'manual' | 'charged' | 'cancelled' | 'changed_room';
+}
+
+export interface CuentaAnulacionItem {
+  id: string;
+  monto: number;
+  motivo?: string | null;
+  estado: string;
+  fecha_crea: string;
+  fecha_mod?: string | null;
+  requested_by_nombre?: string | null;
+  approved_by_nombre?: string | null;
+}
+
+export interface CuentaFinancialSummary {
+  total_original: number;
+  total_actual: number;
+  total_anulado_aprobado: number;
+  total_anulacion_pendiente: number;
+  total_anulacion_rechazada: number;
+  tuvo_anulacion_parcial: boolean;
+  fue_anulada_total: boolean;
+}
+
 export interface CuentaWithDetails extends Cuenta {
   cliente_nombre?: string;
   habitacion_numero?: string;
   detalles?: DetalleCuenta[];
   usuarios?: CuentaUsuario[];
+  tiempo_total?: number;
+  tiempo_activo?: number;
+  habitaciones_historial_data?: CuentaRoomHistoryItem[];
+  solicitudes_anulacion?: CuentaAnulacionItem[];
+  resumen_financiero?: CuentaFinancialSummary;
 }
 
 export interface CreateCuentaRequest {

@@ -14,14 +14,24 @@ const defaultConfig: any = {
   database: env.DB_NAME,
   port: env.DB_PORT,
   waitForConnections: true,
-  connectionLimit: 50,
+  connectionLimit: 10,
   queueLimit: 0,
   timezone: dbTzOffset,
   multipleStatements: true,
-  dateStrings: true
+  dateStrings: true,
+  charset: 'utf8mb4'
 };
 
-const pool = mysql.createPool(defaultConfig);
+declare global {
+  // eslint-disable-next-line no-var
+  var __lasMunecasDbPool: mysql.Pool | undefined;
+}
+
+const pool = globalThis.__lasMunecasDbPool ?? mysql.createPool(defaultConfig);
+
+if (!globalThis.__lasMunecasDbPool) {
+  globalThis.__lasMunecasDbPool = pool;
+}
 
 pool.on('connection', async (connection: any) => {
   try {

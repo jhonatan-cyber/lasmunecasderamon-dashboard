@@ -24,7 +24,6 @@ import { useGratificaciones } from '@/hooks/personal/useGratificaciones';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { Gratificacion } from '@/types/gratificacion';
 
 export default function GratificacionesPage() {
@@ -44,7 +43,7 @@ export default function GratificacionesPage() {
   // States
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('fecha_hora');
+  const [sortBy, setSortBy] = useState('fecha_crea');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -85,9 +84,9 @@ export default function GratificacionesPage() {
       let bValue: any;
 
       switch (sortBy) {
-        case 'fecha_hora':
-          aValue = new Date(a.fecha_hora || 0);
-          bValue = new Date(b.fecha_hora || 0);
+        case 'fecha_crea':
+          aValue = new Date(a.fecha_crea || 0);
+          bValue = new Date(b.fecha_crea || 0);
           break;
         case 'monto':
           aValue = a.monto;
@@ -98,8 +97,8 @@ export default function GratificacionesPage() {
           bValue = b.usuario.toLowerCase();
           break;
         default:
-          aValue = a.fecha_hora;
-          bValue = b.fecha_hora;
+          aValue = a.fecha_crea;
+          bValue = b.fecha_crea;
       }
 
       if (sortOrder === 'asc') {
@@ -177,8 +176,7 @@ export default function GratificacionesPage() {
         await createGratificacion({
           usuario_id: data.usuario_id,
           monto: data.monto,
-          descripcion: data.descripcion,
-          fecha_hora: getNowInBusinessTimezone()
+          descripcion: data.descripcion
         });
       }
       setIsModalOpen(false);
@@ -239,81 +237,27 @@ export default function GratificacionesPage() {
       </div>
 
       {/* Filtros */}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-white dark:bg-gray-800 rounded-3xl shadow-md border-none'>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Buscar</label>
-          <input
-            type='text'
-            placeholder='Buscar por nombre o ID...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Estado</label>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='all'>Todos</option>
-            <option value='pagado'>Pagado</option>
-            <option value='por_pagar'>Por pagar</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Ordenar por</label>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='fecha_hora'>Fecha</option>
-            <option value='monto'>Monto</option>
-            <option value='usuario'>Usuario</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Orden</label>
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='desc'>Descendente</option>
-            <option value='asc'>Ascendente</option>
-          </select>
-        </div>
-        <div className='flex items-center'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => getGratificaciones()}
-            disabled={loading}
-            className='rounded-full'
-          >
-            {loading ? 'Cargando...' : 'Actualizar'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Selector de filas por página */}
-      <div className='flex justify-between items-center'>
-        <SelectElements
-          value={rowsPerPage}
-          onChange={value => {
-            setRowsPerPage(value);
-            setCurrentPage(1);
-          }}
-          options={[
-            { value: 5, label: '5' },
-            { value: 10, label: '10' },
-            { value: 20, label: '20' },
-            { value: 50, label: '50' }
-          ]}
-        />
-      </div>
+      <GratificacionesFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterStatus={statusFilter}
+        setFilterStatus={setStatusFilter}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        onClearFilters={() => {
+          setSearchTerm('');
+          setStatusFilter('all');
+          setSortBy('fecha_crea');
+          setSortOrder('desc');
+          setRowsPerPage(10);
+          setCurrentPage(1);
+        }}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+        setPage={setCurrentPage}
+      />
 
       <GratificacionesTable
         loading={loading}

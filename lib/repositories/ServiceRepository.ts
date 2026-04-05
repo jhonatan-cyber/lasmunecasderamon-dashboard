@@ -16,8 +16,24 @@ export class ServiceRepository {
       || [row.creator_name, row.creator_last_name].filter(Boolean).join(' ').trim()
       || null;
 
+    // Calcular número de anfitrionas
+    const anfitrionasIds = row.anfitrionas_ids ? String(row.anfitrionas_ids).split(',').filter(Boolean) : [];
+    const numAnfitrionas = Math.max(1, anfitrionasIds.length);
+
+    // Calcular comisiones
+    const habitacionComision = row.habitacion_comision ? Number(row.habitacion_comision) : 0;
+    const precioServicio = Number(row.precio_servicio || 0);
+    
+    // Si tiene comisión de habitación, se usa; si no, el precio del servicio es la comisión total
+    const tieneComisionHabitacion = habitacionComision > 0;
+    const totalComision = tieneComisionHabitacion ? habitacionComision : precioServicio * numAnfitrionas;
+    const comisionIndividual = tieneComisionHabitacion 
+      ? Math.floor(habitacionComision / numAnfitrionas) 
+      : precioServicio;
+
     return ServiceSchema.parse({
       id: row.id_servicio,
+      codigo: row.codigo,
       cliente_id: row.cliente_id,
       habitacion_id: row.habitacion_id,
       precio_habitacion: Number(row.precio_habitacion || 0),
@@ -33,6 +49,7 @@ export class ServiceRepository {
       habitacion_nombre: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
       anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas,
       anfitrionas_ids: row.anfitrionas_ids,
+      total_usuarios: numAnfitrionas,
       created_by: row.created_by,
       creator_nick: row.creator_nick || null,
       creator_nombre: row.creator_nombre || null,
@@ -40,7 +57,10 @@ export class ServiceRepository {
       creator_foto: row.creator_foto || null,
       waiter_name: creatorName,
       waiter_foto: row.creator_foto || null,
-      habitacion_comision: row.habitacion_comision ? Number(row.habitacion_comision) : null
+      cliente_nombre: row.cliente_nombre || null,
+      habitacion_comision: habitacionComision > 0 ? habitacionComision : null,
+      total_comision: totalComision,
+      comision_individual: comisionIndividual
     });
   }
 
@@ -52,8 +72,9 @@ export class ServiceRepository {
 
     let where = 'WHERE 1=1';
     let sqlParams: any[] = [];
-    if (params.all === 'true') where = 'WHERE s.estado = 1';
+    if (params.all === 'true') where = 'WHERE s.estado IN (0, 1)';
     else if (params.all === 'false') where = 'WHERE s.estado IN (2, 3, 4)';
+    else where = 'WHERE s.estado IN (1, 2, 3, 4)'; // Default: todos los estados válidos
     
     if (params.caja_id) {
       where += ' AND s.caja_id = ?';
@@ -64,11 +85,13 @@ export class ServiceRepository {
       SELECT 
         s.*, h.nombre as habitacion_numero, h.comision_anfitriona as habitacion_comision,
         cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
+        CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
         GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres,
         GROUP_CONCAT(DISTINCT u.id_usuario SEPARATOR ',') as anfitrionas_ids
       FROM servicios s
       LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
       LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
+      LEFT JOIN clientes cl ON cl.id_cliente = s.cliente_id
       LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
       LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
       ${where}
@@ -186,16 +209,27 @@ export class ServiceRepository {
     return results.map(row => this.mapServiceFromDB(row));
   }
 
-  static async getByUser(userId: string): Promise<ServiceType[]> {
+  static async getByUser(userId: string): Promise<any[]> {
     const results = await query<any[]>(`
-      SELECT s.*, ds.comision as mi_comision, h.comision_anfitriona as habitacion_comision
+      SELECT 
+        s.id_servicio, s.codigo, s.tiempo, s.fecha_crea, s.precio_servicio, 
+        s.precio_habitacion, s.total, s.metodo_pago, s.estado,
+        ds.comision as comision_usuario,
+        h.nombre as habitacion, h.comision_anfitriona as habitacion_comision,
+        COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente,
+        GROUP_CONCAT(DISTINCT COALESCE(u.nick, CONCAT(u.nombre, ' ', u.apellido)) SEPARATOR ', ') as anfitriona,
+        cu.nick as creado_por
       FROM servicios s
-      INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+      INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.usuario_id = ?
       LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
-      WHERE ds.usuario_id = ?
+      LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
+      LEFT JOIN detalle_servicios ds2 ON ds2.servicio_id = s.id_servicio
+      LEFT JOIN usuarios u ON u.id_usuario = ds2.usuario_id
+      LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
+      GROUP BY s.id_servicio, ds.comision
       ORDER BY s.fecha_crea DESC
     `, [userId]);
-    return results.map(row => this.mapServiceFromDB(row));
+    return results;
   }
 
   static async getById(id: string): Promise<ServiceType | null> {
@@ -224,11 +258,12 @@ export class ServiceRepository {
 
   static async requestAnulacion(id: string, reason: string, requestedBy: string): Promise<string> {
     const idAnul = generateUUID();
+    const token = generateUUID();
     await query(`
-      INSERT INTO solicitudes_anulacion (id, servicio_id, motivo, requested_by, estado, fecha_crea)
-      VALUES (?, ?, ?, ?, 'pendiente', ?)
-    `, [idAnul, id, reason, requestedBy, getNowInBusinessTimezone()]);
-    return idAnul;
+      INSERT INTO solicitudes_anulacion_servicios (id, servicio_id, token, estado, fecha_solicitud, solicitado_por, motivo)
+      VALUES (?, ?, ?, 'pendiente', ?, ?, ?)
+    `, [idAnul, id, token, getNowInBusinessTimezone(), requestedBy, reason]);
+    return token;
   }
 
   static async processAnulacion(requestId: string, approvedBy: string, status: 'aprobado' | 'rechazado'): Promise<void> {
@@ -240,9 +275,22 @@ export class ServiceRepository {
         if (req.length > 0) {
             const sId = req[0].servicio_id;
             await trx('UPDATE servicios SET estado = 0, fecha_mod = ? WHERE id_servicio = ?', [now, sId]);
-            const s = await trx<any[]>('SELECT cliente_id, total, metodo_pago FROM servicios WHERE id_servicio = ?', [sId]);
-            if (s.length > 0 && s[0].metodo_pago === 'prepago' && s[0].cliente_id) {
-              await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [s[0].total, s[0].cliente_id]);
+            const s = await trx<any[]>('SELECT cliente_id FROM servicios WHERE id_servicio = ?', [sId]);
+            if (s.length > 0 && s[0].cliente_id) {
+              const prepagoMovs = await trx<any[]>(
+                `SELECT COALESCE(SUM(monto), 0) as total_prepago
+                 FROM clientes_prepago_movimientos
+                 WHERE venta_id = ? AND cliente_id = ? AND tipo = 'CONSUMO'`,
+                [sId, s[0].cliente_id]
+              );
+
+              const montoRestituir = Number(prepagoMovs[0]?.total_prepago || 0);
+              if (montoRestituir > 0) {
+                await trx(
+                  'UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?',
+                  [montoRestituir, s[0].cliente_id]
+                );
+              }
             }
         }
       }

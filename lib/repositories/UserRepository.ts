@@ -40,6 +40,7 @@ export class UserRepository {
     search?: string, 
     status?: string | number, 
     role?: string,
+    loggedIn?: boolean,
     limit?: number,
     offset?: number 
   }): Promise<{ data: UserType[], total: number }> {
@@ -67,10 +68,13 @@ export class UserRepository {
       sqlParams.push(params.role);
     }
 
+    const loginJoin = params?.loggedIn ? 'INNER JOIN logins l ON l.usuario_id = u.id_usuario AND l.estado = 1' : '';
+
     const countSql = `
       SELECT COUNT(*) as total 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol
+      ${loginJoin}
       ${where}
     `;
 
@@ -78,6 +82,7 @@ export class UserRepository {
       SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol
+      ${loginJoin}
       ${where}
       ORDER BY u.fecha_crea DESC
       ${params?.limit !== undefined ? 'LIMIT ? OFFSET ?' : ''}

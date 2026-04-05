@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCuentas } from '@/hooks/caja/useCuentas';
 import useOrders from '@/hooks/servicios/useOrders';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -20,6 +20,22 @@ export default function AccountsPage() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
 
+  const handleRefresh = () => {
+    getCuentas();
+  };
+
+  useEffect(() => {
+    const handleCuentasUpdated = () => {
+      getCuentas();
+    };
+
+    window.addEventListener('cuentasUpdated', handleCuentasUpdated);
+
+    return () => {
+      window.removeEventListener('cuentasUpdated', handleCuentasUpdated);
+    };
+  }, [getCuentas]);
+
   if (isLoading || cajaLoading) {
     return <ReportSkeleton />;
   }
@@ -36,11 +52,10 @@ export default function AccountsPage() {
   const totalPages = Math.ceil(filteredCuentas.length / rowsPerPage) || 1;
   const paginatedCuentas = filteredCuentas.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  const handleRefresh = () => {
-    getCuentas();
-  };
+
 
   return (
+
     <PermissionGuard module='accounts' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <CuentaHeader loading={isLoading} onRefresh={handleRefresh} />

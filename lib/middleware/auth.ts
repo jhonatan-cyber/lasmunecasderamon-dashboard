@@ -194,119 +194,6 @@ function getUserPermissions(role: string): UserPermissions {
   return rolePermissions[role] || rolePermissions.garzon;
 }
 
-// Middleware de autenticación mejorado
-export function withAuth(handler: NextApiHandler) {
-  return async (req: NextApiRequest, res: NextApiResponse) => {
-    const authedReq = req as AuthenticatedNextApiRequest;
-    let token = null;
-
-    // logs removidos
-
-    // 1. Buscar en el header Authorization
-    const auth = req.headers.authorization;
-    if (auth && auth.startsWith('Bearer ')) {
-      token = auth.replace('Bearer ', '');
-    }
-
-    // 2. Si no hay token, buscar en la cookie 'token'
-    if (!token && req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token no proporcionado',
-        code: 'NO_TOKEN'
-      });
-    }
-
-    try {
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || 'default_secret'
-      ) as AuthenticatedUser;
-
-      // Agregar permisos al usuario desde la base de datos
-      decoded.permissions = await getUserPermissionsFromDB(decoded.id);
-
-      authedReq.user = decoded;
-      return handler(authedReq, res);
-    } catch {
-      return res.status(401).json({
-        success: false,
-        message: 'Token inválido o expirado',
-        code: 'INVALID_TOKEN'
-      });
-    }
-  };
-}
-
-// Middleware para validar permisos específicos
-export function withPermission(permission: keyof UserPermissions, action: string) {
-  return function (handler: NextApiHandler) {
-    return withAuth(async (req: NextApiRequest, res: NextApiResponse) => {
-      const user = (req as AuthenticatedNextApiRequest).user as AuthenticatedUser;
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuario no autenticado',
-          code: 'NOT_AUTHENTICATED'
-        });
-      }
-
-      const isAdministrator = user.role?.toLowerCase() === 'administrador';
-      const userPermissions = user.permissions[permission];
-      const hasPermission = isAdministrator || (userPermissions && userPermissions[action as keyof typeof userPermissions] === true);
-
-      if (!hasPermission) {
-        return res.status(403).json({
-          success: false,
-          message: 'No tienes permisos para realizar esta acción',
-          code: 'INSUFFICIENT_PERMISSIONS'
-        });
-      }
-
-      return handler(req, res);
-    });
-  };
-}
-
-// Middleware para roles específicos
-export function withRole(allowedRoles: string[]) {
-  return function (handler: NextApiHandler) {
-    return withAuth(async (req: NextApiRequest, res: NextApiResponse) => {
-      const user = (req as AuthenticatedNextApiRequest).user as AuthenticatedUser;
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuario no autenticado',
-          code: 'NOT_AUTHENTICATED'
-        });
-      }
-
-      if (!allowedRoles.includes(user.role)) {
-        auditLogger.securityEvent(user.id, 'ROLE_ACCESS_DENIED', {
-          userRole: user.role,
-          allowedRoles,
-          path: req.url,
-          ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress
-        });
-
-        return res.status(403).json({
-          success: false,
-          message: 'No tienes el rol necesario para acceder a este recurso',
-          code: 'INSUFFICIENT_ROLE'
-        });
-      }
-
-      return handler(req, res);
-    });
-  };
-}
-
 // Función helper para verificar permisos en el código
 export function checkPermission(
   user: AuthenticatedUser,
@@ -317,17 +204,8 @@ export function checkPermission(
   return userPermissions && userPermissions[action as keyof typeof userPermissions] === true;
 }
 
-// Función para obtener información del usuario actual
-export function getCurrentUser(req: NextApiRequest): AuthenticatedUser | null {
-  return (req as AuthenticatedNextApiRequest).user || null;
-}
-
 const authMiddleware = {
-  withAuth,
-  withPermission,
-  withRole,
   checkPermission,
-  getCurrentUser,
   getUserPermissions
 };
 

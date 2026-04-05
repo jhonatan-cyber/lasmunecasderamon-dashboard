@@ -125,7 +125,7 @@ export default function GratificacionesTable({
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3 w-3 text-gray-400" />
                   <span className="text-xs sm:text-sm text-gray-600">
-                    {formatDateTime(gratificacion.fecha_hora)}
+                    {formatDateTime(gratificacion.fecha_crea)}
                   </span>
                 </div>
 
@@ -188,7 +188,7 @@ export default function GratificacionesTable({
                     {gratificacion.usuario}
                   </TableCell>
                   <TableCell className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-                    {formatDateTime(gratificacion.fecha_hora)}
+                    {formatDateTime(gratificacion.fecha_crea)}
                   </TableCell>
                   <TableCell className="text-center font-bold text-sm text-zinc-900 dark:text-zinc-100">
                     {formatCurrencyNoDecimals(gratificacion.monto)}

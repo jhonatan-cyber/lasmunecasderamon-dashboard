@@ -7,27 +7,19 @@ export class TipRepository {
   static async register(body: any) {
     const { venta_id, monto } = TipRegisterSchema.parse(body);
 
-    // Intentar obtener usuarios logueados (cajero/garzón)
-    const logueados = await query<any[]>(`
-      SELECT DISTINCT u.id_usuario FROM logins l
-      INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
-      INNER JOIN roles r ON r.id_rol = u.rol_id
-      WHERE l.estado = 1 AND l.en_local = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
-    `);
+    const distribucionUsuarios = await query<any[]>(
+      `SELECT DISTINCT u.id_usuario
+       FROM logins l
+       INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
+       INNER JOIN roles r ON r.id_rol = u.rol_id
+       WHERE l.estado = 1
+         AND l.en_local = 1
+         AND u.estado = 1
+         AND LOWER(r.nombre) IN ('cajero', 'garzon')`
+    );
 
-    // Si no hay usuarios logueados, distribuir entre todas las anfitrionas activas
-    let distribucionUsuarios = logueados;
-    if (logueados.length === 0) {
-      console.log('[TipRepository] No hay cajeros/garzones logueados, distribuyendo entre anfitrionas activas');
-      const anfitrionas = await query<any[]>(`
-        SELECT DISTINCT u.id_usuario FROM usuarios u
-        INNER JOIN roles r ON r.id_rol = u.rol_id
-        WHERE u.estado = 1 AND r.nombre IN ('anfitriona')
-      `);
-      if (anfitrionas.length === 0) {
-        throw new Error('No hay usuarios disponibles para distribuir la propina');
-      }
-      distribucionUsuarios = anfitrionas;
+    if (distribucionUsuarios.length === 0) {
+      throw new Error('No hay usuarios disponibles para distribuir la propina');
     }
 
     const montoPorUsuario = monto / distribucionUsuarios.length;
@@ -39,7 +31,7 @@ export class TipRepository {
         id_propina: id,
         venta_id,
         propina: monto,
-        estado: 1, // 1 = por cobrar, 0 = cobrado
+        estado: 1,
         fecha_crea: now
       });
 
@@ -77,8 +69,6 @@ export class TipRepository {
         'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
       );
       if (active.length > 0) {
-        // Filtramos por caja activa usando LEFT JOIN y verificamos que la venta pertenezca a esa caja
-        // O que la propina no tenga venta asociada (propinas manuales)
         where += (where ? ' AND ' : 'WHERE ') + '(V.caja_id = ? OR V.id_venta IS NULL)';
         params.push(active[0].id_caja);
       } else {

@@ -62,7 +62,7 @@ interface TimerContextType {
   formatTime: (seconds: number) => string;
   serverOffset: number;
   getAccurateNow: () => Date;
-  setRefreshCallback: (callback: (servicioId?: string) => void) => void;
+  setRefreshCallback: (callback: (servicioId?: string | number) => void) => void;
   updateTimerByServicioId: (servicioId: string, newDuration: number) => void;
   startTemporaryTimer: any;
   stopTemporaryTimer: any;
@@ -94,10 +94,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useSignals();
   const [isInitialized, setIsInitialized] = useState(false);
   const [serverOffset, setServerOffset] = useState(0);
-  const [refreshCallback, setRefreshCallback] = useState<((servicioId?: string) => void) | null>(null);
+  const refreshCallbackRef = useRef<((servicioId?: string | number) => void) | null>(null);
   const [timerExpiredNotification, setTimerExpiredNotification] = useState<TimerExpiredNotification | null>(null);
   const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
   const { modalState, showConfirm, closeModal } = useConfirmModal();
+
+  // Exponer setRefreshCallback que guarda en ref en lugar de estado
+  const setRefreshCallback = useCallback((callback: (servicioId?: string | number) => void) => {
+    refreshCallbackRef.current = callback;
+  }, []);
 
   // El array de timers para compatibilidad con componentes que no usan signals
   const timers = useMemo(() => activeTimers.value.map(t => t.toPlainObject() as Timer), [activeTimers.value]);
@@ -130,26 +135,34 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const { startTimer, stopTimer, pauseTimerByServicioId, resumeTimerByServicioId, startTemporaryTimer } = useTimerActions({
     onNotificationExpira: showTimerExpiredNotification,
-    onRefreshCaja: (id) => refreshCallback?.(id)
+    onRefreshCaja: (id) => refreshCallbackRef.current?.(id)
   });
 
   useTimerSync({
     isInitialized, setIsInitialized,
     setServerOffset,
-    onTimerStopped: (id) => refreshCallback?.(id)
+    onTimerStopped: (id) => refreshCallbackRef.current?.(id)
   });
 
   useEffect(() => {
     startGlobalTimerLoop();
     setGlobalExpirationHandler((instance) => {
       const timer = instance.toPlainObject() as Timer;
+      console.log('[TimerContext] Timer expirado:', timer.servicioId, timer.roomName);
       showTimerExpiredNotification(timer);
 
       if (timer.isTemporary) {
         activeTimers.value = activeTimers.peek().filter(x => x.id !== timer.id);
         setTimeout(() => resumeTimerByServicioId(timer.servicioId), 200);
       } else {
+        console.log('[TimerContext] Llamando stopTimer para:', timer.id, timer.servicioId);
         stopTimer(timer.id, false, timer);
+        
+        // Llamar al callback de refresh para actualizar la lista de servicios
+        if (refreshCallbackRef.current) {
+          console.log('[TimerContext] Llamando refreshCallback para:', timer.servicioId);
+          refreshCallbackRef.current(timer.servicioId);
+        }
       }
     });
     return () => {
@@ -194,22 +207,28 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const value = useMemo(() => ({
     timers, startTimer, stopTimer, stopTimerByRoomId, stopTimerByServicioId,
     pauseTimerByServicioId, resumeTimerByServicioId, getTimerByRoomId, getTimerByServicioId,
-    getTemporaryTimerByServicioId, formatTime, serverOffset, getAccurateNow,
-    setRefreshCallback, updateTimerByServicioId, startTemporaryTimer, stopTemporaryTimer
-  }), [timers, startTimer, stopTimer, stopTimerByRoomId, stopTimerByServicioId, pauseTimerByServicioId, resumeTimerByServicioId, serverOffset, getAccurateNow, updateTimerByServicioId, startTemporaryTimer, stopTemporaryTimer]);
+    getTemporaryTimerByServicioId,
+    formatTime: (seconds: number) => {
+      const absSecs = Math.max(0, Math.abs(seconds));
+      const m = Math.floor(absSecs / 60);
+      const s = absSecs % 60;
+      return `${seconds < 0 ? "-" : ""}${m}:${s.toString().padStart(2, "0")}`;
+    },
+    serverOffset, getAccurateNow,
+    setRefreshCallback,
+    updateTimerByServicioId,
+    startTemporaryTimer, stopTemporaryTimer,
+    isInitialized
+  }), [timers, startTimer, stopTimer, stopTimerByRoomId, stopTimerByServicioId, pauseTimerByServicioId, resumeTimerByServicioId, serverOffset, getAccurateNow, updateTimerByServicioId, startTemporaryTimer, stopTemporaryTimer, isInitialized]);
+
+  // Debug: mostrar cuando se inicializa
+  useEffect(() => {
+    console.log('[TimerContext] isInitialized:', isInitialized, 'timers count:', timers.length);
+  }, [isInitialized, timers.length]);
 
   return (
     <TimerContext.Provider value={value}>
       {children}
-      <ConfirmModal
-        {...modalState}
-        onConfirm={modalState.onConfirm || (() => { })}
-        onCancel={modalState.onCancel || (() => { })}
-        onOpenChange={closeModal}
-      />
-      {timerExpiredNotification && (
-        <TimerExpiredModal open={showTimerExpiredModal} onOpenChange={() => setShowTimerExpiredModal(false)} {...timerExpiredNotification} />
-      )}
     </TimerContext.Provider>
   );
 };

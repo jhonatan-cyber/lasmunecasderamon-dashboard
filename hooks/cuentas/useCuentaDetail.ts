@@ -47,9 +47,11 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
   const getEstadoBadge = (estado: number | string): EstadoBadge => {
     const estadoStr = String(estado).toLowerCase();
     return ({
-      0: { label: 'Cerrada', variant: 'secondary' },
+      0: { label: 'Cobrada', variant: 'success' },
       1: { label: 'Activa', variant: 'default' },
-      2: { label: 'Pagada', variant: 'success' }
+      2: { label: 'Solicitud anul.', variant: 'outline' },
+      3: { label: 'Anulada', variant: 'destructive' },
+      4: { label: 'Saldo pendiente', variant: 'secondary' }
     } as Record<string, EstadoBadge>)[estadoStr] || { label: 'Desconocido', variant: 'outline' as const };
   };
 

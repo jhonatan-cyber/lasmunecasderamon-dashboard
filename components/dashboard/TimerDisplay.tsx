@@ -16,20 +16,20 @@ const getTipoInfo = (timer: any) => {
   if (tipo === 'servicio') {
     return {
       label: 'Servicio',
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      borderColor: 'border-indigo-100',
-      icon: <Clock className='w-3 h-3 text-indigo-500' />
+      color: 'text-indigo-600 dark:text-indigo-300',
+      bgColor: 'bg-indigo-50 dark:bg-indigo-950/40',
+      borderColor: 'border-indigo-100 dark:border-indigo-900/60',
+      icon: <Clock className='h-3 w-3 text-indigo-500 dark:text-indigo-300' />
     };
   }
 
   if (tipo === 'cuenta') {
     return {
       label: 'Cuenta',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-100',
-      icon: <Clock className='w-3 h-3 text-amber-500' />
+      color: 'text-amber-600 dark:text-amber-300',
+      bgColor: 'bg-amber-50 dark:bg-amber-950/40',
+      borderColor: 'border-amber-100 dark:border-amber-900/60',
+      icon: <Clock className='h-3 w-3 text-amber-500 dark:text-amber-300' />
     };
   }
 
@@ -39,27 +39,27 @@ const getTipoInfo = (timer: any) => {
     if (codigo.includes('champ') || codigo.includes('sham')) {
       return {
         label: 'Venta - Champaña',
-        color: 'text-rose-600',
-        bgColor: 'bg-rose-50',
-        borderColor: 'border-rose-100',
-        icon: <Clock className='w-3 h-3 text-rose-500' />
+        color: 'text-rose-600 dark:text-rose-300',
+        bgColor: 'bg-rose-50 dark:bg-rose-950/40',
+        borderColor: 'border-rose-100 dark:border-rose-900/60',
+        icon: <Clock className='h-3 w-3 text-rose-500 dark:text-rose-300' />
       };
     }
     return {
       label: 'Venta - Tragos',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-100',
-      icon: <Clock className='w-3 h-3 text-emerald-500' />
+      color: 'text-emerald-600 dark:text-emerald-300',
+      bgColor: 'bg-emerald-50 dark:bg-emerald-950/40',
+      borderColor: 'border-emerald-100 dark:border-emerald-900/60',
+      icon: <Clock className='h-3 w-3 text-emerald-500 dark:text-emerald-300' />
     };
   }
 
   return {
     label: 'Venta',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-100',
-    icon: <Clock className='w-3 h-3 text-gray-500' />
+    color: 'text-gray-600 dark:text-slate-300',
+    bgColor: 'bg-gray-50 dark:bg-slate-900/70',
+    borderColor: 'border-gray-100 dark:border-slate-800',
+    icon: <Clock className='h-3 w-3 text-gray-500 dark:text-slate-300' />
   };
 };
 
@@ -77,11 +77,11 @@ const TimerItem = memo(({
   const remainingTime = useCountdown(timer);
 
   return (
-    <div className={`flex items-center justify-between p-1.5 ${tipoInfo.bgColor} rounded border ${tipoInfo.borderColor} mb-1 shadow-sm`}>
+    <div className={`mb-1 flex items-center justify-between rounded border p-1.5 shadow-sm ${tipoInfo.bgColor} ${tipoInfo.borderColor}`}>
       <div className='flex-1 min-w-0'>
         <div className='flex flex-col'>
           <span
-            className={`font-bold text-sm truncate ${timer.isPaused ? 'text-yellow-600' : 'text-gray-900'
+            className={`truncate text-sm font-bold ${timer.isPaused ? 'text-yellow-600 dark:text-yellow-300' : 'text-gray-900 dark:text-slate-100'
               }`}
           >
             {timer.roomName}
@@ -93,7 +93,7 @@ const TimerItem = memo(({
             </span>
           </div>
           {timer.waiterName && (
-            <span className='text-[9px] text-gray-500 font-medium truncate italic'>
+            <span className='truncate text-[9px] font-medium italic text-gray-500 dark:text-slate-400'>
               Garzón: {timer.waiterName}
             </span>
           )}
@@ -102,7 +102,7 @@ const TimerItem = memo(({
       <div className='flex items-center gap-1.5 ml-1'>
         <div className='flex flex-col items-end'>
           <span
-            className={`font-mono text-sm font-black tabular-nums ${timer.isPaused ? 'text-yellow-600' : (remainingTime < 60 ? 'text-red-600 animate-pulse' : 'text-blue-700')
+            className={`font-mono text-sm font-black tabular-nums ${timer.isPaused ? 'text-yellow-600 dark:text-yellow-300' : (remainingTime < 60 ? 'animate-pulse text-red-600 dark:text-red-300' : 'text-blue-700 dark:text-blue-300')
               }`}
           >
             {formatTime(remainingTime)}
@@ -114,7 +114,7 @@ const TimerItem = memo(({
             size='sm'
             variant='ghost'
             onClick={() => onStop(timer.id, timer.roomName)}
-            className='h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 transition-colors'
+            className='h-6 w-6 p-0 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-300'
           >
             <Square className='w-3 h-3' />
           </Button>
@@ -169,10 +169,10 @@ export function TimerDisplay() {
     return (
       <>
         <div className='fixed bottom-4 right-4 z-50 max-w-xs'>
-          <Card className='bg-white shadow-lg border border-gray-200'>
+          <Card className='border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950/95 dark:shadow-2xl'>
             <CardHeader className='pb-1'>
-              <CardTitle className='text-xs font-semibold flex items-center gap-1'>
-                <Clock className='text-blue-600 text-xs' />
+              <CardTitle className='flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-slate-100'>
+                <Clock className='text-xs text-blue-600 dark:text-blue-300' />
                 Temporizador
               </CardTitle>
             </CardHeader>
@@ -211,12 +211,12 @@ export function TimerDisplay() {
   return (
     <>
       <div className='fixed bottom-4 right-4 z-50 max-w-xs'>
-        <Card className='bg-white shadow-lg border border-gray-200'>
+        <Card className='border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950/95 dark:shadow-2xl'>
           <CardHeader className='pb-1'>
-            <CardTitle className='text-xs font-semibold flex items-center gap-1'>
-              <Clock className='text-blue-600 text-xs' />
+            <CardTitle className='flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-slate-100'>
+              <Clock className='text-xs text-blue-600 dark:text-blue-300' />
               Temporizadores
-              <Badge variant='secondary' className='ml-auto text-xs'>
+              <Badge variant='secondary' className='ml-auto text-xs dark:bg-slate-800 dark:text-slate-100'>
                 {activeTimers.length}
               </Badge>
             </CardTitle>
@@ -234,7 +234,7 @@ export function TimerDisplay() {
               variant='ghost'
               size='sm'
               onClick={() => setIsExpanded(!isExpanded)}
-              className='w-full mt-1 h-6 text-xs'
+              className='mt-1 h-6 w-full text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
             >
               {isExpanded ? (
                 <ChevronUp className='text-xs mr-1' />

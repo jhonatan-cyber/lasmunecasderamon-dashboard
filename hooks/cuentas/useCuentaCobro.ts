@@ -143,15 +143,15 @@ export function useCuentaCobro() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          origen: 'cuenta',
+          skip_client_prepago: true,
           cliente_id: cuenta?.cliente_id != null ? String(cuenta.cliente_id) : null,
           pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
-          habitacion_id: cuenta?.habitacion_id != null ? String(cuenta.habitacion_id) : (habitacionId != null ? String(habitacionId) : null),
           metodo_pago: metodoPagoSeleccionado,
           propina: propinaFinal,
           sub_total: Number(cuenta?.sub_total ?? 0),
           total: montoFinal,
           total_comision: Number(cuenta?.total_comision ?? 0),
-          tiempo: Number(cuenta?.tiempo ?? 0),
           codigo: cuenta?.codigo,
           detalles: cuenta.detalles?.map((d: any) => ({
             producto_id: String(d.producto_id ?? d.id_producto),

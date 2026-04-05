@@ -1,4 +1,3 @@
- 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
@@ -20,7 +19,7 @@ export const useCalendarActions = (startDate?: string, endDate?: string) => {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const endpoint = useMemo(() => {
     if (!startDate || !endDate) return null;
-    return `/api/calendar-actions?startDate=${startDate}&endDate=${endDate}`;
+    return `/api/calendar?startDate=${startDate}&endDate=${endDate}`;
   }, [startDate, endDate]);
 
   const {
@@ -28,7 +27,7 @@ export const useCalendarActions = (startDate?: string, endDate?: string) => {
     isLoading: loading,
     error: fetchError,
     refetch
-  } = useGenericFetch<CalendarActions>(endpoint || '/api/calendar-actions', {
+  } = useGenericFetch<CalendarActions>(endpoint || '/api/calendar', {
     initialFetch: !!endpoint,
     transform: data => (data.success ? data.data : {})
   });

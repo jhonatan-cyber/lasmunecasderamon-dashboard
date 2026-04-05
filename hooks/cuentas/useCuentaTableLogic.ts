@@ -22,7 +22,11 @@ export function useCuentaTableLogic() {
       case '1':
         return { label: 'Por Cobrar', variant: 'destructive' };
       case '2':
-        return { label: 'Pagada', variant: 'default' };
+        return { label: 'Solicitud Anul.', variant: 'outline' };
+      case '3':
+        return { label: 'Anulada', variant: 'secondary' };
+      case '4':
+        return { label: 'Anul. Parcial', variant: 'outline' };
       default:
         return { label: 'Desconocido', variant: 'secondary' };
     }
