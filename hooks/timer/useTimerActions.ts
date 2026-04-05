@@ -11,20 +11,15 @@ interface TimerActionsProps {
 }
 
 export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerActionsProps) {
-  // --- API HELPERS ---
   const updateRoomStatus = async (roomId: string, status: number) => {
     try {
-      // El endpoint GET espera el ID como query param, no en el path
       const roomRes = await fetch(`/api/rooms?id=${roomId}`);
       const { success, data } = await roomRes.json();
       if (!success) return;
-
       const hasPrice = data.price > 0,
         hasTime = data.time > 0,
         hasComm = data.comision_anfitriona > 0;
       if (!hasPrice && !hasTime && !hasComm) return;
-
-      // El endpoint PATCH espera el ID como query param
       await fetch(`/api/rooms?id=${roomId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -47,7 +42,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
     }
   };
 
-  // --- ACTIONS ---
   const startTimer = useCallback(
     async (
       servicioId: string,
@@ -61,9 +55,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       waiterName?: string
     ) => {
       const currentTimers = activeTimers.peek();
-
-      // LIMPIEZA PREVENTIVA: Si ya existe un timer para esta habitación, lo eliminamos TODOS.
-      // Esto evita que timers antiguos/huérfanos disparen modales erróneos.
       const duplicates = currentTimers.filter(t => t.roomId.peek() === roomId);
       if (duplicates.length > 0) {
         console.warn(
@@ -74,11 +65,8 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
 
       if (!servicioId || !roomId || !duration || duration <= 0) return;
 
-      // Usar el tiempo real incluyendo el offset del servidor para que nazca en 0ms transcurridos
       const currentOffset = serverOffsetSignal.peek();
-      // Ajustar el startTime al "ahora" del servidor
       const startTime = new Date(Date.now() + currentOffset);
-
       const newT = new TimerInstance(
         {
           id: `timer_${roomId}_${servicioCode}_${Date.now()}`,
@@ -115,7 +103,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         ? (timer as TimerInstance).tipoTransaccion.peek()
         : (timer as any).tipoTransaccion;
 
-      // Quitar del store de señales
       activeTimers.value = activeTimers.peek().filter(t => t.id !== timerId);
 
       const othersInRoom = activeTimers
@@ -162,7 +149,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
     const target = activeTimers.peek().find(t => t.servicioId === servicioId && !t.isTemporary);
     if (target) {
       target.isPaused.value = false;
-      // El motor de señales (loop central) se encargará del resto basado en startTime
       updateServiceStatus(servicioId, 2);
     }
   }, []);

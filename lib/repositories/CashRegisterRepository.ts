@@ -93,6 +93,7 @@ export class CashRegisterRepository {
     const setClause = dedupedEntries.map(([col]) => `${col} = ${col} + ?`).join(', ');
     const values = dedupedEntries.map(([_, v]) => v);
 
+    console.log('[CashRegisterRepository] updateBalances:', { id_caja, setClause, values });
     await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [...values, id_caja]);
   }
 
@@ -121,7 +122,11 @@ export class CashRegisterRepository {
       cantidad_ventas: stats.ventas.cantidad,
       promedio_venta: stats.ventas.promedio,
       cantidad_servicios: stats.servicios.cantidad,
-      promedio_servicio: stats.servicios.promedio
+      promedio_servicio: stats.servicios.promedio,
+      // Alias para compatibilidad con la app
+      total_anticipo: cajaRow.anticipo || 0,
+      efectivo_en_caja: Number(cajaRow.efectivo || 0) + Number(cajaRow.monto_apertura || 0),
+      total_efectivo: Number(cajaRow.efectivo || 0)
     };
   }
 

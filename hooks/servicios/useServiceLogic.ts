@@ -1,8 +1,8 @@
- 
+  
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useServicios } from '@/hooks/servicios/useServicios';
+import { useServicios, useAllServicios } from '@/hooks/servicios/useServicios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ServicioWithDetails } from '@/types/servicio';
@@ -10,6 +10,10 @@ import { ServicioWithDetails } from '@/types/servicio';
 export function useServiceLogic() {
   const { servicios, loading, getServicios, removeServicioFromState, patchServicio } =
     useServicios();
+  
+  // Obtener todos los servicios (sin filtro por estado) para los stats
+  const { servicios: allServicios, loading: loadingAll } = useAllServicios();
+  
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,43 +28,57 @@ export function useServiceLogic() {
   const handleShowActiveServices = useCallback(() => {
     setShowAllServices(false);
     setCurrentPage(1);
-  }, []);
+    // También recargar con all=false para obtener activos
+    getServicios(false);
+  }, [getServicios]);
 
   const handleShowAllServices = useCallback(() => {
     setShowAllServices(true);
     setCurrentPage(1);
-  }, []);
+    // Recargar con all=true para obtener finalizados
+    getServicios(true);
+  }, [getServicios]);
 
   const handleStopTimer = useCallback(
     async (servicioId: number) => {
+      console.log('[useServiceLogic] handleStopTimer llamado con:', servicioId);
       try {
         // Usar patchServicio que ya implementa actualizaciones optimistas
         await patchServicio(servicioId, { estado: 1 }); // 1 = Terminado
+        
+        // Remover del estado local inmediatamente para que desaparezca de la vista
+        removeServicioFromState(servicioId);
+        
         toast.success('Servicio finalizado exitosamente');
       } catch (error) {
+        console.error('[useServiceLogic] Error al finalizar:', error);
         toast.error('Error al finalizar el servicio');
       }
     },
-    [patchServicio]
+    [patchServicio, removeServicioFromState]
   );
 
   const handleServiceFinalized = useCallback(
-    (servicioId: number) => {
+    (servicioId: string | number) => {
+      console.log('[useServiceLogic] handleServiceFinalized llamado con:', servicioId);
       removeServicioFromState(servicioId);
     },
     [removeServicioFromState]
   );
 
   const handleServiceAutoFinished = useCallback(async () => {
+    console.log('[useServiceLogic] handleServiceAutoFinished llamado');
     try {
-      await getServicios(true);
+      await getServicios(false); // false = obtener servicios activos
       setCurrentPage(prev => prev);
     } catch (error) {
+      console.error('[useServiceLogic] Error en handleServiceAutoFinished:', error);
       throw new Error('Error al actualizar servicios');
     }
   }, [getServicios, setCurrentPage]);
 
   const serviciosByStatus = useMemo(() => {
+    if (!servicios || servicios.length === 0) return [];
     if (showAllServices) {
       // Mostrar servicios finalizados (1) o anulados (0)
       return servicios.filter(
@@ -76,11 +94,12 @@ export function useServiceLogic() {
   }, [servicios, showAllServices]);
 
   const filteredServicios = useMemo(() => {
+    if (!serviciosByStatus || serviciosByStatus.length === 0) return [];
     return serviciosByStatus.filter(
       (servicio: ServicioWithDetails) =>
-        servicio.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        servicio.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        servicio.habitacion_numero?.toLowerCase().includes(searchTerm.toLowerCase())
+        (servicio.codigo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (servicio.cliente_nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (servicio.habitacion_numero || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [serviciosByStatus, searchTerm]);
   const totalPages = Math.ceil(filteredServicios.length / itemsPerPage);
@@ -90,7 +109,9 @@ export function useServiceLogic() {
 
   return {
     servicios,
+    allServicios,
     loading,
+    loadingAll,
     searchTerm,
     showAllServices,
     currentPage,

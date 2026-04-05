@@ -7,7 +7,7 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { buildAnticipoRequestMessage, buildAnticipoProcessedMessages } from '@/lib/notifications/notificationMessages';
 import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
-import { sendPushByRole } from '@/lib/integrations/pushNotifications';
+import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
 
 export class AnticipoRepository {
   private static readonly TABLE = 'anticipos';
@@ -25,7 +25,9 @@ export class AnticipoRepository {
         COALESCE(U.nick, '') AS nick, 
         U.foto, 
         A.fecha_crea, 
+        A.fecha_mod,
         A.monto, 
+        A.motivo,
         A.estado
       FROM ${this.TABLE} A
       LEFT JOIN usuarios U ON U.id_usuario = A.usuario_id
@@ -145,16 +147,33 @@ export class AnticipoRepository {
     });
 
     const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
+    const baseUrl = process.env.PUBLIC_BASE_URL || '';
     const msg = buildAnticipoRequestMessage({
       nombreCompleto: `${user.nombre} ${user.apellido}`,
       usuarioNick: user.nick,
       montoSolicitado: monto,
       motivo, montoAsistencia, montoComision, montoPropina, montoMaximo,
-      anticipoId: id, fecha: new Date(now.replace(' ', 'T'))
+      anticipoId: id, fecha: new Date(now.replace(' ', 'T')),
+      baseUrl,
+      token: id
     });
 
     await enviarWhatsApp(adminWhatsApp, msg);
-    sendNotificationToAll('new_anticipo_request', { id, monto, empleado: `${user.nombre} ${user.apellido}`, nick: user.nick });
+    sendNotificationToAll('new_anticipo_request', {
+      id,
+      usuario_id,
+      monto,
+      motivo,
+      empleado: `${user.nombre} ${user.apellido}`,
+      nick: user.nick,
+      fecha_crea: now
+    });
+
+    await sendPushByRole(
+      'cajero',
+      'Nueva solicitud de anticipo',
+      `${user.nick} solicito ${formatCurrencyCLP(monto)}`
+    ).catch(console.error);
 
     const res = await query<any[]>('SELECT * FROM anticipos WHERE id_anticipo = ?', [id]);
     return res.length > 0 ? res[0] : null;
@@ -174,41 +193,23 @@ export class AnticipoRepository {
     const now = getNowInBusinessTimezone();
 
     return await withTransaction(async (trx) => {
-      // 1. Obtener la solicitud con datos del usuario
       const request = await query<any[]>(`
-        SELECT a.*, u.nombre, u.apellido, u.nick, u.telefono, u.push_token 
-        FROM anticipos a 
-        INNER JOIN usuarios u ON a.usuario_id = u.id_usuario 
+        SELECT a.*, u.nombre, u.apellido, u.nick, u.telefono, u.push_token
+        FROM anticipos a
+        INNER JOIN usuarios u ON a.usuario_id = u.id_usuario
         WHERE a.id_anticipo = ?
       `, [id]);
-      
+
       if (request.length === 0) throw new Error('Solicitud no encontrada');
       const sol = request[0];
 
       if (Number(sol.estado) !== 2) throw new Error('La solicitud ya fue procesada anteriormente');
 
-      // 2. Actualizar estado
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
         estado,
         fecha_mod: now
       });
 
-      // 3. Si se aprueba, actualizar saldos de caja (lógica actual heredada)
-      if (action === 'approve') {
-        const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
-        if (idCaja) {
-          const caja = await CashRegisterRepository.getById(idCaja);
-          const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
-          if (caja && efectivoTotal >= Number(sol.monto)) {
-            await CashRegisterRepository.updateBalances(trx, idCaja, {
-              efectivo: -Number(sol.monto),
-              anticipo: Number(sol.monto)
-            });
-          }
-        }
-      }
-
-      // 4. Notificaciones
       const { empleado: msgEmp, administrador: msgAdmin } = buildAnticipoProcessedMessages({
         action: action === 'approve' ? 'approved' : 'rejected',
         empleadoNombre: `${sol.nombre} ${sol.apellido}`,
@@ -217,8 +218,7 @@ export class AnticipoRepository {
       });
 
       const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-      
-      // WhatsApp (Silencioso si falla un número)
+
       try {
         await Promise.all([
           enviarWhatsApp(sol.telefono || '', msgEmp),
@@ -228,19 +228,87 @@ export class AnticipoRepository {
         console.error('Error enviando WhatsApps:', e);
       }
 
-      // Notificación Web (SSE)
       sendNotificationToAll('anticipo_processed', {
         id,
+        usuario_id: sol.usuario_id,
         status: action === 'approve' ? 'approved' : 'rejected',
         monto: Number(sol.monto),
+        motivo: sol.motivo,
+        fecha_mod: now,
         empleado: `${sol.nombre} ${sol.apellido}`,
         nick: sol.nick
       });
 
-      // Notificación Push (Apps Móviles para el Cajero)
-      const title = action === 'approve' ? '💰 Anticipo Aceptado' : '❌ Anticipo Rechazado';
+      const title = action === 'approve' ? 'Anticipo aceptado' : 'Anticipo rechazado';
       const body = `El anticipo de ${sol.nombre} por ${formatCurrencyCLP(Number(sol.monto))} ha sido ${action === 'approve' ? 'aceptado' : 'rechazado'}.`;
+
       await sendPushByRole('cajero', title, body, { id_anticipo: id, type: 'anticipo', action });
+      await sendPushNotification(sol.usuario_id, title, body, {
+        id_anticipo: id,
+        type: 'anticipo',
+        action
+      });
+
+      return { ok: true, id };
+    });
+  }
+
+  static async deliverAnticipo(id: string) {
+    const now = getNowInBusinessTimezone();
+
+    return await withTransaction(async (trx) => {
+      const request = await query<any[]>(`
+        SELECT a.*, u.nombre, u.apellido, u.nick
+        FROM anticipos a
+        INNER JOIN usuarios u ON a.usuario_id = u.id_usuario
+        WHERE a.id_anticipo = ?
+      `, [id]);
+
+      if (request.length === 0) throw new Error('Solicitud no encontrada');
+      const sol = request[0];
+
+      if (Number(sol.estado) !== 1) throw new Error('Solo se pueden entregar anticipos aprobados');
+
+      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
+      if (!idCaja) throw new Error('No hay una caja abierta para entregar el anticipo');
+
+      const caja = await CashRegisterRepository.getById(idCaja);
+      const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
+      if (!caja || efectivoTotal < Number(sol.monto)) {
+        throw new Error('No hay suficiente efectivo en caja');
+      }
+
+      const montoAnticipo = Number(sol.monto);
+      console.log('[deliverAnticipo] Actualizando caja:', { idCaja, monto: montoAnticipo });
+
+      await CashRegisterRepository.updateBalances(trx, idCaja, {
+        efectivo: -montoAnticipo,
+        anticipo: montoAnticipo
+      });
+
+      await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
+        estado: 0,
+        fecha_mod: now
+      });
+
+      sendNotificationToAll('anticipo_delivered', {
+        id,
+        usuario_id: sol.usuario_id,
+        monto: Number(sol.monto),
+        fecha_mod: now,
+        empleado: `${sol.nombre} ${sol.apellido}`,
+        nick: sol.nick
+      });
+
+      const title = 'Anticipo entregado';
+      const body = `Se entrego ${formatCurrencyCLP(Number(sol.monto))} a ${sol.nombre}.`;
+
+      await sendPushByRole('cajero', title, body, { id_anticipo: id, type: 'anticipo', action: 'delivered' });
+      await sendPushNotification(sol.usuario_id, title, body, {
+        id_anticipo: id,
+        type: 'anticipo',
+        action: 'delivered'
+      });
 
       return { ok: true, id };
     });

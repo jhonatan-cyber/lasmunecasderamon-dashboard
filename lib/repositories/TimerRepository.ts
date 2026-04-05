@@ -1,6 +1,7 @@
 import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { CuentaRepository } from './CuentaRepository';
 
 export class TimerRepository {
   static async getActive() {
@@ -15,8 +16,8 @@ export class TimerRepository {
                s.precio_servicio, s.precio_habitacion, s.iva, s.cliente_id,
                COALESCE(GROUP_CONCAT(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE CONCAT(u.nombre, ' ', u.apellido) END SEPARATOR ', '), 'Sin asignar') as anfitrionas,
                GROUP_CONCAT(DISTINCT ds.usuario_id SEPARATOR ',') as anfitrionas_ids,
-               COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente') as clienteNombre,
-               s.total, s.metodo_pago, creator.nick as waiter_name
+               COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as clienteNombre,
+               s.total, s.metodo_pago, creator.nick as waiter_name, creator.foto as waiter_foto
         FROM servicios s 
         LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
@@ -32,7 +33,7 @@ export class TimerRepository {
                v.habitacion_id as roomId, 'venta' as tipoTransaccion,
                COALESCE(GROUP_CONCAT(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE CONCAT(u.nombre, ' ', u.apellido) END SEPARATOR ', '), 'Sin asignar') as anfitrionas,
                GROUP_CONCAT(DISTINCT vu.usuario_id SEPARATOR ',') as anfitrionas_ids,
-               COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente') as clienteNombre,
+               COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as clienteNombre,
                v.total, v.metodo_pago, creator.nick as waiter_name
         FROM ventas v 
         LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
@@ -44,11 +45,18 @@ export class TimerRepository {
         GROUP BY v.id_venta
       `, [getNowInBusinessTimezone()]),
       query(`
-        SELECT c.id_cuenta as id, h.nombre as roomName, c.tiempo as duration, c.fecha_crea as startTime, 
-               c.estado, NULL as pausedAt, c.habitacion_id as roomId, 'cuenta' as tipoTransaccion
-        FROM cuentas c 
-        JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
-        WHERE c.estado = 1 AND c.tiempo > 0 AND TIMESTAMPDIFF(SECOND, c.fecha_crea, ?) < (c.tiempo * 60)
+        SELECT c.id_cuenta as id, c.codigo, c.id_cuenta as servicioId, COALESCE(h.nombre, 'Sin habitacion') as roomName,
+               COALESCE(c.tiempo_actual, c.tiempo) as duration, COALESCE(c.tiempo_inicio_actual, c.fecha_crea) as startTime, c.estado, NULL as pausedAt,
+               c.habitacion_id as roomId, 'cuenta' as tipoTransaccion,
+               COALESCE(CONCAT(cl.nombre, ' ', cl.apellido), 'Sin cliente registrado') as clienteNombre,
+               c.total, creator.nick as waiter_name
+        FROM cuentas c
+        LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
+        LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id
+        LEFT JOIN usuarios creator ON creator.id_usuario = c.created_by
+        WHERE c.estado = 1
+          AND COALESCE(c.tiempo_actual, c.tiempo) > 0
+          AND TIMESTAMPDIFF(SECOND, COALESCE(c.tiempo_inicio_actual, c.fecha_crea), ?) < (COALESCE(c.tiempo_actual, c.tiempo) * 60)
       `, [getNowInBusinessTimezone()])
     ]);
 
@@ -92,6 +100,15 @@ export class TimerRepository {
       await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [s.id_servicio]);
       await query('UPDATE usuarios u INNER JOIN detalle_servicios ds ON u.id_usuario = ds.usuario_id SET u.estado_servicio = 0 WHERE ds.servicio_id = ?', [s.id_servicio]);
       await this.handleRoomResume(s.habitacion_id, nowStr);
+      changed = true;
+    }
+
+    // Limpiar cuentas expiradas
+    const expiredC = await query<any[]>('SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TIMESTAMPDIFF(SECOND, COALESCE(tiempo_inicio_actual, fecha_crea), ?) >= (COALESCE(tiempo_actual, tiempo) * 60)', [nowStr]);
+    for (const c of expiredC) {
+      await CuentaRepository.finalizeRoomSession(c.id_cuenta, nowStr);
+      await this.handleRoomResume(c.habitacion_id, nowStr);
+      sendNotificationToAll('timer_stopped', { servicioId: c.id_cuenta, status: 1, tipoTransaccion: 'cuenta' });
       changed = true;
     }
 

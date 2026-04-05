@@ -151,12 +151,6 @@ function ConfirmarAnticipoContent() {
       <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950'>
         <Card className='w-full max-w-lg shadow-xl border-t-4 border-t-primary'>
           <CardHeader className='text-center pb-2'>
-            <Badge
-              variant='outline'
-              className='mb-2 self-center px-4 py-1 text-xs font-bold bg-primary/10 text-primary border-primary/20'
-            >
-              SOLICITUD DE ANTICIPO #{solicitud.id}
-            </Badge>
             <CardTitle className='text-2xl font-black text-gray-900 dark:text-gray-100'>
               Confirmar Solicitud
             </CardTitle>

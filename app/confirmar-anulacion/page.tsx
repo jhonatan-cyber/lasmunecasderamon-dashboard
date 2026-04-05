@@ -15,6 +15,7 @@ interface SolicitudAnulacion {
   venta_id: number;
   codigo: string;
   total: number;
+  monto: number;
   cliente_nombre: string;
   motivo: string;
   solicitado_por: string;
@@ -37,22 +38,19 @@ function ConfirmarAnulacionContent() {
       return;
     }
 
-    // Cargar datos de la solicitud
     const cargarSolicitud = async () => {
       try {
         const response = await fetch(`/api/ventas/solicitud-anulacion?token=${token}`);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-
           throw new Error(errorData.message || 'Solicitud no encontrada o ya procesada');
         }
 
         const data = await response.json();
-
         setSolicitud(data.solicitud);
       } catch (err) {
-        console.error('🔍 Error cargando solicitud:', err);
+        console.error('Error cargando solicitud:', err);
         setError(err instanceof Error ? err.message : 'Error al cargar la solicitud');
       } finally {
         setLoading(false);
@@ -67,7 +65,7 @@ function ConfirmarAnulacionContent() {
 
     setProcessing(true);
     try {
-      const response = await fetch(`/api/ventas/procesar-anulacion`, {
+      const response = await fetch('/api/ventas/procesar-anulacion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -87,14 +85,11 @@ function ConfirmarAnulacionContent() {
       if (result.success) {
         toast.success(
           accion === 'confirmar'
-            ? '✅ Anulación confirmada exitosamente'
-            : '❌ Anulación rechazada exitosamente'
+            ? 'Anulación confirmada exitosamente'
+            : 'Anulación rechazada exitosamente'
         );
-
-        // Mostrar mensaje de que la ventana se cerrará
         toast.info('La ventana se cerrará automáticamente en 2 segundos');
 
-        // Cerrar la ventana después de 2 segundos
         setTimeout(() => {
           window.close();
         }, 2000);
@@ -133,7 +128,7 @@ function ConfirmarAnulacionContent() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
             <Button onClick={() => window.close()} className='w-full mt-4'>
-              Cerrar Ventana
+              Cerrar ventana
             </Button>
           </CardContent>
         </Card>
@@ -151,7 +146,7 @@ function ConfirmarAnulacionContent() {
           <CardContent>
             <p>La solicitud de anulación no existe o ya fue procesada.</p>
             <Button onClick={() => window.close()} className='w-full mt-4'>
-              Cerrar Ventana
+              Cerrar ventana
             </Button>
           </CardContent>
         </Card>
@@ -173,7 +168,6 @@ function ConfirmarAnulacionContent() {
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            {/* Detalles de la venta */}
             <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
               <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
                 Detalles de la Venta
@@ -187,6 +181,12 @@ function ConfirmarAnulacionContent() {
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Cliente:</span>
                   <span className='text-gray-900 dark:text-gray-100'>
                     {solicitud.cliente_nombre}
+                  </span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Monto solicitado:</span>
+                  <span className='font-bold text-amber-600 dark:text-amber-400'>
+                    {formatCurrencyCLP(solicitud.monto || 0)}
                   </span>
                 </div>
                 <div className='flex justify-between'>
@@ -212,7 +212,6 @@ function ConfirmarAnulacionContent() {
               </div>
             </div>
 
-            {/* Motivo de anulación */}
             {solicitud.motivo && solicitud.motivo !== 'Motivo no especificado' && (
               <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800'>
                 <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>
@@ -222,7 +221,6 @@ function ConfirmarAnulacionContent() {
               </div>
             )}
 
-            {/* Botones de acción */}
             <div className='flex gap-4 pt-4'>
               <div className='flex justify-center gap-2 w-full'>
                 <Button
@@ -249,10 +247,9 @@ function ConfirmarAnulacionContent() {
               </div>
             </div>
 
-            {/* Información sobre cierre automático */}
             <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
               <p className='text-sm text-blue-800 dark:text-blue-200 text-center'>
-                <strong>ℹ️ Información:</strong> Después de procesar la anulación, esta ventana se
+                <strong>Información:</strong> Después de procesar la anulación, esta ventana se
                 cerrará automáticamente.
               </p>
             </div>

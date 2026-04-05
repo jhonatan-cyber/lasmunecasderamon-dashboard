@@ -1,7 +1,7 @@
 /* eslint-disable */
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, useRef, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -54,12 +54,24 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const { user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
+  
+  // Memoizar valores para evitar re-renders innecesarios
+  const routerRef = useRef(router);
+  const pathnameRef = useRef(pathname);
+  
+  // Sincronizar refs
+  useEffect(() => {
+    routerRef.current = router;
+    pathnameRef.current = pathname;
+  }, [router, pathname]);
 
   useEffect(() => {
     // Función para verificar autorización
     const checkAuth = () => {
+      const currentPathname = pathnameRef.current;
+      
       // Si es una ruta pública, permitir acceso
-      if (pathname && publicRoutes.some(route => pathname === route || pathname.startsWith(route))) {
+      if (currentPathname && publicRoutes.some(route => currentPathname === route || currentPathname.startsWith(route))) {
         setAuthorized(true);
         setChecking(false);
         return;
@@ -72,7 +84,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       // Si no hay usuario, redirigir a login
       if (!user) {
-        router.push(`/login?redirect=${encodeURIComponent(pathname || '/')}`);
+        routerRef.current.push(`/login?redirect=${encodeURIComponent(currentPathname || '/')}`);
         return;
       }
 
@@ -103,7 +115,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       const sortedRoutes = Object.entries(routePermissions).sort((a, b) => b[0].length - a[0].length);
 
       const requiredPermission = sortedRoutes.find(([route]) =>
-        pathname && (pathname === route || pathname.startsWith(route + '/'))
+        currentPathname && (currentPathname === route || currentPathname.startsWith(route + '/'))
       );
 
       // Si no hay permiso definido para esta ruta, permitir acceso
@@ -115,7 +127,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       const [, { module, action }] = requiredPermission;
 
-      console.log('[RouteGuard] 🔍 Verificando permiso:', { module, action, pathname });
+      console.log('[RouteGuard] 🔍 Verificando permiso:', { module, action, pathname: currentPathname });
 
       // Verificar si el usuario tiene el permiso
       const hasAccess = hasPermission(module, action);
@@ -125,7 +137,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       if (!hasAccess) {
         console.log('[RouteGuard] ❌ Acceso denegado, redirigiendo...');
         // Redirigir a página de acceso denegado
-        router.push(`/access-denied?module=${module}&action=${action}`);
+        routerRef.current.push(`/access-denied?module=${module}&action=${action}`);
         return;
       }
 
@@ -134,7 +146,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [pathname, user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission, router]);
+  }, [user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission]);
 
   // Mostrar loading mientras se verifica
   if (checking || userLoading || permissionsLoading) {

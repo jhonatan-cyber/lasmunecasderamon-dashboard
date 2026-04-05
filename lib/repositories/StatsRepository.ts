@@ -222,10 +222,10 @@ export class StatsRepository {
         CASE 
           WHEN DAYNAME(days.d) = 'Monday' THEN 'Lunes'
           WHEN DAYNAME(days.d) = 'Tuesday' THEN 'Martes'
-          WHEN DAYNAME(days.d) = 'Wednesday' THEN 'MiÃ©rcoles'
+          WHEN DAYNAME(days.d) = 'Wednesday' THEN 'Miércoles'
           WHEN DAYNAME(days.d) = 'Thursday' THEN 'Jueves'
           WHEN DAYNAME(days.d) = 'Friday' THEN 'Viernes'
-          WHEN DAYNAME(days.d) = 'Saturday' THEN 'SÃ¡bado'
+          WHEN DAYNAME(days.d) = 'Saturday' THEN 'Sábado'
           WHEN DAYNAME(days.d) = 'Sunday' THEN 'Domingo'
         END as dia_espanol,
         WEEKDAY(days.d) as orden,

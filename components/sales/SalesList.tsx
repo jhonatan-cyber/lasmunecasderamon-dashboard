@@ -23,7 +23,7 @@ interface SalesListProps {
   anfitrionaColors: string[];
   formatCurrency: (value: number) => string;
   onVerDetalles: (ventaId: string | number) => void;
-  onAnularVenta: (ventaId: string | number, motivo?: string) => void;
+  onAnularVenta: (ventaId: string | number, motivo: string, monto: number) => void;
   page: number;
   setPage: (value: number) => void;
   totalPages: number;
@@ -118,9 +118,15 @@ export function SalesList({
     });
   };
 
-  const handleConfirmarAnulacion = async (motivo: string) => {
+  const handleConfirmarAnulacion = async ({
+    motivo,
+    monto
+  }: {
+    motivo: string;
+    monto: number;
+  }) => {
     if (anulacionModal.ventaId) {
-      await onAnularVenta(anulacionModal.ventaId, motivo);
+      await onAnularVenta(anulacionModal.ventaId, motivo, monto);
       setAnulacionModal({ open: false, ventaId: null, ventaInfo: null });
     }
   };

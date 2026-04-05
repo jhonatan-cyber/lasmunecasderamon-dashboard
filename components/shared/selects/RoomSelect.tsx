@@ -132,7 +132,9 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
   const handleValueChange = (newValue: string) => {
     // Convertir el valor especial "__none__" a string vacío
-    onChange(newValue === "__none__" ? "" : newValue);
+    const resolved = newValue === "__none__" ? "" : newValue;
+    console.log("[RoomSelect] onChange value", resolved);
+    onChange(resolved);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,16 +150,18 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
       </Label>
 
       <div className="relative">
-
-        <Select value={value || ""} onValueChange={handleValueChange || (() => { })} disabled={disabled}>
+        <Select 
+          value={value || ""} 
+          onValueChange={handleValueChange} 
+          disabled={disabled}
+        >
           <SelectTrigger
             className="w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11"
             disabled={disabled}
-            onClick={(e) => e.stopPropagation()}
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent className="max-h-80" onClick={(e) => e.stopPropagation()}>
+          <SelectContent className="max-h-80">
             {/* Barra de búsqueda */}
             <div className="p-2 border-b">
               <Input
@@ -176,7 +180,6 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
               {value && (
                 <SelectItem
                   value="__none__"
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <span className="text-gray-500 italic">Sin habitación</span>
                 </SelectItem>
@@ -199,7 +202,6 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                       key={id}
                       value={id ? id.toString() : ""}
                       disabled={isDisabled}
-                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-between w-full gap-2">
                         <span className={isOcupada ? "text-gray-400" : ""}>

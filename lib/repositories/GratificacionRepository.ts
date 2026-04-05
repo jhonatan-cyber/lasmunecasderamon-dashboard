@@ -8,7 +8,7 @@ export class GratificacionRepository {
     if (tableCheck.length === 0) return [];
 
     let sql = `
-      SELECT G.*, DATE_FORMAT(G.fecha_hora, "%Y-%m-%d %H:%i:%s") as fecha_hora_fmt, 
+      SELECT G.*, DATE_FORMAT(G.fecha_crea, "%Y-%m-%d %H:%i:%s") as fecha_crea_fmt, 
              U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario
       FROM gratificaciones G
       INNER JOIN usuarios U ON U.id_usuario = G.usuario_id
@@ -18,12 +18,12 @@ export class GratificacionRepository {
       sql += ' WHERE G.usuario_id = ?';
       params.push(userId);
     }
-    sql += ' ORDER BY G.fecha_hora DESC';
+    sql += ' ORDER BY G.fecha_crea DESC';
 
     const rows = await query<any[]>(sql, params);
     return rows.map(row => ({
       id: String(row.id),
-      fecha_hora: row.fecha_hora_fmt,
+      fecha_hora: row.fecha_crea_fmt,
       id_usuario: String(row.id_usuario),
       usuario: String(row.usuario),
       monto: Number(row.monto),
@@ -40,7 +40,6 @@ export class GratificacionRepository {
 
     await BaseRepository.insert(query, 'gratificaciones', {
       id,
-      fecha_hora: now,
       usuario_id: data.usuario_id,
       monto: data.monto,
       descripcion: data.descripcion || '',

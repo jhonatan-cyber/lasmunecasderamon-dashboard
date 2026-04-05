@@ -1,7 +1,7 @@
 /* eslint-disable */
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useServicios } from '@/hooks/servicios/useServicios';
 import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
 import { useDevolucionLogic } from '@/hooks/servicios/useDevolucionLogic';
@@ -55,13 +55,25 @@ export default function DevolucionesServiciosPage() {
     // Los datos se actualizarán automáticamente cuando el timer termine
   }, []);
 
-  useEffect(() => {
-    setRefreshCallback(updateCallback);
-  }, [setRefreshCallback, updateCallback]);
+  // Refs para callbacks estables
+  const updateCallbackRef = useRef(updateCallback);
+  const timerUpdateCallbackRef = useRef(timerUpdateCallback);
 
   useEffect(() => {
-    setTimerRefreshCallback(timerUpdateCallback);
-  }, [setTimerRefreshCallback, timerUpdateCallback]);
+    updateCallbackRef.current = updateCallback;
+  }, [updateCallback]);
+
+  useEffect(() => {
+    timerUpdateCallbackRef.current = timerUpdateCallback;
+  }, [timerUpdateCallback]);
+
+  useEffect(() => {
+    setRefreshCallback(() => updateCallbackRef.current);
+  }, [setRefreshCallback]);
+
+  useEffect(() => {
+    setTimerRefreshCallback(() => timerUpdateCallbackRef.current);
+  }, [setTimerRefreshCallback]);
 
   // Filtrar servicios según el estado seleccionado
   const serviciosFiltrados = showAnulados

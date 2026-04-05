@@ -185,13 +185,25 @@ export const serverOffsetSignal = signal(0);
 
 // Un solo loop central para todos los timers del sistema
 let tickInterval: NodeJS.Timeout | null = null;
+let tickCount = 0;
 
 export const startGlobalTimerLoop = () => {
   if (tickInterval) return;
 
+  console.log('[timerStore] Starting global timer loop');
+  
   tickInterval = setInterval(() => {
+    tickCount++;
     const currentOffset = serverOffsetSignal.peek();
     const timers = activeTimers.peek();
+
+    // Debug cada 10 ticks (cada 10 segundos)
+    if (tickCount % 10 === 0) {
+      console.log('[timerStore] Tick', tickCount, 'timers:', timers.length, 'offset:', currentOffset);
+      timers.forEach(t => {
+        console.log('  -', t.servicioId, 'remaining:', t.remainingSeconds.peek(), 'active:', t.isActive.peek());
+      });
+    }
 
     batch(() => {
       timers.forEach(t => t.update(currentOffset));

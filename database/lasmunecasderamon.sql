@@ -2013,7 +2013,7 @@ ALTER TABLE `detalle_devoluciones_ventas`
 -- Filtros para la tabla `detalle_pedidos`
 --
 ALTER TABLE `detalle_pedidos`
-  ADD CONSTRAINT `fk_detalle_pedidos_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id_habitacion`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_detalle_pedidos_habitaciones` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id_habitacion`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_detalle_pedidos_habitacion_id` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id_habitacion`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_detalle_pedidos_pedido_id` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id_pedido`) ON DELETE CASCADE ON UPDATE CASCADE;
 

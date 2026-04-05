@@ -8,21 +8,27 @@ import ServicioCard from '@/components/servicios/ServicioCard';
 import Paginate from '@/components/shared/Paginate';
 import ServiceStats from '@/components/servicios/ServiceStats';
 import ServiceFilters from '@/components/servicios/ServiceFilters';
+import { ServiceStatusTabs } from '@/components/servicios/ServiceStatusTabs';
+import { ServiceDetailModal } from '@/components/servicios/ServiceDetailModal';
 import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatsCardSkeleton, CardSkeleton } from '@/components/shared/Skeletons';
+import { ServicioWithDetails } from '@/types/servicio';
 
 export default function ServiciosPage() {
   const { habitaciones, loading: habitacionLoading } = useHabitaciones();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
   const { hasPermission } = useUserPermissions();
+  
+  // State para el modal de detalle
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);
 
   const canCreate = hasPermission('private_rooms', 'create');
   const canEdit = hasPermission('private_rooms', 'edit');
@@ -30,7 +36,9 @@ export default function ServiciosPage() {
 
   const {
     servicios,
+    allServicios,
     loading,
+    loadingAll,
     searchTerm,
     setSearchTerm,
     showAllServices,
@@ -51,21 +59,37 @@ export default function ServiciosPage() {
     getServicios
   } = useServiceLogic();
 
+  // Refs para mantener referencias estables
+  const handleServiceFinalizedRef = useRef(handleServiceFinalized);
+  const handleServiceAutoFinishedRef = useRef(handleServiceAutoFinished);
+
+  // Mantener refs actualizadas
+  useEffect(() => {
+    handleServiceFinalizedRef.current = handleServiceFinalized;
+  }, [handleServiceFinalized]);
+
+  useEffect(() => {
+    handleServiceAutoFinishedRef.current = handleServiceAutoFinished;
+  }, [handleServiceAutoFinished]);
+
   // Configurar callback de actualización para cuando termine un timer
   useEffect(() => {
     console.log('🔧 Configurando refreshCallback');
-    setRefreshCallback(() => (servicioId?: number) => {
-      console.log('🔄 RefreshCallback llamado desde TimerContext, servicioId:', servicioId);
+    setRefreshCallback((servicioId?: string | number) => {
+      console.log('🔄 RefreshCallback llamado desde TimerContext, servicioId:', servicioId, 'tipo:', typeof servicioId);
 
-      // Si tenemos el ID del servicio, removerlo del estado local inmediatamente
+      // Usar refs estables en lugar de funciones que pueden cambiar
       if (servicioId) {
-        handleServiceFinalized(servicioId);
+        const numericId = typeof servicioId === 'string' ? servicioId : String(servicioId);
+        console.log('🔄 Llamando handleServiceFinalized con:', numericId);
+        handleServiceFinalizedRef.current(numericId as any);
       }
 
       // Luego recargar todos los datos
-      handleServiceAutoFinished();
+      console.log('🔄 Llamando handleServiceAutoFinished');
+      handleServiceAutoFinishedRef.current();
     });
-  }, [setRefreshCallback, handleServiceAutoFinished, handleServiceFinalized]);
+  }, [setRefreshCallback]);
 
   const handleCreateServicioWithCheck = () => {
     if (!hasOpenCaja) {
@@ -75,6 +99,14 @@ export default function ServiciosPage() {
       return;
     }
     handleCreateServicio();
+  };
+
+  // Handler para mostrar el detalle del servicio (solo en finalizados)
+  const handleShowServiceDetail = (servicio: ServicioWithDetails) => {
+    if (showAllServices) {
+      setSelectedServicio(servicio);
+      setDetailModalOpen(true);
+    }
   };
 
   return (
@@ -121,14 +153,14 @@ export default function ServiciosPage() {
         </div>
 
         {/* Estadísticas de servicios */}
-        {loading ? (
+        {loading || loadingAll ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
             {[...Array(4)].map((_, i) => (
               <StatsCardSkeleton key={i} />
             ))}
           </div>
         ) : (
-          <ServiceStats servicios={servicios} />
+          <ServiceStats servicios={allServicios} />
         )}
 
         {/* List Content */}
@@ -136,87 +168,65 @@ export default function ServiciosPage() {
           <ServiceFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            showAllServices={showAllServices}
-            onShowActiveServices={handleShowActiveServices}
-            onShowAllServices={handleShowAllServices}
             itemsPerPage={itemsPerPage}
             setItemsPerPage={setItemsPerPage}
             setCurrentPage={setCurrentPage}
+            onRefresh={() => getServicios(true)}
           />
 
-          {/* Pestañas de estado - Centradas */}
-          <div className='flex justify-center mb-10'>
-            <Tabs
-              value={showAllServices ? 'finished' : 'active'}
-              onValueChange={value => {
-                if (value === 'active') handleShowActiveServices();
-                else handleShowAllServices();
-              }}
-              className='w-full sm:w-auto'
-            >
-              <TabsList className='grid w-full grid-cols-2 bg-gray-100/80 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-gray-200 dark:border-zinc-700 shadow-md h-14'>
-                <TabsTrigger
-                  value='active'
-                  className='rounded-xl px-10 sm:px-16 py-3 text-sm sm:text-base font-bold data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black transition-all duration-300 shadow-sm'
-                >
-                  En Proceso
-                </TabsTrigger>
-                <TabsTrigger
-                  value='finished'
-                  className='rounded-xl px-10 sm:px-16 py-3 text-sm sm:text-base font-bold data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black transition-all duration-300 shadow-sm'
-                >
-                  Finalizados
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          {/* Tabs de estado: En Proceso / Finalizados */}
+          <ServiceStatusTabs
+            showAllServices={showAllServices}
+            onShowActiveServices={handleShowActiveServices}
+            onShowAllServices={handleShowAllServices}
+          />
+
+          {/* Mensaje de historial cuando está en finalizados */}
+          {showAllServices && (
+            <div className='mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl flex items-center gap-3'>
+              <div className='w-2 h-2 rounded-full bg-blue-500 animate-pulse' />
+              <p className='text-blue-800 dark:text-blue-300 text-xs sm:text-sm font-medium'>
+                <strong>Historial:</strong> Mostrando únicamente servicios finalizados
+              </p>
+            </div>
+          )}
+
+          {/* Grid de servicios */}
+          <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
+            {currentServicios.map((servicio: any) => (
+              <ServicioCard
+                key={servicio.id_servicio || servicio.id || Math.random()}
+                servicio={servicio}
+                onStopTimer={handleStopTimer}
+                onUpdate={() => getServicios(true)}
+                showAllServices={showAllServices}
+                onShowDetail={handleShowServiceDetail}
+              />
+            ))}
           </div>
 
-          {loading ? (
-            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6'>
-              {[...Array(6)].map((_, i) => (
-                <CardSkeleton key={i} />
-              ))}
-            </div>
-          ) : (
-            <>
-              {showAllServices && (
-                <div className='mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl flex items-center gap-3'>
-                  <div className='w-2 h-2 rounded-full bg-blue-500 animate-pulse' />
-                  <p className='text-blue-800 dark:text-blue-300 text-xs sm:text-sm font-medium'>
-                    <strong>Historial:</strong> Mostrando únicamente servicios finalizados
-                  </p>
+          {/* Paginación */}
+          {currentServicios.length > 0 && totalPages > 1 && (
+            <div className='mt-4 sm:mt-6'>
+              <div className='flex justify-between items-center text-xs sm:text-sm text-gray-600 mb-4'>
+                <div>
+                  Mostrando {startIndex + 1} a {Math.min(endIndex, currentServicios.length)} de{' '}
+                  {currentServicios.length} servicios
                 </div>
-              )}
-
-              <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
-                {currentServicios.map((servicio: any) => (
-                  <ServicioCard
-                    key={servicio.id_servicio}
-                    servicio={servicio}
-                    onStopTimer={handleStopTimer}
-                    onUpdate={() => getServicios(true)}
-                    showAllServices={showAllServices}
-                  />
-                ))}
               </div>
-
-              {/* Paginación */}
-              {currentServicios.length > 0 && totalPages > 1 && (
-                <div className='mt-4 sm:mt-6'>
-                  <div className='flex justify-between items-center text-xs sm:text-sm text-gray-600 mb-4'>
-                    <div>
-                      Mostrando {startIndex + 1} a {Math.min(endIndex, currentServicios.length)} de{' '}
-                      {currentServicios.length} servicios
-                    </div>
-                  </div>
-                  <div className='flex justify-center'>
-                    <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
-                  </div>
-                </div>
-              )}
-            </>
+              <div className='flex justify-center'>
+                <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
+              </div>
+            </div>
           )}
         </div>
+
+        {/* Modal de Detalle del Servicio */}
+        <ServiceDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          servicio={selectedServicio}
+        />
       </div>
     </PermissionGuard>
   );

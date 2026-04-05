@@ -5,10 +5,17 @@ export class NotificationRepository {
   static async create(data: { usuario_id: string; tipo: string; titulo: string; mensaje: string; estado: number; data?: string }) {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    await query(
-      'INSERT INTO notificaciones (id_notificacion, usuario_id, tipo, titulo, mensaje, leida, estado, fecha_crea, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, data.usuario_id, data.tipo, data.titulo, data.mensaje, 0, data.estado, now, data.data || null]
-    );
+    try {
+      await query(
+        'INSERT INTO notificaciones (id, usuario_id, tipo, titulo, mensaje, datos, leida, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, data.usuario_id, data.tipo, data.titulo, data.mensaje, data.data || null, 0, now]
+      );
+    } catch {
+      await query(
+        'INSERT INTO notificaciones (id_notificacion, usuario_id, tipo, titulo, mensaje, leida, estado, fecha_crea, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, data.usuario_id, data.tipo, data.titulo, data.mensaje, 0, data.estado, now, data.data || null]
+      );
+    }
     return id;
   }
 

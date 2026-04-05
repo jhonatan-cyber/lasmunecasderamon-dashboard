@@ -1,4 +1,4 @@
- 
+  
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
@@ -6,9 +6,11 @@ import { useGenericFetch } from '../shared/useGenericFetch';
 
 export function useServicios() {
   const queryClient = useQueryClient();
-  const [includeAll, setIncludeAll] = useState(true);
+  const [includeAll, setIncludeAll] = useState(false); // Iniciar con false = servicios activos (estado 2,3,4)
   const endpoint = useMemo(() => {
-    return includeAll ? '/api/servicios' : '/api/servicios?all=false';
+    const ep = includeAll ? '/api/servicios?all=true' : '/api/servicios?all=false';
+    console.log('[useServicios] endpoint:', ep);
+    return ep;
   }, [includeAll]);
 
   const {
@@ -20,14 +22,36 @@ export function useServicios() {
   } = useGenericFetch<ServicioWithDetails>(endpoint, {
     initialFetch: true,
     transform: data => {
-      if (data.success) {
-        return data.data.filter((servicio: any) => {
+      console.log('[useServicios] raw response:', JSON.stringify(data).substring(0, 500));
+      if (data.success && data.data) {
+        // La respuesta puede ser { data: [...] } o [...] directamente
+        let rawData = data.data;
+        if (data.data.data) {
+          rawData = data.data.data;
+        } else if (data.data.data?.data) {
+          rawData = data.data.data.data;
+        }
+        console.log('[useServicios] rawData is array?', Array.isArray(rawData), 'length:', rawData?.length);
+        if (!Array.isArray(rawData)) {
+          console.log('[useServicios] rawData structure:', typeof rawData, rawData);
+          return [];
+        }
+        const filtered = rawData.map((servicio: any) => ({
+          ...servicio,
+          // Asegurar que siempre tenga id_servicio (el API devuelve "id")
+          id_servicio: servicio.id_servicio || servicio.id
+        })).filter((servicio: any) => {
           return !servicio.es_temporal && !servicio.servicio_original_id;
         });
+        console.log('[useServicios] filtered servicios:', filtered.length);
+        return filtered;
       }
+      console.log('[useServicios] data.success was false or no data:', data);
       return [];
     }
   });
+
+  console.log('[useServicios] returning servicios:', servicios?.length || 0, 'loading:', fetchLoading);
 
   const getServicios = useCallback(
     async (includeAllParam: boolean = true) => {
@@ -134,6 +158,46 @@ export function useServicios() {
         );
       }
     }
+  };
+}
+
+// Hook para obtener TODOS los servicios (sin filtro por estado) para estadísticas
+export function useAllServicios() {
+  const endpoint = '/api/servicios';
+  
+  const {
+    data: servicios,
+    isLoading,
+    error,
+    refetch
+  } = useGenericFetch<ServicioWithDetails>(endpoint, {
+    initialFetch: true,
+    transform: data => {
+      if (data.success && data.data) {
+        let rawData = data.data;
+        if (data.data.data) {
+          rawData = data.data.data;
+        }
+        if (!Array.isArray(rawData)) return [];
+        
+        return rawData.map((servicio: any) => ({
+          ...servicio,
+          id_servicio: servicio.id_servicio || servicio.id
+        }));
+      }
+      return [];
+    }
+  });
+
+  const getAllServicios = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  return {
+    servicios: servicios || [],
+    loading: isLoading,
+    error,
+    getAllServicios
   };
 }
 

@@ -34,7 +34,7 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
         (COALESCE(S.total_semanas, 0) * U.descuento) as monto_descuento_hab,
         (SELECT COALESCE(SUM(DC.comision), 0) FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE DC.usuario_id = U.id_usuario AND C.estado = 1) as total_comisiones,
         (SELECT COALESCE(SUM(DP.monto), 0) FROM detalle_propinas DP INNER JOIN propinas P ON P.id_propina = DP.propina_id WHERE DP.usuario_id = U.id_usuario AND P.estado = 1) as total_propinas,
-        (SELECT COALESCE(SUM(monto), 0) FROM anticipos WHERE usuario_id = U.id_usuario AND estado = 1) as total_anticipos
+        (SELECT COALESCE(SUM(monto), 0) FROM anticipos WHERE usuario_id = U.id_usuario AND estado IN (0, 1)) as total_anticipos
         ${cachedTableChecks.hasGratificaciones ? ', (SELECT COALESCE(SUM(monto), 0) FROM gratificaciones WHERE usuario_id = U.id_usuario AND estado = 1) as total_gratificaciones' : ', 0 as total_gratificaciones'}
         ${cachedTableChecks.hasHorasExtras ? ', (SELECT COALESCE(SUM(total), 0) FROM horas_extras WHERE usuario_id = U.id_usuario AND estado = 1) as total_horas_extras' : ', 0 as total_horas_extras'}
       FROM usuarios U

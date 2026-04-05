@@ -8,6 +8,7 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   const eventSourceRef = useRef<EventSource | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onMessageRef = useRef(onMessage);
+  const isMountedRef = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
 
   // Mantener el callback actualizado sin relanzar el efecto
@@ -15,8 +16,24 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
+  // Cleanup al desmontar
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, []);
+
   const connect = useCallback(() => {
-    if (typeof window === 'undefined' || !url) return;
+    if (typeof window === 'undefined' || !url || !isMountedRef.current) return;
 
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
@@ -32,10 +49,13 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
     const es = new EventSource(url);
 
     es.onopen = () => {
-      setIsConnected(true);
+      if (isMountedRef.current) {
+        setIsConnected(true);
+      }
     };
 
     es.onmessage = (event) => {
+      if (!isMountedRef.current) return;
       try {
         const payload = JSON.parse(event.data);
         onMessageRef.current(payload);
@@ -45,6 +65,7 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
     };
 
     es.onerror = () => {
+      if (!isMountedRef.current) return;
       setIsConnected(false);
       console.warn('[SSE] Error de conexión, reintentando en 5s...');
       es.close();
@@ -56,8 +77,11 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   }, [url]);
 
   useEffect(() => {
-    connect();
+    if (url) {
+      connect();
+    }
     return () => {
+      // Cleanup en cada cambio de url
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
@@ -67,9 +91,8 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
-      setIsConnected(false);
     };
-  }, [connect]);
+  }, [url, connect]);
 
   return {
     isConnected,

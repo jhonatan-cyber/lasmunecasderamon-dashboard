@@ -1,7 +1,7 @@
 /* eslint-disable */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSales } from '@/hooks/caja/useSales';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
@@ -52,10 +52,19 @@ export default function Sales() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleRefresh = useCallback(async () => {
-    await getVentas();
-    await getResumen();
-    await getHabitaciones();
-  }, [getVentas, getResumen, getHabitaciones]);
+    await Promise.all([
+      getVentas(),
+      getResumen(),
+      getHabitaciones()
+    ]);
+  }, [getHabitaciones, getResumen, getVentas]);
+
+  // Ref para mantener la función de refresh estable
+  const handleRefreshRef = useRef(handleRefresh);
+  
+  useEffect(() => {
+    handleRefreshRef.current = handleRefresh;
+  }, [handleRefresh]);
 
   useEffect(() => {
     handleRefresh();
@@ -65,7 +74,7 @@ export default function Sales() {
   useEffect(() => {
     const handleVentaRegistrada = () => {
       console.log('[Sales] Evento ventaRegistrada recibido - refrescando ventas');
-      handleRefresh();
+      handleRefreshRef.current();
     };
 
     window.addEventListener('ventaRegistrada', handleVentaRegistrada);
@@ -73,15 +82,15 @@ export default function Sales() {
     return () => {
       window.removeEventListener('ventaRegistrada', handleVentaRegistrada);
     };
-  }, [handleRefresh]);
+  }, []);
 
   useEffect(() => {
-    setRefreshCallback(() => handleRefresh);
+    setRefreshCallback(() => handleRefreshRef.current);
   }, [setRefreshCallback]);
 
   useEffect(() => {
-    setTimerRefreshCallback(() => handleRefresh);
-  }, [setTimerRefreshCallback, handleRefresh]);
+    setTimerRefreshCallback(() => handleRefreshRef.current);
+  }, [setTimerRefreshCallback]);
 
   const filteredVentas = filterVentas(ventas, searchTerm, statusFilter, paymentFilter);
   const sortedAndFilteredVentas = sortVentas(filteredVentas, sortBy, sortOrder);
@@ -110,7 +119,7 @@ export default function Sales() {
   };
 
   // Solicitar anulación de venta
-  const handleAnularVenta = async (ventaId: string | number, motivo?: string) => {
+  const handleAnularVenta = async (ventaId: string | number, motivo: string, monto: number) => {
     try {
       const authResponse = await fetch('/api/test-auth');
       if (!authResponse.ok) {
@@ -118,7 +127,7 @@ export default function Sales() {
         return;
       }
 
-      const result = await solicitarAnulacionVenta(ventaId, motivo);
+      const result = await solicitarAnulacionVenta(ventaId, motivo, monto);
       if (result.success) {
         showSuccessToast('Solicitud de anulación enviada al administrador');
         await handleRefresh();
@@ -238,3 +247,4 @@ export default function Sales() {
     </PermissionGuard>
   );
 }
+

@@ -22,6 +22,8 @@ export const PUT = withAppApiWrapper(
       await AnticipoRepository.processSolicitud(id, 'approve');
     } else if (Number(estado) === 3) {
       await AnticipoRepository.processSolicitud(id, 'reject');
+    } else if (Number(estado) === 0) {
+      await AnticipoRepository.deliverAnticipo(id);
     } else {
       await AnticipoRepository.updateStatus(id, Number(estado ?? 0));
     }

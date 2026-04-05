@@ -6,32 +6,43 @@ import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepositor
 import { RoomManager } from '@/lib/services/RoomManager';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
+type MixedPayment = {
+  metodo: string;
+  monto: number;
+};
+
 export class ServiceService {
   /**
-   * Procesa la creación de un servicio de anfitriona, gestionando comisiones,
-   * piezas, y saldos de prepago.
+   * Procesa la creacion de un servicio de anfitriona, gestionando comisiones
+   * y saldos de prepago.
    */
   static async createService(body: any, createdBy: string) {
     const v = ServiceCreateSchema.parse(body);
     const servicioId = generateUUID();
     const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
     const now = getNowInBusinessTimezone(v.device_date);
-    
+    const pagosMixtos: MixedPayment[] = Array.isArray(v.pagos_mixtos)
+      ? v.pagos_mixtos
+          .map((pago: any) => ({
+            metodo: String(pago?.metodo || ''),
+            monto: Number(pago?.monto || 0)
+          }))
+          .filter((pago: MixedPayment) => pago.metodo && pago.monto > 0)
+      : [];
+
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
     const numAnfitrionas = Math.max(1, v.usuarios.length);
     const precioServicioInput = Number(v.precio_servicio || 0);
-    
-    // Obtener configuración de comisión de la habitación
-    // Si la habitación tiene comision_anfitriona > 0, se divide entre las anfitrionas
-    // Si no, cada anfitriona recibe el precio completo del input (no se divide)
+
     let comisionHabitacion = 0;
     if (v.habitacion_id) {
-      const habitacion = await query<any[]>('SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [v.habitacion_id]);
+      const habitacion = await query<any[]>(
+        'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+        [v.habitacion_id]
+      );
       comisionHabitacion = Number(habitacion[0]?.comision_anfitriona || 0);
     }
 
-    // Si la habitación tiene comisión fija, se divide entre las anfitrionas
-    // Si no, cada anfitriona recibe el precio del input (multiplicado por anfitrionas = total)
     const tieneComisionHabitacion = comisionHabitacion > 0;
     const comisionIndividual = tieneComisionHabitacion
       ? Math.floor(comisionHabitacion / numAnfitrionas)
@@ -40,31 +51,69 @@ export class ServiceService {
       ? comisionHabitacion
       : precioServicioInput * numAnfitrionas;
 
-    const result = await withTransaction(async (trx) => {
-      // 1. Deducción de Saldo del Cliente
-      // Si el cliente tiene saldo, siempre se descuenta lo que alcance (hasta el total).
-      // Si el saldo excede el total, el saldo queda en 0 y se usa todo para este servicio.
-      // El resto (si el saldo no cubre el total) lo cubre el método de pago seleccionado.
+    const result = await withTransaction(async trx => {
       let prepagoMonto = 0;
+      const esMixto = v.metodo_pago === 'mixto';
+      const prepagoSolicitado = esMixto
+        ? pagosMixtos
+            .filter((pago: MixedPayment) => pago.metodo === 'prepago')
+            .reduce((sum: number, pago: MixedPayment) => sum + pago.monto, 0)
+        : null;
+
+      if (esMixto) {
+        const totalPagosMixtos = pagosMixtos.reduce(
+          (sum: number, pago: MixedPayment) => sum + pago.monto,
+          0
+        );
+
+        if (pagosMixtos.length < 2) {
+          throw new Error('Pago mixto invalido: se requieren al menos 2 metodos');
+        }
+
+        if (Math.abs(totalPagosMixtos - Number(v.total || 0)) > 1) {
+          throw new Error('Pago mixto invalido: la suma debe ser igual al total del servicio');
+        }
+      }
 
       if (v.cliente_id) {
-        const clients = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [v.cliente_id]);
+        const clients = await trx<any[]>(
+          'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
+          [v.cliente_id]
+        );
         const saldoDisponible = Number(clients[0]?.saldo || 0);
 
-        if (saldoDisponible > 0) {
-          // Descontar el mínimo entre el saldo disponible y el total del servicio
-          prepagoMonto = Math.min(saldoDisponible, Number(v.total || 0));
+        if (saldoDisponible > 0 && prepagoSolicitado !== 0) {
+          prepagoMonto =
+            prepagoSolicitado === null
+              ? Math.min(saldoDisponible, Number(v.total || 0))
+              : prepagoSolicitado;
 
-          await trx('UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?', [prepagoMonto, v.cliente_id]);
+          if (prepagoSolicitado !== null && prepagoSolicitado > saldoDisponible) {
+            throw new Error('Saldo insuficiente para el monto de prepago seleccionado');
+          }
+
+          await trx(
+            'UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?',
+            [prepagoMonto, v.cliente_id]
+          );
 
           await trx(
             'INSERT INTO clientes_prepago_movimientos (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [generateUUID(), v.cliente_id, 'CONSUMO', prepagoMonto, 'prepago', servicioId, createdBy, now, JSON.stringify({ concepto: `Pago servicio ${codigo}` })]
+            [
+              generateUUID(),
+              v.cliente_id,
+              'CONSUMO',
+              prepagoMonto,
+              'prepago',
+              servicioId,
+              createdBy,
+              now,
+              JSON.stringify({ concepto: `Pago servicio ${codigo}` })
+            ]
           );
         }
       }
 
-      // 2. Insertar Servicio (vía Repository)
       await ServiceRepository.rawInsert(trx, {
         id_servicio: servicioId,
         codigo,
@@ -79,20 +128,19 @@ export class ServiceService {
         metodo_pago: v.metodo_pago,
         caja_id: cajaId,
         created_by: createdBy,
-        estado: 2, // Siempre inicia en estado 2 (en servicio)
+        estado: 2,
         fecha_crea: now,
         pagos_mixtos: v.pagos_mixtos ? JSON.stringify(v.pagos_mixtos) : null
       });
 
-      // 2b. Actualizar estado de habitación a ocupada (2)
       if (v.habitacion_id) {
-        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [v.habitacion_id]);
+        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
+          v.habitacion_id
+        ]);
       }
 
-      // 3. Gestión de Conflictos en RoomManager
       await RoomManager.pauseConflictingServices(trx, v.usuarios, servicioId);
 
-      // 4. Cálculo y Distribución de Comisiones
       const commissionId = generateUUID();
       await trx(
         'INSERT INTO comisiones (id_comision, servicio_id, monto, estado, fecha_crea) VALUES (?, ?, ?, 1, ?)',
@@ -105,15 +153,14 @@ export class ServiceService {
           [generateUUID(), commissionId, uId, comisionIndividual, now]
         );
 
-        // En detalle_servicios, la comisión es la parte que le corresponde a cada anfitriona
         await trx(
           'INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision, fecha_crea) VALUES (?, ?, ?, ?, ?)',
           [generateUUID(), uId, servicioId, comisionIndividual, now]
         );
       }
 
-      // 4b. Registrar clientes del servicio (si hay clientes seleccionados)
-      const clientesArray = v.clientes && v.clientes.length > 0 ? v.clientes : (v.cliente_id ? [v.cliente_id] : []);
+      const clientesArray =
+        v.clientes && v.clientes.length > 0 ? v.clientes : v.cliente_id ? [v.cliente_id] : [];
       for (const clienteId of clientesArray) {
         if (clienteId) {
           await trx(
@@ -123,32 +170,45 @@ export class ServiceService {
         }
       }
 
-      // 5. Actualizar disponibilidad de anfitrionas - marcar como ocupadas directamente
-      for (const uId of v.usuarios) {
-        await trx('UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario = ?', [uId]);
-      }
-
-      // 6. Actualizar Balances de Caja
       if (cajaId) {
-        const commToCaja = comisionTotal;
-        // El monto cubierto por el método de pago principal es el total menos lo que cubrió el saldo
-        const montoMetodoPrincipal = Number(v.total) - prepagoMonto;
+        if (esMixto) {
+          const deltas = pagosMixtos.reduce(
+            (acc: { efectivo: number; tarjeta: number; transferencia: number }, pago: MixedPayment) => {
+              if (pago.metodo === 'efectivo') acc.efectivo += pago.monto;
+              if (pago.metodo === 'tarjeta') acc.tarjeta += pago.monto;
+              if (pago.metodo === 'transferencia') acc.transferencia += pago.monto;
+              return acc;
+            },
+            { efectivo: 0, tarjeta: 0, transferencia: 0 }
+          );
 
-        await CashRegisterRepository.updateBalances(trx, cajaId, {
-          servicio: v.total - v.iva,
-          efectivo: v.metodo_pago === 'efectivo' ? montoMetodoPrincipal : 0,
-          tarjeta: v.metodo_pago === 'tarjeta' ? montoMetodoPrincipal : 0,
-          transferencia: v.metodo_pago === 'transferencia' ? montoMetodoPrincipal : 0,
-          prepago: prepagoMonto,
-          iva: v.iva,
-          comision: commToCaja
-        });
+          await CashRegisterRepository.updateBalances(trx, cajaId, {
+            servicio: Number(v.total) - Number(v.iva || 0),
+            efectivo: deltas.efectivo,
+            tarjeta: deltas.tarjeta,
+            transferencia: deltas.transferencia,
+            prepago: prepagoMonto,
+            iva: v.iva,
+            comision: comisionTotal
+          });
+        } else {
+          const montoMetodoPrincipal = Number(v.total) - prepagoMonto;
+
+          await CashRegisterRepository.updateBalances(trx, cajaId, {
+            servicio: Number(v.total) - Number(v.iva || 0),
+            efectivo: v.metodo_pago === 'efectivo' ? montoMetodoPrincipal : 0,
+            tarjeta: v.metodo_pago === 'tarjeta' ? montoMetodoPrincipal : 0,
+            transferencia: v.metodo_pago === 'transferencia' ? montoMetodoPrincipal : 0,
+            prepago: prepagoMonto,
+            iva: v.iva,
+            comision: comisionTotal
+          });
+        }
       }
 
       return { id: servicioId, codigo, tiempo: v.tiempo, total: v.total };
     });
 
-    // Notificar a todos los clientes SSE para que actualicen los timers activos (incluye habitacion_comision)
     sendNotificationToAll('timers_updated', { timestamp: now });
 
     return result;
