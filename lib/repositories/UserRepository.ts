@@ -29,46 +29,49 @@ export class UserRepository {
       estado_servicio: row.estado_servicio,
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod,
-      qr_token: row.qr_token,
+      qr_token: row.qr_token
     };
 
     return UserSchema.parse(user);
   }
 
-  static async getAll(params?: { 
-    anfitrionas?: string, 
-    search?: string, 
-    status?: string | number, 
-    role?: string,
-    loggedIn?: boolean,
-    limit?: number,
-    offset?: number 
-  }): Promise<{ data: UserType[], total: number }> {
+  static async getAll(params?: {
+    anfitrionas?: string;
+    search?: string;
+    status?: string | number;
+    role?: string;
+    loggedIn?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ data: UserType[]; total: number }> {
     let where = 'WHERE 1=1';
     let sqlParams: any[] = [];
-    
+
     if (params?.anfitrionas === '1') {
       where += " AND LOWER(r.nombre) = 'anfitriona'";
     }
 
     if (params?.search) {
-      where += " AND (u.nombre LIKE ? OR u.apellido LIKE ? OR u.nick LIKE ? OR u.run LIKE ? OR u.email LIKE ?)";
+      where +=
+        ' AND (u.nombre LIKE ? OR u.apellido LIKE ? OR u.nick LIKE ? OR u.run LIKE ? OR u.email LIKE ?)';
       const search = `%${params.search}%`;
       sqlParams.push(search, search, search, search, search);
     }
 
     if (params?.status !== undefined && params?.status !== 'all') {
-      where += " AND u.estado = ?";
+      where += ' AND u.estado = ?';
       const isStatusActive = params.status === 'active' || Number(params.status) === 1;
       sqlParams.push(isStatusActive ? 1 : 0);
     }
 
     if (params?.role && params?.role !== 'all') {
-      where += " AND LOWER(r.nombre) = LOWER(?)";
+      where += ' AND LOWER(r.nombre) = LOWER(?)';
       sqlParams.push(params.role);
     }
 
-    const loginJoin = params?.loggedIn ? 'INNER JOIN logins l ON l.usuario_id = u.id_usuario AND l.estado = 1' : '';
+    const loginJoin = params?.loggedIn
+      ? 'INNER JOIN logins l ON l.usuario_id = u.id_usuario AND l.estado = 1'
+      : '';
 
     const countSql = `
       SELECT COUNT(*) as total 
@@ -79,7 +82,7 @@ export class UserRepository {
     `;
 
     const dataSql = `
-      SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, r.nombre as rol_nombre, r.id_rol 
+      SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.fecha_crea, u.fecha_mod, u.qr_token, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol
       ${loginJoin}
@@ -91,13 +94,12 @@ export class UserRepository {
     const countRes = await query<any[]>(countSql, sqlParams);
     const total = countRes[0]?.total || 0;
 
-    const queryParams = params?.limit !== undefined 
-      ? [...sqlParams, params.limit, params.offset || 0] 
-      : sqlParams;
+    const queryParams =
+      params?.limit !== undefined ? [...sqlParams, params.limit, params.offset || 0] : sqlParams;
 
     const data = await query<any[]>(dataSql, queryParams);
     if (!data || !Array.isArray(data)) return { data: [], total: 0 };
-    
+
     return {
       data: data.map(row => this.mapUserFromDB(row)),
       total
@@ -105,13 +107,16 @@ export class UserRepository {
   }
 
   static async getById(id: string): Promise<UserType | null> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT u.*, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.rol_id = r.id_rol
       WHERE u.id_usuario = ?
-    `, [id]);
-    
+    `,
+      [id]
+    );
+
     return results.length > 0 ? this.mapUserFromDB(results[0]) : null;
   }
 
@@ -125,7 +130,10 @@ export class UserRepository {
     return row ? this.mapUserFromDB(row) : null;
   }
 
-  static async create(data: Partial<UserType> & { password?: string, email?: string }, fotoFilename: string = 'default.png'): Promise<UserType | null> {
+  static async create(
+    data: Partial<UserType> & { password?: string; email?: string },
+    fotoFilename: string = 'default.png'
+  ): Promise<UserType | null> {
     const id = generateUUID();
     await BaseRepository.insert(query, this.TABLE, {
       [this.ID_COL]: id,
@@ -151,7 +159,11 @@ export class UserRepository {
     return await this.getById(id);
   }
 
-  static async update(id: string, data: Partial<UserType> & { password?: string, email?: string }, fotoFilename: string | null = null): Promise<UserType | null> {
+  static async update(
+    id: string,
+    data: Partial<UserType> & { password?: string; email?: string },
+    fotoFilename: string | null = null
+  ): Promise<UserType | null> {
     const upData: any = {
       run: data.run,
       nick: data.nick,
@@ -161,7 +173,7 @@ export class UserRepository {
       telefono: data.phone,
       estado_civil: data.maritalStatus,
       afp: data.afp,
-      rol_id: (data.rol_id !== undefined && data.rol_id !== '') ? data.rol_id : undefined,
+      rol_id: data.rol_id !== undefined && data.rol_id !== '' ? data.rol_id : undefined,
       sueldo: data.salary,
       aporte: data.contributions,
       descuento: data.discount,
@@ -177,7 +189,7 @@ export class UserRepository {
 
   static async updateStatus(id: string, action: string): Promise<UserType | null> {
     const newStatus = action === 'activate' ? 1 : 0;
-    await BaseRepository.update(query, this.TABLE, this.ID_COL, id, { 
+    await BaseRepository.update(query, this.TABLE, this.ID_COL, id, {
       estado: newStatus,
       fecha_mod: getNowInBusinessTimezone()
     });

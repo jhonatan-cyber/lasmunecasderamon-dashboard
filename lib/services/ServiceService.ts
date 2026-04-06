@@ -12,10 +12,6 @@ type MixedPayment = {
 };
 
 export class ServiceService {
-  /**
-   * Procesa la creacion de un servicio de anfitriona, gestionando comisiones
-   * y saldos de prepago.
-   */
   static async createService(body: any, createdBy: string) {
     const v = ServiceCreateSchema.parse(body);
     const servicioId = generateUUID();

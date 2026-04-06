@@ -7,7 +7,7 @@ import {
   parseSolicitudResponseCommand
 } from '@/lib/integrations/whatsappCommandUtils';
 import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
-import { processAnticipoCommand } from '@/lib/integrations/whatsappAnticipoActions';
+import { AnticipoService } from '@/lib/services/AnticipoService';
 
 export async function POST(request: Request) {
   try {
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     // Command parsing (logic from original handler)
     const comandoAnticipo = parseAnticipoCommand(mensaje);
     if (comandoAnticipo) {
-      const result = await processAnticipoCommand(
+      const result = await AnticipoService.processAnticipoFromCommand(
         (anticiposPendientes as any[]).map(a => ({ ...a, tipo: 'anticipo' })),
         comandoAnticipo.anticipoId,
         comandoAnticipo.action === 'aprobar',

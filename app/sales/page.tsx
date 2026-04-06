@@ -16,7 +16,6 @@ import {
   SalesStatsCards,
   SalesFilters,
   SalesList,
-  SalesDetailModal,
   SalesError,
   CajaStatusBanner
 } from '@/components/sales';
@@ -34,6 +33,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 import { SalesSkeleton } from '@/components/shared/Skeletons';
+import dynamic from 'next/dynamic';
+
+const SalesDetailModal = dynamic(
+  () => import('@/components/sales/SalesDetailModal').then(mod => mod.SalesDetailModal),
+  { ssr: false }
+);
 
 export default function Sales() {
   const { ventas, loading, error, getVentas, getResumen } = useSales();
@@ -151,100 +156,102 @@ export default function Sales() {
     }
   };
 
-  if (loading && ventas.length === 0) {
-    return <SalesSkeleton />;
-  }
-
   if (error) {
     return <SalesError error={error} onRetry={handleRefresh} />;
   }
 
+  const isInitialLoad = loading && ventas.length === 0;
+
   return (
     <PermissionGuard module='sales' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <CajaStatusBanner />
         <SalesHeader loading={loading} onRefresh={handleRefresh} />
 
-        <CajaStatusBanner />
+        {isInitialLoad ? (
+          <SalesSkeleton />
+        ) : (
+          <>
+            <SalesStatsCards ventas={ventas} />
 
-        <SalesStatsCards ventas={ventas} />
-
-        <SalesFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filterStatus={statusFilter}
-          setFilterStatus={setStatusFilter}
-          filterMetodoPago={paymentFilter}
-          setFilterMetodoPago={setPaymentFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          onClearFilters={handleClearFilters}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-        />
-
-        <Tabs defaultValue='all' className='w-full'>
-          <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-sm'>
-            <TabsTrigger
-              value='all'
-              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
-            >
-              Todas las ventas
-            </TabsTrigger>
-            <TabsTrigger
-              value='with-room'
-              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
-            >
-              Ventas con habitación
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value='all' className='space-y-4'>
-            <SalesList
-              loading={loading}
-              paginatedVentas={paginatedVentas}
+            <SalesFilters
               searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
               filterStatus={statusFilter}
+              setFilterStatus={setStatusFilter}
               filterMetodoPago={paymentFilter}
-              statusColors={statusColors}
-              statusLabels={statusLabels}
-              metodoPagoLabels={metodoPagoLabels}
-              anfitrionaColors={anfitrionaColors}
-              formatCurrency={formatCurrency}
-              onVerDetalles={handleViewDetails}
-              onAnularVenta={handleAnularVenta}
-              page={page}
+              setFilterMetodoPago={setPaymentFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              onClearFilters={handleClearFilters}
+              rowsPerPage={rowsPerPage}
+              setRowsPerPage={setRowsPerPage}
               setPage={setPage}
-              totalPages={totalPages}
             />
 
-            {filteredVentas.length > rowsPerPage && (
-              <div className='flex justify-center'>
-                <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-              </div>
-            )}
-          </TabsContent>
+            <Tabs defaultValue='all' className='w-full'>
+              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-sm'>
+                <TabsTrigger
+                  value='all'
+                  className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
+                >
+                  Todas las ventas
+                </TabsTrigger>
+                <TabsTrigger
+                  value='with-room'
+                  className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
+                >
+                  Ventas con habitación
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value='with-room'>
-            <SalesWithRoomTab
-              ventas={sortedAndFilteredVentas as VentaWithDetails[]}
-              loading={loading}
-              onRefresh={handleRefresh}
-            />
-          </TabsContent>
-        </Tabs>
+              <TabsContent value='all' className='space-y-4'>
+                <SalesList
+                  loading={loading}
+                  paginatedVentas={paginatedVentas}
+                  searchTerm={searchTerm}
+                  filterStatus={statusFilter}
+                  filterMetodoPago={paymentFilter}
+                  statusColors={statusColors}
+                  statusLabels={statusLabels}
+                  metodoPagoLabels={metodoPagoLabels}
+                  anfitrionaColors={anfitrionaColors}
+                  formatCurrency={formatCurrency}
+                  onVerDetalles={handleViewDetails}
+                  onAnularVenta={handleAnularVenta}
+                  page={page}
+                  setPage={setPage}
+                  totalPages={totalPages}
+                />
 
-        <SalesDetailModal
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
-          selectedVenta={selectedVenta}
-          anfitrionaColors={anfitrionaColors}
-          metodoPagoLabels={metodoPagoLabels}
-        />
+                {filteredVentas.length > rowsPerPage && (
+                  <div className='flex justify-center'>
+                    <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value='with-room'>
+                <SalesWithRoomTab
+                  ventas={sortedAndFilteredVentas as VentaWithDetails[]}
+                  loading={loading}
+                  onRefresh={handleRefresh}
+                />
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </div>
+
+      <SalesDetailModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        selectedVenta={selectedVenta}
+        anfitrionaColors={anfitrionaColors}
+        metodoPagoLabels={metodoPagoLabels}
+      />
     </PermissionGuard>
   );
 }
-

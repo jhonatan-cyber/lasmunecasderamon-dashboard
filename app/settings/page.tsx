@@ -7,11 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Key, Plus, Search, Edit, Trash2, Database, AlertTriangle, Building2, Settings as SettingsIcon, Save, Download, RotateCcw, HardDrive, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import { ClientsSkeleton } from '@/components/shared/Skeletons';
-import { PermissionModal } from '@/components/permissions/PermissionModal';
 import { PermissionTable, Permission } from '@/components/permissions/PermissionTable';
 import { PermissionFilters } from '@/components/permissions/PermissionFilters';
 import { PermissionStatsCards } from '@/components/permissions/PermissionStatsCards';
-import { CleanDatabaseConfirmModal } from '@/components/settings/CleanDatabaseConfirmModal';
+import dynamic from 'next/dynamic';
+
+const PermissionModal = dynamic(
+  () => import('@/components/permissions/PermissionModal').then(mod => mod.PermissionModal),
+  { ssr: false }
+);
+
+const CleanDatabaseConfirmModal = dynamic(
+  () => import('@/components/settings/CleanDatabaseConfirmModal').then(mod => mod.CleanDatabaseConfirmModal),
+  { ssr: false }
+);
 import Paginate from '@/components/shared/Paginate';
 
 interface CompanyConfig {

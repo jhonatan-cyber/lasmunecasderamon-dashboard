@@ -52,7 +52,7 @@ export async function buildOrderNotificationData({
   const meseroResult = meseroResults[0];
   const meseroNombre = meseroResult
     ? `${meseroResult.nombre} ${meseroResult.apellido || ''} `.trim()
-    : 'Mesero';
+    : 'Garzon';
 
   const anfitrionasResults = (await query(
     `

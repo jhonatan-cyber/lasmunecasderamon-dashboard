@@ -50,22 +50,22 @@ export interface TimerExpiredNotification {
 
 interface TimerContextType {
   timers: Timer[];
-  startTimer: any;
-  stopTimer: any;
-  stopTimerByRoomId: any;
-  stopTimerByServicioId: any;
-  pauseTimerByServicioId: any;
-  resumeTimerByServicioId: any;
-  getTimerByRoomId: any;
-  getTimerByServicioId: any;
-  getTemporaryTimerByServicioId: any;
+  startTimer: (servicioId: string, roomId: string, roomName: string, duration: number, servicioCode: string, clienteNombre: string, anfitrionas?: string, tipoTransaccion?: 'servicio' | 'venta' | 'cuenta', solicitado_por?: string) => Promise<void>;
+  stopTimer: (id: string, isManual?: boolean, timerInfo?: Partial<Timer>) => Promise<void>;
+  stopTimerByRoomId: (roomId: string) => Promise<void>;
+  stopTimerByServicioId: (servicioId: string) => Promise<void>;
+  pauseTimerByServicioId: (servicioId: string) => void;
+  resumeTimerByServicioId: (servicioId: string) => void;
+  getTimerByRoomId: (roomId: string) => Timer | undefined;
+  getTimerByServicioId: (servicioId: string) => Timer | undefined;
+  getTemporaryTimerByServicioId: (sid: string) => Timer | undefined;
   formatTime: (seconds: number) => string;
   serverOffset: number;
   getAccurateNow: () => Date;
   setRefreshCallback: (callback: (servicioId?: string | number) => void) => void;
   updateTimerByServicioId: (servicioId: string, newDuration: number) => void;
-  startTemporaryTimer: any;
-  stopTemporaryTimer: any;
+  startTemporaryTimer: (servicioId: string, roomId: string, roomName: string, duration: number, servicioCode: string, clienteNombre: string, onComplete: () => void, datosTemporales?: any, anfitrionas?: string) => void;
+  stopTemporaryTimer: (sid: string) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);

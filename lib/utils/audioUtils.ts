@@ -1,8 +1,6 @@
 import { Howl } from 'howler';
+import { logger } from './logger';
 
-/**
- * Utilidades para notificaciones sonoras y por voz usando Howler.js
- */
 
 let notificationSound: Howl | null = null;
 
@@ -23,7 +21,8 @@ export const playNotificationSound = () => {
 
     notificationSound.play();
   } catch {
-    // Audio errors are non-blocking for the app.
+
+    logger.error('Error al reproducir sonido de notificación');
   }
 };
 
@@ -36,7 +35,7 @@ export const announceVoice = (message: string) => {
       utterance.pitch = 1.0;
       window.speechSynthesis.speak(utterance);
     } catch {
-      // Voice errors are non-blocking for the app.
+      logger.error('Error al reproducir voz');
     }
   }
 };
@@ -51,7 +50,7 @@ export const announcePriority = (message: string) => {
       utterance.pitch = 1.1;
       window.speechSynthesis.speak(utterance);
     } catch {
-      // Voice errors are non-blocking for the app.
+      logger.error('Error al reproducir voz');
     }
   }
 };
