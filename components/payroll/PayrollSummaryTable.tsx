@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Eye } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils/utils'
+import { formatCurrencyCLP } from '@/lib/utils/formatters'
 
 interface PayrollSummaryTableProps {
   data: any[]
@@ -50,9 +50,9 @@ export default function PayrollSummaryTable({ data = [], isLoading = false }: Pa
                     {item.total_asistencias} Días Asistidos
                   </span>
                 </TableCell>
-                <TableCell className="text-right">{formatCurrency(item.sueldo_total)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(item.aporte_total + item.descuento_total)}</TableCell>
-                <TableCell className="text-right font-medium">{formatCurrency(item.total_final)}</TableCell>
+                <TableCell className="text-right">{formatCurrencyCLP(item.sueldo_total)}</TableCell>
+                <TableCell className="text-right">{formatCurrencyCLP(item.aporte_total + item.descuento_total)}</TableCell>
+                <TableCell className="text-right font-medium">{formatCurrencyCLP(item.total_final)}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon">
                     <Eye className="h-4 w-4" />

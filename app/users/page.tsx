@@ -17,12 +17,23 @@ import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { UserTable } from '@/components/users/UserTable';
 import { UserFilters } from '@/components/users/UserFilters';
 import { type UserFormValues } from '@/hooks/personal/useUserForm';
-import { DeleteUserConfirmModal } from '@/components/users/DeleteUserConfirmModal';
-import { UserDetailsModal } from '@/components/users/UserDetailsModal';
-import { UserFormModal } from '@/components/users/UserFormModal';
 import { ExportButtons } from '@/components/users/ExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { UsersSkeleton } from '@/components/shared/Skeletons';
+import dynamic from 'next/dynamic';
+
+const UserDetailsModal = dynamic(
+  () => import('@/components/users/UserDetailsModal').then(m => m.UserDetailsModal),
+  { ssr: false }
+);
+const UserFormModal = dynamic(
+  () => import('@/components/users/UserFormModal').then(m => m.UserFormModal),
+  { ssr: false }
+);
+const DeleteUserConfirmModal = dynamic(
+  () => import('@/components/users/DeleteUserConfirmModal').then(m => m.DeleteUserConfirmModal),
+  { ssr: false }
+);
 
 export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -178,40 +189,47 @@ export default function Users() {
     return roleColors[role?.toLowerCase()] || roleColors.default;
   }, []);
 
-  if (isLoading) return <UsersSkeleton />;
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <PermissionGuard module='users' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-6'>
-        <div className='flex flex-col sm:flex-row justify-between items-center gap-6'>
-          <div>
-            <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
-            <p className='text-gray-600'>Control de plataforma.</p>
-          </div>
-          <div className='flex gap-2 items-center'>
+    <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-6'>
+      <div className='flex flex-col sm:flex-row justify-between items-center gap-6'>
+        <div>
+          <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
+          <p className='text-gray-600'>Control de plataforma.</p>
+        </div>
+        <div className='flex gap-2 items-center'>
+          <PermissionGuard module='users' action='view' fallback={null}>
             <ExportButtons users={users || []} />
-            <PermissionGuard module='users' action='create' fallback={null}>
-              <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
-                className='bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'>
-                <Plus className='w-4 h-4 mr-1' /> Nuevo Usuario
-              </Button>
-            </PermissionGuard>
-          </div>
+          </PermissionGuard>
+          <PermissionGuard module='users' action='create' fallback={null}>
+            <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
+              className='bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'>
+              <Plus className='w-4 h-4 mr-1' /> Nuevo Usuario
+            </Button>
+          </PermissionGuard>
         </div>
+      </div>
 
-        <UserFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus} filterRole={filterRole} setFilterRole={setFilterRole}
-          onClearFilters={handleClearFilters} pageSize={pageSize} setPageSize={setPageSize} setPage={setPage} />
+      <PermissionGuard module='users' action='view'>
+        {isLoading ? (
+          <UsersSkeleton />
+        ) : (
+          <>
+            <UserFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus} filterRole={filterRole} setFilterRole={setFilterRole}
+              onClearFilters={handleClearFilters} pageSize={pageSize} setPageSize={setPageSize} setPage={setPage} />
 
-        <div className='mt-6 overflow-x-auto'>
-          <UserTable users={users} onViewDetails={handleViewDetails} onEdit={handleEditUser}
-            onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} onDelete={handleDeleteUser}
-            formatCurrency={formatCurrency} formatDate={formatDate} getRoleBadgeColor={getRoleBadgeColor}
-            currentPage={page} pageSize={pageSize} />
-        </div>
+            <div className='mt-6 overflow-x-auto'>
+              <UserTable users={users} onViewDetails={handleViewDetails} onEdit={handleEditUser}
+                onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} onDelete={handleDeleteUser}
+                formatCurrency={formatCurrency} formatDate={formatDate} getRoleBadgeColor={getRoleBadgeColor}
+                currentPage={page} pageSize={pageSize} />
+            </div>
 
-        {totalPages > 1 && <div className='flex justify-center mt-6'><Paginate page={page} totalPages={totalPages} setPage={setPage} /></div>}
+            {totalPages > 1 && <div className='flex justify-center mt-6'><Paginate page={page} totalPages={totalPages} setPage={setPage} /></div>}
+          </>
+        )}
 
         <UserDetailsModal
           user={selectedUser}
@@ -235,7 +253,7 @@ export default function Users() {
           userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
           isLoading={isMutating}
         />
-      </div>
-    </PermissionGuard>
+      </PermissionGuard>
+    </div>
   );
 }

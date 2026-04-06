@@ -1,9 +1,10 @@
- 
 import { useState, useCallback, useMemo } from 'react';
 import { Room } from '@/types/room';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/api/queryClient';
 
 interface UseRooms {
   rooms: Room[];
@@ -28,8 +29,6 @@ interface UseRooms {
   reorderRooms: (reorderedRooms: Room[]) => Promise<void>;
 }
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
 const EMPTY_ARRAY: any[] = [];
 
 export default function useRooms(): UseRooms {
@@ -43,7 +42,12 @@ export default function useRooms(): UseRooms {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const { create, update, remove, isLoading: crudMutating } = useGenericMutations<Room>('/api/rooms', {
+  const {
+    create,
+    update,
+    remove,
+    isLoading: crudMutating
+  } = useGenericMutations<Room>('/api/rooms', {
     onSuccess: () => {
       refetch();
     },
@@ -84,20 +88,28 @@ export default function useRooms(): UseRooms {
   );
 
   const queryClient = useQueryClient();
+  const roomsQueryKey = queryKeys.rooms.all;
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: string | number; action: string; subAction?: string }) => {
+    mutationFn: async ({
+      id,
+      action
+    }: {
+      id: string | number;
+      action: string;
+      subAction?: string;
+    }) => {
       const res = await fetch(`/api/rooms?id=${id}&action=${action}`, { method: 'PATCH' });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Error en la operación');
       return data;
     },
     onMutate: async ({ id, action }) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/rooms'] });
-      const previousRooms = queryClient.getQueryData<Room[]>(['/api/rooms']);
+      await queryClient.cancelQueries({ queryKey: roomsQueryKey });
+      const previousRooms = queryClient.getQueryData<Room[]>(roomsQueryKey);
 
       if (previousRooms) {
-        queryClient.setQueryData(['/api/rooms'], (old: Room[] | undefined) =>
+        queryClient.setQueryData(roomsQueryKey, (old: Room[] | undefined) =>
           (old || []).map(room => {
             if (String(room.id) === String(id)) {
               let newStatus = room.status;
@@ -115,22 +127,22 @@ export default function useRooms(): UseRooms {
     },
     onError: (err, variables, context) => {
       if (context?.previousRooms) {
-        queryClient.setQueryData(['/api/rooms'], context.previousRooms);
+        queryClient.setQueryData(roomsQueryKey, context.previousRooms);
       }
       showErrorToast(err.message || 'Error al actualizar el estado de la habitación');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+      queryClient.invalidateQueries({ queryKey: roomsQueryKey });
     },
     onSuccess: (_, variables) => {
       const { action, subAction } = variables;
       let message = 'Estado de habitación actualizado';
-      
+
       if (subAction === 'liberate') message = 'Habitación liberada correctamente';
       else if (action === 'activate') message = 'Habitación activada correctamente';
       else if (action === 'deactivate') message = 'Habitación desactivada correctamente';
       else if (action === 'occupy') message = 'Habitación marcada como ocupada';
-      
+
       showSuccessToast(message);
     }
   });
@@ -206,4 +218,3 @@ export default function useRooms(): UseRooms {
     reorderRooms
   };
 }
-

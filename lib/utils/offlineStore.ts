@@ -1,5 +1,7 @@
 'use client';
 
+import logger from "./logger";
+
 interface QueuedRequest {
     id: string;
     url: string;
@@ -61,7 +63,14 @@ export const syncOfflineRequests = async () => {
                 clearQueuedRequest(req.id);
             }
         } catch {
-            // Keep in queue for next attempt
+
+            logger.error('Error syncing offline request', {
+                url: req.url,
+                method: req.method,
+                body: req.body,
+                timestamp: req.timestamp,
+                actionType: 'OFFLINE_REQUEST'
+            });
         }
     }
 };

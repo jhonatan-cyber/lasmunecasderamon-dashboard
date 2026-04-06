@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/api/queryClient';
 
 interface DashboardSummary {
   totalAsistencias: number;
@@ -17,7 +18,7 @@ interface DashboardSummary {
 
 export const useDashboardSummary = () => {
   return useQuery<DashboardSummary>({
-    queryKey: ['dashboard-summary'],
+    queryKey: queryKeys.dashboard.summary(),
     queryFn: async () => {
       const response = await fetch('/api/stats/dashboard-summary');
       if (!response.ok) {

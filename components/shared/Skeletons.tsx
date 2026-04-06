@@ -142,12 +142,7 @@ export function ReportSkeleton() {
 // Dashboard Skeleton
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-96" />
-      </div>
+    <div className="space-y-6">
       
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -192,20 +187,7 @@ export function ListSkeleton({ items = 5 }: { items?: number }) {
 // Users Skeleton
 export function UsersSkeleton() {
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      {/* Header Skeleton */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48 sm:h-10 sm:w-64" />
-          <Skeleton className="h-4 w-64 sm:w-80" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-24 sm:w-32 rounded-full" />
-          <Skeleton className="h-10 w-32 sm:w-40 rounded-full" />
-        </div>
-      </div>
-
-      {/* Filters Skeleton */}
+    <div className="space-y-4 sm:space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-xl bg-gray-50/50">
         <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-10 w-full rounded-lg" />

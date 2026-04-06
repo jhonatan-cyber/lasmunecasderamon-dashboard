@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatCurrency } from '@/lib/utils/utils'
+import { formatCurrencyCLP } from '@/lib/utils/formatters'
 
 interface PayrollSummaryStatsProps {
   totals: {
@@ -38,15 +38,15 @@ export default function PayrollSummaryStats({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-muted-foreground">Total Sueldos</span>
-            <span className="text-2xl font-bold">{formatCurrency(totals.sueldo)}</span>
+            <span className="text-2xl font-bold">{formatCurrencyCLP(totals.sueldo)}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-muted-foreground">Total Descuentos</span>
-            <span className="text-2xl font-bold text-red-600">{formatCurrency(totals.descuento)}</span>
+            <span className="text-2xl font-bold text-red-600">{formatCurrencyCLP(totals.descuento)}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-muted-foreground">Total a Pagar</span>
-            <span className="text-2xl font-bold text-green-600">{formatCurrency(totals.total)}</span>
+            <span className="text-2xl font-bold text-green-600">{formatCurrencyCLP(totals.total)}</span>
           </div>
         </div>
       </CardContent>

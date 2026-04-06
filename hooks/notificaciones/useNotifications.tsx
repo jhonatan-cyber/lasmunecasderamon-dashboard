@@ -1,12 +1,13 @@
-/* eslint-disable */
-import { useCallback, useEffect, useState, useMemo } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useCallback, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
 import { playNotificationSound, announcePriority } from '@/lib/utils/audioUtils';
-import { useSSE } from '@/hooks/shared/useSSE';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 interface NotificationData {
   id: number;
@@ -56,16 +57,9 @@ export function useNotifications() {
 
   useEffect(() => {
     const handleRefresh = () => refetchCounts();
-
-    window.addEventListener('updatePendingOrders', handleRefresh);
-    window.addEventListener('updateServiceRequests', handleRefresh);
-    window.addEventListener('refreshNotifications', handleRefresh);
-
-    return () => {
-      window.removeEventListener('updatePendingOrders', handleRefresh);
-      window.removeEventListener('updateServiceRequests', handleRefresh);
-      window.removeEventListener('refreshNotifications', handleRefresh);
-    };
+    const u1 = appEventBus.on('updatePendingOrders', handleRefresh);
+    const u2 = appEventBus.on('updateServiceRequests', handleRefresh);
+    return () => { u1(); u2(); };
   }, [refetchCounts]);
 
   const showNotification = useCallback(
@@ -73,11 +67,7 @@ export function useNotifications() {
 
 
       if (user && data.createdBy && user.id === data.createdBy) {
-
-        const event = new CustomEvent('updatePendingOrders', {
-          detail: { type: 'order-created', orderId: data.id }
-        });
-        window.dispatchEvent(event);
+        appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
         return;
       }
       if (user?.role?.toLowerCase() === 'anfitriona') {
@@ -89,10 +79,7 @@ export function useNotifications() {
       const shouldShowAlert = isCajeroOrAdmin;
 
       // Actualizar el estado de la aplicación siempre
-      const updateEvent = new CustomEvent('updatePendingOrders', {
-        detail: { type: 'order-created', orderId: data.id }
-      });
-      window.dispatchEvent(updateEvent);
+      appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
 
       // Solo mostrar alerta intrusiva si está en el dashboard
       if (!shouldShowAlert) {
@@ -130,10 +117,7 @@ export function useNotifications() {
         duration: 5000
       });
 
-      const openModalEvent = new CustomEvent('openOrderModal', {
-        detail: { orderId: data.id, codigo: data.codigo }
-      });
-      window.dispatchEvent(openModalEvent);
+      appEventBus.emit('openOrderModal', { orderId: data.id, codigo: data.codigo });
     },
     [user, pathname]
   );
@@ -144,8 +128,7 @@ export function useNotifications() {
       const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
       const shouldShowAlert = isCajeroOrAdmin;
 
-      const updateEvent = new CustomEvent('updateServiceRequests');
-      window.dispatchEvent(updateEvent);
+      appEventBus.emit('updateServiceRequests');
 
       if (user && data.createdBy && user.id === data.createdBy) {
         return;
@@ -187,8 +170,7 @@ export function useNotifications() {
         duration: 5000
       });
 
-      const openModalEvent = new CustomEvent('openServiceRequestModal', { detail: data });
-      window.dispatchEvent(openModalEvent);
+      appEventBus.emit('openServiceRequestModal', { solicitud: data });
     },
     [user, pathname]
   );
@@ -197,7 +179,7 @@ export function useNotifications() {
     ? null 
     : '/api/notifications/sse';
 
-  const { reconnect } = useSSE(sseUrl, (payload) => {
+  const { reconnect } = useSharedSSE(sseUrl, (payload) => {
     const userRole = (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
 
     if (payload?.type === 'new_order' && payload?.data) {
@@ -216,7 +198,7 @@ export function useNotifications() {
         timestamp: Date.now()
       });
 
-      window.dispatchEvent(new CustomEvent('updateServiceRequests'));
+      appEventBus.emit('updateServiceRequests');
     }
 
     if (
@@ -224,25 +206,21 @@ export function useNotifications() {
       payload?.type === 'service_request_rejected'
     ) {
       setPendingServiceRequestsCount(prev => Math.max(0, prev - 1));
-      window.dispatchEvent(new CustomEvent('updateServiceRequests'));
+      appEventBus.emit('updateServiceRequests');
     }
 
     if (payload?.type === 'order_updated') {
       setPendingOrdersCount(prev => Math.max(0, prev - 1));
-      window.dispatchEvent(new CustomEvent('updatePendingOrders'));
+      appEventBus.emit('updatePendingOrders', {});
     }
 
     if (payload?.type === 'order_deleted' && payload?.data) {
       setPendingOrdersCount(prev => Math.max(0, prev - 1));
-      window.dispatchEvent(new CustomEvent('updatePendingOrders', { detail: payload.data }));
-    }
-
-    if (payload?.type === 'categories_updated' && payload?.data) {
-      window.dispatchEvent(new CustomEvent('categoriesUpdated', { detail: payload.data }));
+      appEventBus.emit('updatePendingOrders', { type: 'order-deleted', orderId: payload.data.orderId });
     }
 
     if (payload?.type === 'sale_cancelled' && payload?.data) {
-      window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+      appEventBus.emit('ventaRegistrada', {});
     }
 
     if (payload?.type === 'timer_warning_5m' && payload?.data) {
@@ -265,13 +243,13 @@ export function useNotifications() {
       if (userRole === 'cajero' || userRole === 'administrador') {
         announcePriority(`Atención. Tiempo agotado en ${room_name}.`);
       }
-      window.dispatchEvent(new CustomEvent('updateServiceRequests'));
+      appEventBus.emit('updateServiceRequests');
     }
 
     if (payload?.type === 'service_assistance' && payload?.data) {
       const { roomName, assistanceType } = payload.data;
       toast.warning(`⚠️ SOLICITUD DE ASISTENCIA`, {
-        description: `Habitación ${roomName} solicita: ${assistanceType}`, 
+        description: `Habitación ${roomName} solicita: ${assistanceType}`,
         duration: 10000
       });
       playNotificationSound();
@@ -281,25 +259,19 @@ export function useNotifications() {
     }
 
     if (payload?.type === 'anulacion_confirmada' || payload?.type === 'anulacion_rechazada') {
-      window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+      appEventBus.emit('ventaRegistrada', {});
     }
 
     if (payload?.type === 'anulacion_processed' && payload?.data) {
       const approved = payload.data.accion === 'confirmar';
       const tipo = payload.data.tipo;
       toast[approved ? 'success' : 'error'](
-        `${approved ? 'Solicitud aprobada' : 'Solicitud rechazada'}`
-      , {
-        description: `${payload.data.codigo} - ${payload.data.clienteNombre}`,
-      });
-      if (tipo === 'cuenta') {
-        window.dispatchEvent(new CustomEvent('cuentasUpdated', { detail: payload.data }));
-      } else if (tipo === 'venta') {
-        window.dispatchEvent(new CustomEvent('ventaRegistrada'));
-      } else if (tipo === 'servicio') {
-        window.dispatchEvent(new CustomEvent('updateServiceRequests'));
-      }
-      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+        `${approved ? 'Solicitud aprobada' : 'Solicitud rechazada'}`,
+        { description: `${payload.data.codigo} - ${payload.data.clienteNombre}` }
+      );
+      if (tipo === 'venta') appEventBus.emit('ventaRegistrada', {});
+      if (tipo === 'servicio') appEventBus.emit('updateServiceRequests');
+      appEventBus.emit('updatePendingOrders', {});
     }
   });
 

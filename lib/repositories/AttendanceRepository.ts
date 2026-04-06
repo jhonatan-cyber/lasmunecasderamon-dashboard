@@ -2,6 +2,7 @@ import { query, rawQuery, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
+import logger from '../utils/logger';
 
 export class AttendanceRepository {
   static async getSummary() {
@@ -55,31 +56,25 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     let targetUser: any = null;
     let isSystemCode = false;
 
-    // Si tiene 8 o menos caracteres = código de sistema
-    // Si tiene más de 8 caracteres = QR del usuario
-    if (qrData.length <= 8) {
-      // Es código de sistema - verificar contra tabla codigos (solo buscar si es código de sistema)
+    if (qrData.length <= 4) {
       const codes = await query<any[]>('SELECT codigo FROM codigos WHERE estado = 1 AND codigo = ? LIMIT 1', [qrData]);
-      
+
       if (codes.length === 0) {
-        // Código NO encontrado - error inmediato, sin hacer nada más
         throw new Error('Codigo invalido, expirado o ya utilizado');
       }
-      
-      // Código encontrado - continuar solo si hay usuario logueado
+
       if (!currentUser) {
         throw new Error('Codigo invalido, expirado o ya utilizado');
       }
-      
+
       const logged = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1', [currentUser.id]);
-      if (logged.length > 0) { 
-        targetUser = logged[0]; 
-        isSystemCode = true; 
+      if (logged.length > 0) {
+        targetUser = logged[0];
+        isSystemCode = true;
       } else {
         throw new Error('Codigo invalido, expirado o ya utilizado');
       }
     } else {
-      // Es QR del usuario - buscar por qr_token
       const users = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1', [qrData]);
       if (users.length > 0) {
         targetUser = users[0];
@@ -100,7 +95,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     const alreadyRegistered = existing.length > 0;
 
     if (alreadyRegistered) {
-      // Solo actualizar ubicación, no regenerar código
       const ipLimpia = ip?.split(',')[0].trim() || null;
       await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
         en_local: 1,
@@ -109,7 +103,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencias registrada hoy. Ubicacion actualizada.' };
     }
 
-    // Solo registrar y actualizar QR si es nuevo
     const timeStr = nowStr.substring(11, 19);
     const id = generateUUID();
     await BaseRepository.insert(query, 'asistencias', {
@@ -120,20 +113,20 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       estado: 1
     });
 
-    // Actualizar login
     const ipLimpia = ip?.split(',')[0].trim() || null;
     await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
       en_local: 1,
       ...(ipLimpia && { ip_address: ipLimpia }),
     });
 
-    // Regenerar código solo si es código de sistema (al final, no bloquea respuesta)
     if (isSystemCode) {
       setTimeout(async () => {
         try {
           const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
           await regenerateAttendanceCode();
-        } catch (e) { /* ignorado */ }
+        } catch (e) {
+          logger.error('Error al regenerar codigo de asistencia', e);
+        }
       }, 100);
     }
 

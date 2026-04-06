@@ -2,6 +2,7 @@ import twilio from 'twilio';
 import { formatDateLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import logger from '../utils/logger';
 
 // Configuración de Twilio
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -11,10 +12,10 @@ const whatsappNumber =
 
 // Verificar que las variables de entorno estén configuradas
 if (!accountSid || !authToken || !whatsappNumber) {
-  console.warn('⚠️  Variables de entorno de Twilio no configuradas. WhatsApp no funcionará.');
+  logger.warn('⚠️  Variables de entorno de Twilio no configuradas. WhatsApp no funcionará.');
 } else {
-  console.warn('✅ Twilio configurado correctamente');
-  console.warn('📱 Número de WhatsApp:', whatsappNumber);
+  logger.warn('✅ Twilio configurado correctamente');
+  logger.warn('📱 Número de WhatsApp:', whatsappNumber);
 }
 
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
@@ -38,7 +39,7 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
     return true;
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Detalles del error:', error.message);
+      logger.error('Detalles del error:', error.message);
     }
 
     return false;

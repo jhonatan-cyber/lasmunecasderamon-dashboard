@@ -3,15 +3,7 @@ import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { query } from '@/lib/database/db';
 import { getAuth } from '@/lib/auth/auth-app';
 import { logger } from '@/lib/utils/logger';
-
-function generateRandomCode(length: number = 6): string {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
+import { generateRandomCode4 } from '@/lib/utils/codeUtils';
 
 export const GET = withAppApiWrapper(async () => {
   const user = await getAuth();
@@ -29,7 +21,7 @@ export const GET = withAppApiWrapper(async () => {
     
     // Si no hay códigos, crear uno automáticamente
     if (res.length === 0) {
-      const newCode = generateRandomCode(8);
+      const newCode = generateRandomCode4();
       const newId = crypto.randomUUID();
       
       await query(
