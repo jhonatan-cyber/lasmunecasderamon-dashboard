@@ -67,7 +67,7 @@ type SolicitudRespuestaInput = {
 };
 
 export function buildAnticipoNotFoundMessage(anticipoId: string) {
-  return `⚠️ No se encontró la solicitud de anticipo #${anticipoId}. Verifica el número e intenta de nuevo.`;
+  return `No se encontró la solicitud de anticipo #${anticipoId}. Verifica el número e intenta de nuevo.`;
 }
 
 export function buildOrderPushBody({ codigo, clienteNombre, total }: OrderPushBodyInput) {
@@ -89,7 +89,7 @@ export function buildAnticipoRequestMessage({
   token,
 }: AnticipoRequestMessageInput) {
   const confirmUrl = baseUrl && token ? `${baseUrl}/confirmar-anticipo?token=${token}` : null;
-  
+
   return `💰 *NUEVA SOLICITUD DE ANTICIPO*
 
 👤 *Empleado:* ${nombreCompleto}
@@ -113,7 +113,7 @@ _Haz clic en el link para aprobar o rechazar la solicitud_
 ❌ *Para rechazar:* Responde "RECHAZAR ${anticipoId}"
 
 _O también puedes aprobar/rechazar desde el panel administrativo_`
-}`;
+    }`;
 }
 
 export function buildServicioAnulacionMessage({
@@ -232,15 +232,15 @@ export function buildSolicitudRespuestaMessage({
 - Total: ${formatCurrencyCLP(total)}
 
 ${action === 'confirmar'
-    ? tipo === 'venta'
-      ? '_La venta ha sido anulada exitosamente._'
-      : tipo === 'cuenta'
-        ? '_La cuenta ha sido anulada exitosamente._'
-        : '_El servicio ha sido devuelto exitosamente. Habitacion liberada y caja actualizada._'
-    : tipo === 'venta'
-      ? '_La venta ha sido mantenida activa._'
-      : tipo === 'cuenta'
-        ? '_La cuenta ha sido mantenida activa._'
-        : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
-  }`;
+      ? tipo === 'venta'
+        ? '_La venta ha sido anulada exitosamente._'
+        : tipo === 'cuenta'
+          ? '_La cuenta ha sido anulada exitosamente._'
+          : '_El servicio ha sido devuelto exitosamente. Habitacion liberada y caja actualizada._'
+      : tipo === 'venta'
+        ? '_La venta ha sido mantenida activa._'
+        : tipo === 'cuenta'
+          ? '_La cuenta ha sido mantenida activa._'
+          : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
+    }`;
 }

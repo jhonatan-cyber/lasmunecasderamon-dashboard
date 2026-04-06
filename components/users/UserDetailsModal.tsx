@@ -1,6 +1,12 @@
 'use client';
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,7 +33,9 @@ interface UserDetailsModalProps {
 
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return 'Sin fecha';
-  return format(new Date(dateString), 'PPP', { locale: es });
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Sin fecha';
+  return format(date, 'PPP', { locale: es });
 };
 
 const getRoleBadgeColor = (role: string) => {
@@ -70,7 +78,9 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
         <DialogHeader className='p-6 border-b flex flex-row items-center justify-between'>
           <div>
             <DialogTitle className='text-xl font-bold'>Detalles del Usuario</DialogTitle>
-            <DialogDescription className='sr-only'>Información detallada del usuario seleccionado</DialogDescription>
+            <DialogDescription className='sr-only'>
+              Información detallada del usuario seleccionado
+            </DialogDescription>
           </div>
         </DialogHeader>
         <div className='flex-1 overflow-y-auto p-6'>
@@ -93,9 +103,10 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </h2>
                   <div className='flex items-center mt-1 space-x-2'>
                     <Badge
-                      className={`text-xs sm:text-sm ${
-                        user.status === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}
+                      className={`text-xs sm:text-sm ${user.status === 1
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                        }`}
                     >
                       {user.status === 1 ? 'Activo' : 'Inactivo'}
                     </Badge>
@@ -170,13 +181,12 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Estado Civil</p>
                         <Badge
-                          className={`mt-1 text-xs sm:text-sm ${
-                            ['Soltero', 'Soltera'].includes(user.maritalStatus || '')
+                          className={`mt-1 text-xs sm:text-sm ${['Soltero', 'Soltera'].includes(user.maritalStatus || '')
                               ? 'bg-green-100 text-green-700'
                               : ['Casado', 'Casada'].includes(user.maritalStatus || '')
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-100 text-gray-700'
-                          }`}
+                            }`}
                         >
                           {user.maritalStatus || 'Sin estado civil'}
                         </Badge>
@@ -205,7 +215,9 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                       <TrendingUp className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Sueldo</p>
-                        <p className='text-sm text-gray-600'>{formatCurrency(user.salary, 'sueldo')}</p>
+                        <p className='text-sm text-gray-600'>
+                          {formatCurrency(user.salary, 'sueldo')}
+                        </p>
                       </div>
                     </div>
 

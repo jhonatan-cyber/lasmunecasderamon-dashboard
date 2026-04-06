@@ -5,7 +5,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { AnulacionProvider } from '@/contexts/AnulacionContext';
 import { TimerProvider } from '@/contexts/TimerContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
-import { NotificationProvider } from '@/components/notifications';
 import { ServicioAnfitrionasProvider } from '@/contexts/ServicioAnfitrionasContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import AnulacionNotificationModal from '@/components/AnulacionNotificationModal';
@@ -25,12 +24,10 @@ export function ProtectedAppProviders({ children }: { children: ReactNode }) {
             <TimerProvider>
               <ServicioAnfitrionasProvider>
                 <NotificationsProvider>
-                  <NotificationProvider>
-                    <TooltipProvider>
-                      {children}
-                      <AnulacionNotificationModal />
-                    </TooltipProvider>
-                  </NotificationProvider>
+                  <TooltipProvider>
+                    {children}
+                    <AnulacionNotificationModal />
+                  </TooltipProvider>
                 </NotificationsProvider>
               </ServicioAnfitrionasProvider>
             </TimerProvider>

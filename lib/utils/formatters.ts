@@ -16,7 +16,7 @@ export const formatCurrency = (
           : '$0';
   }
 
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const numValue = typeof value === 'string' ? parseInt(value) : value;
 
   if (isNaN(numValue)) {
     return type === 'sueldo'
@@ -40,7 +40,7 @@ export const formatCurrencyNoDecimals = (value: number | string | undefined): st
     return '$0';
   }
 
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const numValue = typeof value === 'string' ? parseInt(value) : value;
 
   if (isNaN(numValue)) {
     return '$0';
@@ -56,7 +56,7 @@ export const formatCurrencyCLP = (value: number | string | undefined): string =>
     return '$0';
   }
 
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const numValue = typeof value === 'string' ? parseInt(value) : value;
 
   if (isNaN(numValue)) {
     return '$0';
@@ -72,7 +72,7 @@ export const formatNumberCL = (value: number | string | undefined): string => {
     return '0';
   }
 
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const numValue = typeof value === 'string' ? parseInt(value) : value;
 
   if (isNaN(numValue)) {
     return '0';
@@ -163,7 +163,7 @@ export const formatCurrencyAbbreviated = (value: number | string | undefined): s
     return '$0';
   }
 
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const numValue = typeof value === 'string' ? parseInt(value) : value;
 
   if (isNaN(numValue)) {
     return '$0';

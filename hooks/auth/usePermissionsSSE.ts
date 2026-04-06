@@ -1,4 +1,4 @@
-import { useSSE } from '@/hooks/shared/useSSE';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -7,7 +7,7 @@ export function usePermissionsSSE() {
 
   const sseUrl = (!user || user.role?.toLowerCase() === 'administrador') ? null : '/api/notifications/sse';
 
-  useSSE(sseUrl, (data) => {
+  useSharedSSE(sseUrl, (data: any) => {
     if (data.type === 'connected') return;
 
     if (data.type === 'permissions-updated') {

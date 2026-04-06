@@ -1,6 +1,5 @@
-import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
-import jwt from 'jsonwebtoken';
-import { auditLogger } from '@/lib/utils/logger';
+import type { NextApiRequest } from 'next';
+
 
 export interface UserPermissions {
   users: {
@@ -64,9 +63,6 @@ export interface AuthenticatedUser {
   exp: number;
 }
 
-type AuthenticatedNextApiRequest = NextApiRequest & {
-  user?: AuthenticatedUser;
-};
 
 const rolePermissions: Record<string, UserPermissions> = {
   administrador: {
@@ -151,9 +147,6 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
       advances: { read: false, write: false, delete: false, process: false }
     };
 
-    // Mapear acciones de la BD al formato interno del middleware
-    // BD: view, create, edit, delete, export, anulate, process, etc.
-    // Middleware: read, write, delete, export, anulate, process
     const actionMap: Record<string, string> = {
       'view': 'read',
       'view_details': 'read',
@@ -170,8 +163,7 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
 
     permissions.forEach(perm => {
       const mappedAction = actionMap[perm.action] || perm.action;
-      
-      // Mapear nombres de módulos si son distintos entre la BD y el middleware
+
       let moduleName = perm.module as string;
       if (moduleName === 'cash_register' || moduleName === 'cashregister') {
         moduleName = 'finances';
@@ -185,16 +177,13 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
 
     return userPerms;
   } catch {
-    return rolePermissions.garzon; // Fallback a permisos por defecto
+    return rolePermissions.garzon;
   }
 }
 
-// Función para obtener permisos del usuario (mantener para compatibilidad)
 function getUserPermissions(role: string): UserPermissions {
   return rolePermissions[role] || rolePermissions.garzon;
 }
-
-// Función helper para verificar permisos en el código
 export function checkPermission(
   user: AuthenticatedUser,
   permission: keyof UserPermissions,

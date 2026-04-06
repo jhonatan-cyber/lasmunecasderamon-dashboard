@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useSSE } from '@/hooks/shared/useSSE';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
 
 interface AnulacionContextType {
   showNotification: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
@@ -75,7 +75,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Escuchar notificaciones SSE para servicios
-  useSSE('/api/notifications/sse', (data) => {
+  useSharedSSE('/api/notifications/sse', (data: any) => {
     // Manejar notificaciones de anulación de servicios
     if (
       data.type === 'anulacion_servicio_confirmada' ||

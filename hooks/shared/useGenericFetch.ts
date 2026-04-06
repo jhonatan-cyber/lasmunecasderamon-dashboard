@@ -1,4 +1,3 @@
- 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { z } from 'zod';
@@ -11,10 +10,14 @@ export function useGenericFetch<T>(
     initialFetch?: boolean;
     transform?: (data: any) => T[];
     schema?: z.ZodSchema<any>;
+    /** QueryKey centralizado desde queryClient.ts. Si no se proporciona, usa [endpoint] */
+    queryKey?: readonly unknown[];
+    /** Tiempo de stale en ms (default: 60000) */
+    staleTime?: number;
   }
 ) {
   const queryClient = useQueryClient();
-  const queryKey = useMemo(() => [endpoint], [endpoint]);
+  const queryKey = useMemo(() => options?.queryKey ?? [endpoint], [options?.queryKey, endpoint]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey,
@@ -51,7 +54,7 @@ export function useGenericFetch<T>(
       return rawData;
     },
     enabled: options?.initialFetch !== false,
-    staleTime: 1000 * 60 // 1 minute
+    staleTime: options?.staleTime ?? 1000 * 60
   });
 
   const setData = useCallback(
@@ -69,4 +72,3 @@ export function useGenericFetch<T>(
     setData
   };
 }
-

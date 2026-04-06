@@ -1,5 +1,6 @@
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { query } from '@/lib/database/db';
+import logger from '../utils/logger';
 
 const expo = new Expo();
 
@@ -28,7 +29,6 @@ export async function sendPushNotification(
         const messages: ExpoPushMessage[] = [];
         for (const user of users) {
             if (!Expo.isExpoPushToken(user.push_token)) {
-                console.error(`Push token ${user.push_token} no es válido.`);
                 continue;
             }
 
@@ -56,13 +56,13 @@ export async function sendPushNotification(
                     }
                 }
             } catch (error) {
-                console.error('Error enviando chunk de notificaciones:', error);
+                logger.error('Error enviando chunk de notificaciones:', error);
             }
         }
 
         return tickets;
     } catch (error) {
-        console.error('Error en sendPushNotification:', error);
+        logger.error('Error en sendPushNotification:', error);
     }
 }
 
@@ -104,11 +104,11 @@ export async function sendPushByRole(
                     }
                 }
             } catch (err) {
-                console.error('[PUSH BY ROLE] Error:', err);
+                logger.error('[PUSH BY ROLE] Error:', err);
             }
         }
     } catch (error) {
-        console.error('Error en sendPushByRole:', error);
+        logger.error('Error en sendPushByRole:', error);
     }
 }
 
