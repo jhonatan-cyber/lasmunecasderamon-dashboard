@@ -17,21 +17,16 @@ type MixedPayment = {
 };
 
 export class SaleService {
-  /**
-   * Procesa la creación de una venta, incluyendo deducción de prepago,
-   * gestión de conflictos de habitación/anfitrionas y actualización de caja.
-   */
   static async createSale(body: any, createdBy: string) {
 logger.debug('[SaleService] createSale - body:', { body });
     const validated = SaleCreateSchema.parse(body);
     logger.debug('[SaleService] validated:', { validated });
     const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
     
-    // Usar el body original si validated no tiene pedido_id
     const pedidoId = validated.pedido_id || body.pedido_id || body.id_pedido;
     const clienteId = validated.cliente_id || body.cliente_id;
     
-    logger.debug('[SaleService] pedidoId:', pedidoId, 'clienteId:', clienteId);
+    logger.debug('[SaleService] creating sale', { pedidoId, clienteId });
     
     const ventaId = generateUUID();
     const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -55,8 +50,6 @@ logger.debug('[SaleService] createSale - body:', { body });
       : totalComisionCalculada;
 
     const result = await withTransaction(async (trx) => {
-      // 1. Deducción de Saldo del Cliente
-      // Si el cliente tiene saldo, siempre se descuenta lo que alcance (hasta el total)
       let prepagoMonto = 0;
       const esMixto = validated.metodo_pago === 'mixto';
       const prepagoSolicitado = esMixto
@@ -111,11 +104,9 @@ logger.debug('[SaleService] createSale - body:', { body });
         }
       }
 
-      // 2. Determinar estado inicial (2: en servicio si tiene habitación y tiempo, 1: completado)
       const estado = (validated.habitacion_id && validated.tiempo > 0) ? 2 : 1;
 
-      // 3. Persistencia de la venta (vía Repository)
-      logger.debug('[SaleService] Insertando venta - propina:', validated.propina, 'total:', validated.total);
+      logger.debug('[SaleService] Insertando venta', { propina: validated.propina, total: validated.total });
       await SaleRepository.rawInsert(trx, {
         id_venta: ventaId,
         codigo,
@@ -135,12 +126,9 @@ logger.debug('[SaleService] createSale - body:', { body });
         pagos_mixtos: validated.pagos_mixtos ? JSON.stringify(validated.pagos_mixtos) : null
       });
 
-      // 2b. Actualizar estado de habitación a ocupada si la venta tiene habitación y tiempo
       if (validated.habitacion_id && estado === 2) {
         await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [validated.habitacion_id]);
       }
-
-      // 4. Gestión de Anfitrionas y Conflictos
       if (validated.usuarios?.length) {
         const hostessRows = await trx<any[]>(
           `SELECT DISTINCT u.id_usuario
@@ -170,13 +158,12 @@ logger.debug('[SaleService] createSale - body:', { body });
         await RoomManager.updateHostessServiceStatus(trx, hostessIds, undefined, ventaId);
       }
 
-      // 5. Detalles y Comisiones (Lógica de Desglose)
         for (const d of validated.detalles) {
           const requestedHostesses = (d.hostesses && d.hostesses.length > 0)
             ? d.hostesses
             : (d.hostess_id ? [d.hostess_id] : []);
 
-          let hostesses = requestedHostesses;
+          let hostesses: (string | null)[] = requestedHostesses;
           if (requestedHostesses.length > 0) {
             const hostessRows = await trx<any[]>(
               `SELECT DISTINCT u.id_usuario
@@ -282,7 +269,7 @@ logger.debug('[SaleService] createSale - body:', { body });
 
       // 8. Actualizar estado del pedido a procesado (estado = 0)
       if (pedidoId) {
-        logger.debug('[SaleService] Actualizando pedido:', pedidoId, 'a estado 0');
+        logger.debug(`[SaleService] Actualizando pedido a estado 0`, { pedidoId });
         await trx('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
         logger.debug('[SaleService] Pedido actualizado a estado 0');
       }

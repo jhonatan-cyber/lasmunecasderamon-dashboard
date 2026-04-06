@@ -1,17 +1,17 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import SearchInput from "@/components/shared/SearchInput";
-import { Trash2 } from "lucide-react";
-import SelectElements from "@/components/shared/SelectElements";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import SearchInput from '@/components/shared/SearchInput';
+import { Trash2 } from 'lucide-react';
+import SelectElements from '@/components/shared/SelectElements';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue
+} from '@/components/ui/select';
 
 interface CategoryFiltersProps {
   searchTerm: string;
@@ -32,7 +32,7 @@ export function CategoryFilters({
   onClearFilters,
   pageSize,
   setPageSize,
-  setPage,
+  setPage
 }: CategoryFiltersProps) {
   const handlePageSizeChange = (value: number) => {
     setPageSize(value);
@@ -45,7 +45,10 @@ export function CategoryFilters({
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {/* Búsqueda */}
           <div className='w-full lg:flex-1'>
-            <Label htmlFor='search' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+            <Label
+              htmlFor='search'
+              className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+            >
               Buscar Categoría
             </Label>
             <SearchInput
@@ -60,7 +63,10 @@ export function CategoryFilters({
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {/* Filtro de estado */}
             <div className='w-full sm:w-auto min-w-[160px]'>
-              <Label htmlFor='status' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+              <Label
+                htmlFor='status'
+                className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+              >
                 Estado
               </Label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -83,7 +89,7 @@ export function CategoryFilters({
               <SelectElements
                 value={pageSize}
                 onChange={handlePageSizeChange}
-                options={[6, 12, 24, 48]}
+                options={[12, 24, 36, 48]}
                 label='LISTAR'
               />
             </div>
@@ -96,14 +102,14 @@ export function CategoryFilters({
                     <div>
                       <Button
                         onClick={onClearFilters}
-                        size="icon"
+                        size='icon'
                         className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
                       >
                         <Trash2 className='w-4 h-4' />
                       </Button>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl">
+                  <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
                     <p>Limpiar filtros</p>
                   </TooltipContent>
                 </Tooltip>

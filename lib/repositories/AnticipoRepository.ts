@@ -80,7 +80,7 @@ export class AnticipoRepository {
         usuario_id,
         monto,
         motivo,
-        estado: 1, // Aprobado directamente
+        estado: 1,
         fecha_crea: now
       });
 
@@ -96,18 +96,15 @@ export class AnticipoRepository {
         anticipo: monto
       });
 
-      // Notificaciones inmediatas
       const userRes = await query<any[]>('SELECT nombre, apellido, nick, telefono FROM usuarios WHERE id_usuario = ?', [usuario_id]);
       if (userRes.length > 0) {
         const user = userRes[0];
         
-        // 1. WhatsApp al usuario
         const confirmMsg = `*Anticipo Otorgado* ✅\n\nHola ${user.nombre}, se ha registrado un anticipo por *${formatCurrencyCLP(monto)}*.\n\n*Motivo:* ${motivo}\n*Fecha:* ${now}`;
         if (user.telefono) {
           enviarWhatsApp(user.telefono, confirmMsg).catch(console.error);
         }
 
-        // 2. Notificación Web (SSE)
         sendNotificationToAll('ANTICIPO_PROCESSED', {
           id,
           usuario: `${user.nombre} ${user.apellido}`,
@@ -115,7 +112,6 @@ export class AnticipoRepository {
           estado: 1
         });
 
-        // 3. Push a Cajeros (para sincronía de caja)
         sendPushByRole('cajero', 'Anticipo Otorgado', `Se otorgaron ${formatCurrencyCLP(monto)} a ${user.nick}`).catch(console.error);
       }
 
@@ -142,7 +138,7 @@ export class AnticipoRepository {
       usuario_id,
       monto,
       motivo,
-      estado: 2, // Pendiente
+      estado: 2, 
       fecha_crea: now
     });
 
@@ -279,8 +275,6 @@ export class AnticipoRepository {
       }
 
       const montoAnticipo = Number(sol.monto);
-      console.log('[deliverAnticipo] Actualizando caja:', { idCaja, monto: montoAnticipo });
-
       await CashRegisterRepository.updateBalances(trx, idCaja, {
         efectivo: -montoAnticipo,
         anticipo: montoAnticipo

@@ -2,14 +2,12 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 type AuditDetails = Record<string, unknown>;
 
-// Logger isomorfico: usa winston en servidor y console en cliente
 let loggerInstance: any = null;
 
 const getLogger = () => {
   if (loggerInstance) return loggerInstance;
 
   if (typeof window === 'undefined') {
-    // Servidor: cargar winston dinamicamente para evitar bundling en cliente
     const winston = require('winston');
     const path = require('path');
 
@@ -60,20 +58,18 @@ const getLogger = () => {
     }
     loggerInstance = winstonLogger;
   } else {
-    // Cliente: fallback a console
     loggerInstance = {
       info: (msg: string, meta: any) => console.log(`[INFO] ${msg}`, meta),
       warn: (msg: string, meta: any) => console.warn(`[WARN] ${msg}`, meta),
       error: (msg: string, meta: any) => console.error(`[ERROR] ${msg}`, meta),
       debug: (msg: string, meta: any) => console.debug(`[DEBUG] ${msg}`, meta),
-      add: () => {},
-      remove: () => {},
+      add: () => { },
+      remove: () => { },
     };
   }
   return loggerInstance;
 };
 
-// Proxies para mantener la API original
 export const logger = {
   info: (msg: string, meta?: any) => getLogger().info(msg, meta),
   warn: (msg: string, meta?: any) => getLogger().warn(msg, meta),

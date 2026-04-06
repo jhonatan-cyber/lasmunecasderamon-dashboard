@@ -42,7 +42,7 @@ export default function Categories() {
 
   const [filterStatus, setFilterStatus] = useState('all');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(12);
 
   const dedupedCategories = useMemo(() => {
     const seen = new Set<string>();
@@ -61,29 +61,39 @@ export default function Categories() {
   const totalPages = Math.ceil(filteredByStatus.length / pageSize);
   const paginatedCategories = filteredByStatus.slice((page - 1) * pageSize, page * pageSize);
 
-  const handleSubmit = useCallback(async (data: CategoryFormValues) => {
-    const result = isEditMode && editCategoryId
-      ? await updateCategory(editCategoryId, data)
-      : await createCategory(data);
+  const handleSubmit = useCallback(
+    async (data: CategoryFormValues) => {
+      const result =
+        isEditMode && editCategoryId
+          ? await updateCategory(editCategoryId, data)
+          : await createCategory(data);
 
-    if (result.success) {
-      toast.success(result.message);
-      closeModal();
-    } else {
-      toast.error(result.message);
-    }
-  }, [isEditMode, editCategoryId, createCategory, updateCategory, closeModal]);
+      if (result.success) {
+        toast.success(result.message);
+        closeModal();
+      } else {
+        toast.error(result.message);
+      }
+    },
+    [isEditMode, editCategoryId, createCategory, updateCategory, closeModal]
+  );
 
-  const handleDelete = useCallback(async (id: string) => {
-    const result = await deleteCategory(id);
-    if (result.success) toast.success(result.message);
-    else toast.error(result.message);
-  }, [deleteCategory]);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const result = await deleteCategory(id);
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
+    },
+    [deleteCategory]
+  );
 
-  const handleReorder = useCallback(async (newOrder: Category[]) => {
-    const result = await reorderCategories(newOrder);
-    if (!result.success) toast.error(result.message);
-  }, [reorderCategories]);
+  const handleReorder = useCallback(
+    async (newOrder: Category[]) => {
+      const result = await reorderCategories(newOrder);
+      if (!result.success) toast.error(result.message);
+    },
+    [reorderCategories]
+  );
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm('');

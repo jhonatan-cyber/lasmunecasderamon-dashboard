@@ -1,15 +1,10 @@
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { generateRandomCode } from '@/lib/utils/codeUtils';
-
-/**
- * Registra un nuevo código en la tabla codigos y retorna el nuevo código.
- */
+import { generateRandomCode4 } from '@/lib/utils/codeUtils';
 export async function regenerateAttendanceCode(): Promise<string> {
-  const newCode = generateRandomCode();
+  const newCode = generateRandomCode4();
   try {
-    // Siguiendo la lógica original: borramos códigos anteriores antes de insertar uno nuevo
     await query('DELETE FROM codigos');
 
     const fechaSQL = getNowInBusinessTimezone();
@@ -21,10 +16,6 @@ export async function regenerateAttendanceCode(): Promise<string> {
       fechaSQL
     ]);
 
-
-
-
-    // Al regenerar el código, notificamos a todos los clientes (especialmente cajeros)
     try {
       const { sendNotificationToAll } = await import('@/lib/api/sseService');
       sendNotificationToAll('code_changed', { codigo: newCode });

@@ -3,13 +3,12 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 export const toDateKey = (value?: string | Date | null) => {
   if (!value) return '';
   if (value instanceof Date) {
-    // Usar formato local para evitar desfases de zona horaria
     const year = value.getFullYear();
     const month = String(value.getMonth() + 1).padStart(2, '0');
     const day = String(value.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
-  return value.substring(0, 10).replace('T', ' '); // Normalizar a YYYY-MM-DD
+  return value.substring(0, 10).replace('T', ' ');
 };
 
 export const toDateKeys = (dates: Date[]) => dates.map(date => toDateKey(date));
@@ -31,7 +30,6 @@ export const getMonthDateRange = (date: Date) => {
 };
 
 export const getWeekDateRange = (offsetWeeks = 0) => {
-  // Use business timezone to get the correct "today"
   const todayStr = getNowInBusinessTimezone().substring(0, 10);
   const today = new Date(todayStr + 'T00:00:00');
   const dayOfWeek = today.getDay();
@@ -59,8 +57,8 @@ export const getMonthPeriodKey = (date?: Date) => {
   if (date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   }
-  const now = getNowInBusinessTimezone(); // "YYYY-MM-DD HH:MM:SS"
-  return now.substring(0, 7); // "YYYY-MM"
+  const now = getNowInBusinessTimezone();
+  return now.substring(0, 7);
 };
 
 export const getCurrentTimeKey = () => getNowInBusinessTimezone().substring(11, 19);
@@ -82,13 +80,12 @@ export const formatLongDateEs = (value: string | Date, locale = 'es-ES') => {
 
 export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
   if (!value) return '';
-  
+
   if (typeof value === 'string' && value.includes(':') && !value.includes('-') && !value.includes('T')) {
-    // If it's a time-only string like "HH:MM:SS" or "HH:MM"
     const parts = value.split(':');
     const hours = parseInt(parts[0], 10);
     const minutes = parseInt(parts[1], 10);
-    
+
     if (!isNaN(hours) && !isNaN(minutes)) {
       const date = new Date();
       date.setHours(hours, minutes, 0, 0);

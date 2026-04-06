@@ -1,21 +1,28 @@
- 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+'use client';
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { VentaWithDetails } from '@/types/venta';
-import { Home, Clock, CreditCard } from 'lucide-react';
-import { useTimer } from '@/contexts/TimerContext';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
+import { formatCurrency, statusColors, statusLabels } from '@/lib/business/salesUtils';
+import {
+  ShoppingBag,
+  User,
+  Home,
+  CreditCard,
+  Users,
+  Clock,
+  DollarSign,
+  Receipt,
+  Hash,
+} from 'lucide-react';
 
 interface SalesDetailModalProps {
   open: boolean;
@@ -30,283 +37,271 @@ export function SalesDetailModal({
   onOpenChange,
   selectedVenta,
   anfitrionaColors,
-  metodoPagoLabels
+  metodoPagoLabels,
 }: SalesDetailModalProps) {
-  const { getTimerByServicioId, formatTime } = useTimer();
-
   if (!selectedVenta) return null;
 
-  const timer = getTimerByServicioId(String(selectedVenta.id));
-  const isLowTime = timer && timer.isActive && timer.remainingTime <= 300;
+  const hostesses =
+    selectedVenta.usuarios
+      ?.map((u) => u.nick || u.usuario_nombre)
+      .filter(Boolean) || [];
 
-  const hasAnfitrionas = Array.isArray(selectedVenta.usuarios) && selectedVenta.usuarios.length > 0;
-  const totalComision = Array.isArray(selectedVenta.detalles)
-    ? selectedVenta.detalles.reduce((sum, detalle) => sum + (detalle.comision || 0), 0)
-    : 0;
-  const subTotal = Array.isArray(selectedVenta.detalles)
-    ? selectedVenta.detalles.reduce((sum, detalle) => sum + (detalle.sub_total || 0), 0)
-    : 0;
+  const statusColor = statusColors[selectedVenta.estado] || 'bg-gray-100 text-gray-800';
+  const statusLabel = statusLabels[selectedVenta.estado] || 'Desconocido';
+  const metodoPagoLabel =
+    metodoPagoLabels[selectedVenta.metodo_pago] || selectedVenta.metodo_pago;
+
+  const formatFecha = (fecha: string) => {
+    try {
+      const date = new Date(fecha.replace(' ', 'T'));
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '-';
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-[56rem] sm:max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0'>
-          <DialogTitle className='text-lg sm:text-xl'>
-            Detalles de la Venta - {selectedVenta.codigo || 'Sin código'}
-          </DialogTitle>
+      <DialogContent className='max-w-2xl max-h-[95vh] p-0 border-none shadow-2xl rounded-3xl overflow-hidden bg-white dark:bg-slate-900 flex flex-col'>
+        {/* Header */}
+        <DialogHeader className='px-8 pt-8 pb-4 bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-gray-800'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-3'>
+              <div className='p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl'>
+                <Receipt className='h-6 w-6 text-blue-600' />
+              </div>
+              <div>
+                <DialogTitle className='text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight'>
+                  Detalle de Venta
+                </DialogTitle>
+                <div className='flex items-center gap-2 text-sm text-gray-500 font-medium'>
+                  <Hash className='h-3.5 w-3.5' />
+                  {selectedVenta.codigo}
+                </div>
+              </div>
+            </div>
+            <Badge className={`rounded-full px-3 py-1 border-none font-bold uppercase tracking-tighter text-[10px] ${statusColor}`}>
+              {statusLabel}
+            </Badge>
+          </div>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-6'>
-          <div className='space-y-8'>
-            {/* Header Info Grid - Distribución limpia sin cards */}
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 pb-6 border-b border-slate-100 dark:border-slate-800'>
-              <div className='space-y-1.5'>
-                <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                  Fecha de Venta
-                </span>
-                <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
-                  {formatLongDateEs(selectedVenta.fecha_crea)}
+        {/* Content */}
+        <div className='flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800'>
+          {/* Summary Cards */}
+          <div className='grid grid-cols-2 md:grid-cols-3 gap-3'>
+            <Card className='rounded-3xl border-none shadow-md bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden'>
+              <CardContent className='p-4 flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center'>
+                  <DollarSign className='h-5 w-5 text-emerald-600' />
                 </div>
-              </div>
+                <div>
+                  <p className='text-[10px] uppercase font-black text-emerald-400 tracking-wider'>Total</p>
+                  <p className='text-lg font-black text-emerald-600'>${formatCurrency(selectedVenta.total)}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className='space-y-1.5'>
-                <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
+            <Card className='rounded-3xl border-none shadow-md bg-blue-50/50 dark:bg-blue-900/20 overflow-hidden'>
+              <CardContent className='p-4 flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-2xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center'>
+                  <CreditCard className='h-5 w-5 text-blue-600' />
+                </div>
+                <div>
+                  <p className='text-[10px] uppercase font-black text-blue-400 tracking-wider'>Pago</p>
+                  <p className='text-sm font-black text-gray-900 dark:text-white capitalize'>{metodoPagoLabel}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className='rounded-3xl border-none shadow-md bg-amber-50/50 dark:bg-amber-900/20 overflow-hidden'>
+              <CardContent className='p-4 flex items-center gap-3'>
+                <div className='h-10 w-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center'>
+                  <DollarSign className='h-5 w-5 text-amber-600' />
+                </div>
+                <div>
+                  <p className='text-[10px] uppercase font-black text-amber-400 tracking-wider'>Propina</p>
+                  <p className='text-sm font-black text-gray-900 dark:text-white'>${formatCurrency(selectedVenta.propina)}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Info Section */}
+          <div className='space-y-4'>
+            {/* Fecha */}
+            <div className='flex items-center gap-3'>
+              <Clock className='w-4 h-4 text-gray-400 flex-shrink-0' />
+              <div>
+                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                  Fecha
+                </span>
+                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                  {formatFecha(selectedVenta.fecha_crea)}
+                </span>
+              </div>
+            </div>
+
+            {/* Habitación */}
+            <div className='flex items-center gap-3'>
+              <Home className='w-4 h-4 text-indigo-500 flex-shrink-0' />
+              <div>
+                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                  Habitación
+                </span>
+                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                  {selectedVenta.habitacion_numero || selectedVenta.habitacion_nombre || 'Sin habitación'}
+                  {selectedVenta.tiempo ? ` · ${selectedVenta.tiempo} min` : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* Cliente */}
+            <div className='flex items-center gap-3'>
+              <User className='w-4 h-4 text-blue-500 flex-shrink-0' />
+              <div>
+                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                   Cliente
                 </span>
-                <div className='text-sm font-semibold text-slate-700 dark:text-slate-200 truncate'>
-                  {selectedVenta.cliente_nombre || 'Sin cliente'}
-                </div>
-              </div>
-
-              <div className='space-y-1.5'>
-                <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                  Método de Pago
+                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                  {selectedVenta.cliente_nombre?.toLowerCase() === 'sin cliente' || !selectedVenta.cliente_nombre
+                    ? 'Cliente sin registrar'
+                    : selectedVenta.cliente_nombre}
                 </span>
+              </div>
+            </div>
+
+            {/* Garzón */}
+            {(selectedVenta.garzon_nombre || selectedVenta.garzon_nick) && (
+              <div className='flex items-center gap-3'>
+                <User className='w-4 h-4 text-green-500 flex-shrink-0' />
                 <div>
-                  <Badge
-                    variant='outline'
-                    className='bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold capitalize'
-                  >
-                    {metodoPagoLabels[selectedVenta.metodo_pago as keyof typeof metodoPagoLabels] ||
-                      selectedVenta.metodo_pago}
-                  </Badge>
-                </div>
-              </div>
-
-              {selectedVenta.garzon_nombre && (
-                <div className='space-y-1.5'>
-                  <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                    Garzón
+                  <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                    Garzón / Mesero
                   </span>
-                  <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
-                    {selectedVenta.garzon_nombre}
-                  </div>
+                  <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                    {selectedVenta.garzon_nombre || selectedVenta.garzon_nick}
+                  </span>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Info de Habitación integrada en el grid si existe */}
-              {selectedVenta.habitacion_id &&
-                selectedVenta.habitacion_nombre !== 'Sin habitación' && (
-                  <>
-                    <div className='space-y-1.5'>
-                      <span className='text-[10px] sm:text-xs font-bold text-pink-400 uppercase tracking-widest'>
-                        Habitación
-                      </span>
-                      <div className='text-sm font-bold text-pink-600 dark:text-pink-400 flex items-center gap-1.5'>
-                        <Home className='w-3.5 h-3.5' />
-                        {selectedVenta.habitacion_numero || selectedVenta.habitacion_nombre}
-                      </div>
-                    </div>
-
-                    <div className='space-y-1.5'>
-                      <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                        Hora Entrada
-                      </span>
-                      <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
-                        {formatShortTimeEs(selectedVenta.fecha_crea)}
-                      </div>
-                    </div>
-
-                    <div className='space-y-1.5'>
-                      <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                        Hora Salida
-                      </span>
-                      <div className='text-sm font-semibold space-y-0.5'>
-                        <div className='flex items-center gap-1.5'>
-                          <span className='text-blue-600 dark:text-blue-400 font-bold'>
-                            {(() => {
-                              try {
-                                const rawFecha = selectedVenta.fecha_crea;
-                                const dateStr =
-                                  typeof rawFecha === 'string'
-                                    ? rawFecha
-                                    : new Date(rawFecha).toISOString();
-                                const isoStr = dateStr.includes('T')
-                                  ? dateStr
-                                  : dateStr.replace(' ', 'T');
-                                const entry = new Date(isoStr);
-                                const exit = new Date(
-                                  entry.getTime() + (selectedVenta.tiempo || 0) * 60000
-                                );
-                                return formatShortTimeEs(exit.toISOString());
-                              } catch (e) {
-                                return '-';
-                              }
-                            })()}
-                          </span>
-                          <span className='text-slate-400 text-[10px]'>
-                            ({selectedVenta.tiempo || 0} min)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {timer && timer.isActive && (
-                      <div className='space-y-1.5'>
-                        <span className='text-[10px] sm:text-xs font-bold text-blue-400 uppercase tracking-widest'>
-                          Restante
-                        </span>
-                        <div
-                          className={`text-sm font-mono font-black ${isLowTime ? 'text-red-500 animate-pulse' : 'text-blue-500'}`}
-                        >
-                          {formatTime(timer.remainingTime)}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-            </div>
-
-            {/* Anfitrionas - Fila dedicada */}
-            <div className='space-y-3 pb-2'>
-              <div className='flex items-center gap-2'>
-                <span className='text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                  Anfitriona(s) Asignada(s)
+            {/* Anfitrionas */}
+            <div className='flex items-start gap-3'>
+              <Users className='w-4 h-4 text-purple-500 flex-shrink-0 mt-1' />
+              <div className='flex-1'>
+                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                  Anfitrionas
                 </span>
-              </div>
-              <div className='flex flex-wrap gap-2'>
-                {hasAnfitrionas ? (
-                  selectedVenta.usuarios.map((usuario: any, index: number) => (
-                    <Badge
-                      key={
-                        usuario.id
-                          ? `modal-usuario-${usuario.id}-${index}`
-                          : `modal-user-idx-${index}`
-                      }
-                      className={`${anfitrionaColors[index % anfitrionaColors.length]} px-3 py-1 text-xs font-bold shadow-sm`}
-                    >
-                      {usuario.nick || usuario.usuario_nombre || 'Sin nick'}
-                    </Badge>
-                  ))
-                ) : (
-                  <Badge
-                    variant='secondary'
-                    className='text-slate-400 italic bg-slate-50 dark:bg-slate-900'
-                  >
-                    Venta directa en barra
-                  </Badge>
-                )}
+                <div className='flex flex-wrap gap-1.5 mt-1'>
+                  {hostesses.length > 0 ? (
+                    hostesses.map((nick, idx) => (
+                      <Badge
+                        key={idx}
+                        className={`rounded-full px-3 py-1 border-none font-bold text-[10px] uppercase tracking-tighter ${anfitrionaColors[idx % anfitrionaColors.length]}`}
+                      >
+                        {nick}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className='text-xs text-gray-400 dark:text-gray-500 italic'>
+                      Sin anfitrionas
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Tabla de productos */}
-            <div className='border rounded-lg p-4'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='text-left'>Producto</TableHead>
-                    <TableHead className='text-center'>Tipo</TableHead>
-                    <TableHead className='text-center'>Cantidad</TableHead>
-                    <TableHead className='text-center'>Precio</TableHead>
-                    <TableHead className='text-center'>Comisión</TableHead>
-                    <TableHead className='text-right'>Sub Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.isArray(selectedVenta.detalles) && selectedVenta.detalles.length > 0 ? (
-                    selectedVenta.detalles.map((detalle: any, index: number) => {
-                      const tieneComision = (detalle.comision || 0) > 0;
-                      return (
-                        <TableRow key={index}>
-                          <TableCell className='font-medium'>
-                            {detalle.producto_nombre ||
-                              `Producto ID: ${detalle.producto_id}` ||
-                              'Sin nombre'}
-                          </TableCell>
-                          <TableCell className='text-center'>
-                            <Badge
-                              variant={tieneComision ? 'default' : 'secondary'}
-                              className='text-xs'
-                            >
-                              {tieneComision ? 'Anfitriona' : 'Cliente'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className='text-center'>{detalle.cantidad || 0}</TableCell>
-                          <TableCell className='text-center'>
-                            {formatCurrencyCLP(detalle.precio)}
-                          </TableCell>
-                          <TableCell className='text-center'>
-                            <span className={tieneComision ? 'text-green-600 font-semibold' : ''}>
-                              {formatCurrencyCLP(detalle.comision)}
-                            </span>
-                          </TableCell>
-                          <TableCell className='text-right font-medium'>
-                            {formatCurrencyCLP(detalle.sub_total)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className='text-center text-muted-foreground'>
-                        No hay detalles de productos disponibles
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+          {/* Productos */}
+          <div>
+            <div className='flex items-center gap-2 mb-3'>
+              <ShoppingBag className='w-4 h-4 text-orange-500' />
+              <h4 className='text-sm font-black uppercase tracking-widest text-gray-400'>
+                Productos
+              </h4>
+            </div>
 
-              <Separator className='my-4' />
-
-              {/* Resumen de totales */}
-              <div className='space-y-2'>
-                <div className='flex justify-between items-center text-sm'>
-                  <span className='text-muted-foreground'>SUBTOTAL:</span>
-                  <span className='font-semibold'>{formatCurrencyCLP(subTotal)}</span>
+            {selectedVenta.detalles && selectedVenta.detalles.length > 0 ? (
+              <div className='bg-white dark:bg-slate-900/40 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden'>
+                <div className='divide-y divide-gray-100 dark:divide-gray-800'>
+                  {selectedVenta.detalles.map((det, idx) => (
+                    <div
+                      key={idx}
+                      className='flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors'
+                    >
+                      <div className='flex-1 min-w-0'>
+                        <span className='text-sm font-semibold text-gray-900 dark:text-white truncate block'>
+                          {det.producto_nombre || 'Producto'}
+                        </span>
+                        <span className='text-[10px] text-gray-400 font-medium'>
+                          ${formatCurrency(det.precio)} c/u · Comisión: ${formatCurrency(det.comision)}
+                        </span>
+                      </div>
+                      <div className='flex items-center gap-4'>
+                        <Badge variant='outline' className='rounded-full text-xs font-bold'>
+                          x{det.cantidad}
+                        </Badge>
+                        <span className='font-black text-emerald-600 text-sm min-w-[80px] text-right'>
+                          ${formatCurrency(det.sub_total)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {selectedVenta.propina && selectedVenta.propina > 0 && (
-                  <div className='flex justify-between items-center text-sm'>
-                    <span className='text-blue-600'>+ Propina:</span>
-                    <span className='text-blue-600 font-medium'>
-                      {formatCurrencyCLP(selectedVenta.propina)}
+
+                {/* Totales */}
+                <div className='px-5 py-3.5 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800'>
+                  <div className='flex items-center justify-between text-sm'>
+                    <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>Subtotal</span>
+                    <span className='font-bold text-gray-700 dark:text-gray-300'>
+                      ${formatCurrency(selectedVenta.sub_total)}
                     </span>
                   </div>
-                )}
-                <Separator />
-                <div className='flex justify-between items-center text-base'>
-                  <span className='font-bold'>TOTAL:</span>
-                  <span className='font-bold text-lg'>{formatCurrencyCLP(selectedVenta.total)}</span>
+                  {selectedVenta.propina > 0 && (
+                    <div className='flex items-center justify-between text-sm mt-1'>
+                      <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>Propina</span>
+                      <span className='font-bold text-amber-600'>
+                        ${formatCurrency(selectedVenta.propina)}
+                      </span>
+                    </div>
+                  )}
+                  <div className='flex items-center justify-between text-sm mt-2 pt-2 border-t border-gray-200 dark:border-gray-700'>
+                    <span className='font-black text-gray-900 dark:text-white uppercase tracking-wide text-xs'>Total</span>
+                    <span className='font-black text-emerald-600 text-lg'>
+                      ${formatCurrency(selectedVenta.total)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className='text-center py-8 bg-gray-50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800'>
+                <p className='text-gray-400 font-medium tracking-tight'>
+                  No se encontraron productos
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Footer con botón - fijo en la parte inferior */}
-        <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4 bg-white'>
-          <div className='flex justify-center'>
-            <Button
-              onClick={() => onOpenChange(false)}
-              size='sm'
-              variant='outline'
-              className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
-            >
-              Cerrar
-            </Button>
-          </div>
-        </div>
+        {/* Footer */}
+        <DialogFooter className='px-8 py-4 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center sm:justify-center'>
+          <Button
+            onClick={() => onOpenChange(false)}
+            variant='outline'
+            className='rounded-full px-8 font-bold hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-200'
+          >
+            Cerrar
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
