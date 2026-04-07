@@ -28,6 +28,8 @@ interface ProductoCarrito {
   sub_total: number;
   categoria_nombre?: string;
   comision: number;
+  selectedHostesses?: (string | number)[];
+  isChampagne?: boolean;
 }
 
 interface ProductCartTableProps {

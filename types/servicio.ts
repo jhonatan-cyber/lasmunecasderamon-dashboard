@@ -26,6 +26,8 @@ export interface ServicioWithDetails extends Servicio {
   comision_individual?: number;
   created_by?: string;
   creator_name?: string;
+  fecha_mod?: string;
+  id?: string | number;
 }
 
 // Tipos para estadísticas

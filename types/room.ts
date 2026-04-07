@@ -15,4 +15,5 @@ export interface Room {
   fecha_crea?: string;
   fecha_mod?: string;
   fecha_elim?: string;
+  created_at?: string | number | Date;
 } 

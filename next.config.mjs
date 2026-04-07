@@ -115,6 +115,15 @@ const nextConfig = {
       use: ['@svgr/webpack']
     });
 
+    // EXTERNALS: Exclude node modules that should NOT be bundled in client
+    if (!isServer) {
+      config.externals = [
+        ...(config.externals || []),
+        // Prevent mysql2 from being bundled in client - only server-side
+        { mysql2: 'mysql2' }
+      ];
+    }
+
     if (!isServer) {
       config.optimization = {
         ...config.optimization,

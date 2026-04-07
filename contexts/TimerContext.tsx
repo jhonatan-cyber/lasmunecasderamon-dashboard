@@ -233,7 +233,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-export const useCountdown = (timer: Timer | undefined) => {
+export const useCountdown = (timer: Timer | undefined | null) => {
   useSignals();
 
   if (!timer) return 0;

@@ -65,8 +65,16 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
     <CardContainer className='inter-var'>
       <CardBody 
         className='bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border cursor-pointer hover:scale-105 transition-all duration-300'
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
       >
-        <div onClick={onClick} className="w-full h-full">
         {/* Header */}
         <div className='flex items-start justify-between pb-3'>
           <div className='flex items-center gap-2 sm:gap-3'>
@@ -113,7 +121,6 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
             <span className='text-xs text-gray-500 dark:text-neutral-400'>Creada: {createdAt}</span>
           </div>
         </div>
-      </div>
       </CardBody>
     </CardContainer>
   );
