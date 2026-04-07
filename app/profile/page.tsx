@@ -755,7 +755,7 @@ export default function ProfilePage() {
                     <Label htmlFor='estado_civil'>Estado Civil</Label>
                     <Select
                       value={userData.estado_civil || ''}
-                      onValueChange={value => setUserData({ ...userData, estado_civil: value })}
+                      onValueChange={(value: string) => setUserData({ ...userData, estado_civil: value })}
                       disabled={!isEditing}
                     >
                       <SelectTrigger className='rounded-full'>
@@ -787,10 +787,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <Label htmlFor='rol_id'>Rol</Label>
+                    <Label htmlFor='estado_civil'>Estado Civil</Label>
                     <Select
-                      value={userData.rol_id ? userData.rol_id.toString() : ''}
-                      onValueChange={value => setUserData({ ...userData, rol_id: parseInt(value) })}
+                      value={userData.estado_civil || ''}
+                      onValueChange={(value: string) => setUserData({ ...userData, estado_civil: value })}
                       disabled={!isEditing}
                     >
                       <SelectTrigger className='rounded-full'>
@@ -898,7 +898,7 @@ export default function ProfilePage() {
                     <Label htmlFor='estado_civil'>Estado Civil</Label>
                     <Select
                       value={userData.estado_civil || ''}
-                      onValueChange={value => setUserData({ ...userData, estado_civil: value })}
+                      onValueChange={(value: string) => setUserData({ ...userData, estado_civil: value })}
                       disabled={!isEditing}
                     >
                       <SelectTrigger className='rounded-full'>
