@@ -49,7 +49,7 @@ export const GET = withAppApiWrapper(async (request: Request, { params }: { para
 
 async function getPropinaDetail(id: string) {
   // Obtener detalle de la propina
-  const detalPropina = await query(`
+  const detalPropina = await query<any[]>(`
     SELECT 
       dp.id_detalle_propina,
       dp.monto,
@@ -82,7 +82,7 @@ async function getPropinaDetail(id: string) {
   const dp = detalPropina[0];
 
   // Obtener información del usuario que recibió la propina
-  const usuario = await query(`
+  const usuario = await query<any[]>(`
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, u.foto
     FROM usuarios u WHERE u.id_usuario = ?
   `, [dp.usuario_id]);
@@ -90,7 +90,7 @@ async function getPropinaDetail(id: string) {
   // Obtener información del garzón (quién hizo la venta)
   let garzon = null;
   if (dp.venta_id) {
-    const garzonData = await query(`
+    const garzonData = await query<any[]>(`
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_ventas dv
       INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
@@ -102,7 +102,7 @@ async function getPropinaDetail(id: string) {
   // Obtener Cajero
   let cajero = null;
   if (dp.venta_id) {
-    const cajeroData = await query(`
+    const cajeroData = await query<any[]>(`
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM ventas v2
       INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
@@ -112,9 +112,9 @@ async function getPropinaDetail(id: string) {
   }
 
   // Obtener detalles del pedido/venta
-  let detalles = [];
+  let detalles: any[] = [];
   if (dp.venta_id) {
-    detalles = await query(`
+    detalles = await query<any[]>(`
       SELECT dv.cantidad, dv.sub_total as subtotal, p.nombre as producto_nombre
       FROM detalle_ventas dv
       INNER JOIN productos p ON p.id_producto = dv.producto_id
@@ -123,9 +123,9 @@ async function getPropinaDetail(id: string) {
   }
 
   // Obtener todas las propinas de esta venta (para mostrar cómo se dividió)
-  let propinas_detalle = [];
+  let propinas_detalle: any[] = [];
   if (dp.venta_id) {
-    propinas_detalle = await query(`
+    propinas_detalle = await query<any[]>(`
       SELECT dp2.monto, u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_propinas dp2
       INNER JOIN propinas p2 ON p2.id_propina = dp2.propina_id
@@ -137,7 +137,7 @@ async function getPropinaDetail(id: string) {
   // Obtener tiempo del servicio si aplica
   let tiempo = null;
   if (dp.venta_id) {
-    const tiempoData = await query(`
+    const tiempoData = await query<any[]>(`
       SELECT TIMESTAMPDIFF(MINUTE, v.hora_inicio, v.hora_fin) as minutos
       FROM servicios v WHERE v.id_servicio = ?
     `, [dp.venta_id]);

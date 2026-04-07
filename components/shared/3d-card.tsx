@@ -68,10 +68,18 @@ export const CardContainer = ({
 
 export const CardBody = ({
   children,
-  className
+  className,
+  onClick,
+  role,
+  tabIndex,
+  onKeyDown
 }: {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
+  role?: string;
+  tabIndex?: number;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
 }) => {
   const { mouseX, mouseY, isHovered } = useContext(MouseEnterContext);
   const ref = useRef<HTMLDivElement>(null);
@@ -106,6 +114,10 @@ export const CardBody = ({
     <div
       ref={ref}
       className={`group-hover/card:shadow-2xl group-hover/card:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-6 border transition-all duration-300 ease-out ${className}`}
+      onClick={onClick}
+      role={role}
+      tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
     >
       {children}
     </div>

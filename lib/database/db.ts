@@ -45,7 +45,16 @@ pool.on('connection', async (connection: any) => {
 
 
 export type TransactionQuery = <R>(sql: string, params?: any[]) => Promise<R>;
-export async function query<T>(sql: string, params: any[] = []): Promise<T> {
+
+/**
+ * Database query function - returns an array of objects by default
+ * Use query<SpecificType[]>(...) for typed results
+ * 
+ * @example
+ * const users = await query<{id: number, name: string}[]>('SELECT id, name FROM users')
+ * const rows = await query('SELECT * FROM users') // returns any[] - access properties directly
+ */
+export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
   const safeParams = (params || []).map(p => (p === undefined ? null : p));
 
   try {
@@ -53,7 +62,7 @@ export async function query<T>(sql: string, params: any[] = []): Promise<T> {
       ? await pool.execute(sql, safeParams)
       : await pool.query(sql);
 
-    return (rows || []) as unknown as T;
+    return (rows || []) as T;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Database query failed:', { sql, safeParams, error });
