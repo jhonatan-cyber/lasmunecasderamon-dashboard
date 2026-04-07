@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
-import { solicitarAnulacionServicio } from '@/lib/business/serviciosUtils';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 
 interface UseServiceAnulacionFormProps {
@@ -33,7 +32,19 @@ export function useServiceAnulacionForm({
     setIsLoading(true);
 
     try {
-      const result = await solicitarAnulacionServicio(Number(servicio.id_servicio!), motivo);
+      // Llamar a la API en lugar de usar la función directamente
+      const response = await fetch('/api/servicios/solicitud-anulacion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          servicioId: servicio.id_servicio,
+          motivo
+        })
+      });
+
+      const result = await response.json();
 
       if (result.success) {
         showSuccessToast('Solicitud de anulación enviada al administrador');

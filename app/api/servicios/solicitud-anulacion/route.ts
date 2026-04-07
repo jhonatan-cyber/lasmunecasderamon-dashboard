@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/database/db';
+import { query, generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -31,4 +32,35 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({ success: true, solicitud: rows[0] });
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { servicioId, motivo } = body;
+
+    if (!servicioId || !motivo) {
+      return NextResponse.json(
+        { success: false, message: 'Faltan datos requeridos' },
+        { status: 400 }
+      );
+    }
+
+    const now = getNowInBusinessTimezone();
+    const token = generateUUID();
+
+    await query(
+      `INSERT INTO solicitudes_anulacion_servicios (id, token, servicio_id, motivo, solicitado_por, fecha_solicitud, estado)
+       VALUES (?, ?, ?, ?, NULL, ?, 'pendiente')`,
+      [generateUUID(), token, Number(servicioId), motivo, now]
+    );
+
+    return NextResponse.json({ success: true, token });
+  } catch (error: any) {
+    console.error('Error al solicitar anulación:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
 }

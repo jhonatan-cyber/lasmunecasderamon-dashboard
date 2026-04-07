@@ -51,7 +51,7 @@ export function MaritalStatusSelect({
             </span>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
-                <SelectTrigger className='pl-12 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'>
+                <SelectTrigger className='pl-12 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10 w-full'>
                   <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
               </FormControl>
@@ -60,7 +60,7 @@ export function MaritalStatusSelect({
                   <SelectItem
                     key={status.value}
                     value={status.value}
-                    className='rounded-lg'
+                    className='rounded-full'
                   >
                     {status.label}
                   </SelectItem>
