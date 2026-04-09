@@ -1,75 +1,140 @@
-# Las Munecas de Ramon Web
+# Las Muñecas de Ramón Web
 
-Aplicacion `Next.js 16` que combina el sitio publico y el panel operativo interno.
+Aplicación **Next.js 16** que combina el sitio público y el panel operativo
+interno.
 
-## Scripts principales
+## 🏗️ Arquitectura
 
-```bash
-corepack pnpm install
-corepack pnpm dev
-corepack pnpm lint
-corepack pnpm typecheck
-corepack pnpm build
-corepack pnpm audit:web:quality
-corepack pnpm audit:web:quality:json
-corepack pnpm audit:web:quality:ci
-corepack pnpm test:e2e:smoke
+El proyecto está migrando a una estructura **DDD (Domain-Driven Design)**:
+
+```
+src/
+├── domains/           # Dominios DDD (en desarrollo)
+│   ├── usuarios/     # users, clients, roles
+│   ├── pedidos/      # orders, sales, products
+│   ├── pagos/        # accounts, tips, commissions
+│   ├── reportes/     # stats, payroll
+│   └── asistencia/   # attendance, calendar
+├── components/
+│   └── common/       # Barrel exports de componentes
+types/                # Tipos TypeScript globales
 ```
 
-## Calidad y validaciones
+## 🚀 Scripts Principales
 
-- `lint`: revisa el codigo con ESLint compatible con Next 16.
-- `typecheck`: expone deuda de TypeScript sin ocultarla dentro del build.
-- `audit:web:quality`: ejecuta el skill local `@web-quality-audit` y devuelve un reporte Markdown con hallazgos por severidad.
-- `audit:web:quality:json`: genera la misma auditoria en JSON para CI, artifacts y automatizaciones.
-- `audit:web:quality:ci`: usa umbrales por categoria para bloquear hallazgos `high` de `Accessibility`, `SEO` y `Best Practices`.
-- `test:e2e:smoke`: valida landing, login y pagina legal publica.
-- `build`: compila la app con chequeo de tipos y limpia artefactos corruptos de `.next/dev/types` antes de producir el build.
+```bash
+# Install
+corepack pnpm install
 
-## Skill local `@web-quality-audit`
+# Desarrollo
+corepack pnpm dev
 
-Este repo incluye un skill local en [SKILL.md](D:/DEV/lasmuñecasderamon.com/lasmunecasderamon/.agents/skills/web-quality-audit/SKILL.md). No forma parte del catalogo global de la sesion; se usa dentro de este proyecto.
+# Calidad
+pnpm lint              # ESLint
+pnpm typecheck        # TypeScript
+pnpm build            # Build producción
 
-Usalo cuando necesites una revision web enfocada en:
+# Testing
+pnpm test:unit        # Tests unitarios (Vitest)
+pnpm test:unit:coverage  # Con coverage
+pnpm test:e2e         # Tests E2E (Playwright)
+pnpm test:ci          # Tests completos para CI
 
-- Performance
-- Accessibility
-- SEO
-- Best Practices
+# Auditoría web
+pnpm audit:web:quality
+pnpm audit:web:quality:json
+pnpm audit:web:quality:ci
+```
 
-Contrato esperado al invocarlo con prompts como `usa @web-quality-audit`:
+## ✅ Calidad y Validaciones
 
-1. inspeccionar el repo y los artefactos publicos;
-2. ejecutar el runner si hay build disponible;
-3. devolver hallazgos en `Critical`, `High`, `Medium` y `Low`;
-4. cerrar con prioridades concretas de correccion.
+| Script              | Descripción                                          |
+| ------------------- | ---------------------------------------------------- |
+| `lint`              | Revisa el código con ESLint compatible con Next 16   |
+| `typecheck`         | Expone deuda de TypeScript sin ocultarla en el build |
+| `test:unit`         | Tests unitarios con Vitest                           |
+| `test:e2e`          | Tests E2E con Playwright                             |
+| `audit:web:quality` | Auditoría de Performance, Accessibility, SEO         |
 
-Salidas esperadas:
+## 🧪 Testing
 
-- Markdown legible para terminal o review humano.
-- JSON estructurado para CI y artifacts.
-- Umbrales configurables por severidad global o por categoria, por ejemplo `Accessibility:high,SEO:high,Best Practices:high`.
+### Unit Tests (Vitest)
 
-## Variables y entorno
+```bash
+pnpm test:unit           # Ejecutar tests
+pnpm test:unit:watch     # Modo watch
+pnpm test:unit:coverage  # Con coverage report
+```
 
-- `NEXT_PUBLIC_BASE_URL`
-- `NEXT_PUBLIC_API_URL`
-- `NEXT_PUBLIC_SOCKET_URL`
-- variables de base de datos/Twilio usadas en deploy
+Ubicación: `tests/unit/`
 
-## Flujo recomendado
+### E2E Tests (Playwright)
 
-1. Ejecutar `corepack pnpm lint`.
-2. Ejecutar `corepack pnpm typecheck` y revisar errores conocidos.
-3. Ejecutar `corepack pnpm test:e2e:smoke`.
-4. Ejecutar `corepack pnpm audit:web:quality`.
-5. Ejecutar `corepack pnpm build` antes de desplegar.
+```bash
+pnpm test:e2e           # Todos los tests
+pnpm test:e2e:smoke      # Solo smoke tests
+pnpm test:e2e:headed    # Con UI
+```
 
-## Checklist manual de release
+Ubicación: `tests/e2e/`
 
-- Revisar landing en movil y desktop.
-- Validar login y redireccion protegida.
-- Confirmar `robots.txt`, `sitemap.xml` y `manifest.json`.
-- Verificar modo oscuro, focus visible y `prefers-reduced-motion`.
-- Revisar el artifact de `web-quality-audit` en CI si hubo nuevos hallazgos.
-- Tomar en serio cualquier `high` de `Accessibility`, `SEO` o `Best Practices`, porque ahora pueden bloquear CI.
+## 📁 Estructura de Carpetas
+
+| Carpeta        | Descripción                                            |
+| -------------- | ------------------------------------------------------ |
+| `app/`         | Next.js App Router páginas (+60 páginas)               |
+| `components/`  | Componentes React (shadcn/ui + custom)                 |
+| `lib/`         | Lógica de negocio, repositories, services, API helpers |
+| `src/domains/` | Nueva estructura DDD (en migración)                    |
+| `tests/`       | Tests unitarios y E2E                                  |
+| `types/`       | Tipos TypeScript globales                              |
+| `.agents/`     | Skills de agentes (QA, SEO, etc.)                      |
+
+## 🌐 Variables de Entorno
+
+```env
+NEXT_PUBLIC_BASE_URL=
+NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_SOCKET_URL=
+DB_HOST=
+DB_USER=
+DB_PASSWORD=
+JWT_SECRET=
+```
+
+## 📋 Flujo de Desarrollo Recomendado
+
+```bash
+# 1. Lint
+pnpm lint
+
+# 2. TypeScript
+pnpm typecheck
+
+# 3. Tests unitarios
+pnpm test:unit
+
+# 4. Tests E2E (opcional en dev local)
+pnpm test:e2e:smoke
+
+# 5. Auditoría web (opcional)
+pnpm audit:web:quality
+
+# 6. Build
+pnpm build
+```
+
+## 🤝 Contributing
+
+Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para guías de contribución.
+
+## 📊 Plan de Mejoras
+
+El proyecto tiene un plan de mejoras activo. Ver
+[PLAN-MEJORAS.md](./PLAN-MEJORAS.md) para el estado actual.
+
+## 📚 Documentación Adicional
+
+- [Skill Web Quality](./.agents/skills/web-quality-audit/SKILL.md)
+- [Plan de Mejoras](./PLAN-MEJORAS.md)
+- [Contributing](./CONTRIBUTING.md)
