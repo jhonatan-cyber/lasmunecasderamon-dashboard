@@ -92,7 +92,7 @@ export default function AttendancePage() {
     );
   }, [users]);
 
-  // Polling del código de asistencia
+  // Escuchar cambios en tiempo real via SSE (sin polling)
   useEffect(() => {
     if (!selectedUserForQR) return;
     const fetchCodigo = async () => {
@@ -103,8 +103,20 @@ export default function AttendancePage() {
       } catch {}
     };
     fetchCodigo();
-    const interval = setInterval(fetchCodigo, 3000);
-    return () => clearInterval(interval);
+
+    const es = new EventSource('/api/notifications/sse');
+    es.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'code_changed' && payload.data?.codigo) {
+          setCodigoAsistencia(payload.data.codigo);
+        }
+      } catch { }
+    };
+
+    return () => {
+      es.close();
+    };
   }, [selectedUserForQR?.id]);
 
   // Polling para actualización del QR en tiempo real
