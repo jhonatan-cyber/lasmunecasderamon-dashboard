@@ -1,3 +1,5 @@
+'use client';
+
 import { Mail, Lock, Eye, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

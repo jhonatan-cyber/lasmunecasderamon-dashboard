@@ -2,7 +2,7 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
-  allowedDevOrigins: ['e03a-192-223-121-195.ngrok-free.app', '*.ngrok-free.app'],
+  allowedDevOrigins: ['e03a-192-223-121-195.ngrok-free.app', '*.ngrok-free.app', 'dev.xn--lasmuecasderamon-bub.com', 'dev.lasmuñecasderamon.com'],
   
   images: {
     unoptimized: true,

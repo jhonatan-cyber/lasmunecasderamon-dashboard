@@ -87,8 +87,21 @@ export default function Dashboard() {
       } catch { }
     };
     fetchCodigo();
-    const interval = setInterval(fetchCodigo, 3000);
-    return () => clearInterval(interval);
+
+    // Escuchar cambios en tiempo real via SSE (sin polling)
+    const es = new EventSource('/api/notifications/sse');
+    es.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'code_changed' && payload.data?.codigo) {
+          setCodigoAsistencia(payload.data.codigo);
+        }
+      } catch { }
+    };
+
+    return () => {
+      es.close();
+    };
   }, [user?.qr_token, user?.role]);
 
   const isCajero = user?.role?.toLowerCase() === 'cajero';
