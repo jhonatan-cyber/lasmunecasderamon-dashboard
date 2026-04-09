@@ -19,10 +19,15 @@ export const GET = withAppApiWrapper(async () => {
     // Verificar si hay códigos en la tabla
     let res = await query<any[]>('SELECT codigo FROM codigos ORDER BY fecha_crea DESC LIMIT 1');
     
-    // Si no hay códigos, crear uno automáticamente
-    if (res.length === 0) {
+    // Si no hay códigos o el formato es incorrecto (no son 4 dígitos), crear uno nuevo
+    const isValidCode = res.length > 0 && /^\d{4}$/.test(res[0].codigo);
+    
+    if (res.length === 0 || !isValidCode) {
       const newCode = generateRandomCode4();
       const newId = crypto.randomUUID();
+      
+      // Limpiar códigos anteriores
+      await query('DELETE FROM codigos');
       
       await query(
         'INSERT INTO codigos (id_codigo, codigo, fecha_crea, estado) VALUES (?, ?, NOW(), ?)',

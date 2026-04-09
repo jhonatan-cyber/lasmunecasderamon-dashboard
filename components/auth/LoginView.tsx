@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import { useLoginForm } from '@/hooks/auth/useLoginForm';
 import { LoginForm } from './LoginForm';
