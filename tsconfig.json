@@ -6,6 +6,7 @@
     "skipLibCheck": true,
     "strict": false,
     "noImplicitAny": false,
+    "strictNullChecks": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -20,7 +21,15 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/components/common/*": ["./src/components/common/*"],
+      "@/domains/*": ["./src/domains/*"],
+      "@/domains/usuarios/*": ["./src/domains/usuarios/*"],
+      "@/domains/pedidos/*": ["./src/domains/pedidos/*"],
+      "@/domains/pagos/*": ["./src/domains/pagos/*"],
+      "@/domains/reportes/*": ["./src/domains/reportes/*"],
+      "@/domains/asistencia/*": ["./src/domains/asistencia/*"],
+      "@/domains/shared/*": ["./src/domains/shared/*"]
     }
   },
   "include": [

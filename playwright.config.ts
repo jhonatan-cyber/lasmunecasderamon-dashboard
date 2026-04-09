@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-const port = 3100;
+const port = process.env.PORT || '3100';
+const baseUrl = process.env.BASE_URL || `http://127.0.0.1:${port}`;
 const configDir = __dirname;
 const nextBin = path.join(configDir, 'node_modules', 'next', 'dist', 'bin', 'next');
 const webServerCommand =
@@ -16,7 +17,7 @@ export default defineConfig({
   fullyParallel: false,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
-    baseURL: `http://127.0.0.1:${port}`,
+    baseURL: baseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -24,9 +25,9 @@ export default defineConfig({
   },
   webServer: {
     command: webServerCommand,
-    url: `http://127.0.0.1:${port}`,
+    url: baseUrl,
     timeout: 120_000,
-    reuseExistingServer: false
+    reuseExistingServer: !process.env.CI
   },
   projects: [
     {
