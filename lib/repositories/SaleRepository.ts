@@ -43,6 +43,13 @@ export class SaleRepository {
       .filter((item: MixedPayment) => item.metodo && item.monto > 0);
   }
 
+  private static normalizeSolicitudStatus(status: string): 'confirmada' | 'rechazada' {
+    const normalized = String(status || '').toLowerCase();
+    return normalized === 'aprobado' || normalized === 'confirmado' || normalized === 'confirmada'
+      ? 'confirmada'
+      : 'rechazada';
+  }
+
   private static allocateProportionally<T>(
     rows: T[],
     getAmount: (row: T) => number,
@@ -774,15 +781,17 @@ export class SaleRepository {
   static async processAnulacion(
     requestId: string,
     approvedBy: string,
-    status: 'aprobado' | 'rechazado'
+    status: string
   ): Promise<SaleType | null> {
     const now = getNowInBusinessTimezone();
+    const nextStatus = this.normalizeSolicitudStatus(status);
+    const shouldApprove = nextStatus === 'confirmada';
     let ventaId: string | null = null;
 
     await withTransaction(async trx => {
       await trx(
         'UPDATE solicitudes_anulacion_ventas SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
-        [status, approvedBy, now, requestId]
+        [nextStatus, approvedBy, now, requestId]
       );
       const req = await trx<any[]>(
         'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?',
@@ -790,7 +799,7 @@ export class SaleRepository {
       );
       if (req.length > 0) {
         ventaId = req[0].venta_id;
-        if (status === 'rechazado') {
+        if (!shouldApprove) {
           const ventaRows = await trx<any[]>(
             'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ?',
             [ventaId]
@@ -809,7 +818,7 @@ export class SaleRepository {
     });
 
     if (!ventaId) return null;
-    if (status === 'aprobado') {
+    if (shouldApprove) {
       const requestRows = await query<any[]>(
         'SELECT monto FROM solicitudes_anulacion_ventas WHERE id = ? LIMIT 1',
         [requestId]

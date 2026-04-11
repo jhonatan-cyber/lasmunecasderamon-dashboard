@@ -37,20 +37,16 @@ export async function POST(request: Request) {
   await processPendingSolicitud(
     {
       tipo: 'venta',
+      solicitud_id: solicitud.id,
       id_venta: solicitud.id_venta,
       codigo: solicitud.codigo,
       cliente_nombre: solicitud.cliente_nombre,
       total: Number(solicitud.total || 0),
-      monto: Number(solicitud.monto || 0),
+      monto: Number(solicitud.monto || 0)
     },
     action,
     adminWhatsApp
   );
-
-  await query('UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?', [
-    action === 'confirmar' ? 'confirmada' : 'rechazada',
-    solicitud.id,
-  ]);
 
   return NextResponse.json({ success: true });
 }
