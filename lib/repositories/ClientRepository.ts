@@ -2,8 +2,20 @@ import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ClientSchema, type ClientType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
+import { CashRegisterRepository } from './CashRegisterRepository';
+import { BusinessError } from '@/lib/errors/errors';
 
 export class ClientRepository {
+  private static getPrepagoCajaDeltas(monto: number, metodoPago?: string) {
+    const metodo = String(metodoPago || 'efectivo');
+    return {
+      efectivo: metodo === 'efectivo' ? monto : 0,
+      tarjeta: metodo === 'tarjeta' ? monto : 0,
+      transferencia: metodo === 'transferencia' ? monto : 0,
+      prepago: monto
+    };
+  }
+
   private static mapClientFromDB(row: any): ClientType {
     return ClientSchema.parse({
       id: row.id_cliente,
@@ -244,6 +256,14 @@ export class ClientRepository {
     const { withTransaction } = await import('@/lib/database/db');
 
     await withTransaction(async trx => {
+      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
+      if (!idCaja) {
+        throw new BusinessError(
+          'No hay una caja abierta para registrar la recarga prepago',
+          'NO_CAJA_ABIERTA'
+        );
+      }
+
       await BaseRepository.insert(trx, 'clientes_prepago_movimientos', {
         id_movimiento: moveId,
         cliente_id: data.cliente_id,
@@ -259,6 +279,12 @@ export class ClientRepository {
         data.monto,
         data.cliente_id
       ]);
+
+      await CashRegisterRepository.updateBalances(
+        trx,
+        idCaja,
+        this.getPrepagoCajaDeltas(data.monto, data.metodo_pago)
+      );
     });
   }
 }
