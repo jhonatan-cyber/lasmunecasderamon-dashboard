@@ -57,7 +57,8 @@ async function notifySolicitudResolution(
      WHERE LOWER(r.nombre) IN ('administrador', 'cajero')`
   )) as NotificationRecipientRow[];
 
-  const entidad = solicitud.tipo === 'venta' ? 'venta' : solicitud.tipo === 'cuenta' ? 'cuenta' : 'servicio';
+  const entidad =
+    solicitud.tipo === 'venta' ? 'venta' : solicitud.tipo === 'cuenta' ? 'cuenta' : 'servicio';
   const actionText = accion === 'confirmar' ? 'aprobada' : 'rechazada';
   const title = `Solicitud de anulacion ${actionText}`;
   const body = `La ${entidad} ${solicitud.codigo} de ${solicitud.cliente_nombre} fue ${estadoTexto}.`;
@@ -67,7 +68,7 @@ async function notifySolicitudResolution(
     clienteNombre: solicitud.cliente_nombre,
     total: Number(solicitud.total || 0),
     accion,
-    estadoTexto,
+    estadoTexto
   };
 
   for (const recipient of recipients) {
@@ -77,7 +78,7 @@ async function notifySolicitudResolution(
       titulo: title,
       mensaje: body,
       estado: 1,
-      data: JSON.stringify(payload),
+      data: JSON.stringify(payload)
     });
   }
 
@@ -87,7 +88,7 @@ async function notifySolicitudResolution(
   const pushBody = `${solicitud.codigo} - ${solicitud.cliente_nombre}`;
   await Promise.allSettled([
     sendPushByRole('cajero', pushTitle, pushBody, payload),
-    sendPushByRole('administrador', pushTitle, pushBody, payload),
+    sendPushByRole('administrador', pushTitle, pushBody, payload)
   ]);
 }
 
@@ -103,7 +104,10 @@ async function adjustCuentaCommission(
     [cuentaId]
   )) as CuentaCommissionRow[];
 
-  const currentCommissionTotal = detailRows.reduce((sum, row) => sum + Number(row.comision || 0), 0);
+  const currentCommissionTotal = detailRows.reduce(
+    (sum, row) => sum + Number(row.comision || 0),
+    0
+  );
   if (currentCommissionTotal <= 0) {
     await dbQuery('UPDATE cuentas SET total_comision = ? WHERE id_cuenta = ?', [0, cuentaId]);
     return 0;
@@ -114,12 +118,12 @@ async function adjustCuentaCommission(
       ? Math.round((currentCommissionTotal * remainingTotal) / currentTotal)
       : 0;
 
-  const baseRows = detailRows.map((row) => ({
+  const baseRows = detailRows.map(row => ({
     ...row,
     nextComision:
       remainingCommission > 0
         ? Math.floor((Number(row.comision || 0) * remainingCommission) / currentCommissionTotal)
-        : 0,
+        : 0
   }));
 
   let assigned = baseRows.reduce((sum, row) => sum + row.nextComision, 0);
@@ -145,13 +149,13 @@ async function adjustCuentaCommission(
   for (const row of baseRows) {
     await dbQuery('UPDATE detalle_cuentas SET comision = ? WHERE id_detalle_cuenta = ?', [
       row.nextComision,
-      row.id_detalle_cuenta,
+      row.id_detalle_cuenta
     ]);
   }
 
   await dbQuery('UPDATE cuentas SET total_comision = ? WHERE id_cuenta = ?', [
     remainingCommission,
-    cuentaId,
+    cuentaId
   ]);
 
   return remainingCommission;
@@ -168,26 +172,33 @@ export async function processPendingSolicitud(
         ? 0
         : solicitud.tipo === 'cuenta'
           ? 3
-        : 3
+          : 3
       : 1;
   const estadoTexto =
     accion === 'confirmar'
       ? solicitud.tipo === 'venta'
-        ? (Number(solicitud.monto || 0) > 0 && Number(solicitud.monto || 0) < Number(solicitud.total || 0)
-            ? 'anulada parcialmente'
-            : 'anulada')
+        ? Number(solicitud.monto || 0) > 0 &&
+          Number(solicitud.monto || 0) < Number(solicitud.total || 0)
+          ? 'anulada parcialmente'
+          : 'anulada'
         : solicitud.tipo === 'cuenta'
           ? 'anulada'
-        : 'devuelto'
+          : 'devuelto'
       : solicitud.tipo === 'venta'
         ? 'activa'
         : solicitud.tipo === 'cuenta'
           ? 'activa'
-        : 'activo';
+          : 'activo';
 
   const now = getNowInBusinessTimezone();
   if (solicitud.tipo === 'venta') {
-    if (accion === 'confirmar' && solicitud.id_venta) {
+    if (solicitud.solicitud_id) {
+      await SaleRepository.processAnulacion(
+        solicitud.solicitud_id,
+        'whatsapp',
+        accion === 'confirmar' ? 'confirmada' : 'rechazada'
+      );
+    } else if (accion === 'confirmar' && solicitud.id_venta) {
       await SaleRepository.approveAnulacion(
         solicitud.id_venta,
         'whatsapp',
@@ -205,25 +216,26 @@ export async function processPendingSolicitud(
       await dbQuery('UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?', [
         nextState,
         now,
-        solicitud.id_venta,
+        solicitud.id_venta
       ]);
     }
   } else if (solicitud.tipo === 'cuenta') {
     const requestedAmount = Number(solicitud.monto || 0);
-    const cuentaInfo = (await dbQuery(
-      'SELECT total FROM cuentas WHERE id_cuenta = ? LIMIT 1',
-      [solicitud.id_cuenta]
-    )) as Array<{ total: number }>;
+    const cuentaInfo = (await dbQuery('SELECT total FROM cuentas WHERE id_cuenta = ? LIMIT 1', [
+      solicitud.id_cuenta
+    ])) as Array<{ total: number }>;
 
     const currentTotal = Number(cuentaInfo[0]?.total || 0);
     const remainingTotal = Math.max(0, currentTotal - requestedAmount);
-    const nextCuentaState = accion === 'confirmar'
-      ? (remainingTotal > 0 ? 4 : 3)
-      : 1;
+    const nextCuentaState = accion === 'confirmar' ? (remainingTotal > 0 ? 4 : 3) : 1;
 
     let nextCommissionTotal = 0;
     if (accion === 'confirmar') {
-      nextCommissionTotal = await adjustCuentaCommission(solicitud.id_cuenta, currentTotal, remainingTotal);
+      nextCommissionTotal = await adjustCuentaCommission(
+        solicitud.id_cuenta,
+        currentTotal,
+        remainingTotal
+      );
     } else {
       const commissionRows = (await dbQuery(
         'SELECT COALESCE(SUM(comision), 0) as total FROM detalle_cuentas WHERE cuenta_id = ?',
@@ -234,7 +246,13 @@ export async function processPendingSolicitud(
 
     await dbQuery(
       'UPDATE cuentas SET total = ?, total_comision = ?, estado = ?, fecha_mod = ? WHERE id_cuenta = ?',
-      [accion === 'confirmar' ? remainingTotal : currentTotal, nextCommissionTotal, nextCuentaState, now, solicitud.id_cuenta]
+      [
+        accion === 'confirmar' ? remainingTotal : currentTotal,
+        nextCommissionTotal,
+        nextCuentaState,
+        now,
+        solicitud.id_cuenta
+      ]
     );
 
     if (solicitud.solicitud_id) {
@@ -259,7 +277,7 @@ export async function processPendingSolicitud(
     clienteNombre: solicitud.cliente_nombre,
     total: solicitud.total || 0,
     action: accion,
-    estadoTexto,
+    estadoTexto
   });
 
   await notifySolicitudResolution(solicitud, accion, estadoTexto);

@@ -1,4 +1,4 @@
-import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+﻿import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { CajaSchema, type CajaType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from './BaseRepository';
@@ -84,7 +84,7 @@ export class CashRegisterRepository {
     const knownEntries = entries.filter(([k]) => k in columnMap);
     if (knownEntries.length === 0) return;
 
-    // Deduplicate by mapped column name (e.g. both 'venta' and 'cuenta' → 'venta'), summing their values
+    // Deduplicate by mapped column name (e.g. both 'venta' and 'cuenta' â†’ 'venta'), summing their values
     const colTotals: Record<string, number> = {};
     for (const [k, v] of knownEntries) {
       const col = columnMap[k];
@@ -177,10 +177,15 @@ export class CashRegisterRepository {
 
   static async open(usuario_id: string, monto_apertura: number): Promise<CajaType | null> {
     const open = await query<any[]>(
-      'SELECT id_caja FROM cajas WHERE usuario_id_apertura = ? AND estado = 1',
-      [usuario_id]
+      'SELECT id_caja, usuario_id_apertura FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     );
-    if (open.length > 0) throw new ConflictError('Usuario ya tiene una caja abierta');
+    if (open.length > 0) {
+      const currentOpenUserId = String(open[0].usuario_id_apertura || '');
+      if (currentOpenUserId === String(usuario_id)) {
+        throw new ConflictError('Usuario ya tiene una caja abierta');
+      }
+      throw new ConflictError('Ya existe una caja abierta');
+    }
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
