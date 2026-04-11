@@ -25,15 +25,16 @@ export async function POST(request: Request) {
     if (numeroRemitente !== adminWhatsApp) return NextResponse.json({ message: 'No autorizado' });
 
     // Fetch pending items (logic from original handler)
-    const [ventasPendientes, serviciosPendientes, cuentasPendientes, anticiposPendientes] = await Promise.all([
-      query(
-        `SELECT v.id_venta, v.codigo, v.total, COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre, v.fecha_mod FROM ventas v LEFT JOIN clientes c ON v.id_cliente = c.id_cliente WHERE v.estado = 2 ORDER BY v.fecha_mod DESC`
-      ),
-      query(
-        `SELECT s.id_servicio, s.codigo, s.total, COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre, s.fecha_mod FROM servicios s LEFT JOIN clientes c ON s.cliente_id = c.id_cliente WHERE s.estado = 2 ORDER BY s.fecha_mod DESC`
-      ),
-      query(
-        `SELECT sac.id as solicitud_id, sac.cuenta_id as id_cuenta, sac.monto, c.codigo, c.total,
+    const [ventasPendientes, serviciosPendientes, cuentasPendientes, anticiposPendientes] =
+      await Promise.all([
+        query(
+          `SELECT v.id_venta, v.codigo, v.total, COALESCE(CONCAT(c.nombre, " ", c.apellido), 'Sin cliente registrado') as cliente_nombre, v.fecha_mod FROM ventas v LEFT JOIN clientes c ON v.id_cliente = c.id_cliente WHERE v.estado = 2 ORDER BY v.fecha_mod DESC`
+        ),
+        query(
+          `SELECT s.id_servicio, s.codigo, s.total, COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre, s.fecha_mod FROM servicios s LEFT JOIN clientes c ON s.cliente_id = c.id_cliente WHERE s.estado = 2 ORDER BY s.fecha_mod DESC`
+        ),
+        query(
+          `SELECT sac.id as solicitud_id, sac.cuenta_id as id_cuenta, sac.monto, c.codigo, c.total,
                 COALESCE(cl.nombre, 'Sin cliente registrado') as cliente_nombre,
                 COALESCE(sac.fecha_mod, sac.fecha_crea) as fecha_mod
          FROM solicitudes_anulacion_cuentas sac
@@ -41,11 +42,11 @@ export async function POST(request: Request) {
          LEFT JOIN clientes cl ON c.cliente_id = cl.id_cliente
          WHERE sac.estado = 'pendiente'
          ORDER BY COALESCE(sac.fecha_mod, sac.fecha_crea) DESC`
-      ),
-      query(
-        `SELECT a.id_anticipo as id, a.monto, CONCAT(u.nombre, ' ', u.apellido) as empleado_nombre, u.nick as empleado_nick, a.fecha_crea as fecha_mod FROM anticipos a INNER JOIN usuarios u ON a.usuario_id = u.id_usuario WHERE a.estado = 2 ORDER BY a.fecha_crea DESC`
-      )
-    ]);
+        ),
+        query(
+          `SELECT a.id_anticipo as id, a.monto, CONCAT(u.nombre, ' ', u.apellido) as empleado_nombre, u.nick as empleado_nick, a.fecha_crea as fecha_mod FROM anticipos a INNER JOIN usuarios u ON a.usuario_id = u.id_usuario WHERE a.estado = 2 ORDER BY a.fecha_crea DESC`
+        )
+      ]);
 
     const todasLasSolicitudes = [
       ...(ventasPendientes as any[]).map(v => ({ ...v, tipo: 'venta' })),
@@ -93,7 +94,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ message: 'Mensaje no reconocido' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

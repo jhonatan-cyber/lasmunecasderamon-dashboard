@@ -4,6 +4,8 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
+import { logger } from '@/lib/utils/logger';
+import { NotFoundError } from '@/lib/errors/errors';
 
 type MixedPayment = {
   metodo: string;
@@ -102,7 +104,7 @@ export class SaleRepository {
     );
 
     if (!ventaRows.length) {
-      throw new Error('Venta no encontrada');
+      throw new NotFoundError('Venta', ventaId);
     }
 
     const venta = ventaRows[0];
@@ -381,7 +383,7 @@ export class SaleRepository {
         anfitrionas_nicks: row.anfitrionas_nicks || null,
       });
     } catch (err) {
-      console.warn('[SaleRepository] Skipping invalid sale row:', row.id_venta, err);
+      logger.warn('[SaleRepository] Skipping invalid sale row:', { id: row.id_venta, err });
       return null;
     }
   }
@@ -590,7 +592,7 @@ export class SaleRepository {
       'SELECT estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, propina, total_comision, pagos_mixtos FROM ventas WHERE id_venta = ?',
       [id]
     );
-    if (prev.length === 0) throw new Error('Venta no encontrada');
+    if (prev.length === 0) throw new NotFoundError('Venta', id);
     const estadoAnterior = prev[0].estado;
     const habitacionId = prev[0].habitacion_id;
     const clienteId = prev[0].cliente_id;

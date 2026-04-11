@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { RoomRepository } from '@/lib/repositories/RoomRepository';
 import { RoomService } from '@/lib/services/RoomService';
 
@@ -22,13 +22,13 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppApiWrapper(async (request: Request) => {
+export const POST = withAppAuth(async (request: Request) => {
   const body = await request.json();
   const data = await RoomService.createRoom(body);
   return NextResponse.json({ success: true, message: 'Habitación creada', data }, { status: 201 });
 });
 
-export const PUT = withAppApiWrapper(async (request: Request) => {
+export const PUT = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const body = await request.json();
@@ -45,7 +45,7 @@ export const PUT = withAppApiWrapper(async (request: Request) => {
   });
 });
 
-export const PATCH = withAppApiWrapper(async (request: Request) => {
+export const PATCH = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const action = searchParams.get('action');
@@ -60,7 +60,7 @@ export const PATCH = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, message: 'Estado actualizado correctamente', data });
 });
 
-export const DELETE = withAppApiWrapper(async (request: Request) => {
+export const DELETE = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 

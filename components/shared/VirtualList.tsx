@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 'use client';
 
 import React, { useRef, useMemo } from 'react';
@@ -33,16 +34,16 @@ export function VirtualGrid<T>({
     getScrollElement: () => parentRef.current,
     estimateSize: () => estimateSize,
     overscan,
-    getItemKey: (index) => `row-${index}`
+    getItemKey: index => `row-${index}`
   });
 
   const gridItems = useMemo(() => {
     const rows: React.ReactNode[] = [];
-    
-    virtualizer.getVirtualItems().forEach((virtualRow) => {
+
+    virtualizer.getVirtualItems().forEach(virtualRow => {
       const startIndex = virtualRow.index * columns;
       const rowItems = items.slice(startIndex, startIndex + columns);
-      
+
       rows.push(
         <div
           key={virtualRow.key}
@@ -52,20 +53,18 @@ export function VirtualGrid<T>({
             top: 0,
             left: 0,
             width: '100%',
-            transform: `translateY(${virtualRow.start}px)`,
+            transform: `translateY(${virtualRow.start}px)`
           }}
         >
           {rowItems.map((item, idx) => (
-            <div key={keyExtractor(item)}>
-              {renderItem(item, startIndex + idx)}
-            </div>
+            <div key={keyExtractor(item)}>{renderItem(item, startIndex + idx)}</div>
           ))}
         </div>
       );
     });
-    
+
     return rows;
-  }, [virtualizer.getVirtualItems(), items, columns, renderItem, keyExtractor, gap, estimateSize]);
+  }, [virtualizer, items, columns, renderItem, keyExtractor, gap]);
 
   return (
     <div
@@ -77,7 +76,7 @@ export function VirtualGrid<T>({
         style={{
           height: `${virtualizer.getTotalSize()}px`,
           width: '100%',
-          position: 'relative',
+          position: 'relative'
         }}
       >
         {gridItems}
@@ -112,22 +111,19 @@ export function VirtualList<T>({
     getScrollElement: () => parentRef.current,
     estimateSize: () => estimateSize,
     overscan,
-    getItemKey: (index) => keyExtractor(items[index])
+    getItemKey: index => keyExtractor(items[index])
   });
 
   return (
-    <div
-      ref={parentRef}
-      className={`relative w-full overflow-auto ${containerClassName}`}
-    >
+    <div ref={parentRef} className={`relative w-full overflow-auto ${containerClassName}`}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
           width: '100%',
-          position: 'relative',
+          position: 'relative'
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => (
+        {virtualizer.getVirtualItems().map(virtualRow => (
           <div
             key={keyExtractor(items[virtualRow.index])}
             data-index={virtualRow.index}
@@ -137,7 +133,7 @@ export function VirtualList<T>({
               top: 0,
               left: 0,
               width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
+              transform: `translateY(${virtualRow.start}px)`
             }}
           >
             {renderItem(items[virtualRow.index], virtualRow.index)}

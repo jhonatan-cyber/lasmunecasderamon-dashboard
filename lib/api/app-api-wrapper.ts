@@ -17,27 +17,41 @@ type AuthenticatedAppRouteHandler = (
   context: { params: any; user: AuthenticatedUser }
 ) => Promise<Response>;
 
+type RequiredPermission = { module: keyof UserPermissions; action: string };
+type WithAppAuthOptions = { requiredPermission?: RequiredPermission };
+
+function resolveRequiredPermission(
+  permissionOrOptions?: RequiredPermission | WithAppAuthOptions
+): RequiredPermission | undefined {
+  if (!permissionOrOptions) return undefined;
+  return 'requiredPermission' in permissionOrOptions
+    ? permissionOrOptions.requiredPermission
+    : (permissionOrOptions as RequiredPermission);
+}
+
 export function withAppApiWrapper(handler: AppRouteHandler) {
   return async (request: Request, context: { params: any }) => {
     try {
       const response = await handler(request, context);
       return await normalizeJsonResponseDates(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const url = new URL(request.url);
       const method = request.method;
       const params = await context.params;
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      const stack = error instanceof Error ? error.stack : undefined;
 
       logger.error(`[APP API ERROR] ${method} ${url.pathname}`, {
-        message: error.message,
-        stack: error.stack,
+        message,
+        stack,
         params,
       });
 
       try {
         await ErrorLogRepository.log({
           endpoint: `${method} ${url.pathname}`,
-          error_message: error.message,
-          stack_trace: error.stack
+          error_message: message,
+          stack_trace: stack
         });
       } catch (logError) {
         console.error('Failed to log error to database:', logError);
@@ -57,8 +71,9 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
 
 export function withAppAuth(
   handler: AuthenticatedAppRouteHandler,
-  requiredPermission?: { module: keyof UserPermissions; action: string }
+  permissionOrOptions?: RequiredPermission | WithAppAuthOptions
 ) {
+  const requiredPermission = resolveRequiredPermission(permissionOrOptions);
   return withAppApiWrapper(async (request: Request, context: { params: any }) => {
     const user = await getAuth();
 
@@ -103,3 +118,6 @@ export function withAppAuth(
     return handler(request, { ...context, params: Promise.resolve(params), user });
   });
 }
+
+
+

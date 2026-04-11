@@ -22,11 +22,9 @@ export const GET = withAppAuth(
         success: true,
         data: balances
       });
-    } catch (error: any) {
-      return NextResponse.json(
-        { success: false, message: error.message || 'Error al obtener saldos' },
-        { status: 500 }
-      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error al obtener saldos';
+      return NextResponse.json({ success: false, message: msg }, { status: 500 });
     }
   },
   { module: 'advances', action: 'read' }

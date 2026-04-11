@@ -1,4 +1,4 @@
-import mysql from 'mysql2/promise';
+﻿import mysql from 'mysql2/promise';
 import { randomUUID } from 'crypto';
 import { getSQLTimezoneOffset } from '@/lib/business/timezoneService';
 import { env } from '@/lib/utils/env';
@@ -17,13 +17,11 @@ const defaultConfig: any = {
   connectionLimit: 10,
   queueLimit: 0,
   timezone: dbTzOffset,
-  multipleStatements: true,
   dateStrings: true,
   charset: 'utf8mb4'
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __lasMunecasDbPool: mysql.Pool | undefined;
 }
 
@@ -112,10 +110,14 @@ export function generateUUID(): string {
   return randomUUID();
 }
 
-export default {
+const database = {
   query,
   withTransaction,
   testConnection,
   pool,
   generateUUID
 };
+
+export default database;
+
+

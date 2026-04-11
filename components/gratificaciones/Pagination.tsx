@@ -36,20 +36,20 @@ export function Pagination({
   }
 
   return (
-    <div className={cn("flex items-center justify-between space-x-2 py-4", className)}>
-      <div className="flex items-center space-x-2">
+    <div className={cn('flex items-center justify-between space-x-2 py-4', className)}>
+      <div className='flex items-center space-x-2'>
         {showItemsPerPage && (
           <>
-            <span className="text-sm text-muted-foreground">Mostrar:</span>
+            <span className='text-sm text-muted-foreground'>Mostrar:</span>
             <Select
               value={itemsPerPage.toString()}
-              onValueChange={(value) => onItemsPerPageChange(parseInt(value))}
+              onValueChange={(value: string) => onItemsPerPageChange(parseInt(value))}
             >
-              <SelectTrigger className="w-[70px]">
+              <SelectTrigger className='w-[70px]'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {itemsPerPageOptions.map((option) => (
+                {itemsPerPageOptions.map(option => (
                   <SelectItem key={option} value={option.toString()}>
                     {option}
                   </SelectItem>
@@ -58,45 +58,45 @@ export function Pagination({
             </Select>
           </>
         )}
-        
+
         {showTotalItems && (
-          <span className="text-sm text-muted-foreground">
+          <span className='text-sm text-muted-foreground'>
             {totalItems} {totalItems === 1 ? 'elemento' : 'elementos'}
           </span>
         )}
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className='flex items-center space-x-2'>
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          aria-label="Ir a la primera página"
+          aria-label='Ir a la primera página'
         >
-          <ChevronsLeft className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          aria-label="Página anterior"
-        >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronsLeft className='h-4 w-4' />
         </Button>
 
-        <div className="flex items-center space-x-1">
-          {visiblePages.map((page) => (
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          aria-label='Página anterior'
+        >
+          <ChevronLeft className='h-4 w-4' />
+        </Button>
+
+        <div className='flex items-center space-x-1'>
+          {visiblePages.map(page => (
             <Button
               key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
+              variant={currentPage === page ? 'default' : 'outline'}
+              size='sm'
               onClick={() => onPageChange(page)}
-              className="w-8 h-8 p-0"
+              className='w-8 h-8 p-0'
               aria-label={`Ir a la página ${page}`}
-              aria-current={currentPage === page ? "page" : undefined}
+              aria-current={currentPage === page ? 'page' : undefined}
             >
               {page}
             </Button>
@@ -104,31 +104,31 @@ export function Pagination({
         </div>
 
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          aria-label="Página siguiente"
+          aria-label='Página siguiente'
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className='h-4 w-4' />
         </Button>
-        
+
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          aria-label="Ir a la última página"
+          aria-label='Ir a la última página'
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronsRight className='h-4 w-4' />
         </Button>
       </div>
 
-      <div className="text-sm text-muted-foreground">
+      <div className='text-sm text-muted-foreground'>
         Página {currentPage} de {totalPages}
       </div>
     </div>
   );
 }
 
-export default Pagination; 
+export default Pagination;

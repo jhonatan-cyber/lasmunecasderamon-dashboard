@@ -1,5 +1,4 @@
-/* eslint-disable */
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { syncOfflineRequests, getQueuedRequests } from '@/lib/utils/offlineStore';
@@ -24,12 +23,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const handleOnline = () => {
             setIsOnline(true);
-            toast.success('Conexión restaurada. Sincronizando datos...');
+            toast.success('ConexiÃ³n restaurada. Sincronizando datos...');
             syncOfflineRequests();
         };
         const handleOffline = () => {
             setIsOnline(false);
-            toast.error('Sin conexión. Las acciones se guardarán localmente.');
+            toast.error('Sin conexiÃ³n. Las acciones se guardarÃ¡n localmente.');
         };
 
         const updatePendingCount = () => {
@@ -81,4 +80,5 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useSync = () => useContext(SyncContext);
+
 

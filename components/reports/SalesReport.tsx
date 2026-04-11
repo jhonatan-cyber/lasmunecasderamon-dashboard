@@ -262,7 +262,7 @@ export function SalesReport() {
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <span className="text-sm font-medium">Período:</span>
               </div>
-              <Select value={period} onValueChange={value => setPeriod(value as SalesPeriod)}>
+              <Select value={period} onValueChange={(value: string) => setPeriod(value as SalesPeriod)}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>

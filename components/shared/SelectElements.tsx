@@ -1,13 +1,12 @@
-
-import { Label } from "@/components/ui/label";
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import React from "react";
+  SelectValue
+} from '@/components/ui/select';
+import React from 'react';
 
 interface SelectElementsProps {
   // API A (actual)
@@ -21,7 +20,7 @@ interface SelectElementsProps {
   label?: string;
 }
 
-const SelectElements: React.FC<SelectElementsProps> = (props) => {
+const SelectElements: React.FC<SelectElementsProps> = props => {
   const {
     value,
     onChange,
@@ -29,11 +28,11 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
     setRowsPerPage,
     setPage,
     options = [5, 10, 20, 40], // Valores por defecto
-    label = "Listado"
+    label = 'Listado'
   } = props;
 
   // Compatibilidad hacia atrás: preferir value/onChange; si no existen, usar rowsPerPage/setRowsPerPage
-  const effectiveValue = (value ?? rowsPerPage ?? 5);
+  const effectiveValue = value ?? rowsPerPage ?? 5;
   const effectiveOnChange = (v: number) => {
     if (onChange) onChange(v);
     if (setRowsPerPage) setRowsPerPage(v);
@@ -43,18 +42,21 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
   return (
     <div>
       {label && (
-        <Label htmlFor='list' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+        <Label
+          htmlFor='list'
+          className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+        >
           {label}
         </Label>
       )}
       <Select
         value={String(effectiveValue)}
-        onValueChange={(value) => effectiveOnChange(Number(value))}
+        onValueChange={(value: string) => effectiveOnChange(Number(value))}
       >
-        <SelectTrigger className="w-[180px] rounded-full text-center text-sm bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+        <SelectTrigger className='w-[180px] rounded-full text-center text-sm bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'>
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="rounded-xl border-gray-200 dark:border-gray-800">
+        <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
           {options.map((option, index) => {
             const optionValue = typeof option === 'object' ? option.value : option;
             const optionLabel = typeof option === 'object' ? option.label : `${option} elementos`;

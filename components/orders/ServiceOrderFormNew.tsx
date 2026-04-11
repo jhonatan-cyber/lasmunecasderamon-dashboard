@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -74,30 +73,38 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const maxTotalPersonas = 4;
 
   // Calcular límites dinámicos
-  const maxAnfitrionasSegunClientes = tempForm.comision_anfitriona > 0
-    ? 3 // Máximo 3 anfitrionas para habitaciones con comisión
-    : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); // Máximo 3 anfitrionas si hay comisión
+  const maxAnfitrionasSegunClientes =
+    tempForm.comision_anfitriona > 0
+      ? 3 // Máximo 3 anfitrionas para habitaciones con comisión
+      : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); // Máximo 3 anfitrionas si hay comisión
 
-  const maxClientesSegunAnfitrionas = tempForm.comision_anfitriona > 0
-    ? 1 // Máximo 1 cliente para habitaciones con comisión
-    : Math.max(0, maxTotalPersonas - tempForm.anfitrionas_ids.length);
+  const maxClientesSegunAnfitrionas =
+    tempForm.comision_anfitriona > 0
+      ? 1 // Máximo 1 cliente para habitaciones con comisión
+      : Math.max(0, maxTotalPersonas - tempForm.anfitrionas_ids.length);
 
   // Calcular límites específicos para combinaciones
-  const maxAnfitrionasCon1Cliente = tempForm.comision_anfitriona > 0 && tempForm.clientes_ids.length === 1
-    ? 3 // Máximo 3 anfitrionas con 1 cliente
-    : Math.max(0, maxTotalPersonas - 1); // Máximo 3 anfitrionas con 1 cliente
+  const maxAnfitrionasCon1Cliente =
+    tempForm.comision_anfitriona > 0 && tempForm.clientes_ids.length === 1
+      ? 3 // Máximo 3 anfitrionas con 1 cliente
+      : Math.max(0, maxTotalPersonas - 1); // Máximo 3 anfitrionas con 1 cliente
 
-  const maxClientesCon2Anfitrionas = tempForm.comision_anfitriona > 0 && tempForm.anfitrionas_ids.length === 2
-    ? 2 // Máximo 2 anfitrionas con 2 clientes
-    : Math.max(0, maxTotalPersonas - 2); // Máximo 2 anfitrionas con 2 clientes
+  const maxClientesCon2Anfitrionas =
+    tempForm.comision_anfitriona > 0 && tempForm.anfitrionas_ids.length === 2
+      ? 2 // Máximo 2 anfitrionas con 2 clientes
+      : Math.max(0, maxTotalPersonas - 2); // Máximo 2 anfitrionas con 2 clientes
 
   // Determinar límite final según la combinación actual
-  const maxAnfitrionasFinal = tempForm.comision_anfitriona > 0
-    ? (tempForm.clientes_ids.length === 0 ? 3 // Máximo 3 anfitrionas sin clientes
-      : tempForm.clientes_ids.length === 1 ? maxAnfitrionasCon1Cliente
-        : tempForm.clientes_ids.length === 2 ? maxClientesCon2Anfitrionas
-          : maxClientesSegunAnfitrionas)
-    : maxAnfitrionasSegunClientes;
+  const maxAnfitrionasFinal =
+    tempForm.comision_anfitriona > 0
+      ? tempForm.clientes_ids.length === 0
+        ? 3 // Máximo 3 anfitrionas sin clientes
+        : tempForm.clientes_ids.length === 1
+          ? maxAnfitrionasCon1Cliente
+          : tempForm.clientes_ids.length === 2
+            ? maxClientesCon2Anfitrionas
+            : maxClientesSegunAnfitrionas
+      : maxAnfitrionasSegunClientes;
 
   const haAlcanzadoMaxAnfitrionas = tempForm.anfitrionas_ids.length >= maxAnfitrionasFinal;
   const haAlcanzadoMaxClientes = tempForm.clientes_ids.length >= maxClientesSegunAnfitrionas;
@@ -313,7 +320,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>Habitación*</Label>
           <Select
             value={tempForm.habitacion_id ? String(tempForm.habitacion_id) : ''}
-            onValueChange={value => {
+            onValueChange={(value: string) => {
               const habitacionId = parseInt(value, 10);
               const habitacion = habitacionesDisponibles.find(
                 h => (h.id_habitacion || h.id) === habitacionId
@@ -436,7 +443,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           </Label>
           <Select
             value={tempForm.metodo_pago}
-            onValueChange={value => setTempForm({ ...tempForm, metodo_pago: value })}
+            onValueChange={(value: string) => setTempForm({ ...tempForm, metodo_pago: value })}
           >
             <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
               <SelectValue />
@@ -519,4 +526,3 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     </div>
   );
 }
-

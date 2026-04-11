@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { RoomRepository } from '@/lib/repositories/RoomRepository';
 
 export const GET = withAppApiWrapper(
@@ -12,8 +12,8 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
     await RoomRepository.update(id, body);
@@ -21,8 +21,8 @@ export const PUT = withAppApiWrapper(
   }
 );
 
-export const PATCH = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const { action } = await request.json();
     await RoomRepository.updateStatus(id, action);
@@ -30,8 +30,8 @@ export const PATCH = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const result = await RoomRepository.delete(id);
     return NextResponse.json(result);

@@ -1,43 +1,26 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { CategoryRepository } from '@/lib/repositories/CategoryRepository';
-import { getAuth } from '@/lib/auth/auth-app';
+import { ValidationError } from '@/lib/errors/errors';
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const { name, description } = await request.json();
-
-    if (!id || !name)
-      return NextResponse.json(
-        { success: false, message: 'ID y nombre son requeridos' },
-        { status: 400 }
-      );
+    if (!name) throw new ValidationError('Nombre es requerido');
 
     await CategoryRepository.update(id, name, description);
     return NextResponse.json({ success: true, message: 'Categoría actualizada correctamente' });
   }
 );
 
-export const PATCH = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PATCH = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
-    if (!id || !action)
-      return NextResponse.json(
-        { success: false, message: 'Faltan parámetros id o action' },
-        { status: 400 }
-      );
+    if (!action) throw new ValidationError('Falta el parámetro action');
 
     const updatedCategory = await CategoryRepository.updateStatus(id, action);
     return NextResponse.json({
@@ -48,15 +31,9 @@ export const PATCH = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(
+  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    if (!id) return NextResponse.json({ success: false, message: 'Falta el id' }, { status: 400 });
-
     await CategoryRepository.delete(id);
     return NextResponse.json({
       success: true,

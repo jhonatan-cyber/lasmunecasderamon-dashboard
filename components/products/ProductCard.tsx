@@ -1,6 +1,18 @@
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
-import { Pencil, Trash2, CheckCircle, Power, MoreVertical, GripVertical, Info, Tag as TagIcon, IndianRupee, DollarSign } from 'lucide-react';
+import {
+  Pencil,
+  Trash2,
+  CheckCircle,
+  Power,
+  MoreVertical,
+  GripVertical,
+  Info,
+  Tag as TagIcon,
+  IndianRupee,
+  DollarSign
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,34 +50,29 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const { hasPermission } = useUserPermissions();
-  
+
   // Verificar permisos
   const canEdit = hasPermission('productos', 'editar_categoria');
   const canDelete = hasPermission('productos', 'eliminar');
   const canActivate = hasPermission('productos', 'activar');
   const canDeactivate = hasPermission('productos', 'desactivar');
-  
+
   // Si no tiene ningún permiso de acción, no mostrar el menú
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: product.id,
     disabled: !isDraggable
   });
 
-  const style = isDraggable ? {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-    zIndex: isDragging ? 50 : 'auto',
-  } : {};
+  const style = isDraggable
+    ? {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.6 : 1,
+        zIndex: isDragging ? 50 : 'auto'
+      }
+    : {};
 
   const handleDeleteClick = () => {
     setDeleteModalOpen(true);
@@ -78,9 +85,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <>
-      <Card 
-        className='group relative border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 rounded-[2rem] overflow-hidden' 
-        ref={isDraggable ? setNodeRef : undefined} 
+      <Card
+        className='group relative border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 rounded-[2rem] overflow-hidden'
+        ref={isDraggable ? setNodeRef : undefined}
         style={style}
       >
         {/* Drag handle */}
@@ -88,9 +95,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div
             {...attributes}
             {...listeners}
-            className="absolute top-4 left-4 z-20 cursor-grab active:cursor-grabbing p-2 bg-white/80 dark:bg-slate-900/80 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            className='absolute top-4 left-4 z-20 cursor-grab active:cursor-grabbing p-2 bg-white/80 dark:bg-slate-900/80 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity'
           >
-            <GripVertical className="w-4 h-4 text-gray-400 group-active:text-purple-500" />
+            <GripVertical className='w-4 h-4 text-gray-400 group-active:text-purple-500' />
           </div>
         )}
 
@@ -107,7 +114,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   <MoreVertical className='h-4 w-4 text-gray-600 dark:text-gray-300' />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align='end' className='rounded-2xl border-gray-100 dark:border-slate-800 p-2'>
+              <DropdownMenuContent
+                align='end'
+                className='rounded-2xl border-gray-100 dark:border-slate-800 p-2'
+              >
                 {canEdit && (
                   <DropdownMenuItem
                     onClick={() => onEdit(product)}
@@ -158,22 +168,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Imagen */}
         <div className='relative w-full aspect-[4/3] overflow-hidden group-hover:scale-105 transition-transform duration-500'>
-          <img
+          <Image
             src={
               !product.foto || product.foto === 'default.png' || product.foto === ''
                 ? '/img/products/default.png'
-                : product.foto.startsWith('http') 
-                  ? product.foto 
+                : product.foto.startsWith('http')
+                  ? product.foto
                   : `/img/products/${product.foto}`
             }
             alt={product.name}
+            fill
+            sizes='(max-width: 768px) 100vw, 33vw'
             className='w-full h-full object-cover'
-            onError={e => {
-              const target = e.target as HTMLImageElement;
-              if (!target.src.endsWith('/img/products/default.png')) {
-                target.src = '/img/products/default.png';
-              }
-            }}
           />
           {/* Status Badge Overlay */}
           <div className='absolute bottom-3 left-3 flex gap-2'>
@@ -194,7 +200,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className='space-y-1.5'>
             <div className='flex items-center gap-2 text-gray-400 dark:text-gray-500'>
               <TagIcon className='h-3 w-3' />
-              <span className='text-[10px] uppercase font-bold tracking-[0.1em]'>{product.code}</span>
+              <span className='text-[10px] uppercase font-bold tracking-[0.1em]'>
+                {product.code}
+              </span>
             </div>
             <h3 className='text-lg font-bold text-gray-900 dark:text-neutral-100 line-clamp-1 group-hover:text-purple-600 transition-colors'>
               {product.name}
@@ -203,17 +211,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
           <div className='grid grid-cols-2 gap-4 pb-4 border-b border-gray-100 dark:border-slate-800'>
             <div className='space-y-1'>
-              <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>Precio</p>
+              <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
+                Precio
+              </p>
               <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-bold'>
                 <span className='text-purple-500 text-xs'>$</span>
-                <span className='text-base'>{formatCurrencyCLP(product.price).replace('$', '')}</span>
+                <span className='text-base'>
+                  {formatCurrencyCLP(product.price).replace('$', '')}
+                </span>
               </div>
             </div>
             <div className='space-y-1'>
-              <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>Comisión</p>
+              <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
+                Comisión
+              </p>
               <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-medium opacity-80'>
                 <span className='text-purple-400 text-xs'>$</span>
-                <span className='text-base'>{formatCurrencyCLP(product.commission).replace('$', '')}</span>
+                <span className='text-base'>
+                  {formatCurrencyCLP(product.commission).replace('$', '')}
+                </span>
               </div>
             </div>
           </div>
@@ -224,7 +240,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <Info className='h-3 w-3' />
               </div>
               <p className='text-xs leading-relaxed line-clamp-2 italic'>
-                "{product.description}"
+                &quot;{product.description}&quot;
               </p>
             </div>
           ) : (

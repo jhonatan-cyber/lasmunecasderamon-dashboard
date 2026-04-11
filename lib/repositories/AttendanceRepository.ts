@@ -3,6 +3,10 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
 import logger from '../utils/logger';
+import { ValidationError } from '@/lib/errors/errors';
+import { z } from 'zod';
+
+type AttendanceRegisterInput = z.input<typeof AttendanceRegisterSchema>;
 
 export class AttendanceRepository {
   static async getSummary() {
@@ -51,7 +55,7 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     return { total: totalUsuarios, ...stats };
   }
 
-  static async register(body: any, currentUser?: { id: string }, ip?: string) {
+  static async register(body: AttendanceRegisterInput, currentUser?: { id: string }, ip?: string) {
     const { qrData } = AttendanceRegisterSchema.parse(body);
     let targetUser: any = null;
     let isSystemCode = false;
@@ -60,11 +64,11 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       const codes = await query<any[]>('SELECT codigo FROM codigos WHERE estado = 1 AND codigo = ? LIMIT 1', [qrData]);
 
       if (codes.length === 0) {
-        throw new Error('Codigo invalido, expirado o ya utilizado');
+        throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
 
       if (!currentUser) {
-        throw new Error('Codigo invalido, expirado o ya utilizado');
+        throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
 
       const logged = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1', [currentUser.id]);
@@ -72,18 +76,18 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
         targetUser = logged[0];
         isSystemCode = true;
       } else {
-        throw new Error('Codigo invalido, expirado o ya utilizado');
+        throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
     } else {
       const users = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1', [qrData]);
       if (users.length > 0) {
         targetUser = users[0];
       } else {
-        throw new Error('Codigo invalido, expirado o ya utilizado');
+        throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
     }
 
-    if (!targetUser) throw new Error('Codigo invalido, expirado o ya utilizado');
+    if (!targetUser) throw new ValidationError('Codigo invalido, expirado o ya utilizado');
 
     const nowStr = getNowInBusinessTimezone();
     const hour = parseInt(nowStr.substring(11, 13), 10);

@@ -10,35 +10,34 @@ import { TipRepository } from '@/lib/repositories/TipRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { logger } from '@/lib/utils/logger';
+import { BusinessError } from '@/lib/errors/errors';
+import { z } from 'zod';
+import {
+  parsePagosMixtos,
+  validatePagosMixtos,
+  calcularDeltasCaja,
+  procesarPrepago,
+  type MixedPayment,
+} from '@/lib/business/pagosMixtos';
 
-type MixedPayment = {
-  metodo: string;
-  monto: number;
+type SaleCreateInput = z.input<typeof SaleCreateSchema> & {
+  skip_client_prepago?: boolean;
+  origen?: string;
+  id_pedido?: string;
 };
 
 export class SaleService {
-  static async createSale(body: any, createdBy: string) {
-logger.debug('[SaleService] createSale - body:', { body });
+  static async createSale(body: SaleCreateInput, createdBy: string) {
     const validated = SaleCreateSchema.parse(body);
-    logger.debug('[SaleService] validated:', { validated });
     const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
     
     const pedidoId = validated.pedido_id || body.pedido_id || body.id_pedido;
     const clienteId = validated.cliente_id || body.cliente_id;
     
-    logger.debug('[SaleService] creating sale', { pedidoId, clienteId });
-    
     const ventaId = generateUUID();
     const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
     const now = getNowInBusinessTimezone(validated.device_date);
-    const pagosMixtos: MixedPayment[] = Array.isArray(validated.pagos_mixtos)
-      ? validated.pagos_mixtos
-          .map((pago: any) => ({
-            metodo: String(pago?.metodo || ''),
-            monto: Number(pago?.monto || 0),
-          }))
-          .filter((pago: MixedPayment) => pago.metodo && pago.monto > 0)
-      : [];
+    const pagosMixtos: MixedPayment[] = parsePagosMixtos(validated.pagos_mixtos);
 
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
     const totalComisionCalculada = validated.detalles.reduce(
@@ -59,54 +58,24 @@ logger.debug('[SaleService] createSale - body:', { body });
         : null;
 
       if (esMixto) {
-        const totalPagosMixtos = pagosMixtos.reduce(
-          (sum: number, pago: MixedPayment) => sum + pago.monto,
-          0
-        );
-
-        if (pagosMixtos.length < 2) {
-          throw new Error('Pago mixto invalido: se requieren al menos 2 metodos');
-        }
-
-        if (Math.abs(totalPagosMixtos - Number(validated.total || 0)) > 1) {
-          throw new Error('Pago mixto invalido: la suma debe ser igual al total de la venta');
-        }
+        validatePagosMixtos(pagosMixtos, Number(validated.total || 0));
       }
 
       if (clienteId && !skipClientPrepago) {
-        const clients = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [clienteId]);
-        const saldoDisponible = Number(clients[0]?.saldo || 0);
-
-        if (saldoDisponible > 0 && prepagoSolicitado !== 0) {
-          prepagoMonto =
-            prepagoSolicitado === null
-              ? Math.min(saldoDisponible, Number(validated.total || 0))
-              : prepagoSolicitado;
-
-          if (prepagoSolicitado !== null && prepagoSolicitado > saldoDisponible) {
-            throw new Error('Saldo insuficiente para el monto de prepago seleccionado');
-          }
-
-          await trx('UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?', [prepagoMonto, clienteId]);
-          await trx(`
-            INSERT INTO clientes_prepago_movimientos 
-            (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
-            VALUES (?, ?, 'CONSUMO', ?, 'prepago', ?, ?, ?, ?)
-          `, [
-            generateUUID(),
-            clienteId,
-            prepagoMonto,
-            ventaId,
-            createdBy,
-            now,
-            JSON.stringify({ venta_id: ventaId, codigo, concepto: `Pago venta ${codigo}` })
-          ]);
-        }
+        prepagoMonto = await procesarPrepago(trx, {
+          clienteId,
+          total: Number(validated.total || 0),
+          prepagoSolicitado,
+          ventaId,
+          createdBy,
+          now,
+          codigo,
+          concepto: `Pago venta ${codigo}`,
+        });
       }
 
       const estado = (validated.habitacion_id && validated.tiempo > 0) ? 2 : 1;
 
-      logger.debug('[SaleService] Insertando venta', { propina: validated.propina, total: validated.total });
       await SaleRepository.rawInsert(trx, {
         id_venta: ventaId,
         codigo,
@@ -145,7 +114,7 @@ logger.debug('[SaleService] createSale - body:', { body });
         const hostessIds = hostessRows.map((row: any) => row.id_usuario);
 
         if (hostessIds.length !== validated.usuarios.length) {
-          throw new Error('Hay anfitrionas seleccionadas que no estan logueadas en el local');
+          throw new BusinessError('Hay anfitrionas seleccionadas que no estan logueadas en el local', 'HOSTESS_NOT_LOGGED_IN');
         }
         if (estado === 2) {
           await RoomManager.pauseConflictingServices(trx, hostessIds, undefined, ventaId);
@@ -180,7 +149,7 @@ logger.debug('[SaleService] createSale - body:', { body });
 
             hostesses = hostessRows.map((row: any) => row.id_usuario);
             if (hostesses.length !== requestedHostesses.length) {
-              throw new Error('Hay anfitrionas seleccionadas que no estan logueadas en el local');
+              throw new BusinessError('Hay anfitrionas seleccionadas que no estan logueadas en el local', 'HOSTESS_NOT_LOGGED_IN');
             }
           }
 
@@ -225,15 +194,7 @@ logger.debug('[SaleService] createSale - body:', { body });
       // 6. Actualización de Caja
       if (cajaId) {
         if (esMixto) {
-          const deltas = pagosMixtos.reduce(
-            (acc: { efectivo: number; tarjeta: number; transferencia: number }, pago: MixedPayment) => {
-              if (pago.metodo === 'efectivo') acc.efectivo += pago.monto;
-              if (pago.metodo === 'tarjeta') acc.tarjeta += pago.monto;
-              if (pago.metodo === 'transferencia') acc.transferencia += pago.monto;
-              return acc;
-            },
-            { efectivo: 0, tarjeta: 0, transferencia: 0 }
-          );
+          const deltas = calcularDeltasCaja(pagosMixtos);
 
           await CashRegisterRepository.updateBalances(trx, cajaId, {
             venta: validated.total - validated.propina,
@@ -269,14 +230,11 @@ logger.debug('[SaleService] createSale - body:', { body });
 
       // 8. Actualizar estado del pedido a procesado (estado = 0)
       if (pedidoId) {
-        logger.debug(`[SaleService] Actualizando pedido a estado 0`, { pedidoId });
         await trx('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
-        logger.debug('[SaleService] Pedido actualizado a estado 0');
       }
 
       // 7b. Registrar propina si existe
       if (validated.propina && validated.propina > 0) {
-        logger.debug('[SaleService] Registrando propina:', validated.propina);
         try {
           const pedidoUsuarios = pedidoId
             ? await trx<any[]>('SELECT mesero_id FROM pedidos WHERE id_pedido = ? LIMIT 1', [pedidoId])
@@ -294,7 +252,6 @@ logger.debug('[SaleService] createSale - body:', { body });
             monto: validated.propina,
             usuario_ids: destinatariosPropina
           });
-          logger.info('[SaleService] Propina registrada correctamente');
         } catch (tipError) {
           logger.error('[SaleService] Error al registrar propina:', tipError);
         }

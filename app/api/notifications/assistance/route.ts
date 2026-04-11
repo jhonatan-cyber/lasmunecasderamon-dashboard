@@ -1,24 +1,19 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { NotificationRepository } from '@/lib/repositories/NotificationRepository';
-import { getAuth } from '@/lib/auth/auth-app';
+import { sendNotificationToAll } from '@/lib/api/sseService';
+import { ValidationError } from '@/lib/errors/errors';
 
-export const POST = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
+export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+  const { servicioId, roomName, type } = await request.json();
 
-  const body = await request.json();
-  const { servicioId, roomName, type } = body;
+  if (!servicioId || !roomName || !type)
+    throw new ValidationError('servicioId, roomName y type son requeridos', {
+      servicioId,
+      roomName,
+      type
+    });
 
-  if (!servicioId || !roomName || !type) {
-    return NextResponse.json(
-      { success: false, message: 'servicioId, roomName y type son requeridos' },
-      { status: 400 }
-    );
-  }
-
-  // Create a notification for assistance request
   await NotificationRepository.create({
     usuario_id: user.id.toString(),
     tipo: 'asistencia',
@@ -28,8 +23,6 @@ export const POST = withAppApiWrapper(async (request: Request) => {
     data: JSON.stringify({ servicioId, roomName, type })
   });
 
-  // Send to all connected clients via SSE
-  const { sendNotificationToAll } = await import('@/lib/api/sseService');
   sendNotificationToAll('assistance_request', {
     servicioId,
     roomName,

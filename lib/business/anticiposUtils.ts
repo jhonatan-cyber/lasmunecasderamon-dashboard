@@ -1,4 +1,5 @@
 import { query } from '@/lib/database/db';
+import { DatabaseError } from '@/lib/errors/errors';
 
 type AnticipoBalances = {
   montoAsistencia: number;
@@ -72,8 +73,8 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
       montoPropina: Number(data.total_propinas),
       montoMaximo
     };
-  } catch (error: any) {
-    console.error('Error in getAnticipoBalances:', error);
-    throw new Error(`Error al calcular balances: ${error.message}`);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    throw new DatabaseError(`Error al calcular balances de anticipo: ${msg}`, error);
   }
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -16,17 +15,11 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PUT = withAppAuth(
+  async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
-    const createdBy = user.id;
-
-    const cuentaActualizada = await CuentaRepository.updateCuenta(id, body, createdBy);
+    const cuentaActualizada = await CuentaRepository.updateCuenta(id, body, user.id);
     return NextResponse.json({
       success: true,
       message: 'Cuenta actualizada correctamente',
@@ -35,12 +28,8 @@ export const PUT = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(
+  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     await CuentaRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Cuenta eliminada exitosamente' });

@@ -31,7 +31,8 @@
     "test:unit:coverage": "vitest run --coverage",
     "test:integration": "node tests/integration/order_flow.test.js",
     "test:integration:settings": "node tests/integration/settings_clean.test.js",
-    "test:ci": "vitest run && playwright test"
+    "test:ci": "vitest run && playwright test",
+    "test:integration:legacy-db": "node scripts/run-legacy-db-tests.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

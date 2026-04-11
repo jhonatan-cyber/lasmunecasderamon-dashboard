@@ -1,3 +1,4 @@
+﻿/* eslint-disable no-console */
 const { SaleRepository } = require('./lib/repositories/SaleRepository');
 
 async function testSaleDetail() {
@@ -33,3 +34,4 @@ async function testSaleDetail() {
 }
 
 testSaleDetail();
+

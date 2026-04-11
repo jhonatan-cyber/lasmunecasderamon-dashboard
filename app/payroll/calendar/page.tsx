@@ -61,7 +61,7 @@ export default function PayrollCalendarPage() {
   const [realVentasData, setRealVentasData] = useState<any[]>([]);
   const [realServiciosData, setRealServiciosData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Estado para modal de detalles
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -305,7 +305,7 @@ export default function PayrollCalendarPage() {
 
       console.log(`Fecha range: ${startDate} to ${endDate}`);
 
-      const url = `/api/calendar-data?startDate=${startDate}&endDate=${endDate}&type=${type}`;
+      const url = `/api/calendar/data?startDate=${startDate}&endDate=${endDate}&type=${type}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url);
@@ -769,64 +769,64 @@ export default function PayrollCalendarPage() {
                 </DialogHeader>
 
                 <div className='flex-1 overflow-y-auto px-6 py-4'>
-                    <div className='space-y-4 text-center'>
-                      {/* Totales de Ventas y Servicios */}
-                      {realVentasData.length > 0 && realServiciosData.length > 0 && (
-                        <div className='flex justify-center gap-4 mb-4'>
-                          <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-2'>
-                            <div className='text-xs text-green-600 dark:text-green-400 uppercase font-semibold'>
-                              Total Ventas
-                            </div>
-                            <div className='text-lg font-bold text-green-700 dark:text-green-300'>
-                              {formatCurrencyCLP(
-                                realVentasData.reduce((sum, v) => sum + (v.total || 0), 0)
-                              )}
-                            </div>
+                  <div className='space-y-4 text-center'>
+                    {/* Totales de Ventas y Servicios */}
+                    {realVentasData.length > 0 && realServiciosData.length > 0 && (
+                      <div className='flex justify-center gap-4 mb-4'>
+                        <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-2'>
+                          <div className='text-xs text-green-600 dark:text-green-400 uppercase font-semibold'>
+                            Total Ventas
                           </div>
-                          <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2'>
-                            <div className='text-xs text-blue-600 dark:text-blue-400 uppercase font-semibold'>
-                              Total Servicios
-                            </div>
-                            <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
-                              {formatCurrencyCLP(
-                                realServiciosData.reduce((sum, s) => sum + (s.total || 0), 0)
-                              )}
-                            </div>
+                          <div className='text-lg font-bold text-green-700 dark:text-green-300'>
+                            {formatCurrencyCLP(
+                              realVentasData.reduce((sum, v) => sum + (v.total || 0), 0)
+                            )}
                           </div>
                         </div>
-                      )}
+                        <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2'>
+                          <div className='text-xs text-blue-600 dark:text-blue-400 uppercase font-semibold'>
+                            Total Servicios
+                          </div>
+                          <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
+                            {formatCurrencyCLP(
+                              realServiciosData.reduce((sum, s) => sum + (s.total || 0), 0)
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                      {/* Mostrar total individual cuando solo hay datos de uno */}
-                      {realVentasData.length > 0 && realServiciosData.length === 0 && !isLoading && (
-                        <div className='flex justify-center mb-4'>
-                          <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-2'>
-                            <div className='text-xs text-green-600 dark:text-green-400 uppercase font-semibold'>
-                              Total Ventas
-                            </div>
-                            <div className='text-lg font-bold text-green-700 dark:text-green-300'>
-                              {formatCurrencyCLP(
-                                realVentasData.reduce((sum, v) => sum + (v.total || 0), 0)
-                              )}
-                            </div>
+                    {/* Mostrar total individual cuando solo hay datos de uno */}
+                    {realVentasData.length > 0 && realServiciosData.length === 0 && !isLoading && (
+                      <div className='flex justify-center mb-4'>
+                        <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-2'>
+                          <div className='text-xs text-green-600 dark:text-green-400 uppercase font-semibold'>
+                            Total Ventas
+                          </div>
+                          <div className='text-lg font-bold text-green-700 dark:text-green-300'>
+                            {formatCurrencyCLP(
+                              realVentasData.reduce((sum, v) => sum + (v.total || 0), 0)
+                            )}
                           </div>
                         </div>
-                      )}
-                      {realServiciosData.length > 0 && realVentasData.length === 0 && !isLoading && (
-                        <div className='flex justify-center mb-4'>
-                          <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2'>
-                            <div className='text-xs text-blue-600 dark:text-blue-400 uppercase font-semibold'>
-                              Total Servicios
-                            </div>
-                            <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
-                              {formatCurrencyCLP(
-                                realServiciosData.reduce((sum, s) => sum + (s.total || 0), 0)
-                              )}
-                            </div>
+                      </div>
+                    )}
+                    {realServiciosData.length > 0 && realVentasData.length === 0 && !isLoading && (
+                      <div className='flex justify-center mb-4'>
+                        <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2'>
+                          <div className='text-xs text-blue-600 dark:text-blue-400 uppercase font-semibold'>
+                            Total Servicios
+                          </div>
+                          <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
+                            {formatCurrencyCLP(
+                              realServiciosData.reduce((sum, s) => sum + (s.total || 0), 0)
+                            )}
                           </div>
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      <div className='flex justify-center gap-4'>
+                    <div className='flex justify-center gap-4'>
                       <Button
                         className={`flex-1 max-w-32 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-4 sm:px-6 py-2 ${
                           showVentasTable
@@ -906,13 +906,27 @@ export default function PayrollCalendarPage() {
                               <Table className='min-w-full'>
                                 <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
                                   <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Código</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Cliente</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Habitación</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>Total</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Fecha</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Acciones</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Código
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Cliente
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Habitación
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>
+                                      Total
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Fecha
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Estado
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                                      Acciones
+                                    </TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -920,7 +934,10 @@ export default function PayrollCalendarPage() {
                                     const { data: paginatedData } =
                                       getFilteredAndPaginatedData(realVentasData);
                                     return paginatedData.map(venta => (
-                                      <TableRow key={venta.codigo} className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'>
+                                      <TableRow
+                                        key={venta.codigo}
+                                        className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
+                                      >
                                         <TableCell className='py-3 px-4 font-medium'>
                                           {venta.codigo}
                                         </TableCell>
@@ -1027,13 +1044,27 @@ export default function PayrollCalendarPage() {
                               <Table className='min-w-full'>
                                 <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
                                   <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Código</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Cliente</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Habitación</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>Total</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Fecha</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Acciones</TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Código
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Cliente
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Habitación
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>
+                                      Total
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Fecha
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                      Estado
+                                    </TableHead>
+                                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                                      Acciones
+                                    </TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -1041,7 +1072,10 @@ export default function PayrollCalendarPage() {
                                     const { data: paginatedData } =
                                       getFilteredAndPaginatedData(realServiciosData);
                                     return paginatedData.map(servicio => (
-                                      <TableRow key={servicio.codigo} className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'>
+                                      <TableRow
+                                        key={servicio.codigo}
+                                        className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
+                                      >
                                         <TableCell className='py-3 px-4 font-medium'>
                                           {servicio.codigo}
                                         </TableCell>
@@ -1119,7 +1153,8 @@ export default function PayrollCalendarPage() {
 
                               {/* Paginador para Servicios */}
                               {(() => {
-                                const { totalPages } = getFilteredAndPaginatedData(realServiciosData);
+                                const { totalPages } =
+                                  getFilteredAndPaginatedData(realServiciosData);
                                 return totalPages > 1 ? (
                                   <div className='p-4 border-t border-gray-100 dark:border-gray-800'>
                                     <Paginate
@@ -1138,11 +1173,11 @@ export default function PayrollCalendarPage() {
                   </div>
                 </div>
 
-                <div className="flex-shrink-0 border-t px-6 py-4">
-                  <div className="flex justify-center">
+                <div className='flex-shrink-0 border-t px-6 py-4'>
+                  <div className='flex justify-center'>
                     <Button
-                      variant="outline"
-                      className="bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2"
+                      variant='outline'
+                      className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2'
                       onClick={() => setIsModalOpen(false)}
                     >
                       Cerrar
@@ -1166,11 +1201,15 @@ export default function PayrollCalendarPage() {
                   {/* Información General */}
                   <div className='grid grid-cols-2 gap-4 mb-4'>
                     <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Cliente</div>
+                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                        Cliente
+                      </div>
                       <div className='font-medium'>{selectedItem?.cliente || 'N/A'}</div>
                     </div>
                     <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Habitación</div>
+                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                        Habitación
+                      </div>
                       <div className='font-medium'>{selectedItem?.habitacion || 'N/A'}</div>
                     </div>
                   </div>
@@ -1178,13 +1217,20 @@ export default function PayrollCalendarPage() {
                   {/* Anfitrionas */}
                   <div className='mb-4'>
                     <div className='p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg'>
-                      <div className='text-xs text-purple-600 dark:text-purple-400 uppercase mb-2 font-semibold'>Anfitrionas Involucradas</div>
+                      <div className='text-xs text-purple-600 dark:text-purple-400 uppercase mb-2 font-semibold'>
+                        Anfitrionas Involucradas
+                      </div>
                       <div className='flex flex-wrap gap-2'>
-                        {(selectedItem?.anfitrionas || selectedItem?.anfitriona || 'N/A').split(',').map((anfitriona: string, idx: number) => (
-                          <span key={idx} className='px-3 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium'>
-                            {anfitriona.trim()}
-                          </span>
-                        ))}
+                        {(selectedItem?.anfitrionas || selectedItem?.anfitriona || 'N/A')
+                          .split(',')
+                          .map((anfitriona: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className='px-3 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium'
+                            >
+                              {anfitriona.trim()}
+                            </span>
+                          ))}
                       </div>
                     </div>
                   </div>
@@ -1194,37 +1240,72 @@ export default function PayrollCalendarPage() {
                       {/* Detalles financieros de Venta */}
                       <div className='grid grid-cols-2 gap-4'>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Precio Habitación</div>
-                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.precio || selectedItem.precioHabitacion || 0)}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Precio Habitación
+                          </div>
+                          <div className='font-medium'>
+                            {formatCurrencyCLP(
+                              selectedItem.precio || selectedItem.precioHabitacion || 0
+                            )}
+                          </div>
                         </div>
                         <div className='p-4 bg-green-50 dark:bg-green-900/20 rounded-lg'>
-                          <div className='text-xs text-green-600 dark:text-green-400 uppercase mb-1'>Propina Total</div>
-                          <div className='font-medium text-green-600 dark:text-green-400'>{formatCurrencyCLP(selectedItem.propina_total || selectedItem.propina || 0)}</div>
+                          <div className='text-xs text-green-600 dark:text-green-400 uppercase mb-1'>
+                            Propina Total
+                          </div>
+                          <div className='font-medium text-green-600 dark:text-green-400'>
+                            {formatCurrencyCLP(
+                              selectedItem.propina_total || selectedItem.propina || 0
+                            )}
+                          </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Subtotal</div>
-                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.sub_total || selectedItem.subtotal || 0)}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Subtotal
+                          </div>
+                          <div className='font-medium'>
+                            {formatCurrencyCLP(
+                              selectedItem.sub_total || selectedItem.subtotal || 0
+                            )}
+                          </div>
                         </div>
                         <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
-                          <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>Comisión Total</div>
-                          <div className='font-medium text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(selectedItem.comision_total || selectedItem.total_comision || selectedItem.comision || 0)}</div>
+                          <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>
+                            Comisión Total
+                          </div>
+                          <div className='font-medium text-blue-600 dark:text-blue-400'>
+                            {formatCurrencyCLP(
+                              selectedItem.comision_total ||
+                                selectedItem.total_comision ||
+                                selectedItem.comision ||
+                                0
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Distribución de Propina por Anfitriona */}
                       {selectedItem.distribucion_propina && (
                         <div className='p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg'>
-                          <div className='text-sm font-semibold text-green-700 dark:text-green-300 mb-2'>Distribución de Propina</div>
+                          <div className='text-sm font-semibold text-green-700 dark:text-green-300 mb-2'>
+                            Distribución de Propina
+                          </div>
                           <div className='space-y-2'>
-                            {selectedItem.distribucion_propina.split('|').map((item: string, idx: number) => {
-                              const [nombre, monto] = item.split(':');
-                              return (
-                                <div key={idx} className='flex justify-between items-center'>
-                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>{nombre}</span>
-                                  <span className='font-semibold text-green-600 dark:text-green-400'>{formatCurrencyCLP(parseFloat(monto) || 0)}</span>
-                                </div>
-                              );
-                            })}
+                            {selectedItem.distribucion_propina
+                              .split('|')
+                              .map((item: string, idx: number) => {
+                                const [nombre, monto] = item.split(':');
+                                return (
+                                  <div key={idx} className='flex justify-between items-center'>
+                                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                                      {nombre}
+                                    </span>
+                                    <span className='font-semibold text-green-600 dark:text-green-400'>
+                                      {formatCurrencyCLP(parseFloat(monto) || 0)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                           </div>
                         </div>
                       )}
@@ -1232,17 +1313,25 @@ export default function PayrollCalendarPage() {
                       {/* Comisión por Anfitriona */}
                       {selectedItem.comision_por_anfitriona && (
                         <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-                          <div className='text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2'>Comisión por Anfitriona</div>
+                          <div className='text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2'>
+                            Comisión por Anfitriona
+                          </div>
                           <div className='space-y-2'>
-                            {selectedItem.comision_por_anfitriona.split('|').map((item: string, idx: number) => {
-                              const [nombre, monto] = item.split(':');
-                              return (
-                                <div key={idx} className='flex justify-between items-center'>
-                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>{nombre}</span>
-                                  <span className='font-semibold text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(parseFloat(monto) || 0)}</span>
-                                </div>
-                              );
-                            })}
+                            {selectedItem.comision_por_anfitriona
+                              .split('|')
+                              .map((item: string, idx: number) => {
+                                const [nombre, monto] = item.split(':');
+                                return (
+                                  <div key={idx} className='flex justify-between items-center'>
+                                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                                      {nombre}
+                                    </span>
+                                    <span className='font-semibold text-blue-600 dark:text-blue-400'>
+                                      {formatCurrencyCLP(parseFloat(monto) || 0)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                           </div>
                         </div>
                       )}
@@ -1250,26 +1339,36 @@ export default function PayrollCalendarPage() {
                       {/* Total */}
                       <div className='p-4 bg-black text-white rounded-lg'>
                         <div className='text-xs text-gray-400 uppercase mb-1'>Total Venta</div>
-                        <div className='text-2xl font-bold'>{formatCurrencyCLP(selectedItem.total || 0)}</div>
+                        <div className='text-2xl font-bold'>
+                          {formatCurrencyCLP(selectedItem.total || 0)}
+                        </div>
                       </div>
 
                       {/* Fecha y Estado */}
                       <div className='grid grid-cols-2 gap-4'>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Fecha de Venta</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Fecha de Venta
+                          </div>
                           <div className='font-medium'>
                             {selectedItem.fecha_crea || selectedItem.fechaVenta
-                              ? formatDateToSpanish(selectedItem.fecha_crea || selectedItem.fechaVenta)
+                              ? formatDateToSpanish(
+                                  selectedItem.fecha_crea || selectedItem.fechaVenta
+                                )
                               : 'N/A'}
                           </div>
                           <div className='text-sm text-gray-500'>
                             {selectedItem.fecha_crea || selectedItem.fechaVenta
-                              ? formatTimeFromDate(selectedItem.fecha_crea || selectedItem.fechaVenta)
+                              ? formatTimeFromDate(
+                                  selectedItem.fecha_crea || selectedItem.fechaVenta
+                                )
                               : ''}
                           </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Estado</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Estado
+                          </div>
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
                               selectedItem.estado === 1
@@ -1303,58 +1402,100 @@ export default function PayrollCalendarPage() {
                       {/* Tiempo y Método de Pago */}
                       <div className='grid grid-cols-2 gap-4'>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Tiempo</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Tiempo
+                          </div>
                           <div className='font-medium'>
                             {selectedItem.tiempo}
-                            {selectedItem.tiempo && !selectedItem.tiempo.toString().includes('hrs') ? ' min' : ''}
+                            {selectedItem.tiempo && !selectedItem.tiempo.toString().includes('hrs')
+                              ? ' min'
+                              : ''}
                           </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Método de Pago</div>
-                          <div className='font-medium'>{selectedItem.metodo_pago || selectedItem.metodoPago || 'N/A'}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Método de Pago
+                          </div>
+                          <div className='font-medium'>
+                            {selectedItem.metodo_pago || selectedItem.metodoPago || 'N/A'}
+                          </div>
                         </div>
                       </div>
 
                       {/* Detalles financieros de Servicio */}
                       <div className='grid grid-cols-2 gap-4'>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Precio Habitación</div>
-                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.precio_habitacion || selectedItem.precioHabitacion || 0)}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Precio Habitación
+                          </div>
+                          <div className='font-medium'>
+                            {formatCurrencyCLP(
+                              selectedItem.precio_habitacion || selectedItem.precioHabitacion || 0
+                            )}
+                          </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Precio Servicio</div>
-                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.precio_servicio || selectedItem.precioServicio || 0)}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Precio Servicio
+                          </div>
+                          <div className='font-medium'>
+                            {formatCurrencyCLP(
+                              selectedItem.precio_servicio || selectedItem.precioServicio || 0
+                            )}
+                          </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>IVA</div>
-                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.iva || 0)}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            IVA
+                          </div>
+                          <div className='font-medium'>
+                            {formatCurrencyCLP(selectedItem.iva || 0)}
+                          </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Subtotal</div>
-                          <div className='font-medium'>{formatCurrencyCLP(selectedItem.sub_total || selectedItem.subtotal || 0)}</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Subtotal
+                          </div>
+                          <div className='font-medium'>
+                            {formatCurrencyCLP(
+                              selectedItem.sub_total || selectedItem.subtotal || 0
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Comisión Total */}
                       <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-                        <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>Comisión Total</div>
-                        <div className='text-xl font-bold text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(selectedItem.comision_total || 0)}</div>
+                        <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>
+                          Comisión Total
+                        </div>
+                        <div className='text-xl font-bold text-blue-600 dark:text-blue-400'>
+                          {formatCurrencyCLP(selectedItem.comision_total || 0)}
+                        </div>
                       </div>
 
                       {/* Comisión por Anfitriona */}
                       {selectedItem.comision_por_anfitriona && (
                         <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-                          <div className='text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2'>Comisión por Anfitriona</div>
+                          <div className='text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2'>
+                            Comisión por Anfitriona
+                          </div>
                           <div className='space-y-2'>
-                            {selectedItem.comision_por_anfitriona.split('|').map((item: string, idx: number) => {
-                              const [nombre, monto] = item.split(':');
-                              return (
-                                <div key={idx} className='flex justify-between items-center'>
-                                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>{nombre}</span>
-                                  <span className='font-semibold text-blue-600 dark:text-blue-400'>{formatCurrencyCLP(parseFloat(monto) || 0)}</span>
-                                </div>
-                              );
-                            })}
+                            {selectedItem.comision_por_anfitriona
+                              .split('|')
+                              .map((item: string, idx: number) => {
+                                const [nombre, monto] = item.split(':');
+                                return (
+                                  <div key={idx} className='flex justify-between items-center'>
+                                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                                      {nombre}
+                                    </span>
+                                    <span className='font-semibold text-blue-600 dark:text-blue-400'>
+                                      {formatCurrencyCLP(parseFloat(monto) || 0)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                           </div>
                         </div>
                       )}
@@ -1362,26 +1503,36 @@ export default function PayrollCalendarPage() {
                       {/* Total */}
                       <div className='p-4 bg-black text-white rounded-lg'>
                         <div className='text-xs text-gray-400 uppercase mb-1'>Total Servicio</div>
-                        <div className='text-2xl font-bold'>{formatCurrencyCLP(selectedItem.total || 0)}</div>
+                        <div className='text-2xl font-bold'>
+                          {formatCurrencyCLP(selectedItem.total || 0)}
+                        </div>
                       </div>
 
                       {/* Fecha y Estado */}
                       <div className='grid grid-cols-2 gap-4'>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Fecha y Hora</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Fecha y Hora
+                          </div>
                           <div className='font-medium'>
                             {selectedItem.fecha_crea || selectedItem.fechaHoraServicio
-                              ? formatDateToSpanish(selectedItem.fecha_crea || selectedItem.fechaHoraServicio)
+                              ? formatDateToSpanish(
+                                  selectedItem.fecha_crea || selectedItem.fechaHoraServicio
+                                )
                               : 'N/A'}
                           </div>
                           <div className='text-sm text-gray-500'>
                             {selectedItem.fecha_crea || selectedItem.fechaHoraServicio
-                              ? formatTimeFromDate(selectedItem.fecha_crea || selectedItem.fechaHoraServicio)
+                              ? formatTimeFromDate(
+                                  selectedItem.fecha_crea || selectedItem.fechaHoraServicio
+                                )
                               : ''}
                           </div>
                         </div>
                         <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Estado</div>
+                          <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                            Estado
+                          </div>
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
                               selectedItem.estado === 0

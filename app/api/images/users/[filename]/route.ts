@@ -14,7 +14,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
       await fs.access(filePath);
       imageBuffer = await fs.readFile(filePath);
       const ext = path.extname(filename).toLowerCase();
-      const mimeTypes: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
+      const mimeTypes: Record<string, string> = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+      };
       contentType = mimeTypes[ext] || 'image/jpeg';
     } catch {
       const defaultPath = path.join(process.cwd(), 'public', 'img', 'users', 'default.png');
@@ -30,10 +36,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=31536000',
-        'Access-Control-Allow-Origin': '*',
-      },
+        'Access-Control-Allow-Origin': '*'
+      }
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
