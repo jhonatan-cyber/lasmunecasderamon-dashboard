@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { getAuth } from '@/lib/auth/auth-app';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 
-export const GET = withAppApiWrapper(async () => {
-  const userAuth = await getAuth();
-  if (!userAuth)
-    return NextResponse.json({ success: false, message: 'No session' }, { status: 401 });
-
-  return NextResponse.json({ success: true, user: userAuth });
+export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
+  return NextResponse.json({ success: true, user });
 });

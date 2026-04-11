@@ -1,61 +1,42 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 import { jsonWithNormalizedDates } from '@/lib/api/date-response';
+import { ValidationError } from '@/lib/errors/errors';
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
+export const GET = withAppApiWrapper(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const client = await ClientRepository.getById(id);
-    if (!client) return NextResponse.json({ message: 'Cliente no encontrado' }, { status: 404 });
-    return jsonWithNormalizedDates(client);
-  } catch (error: any) {
-    return NextResponse.json(
-      { message: 'Error interno del servidor', error: error.message },
-      { status: 500 }
-    );
+    if (!client)
+      return NextResponse.json(
+        { success: false, message: 'Cliente no encontrado' },
+        { status: 404 }
+      );
+    return jsonWithNormalizedDates({ success: true, data: client });
   }
-}
+);
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const userAuth = await getAuth();
-    if (!userAuth) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
-
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
     const { run, name, lastName, phone } = body;
 
-    // Si el ID viene en el body lo usamos, sino el de la URL
-    const targetId = id || body.id;
-    if (!targetId || !name || !lastName) {
-      return NextResponse.json({ message: 'Faltan parámetros requeridos' }, { status: 400 });
-    }
+    if (!name || !lastName)
+      throw new ValidationError('name y lastName son requeridos', { name, lastName });
 
-    await ClientRepository.update(targetId, { run, name, lastName, phone });
-    return NextResponse.json({ message: 'Cliente actualizado correctamente' });
-  } catch (error: any) {
-    return NextResponse.json(
-      { message: 'Error interno del servidor', error: error.message },
-      { status: 500 }
-    );
-  }
-}
+    await ClientRepository.update(id, { run, name, lastName, phone });
+    return NextResponse.json({ success: true, message: 'Cliente actualizado correctamente' });
+  },
+  { requiredPermission: { module: 'clients', action: 'write' } }
+);
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const userAuth = await getAuth();
-    if (!userAuth) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    if (!id) return NextResponse.json({ message: 'ID de cliente no válido' }, { status: 400 });
-
     await ClientRepository.delete(id);
-    return NextResponse.json({ message: 'Cliente eliminado correctamente' });
-  } catch (error: any) {
-    return NextResponse.json(
-      { message: 'Error al eliminar el cliente', error: error.message },
-      { status: 500 }
-    );
-  }
-}
+    return NextResponse.json({ success: true, message: 'Cliente eliminado correctamente' });
+  },
+  { requiredPermission: { module: 'clients', action: 'delete' } }
+);

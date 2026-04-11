@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 import { useForm, Controller } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import { z } from 'zod';

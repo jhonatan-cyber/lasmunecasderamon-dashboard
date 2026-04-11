@@ -4,7 +4,13 @@ import { useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CreditCard, DollarSign, Building2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -109,7 +115,9 @@ export default function CobrarCuentaModal({
       detalleResumen.groupedDetalles.map((item, index) => ({
         id_producto: item.id_producto ?? item.producto_id ?? item.agrupacionKey ?? index,
         nombre:
-          item.producto || item.nombre || `Producto ID: ${item.id_producto ?? item.producto_id ?? '-'}`,
+          item.producto ||
+          item.nombre ||
+          `Producto ID: ${item.id_producto ?? item.producto_id ?? '-'}`,
         precio: item.precio || 0,
         cantidad: item.cantidad || 0,
         sub_total: item.sub_total || 0,
@@ -156,7 +164,7 @@ export default function CobrarCuentaModal({
   return (
     <Dialog
       open={open}
-      onOpenChange={(isOpen) => {
+      onOpenChange={isOpen => {
         if (!isOpen) handleClose();
       }}
     >
@@ -206,7 +214,9 @@ export default function CobrarCuentaModal({
                       <b>Anfitriona(s):</b>
                     </span>{' '}
                     <span className='font-normal'>
-                      {anfitrionasArray.length > 0 ? anfitrionasArray.join(', ') : 'Sin anfitrionas'}
+                      {anfitrionasArray.length > 0
+                        ? anfitrionasArray.join(', ')
+                        : 'Sin anfitrionas'}
                     </span>
                   </div>
                   <div>
@@ -229,7 +239,9 @@ export default function CobrarCuentaModal({
                       <Select value={metodoPago} onValueChange={setMetodoPago}>
                         <SelectTrigger
                           className={`w-full pl-8 border focus:ring-0 focus:border-black bg-transparent py-1 text-center text-sm text-gray-500 rounded-full ${
-                            showMetodoPagoError && !metodoPago ? 'border-red-300' : 'border-gray-300'
+                            showMetodoPagoError && !metodoPago
+                              ? 'border-red-300'
+                              : 'border-gray-300'
                           }`}
                         >
                           <SelectValue placeholder='Seleccione un método de pago' />
@@ -257,7 +269,7 @@ export default function CobrarCuentaModal({
                         <Building2 className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4' />
                         <Select
                           value={habitacionValue}
-                          onValueChange={v => setHabitacionId(v || null)}
+                          onValueChange={(v: string) => setHabitacionId(v || null)}
                         >
                           <SelectTrigger className='w-full pl-8 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-1'>
                             <SelectValue placeholder='Seleccione una opción' />

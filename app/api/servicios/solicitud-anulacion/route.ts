@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { logger } from '@/lib/utils/logger';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -56,11 +57,9 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json({ success: true, token });
-  } catch (error: any) {
-    console.error('Error al solicitar anulación:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    logger.error('Error al solicitar anulación:', { error });
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

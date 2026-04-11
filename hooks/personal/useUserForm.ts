@@ -165,6 +165,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');
       descuento.setFormattedValue(user.discount ? descuento.formatNumber(user.discount) : '');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, form, mapEstadoCivilToSelect]);
 
   const handleFormSubmit = async (values: UserFormValues) => {

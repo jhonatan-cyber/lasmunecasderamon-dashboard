@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { AuthRepository } from '@/lib/repositories/AuthRepository';
 import { cookies } from 'next/headers';
+import { loginLimiterApp } from '@/lib/middleware/rateLimit';
 
-export const POST = withAppApiWrapper(async (request: Request) => {
+export const POST = loginLimiterApp(async (request: Request) => {
   const body = await request.json();
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';

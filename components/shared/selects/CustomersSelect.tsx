@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+﻿import { Users } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -71,7 +71,6 @@ const CustomersSelect = ({
                 ? [...value, id]
                 : value;
 
-        console.log('[CustomersSelect] toggle', { id, previous: value, next: newValue });
         onChange(newValue);
     };
 
@@ -112,7 +111,7 @@ const CustomersSelect = ({
                                     ))}
                                 </span>
                             )}
-                            <span className="ml-auto pl-2 text-gray-400 text-xs">▼</span>
+                            <span className="ml-auto pl-2 text-gray-400 text-xs">â–¼</span>
                         </button>
                     </PopoverTrigger>
                     <PopoverContent align="start" className="w-[280px] p-0 shadow-xl border border-gray-200 z-[9999]" sideOffset={5}>
@@ -150,7 +149,7 @@ const CustomersSelect = ({
                         </div>
                         {maxSelection > 1 && (
                             <div className="p-2 border-t bg-gray-50 text-[10px] text-gray-400 text-center uppercase tracking-wider font-semibold">
-                                Seleccionados: {value.length} / Máximo: {maxSelection}
+                                Seleccionados: {value.length} / MÃ¡ximo: {maxSelection}
                             </div>
                         )}
                     </PopoverContent>
@@ -161,3 +160,4 @@ const CustomersSelect = ({
 };
 
 export default CustomersSelect;
+

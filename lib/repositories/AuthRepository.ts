@@ -3,7 +3,7 @@ import * as argon2 from 'argon2';
 import { generateToken, registrarLogin } from '@/lib/auth/auth';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import crypto from 'crypto';
-import { ValidationError } from '@/lib/errors/errors';
+import { ValidationError, NotFoundError, BusinessError, ConflictError } from '@/lib/errors/errors';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 20 * 60;
@@ -50,7 +50,7 @@ export class AuthRepository {
         `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.qr_token = ? AND u.estado = 1`,
         [creds.qr_token]
       );
-      if (users.length === 0) throw new Error('Código QR no válido o expirado');
+      if (users.length === 0) throw new ValidationError('Código QR no válido o expirado');
       user = users[0];
       const nextQR = crypto.randomBytes(16).toString('hex');
       await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
@@ -63,12 +63,12 @@ export class AuthRepository {
         `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.email = ? AND u.estado = 1`,
         [creds.email]
       );
-      if (users.length === 0) throw new Error('Credenciales inválidas');
+      if (users.length === 0) throw new ValidationError('Credenciales inválidas');
       user = users[0];
       const isMatch = await argon2.verify(user.password, creds.password);
-      if (!isMatch) throw new Error('Contraseña incorrecta');
+      if (!isMatch) throw new ValidationError('Contraseña incorrecta');
     } else {
-      throw new Error('Proporciones QR o credenciales');
+      throw new ValidationError('Proporcione QR o credenciales');
     }
 
     const { hora, totalMinutos, dateString, timeString } = this.getSystemDateTime();
@@ -92,7 +92,7 @@ export class AuthRepository {
       const valid = await query<any[]>('SELECT codigo FROM codigos WHERE codigo = ?', [
         creds.codigo
       ]);
-      if (valid.length === 0) throw new Error('Código de verificación incorrecto');
+      if (valid.length === 0) throw new ValidationError('Código de verificación incorrecto');
     }
 
     const token = generateToken({
@@ -219,9 +219,13 @@ export class AuthRepository {
     ci: string;
   }) {
     const hasUsers = await this.checkUsers();
-    if (hasUsers) throw new Error('Ya existen usuarios registrados');
+    if (hasUsers) throw new ConflictError('Ya existen usuarios registrados');
 
-    const hashedPassword = await argon2.hash(data.ci);
+    if (!data.password || data.password.trim().length < 8) {
+      throw new ValidationError('La contrase�a inicial debe tener al menos 8 caracteres');
+    }
+
+    const hashedPassword = await argon2.hash(data.password.trim());
     const id = generateUUID();
 
     // Buscar o crear rol administrador
@@ -281,3 +285,4 @@ export class AuthRepository {
     return { success: true, debeDesconectar: false };
   }
 }
+

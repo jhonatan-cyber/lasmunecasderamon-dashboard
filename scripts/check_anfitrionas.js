@@ -1,3 +1,4 @@
+﻿/* eslint-disable no-console */
 const { query } = require('./lib/database/db');
 
 async function checkAnfitrionas() {
@@ -32,3 +33,4 @@ async function checkAnfitrionas() {
 }
 
 checkAnfitrionas();
+

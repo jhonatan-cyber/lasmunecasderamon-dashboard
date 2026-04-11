@@ -2,6 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomSchema, type RoomType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
+import { ConflictError, ValidationError } from '@/lib/errors/errors';
 
 export class RoomRepository {
   private static mapRoomFromDB(row: any): RoomType {
@@ -85,7 +86,7 @@ export class RoomRepository {
       [validated.name]
     );
     if (dup.length > 0) {
-      throw new Error("Ya existe una habitación con ese nombre");
+      throw new ConflictError('Ya existe una habitación con ese nombre');
     }
 
     const id = generateUUID();
@@ -112,7 +113,7 @@ export class RoomRepository {
         [validated.name, id]
       );
       if (dup.length > 0) {
-        throw new Error("Ya existe una habitación con ese nombre");
+        throw new ConflictError('Ya existe una habitación con ese nombre');
       }
     }
 
@@ -131,7 +132,7 @@ export class RoomRepository {
     if (action === "activate") newStatus = 1;
     else if (action === "deactivate") newStatus = 0;
     else if (action === "occupy") newStatus = 2;
-    else throw new Error("Acción no válida");
+    else throw new ValidationError('Acción no válida', { action, allowed: ['activate', 'deactivate', 'occupy'] });
 
     await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, { 
       estado: newStatus,

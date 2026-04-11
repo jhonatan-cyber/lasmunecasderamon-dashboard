@@ -304,7 +304,7 @@ export function CashRegisterReport() {
               </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="period-select" className="sr-only">Seleccionar período</label>
-                <Select value={period} onValueChange={(v) => dispatch({ type: 'SET_PERIOD', payload: v })}>
+                <Select value={period} onValueChange={(v: string) => dispatch({ type: 'SET_PERIOD', payload: v })}>
                   <SelectTrigger id="period-select" className="w-40">
                     <SelectValue />
                   </SelectTrigger>

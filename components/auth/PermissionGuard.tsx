@@ -1,5 +1,4 @@
-/* eslint-disable */
-'use client';
+﻿'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,7 +67,6 @@ export function PermissionGuard({
   if (requireAll && actions.length > 0) {
     hasAccess = hasAllPermissions(module, actions);
   } else if (action) {
-
     hasAccess = hasPermission(module, action);
   } else {
     hasAccess = hasAnyPermission(module);
@@ -97,11 +95,11 @@ export function PermissionGuard({
               <div className='text-sm text-yellow-800'>
                 <p className='font-medium'>Permisos requeridos:</p>
                 <p className='mt-1'>
-                  Módulo: <span className='font-mono'>{module}</span>
+                  MÃ³dulo: <span className='font-mono'>{module}</span>
                   {action && (
                     <>
                       <br />
-                      Acción: <span className='font-mono'>{action}</span>
+                      AcciÃ³n: <span className='font-mono'>{action}</span>
                     </>
                   )}
                   {actions.length > 0 && (
@@ -121,4 +119,3 @@ export function PermissionGuard({
 
   return <>{children}</>;
 }
-

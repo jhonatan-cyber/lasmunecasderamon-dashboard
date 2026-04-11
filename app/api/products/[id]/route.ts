@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { ProductService } from '@/lib/services/ProductService';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const contentType = request.headers.get('content-type') || '';
     let payload: any = {};
@@ -41,8 +41,8 @@ export const PUT = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     await ProductRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Producto eliminado' });

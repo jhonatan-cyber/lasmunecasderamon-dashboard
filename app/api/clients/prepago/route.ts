@@ -22,11 +22,11 @@ export const POST = withAppAuth(
         metadatos
       });
 
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Saldo cargado correctamente' 
+      return NextResponse.json({
+        success: true,
+        message: 'Saldo cargado correctamente'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return ApiResponse.error(error);
     }
   },

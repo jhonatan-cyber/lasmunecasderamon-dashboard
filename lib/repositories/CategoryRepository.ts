@@ -2,6 +2,7 @@ import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { BaseRepository } from './BaseRepository';
+import { ConflictError } from '@/lib/errors/errors';
 
 export class CategoryRepository {
   private static mapCategoryFromDB(row: any) {
@@ -32,7 +33,7 @@ export class CategoryRepository {
 
   static async create(name: string, description: string = '') {
     const dup = await query<any[]>('SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?)', [name]);
-    if (dup.length > 0) throw new Error('Ya existe una categoría con ese nombre');
+    if (dup.length > 0) throw new ConflictError('Ya existe una categoría con ese nombre');
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
@@ -59,7 +60,7 @@ export class CategoryRepository {
 
   static async update(id: string, name: string, description: string = '') {
     const dup = await query<any[]>('SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?) AND id_categoria != ?', [name, id]);
-    if (dup.length > 0) throw new Error('Ya existe una categoría con ese nombre');
+    if (dup.length > 0) throw new ConflictError('Ya existe una categoría con ese nombre');
 
     await BaseRepository.update(query, 'categorias', 'id_categoria', id, {
       nombre: name,

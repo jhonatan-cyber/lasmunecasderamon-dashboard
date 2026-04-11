@@ -1,37 +1,22 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
-import { getAuth } from '@/lib/auth/auth-app';
+import { ValidationError } from '@/lib/errors/errors';
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const { monto, descripcion } = await request.json();
-    if (!id || !monto)
-      return NextResponse.json(
-        { success: false, message: 'ID y monto son requeridos' },
-        { status: 400 }
-      );
+    if (!monto) throw new ValidationError('monto es requerido', { monto });
 
     await GratificacionRepository.update(id, { monto, descripcion });
     return NextResponse.json({ success: true, message: 'Gratificación actualizada' });
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(
+  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    if (!id)
-      return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
-
     await GratificacionRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Gratificación eliminada' });
   }

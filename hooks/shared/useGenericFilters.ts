@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
+﻿/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useState, useMemo, useEffect } from 'react';
 export function useGenericFilters<T>(
   data: T[],
@@ -49,18 +49,18 @@ export function useGenericFilters<T>(
         if (aValue == null) return sortOrder === 'asc' ? 1 : -1;
         if (bValue == null) return sortOrder === 'asc' ? -1 : 1;
 
-        // Comparación de strings
+        // ComparaciÃ³n de strings
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue);
           return sortOrder === 'asc' ? comparison : -comparison;
         }
 
-        // Comparación numérica
+        // ComparaciÃ³n numÃ©rica
         if (typeof aValue === 'number' && typeof bValue === 'number') {
           return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
         }
 
-        // Comparación de fechas
+        // ComparaciÃ³n de fechas
         if (aValue instanceof Date && bValue instanceof Date) {
           return sortOrder === 'asc' ? aValue.getTime() - bValue.getTime() : bValue.getTime() - aValue.getTime();
         }
@@ -74,7 +74,7 @@ export function useGenericFilters<T>(
           }
         }
 
-        // Fallback: comparación como strings
+        // Fallback: comparaciÃ³n como strings
         const aStr = String(aValue);
         const bStr = String(bValue);
         const comparison = aStr.localeCompare(bStr);
@@ -114,4 +114,6 @@ export function useGenericFilters<T>(
     totalPages,
   };
 }
+
+
 

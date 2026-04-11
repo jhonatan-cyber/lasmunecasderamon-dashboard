@@ -35,3 +35,8 @@ logs/
 
 # Audit reports
 reports/
+playwright-report/
+test-results/
+.cloudflared/
+.atl/
+cloudflared-windows-amd64.exe

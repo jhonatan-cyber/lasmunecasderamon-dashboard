@@ -10,17 +10,19 @@ class SSEManager {
     if (typeof window === 'undefined') return;
 
     if (this.url === url && this.isConnected && this.eventSource) {
-      return; // Ya está conectado al mismo endpoint
+      return; // Ya estÃ¡ conectado al mismo endpoint
     }
 
     this.url = url;
     this.cleanup();
 
-    console.log(`[SSEManager] Conectando a ${url}...`);
+    // eslint-disable-next-line no-console
+    console.info(`[SSEManager] Conectando a ${url}...`);
     this.eventSource = new EventSource(url);
 
     this.eventSource.onopen = () => {
-      console.log(`[SSEManager] Conectado exitosamente.`);
+      // eslint-disable-next-line no-console
+      console.info(`[SSEManager] Conectado exitosamente.`);
       this.isConnected = true;
       appEventBus.emit('sse-reconnect');
     };
@@ -29,7 +31,7 @@ class SSEManager {
       try {
         const payload = JSON.parse(event.data);
         
-        // Emite un evento genérico sse-message para todos los payloads
+        // Emite un evento genÃ©rico sse-message para todos los payloads
         appEventBus.emit('sse-message', payload);
         
       } catch (err) {
@@ -38,7 +40,7 @@ class SSEManager {
     };
 
     this.eventSource.onerror = () => {
-      console.warn('[SSEManager] Error de conexión, reintentando en 5s...');
+      console.warn('[SSEManager] Error de conexiÃ³n, reintentando en 5s...');
       this.isConnected = false;
       this.cleanup(false);
       this.reconnectTimeout = setTimeout(() => {

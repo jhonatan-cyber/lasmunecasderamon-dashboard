@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -13,20 +12,20 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PATCH = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = withAppAuth(
+  async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    const user = await getAuth();
     const { estado } = await request.json();
-    await SaleRepository.updateStatus(id, estado, user?.id.toString());
+    await SaleRepository.updateStatus(id, estado, user.id.toString());
     return NextResponse.json({ success: true, message: 'Estado actualizado' });
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     await SaleRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Venta eliminada exitosamente' });
-  }
+  },
+  { requiredPermission: { module: 'sales', action: 'delete' } }
 );

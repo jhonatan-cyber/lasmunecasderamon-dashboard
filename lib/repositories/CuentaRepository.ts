@@ -3,7 +3,54 @@ import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/time
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
+import { NotFoundError, BusinessError } from '@/lib/errors/errors';
 import { RoomManager } from '@/lib/services/RoomManager';
+
+// ─── Input types for CuentaRepository ───────────────────────────────────────
+
+type CuentaDetalle = {
+  producto_id: string;
+  precio: number;
+  cantidad: number;
+  sub_total: number;
+  comision: number;
+  hostesses?: (string | null)[];
+  isChampagne?: boolean;
+};
+
+type CuentaCreateBody = {
+  codigo: string;
+  cliente_id?: string | null;
+  total_comision: number;
+  habitacion_id?: string | null;
+  habitacion_nombre?: string;
+  sub_total: number;
+  total: number;
+  propina?: number;
+  tiempo?: number;
+  detalles: CuentaDetalle[];
+  usuarios?: string[];
+};
+
+type CuentaUpdateBody = {
+  estado?: number;
+  detalles?: CuentaDetalle[];
+  usuarios?: string[];
+  extraTiempo?: number;
+  habitacion_id?: string | null;
+  tiempo?: number;
+};
+
+type CuentaCobrarBody = {
+  montoFinal?: number;
+  total_cobrado?: number;
+  propinaFinal?: number;
+  propina?: number;
+  tipoPago?: string;
+  metodoPago?: string;
+  metodo_pago?: string;
+  habitacion_id?: string | null;
+};
 
 type CuentaRoomHistoryItem = {
   roomId: string;
@@ -373,7 +420,7 @@ export class CuentaRepository {
     });
   }
 
-  static async create(body: any, createdBy: string) {
+  static async create(body: CuentaCreateBody, createdBy: string) {
     return await withTransaction(async (trx) => {
       const id = generateUUID();
       const now = getNowInBusinessTimezone();
@@ -390,8 +437,8 @@ export class CuentaRepository {
         estado: 1,
         tiempo: body.tiempo || 0,
         tiempo_actual: body.tiempo || 0,
-        tiempo_inicio_actual: body.habitacion_id && body.tiempo > 0 ? now : null,
-        habitaciones_historial: body.habitacion_id && body.tiempo > 0 ? JSON.stringify([{
+        tiempo_inicio_actual: body.habitacion_id && (body.tiempo ?? 0) > 0 ? now : null,
+        habitaciones_historial: body.habitacion_id && (body.tiempo ?? 0) > 0 ? JSON.stringify([{
           roomId: String(body.habitacion_id),
           roomName: body.habitacion_nombre || 'Sin habitacion',
           startedAt: now,
@@ -403,7 +450,7 @@ export class CuentaRepository {
       });
 
       for (const d of body.detalles) {
-        const hasAnfitrionas = body.usuarios?.length > 0;
+        const hasAnfitrionas = (body.usuarios ?? []).length > 0;
         const selectedHostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : [null];
         const isSpecial = d.isChampagne || d.precio >= 160000;
         const comision = hasAnfitrionas ? (d.comision || 0) : 0;
@@ -430,13 +477,13 @@ export class CuentaRepository {
         }
       }
 
-      if (body.usuarios?.length) {
-        for (const uId of body.usuarios) {
+      if ((body.usuarios ?? []).length) {
+        for (const uId of body.usuarios ?? []) {
           await trx(`INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id) VALUES (?, ?, ?)`, [generateUUID(), id, uId]);
         }
       }
 
-      if (body.habitacion_id && body.tiempo > 0) {
+      if (body.habitacion_id && (body.tiempo ?? 0) > 0) {
         await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0 OR comision_anfitriona > 0)', [body.habitacion_id]);
         const habitacion = await trx<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [body.habitacion_id]);
         await trx(
@@ -453,7 +500,7 @@ export class CuentaRepository {
         const cliente = await trx<any[]>('SELECT nombre FROM clientes WHERE id_cliente = ?', [body.cliente_id]);
         sendNotificationToAll('timer_started', {
           servicioId: id, roomId: body.habitacion_id, roomName: habitacion[0]?.nombre || body.habitacion_id,
-          duration: body.tiempo, startTime: now, codigo: body.codigo, clienteNombre: cliente[0]?.nombre || 'Cliente',
+          duration: body.tiempo ?? 0, startTime: now, codigo: body.codigo, clienteNombre: cliente[0]?.nombre || 'Cliente',
           tipoTransaccion: 'cuenta', status: 1
         });
         sendNotificationToAll('timers_updated', { timestamp: now });
@@ -462,7 +509,7 @@ export class CuentaRepository {
     });
   }
 
-  static async updateCuenta(id: string, body: any, createdBy: string) {
+  static async updateCuenta(id: string, body: CuentaUpdateBody, createdBy: string) {
     const bizNow = getNowInBusinessTimezone();
     const nowObj = parseBusinessDate(bizNow);
 
@@ -477,7 +524,7 @@ export class CuentaRepository {
         await trx('UPDATE cuentas SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = ? WHERE id_cuenta = ?', [finalSub, finalComm, finalSub, bizNow, id]);
 
         for (const d of body.detalles) {
-          const hasAnfitrionas = body.usuarios?.length > 0;
+          const hasAnfitrionas = (body.usuarios ?? []).length > 0;
           const selectedHostesses = (d.hostesses?.length) ? d.hostesses : [null];
           const isSpecial = d.isChampagne || d.precio >= 160000;
           const comision = hasAnfitrionas ? (d.comision || 0) : 0;
@@ -503,9 +550,9 @@ export class CuentaRepository {
           }
         }
       }
-      if (body.usuarios?.length) {
+      if ((body.usuarios ?? []).length) {
         await trx('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [id]);
-        for (const uId of body.usuarios) {
+        for (const uId of body.usuarios ?? []) {
           await trx(
             'INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id) VALUES (?, ?, ?)',
             [generateUUID(), id, uId]
@@ -514,7 +561,7 @@ export class CuentaRepository {
       }
     });
 
-    if (body.extraTiempo > 0) {
+    if ((body.extraTiempo ?? 0) > 0) {
       const c = await query<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
       if (c.length) {
         const room = await query<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [c[0].habitacion_id]);
@@ -522,7 +569,7 @@ export class CuentaRepository {
         let history = this.parseRoomHistory(c[0].habitaciones_historial);
         history = this.ensureOpenHistorySegment(history, c[0], room[0]?.nombre || 'Sin habitacion');
 
-        const addedMinutes = Number(body.extraTiempo || 0);
+        const addedMinutes = Number(body.extraTiempo ?? 0);
         const totalAssigned = Number(c[0].tiempo || 0) + addedMinutes;
         const currentRoomId = String(c[0].habitacion_id || '');
         const openIndex = [...history].reverse().findIndex((item) => item.endedAt === null && String(item.roomId) === currentRoomId);
@@ -561,7 +608,7 @@ export class CuentaRepository {
     }
 
     // Si se envian habitacion_id y tiempo nuevos (productos con comision < 160k)
-    if (body.habitacion_id && body.tiempo > 0) {
+    if (body.habitacion_id && (body.tiempo ?? 0) > 0) {
       const room = await query<any[]>(
         'SELECT nombre, precio, tiempo as room_tiempo, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
         [body.habitacion_id]
@@ -625,12 +672,12 @@ export class CuentaRepository {
     return await this.getById(id);
   }
 
-  static async cobrar(id: string, body: any, cobradoPor: string) {
+  static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
     return await withTransaction(async (trx) => {
       const cuenta = await trx<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
-      if (!cuenta.length) throw new Error('Cuenta no encontrada');
+      if (!cuenta.length) throw new NotFoundError('Cuenta', id);
       if (![1, 4].includes(Number(cuenta[0].estado))) {
-        throw new Error('La cuenta ya fue procesada');
+        throw new BusinessError('La cuenta ya fue procesada', 'CUENTA_YA_PROCESADA');
       }
 
       const now = getNowInBusinessTimezone();
@@ -659,7 +706,7 @@ export class CuentaRepository {
 
       if (tipoPago === 'prepago') {
         const client = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [cuenta[0].cliente_id]);
-        if (!client.length || client[0].saldo < montoFinal) throw new Error('Saldo insuficiente');
+        if (!client.length || client[0].saldo < montoFinal) throw new BusinessError('Saldo insuficiente', 'SALDO_INSUFICIENTE');
         await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [montoFinal, cuenta[0].cliente_id]);
       }
 
@@ -697,7 +744,7 @@ export class CuentaRepository {
 
     await withTransaction(async (trx) => {
       const cuenta = await trx<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
-      if (!cuenta.length) throw new Error('Cuenta no encontrada');
+      if (!cuenta.length) throw new NotFoundError('Cuenta', id);
 
       if (cuenta[0].habitacion_id) {
         await this.finalizeRoomSession(id, now);
@@ -730,13 +777,13 @@ export class CuentaRepository {
          WHERE c.id_cuenta = ?`,
         [id]
       );
-      if (!cuenta.length) throw new Error('Cuenta no encontrada');
-      if (Number(cuenta[0].estado) !== 1) throw new Error('La cuenta no se puede solicitar para anulacion');
+      if (!cuenta.length) throw new NotFoundError('Cuenta', id);
+      if (Number(cuenta[0].estado) !== 1) throw new BusinessError('La cuenta no se puede solicitar para anulacion', 'CUENTA_NO_ANULABLE');
       if (monto <= 0) {
-        throw new Error('El monto solicitado debe ser mayor a 0');
+        throw new BusinessError('El monto solicitado debe ser mayor a 0', 'MONTO_INVALIDO');
       }
       if (monto > Number(cuenta[0].total || 0)) {
-        throw new Error('El monto solicitado no puede ser mayor al total de la cuenta');
+        throw new BusinessError('El monto solicitado no puede ser mayor al total de la cuenta', 'MONTO_EXCEDE_TOTAL');
       }
 
       if (Number(cuenta[0].tiempo_actual || 0) > 0) {

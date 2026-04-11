@@ -1,6 +1,7 @@
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
+import { BusinessError } from '@/lib/errors/errors';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'products');
 
@@ -20,12 +21,12 @@ export async function processAndSaveImage(
       if (imageSource.startsWith('data:')) {
         const base64Data = imageSource.split(',')[1];
         if (!base64Data) {
-          throw new Error('Invalid base64 data URL');
+          throw new BusinessError('Invalid base64 data URL', 'INVALID_IMAGE_DATA');
         }
         input = Buffer.from(base64Data, 'base64');
       } else if (imageSource.startsWith('http')) {
         const response = await fetch(imageSource);
-        if (!response.ok) throw new Error('Failed to fetch image from URL');
+        if (!response.ok) throw new BusinessError('Failed to fetch image from URL', 'IMAGE_FETCH_FAILED');
         const arrayBuffer = await response.arrayBuffer();
         input = Buffer.from(arrayBuffer);
       } else {

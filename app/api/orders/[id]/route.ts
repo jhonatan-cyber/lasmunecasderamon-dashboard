@@ -1,37 +1,22 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
-import { getAuth } from '@/lib/auth/auth-app';
+import { ValidationError } from '@/lib/errors/errors';
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(
+  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    if (!id) return NextResponse.json({ success: false, message: 'Falta el id' }, { status: 400 });
-
     await OrderRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Pedido eliminado correctamente' });
   }
 );
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const user = await getAuth();
-    if (!user)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const { estado } = await request.json();
 
-    if (!id || estado === undefined) {
-      return NextResponse.json(
-        { success: false, message: 'Falta el id o el estado' },
-        { status: 400 }
-      );
-    }
+    if (estado === undefined) throw new ValidationError('estado es requerido', { estado });
 
     await OrderRepository.updateStatus(id, estado);
     return NextResponse.json({

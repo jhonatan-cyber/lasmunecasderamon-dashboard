@@ -1,4 +1,4 @@
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+﻿import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filtrar anfitrionas basado en el término de búsqueda
+  // Filtrar anfitrionas basado en el tÃ©rmino de bÃºsqueda
   const filteredAnfitrionas = useMemo(() => {
     if (!searchTerm) return anfitrionas;
 
@@ -81,7 +81,6 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
       ? [...value, id]
       : value;
 
-    console.log('[HostessSelect] toggle', { id, previous: value, next });
     onChange(next);
   };
 
@@ -122,12 +121,12 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                   ))}
                 </span>
               )}
-              <span className="ml-auto pl-2 text-gray-400">▼</span>
+              <span className="ml-auto pl-2 text-gray-400">â–¼</span>
             </button>
           </PopoverTrigger>
           {!disabled && (
             <PopoverContent align="start" className="w-[280px] p-0 z-[9999]">
-            {/* Barra de búsqueda */}
+            {/* Barra de bÃºsqueda */}
             <div className="p-2 border-b">
               <label htmlFor={`${uniqueId}-search`} className="sr-only">Buscar anfitriona</label>
               <Input
@@ -173,10 +172,10 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                   })
               )}
             </div>
-            {/* Contador de selección */}
+            {/* Contador de selecciÃ³n */}
             {maxSelection > 1 && (
               <div className="p-2 border-t bg-gray-50 text-xs text-gray-500">
-                Seleccionadas: {value.length} / Máximo: {maxSelection}
+                Seleccionadas: {value.length} / MÃ¡ximo: {maxSelection}
               </div>
             )}
           </PopoverContent>
@@ -188,3 +187,4 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
 };
 
 export default HostessSelect; 
+

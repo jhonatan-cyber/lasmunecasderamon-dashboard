@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell } from 'lucide-react';
@@ -23,14 +22,22 @@ import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { ServiceRequestModal } from './ServiceRequestModal';
 
-const OrderDetailModal = dynamic(
-  () => import('@/components/orders/OrderDetailModal'),
-  { loading: () => null, ssr: false }
-);
+const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
+  loading: () => null,
+  ssr: false
+});
 
 export function HeaderNotifications() {
   const { user } = useCurrentUser();
-  const { orders, refetch, orderDetail, fetchOrderDetail, isDetailLoading, detailError, setOrders } = useOrders();
+  const {
+    orders,
+    refetch,
+    orderDetail,
+    fetchOrderDetail,
+    isDetailLoading,
+    detailError,
+    setOrders
+  } = useOrders();
   const { hasPermission } = useUserPermissions();
   const { hasOpenCaja } = useCashRegisterStatus();
 
@@ -64,7 +71,7 @@ export function HeaderNotifications() {
           audioRef.current!.currentTime = 0;
           setAudioEnabled(true);
         })
-        .catch(() => { });
+        .catch(() => {});
     }
   };
 
@@ -99,7 +106,9 @@ export function HeaderNotifications() {
       return;
     }
     if (hasOpenCaja === false) {
-      toast.error('No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.');
+      toast.error(
+        'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
+      );
       setShowDropdown(false);
       return;
     }
@@ -126,7 +135,9 @@ export function HeaderNotifications() {
         return;
       }
       if (hasOpenCaja === false) {
-        toast.error('No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.');
+        toast.error(
+          'No se puede procesar pedidos sin caja abierta. Por favor, abra una caja primero.'
+        );
         return;
       }
 
@@ -139,7 +150,8 @@ export function HeaderNotifications() {
     };
 
     window.addEventListener('openOrderModal', handleOpenOrderModal as EventListener);
-    return () => window.removeEventListener('openOrderModal', handleOpenOrderModal as EventListener);
+    return () =>
+      window.removeEventListener('openOrderModal', handleOpenOrderModal as EventListener);
   }, [fetchOrderDetail, orders, hasOpenCaja, hasPermission]);
 
   // Listen for external events to open service request modal
@@ -153,8 +165,15 @@ export function HeaderNotifications() {
       setShowDropdown(false);
     };
 
-    window.addEventListener('openServiceRequestModal', handleOpenServiceRequestModal as unknown as EventListener);
-    return () => window.removeEventListener('openServiceRequestModal', handleOpenServiceRequestModal as unknown as EventListener);
+    window.addEventListener(
+      'openServiceRequestModal',
+      handleOpenServiceRequestModal as unknown as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        'openServiceRequestModal',
+        handleOpenServiceRequestModal as unknown as EventListener
+      );
   }, []);
 
   // Update pending orders from external events
@@ -173,7 +192,8 @@ export function HeaderNotifications() {
     };
 
     window.addEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
-    return () => window.removeEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
+    return () =>
+      window.removeEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
   }, [refetch, setOrders]);
 
   // Close order modal from external event
@@ -186,7 +206,8 @@ export function HeaderNotifications() {
     };
 
     window.addEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
-    return () => window.removeEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+    return () =>
+      window.removeEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
   }, [modalOpen, selectedOrderId]);
 
   // Fetch pending service requests
@@ -247,9 +268,7 @@ export function HeaderNotifications() {
           <DropdownMenuSeparator />
 
           {/* Pedidos de productos */}
-          <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
-            Pedidos de Productos
-          </div>
+          <div className='px-3 py-2 text-xs font-semibold text-gray-500'>Pedidos de Productos</div>
           {pendingOrders.length === 0 ? (
             <div className='text-xs text-gray-400 px-4 py-2'>No hay pedidos pendientes</div>
           ) : (
@@ -269,9 +288,7 @@ export function HeaderNotifications() {
                 {order.nicks && (
                   <div className='text-xs text-gray-600'>Anfitrionas: {order.nicks}</div>
                 )}
-                <div className='text-xs text-gray-500'>
-                  Total: {formatCurrencyCLP(order.total)}
-                </div>
+                <div className='text-xs text-gray-500'>Total: {formatCurrencyCLP(order.total)}</div>
               </DropdownMenuItem>
             ))
           )}
@@ -293,7 +310,7 @@ export function HeaderNotifications() {
               >
                 <div className='flex justify-between w-full'>
                   <span className='font-semibold text-sm'>
-                    Habitación: {solicitud.habitacion_nombre || solicitud.habitacion_id}
+                    HabitaciÃ³n: {solicitud.habitacion_nombre || solicitud.habitacion_id}
                   </span>
                   <span className='text-xs text-gray-500'>
                     {formatShortTimeEs(solicitud.fecha_solicitud)}
