@@ -18,6 +18,28 @@ import {
 type ServiceCreateInput = z.input<typeof ServiceCreateSchema>;
 
 export class ServiceService {
+  private static async getLoggedInHostessIds(
+    trx: typeof query,
+    userIds: string[]
+  ): Promise<string[]> {
+    if (!userIds.length) return [];
+
+    const rows = await trx<any[]>(
+      `SELECT DISTINCT u.id_usuario
+       FROM usuarios u
+       INNER JOIN roles r ON r.id_rol = u.rol_id
+       INNER JOIN logins l ON l.usuario_id = u.id_usuario
+       WHERE u.id_usuario IN (${userIds.map(() => '?').join(', ')})
+         AND u.estado = 1
+         AND l.estado = 1
+         AND l.en_local = 1
+         AND LOWER(r.nombre) = 'anfitriona'`,
+      userIds
+    );
+
+    return rows.map((row: any) => row.id_usuario);
+  }
+
   static async createService(body: ServiceCreateInput, createdBy: string) {
     const v = ServiceCreateSchema.parse(body);
     const servicioId = generateUUID();
@@ -39,7 +61,7 @@ export class ServiceService {
     }
 
     const tieneComisionHabitacion = comisionHabitacion > 0;
-    const comisionIndividual = tieneComisionHabitacion
+    const comisionIndividualBase = tieneComisionHabitacion
       ? Math.floor(comisionHabitacion / numAnfitrionas)
       : precioServicioInput;
     const comisionTotal = tieneComisionHabitacion
@@ -95,7 +117,15 @@ export class ServiceService {
         await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [v.habitacion_id]);
       }
 
-      await RoomManager.pauseConflictingServices(trx, v.usuarios, servicioId);
+      const hostessIds = await this.getLoggedInHostessIds(trx, v.usuarios);
+      if (hostessIds.length !== v.usuarios.length) {
+        throw new BusinessError(
+          'Hay anfitrionas seleccionadas que no estan logueadas en el local',
+          'HOSTESS_NOT_LOGGED_IN'
+        );
+      }
+
+      await RoomManager.pauseConflictingServices(trx, hostessIds, servicioId);
 
       const commissionId = generateUUID();
       await trx(
@@ -103,7 +133,11 @@ export class ServiceService {
         [commissionId, servicioId, comisionTotal, now]
       );
 
-      for (const uId of v.usuarios) {
+      const remainder = tieneComisionHabitacion ? comisionTotal % numAnfitrionas : 0;
+
+      for (const [index, uId] of hostessIds.entries()) {
+        const comisionIndividual = comisionIndividualBase + (index === 0 ? remainder : 0);
+
         await trx(
           'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado, fecha_crea) VALUES (?, ?, ?, ?, 1, ?)',
           [generateUUID(), commissionId, uId, comisionIndividual, now]

@@ -4,6 +4,7 @@ import { enviarWhatsApp as sendWhatsApp } from '@/lib/integrations/whatsappServi
 import { buildSolicitudRespuestaMessage } from '@/lib/notifications/notificationMessages';
 import { NotificationRepository } from '@/lib/repositories/NotificationRepository';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
+import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
 
@@ -243,46 +244,12 @@ export async function processPendingSolicitud(
       );
     }
   } else {
-    await dbQuery('UPDATE servicios SET estado = ?, fecha_mod = ? WHERE id_servicio = ?', [
-      nuevoEstado,
-      now,
-      solicitud.id_servicio,
-    ]);
-
-    if (accion === 'confirmar') {
-      await dbQuery(
-        'UPDATE habitaciones SET estado = 1 WHERE id_habitacion = (SELECT habitacion_id FROM servicios WHERE id_servicio = ?)',
-        [solicitud.id_servicio]
+    if (solicitud.solicitud_id) {
+      await ServiceRepository.processAnulacion(
+        solicitud.solicitud_id,
+        'whatsapp',
+        accion === 'confirmar' ? 'confirmada' : 'rechazada'
       );
-
-      const cajaActiva = (await dbQuery(
-        'SELECT * FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
-      )) as CajaActiva[];
-
-      if (cajaActiva && cajaActiva.length > 0) {
-        const caja = cajaActiva[0];
-        const servicioInfo = (await dbQuery(
-          'SELECT total, iva FROM servicios WHERE id_servicio = ?',
-          [solicitud.id_servicio]
-        )) as ServicioInfo[];
-
-        if (servicioInfo && servicioInfo.length > 0) {
-          const servicio = servicioInfo[0];
-          const totalServicio = servicio.total || 0;
-          const ivaServicio = servicio.iva || 0;
-
-          const nuevoEfectivo = Math.max(0, caja.efectivo - totalServicio);
-          const nuevaIva = Math.max(0, caja.iva - ivaServicio);
-          const nuevaDevoluciones = caja.devoluciones + totalServicio;
-
-          await dbQuery(
-            `UPDATE cajas 
-             SET efectivo = ?, iva = ?, devoluciones = ?
-             WHERE id_caja = ?`,
-            [nuevoEfectivo, nuevaIva, nuevaDevoluciones, caja.id_caja]
-          );
-        }
-      }
     }
   }
 
