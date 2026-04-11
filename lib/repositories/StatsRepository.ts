@@ -5,6 +5,7 @@ import {
   WeeklySalesSchema, type WeeklySalesType
 } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { NotFoundError } from '@/lib/errors/errors';
 
 export class StatsRepository {
 
@@ -271,7 +272,7 @@ export class StatsRepository {
     const roleLower = role.toLowerCase();
 
     const userRes = await query<any[]>('SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?', [userId]);
-    if (userRes.length === 0) throw new Error('Usuario no encontrado');
+    if (userRes.length === 0) throw new NotFoundError('Usuario', userId);
     const userBase = userRes[0];
 
 

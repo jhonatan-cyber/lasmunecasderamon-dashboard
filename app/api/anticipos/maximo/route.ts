@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { getAuth } from '@/lib/auth/auth-app';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { query } from '@/lib/database/db';
 
-export const GET = withAppApiWrapper(async () => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
   const balances = await getAnticipoBalances(user.id.toString());
 
-  // Check if user has a pending request (estado = 2)
   const pendingCheck = await query<any[]>(
     'SELECT COUNT(*) as count FROM anticipos WHERE usuario_id = ? AND estado = 2',
     [user.id.toString()]

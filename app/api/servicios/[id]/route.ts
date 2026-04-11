@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -16,8 +15,8 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
     await ServiceRepository.updateService(id, body);
@@ -25,18 +24,17 @@ export const PUT = withAppApiWrapper(
   }
 );
 
-export const PATCH = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = withAppAuth(
+  async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    const user = await getAuth();
     const { estado } = await request.json();
-    await ServiceRepository.updateStatus(id, estado, user?.id.toString());
+    await ServiceRepository.updateStatus(id, estado, user.id.toString());
     return NextResponse.json({ success: true, message: 'Estado actualizado' });
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = withAppAuth(
+  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     await ServiceRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Servicio eliminado exitosamente' });

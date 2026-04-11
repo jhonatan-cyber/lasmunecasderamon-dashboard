@@ -25,7 +25,7 @@ export default function ServiciosPage() {
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
   const { hasPermission } = useUserPermissions();
-  
+
   // State para el modal de detalle
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);
@@ -76,7 +76,12 @@ export default function ServiciosPage() {
   useEffect(() => {
     console.log('🔧 Configurando refreshCallback');
     setRefreshCallback((servicioId?: string | number) => {
-      console.log('🔄 RefreshCallback llamado desde TimerContext, servicioId:', servicioId, 'tipo:', typeof servicioId);
+      console.log(
+        '🔄 RefreshCallback llamado desde TimerContext, servicioId:',
+        servicioId,
+        'tipo:',
+        typeof servicioId
+      );
 
       // Usar refs estables en lugar de funciones que pueden cambiar
       if (servicioId) {
@@ -193,9 +198,9 @@ export default function ServiciosPage() {
 
           {/* Grid de servicios */}
           <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
-            {currentServicios.map((servicio: any) => (
+            {currentServicios.map((servicio: any, index: number) => (
               <ServicioCard
-                key={servicio.id_servicio || servicio.id || Math.random()}
+                key={String(servicio.id_servicio ?? servicio.id ?? 'servicio-')}
                 servicio={servicio}
                 onStopTimer={handleStopTimer}
                 onUpdate={() => getServicios(true)}
@@ -231,4 +236,3 @@ export default function ServiciosPage() {
     </PermissionGuard>
   );
 }
-

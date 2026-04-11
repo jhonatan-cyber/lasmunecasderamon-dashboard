@@ -1,9 +1,46 @@
-/* eslint-disable */
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { logger } from '@/lib/utils/logger';
 import { env } from '@/lib/utils/env';
+
+// CSP Nonce middleware
+function addCspHeaders(request: NextRequest): {
+  nonce: string;
+  cspHeader: string;
+  headers: Headers;
+} {
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // React dev mode requires 'unsafe-eval' for call stack reconstruction.
+  // Never included in production.
+  const scriptSrc = isDev
+    ? `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
+    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+
+  const cspHeader = `
+    default-src 'self';
+    script-src ${scriptSrc};
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data: https:;
+    font-src 'self' data: https:;
+    connect-src 'self' https: ws: wss:;
+    media-src 'self' blob: https:;
+    frame-src 'self' https://www.google.com https://maps.google.com;
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    object-src 'none';
+  `
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  return { nonce, cspHeader, headers: requestHeaders };
+}
 
 const PUBLIC_PATHS = [
   '/',
@@ -66,30 +103,30 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/codigo',
   '/api/users/user',
   '/api/users',
-  // Asistencias — acceso por autenticación, sin verificación de permisos extra
-  '/api/asistencias',
+  // Attendance â€” acceso por autenticacion, sin verificacion de permisos extra
+  '/api/attendance',
   '/api/attendance-stats',
-  // Anticipos — acceso por autenticación, sin verificación de permisos extra
+  // Anticipos â€” acceso por autenticacion, sin verificacion de permisos extra
   '/api/anticipos',
-  // Tips — acceso por autenticación
+  // Tips â€” acceso por autenticacion
   '/api/tips',
-  // Overtime — acceso por autenticación
+  // Overtime â€” acceso por autenticacion
   '/api/overtime',
-  // Pedidos — acceso por autenticación
+  // Pedidos â€” acceso por autenticacion
   '/api/orders',
-  // Comisiones — acceso por autenticación
+  // Comisiones â€” acceso por autenticacion
   '/api/commissions',
-  // Servicios — acceso por autenticación
+  // Servicios â€” acceso por autenticacion
   '/api/servicios',
-  // Ventas — acceso por autenticación
+  // Ventas â€” acceso por autenticacion
   '/api/sales',
-  // Caja — acceso por autenticación
+  // Caja â€” acceso por autenticacion
   '/api/cashregister',
   '/api/caja',
-  // Cuentas — acceso por autenticación
+  // Cuentas â€” acceso por autenticacion
   '/api/cuentas',
-  // Mis gratificaciones — acceso por autenticación
-  '/api/mis-gratificaciones',
+  // Gratificaciones â€” acceso por autenticacion
+  '/api/gratificaciones',
   // Otros endpoints de empleados
   '/api/stats/logged-users',
   '/api/anfitrionas',
@@ -98,7 +135,7 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/products',
   '/api/categories',
   '/api/clients',
-  '/api/rooms',
+  '/api/rooms'
 ];
 
 const routePermissions: Record<string, { module: string; action: string }> = {
@@ -145,9 +182,9 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/cajero-horas-extras': { module: 'overtime', action: 'view' }
 };
 
-// Solo rutas de administración que requieren verificación de permisos explícita.
-// Los endpoints de empleados (anticipos, asistencias, comisiones, servicios, etc.)
-// están en AUTHENTICATED_ONLY_APIS — solo requieren token válido.
+// Solo rutas de administracion que requieren verificacion de permisos explicita.
+// Los endpoints de empleados (anticipos, attendance, comisiones, servicios, etc.)
+// estan en AUTHENTICATED_ONLY_APIS â€” solo requieren token valido.
 const apiRoutePermissions: Record<string, { module: string; action: string }> = {
   '/api/roles': { module: 'roles', action: 'view' },
   '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
@@ -173,7 +210,8 @@ async function checkUserPermission(
 ): Promise<boolean> {
   try {
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-    const protocol = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
+    const protocol =
+      request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
     const baseUrl = host ? `${protocol}://${host}` : request.nextUrl.origin;
 
     const response = await fetch(`${baseUrl}/api/auth/check-permission`, {
@@ -185,14 +223,12 @@ async function checkUserPermission(
     });
 
     if (!response.ok) {
-    
       return false;
     }
 
     const result = await response.json();
     return result.hasPermission === true;
   } catch (error) {
-   
     return false;
   }
 }
@@ -202,6 +238,8 @@ export default async function proxy(request: NextRequest) {
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
+  // Add CSP nonce to request headers
+  const { nonce, cspHeader } = addCspHeaders(request);
 
   const origin = request.headers.get('origin');
   const isApi = pathname.startsWith('/api/');
@@ -215,12 +253,15 @@ export default async function proxy(request: NextRequest) {
     }
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
+    response.headers.set(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN'
+    );
     response.headers.set('Access-Control-Max-Age', '86400');
     return response;
   }
 
-  const addApiHeaders = (res: NextResponse) => {
+  const addApiHeaders = (res: NextResponse, includeCsp = true) => {
     if (isApi) {
       if (origin) {
         res.headers.set('Access-Control-Allow-Origin', origin);
@@ -229,6 +270,9 @@ export default async function proxy(request: NextRequest) {
       }
       res.headers.set('Access-Control-Allow-Credentials', 'true');
       res.headers.set('Vary', 'Origin');
+    }
+    if (includeCsp) {
+      res.headers.set('Content-Security-Policy', cspHeader);
     }
     return res;
   };
@@ -242,7 +286,13 @@ export default async function proxy(request: NextRequest) {
   });
 
   if (isPublicPath) {
-    return NextResponse.next();
+    const response = NextResponse.next({
+      request: {
+        headers: request.headers
+      }
+    });
+    response.headers.set('Content-Security-Policy', cspHeader);
+    return response;
   }
 
   const token =
@@ -251,10 +301,12 @@ export default async function proxy(request: NextRequest) {
 
   if (!token) {
     if (pathname.startsWith('/api/')) {
-      return addApiHeaders(NextResponse.json(
-        { success: false, message: 'No autenticado', code: 'NO_TOKEN' },
-        { status: 401 }
-      ));
+      return addApiHeaders(
+        NextResponse.json(
+          { success: false, message: 'No autenticado', code: 'NO_TOKEN' },
+          { status: 401 }
+        )
+      );
     }
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
@@ -264,10 +316,12 @@ export default async function proxy(request: NextRequest) {
   const payload = await verifyToken(token);
   if (!payload) {
     if (pathname.startsWith('/api/')) {
-      return addApiHeaders(NextResponse.json(
-        { success: false, message: 'Token inválido', code: 'INVALID_TOKEN' },
-        { status: 401 }
-      ));
+      return addApiHeaders(
+        NextResponse.json(
+          { success: false, message: 'Token invÃ¡lido', code: 'INVALID_TOKEN' },
+          { status: 401 }
+        )
+      );
     }
     return NextResponse.redirect(new URL('/login', request.url));
   }
@@ -293,7 +347,9 @@ export default async function proxy(request: NextRequest) {
       const hasPermission = await checkUserPermission(userId, module, action, request);
 
       if (!hasPermission) {
-        return NextResponse.redirect(new URL(`/access-denied?module=${module}&action=${action}`, request.url));
+        return NextResponse.redirect(
+          new URL(`/access-denied?module=${module}&action=${action}`, request.url)
+        );
       }
     }
   }
@@ -325,14 +381,16 @@ export default async function proxy(request: NextRequest) {
       const hasPermission = await checkUserPermission(userId, module, requiredAction, request);
 
       if (!hasPermission) {
-        return addApiHeaders(NextResponse.json(
-          {
-            success: false,
-            message: 'No tienes permisos para esta acción',
-            code: 'INSUFFICIENT_PERMISSIONS'
-          },
-          { status: 403 }
-        ));
+        return addApiHeaders(
+          NextResponse.json(
+            {
+              success: false,
+              message: 'No tienes permisos para esta acciÃ³n',
+              code: 'INSUFFICIENT_PERMISSIONS'
+            },
+            { status: 403 }
+          )
+        );
       }
     }
   }
@@ -341,8 +399,6 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public).*)'
-  ]
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)']
 };
 

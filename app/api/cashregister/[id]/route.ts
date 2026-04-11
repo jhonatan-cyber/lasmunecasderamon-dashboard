@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -13,14 +12,11 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-    const userAuth = await getAuth();
-    if (!userAuth)
-      return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(
+  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     await CashRegisterRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Caja eliminada' });
-  }
+  },
+  { requiredPermission: { module: 'finances', action: 'delete' } }
 );

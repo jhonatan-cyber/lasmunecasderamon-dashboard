@@ -18,6 +18,25 @@ export class ValidationError extends AppError {
   }
 }
 
+export class NotFoundError extends AppError {
+  constructor(resource: string, id?: string | number) {
+    const msg = id ? `${resource} con ID ${id} no encontrado` : `${resource} no encontrado`;
+    super(msg, 'NOT_FOUND', 404);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super(message, 'CONFLICT', 409, details);
+  }
+}
+
+export class BusinessError extends AppError {
+  constructor(message: string, code: string = 'BUSINESS_ERROR', details?: unknown) {
+    super(message, code, 422, details);
+  }
+}
+
 export class AuthError extends AppError {
   constructor(message: string = 'No autorizado', code: string = 'UNAUTHORIZED', statusCode: number = 401) {
     super(message, code, statusCode);

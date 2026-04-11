@@ -1,96 +1,93 @@
-# Las Muñecas de Ramón Web
+# Las Munecas de Ramon Web
 
-Aplicación **Next.js 16** que combina el sitio público y el panel operativo
-interno.
+Aplicacion `Next.js 16` que combina sitio publico y panel operativo interno.
 
-## 🏗️ Arquitectura
+## Arquitectura
 
-El proyecto está migrando a una estructura **DDD (Domain-Driven Design)**:
+Proyecto usa arquitectura por capas:
 
-```
-src/
-├── domains/           # Dominios DDD (en desarrollo)
-│   ├── usuarios/     # users, clients, roles
-│   ├── pedidos/      # orders, sales, products
-│   ├── pagos/        # accounts, tips, commissions
-│   ├── reportes/     # stats, payroll
-│   └── asistencia/   # attendance, calendar
-├── components/
-│   └── common/       # Barrel exports de componentes
-types/                # Tipos TypeScript globales
+```text
+app/api/          # Rutas App Router / API
+components/       # UI y componentes por modulo
+hooks/            # Hooks de dominio y UI
+lib/services/     # Logica de negocio
+lib/repositories/ # Acceso a datos con SQL directo
+lib/database/     # Pool MySQL y transacciones
+tests/            # Unit, integration, e2e
+types/            # Tipos TypeScript globales
 ```
 
-## 🚀 Scripts Principales
+## Requisitos
+
+- Node.js 22+
+- `corepack` habilitado
+- `pnpm`
+- MySQL y variables de entorno validas para flujos con DB real
+
+## Instalacion
 
 ```bash
-# Install
 corepack pnpm install
+```
 
+## Scripts principales
+
+```bash
 # Desarrollo
 corepack pnpm dev
+corepack pnpm build
+corepack pnpm start
 
 # Calidad
-pnpm lint              # ESLint
-pnpm typecheck        # TypeScript
-pnpm build            # Build producción
+corepack pnpm lint
+corepack pnpm lint:full
+corepack pnpm typecheck
 
 # Testing
-pnpm test:unit        # Tests unitarios (Vitest)
-pnpm test:unit:coverage  # Con coverage
-pnpm test:e2e         # Tests E2E (Playwright)
-pnpm test:ci          # Tests completos para CI
-
-# Auditoría web
-pnpm audit:web:quality
-pnpm audit:web:quality:json
-pnpm audit:web:quality:ci
+corepack pnpm test:unit
+corepack pnpm test:e2e
+corepack pnpm test:e2e:smoke
+corepack pnpm test:integration:legacy-db
 ```
 
-## ✅ Calidad y Validaciones
+## Estado de calidad actual
 
-| Script              | Descripción                                          |
-| ------------------- | ---------------------------------------------------- |
-| `lint`              | Revisa el código con ESLint compatible con Next 16   |
-| `typecheck`         | Expone deuda de TypeScript sin ocultarla en el build |
-| `test:unit`         | Tests unitarios con Vitest                           |
-| `test:e2e`          | Tests E2E con Playwright                             |
-| `audit:web:quality` | Auditoría de Performance, Accessibility, SEO         |
+- `lint:full` en verde
+- `typecheck` en verde con verificacion estricta en `tsconfig.typecheck.json`
+- Tests heredados con MySQL real separados en `tests/integration/legacy-db`
+- CI minima para web y movil en `.github/workflows/quality-checks.yml`
 
-## 🧪 Testing
+## Testing
 
-### Unit Tests (Vitest)
+### Unit
 
 ```bash
-pnpm test:unit           # Ejecutar tests
-pnpm test:unit:watch     # Modo watch
-pnpm test:unit:coverage  # Con coverage report
+corepack pnpm test:unit
+corepack pnpm test:unit:watch
+corepack pnpm test:unit:coverage
 ```
 
-Ubicación: `tests/unit/`
+Ubicacion: `tests/unit/`
 
-### E2E Tests (Playwright)
+### E2E
 
 ```bash
-pnpm test:e2e           # Todos los tests
-pnpm test:e2e:smoke      # Solo smoke tests
-pnpm test:e2e:headed    # Con UI
+corepack pnpm test:e2e
+corepack pnpm test:e2e:smoke
+corepack pnpm test:e2e:headed
 ```
 
-Ubicación: `tests/e2e/`
+Ubicacion: `tests/e2e/`
 
-## 📁 Estructura de Carpetas
+### Integracion legacy con DB real
 
-| Carpeta        | Descripción                                            |
-| -------------- | ------------------------------------------------------ |
-| `app/`         | Next.js App Router páginas (+60 páginas)               |
-| `components/`  | Componentes React (shadcn/ui + custom)                 |
-| `lib/`         | Lógica de negocio, repositories, services, API helpers |
-| `src/domains/` | Nueva estructura DDD (en migración)                    |
-| `tests/`       | Tests unitarios y E2E                                  |
-| `types/`       | Tipos TypeScript globales                              |
-| `.agents/`     | Skills de agentes (QA, SEO, etc.)                      |
+```bash
+corepack pnpm test:integration:legacy-db
+```
 
-## 🌐 Variables de Entorno
+Ubicacion: `tests/integration/legacy-db/`
+
+## Variables de entorno base
 
 ```env
 NEXT_PUBLIC_BASE_URL=
@@ -102,39 +99,24 @@ DB_PASSWORD=
 JWT_SECRET=
 ```
 
-## 📋 Flujo de Desarrollo Recomendado
+## Flujo recomendado
 
 ```bash
-# 1. Lint
-pnpm lint
-
-# 2. TypeScript
-pnpm typecheck
-
-# 3. Tests unitarios
-pnpm test:unit
-
-# 4. Tests E2E (opcional en dev local)
-pnpm test:e2e:smoke
-
-# 5. Auditoría web (opcional)
-pnpm audit:web:quality
-
-# 6. Build
-pnpm build
+corepack pnpm lint:full
+corepack pnpm typecheck
+corepack pnpm test:unit
+corepack pnpm build
 ```
 
-## 🤝 Contributing
+Si tocas flujos heredados con DB:
 
-Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para guías de contribución.
+```bash
+corepack pnpm test:integration:legacy-db
+```
 
-## 📊 Plan de Mejoras
+## Documentacion
 
-El proyecto tiene un plan de mejoras activo. Ver
-[PLAN-MEJORAS.md](./PLAN-MEJORAS.md) para el estado actual.
-
-## 📚 Documentación Adicional
-
-- [Skill Web Quality](./.agents/skills/web-quality-audit/SKILL.md)
-- [Plan de Mejoras](./PLAN-MEJORAS.md)
-- [Contributing](./CONTRIBUTING.md)
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [AUTH_CONTRACT.md](./AUTH_CONTRACT.md)
+- [API_ROUTE_AUDIT.md](./API_ROUTE_AUDIT.md)
+- [PLAN_SEGUIMIENTO_CORRECCIONES.md](./PLAN_SEGUIMIENTO_CORRECCIONES.md)

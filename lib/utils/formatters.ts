@@ -3,7 +3,7 @@ import { es } from 'date-fns/locale';
 import { getSystemTimezone } from '@/lib/business/timezoneService';
 
 export const formatCurrency = (
-  value: number | string | undefined,
+  value: number | string | null | undefined,
   type: 'sueldo' | 'aporte' | 'descuento' | 'general' = 'general'
 ): string => {
   if (value === undefined || value === null) {
@@ -35,7 +35,7 @@ export const formatCurrency = (
   }).format(numValue);
 };
 
-export const formatCurrencyNoDecimals = (value: number | string | undefined): string => {
+export const formatCurrencyNoDecimals = (value: number | string | null | undefined): string => {
   if (value === undefined || value === null) {
     return '$0';
   }
@@ -51,7 +51,7 @@ export const formatCurrencyNoDecimals = (value: number | string | undefined): st
   return `$${formatted}`;
 };
 
-export const formatCurrencyCLP = (value: number | string | undefined): string => {
+export const formatCurrencyCLP = (value: number | string | null | undefined): string => {
   if (value === undefined || value === null) {
     return '$0';
   }
@@ -67,7 +67,7 @@ export const formatCurrencyCLP = (value: number | string | undefined): string =>
   }).format(Math.round(numValue))}`;
 };
 
-export const formatNumberCL = (value: number | string | undefined): string => {
+export const formatNumberCL = (value: number | string | null | undefined): string => {
   if (value === undefined || value === null) {
     return '0';
   }
@@ -158,7 +158,7 @@ export function formatSoloHora(fecha: string | Date) {
   }
 }
 
-export const formatCurrencyAbbreviated = (value: number | string | undefined): string => {
+export const formatCurrencyAbbreviated = (value: number | string | null | undefined): string => {
   if (value === undefined || value === null) {
     return '$0';
   }

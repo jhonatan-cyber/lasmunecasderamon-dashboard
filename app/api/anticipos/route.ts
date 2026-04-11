@@ -1,14 +1,31 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
 import { AnticipoService } from '@/lib/services/AnticipoService';
+import { logger } from '@/lib/utils/logger';
 
 export const GET = withAppAuth(
-  async () => {
-    const data = await AnticipoRepository.getAll();
-    return NextResponse.json({ success: true, data });
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const estado =
+      searchParams.get('estado') !== null ? Number(searchParams.get('estado')) : undefined;
+    const usuario_id = searchParams.get('usuario_id') || undefined;
+    const startDate = searchParams.get('startDate') || undefined;
+    const endDate = searchParams.get('endDate') || undefined;
+    const limit = Math.min(Number(searchParams.get('limit') ?? 50), 200);
+    const offset = Number(searchParams.get('offset') ?? 0);
+
+    const { data, total } = await AnticipoRepository.getAll({
+      estado,
+      usuario_id,
+      startDate,
+      endDate,
+      limit,
+      offset
+    });
+    return NextResponse.json({ success: true, data, total, limit, offset });
   },
-  { module: 'finances', action: 'read' }
+  { requiredPermission: { module: 'finances', action: 'read' } }
 );
 
 export const POST = withAppAuth(
@@ -33,18 +50,21 @@ export const POST = withAppAuth(
 
     const { motivo } = body;
     try {
-      const result = await AnticipoService.grantAnticipo(usuario_id, Number(monto), motivo, device_date);
+      const result = await AnticipoService.grantAnticipo(
+        usuario_id,
+        Number(monto),
+        motivo,
+        device_date
+      );
       return NextResponse.json(
         { success: true, message: 'Anticipo otorgado correctamente', ...result },
         { status: 201 }
       );
-    } catch (error: any) {
-      console.error('Error granting advance:', error);
-      return NextResponse.json(
-        { success: false, message: error.message || 'Error al otorgar anticipo' },
-        { status: 400 }
-      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error al otorgar anticipo';
+      logger.error('Error granting advance:', { error });
+      return NextResponse.json({ success: false, message: msg }, { status: 400 });
     }
   },
-  { module: 'finances', action: 'write' }
+  { requiredPermission: { module: 'finances', action: 'write' } }
 );

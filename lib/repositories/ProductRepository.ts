@@ -1,6 +1,7 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
+import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
 
 export class ProductRepository {
@@ -83,7 +84,6 @@ export class ProductRepository {
   }
 
   static async update(id: string, data: Partial<ProductType>, foto?: string): Promise<ProductType | null> {
-    // Mapeamos solo los campos que vienen en 'data' para evitar sobreescribir con undefined
     const updateData: any = {
       fecha_mod: getNowInBusinessTimezone()
     };
@@ -96,12 +96,9 @@ export class ProductRepository {
     if (data.description !== undefined) updateData.descripcion = data.description;
     if (data.status !== undefined) updateData.estado = data.status;
     if (foto !== undefined) {
-      console.log('[ProductRepository] Updating foto:', foto);
+      logger.debug('[ProductRepository] Updating foto:', foto);
       updateData.foto = foto;
     }
-
-    console.log('[ProductRepository] update - id:', id);
-    console.log('[ProductRepository] update - updateData:', JSON.stringify(updateData, null, 2));
 
     await BaseRepository.update(query, 'productos', 'id_producto', id, updateData);
     return await this.getById(id);
@@ -133,3 +130,4 @@ export class ProductRepository {
     await BaseRepository.delete(query, 'productos', 'id_producto', id);
   }
 }
+

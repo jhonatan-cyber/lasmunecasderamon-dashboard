@@ -104,7 +104,6 @@ export function useEditServiceForm({
       return [];
     }
   }, [anfitrionas]);
-
   useEffect(() => {
     if (habitaciones.length > 0 && open) {
       const precio = obtenerPrecioHabitacionSinComision();
@@ -149,6 +148,7 @@ export function useEditServiceForm({
         }, 0);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id_servicio, open]);
 
   useEffect(() => {
@@ -161,6 +161,7 @@ export function useEditServiceForm({
       }, 0);
       return () => clearTimeout(timeoutId);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, servicio?.id_servicio]);
 
   const numAnfitrionasSeleccionadas = formData.usuarios.length || 1;
@@ -293,6 +294,7 @@ export function useEditServiceForm({
     } finally {
       setIsSaving(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio, formData, iva, subTotal, total, handleClose, onUpdate, precioServicioTotal, precioHabitacionTotal, startGlobalTemporaryTimer, anfitrionasDisponibles]);
 
   return {

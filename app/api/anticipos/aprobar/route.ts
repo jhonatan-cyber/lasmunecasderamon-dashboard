@@ -22,11 +22,9 @@ export const PUT = withAppAuth(
         success: true,
         message: accion === 'aprobar' ? 'Anticipo aprobado' : 'Anticipo rechazado'
       });
-    } catch (error: any) {
-      return NextResponse.json(
-        { success: false, message: error.message || 'Error al procesar solicitud' },
-        { status: 400 }
-      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error al procesar solicitud';
+      return NextResponse.json({ success: false, message: msg }, { status: 400 });
     }
   },
   { module: 'finances', action: 'write' }

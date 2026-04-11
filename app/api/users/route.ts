@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { getAuth } from '@/lib/auth/auth-app';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 import { UserService } from '@/lib/services/UserService';
 import path from 'path';
@@ -12,12 +11,7 @@ import logger from '@/lib/utils/logger';
 export const dynamic = 'force-dynamic';
 
 // GET sin verificación de permisos - solo requiere autenticación
-export const GET = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user) {
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-  }
-
+export const GET = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const params = {
     anfitrionas: searchParams.get('anfitrionas') || undefined,
@@ -25,7 +19,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     status: searchParams.get('status') || undefined,
     role: searchParams.get('role') || undefined,
     limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-    offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
+    offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
   };
 
   const { data, total } = await UserRepository.getAll(params);
@@ -64,7 +58,9 @@ export const POST = withAppAuth(
             fotoFilename = filename;
             logger.info(`[USER API POST] Foto guardada OK: ${filename}`);
           } catch (sharpError) {
-            logger.error(`[USER API POST] Error en Sharp, guardando original:`, { error: sharpError });
+            logger.error(`[USER API POST] Error en Sharp, guardando original:`, {
+              error: sharpError
+            });
             const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
             await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
             fotoFilename = fallbackFilename;
@@ -78,7 +74,10 @@ export const POST = withAppAuth(
       body = await request.json();
     }
 
-    logger.info(`[USER API POST] Creando usuario`, { foto: fotoFilename, body: { ...body, password: '***' } });
+    logger.info(`[USER API POST] Creando usuario`, {
+      foto: fotoFilename,
+      body: { ...body, password: '***' }
+    });
     const data = await UserService.createUser(body, fotoFilename);
     return NextResponse.json({ success: true, message: 'Usuario creado', data }, { status: 201 });
   },
@@ -141,7 +140,9 @@ export const PUT = withAppAuth(
             fotoFilename = filename;
             logger.info(`[USER API PUT] Foto guardada OK: ${filename}`);
           } catch (sharpError) {
-            logger.error(`[USER API PUT] Error en Sharp, guardando original:`, { error: sharpError });
+            logger.error(`[USER API PUT] Error en Sharp, guardando original:`, {
+              error: sharpError
+            });
             const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
             await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
             fotoFilename = fallbackFilename;
@@ -160,7 +161,10 @@ export const PUT = withAppAuth(
     if (!id)
       return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    logger.info(`[USER API PUT] Actualizando usuario ${id}`, { foto: fotoFilename, body: { ...body, password: '***' } });
+    logger.info(`[USER API PUT] Actualizando usuario ${id}`, {
+      foto: fotoFilename,
+      body: { ...body, password: '***' }
+    });
     const data = await UserService.updateUser(id, body, fotoFilename);
     return NextResponse.json({ success: true, message: 'Usuario actualizado', data });
   },

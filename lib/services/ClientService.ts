@@ -1,14 +1,26 @@
-import { ClientSchema } from '@/lib/business/schemas';
+import { ClientSchema, type ClientType } from '@/lib/business/schemas';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
+import { z } from 'zod';
+
+type ClientCreateInput = z.input<typeof ClientSchema>;
+
+type PrepagoInput = {
+  cliente_id: string;
+  monto: number;
+  tipo: 'CARGA';
+  metodo_pago?: string;
+  usuario_id?: string;
+  metadatos?: Record<string, unknown>;
+};
 
 export class ClientService {
 
-  static async createClient(body: any) {
+  static async createClient(body: ClientCreateInput) {
     const validated = ClientSchema.omit({ id: true }).parse(body);
     return await ClientRepository.create(validated);
   }
 
-  static async updateClient(id: string, body: any) {
+  static async updateClient(id: string, body: Partial<ClientCreateInput>) {
     const validated = ClientSchema.partial().omit({ id: true }).parse(body);
     return await ClientRepository.update(id, validated);
   }
@@ -17,7 +29,7 @@ export class ClientService {
     return await ClientRepository.getHistory(clientId);
   }
 
-  static async addPrepago(data: { cliente_id: string; monto: number; tipo: 'CARGA'; metodo_pago?: string; usuario_id?: string; metadatos?: any }) {
+  static async addPrepago(data: PrepagoInput) {
     return await ClientRepository.addPrepago(data);
   }
 }

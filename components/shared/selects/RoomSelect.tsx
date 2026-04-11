@@ -1,4 +1,4 @@
-
+﻿
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Select,
@@ -46,9 +46,9 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   habitaciones,
   value,
   onChange,
-  label = "Habitación",
-  placeholder = "Seleccione una habitación",
-  searchPlaceholder = "Buscar habitación...",
+  label = "HabitaciÃ³n",
+  placeholder = "Seleccione una habitaciÃ³n",
+  searchPlaceholder = "Buscar habitaciÃ³n...",
   className = "",
   required = false,
   disabled = false,
@@ -131,9 +131,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   };
 
   const handleValueChange = (newValue: string) => {
-    // Convertir el valor especial "__none__" a string vacío
+    // Convertir el valor especial "__none__" a string vacÃ­o
     const resolved = newValue === "__none__" ? "" : newValue;
-    console.log("[RoomSelect] onChange value", resolved);
     onChange(resolved);
   };
 
@@ -162,7 +161,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className="max-h-80">
-            {/* Barra de búsqueda */}
+            {/* Barra de bÃºsqueda */}
             <div className="p-2 border-b">
               <Input
                 placeholder={searchPlaceholder}
@@ -176,12 +175,12 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
             {/* Lista de habitaciones */}
             <div className="max-h-60 overflow-y-auto">
-              {/* Opción para limpiar selección */}
+              {/* OpciÃ³n para limpiar selecciÃ³n */}
               {value && (
                 <SelectItem
                   value="__none__"
                 >
-                  <span className="text-gray-500 italic">Sin habitación</span>
+                  <span className="text-gray-500 italic">Sin habitaciÃ³n</span>
                 </SelectItem>
               )}
 
@@ -226,3 +225,4 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 };
 
 export default RoomSelect;
+

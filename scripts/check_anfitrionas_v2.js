@@ -1,3 +1,4 @@
+﻿/* eslint-disable no-console */
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 
@@ -17,7 +18,7 @@ async function checkAnfitrionas() {
   try {
     console.log('Conectando a la base de datos...', { host: config.host, database: config.database });
     connection = await mysql.createConnection(config);
-    console.log('Conexión establecida.');
+    console.log('ConexiÃ³n establecida.');
 
     console.log('\n--- Roles ---');
     const [roles] = await connection.execute('SELECT * FROM roles');
@@ -50,3 +51,4 @@ async function checkAnfitrionas() {
 }
 
 checkAnfitrionas();
+

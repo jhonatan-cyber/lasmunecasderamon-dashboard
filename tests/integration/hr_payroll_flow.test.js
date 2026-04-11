@@ -1,9 +1,10 @@
+﻿/* eslint-disable no-console */
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runHRIntegrationTest() {
-    console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Flujo RRHH y Planillas ---');
+    console.log('--- INICIANDO PRUEBA DE INTEGRACIÃ“N: Flujo RRHH y Planillas ---');
     
     const connection = await mysql.createConnection({
         host: process.env.DB_HOST,
@@ -39,7 +40,7 @@ async function runHRIntegrationTest() {
         );
 
         console.log(`\n[3] Verificando Summary de Planilla (Simulado)`);
-        // Simular cálculo de planilla
+        // Simular cÃ¡lculo de planilla
         const [payroll] = await connection.execute(`
             SELECT 
                 (SELECT COUNT(*) FROM asistencias WHERE usuario_id = ? AND estado = 1) as asistencias,
@@ -51,22 +52,22 @@ async function runHRIntegrationTest() {
         console.log(`Monto Horas Extras: ${payroll[0].total_hx}`);
 
         if (Number(payroll[0].asistencias) >= 1 && Number(payroll[0].total_hx) >= 10000) {
-            console.log('✅ Cálculo de planilla correcto');
+            console.log('âœ… CÃ¡lculo de planilla correcto');
         } else {
             throw new Error('Fallo en el resumen de planilla');
         }
 
-        console.log(`\n[4] Procesando Pago (Limpieza lógica)`);
-        // En un flujo real esto marcaría los registros como estado 0 y pondría fecha de pago
-        // Aquí los eliminaremos para dejar la DB limpia
+        console.log(`\n[4] Procesando Pago (Limpieza lÃ³gica)`);
+        // En un flujo real esto marcarÃ­a los registros como estado 0 y pondrÃ­a fecha de pago
+        // AquÃ­ los eliminaremos para dejar la DB limpia
         await connection.execute('DELETE FROM asistencias WHERE id_asistencia = ?', [asisId]);
         await connection.execute('DELETE FROM horas_extras WHERE id_hora_extra = ?', [hxId]);
         
-        console.log('✅ Flujo de RRHH verificado y datos de prueba eliminados');
-        console.log('\n--- PRUEBA DE INTEGRACIÓN DE RRHH EXITOSA ---');
+        console.log('âœ… Flujo de RRHH verificado y datos de prueba eliminados');
+        console.log('\n--- PRUEBA DE INTEGRACIÃ“N DE RRHH EXITOSA ---');
 
     } catch (error) {
-        console.error('\n❌ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
+        console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
         process.exit(1);
     } finally {
         await connection.end();
@@ -74,3 +75,4 @@ async function runHRIntegrationTest() {
 }
 
 runHRIntegrationTest();
+

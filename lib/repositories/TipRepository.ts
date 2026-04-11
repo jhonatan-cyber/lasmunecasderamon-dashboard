@@ -2,9 +2,13 @@ import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { TipRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
+import { BusinessError } from '@/lib/errors/errors';
+import { z } from 'zod';
+
+type TipRegisterInput = z.input<typeof TipRegisterSchema>;
 
 export class TipRepository {
-  static async register(body: any) {
+  static async register(body: TipRegisterInput) {
     const { venta_id, monto } = TipRegisterSchema.parse(body);
 
     const distribucionUsuarios = await query<any[]>(
@@ -19,7 +23,7 @@ export class TipRepository {
     );
 
     if (distribucionUsuarios.length === 0) {
-      throw new Error('No hay usuarios disponibles para distribuir la propina');
+      throw new BusinessError('No hay usuarios disponibles para distribuir la propina', 'NO_USERS_FOR_TIP');
     }
 
     const montoPorUsuario = monto / distribucionUsuarios.length;

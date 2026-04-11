@@ -2,10 +2,11 @@ import { WithdrawalRepository } from '@/lib/repositories/WithdrawalRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { RetiroCajaSchema, type RetiroCajaType } from '@/lib/business/schemas/withdrawal';
 import { withTransaction } from '@/lib/database/db';
+import { ValidationError, BusinessError } from '@/lib/errors/errors';
 
 export class WithdrawalService {
   static async getByCajaId(cajaId: string) {
-    if (!cajaId) throw new Error('ID de caja es requerido');
+    if (!cajaId) throw new ValidationError('ID de caja es requerido');
     return await WithdrawalRepository.getByCajaId(cajaId);
   }
 
@@ -18,7 +19,7 @@ export class WithdrawalService {
         cajaId = await CashRegisterRepository.getCurrentCajaId(trx);
       }
 
-      if (!cajaId) throw new Error('No hay una caja abierta para realizar el retiro');
+      if (!cajaId) throw new BusinessError('No hay una caja abierta para realizar el retiro', 'NO_CAJA_ABIERTA');
 
       const idRetiro = await WithdrawalRepository.create({
         ...validated,

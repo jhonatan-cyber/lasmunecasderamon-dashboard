@@ -1,21 +1,18 @@
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
-import { logger } from '@/lib/utils/logger';
+import { ConflictError } from '@/lib/errors/errors';
+import { z } from 'zod';
+
+type ProductInput = z.input<typeof ProductSchema>;
 
 export class ProductService {
-  static async createProduct(body: any, fotoName?: string) {
-    logger.debug('[ProductService] createProduct - body:', { body });
-    logger.debug('[ProductService] createProduct - fotoName:', fotoName);
-
+  static async createProduct(body: ProductInput, fotoName?: string) {
     const normalizedBody = {
       ...body,
-      category_id: body.category_id ?? body.categoryId,
+      category_id: body.category_id ?? (body as ProductInput & { categoryId?: string | number }).categoryId,
     };
 
-    logger.debug('[ProductService] normalizedBody:', { normalizedBody });
-
     const validated = ProductSchema.parse(normalizedBody);
-    logger.debug('[ProductService] validated.category_id:', validated.category_id);
 
     const existing = await ProductRepository.getByCodeOrName(
       validated.code,
@@ -24,21 +21,17 @@ export class ProductService {
     );
 
     if (existing) {
-      throw new Error('Ya existe un producto con el mismo código o nombre en esta categoría');
+      throw new ConflictError('Ya existe un producto con el mismo código o nombre en esta categoría');
     }
 
     const foto = fotoName || body.foto || 'default.png';
     return await ProductRepository.create(validated, foto);
   }
 
-  static async updateProduct(id: string, body: any, fotoName?: string) {
-    logger.debug('[ProductService] updateProduct - id:', id);
-    logger.debug('[ProductService] updateProduct - body:', { body });
-    logger.debug('[ProductService] updateProduct - fotoName:', fotoName);
-
+  static async updateProduct(id: string, body: Partial<ProductInput>, fotoName?: string) {
     const normalizedBody = {
       ...body,
-      category_id: body.category_id || body.categoryId,
+      category_id: body.category_id || (body as Partial<ProductInput> & { categoryId?: string | number }).categoryId,
     };
 
     const validated = ProductSchema.partial().parse(normalizedBody);
@@ -54,14 +47,12 @@ export class ProductService {
       );
 
       if (existing && String(existing.id) !== String(id)) {
-        throw new Error('Ya existe otro producto con ese código o nombre en esta categoría');
+        throw new ConflictError('Ya existe otro producto con ese código o nombre en esta categoría');
       }
     }
 
     const foto = fotoName || body.foto || (currentProduct?.foto || 'default.png');
-
-    const updateData = { ...validated };
-
-    return await ProductRepository.update(id, updateData, foto);
+    return await ProductRepository.update(id, { ...validated }, foto);
   }
 }
+

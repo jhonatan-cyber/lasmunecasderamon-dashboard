@@ -1,3 +1,4 @@
+﻿/* eslint-disable no-console */
 
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
@@ -77,7 +78,7 @@ async function testFetchWithUUID() {
           WHEN c.estado = 2 THEN 'Pagado'
           ELSE 'Anulado'
         END AS estado,
-        'Servicio de Acompañante' AS producto,
+        'Servicio de AcompaÃ±ante' AS producto,
         NULL AS fecha_pago,
         s.codigo AS descripcion
       FROM comisiones c
@@ -118,3 +119,4 @@ async function testFetchWithUUID() {
 }
 
 testFetchWithUUID();
+

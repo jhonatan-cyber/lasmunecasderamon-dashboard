@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -33,7 +28,7 @@ export function ServiceRequestModal({
   open,
   onOpenChange,
   solicitud,
-  onProcessed,
+  onProcessed
 }: ServiceRequestModalProps) {
   const { anfitrionas } = useAnfitrionas(false);
   const { startTimer } = useTimer();
@@ -84,7 +79,10 @@ export function ServiceRequestModal({
       try {
         finalIds = JSON.parse(ids);
       } catch {
-        finalIds = ids.split(',').map((id: string) => parseInt(id.trim())).filter(Boolean);
+        finalIds = ids
+          .split(',')
+          .map((id: string) => parseInt(id.trim()))
+          .filter(Boolean);
       }
     }
 
@@ -142,8 +140,7 @@ export function ServiceRequestModal({
     setProcessing(true);
     try {
       const habitacionIdFinal =
-        (isRoomAvailable ? solicitud.habitacion_id : selectedRoomId) ||
-        solicitud.habitacion_id;
+        (isRoomAvailable ? solicitud.habitacion_id : selectedRoomId) || solicitud.habitacion_id;
 
       const url = `/api/solicitudes-servicios/${solicitud.id_solicitud}/aprobar`;
       const response = await fetch(url, {
@@ -165,9 +162,7 @@ export function ServiceRequestModal({
 
         const habitacionId = habitacionIdFinal || solicitud.habitacion_id;
         const solicitante =
-          solicitud.solicitado_por_nombre ||
-          solicitud.solicitado_por_nick ||
-          undefined;
+          solicitud.solicitado_por_nombre || solicitud.solicitado_por_nick || undefined;
 
         if (servicio_id && habitacionId && tiempo > 0) {
           startTimer(
@@ -232,9 +227,7 @@ export function ServiceRequestModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-xl'>
         <DialogHeader>
-          <DialogTitle>
-            Solicitud de Servicio #{solicitud.id_solicitud}
-          </DialogTitle>
+          <DialogTitle>Solicitud de Servicio #{solicitud.id_solicitud}</DialogTitle>
         </DialogHeader>
 
         <div className='space-y-3 text-sm'>
@@ -253,7 +246,7 @@ export function ServiceRequestModal({
               </div>
               <Select
                 value={selectedRoomId ? String(selectedRoomId) : ''}
-                onValueChange={value => setSelectedRoomId(value ? Number(value) : '')}
+                onValueChange={(value: string) => setSelectedRoomId(value ? Number(value) : '')}
               >
                 <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
                   <SelectValue placeholder='Seleccionar habitación' />
@@ -277,22 +270,17 @@ export function ServiceRequestModal({
             <span className='font-medium'>Tiempo:</span> {solicitud.tiempo} min
           </div>
           <div>
-            <span className='font-medium'>Total:</span> $
-            {formatCurrencyCLP(solicitud.total)}
+            <span className='font-medium'>Total:</span> ${formatCurrencyCLP(solicitud.total)}
           </div>
           <div>
             <span className='font-medium'>Garzón:</span>{' '}
-            {solicitud.solicitado_por_nombre ||
-              solicitud.solicitado_por_nick ||
-              'N/A'}
+            {solicitud.solicitado_por_nombre || solicitud.solicitado_por_nick || 'N/A'}
           </div>
           <div>
-            <span className='font-medium'>Método de pago:</span>{' '}
-            {solicitud.metodo_pago}
+            <span className='font-medium'>Método de pago:</span> {solicitud.metodo_pago}
           </div>
           <div>
-            <span className='font-medium'>IVA:</span> $
-            {formatCurrencyCLP(calculateIVA(solicitud))}
+            <span className='font-medium'>IVA:</span> ${formatCurrencyCLP(calculateIVA(solicitud))}
           </div>
         </div>
 

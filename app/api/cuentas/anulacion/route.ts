@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 
-export const POST = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user) {
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-  }
-
+export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
+
   const id = await CuentaRepository.requestAnulacion(
     body.cuentaId,
     body.motivo || 'Solicitud de anulacion de cuenta',
@@ -32,6 +27,7 @@ export const POST = withAppApiWrapper(async (request: Request) => {
   const adminWhatsApp =
     process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
   const baseUrl = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+
   await enviarMensajeSolicitudAnulacion({
     numeroAdmin: adminWhatsApp,
     tipo: 'cuenta',
@@ -42,7 +38,7 @@ export const POST = withAppApiWrapper(async (request: Request) => {
     motivo: body.motivo || 'Solicitud de anulacion de cuenta',
     solicitadoPor: user.nick || user.name || 'Usuario',
     token: id,
-    baseUrl,
+    baseUrl
   });
 
   return NextResponse.json({ success: true, id, message: 'Solicitud de anulacion enviada' });

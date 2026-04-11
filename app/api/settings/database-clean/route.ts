@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { query } from '@/lib/database/db';
+import { logger } from '@/lib/utils/logger';
 
 const PROTECTED_TABLES = [
   'usuarios',
@@ -9,33 +11,24 @@ const PROTECTED_TABLES = [
   'configuraciones'
 ];
 
-export async function POST() {
-  try {
-    // Get all tables in the database
-    const tables = await query(`
-      SELECT TABLE_NAME 
-      FROM information_schema.TABLES 
+export const POST = withAppAuth(
+  async () => {
+    const tables = (await query(`
+      SELECT TABLE_NAME
+      FROM information_schema.TABLES
       WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_TYPE = 'BASE TABLE'
-    `) as Array<{ TABLE_NAME: string }>;
+    `)) as Array<{ TABLE_NAME: string }>;
 
-    // Get foreign key checks state
     await query('SET FOREIGN_KEY_CHECKS = 0');
 
     const deletedTables: string[] = [];
     const skippedTables: string[] = [];
 
-    // Delete data from each table (except protected ones)
     for (const table of tables) {
       const tableName = table.TABLE_NAME;
-      
-      if (PROTECTED_TABLES.includes(tableName)) {
-        skippedTables.push(tableName);
-        continue;
-      }
 
-      // Skip migrations table
-      if (tableName === '_migrations') {
+      if (PROTECTED_TABLES.includes(tableName) || tableName === '_migrations') {
         skippedTables.push(tableName);
         continue;
       }
@@ -44,8 +37,12 @@ export async function POST() {
       deletedTables.push(tableName);
     }
 
-    // Re-enable foreign key checks
     await query('SET FOREIGN_KEY_CHECKS = 1');
+
+    logger.warn('[database-clean] Base de datos limpiada', {
+      deletedCount: deletedTables.length,
+      deletedTables
+    });
 
     return NextResponse.json({
       success: true,
@@ -55,12 +52,6 @@ export async function POST() {
       deletedCount: deletedTables.length,
       skippedCount: skippedTables.length
     });
-
-  } catch (error) {
-    console.error('Error cleaning database:', error);
-    return NextResponse.json(
-      { error: 'Error al limpiar la base de datos' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { requiredPermission: { module: 'settings', action: 'write' } }
+);

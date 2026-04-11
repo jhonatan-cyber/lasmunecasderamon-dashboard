@@ -3,6 +3,10 @@ import { ServiceSchema, ServiceCreateSchema, type ServiceType } from '@/lib/busi
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { BaseRepository } from './BaseRepository';
+import { NotFoundError } from '@/lib/errors/errors';
+import { z } from 'zod';
+
+type ServiceUpdateInput = z.input<typeof ServiceCreateSchema>;
 
 export class ServiceRepository {
   private static readonly TABLE = 'servicios';
@@ -114,7 +118,7 @@ export class ServiceRepository {
     await BaseRepository.insert(trx, this.TABLE, data);
   }
 
-  static async updateService(id: string, body: any): Promise<ServiceType | null> {
+  static async updateService(id: string, body: Partial<ServiceUpdateInput>): Promise<ServiceType | null> {
     const validated = ServiceCreateSchema.partial().parse(body);
     const [prev] = await query<any[]>('SELECT iva FROM servicios WHERE id_servicio = ?', [id]);
     const ivaDelta = Number(validated.iva || 0) - Number(prev?.iva || 0);
@@ -154,7 +158,7 @@ export class ServiceRepository {
 
   static async updateStatus(id: string, estado: number, userId?: string): Promise<ServiceType | null> {
     const prev = await query<any[]>('SELECT estado, habitacion_id FROM servicios WHERE id_servicio = ?', [id]);
-    if (prev.length === 0) throw new Error('Servicio no encontrado');
+    if (prev.length === 0) throw new NotFoundError('Servicio', id);
     const estadoAnterior = prev[0].estado;
     const habitacionId = prev[0].habitacion_id;
     const now = getNowInBusinessTimezone();

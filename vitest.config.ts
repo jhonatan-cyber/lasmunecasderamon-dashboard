@@ -21,7 +21,6 @@ export default defineConfig({
       },
       exclude: ['node_modules/', 'tests/', '**/*.d.ts', '**/*.config.*', '.next/', '**/types/**']
     },
-    environmentMatchGlobs: [['**/*.test.{ts,tsx}', 'jsdom']],
     testTimeout: 30000,
     hookTimeout: 30000
   },

@@ -1,9 +1,10 @@
+﻿/* eslint-disable no-console */
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runPayrollIntegrationTest() {
-    console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Flujo de Pagos (Payroll) ---');
+    console.log('--- INICIANDO PRUEBA DE INTEGRACIÃ“N: Flujo de Pagos (Payroll) ---');
     
     const connection = await mysql.createConnection({
         host: process.env.DB_HOST,
@@ -63,22 +64,22 @@ async function runPayrollIntegrationTest() {
         console.log('Fila de resumen encontrada:', JSON.stringify(summary[0], null, 2));
         
         if (!summary[0] || Number(summary[0].total) <= 0) {
-             // Es posible que el sueldo sea 0, pero hx - ant debería ser > 0 (100*2 - 50 = 150)
+             // Es posible que el sueldo sea 0, pero hx - ant deberÃ­a ser > 0 (100*2 - 50 = 150)
              if (Number(summary[0]?.total) !== (Number(users[0].sueldo) + 200 - 50)) {
-                console.log('⚠️ El total calculado no coincide exactamente con lo esperado, pero verificaremos si existe la fila.');
+                console.log('âš ï¸ El total calculado no coincide exactamente con lo esperado, pero verificaremos si existe la fila.');
              }
         }
 
         // 4. Ejecutar el proceso de pago (pay)
         console.log('\n[3] Ejecutando proceso de pago (pay)...');
-        // Simulamos el método PayrollRepository.pay(userId)
+        // Simulamos el mÃ©todo PayrollRepository.pay(userId)
         await connection.beginTransaction();
         try {
             await connection.execute('UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1', [nowSql, userId]);
             await connection.execute('UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [nowSql, userId]);
             await connection.execute('UPDATE anticipos SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [nowSql, userId]);
             await connection.commit();
-            console.log('✅ Proceso de pago completado en DB');
+            console.log('âœ… Proceso de pago completado en DB');
         } catch (e) {
             await connection.rollback();
             throw e;
@@ -91,7 +92,7 @@ async function runPayrollIntegrationTest() {
         const [antCheck] = await connection.execute('SELECT estado FROM anticipos WHERE id_anticipo = ?', [antId]);
 
         if (asisCheck[0].estado === 0 && hxCheck[0].estado === 0 && antCheck[0].estado === 0) {
-            console.log('✅ Todos los registros pasaron a estado 0 (Pagado)');
+            console.log('âœ… Todos los registros pasaron a estado 0 (Pagado)');
         } else {
             throw new Error('Algunos registros no se actualizaron correctamente');
         }
@@ -101,12 +102,12 @@ async function runPayrollIntegrationTest() {
         await connection.execute('DELETE FROM asistencias WHERE id_asistencia = ?', [asisId]);
         await connection.execute('DELETE FROM horas_extras WHERE id_hora_extra = ?', [hxId]);
         await connection.execute('DELETE FROM anticipos WHERE id_anticipo = ?', [antId]);
-        console.log('✅ Limpieza completada');
+        console.log('âœ… Limpieza completada');
 
-        console.log('\n--- PRUEBA DE INTEGRACIÓN DE PAGOS COMPLETADA CON ÉXITO ---');
+        console.log('\n--- PRUEBA DE INTEGRACIÃ“N DE PAGOS COMPLETADA CON Ã‰XITO ---');
 
     } catch (error) {
-        console.error('\n❌ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
+        console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
         process.exit(1);
     } finally {
         await connection.end();
@@ -114,3 +115,4 @@ async function runPayrollIntegrationTest() {
 }
 
 runPayrollIntegrationTest();
+

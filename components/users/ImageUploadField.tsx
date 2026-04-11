@@ -1,9 +1,10 @@
+import NextImage from 'next/image';
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { Control } from 'react-hook-form';
 import { FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Image, Trash2, UploadCloud, Link as LinkIcon, X } from 'lucide-react';
+import { Image as ImageIcon, Trash2, UploadCloud, Link as LinkIcon, X } from 'lucide-react';
 import { type UserFormValues } from '@/hooks/personal/useUserForm';
 import { cn } from '@/lib/utils/utils';
 
@@ -139,13 +140,12 @@ function ImageUploadFieldComponent({
           >
             {previewUrl ? (
               <>
-                <img
+                <NextImage
                   src={previewUrl}
                   alt='Vista previa'
+                  fill
+                  sizes='200px'
                   className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/img/system/no-image.png';
-                  }}
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2">
                   <UploadCloud size={24} className="animate-bounce" />
@@ -158,7 +158,7 @@ function ImageUploadFieldComponent({
                   "p-3 rounded-full bg-white shadow-sm border transition-colors",
                   isDragging ? "text-blue-500 border-blue-200" : "text-gray-400 border-gray-100"
                 )}>
-                  {isDragging ? <UploadCloud size={32} /> : <Image size={32} />}
+                  {isDragging ? <UploadCloud size={32} /> : <ImageIcon size={32} />}
                 </div>
                 <div>
                   <p className='text-sm font-semibold text-gray-700 dark:text-gray-200'>Subir foto</p>

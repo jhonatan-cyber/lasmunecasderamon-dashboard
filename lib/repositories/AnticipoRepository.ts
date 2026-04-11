@@ -3,36 +3,72 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { logger } from '@/lib/utils/logger';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { buildAnticipoRequestMessage, buildAnticipoProcessedMessages } from '@/lib/notifications/notificationMessages';
 import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
 import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
+import { NotFoundError, BusinessError } from '@/lib/errors/errors';
 
 export class AnticipoRepository {
   private static readonly TABLE = 'anticipos';
   private static readonly ID_COL = 'id_anticipo';
 
-  static async getAll() {
-    return await query(`
-      SELECT 
-        A.${this.ID_COL}, 
-        A.usuario_id, 
-        COALESCE(U.nombre, '') AS name, 
-        COALESCE(U.nombre, '') AS nombre, 
-        COALESCE(U.apellido, '') AS lastName, 
-        COALESCE(U.apellido, '') AS apellido, 
-        COALESCE(U.nick, '') AS nick, 
-        U.foto, 
-        A.fecha_crea, 
+  static async getAll(params?: {
+    estado?: number;
+    usuario_id?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ data: any[]; total: number }> {
+    const limit = params?.limit ?? 50;
+    const offset = params?.offset ?? 0;
+    const sqlParams: any[] = [];
+
+    let where = 'WHERE 1=1';
+    if (params?.estado !== undefined) {
+      where += ' AND A.estado = ?';
+      sqlParams.push(params.estado);
+    }
+    if (params?.usuario_id) {
+      where += ' AND A.usuario_id = ?';
+      sqlParams.push(params.usuario_id);
+    }
+    if (params?.startDate && params?.endDate) {
+      where += ' AND DATE(A.fecha_crea) BETWEEN ? AND ?';
+      sqlParams.push(params.startDate, params.endDate);
+    }
+
+    const countSql = `SELECT COUNT(*) as total FROM ${this.TABLE} A ${where}`;
+    const dataSql = `
+      SELECT
+        A.${this.ID_COL},
+        A.usuario_id,
+        COALESCE(U.nombre, '') AS name,
+        COALESCE(U.nombre, '') AS nombre,
+        COALESCE(U.apellido, '') AS lastName,
+        COALESCE(U.apellido, '') AS apellido,
+        COALESCE(U.nick, '') AS nick,
+        U.foto,
+        A.fecha_crea,
         A.fecha_mod,
-        A.monto, 
+        A.monto,
         A.motivo,
         A.estado
       FROM ${this.TABLE} A
       LEFT JOIN usuarios U ON U.id_usuario = A.usuario_id
+      ${where}
       ORDER BY A.fecha_crea DESC
-    `);
+      LIMIT ? OFFSET ?
+    `;
+
+    const countRes = await query<any[]>(countSql, sqlParams);
+    const total = Number(countRes[0]?.total ?? 0);
+    const data = await query<any[]>(dataSql, [...sqlParams, limit, offset]);
+
+    return { data, total };
   }
 
   static async getByUser(usuario_id: string, startDate?: string, endDate?: string) {
@@ -69,7 +105,7 @@ export class AnticipoRepository {
 
   static async grant(usuario_id: string, monto: number, motivo: string = 'Anticipo otorgado desde administración', device_date?: string) {
     const { montoMaximo } = await getAnticipoBalances(usuario_id);
-    if (monto > montoMaximo) throw new Error(`Monto máximo disponible: ${formatCurrencyCLP(montoMaximo)}`);
+    if (monto > montoMaximo) throw new BusinessError(`Monto máximo disponible: ${formatCurrencyCLP(montoMaximo)}`, 'MONTO_EXCEDE_MAXIMO');
 
     return await withTransaction(async (trx) => {
       const id = generateUUID();
@@ -85,11 +121,11 @@ export class AnticipoRepository {
       });
 
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
-      if (!idCaja) throw new Error("No hay una caja abierta para procesar el anticipo");
+      if (!idCaja) throw new BusinessError('No hay una caja abierta para procesar el anticipo', 'NO_CAJA_ABIERTA');
 
       const caja = await CashRegisterRepository.getById(idCaja);
       const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
-      if (!caja || efectivoTotal < monto) throw new Error("No hay suficiente efectivo en caja");
+      if (!caja || efectivoTotal < monto) throw new BusinessError('No hay suficiente efectivo en caja', 'SALDO_CAJA_INSUFICIENTE');
 
       await CashRegisterRepository.updateBalances(trx, idCaja, {
         efectivo: -monto,
@@ -102,7 +138,7 @@ export class AnticipoRepository {
         
         const confirmMsg = `*Anticipo Otorgado* ✅\n\nHola ${user.nombre}, se ha registrado un anticipo por *${formatCurrencyCLP(monto)}*.\n\n*Motivo:* ${motivo}\n*Fecha:* ${now}`;
         if (user.telefono) {
-          enviarWhatsApp(user.telefono, confirmMsg).catch(console.error);
+          enviarWhatsApp(user.telefono, confirmMsg).catch(err => logger.error('[AnticipoRepository] Error enviando WhatsApp confirmación:', { err }));
         }
 
         sendNotificationToAll('ANTICIPO_PROCESSED', {
@@ -112,7 +148,7 @@ export class AnticipoRepository {
           estado: 1
         });
 
-        sendPushByRole('cajero', 'Anticipo Otorgado', `Se otorgaron ${formatCurrencyCLP(monto)} a ${user.nick}`).catch(console.error);
+        sendPushByRole('cajero', 'Anticipo Otorgado', `Se otorgaron ${formatCurrencyCLP(monto)} a ${user.nick}`).catch(err => logger.error('[AnticipoRepository] Error enviando push:', { err }));
       }
 
       return await BaseRepository.findOne<any>(trx, this.TABLE, this.ID_COL, id);
@@ -121,14 +157,14 @@ export class AnticipoRepository {
 
   static async request(usuario_id: string, monto: number, motivo: string, device_date?: string) {
     const userRes = await query<any[]>('SELECT nombre, apellido, nick, telefono FROM usuarios WHERE id_usuario = ?', [usuario_id]);
-    if (userRes.length === 0) throw new Error('Usuario no encontrado');
+    if (userRes.length === 0) throw new NotFoundError('Usuario', usuario_id);
     const user = userRes[0];
 
     const pending = await query<any[]>('SELECT COUNT(*) as count FROM anticipos WHERE usuario_id = ? AND estado = 2', [usuario_id]);
-    if (Number(pending[0].count) > 0) throw new Error('Ya tienes una solicitud de anticipo pendiente.');
+    if (Number(pending[0].count) > 0) throw new BusinessError('Ya tienes una solicitud de anticipo pendiente', 'ANTICIPO_PENDIENTE');
 
     const { montoAsistencia, montoComision, montoPropina, montoMaximo } = await getAnticipoBalances(usuario_id);
-    if (monto > montoMaximo) throw new Error(`El monto excede el máximo (${formatCurrencyCLP(montoMaximo)})`);
+    if (monto > montoMaximo) throw new BusinessError(`El monto excede el máximo (${formatCurrencyCLP(montoMaximo)})`, 'MONTO_EXCEDE_MAXIMO');
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone(device_date);
@@ -169,7 +205,7 @@ export class AnticipoRepository {
       'cajero',
       'Nueva solicitud de anticipo',
       `${user.nick} solicito ${formatCurrencyCLP(monto)}`
-    ).catch(console.error);
+    ).catch(err => logger.error('[AnticipoRepository] Error enviando push solicitud:', { err }));
 
     const res = await query<any[]>('SELECT * FROM anticipos WHERE id_anticipo = ?', [id]);
     return res.length > 0 ? res[0] : null;
@@ -196,10 +232,10 @@ export class AnticipoRepository {
         WHERE a.id_anticipo = ?
       `, [id]);
 
-      if (request.length === 0) throw new Error('Solicitud no encontrada');
+      if (request.length === 0) throw new NotFoundError('Solicitud de anticipo', id);
       const sol = request[0];
 
-      if (Number(sol.estado) !== 2) throw new Error('La solicitud ya fue procesada anteriormente');
+      if (Number(sol.estado) !== 2) throw new BusinessError('La solicitud ya fue procesada anteriormente', 'ANTICIPO_YA_PROCESADO');
 
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
         estado,
@@ -221,7 +257,7 @@ export class AnticipoRepository {
           enviarWhatsApp(adminWhatsApp, msgAdmin)
         ]);
       } catch (e) {
-        console.error('Error enviando WhatsApps:', e);
+        logger.error('[AnticipoRepository] Error enviando WhatsApps:', { e });
       }
 
       sendNotificationToAll('anticipo_processed', {
@@ -260,18 +296,18 @@ export class AnticipoRepository {
         WHERE a.id_anticipo = ?
       `, [id]);
 
-      if (request.length === 0) throw new Error('Solicitud no encontrada');
+      if (request.length === 0) throw new NotFoundError('Solicitud de anticipo', id);
       const sol = request[0];
 
-      if (Number(sol.estado) !== 1) throw new Error('Solo se pueden entregar anticipos aprobados');
+      if (Number(sol.estado) !== 1) throw new BusinessError('Solo se pueden entregar anticipos aprobados', 'ANTICIPO_NO_APROBADO');
 
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
-      if (!idCaja) throw new Error('No hay una caja abierta para entregar el anticipo');
+      if (!idCaja) throw new BusinessError('No hay una caja abierta para entregar el anticipo', 'NO_CAJA_ABIERTA');
 
       const caja = await CashRegisterRepository.getById(idCaja);
       const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
       if (!caja || efectivoTotal < Number(sol.monto)) {
-        throw new Error('No hay suficiente efectivo en caja');
+        throw new BusinessError('No hay suficiente efectivo en caja', 'SALDO_CAJA_INSUFICIENTE');
       }
 
       const montoAnticipo = Number(sol.monto);

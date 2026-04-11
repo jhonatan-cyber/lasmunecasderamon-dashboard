@@ -1,21 +1,16 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { CategoryRepository } from '@/lib/repositories/CategoryRepository';
-import { getAuth } from '@/lib/auth/auth-app';
+import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppApiWrapper(async () => {
   const data = await CategoryRepository.getAll();
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const POST = withAppAuth(async (request: Request) => {
   const { name, description } = await request.json();
-  if (!name)
-    return NextResponse.json({ success: false, message: 'Nombre requerido' }, { status: 400 });
+  if (!name) throw new ValidationError('Nombre requerido');
 
   const data = await CategoryRepository.create(name, description);
   return NextResponse.json(
@@ -24,19 +19,13 @@ export const POST = withAppApiWrapper(async (request: Request) => {
   );
 });
 
-export const PATCH = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PATCH = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  // Caso 1: Actualización de estado por query params (e.g. ?id=...&action=activate)
   if (id) {
     const action = searchParams.get('action');
-    if (!action)
-      return NextResponse.json({ success: false, message: 'Acción no válida' }, { status: 400 });
+    if (!action) throw new ValidationError('Acción no válida');
 
     const updated = await CategoryRepository.updateStatus(id, action);
     return NextResponse.json({
@@ -46,50 +35,32 @@ export const PATCH = withAppApiWrapper(async (request: Request) => {
     });
   }
 
-  // Caso 2: Reordenamiento por body JSON
   const body = await request.json();
   const { categories, action } = body;
   if (action === 'reorder') {
-    if (!Array.isArray(categories)) {
-      return NextResponse.json(
-        { success: false, message: 'Se requiere un array de categorías' },
-        { status: 400 }
-      );
-    }
+    if (!Array.isArray(categories)) throw new ValidationError('Se requiere un array de categorías');
     await CategoryRepository.reorder(categories);
     return NextResponse.json({ success: true, message: 'Orden actualizado correctamente' });
   }
-  return NextResponse.json({ success: false, message: 'Acción no válida' }, { status: 400 });
+
+  throw new ValidationError('Acción no válida');
 });
 
-export const PUT = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const PUT = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const { name, description } = await request.json();
 
-  if (!id || !name)
-    return NextResponse.json(
-      { success: false, message: 'ID y nombre son requeridos' },
-      { status: 400 }
-    );
+  if (!id || !name) throw new ValidationError('ID y nombre son requeridos', { id, name });
 
   const data = await CategoryRepository.update(id, name, description);
   return NextResponse.json({ success: true, message: 'Categoría actualizada correctamente', data });
 });
 
-export const DELETE = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const DELETE = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-
-  if (!id) return NextResponse.json({ success: false, message: 'Falta el id' }, { status: 400 });
+  if (!id) throw new ValidationError('Falta el id');
 
   await CategoryRepository.delete(id);
   return NextResponse.json({
