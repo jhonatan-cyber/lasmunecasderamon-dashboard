@@ -1,26 +1,14 @@
 import { NextResponse } from 'next/server';
+import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { VentasStatsRepository } from '@/lib/repositories/VentasStatsRepository';
+import { ValidationError } from '@/lib/errors/errors';
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const caja_id = searchParams.get('caja_id');
+export const GET = withAppApiWrapper(async (request: Request) => {
+  const { searchParams } = new URL(request.url);
+  const caja_id = searchParams.get('caja_id');
 
-    if (!caja_id) {
-      return NextResponse.json({ error: 'caja_id es requerido' }, { status: 400 });
-    }
+  if (!caja_id) throw new ValidationError('caja_id es requerido');
 
-    const data = await VentasStatsRepository.getVentasTragosChicas(caja_id);
-    return NextResponse.json({ success: true, ...data }, { status: 200 });
-
-  } catch (error) {
-    return NextResponse.json({ 
-      success: true, 
-      total_venta: 0, 
-      monto_productos: 0, 
-      comisiones: 0, 
-      propinas: 0, 
-      message: 'Error en consulta, devolviendo valores por defecto' 
-    }, { status: 200 });
-  }
-}
+  const data = await VentasStatsRepository.getVentasTragosChicas(caja_id);
+  return NextResponse.json({ success: true, ...data });
+});

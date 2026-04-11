@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const { searchParams } = new URL(request.url);
   const tipo = searchParams.get('tipo') || undefined;
   const startDate = searchParams.get('startDate') || undefined;

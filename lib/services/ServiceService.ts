@@ -5,26 +5,25 @@ import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { BusinessError } from '@/lib/errors/errors';
+import { z } from 'zod';
+import {
+  parsePagosMixtos,
+  validatePagosMixtos,
+  calcularDeltasCaja,
+  procesarPrepago,
+  type MixedPayment,
+} from '@/lib/business/pagosMixtos';
 
-type MixedPayment = {
-  metodo: string;
-  monto: number;
-};
+type ServiceCreateInput = z.input<typeof ServiceCreateSchema>;
 
 export class ServiceService {
-  static async createService(body: any, createdBy: string) {
+  static async createService(body: ServiceCreateInput, createdBy: string) {
     const v = ServiceCreateSchema.parse(body);
     const servicioId = generateUUID();
     const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
     const now = getNowInBusinessTimezone(v.device_date);
-    const pagosMixtos: MixedPayment[] = Array.isArray(v.pagos_mixtos)
-      ? v.pagos_mixtos
-          .map((pago: any) => ({
-            metodo: String(pago?.metodo || ''),
-            monto: Number(pago?.monto || 0)
-          }))
-          .filter((pago: MixedPayment) => pago.metodo && pago.monto > 0)
-      : [];
+    const pagosMixtos: MixedPayment[] = parsePagosMixtos(v.pagos_mixtos);
 
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
     const numAnfitrionas = Math.max(1, v.usuarios.length);
@@ -57,57 +56,20 @@ export class ServiceService {
         : null;
 
       if (esMixto) {
-        const totalPagosMixtos = pagosMixtos.reduce(
-          (sum: number, pago: MixedPayment) => sum + pago.monto,
-          0
-        );
-
-        if (pagosMixtos.length < 2) {
-          throw new Error('Pago mixto invalido: se requieren al menos 2 metodos');
-        }
-
-        if (Math.abs(totalPagosMixtos - Number(v.total || 0)) > 1) {
-          throw new Error('Pago mixto invalido: la suma debe ser igual al total del servicio');
-        }
+        validatePagosMixtos(pagosMixtos, Number(v.total || 0));
       }
 
       if (v.cliente_id) {
-        const clients = await trx<any[]>(
-          'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
-          [v.cliente_id]
-        );
-        const saldoDisponible = Number(clients[0]?.saldo || 0);
-
-        if (saldoDisponible > 0 && prepagoSolicitado !== 0) {
-          prepagoMonto =
-            prepagoSolicitado === null
-              ? Math.min(saldoDisponible, Number(v.total || 0))
-              : prepagoSolicitado;
-
-          if (prepagoSolicitado !== null && prepagoSolicitado > saldoDisponible) {
-            throw new Error('Saldo insuficiente para el monto de prepago seleccionado');
-          }
-
-          await trx(
-            'UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?',
-            [prepagoMonto, v.cliente_id]
-          );
-
-          await trx(
-            'INSERT INTO clientes_prepago_movimientos (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-              generateUUID(),
-              v.cliente_id,
-              'CONSUMO',
-              prepagoMonto,
-              'prepago',
-              servicioId,
-              createdBy,
-              now,
-              JSON.stringify({ concepto: `Pago servicio ${codigo}` })
-            ]
-          );
-        }
+        prepagoMonto = await procesarPrepago(trx, {
+          clienteId: v.cliente_id,
+          total: Number(v.total || 0),
+          prepagoSolicitado,
+          ventaId: servicioId,
+          createdBy,
+          now,
+          codigo,
+          concepto: `Pago servicio ${codigo}`,
+        });
       }
 
       await ServiceRepository.rawInsert(trx, {
@@ -168,15 +130,7 @@ export class ServiceService {
 
       if (cajaId) {
         if (esMixto) {
-          const deltas = pagosMixtos.reduce(
-            (acc: { efectivo: number; tarjeta: number; transferencia: number }, pago: MixedPayment) => {
-              if (pago.metodo === 'efectivo') acc.efectivo += pago.monto;
-              if (pago.metodo === 'tarjeta') acc.tarjeta += pago.monto;
-              if (pago.metodo === 'transferencia') acc.transferencia += pago.monto;
-              return acc;
-            },
-            { efectivo: 0, tarjeta: 0, transferencia: 0 }
-          );
+          const deltas = calcularDeltasCaja(pagosMixtos);
 
           await CashRegisterRepository.updateBalances(trx, cajaId, {
             servicio: Number(v.total) - Number(v.iva || 0),

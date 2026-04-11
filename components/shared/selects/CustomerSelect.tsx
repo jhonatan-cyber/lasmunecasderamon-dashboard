@@ -1,4 +1,4 @@
-import {
+﻿import {
   Select,
   SelectContent,
   SelectItem,
@@ -66,7 +66,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
       const nombre = cliente?.nombre || cliente?.name || '';
       const apellido = cliente?.apellido || cliente?.lastName || '';
       const fullName = `${nombre} ${apellido}`.toLowerCase();
-      return !fullName.includes('genérico') && !fullName.includes('generico');
+      return !fullName.includes('genÃ©rico') && !fullName.includes('generico');
     });
 
     if (!searchTerm) return base;
@@ -78,9 +78,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
       const run = (cliente?.run || '').toLowerCase();
 
       return (
-        nombre.includes(searchLower) ||
-        apellido.includes(searchLower) ||
-        run.includes(searchLower)
+        nombre.includes(searchLower) || apellido.includes(searchLower) || run.includes(searchLower)
       );
     });
   }, [clientes, searchTerm]);
@@ -111,27 +109,28 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
       </Label>
 
       <div className='relative'>
-
         <Select
           value={value || ''}
-          onValueChange={(val) => {
-            onChange || (() => { });
+          onValueChange={(val: string) => {
             onChange(val);
             setSearchTerm('');
           }}
           disabled={disabled}
         >
-          <SelectTrigger className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11' disabled={disabled}>
+          <SelectTrigger
+            className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11'
+            disabled={disabled}
+          >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className='max-h-80'>
-            {/* Barra de búsqueda */}
+            {/* Barra de bÃºsqueda */}
             <div className='p-2 border-b sticky top-0 bg-white z-20'>
               <Input
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === ' ') {
                     e.stopPropagation();
                   }

@@ -1,4 +1,3 @@
- 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Search, Trash2 } from 'lucide-react';
 import { DevolucionFilters as DevolucionFiltersType } from '@/hooks/servicios/useDevolucionFilters';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DevolucionFiltersProps {
   filters: DevolucionFiltersType;
@@ -52,8 +51,14 @@ export const DevolucionFilters = ({
             <Label htmlFor='payment' className='mb-2 text-sm sm:text-base'>
               Método de pago
             </Label>
-            <Select value={filters.paymentFilter} onValueChange={value => updateFilter('paymentFilter', value)}>
-              <SelectTrigger id='payment' className='w-full sm:w-[180px] rounded-full text-sm sm:text-base'>
+            <Select
+              value={filters.paymentFilter}
+              onValueChange={(value: string) => updateFilter('paymentFilter', value)}
+            >
+              <SelectTrigger
+                id='payment'
+                className='w-full sm:w-[180px] rounded-full text-sm sm:text-base'
+              >
                 <SelectValue placeholder='Seleccionar método' />
               </SelectTrigger>
               <SelectContent>
@@ -72,9 +77,12 @@ export const DevolucionFilters = ({
             </Label>
             <Select
               value={String(filters.rowsPerPage)}
-              onValueChange={v => updateFilter('rowsPerPage', Number(v))}
+              onValueChange={(v: string) => updateFilter('rowsPerPage', Number(v))}
             >
-              <SelectTrigger id='rowsPerPage' className='w-full sm:w-[180px] rounded-full text-sm sm:text-base'>
+              <SelectTrigger
+                id='rowsPerPage'
+                className='w-full sm:w-[180px] rounded-full text-sm sm:text-base'
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -89,26 +97,25 @@ export const DevolucionFilters = ({
           {/* Botón limpiar filtros */}
           <div className='flex-1 sm:flex-none'>
             <TooltipProvider>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <Button
-              onClick={clearFilters}
-              variant='outline'
-              size="icon"
-              className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
-              
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl">
-                <p>Limpiar filtros</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={clearFilters}
+                    variant='outline'
+                    size='icon'
+                    className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                  <p>Limpiar filtros</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
     </CardContent>
   </Card>
-); 
+);

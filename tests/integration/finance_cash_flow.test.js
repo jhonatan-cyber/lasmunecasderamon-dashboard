@@ -1,9 +1,10 @@
+﻿/* eslint-disable no-console */
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runFinanceCashFlowTest() {
-    console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Finanzas y Caja ---');
+    console.log('--- INICIANDO PRUEBA DE INTEGRACIÃ“N: Finanzas y Caja ---');
     
     const connection = await mysql.createConnection({
         host: process.env.DB_HOST,
@@ -30,7 +31,7 @@ async function runFinanceCashFlowTest() {
         const montoAnt = 20000;
         await connection.execute(
             'INSERT INTO anticipos (id_anticipo, usuario_id, monto, motivo, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
-            [antId, userId, montoAnt, 'Anticipo integración', 1, now]
+            [antId, userId, montoAnt, 'Anticipo integraciÃ³n', 1, now]
         );
         
         // Actualizar balance de caja (simulado)
@@ -39,12 +40,12 @@ async function runFinanceCashFlowTest() {
             [montoAnt, montoAnt, cajaId]
         );
 
-        console.log('\n[3] Registro de Gratificación');
+        console.log('\n[3] Registro de GratificaciÃ³n');
         const gratId = crypto.randomUUID();
         const montoGrat = 15000;
         await connection.execute(
             'INSERT INTO gratificaciones (id, usuario_id, monto, descripcion, estado, fecha_hora, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [gratId, userId, montoGrat, 'Gratificación integración', 1, now, now]
+            [gratId, userId, montoGrat, 'GratificaciÃ³n integraciÃ³n', 1, now, now]
         );
 
         console.log('\n[4] Verificando Saldo de Caja');
@@ -54,9 +55,9 @@ async function runFinanceCashFlowTest() {
         console.log(`Anticipos: ${cajaRow[0].anticipo}`);
 
         if (Number(cajaRow[0].efectivo) === -20000 && Number(cajaRow[0].anticipo) === 20000) {
-            console.log('✅ Balances de caja actualizados correctamente');
+            console.log('âœ… Balances de caja actualizados correctamente');
         } else {
-            console.log('⚠️ Los balances no coinciden exactamente, pero el flujo persistió');
+            console.log('âš ï¸ Los balances no coinciden exactamente, pero el flujo persistiÃ³');
         }
 
         console.log('\n[5] Limpieza');
@@ -64,11 +65,11 @@ async function runFinanceCashFlowTest() {
         await connection.execute('DELETE FROM anticipos WHERE id_anticipo = ?', [antId]);
         await connection.execute('DELETE FROM cajas WHERE id_caja = ?', [cajaId]);
 
-        console.log('✅ Flujo de Finanzas verificado y datos de prueba eliminados');
-        console.log('\n--- PRUEBA DE INTEGRACIÓN DE FINANZAS EXITOSA ---');
+        console.log('âœ… Flujo de Finanzas verificado y datos de prueba eliminados');
+        console.log('\n--- PRUEBA DE INTEGRACIÃ“N DE FINANZAS EXITOSA ---');
 
     } catch (error) {
-        console.error('\n❌ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
+        console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
         process.exit(1);
     } finally {
         await connection.end();
@@ -76,3 +77,4 @@ async function runFinanceCashFlowTest() {
 }
 
 runFinanceCashFlowTest();
+

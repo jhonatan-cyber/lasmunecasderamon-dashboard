@@ -1,3 +1,4 @@
+﻿/* eslint-disable no-console */
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
@@ -5,17 +6,17 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 /**
- * PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza de Base de Datos
+ * PRUEBA DE INTEGRACIÃ“N: MÃ³dulo de ConfiguraciÃ³n - Limpieza de Base de Datos
  * 
  * Esta prueba verifica el endpoint /api/settings/database-clean
- * que vacía todas las tablas excepto: usuarios, roles, permissions, role_permissions
+ * que vacÃ­a todas las tablas excepto: usuarios, roles, permissions, role_permissions
  * 
- * IMPORTANTE: hace backup antes de limpiar y restaura después
+ * IMPORTANTE: hace backup antes de limpiar y restaura despuÃ©s
  */
 
 const BACKUP_DIR = path.join(__dirname, 'backups');
 
-//确保备份目录存在
+//ç¡®ä¿å¤‡ä»½ç›®å½•å­˜åœ¨
 if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
@@ -28,11 +29,11 @@ async function backupTable(connection, tableName) {
 async function restoreTable(connection, tableName, data) {
     if (!data || data.length === 0) return;
     
-    // 获取表结构信息
+    // èŽ·å–è¡¨ç»“æž„ä¿¡æ¯
     const [columns] = await connection.execute(`DESCRIBE \`${tableName}\``);
     const columnNames = columns.map(c => c.Field);
     
-    // 批量插入
+    // æ‰¹é‡æ’å…¥
     const placeholders = columnNames.map(() => '?').join(', ');
     const columnStr = columnNames.join(', ');
     
@@ -44,14 +45,14 @@ async function restoreTable(connection, tableName, data) {
                 values
             );
         } catch (e) {
-            // 忽略重复键等错误
+            // å¿½ç•¥é‡å¤é”®ç­‰é”™è¯¯
         }
     }
 }
 
 async function runIntegrationTest() {
-    console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza BD ---\n');
-    console.log('⚠️  Esta prueba hará backup y restauración de datos\n');
+    console.log('--- INICIANDO PRUEBA DE INTEGRACIÃ“N: MÃ³dulo de ConfiguraciÃ³n - Limpieza BD ---\n');
+    console.log('âš ï¸  Esta prueba harÃ¡ backup y restauraciÃ³n de datos\n');
     
     const connection = await mysql.createConnection({
         host: process.env.DB_HOST,
@@ -82,7 +83,7 @@ async function runIntegrationTest() {
         for (const table of tables) {
             const tableName = table.TABLE_NAME;
             if (!PROTECTED_TABLES.includes(tableName)) {
-                console.log(`   📦 Backupeando ${tableName}...`);
+                console.log(`   ðŸ“¦ Backupeando ${tableName}...`);
                 backupData[tableName] = await backupTable(connection, tableName);
                 tablesToBackup.push(tableName);
             }
@@ -90,7 +91,7 @@ async function runIntegrationTest() {
         
         // Guardar backup a archivo
         fs.writeFileSync(backupFile, JSON.stringify(backupData, null, 2));
-        console.log(`\n   ✅ Backup guardado en: ${backupFile}`);
+        console.log(`\n   âœ… Backup guardado en: ${backupFile}`);
         
         // Mostrar resumen del backup
         let totalBackupRecords = 0;
@@ -124,8 +125,8 @@ async function runIntegrationTest() {
         // Reactivar foreign keys
         await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
         
-        console.log(`   ✅ ${deletedTables.length} tablas vaciadas`);
-        console.log(`   ✅ ${skippedTables.length} tablas protegidas (omitidas)`);
+        console.log(`   âœ… ${deletedTables.length} tablas vaciadas`);
+        console.log(`   âœ… ${skippedTables.length} tablas protegidas (omitidas)`);
         
         // 3. Verificar que las tablas protegidas conservaron sus datos
         console.log('\n[3] Verificando tablas protegidas...\n');
@@ -150,7 +151,7 @@ async function runIntegrationTest() {
         if (permissionsAfter[0].count !== permissionsBefore[0].count) throw new Error('Permisos fueron eliminados');
         if (rolePermissionsAfter[0].count !== rolePermissionsBefore[0].count) throw new Error('Role permissions fueron eliminadas');
         
-        console.log('   ✅ Todas las tablas protegidas mantienen sus datos');
+        console.log('   âœ… Todas las tablas protegidas mantienen sus datos');
         
         // 4. Verificar que las tablas no protegidas fueron vaciadas
         console.log('\n[4] Verificando tablas vaciadas...\n');
@@ -161,7 +162,7 @@ async function runIntegrationTest() {
         const [productosAfter] = await connection.execute('SELECT COUNT(*) as count FROM productos');
         
         console.log(`   - Ventas: ${ventasAfter[0].count}`);
-        console.log(`   - Categorías: ${categoriasAfter[0].count}`);
+        console.log(`   - CategorÃ­as: ${categoriasAfter[0].count}`);
         console.log(`   - Clientes: ${clientesAfter[0].count}`);
         console.log(`   - Productos: ${productosAfter[0].count}`);
         
@@ -170,7 +171,7 @@ async function runIntegrationTest() {
             throw new Error('Las tablas no fueron vaciadas completamente');
         }
         
-        console.log('   ✅ Tablas correctamente vaciadas');
+        console.log('   âœ… Tablas correctamente vaciadas');
         
         // 5. Restaurar datos desde backup
         console.log('\n[5] Restaurando datos desde backup...\n');
@@ -178,16 +179,16 @@ async function runIntegrationTest() {
         await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
         
         for (const [tableName, data] of Object.entries(backupData)) {
-            console.log(`   🔄 Restaurando ${tableName}...`);
+            console.log(`   ðŸ”„ Restaurando ${tableName}...`);
             await restoreTable(connection, tableName, data);
         }
         
         await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
         
-        console.log('   ✅ Datos restaurados correctamente');
+        console.log('   âœ… Datos restaurados correctamente');
         
-        // 6. Verificar restauración
-        console.log('\n[6] Verificando restauración...\n');
+        // 6. Verificar restauraciÃ³n
+        console.log('\n[6] Verificando restauraciÃ³n...\n');
         
         const [ventasRestored] = await connection.execute('SELECT COUNT(*) as count FROM ventas');
         const [categoriasRestored] = await connection.execute('SELECT COUNT(*) as count FROM categorias');
@@ -195,7 +196,7 @@ async function runIntegrationTest() {
         const [productosRestored] = await connection.execute('SELECT COUNT(*) as count FROM productos');
         
         console.log(`   - Ventas: ${ventasRestored[0].count}`);
-        console.log(`   - Categorías: ${categoriasRestored[0].count}`);
+        console.log(`   - CategorÃ­as: ${categoriasRestored[0].count}`);
         console.log(`   - Clientes: ${clientesRestored[0].count}`);
         console.log(`   - Productos: ${productosRestored[0].count}`);
         
@@ -208,26 +209,26 @@ async function runIntegrationTest() {
         };
         
         if (ventasRestored[0].count !== originalCounts.ventas) throw new Error('Ventas no restauradas correctamente');
-        if (categoriasRestored[0].count !== originalCounts.categorias) throw new Error('Categorías no restauradas correctamente');
+        if (categoriasRestored[0].count !== originalCounts.categorias) throw new Error('CategorÃ­as no restauradas correctamente');
         if (clientesRestored[0].count !== originalCounts.clientes) throw new Error('Clientes no restaurados correctamente');
         if (productosRestored[0].count !== originalCounts.productos) throw new Error('Productos no restaurados correctamente');
         
-        console.log('   ✅ Restauración verificada');
+        console.log('   âœ… RestauraciÃ³n verificada');
         
         // Limpiar archivo de backup
         fs.unlinkSync(backupFile);
-        console.log(`\n   🗑️  Archivo de backup eliminado`);
+        console.log(`\n   ðŸ—‘ï¸  Archivo de backup eliminado`);
         
-        console.log('\n--- PRUEBA DE INTEGRACIÓN EXITOSA ---');
+        console.log('\n--- PRUEBA DE INTEGRACIÃ“N EXITOSA ---');
         console.log('\nRESUMEN:');
         console.log(`  - ${deletedTables.length} tablas vaciadas y restauradas`);
         console.log(`  - ${skippedTables.length} tablas protegidas`);
         console.log('  - Datos de usuarios, roles, permissions intactos');
-        console.log('  - Backup automático creado y eliminado tras prueba');
+        console.log('  - Backup automÃ¡tico creado y eliminado tras prueba');
 
     } catch (error) {
-        console.error('\n❌ ERROR EN PRUEBA DE INTEGRACIÓN:', error.message);
-        console.log('\n⚠️  Intentando restaurar desde backup...');
+        console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error.message);
+        console.log('\nâš ï¸  Intentando restaurar desde backup...');
         
         try {
             if (fs.existsSync(backupFile)) {
@@ -239,10 +240,10 @@ async function runIntegrationTest() {
                 }
                 
                 await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
-                console.log('✅ Restauración de emergencia completada');
+                console.log('âœ… RestauraciÃ³n de emergencia completada');
             }
         } catch (restoreError) {
-            console.error('❌ Error en restauración de emergencia:', restoreError.message);
+            console.error('âŒ Error en restauraciÃ³n de emergencia:', restoreError.message);
         }
         
         process.exit(1);

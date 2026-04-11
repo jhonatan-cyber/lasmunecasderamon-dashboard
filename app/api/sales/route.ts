@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { SaleService } from '@/lib/services/SaleService';
-import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -14,24 +13,13 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     caja_id: searchParams.get('caja_id') || undefined,
     search: searchParams.get('search') || undefined
   };
-
   const data = await SaleRepository.getAll(params);
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json(
-      { success: false, message: 'Usuario no autenticado' },
-      { status: 401 }
-    );
-
+export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
-  const createdBy = user.id;
-
-  const result = await SaleService.createSale(body, createdBy.toString());
-
+  const result = await SaleService.createSale(body, user.id.toString());
   return NextResponse.json(
     { success: true, message: 'Venta procesada', ...result },
     { status: 201 }

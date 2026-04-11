@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { User, ChevronDown, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,13 +49,12 @@ export function HeaderUserMenu() {
         <Button variant='ghost' className='flex items-center gap-2 px-2 sm:px-3'>
           <Avatar className='h-8 w-8'>
             {user?.foto && user.foto !== '' ? (
-              <img
+              <Image
                 src={`/img/users/${user.foto}?v=${imageVersion}`}
                 alt={user ? `${user.name} ${user.lastName}` : 'Usuario'}
+                width={32}
+                height={32}
                 className='w-full h-full object-cover rounded-full'
-                onError={(e) => {
-                  e.currentTarget.src = '/img/users/default.png';
-                }}
               />
             ) : (
               <AvatarImage src='/img/users/default.png' alt='Usuario' />

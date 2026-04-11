@@ -1,4 +1,4 @@
-{
+﻿{
   "extends": ["next/core-web-vitals", "next/typescript"],
   "plugins": ["@typescript-eslint", "react-hooks", "prefer-arrow"],
   "rules": {
@@ -86,11 +86,23 @@
         "**/*.test.ts",
         "**/*.test.tsx",
         "**/*.spec.ts",
-        "**/*.spec.tsx"
+        "**/*.spec.tsx",
+        "**/*.test.js",
+        "**/*.test.jsx",
+        "**/*.spec.js",
+        "**/*.spec.jsx",
+        "tests/**/*.js",
+        "tests/**/*.jsx"
       ],
       "rules": {
         "no-console": "off",
         "@typescript-eslint/no-explicit-any": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.js", "scripts/**/*.ts"],
+      "rules": {
+        "no-console": "off"
       }
     },
     {

@@ -1,11 +1,11 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { OrderSchema, OrderCreateSchema, type OrderType, type OrderCreateType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { 
-  applyAutoRoomToDetails, 
-  hasSpecialHostessProducts 
+import {
+  applyAutoRoomToDetails,
+  hasSpecialHostessProducts
 } from '@/lib/business/orderRoomAssignment';
-import { 
+import {
   buildOrderNotificationData,
   buildOrderDeletionNotificationData
 } from '@/lib/notifications/orderNotificationUtils';
@@ -13,6 +13,10 @@ import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
 import { buildOrderPushBody } from '@/lib/notifications/notificationMessages';
 import { BaseRepository } from './BaseRepository';
+import { logger } from '@/lib/utils/logger';
+import { z } from 'zod';
+
+type OrderCreateInput = z.input<typeof OrderCreateSchema>;
 
 export class OrderRepository {
   private static mapOrderFromDB(row: any): OrderType {
@@ -34,7 +38,7 @@ export class OrderRepository {
     });
   }
 
-  static async getAll(): Promise<OrderType[]> {
+  static async getAll(limit: number = 200): Promise<OrderType[]> {
     const results = await query<any[]>(`
       SELECT 
         P.id_pedido, 
@@ -52,8 +56,8 @@ export class OrderRepository {
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
       WHERE P.estado IN (1, 2)
       ORDER BY P.fecha_crea DESC
-    `);
-    console.log('[OrderRepository.getAll] Raw results:', results.length);
+      LIMIT ?
+    `, [limit]);
     return results.map(row => this.mapOrderFromDB(row));
   }
 
@@ -67,7 +71,7 @@ export class OrderRepository {
     return results.map(row => this.mapOrderFromDB(row));
   }
 
-  static async create(body: any): Promise<any> {
+  static async create(body: OrderCreateInput): Promise<any> {
     const data = OrderCreateSchema.parse(body);
     let { codigo, meseroId, clienteId, subtotal, total, totalComision, propina, detalles, usuarios, device_date } = data;
 

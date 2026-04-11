@@ -1,5 +1,4 @@
-/* eslint-disable */
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
@@ -32,7 +31,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  // Cerrar sidebar cuando cambia el tamaño de la ventana a desktop
+  // Cerrar sidebar cuando cambia el tamaÃ±o de la ventana a desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) { // lg breakpoint
@@ -86,3 +85,4 @@ export function useSidebar() {
   }
   return context;
 } 
+

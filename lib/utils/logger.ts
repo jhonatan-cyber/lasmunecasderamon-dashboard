@@ -59,10 +59,12 @@ const getLogger = () => {
     loggerInstance = winstonLogger;
   } else {
     loggerInstance = {
-      info: (msg: string, meta: any) => console.log(`[INFO] ${msg}`, meta),
+      // eslint-disable-next-line no-console
+      info: (msg: string, meta: any) => console.info(`[INFO] ${msg}`, meta),
       warn: (msg: string, meta: any) => console.warn(`[WARN] ${msg}`, meta),
       error: (msg: string, meta: any) => console.error(`[ERROR] ${msg}`, meta),
-      debug: (msg: string, meta: any) => console.debug(`[DEBUG] ${msg}`, meta),
+      // eslint-disable-next-line no-console
+      debug: (msg: string, meta: any) => console.info(`[DEBUG] ${msg}`, meta),
       add: () => { },
       remove: () => { },
     };

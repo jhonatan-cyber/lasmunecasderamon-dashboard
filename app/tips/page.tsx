@@ -1,5 +1,4 @@
-/* eslint-disable */
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 
@@ -44,7 +43,7 @@ export default function TipsPage() {
     }
   };
 
-  // Filtrar y ordenar datos por término de búsqueda
+  // Filtrar y ordenar datos por tÃ©rmino de bÃºsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
 
@@ -81,7 +80,7 @@ export default function TipsPage() {
     });
   }, [tipsCajaActiva, searchTerm]);
 
-  // Calcular estadísticas
+  // Calcular estadÃ­sticas
   const stats = useMemo(() => {
     if (!filteredTips) {
       return {
@@ -111,7 +110,7 @@ export default function TipsPage() {
     };
   }, [filteredTips, filteredTipsCajaActiva]);
 
-  // Función para formatear moneda
+  // FunciÃ³n para formatear moneda
   const formatCurrency = (n: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -121,7 +120,7 @@ export default function TipsPage() {
     }).format(n);
   };
 
-  // Paginación
+  // PaginaciÃ³n
   const paginatedTips = filteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const totalPages = Math.ceil(filteredTips.length / rowsPerPage) || 1;
 
@@ -160,7 +159,7 @@ export default function TipsPage() {
             </div>
           </div>
 
-          {/* Estadísticas */}
+          {/* EstadÃ­sticas */}
           <TipsStatsCards
             totalTips={stats.totalTips}
             totalUsuarios={stats.totalUsuarios}

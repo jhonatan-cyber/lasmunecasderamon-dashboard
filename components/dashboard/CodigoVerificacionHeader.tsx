@@ -29,7 +29,7 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
     const role = userRole?.toLowerCase();
     if (role === 'administrador' || role === 'cajero') {
       fetchCodigo();
-      
+
       const handleFocus = () => {
         fetchCodigo();
       };
@@ -37,9 +37,13 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
       window.addEventListener('focus', handleFocus);
       return () => window.removeEventListener('focus', handleFocus);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole]);
 
-  if (!userRole || (userRole.toLowerCase() !== 'administrador' && userRole.toLowerCase() !== 'cajero')) {
+  if (
+    !userRole ||
+    (userRole.toLowerCase() !== 'administrador' && userRole.toLowerCase() !== 'cajero')
+  ) {
     return null;
   }
 

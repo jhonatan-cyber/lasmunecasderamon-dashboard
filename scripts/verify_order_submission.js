@@ -1,10 +1,11 @@
+﻿/* eslint-disable no-console */
 
 const { query, withTransaction } = require('./lib/database/db');
 const { OrderRepository } = require('./lib/repositories/OrderRepository');
 const { v4: uuidv4 } = require('uuid');
 
 async function testOrderSubmission() {
-    console.log('--- Iniciando prueba de envío de pedido ---');
+    console.log('--- Iniciando prueba de envÃ­o de pedido ---');
 
     try {
         // 1. Obtener datos necesarios (un mesero, un cliente, un producto, una anfitriona)
@@ -29,7 +30,7 @@ async function testOrderSubmission() {
         console.log('- Producto ID:', producto.id_producto, '(Precio:', producto.precio, ', Comision:', producto.comision, ')');
         console.log('- Anfitriona ID:', anfitrionaId);
 
-        // 2. Simular el objeto de pedido que envía el frontend
+        // 2. Simular el objeto de pedido que envÃ­a el frontend
         const subtotal = producto.precio;
         const propina = subtotal * 0.1; // 10% de propina
         const total = subtotal + propina;
@@ -59,10 +60,10 @@ async function testOrderSubmission() {
             usuarios: anfitrionaId ? [{ usuarioId: anfitrionaId }] : []
         };
 
-        console.log('\nSimulando envío de pedido (Payload):');
+        console.log('\nSimulando envÃ­o de pedido (Payload):');
         console.log(JSON.stringify(mockOrder, null, 2));
 
-        // 3. Ejecutar la creación en el repositorio
+        // 3. Ejecutar la creaciÃ³n en el repositorio
         const result = await OrderRepository.create(mockOrder);
         const pedidoId = result.id;
         console.log('\nPedido creado exitosamente. ID:', pedidoId);
@@ -96,12 +97,12 @@ async function testOrderSubmission() {
             console.log('- Registros encontrados:', usuariosPedido.length);
         }
 
-        // 5. Limpieza (opcional, pero mejor dejarlo para auditoría si es ambiente de dev)
+        // 5. Limpieza (opcional, pero mejor dejarlo para auditorÃ­a si es ambiente de dev)
         // console.log('\nEliminando pedido de prueba...');
         // await OrderRepository.delete(pedidoId);
         // console.log('Pedido eliminado.');
 
-        console.log('\n--- Prueba finalizada con ÉXITO ---');
+        console.log('\n--- Prueba finalizada con Ã‰XITO ---');
 
     } catch (error) {
         console.error('\n--- ERROR durante la prueba ---');
@@ -112,3 +113,4 @@ async function testOrderSubmission() {
 }
 
 testOrderSubmission();
+

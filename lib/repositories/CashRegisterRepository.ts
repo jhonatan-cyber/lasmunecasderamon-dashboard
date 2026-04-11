@@ -2,6 +2,8 @@ import { query, generateUUID, withTransaction, type TransactionQuery } from '@/l
 import { CajaSchema, type CajaType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from './BaseRepository';
+import { logger } from '@/lib/utils/logger';
+import { ConflictError, NotFoundError, BusinessError } from '@/lib/errors/errors';
 
 export class CashRegisterRepository {
   private static mapCajaFromDB(row: any): CajaType {
@@ -93,7 +95,7 @@ export class CashRegisterRepository {
     const setClause = dedupedEntries.map(([col]) => `${col} = ${col} + ?`).join(', ');
     const values = dedupedEntries.map(([_, v]) => v);
 
-    console.log('[CashRegisterRepository] updateBalances:', { id_caja, setClause, values });
+    logger.debug('[CashRegisterRepository] updateBalances:', { id_caja, setClause, values });
     await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [...values, id_caja]);
   }
 
@@ -152,7 +154,7 @@ export class CashRegisterRepository {
 
   static async open(usuario_id: string, monto_apertura: number): Promise<CajaType | null> {
     const open = await query<any[]>('SELECT id_caja FROM cajas WHERE usuario_id_apertura = ? AND estado = 1', [usuario_id]);
-    if (open.length > 0) throw new Error('Usuario ya tiene una caja abierta');
+    if (open.length > 0) throw new ConflictError('Usuario ya tiene una caja abierta');
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
@@ -173,7 +175,7 @@ export class CashRegisterRepository {
 
   static async close(id: string, usuario_id_cierre: string): Promise<CajaType | null> {
     const caja = await BaseRepository.findOne<any>(query, 'cajas', 'id_caja', id);
-    if (!caja || caja.estado !== 1) throw new Error('Caja no encontrada o ya cerrada');
+    if (!caja || caja.estado !== 1) throw new NotFoundError('Caja abierta');
 
     const montoCierre = Number(caja.monto_apertura || 0) + Number(caja.efectivo || 0) + 
                         Number(caja.tarjeta || 0) + Number(caja.transferencia || 0) - Number(caja.devolucion || 0);

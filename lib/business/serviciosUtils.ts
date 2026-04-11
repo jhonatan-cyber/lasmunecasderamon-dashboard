@@ -1,8 +1,8 @@
 // Service utilities for cancellation flow and UI helpers.
 
-import { query } from '@/lib/database/db';
-import { generateUUID } from '@/lib/database/db';
+import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { logger } from '@/lib/utils/logger';
 
 export async function solicitarAnulacionServicio(servicioId: number, motivo: string): Promise<{ success: boolean; error?: string }> {
   try {
@@ -16,8 +16,9 @@ export async function solicitarAnulacionServicio(servicioId: number, motivo: str
     );
     
     return { success: true };
-  } catch (error: any) {
-    console.error('Error al solicitar anulación de servicio:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    logger.error('Error al solicitar anulación de servicio:', { error, servicioId });
+    return { success: false, error: msg };
   }
 }

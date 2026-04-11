@@ -1,4 +1,4 @@
-  
+﻿  
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
@@ -28,7 +28,7 @@ export function useServiceLogic() {
   const handleShowActiveServices = useCallback(() => {
     setShowAllServices(false);
     setCurrentPage(1);
-    // También recargar con all=false para obtener activos
+    // TambiÃ©n recargar con all=false para obtener activos
     getServicios(false);
   }, [getServicios]);
 
@@ -41,7 +41,6 @@ export function useServiceLogic() {
 
   const handleStopTimer = useCallback(
     async (servicioId: number) => {
-      console.log('[useServiceLogic] handleStopTimer llamado con:', servicioId);
       try {
         // Usar patchServicio que ya implementa actualizaciones optimistas
         await patchServicio(servicioId, { estado: 1 }); // 1 = Terminado
@@ -60,14 +59,12 @@ export function useServiceLogic() {
 
   const handleServiceFinalized = useCallback(
     (servicioId: string | number) => {
-      console.log('[useServiceLogic] handleServiceFinalized llamado con:', servicioId);
       removeServicioFromState(servicioId);
     },
     [removeServicioFromState]
   );
 
   const handleServiceAutoFinished = useCallback(async () => {
-    console.log('[useServiceLogic] handleServiceAutoFinished llamado');
     try {
       await getServicios(false); // false = obtener servicios activos
       setCurrentPage(prev => prev);
@@ -85,7 +82,7 @@ export function useServiceLogic() {
         (servicio: ServicioWithDetails) => servicio.estado === 1 || servicio.estado === 0
       );
     } else {
-      // Mostrar servicios en proceso (2), pausados (3) o solicitud de anulación (4)
+      // Mostrar servicios en proceso (2), pausados (3) o solicitud de anulaciÃ³n (4)
       return servicios.filter(
         (servicio: ServicioWithDetails) =>
           servicio.estado === 2 || servicio.estado === 3 || servicio.estado === 4
@@ -136,3 +133,4 @@ export function useServiceLogic() {
     getServicios: (p0: boolean) => getServicios(true)
   };
 }
+

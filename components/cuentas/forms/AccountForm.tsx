@@ -9,11 +9,11 @@ import { Client } from '@/types/client';
 import { User } from '@/types/user';
 import { Room } from '@/types/room';
 
-interface Cliente extends Partial<Client> { }
+type Cliente = Partial<Client>;
 
-interface Anfitriona extends Partial<User> { }
+type Anfitriona = Partial<User>;
 
-interface Habitacion extends Partial<Room> { }
+type Habitacion = Partial<Room>;
 
 interface AccountFormDataProps {
   clientes: Cliente[];
@@ -47,21 +47,23 @@ export default function AccountFormData({
   onHabitacionChange,
   onTimeChange
 }: AccountFormDataProps) {
-  const habitacionesFiltradas = selectedAnfitrionas.length === 0
-    ? habitaciones.filter(r =>
-      (r.price ?? r.precio ?? 0) === 0 &&
-      (r.time ?? r.tiempo ?? 0) === 0 &&
-      (r.comision_anfitriona ?? 0) === 0
-    )
-    : habitaciones;
+  const habitacionesFiltradas =
+    selectedAnfitrionas.length === 0
+      ? habitaciones.filter(
+          r =>
+            (r.price ?? r.precio ?? 0) === 0 &&
+            (r.time ?? r.tiempo ?? 0) === 0 &&
+            (r.comision_anfitriona ?? 0) === 0
+        )
+      : habitaciones;
 
   // Detectar si hay habitación seleccionada y NO tiene comisión
   const habitacionSeleccionada = selectedHabitacion
     ? habitaciones.find(r => String(r.id ?? r.id_habitacion) === selectedHabitacion)
     : null;
 
-  const mostrarSelectorTiempo = habitacionSeleccionada
-    && (habitacionSeleccionada.comision_anfitriona ?? 0) === 0;
+  const mostrarSelectorTiempo =
+    habitacionSeleccionada && (habitacionSeleccionada.comision_anfitriona ?? 0) === 0;
 
   // Auto-setear tiempo de la habitación al seleccionarla
   useEffect(() => {
@@ -69,12 +71,11 @@ export default function AccountFormData({
       const tiempo = habitacionSeleccionada.time ?? habitacionSeleccionada.tiempo ?? 0;
       onTimeChange(tiempo > 0 ? tiempo : 60);
     }
-  }, [selectedHabitacion]);
+  }, [habitacionSeleccionada, onTimeChange]);
 
   return (
     <div className='space-y-4'>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-
         <CustomerSelect
           clientes={clientes}
           value={selectedCliente}

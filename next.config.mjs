@@ -2,8 +2,13 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
-  allowedDevOrigins: ['e03a-192-223-121-195.ngrok-free.app', '*.ngrok-free.app', 'dev.xn--lasmuecasderamon-bub.com', 'dev.lasmuñecasderamon.com'],
-  
+  allowedDevOrigins: [
+    'e03a-192-223-121-195.ngrok-free.app',
+    '*.ngrok-free.app',
+    'dev.xn--lasmuecasderamon-bub.com',
+    'dev.lasmuñecasderamon.com'
+  ],
+
   images: {
     unoptimized: true,
     formats: ['image/avif', 'image/webp'],
@@ -37,8 +42,8 @@ const nextConfig = {
             value: '0'
           },
           {
-             key: 'Connection',
-             value: 'keep-alive'
+            key: 'Connection',
+            value: 'keep-alive'
           }
         ]
       },
@@ -69,11 +74,6 @@ const nextConfig = {
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
-          },
-          {
-            key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: ws: wss:; media-src 'self' blob: https:; frame-src 'self' https://www.google.com https://maps.google.com;"
           }
         ]
       }

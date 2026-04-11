@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import useProducts from '@/hooks/productos/useProducts';
@@ -34,13 +34,12 @@ const cardPageSizes = [8, 12, 24, 48];
 const ProductCategoryPage = () => {
   const params = useParams();
   const rawId = params?.id;
-  // El categoryId ya es el UUID correcto de la categoría
+  // El categoryId ya es el UUID correcto de la categorÃ­a
   const categoryId = typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : '';
 
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
   const category = filteredCategories.find(cat => String(cat.id) === String(categoryId));
 
-  
   const {
     products,
     isLoading,
@@ -56,7 +55,6 @@ const ProductCategoryPage = () => {
     filterStatus,
     setFilterStatus
   } = useProducts(categoryId || '');
-
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -79,7 +77,6 @@ const ProductCategoryPage = () => {
     })
   );
 
-
   const filteredProducts = useMemo(() => {
     let result = products;
     const term = searchTerm.trim().toLowerCase();
@@ -92,8 +89,7 @@ const ProductCategoryPage = () => {
       result = result.filter(p => p.status === filterStatus);
     }
     return result;
-  }, [products, searchTerm, filterStatus, isLoading]);
-
+  }, [products, searchTerm, filterStatus]);
 
   React.useEffect(() => {
     setLocalProductsCards(filteredProducts);
@@ -112,18 +108,21 @@ const ProductCategoryPage = () => {
     return localProductsCards.slice(start, start + pageSizeCards);
   }, [localProductsCards, pageCards, pageSizeCards]);
 
-  const handleDragEndCards = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEndCards = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = localProductsCards.findIndex(p => p.id === active.id);
-      const newIndex = localProductsCards.findIndex(p => p.id === over.id);
+      if (over && active.id !== over.id) {
+        const oldIndex = localProductsCards.findIndex(p => p.id === active.id);
+        const newIndex = localProductsCards.findIndex(p => p.id === over.id);
 
-      const newProducts = arrayMove(localProductsCards, oldIndex, newIndex);
-      setLocalProductsCards(newProducts);
-      reorderProducts(newProducts);
-    }
-  }, [localProductsCards, reorderProducts]);
+        const newProducts = arrayMove(localProductsCards, oldIndex, newIndex);
+        setLocalProductsCards(newProducts);
+        reorderProducts(newProducts);
+      }
+    },
+    [localProductsCards, reorderProducts]
+  );
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm('');
@@ -132,33 +131,48 @@ const ProductCategoryPage = () => {
     setPageCards(1);
   }, [setSearchTerm, setFilterStatus]);
 
-  const handleCreate = useCallback(async (form: FormData) => {
-    await createProduct(form);
-    setOpenDialog(false);
-  }, [createProduct]);
+  const handleCreate = useCallback(
+    async (form: FormData) => {
+      await createProduct(form);
+      setOpenDialog(false);
+    },
+    [createProduct]
+  );
 
   const handleEdit = useCallback((product: Product) => {
     setEditProduct(product);
     setOpenDialog(true);
   }, []);
 
-  const handleUpdate = useCallback(async (form: FormData) => {
-    await updateProduct(form);
-    setEditProduct(null);
-    setOpenDialog(false);
-  }, [updateProduct]);
+  const handleUpdate = useCallback(
+    async (form: FormData) => {
+      await updateProduct(form);
+      setEditProduct(null);
+      setOpenDialog(false);
+    },
+    [updateProduct]
+  );
 
-  const handleDelete = useCallback(async (product: Product) => {
-    await deleteProduct(product.id);
-  }, [deleteProduct]);
+  const handleDelete = useCallback(
+    async (product: Product) => {
+      await deleteProduct(product.id);
+    },
+    [deleteProduct]
+  );
 
-  const handleActivate = useCallback(async (product: Product) => {
-    await activateProduct(product.id);
-  }, [activateProduct]);
+  const handleActivate = useCallback(
+    async (product: Product) => {
+      await activateProduct(product.id);
+    },
+    [activateProduct]
+  );
 
-  const handleDeactivate = useCallback(async (product: Product) => {
-    await deactivateProduct(product.id);
-  }, [deactivateProduct]);
+  const handleDeactivate = useCallback(
+    async (product: Product) => {
+      await deactivateProduct(product.id);
+    },
+    [deactivateProduct]
+  );
 
   const handleBack = () => {
     router.push('/products');
@@ -181,7 +195,7 @@ const ProductCategoryPage = () => {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
-          Categoría no encontrada. ID: {categoryId}
+          CategorÃ­a no encontrada. ID: {categoryId}
         </div>
       </div>
     );
@@ -191,12 +205,11 @@ const ProductCategoryPage = () => {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
-          ID de categoría inválido
+          ID de categorÃ­a invÃ¡lido
         </div>
       </div>
     );
   }
-
 
   return (
     <PermissionGuard module='products' action='view'>
@@ -281,7 +294,7 @@ const ProductCategoryPage = () => {
           )}
         </div>
 
-        {/* Vista de cards siempre en móvil */}
+        {/* Vista de cards siempre en mÃ³vil */}
         <div className='lg:hidden'>
           <DndContext
             sensors={sensors}
@@ -317,7 +330,7 @@ const ProductCategoryPage = () => {
 
         <ProductFormModal
           open={openDialog}
-          onOpenChange={(v) => {
+          onOpenChange={v => {
             if (!v) {
               setOpenDialog(false);
               setEditProduct(null);

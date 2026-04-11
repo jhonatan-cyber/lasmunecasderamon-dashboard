@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ServiceRequestRepository } from '@/lib/repositories/ServiceRequestRepository';
-import { getAuth } from '@/lib/auth/auth-app';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -11,11 +11,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
   const result = await ServiceRequestRepository.create(body, user.id.toString());
 
@@ -28,16 +24,15 @@ export const POST = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data: result }, { status: 201 });
 });
 
-export const DELETE = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user || !['administrador', 'cajero'].includes(user.role.toLowerCase())) {
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 403 });
-  }
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  if (!id) return NextResponse.json({ success: false, message: 'ID requerido' }, { status: 400 });
+export const DELETE = withAppAuth(
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) throw new ValidationError('ID requerido');
 
-  await ServiceRequestRepository.delete(id);
-  sendNotificationToAll('service_request_deleted', { id });
-  return NextResponse.json({ success: true, message: 'Solicitud eliminada' });
-});
+    await ServiceRequestRepository.delete(id);
+    sendNotificationToAll('service_request_deleted', { id });
+    return NextResponse.json({ success: true, message: 'Solicitud eliminada' });
+  },
+  { requiredPermission: { module: 'orders', action: 'delete' } }
+);

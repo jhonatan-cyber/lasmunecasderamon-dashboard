@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
-import { getAuth } from '@/lib/auth/auth-app';
+import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
-  const user = await getAuth();
-  if (!user)
-    return NextResponse.json({ success: false, message: 'No autorizado' }, { status: 401 });
-
+export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const { searchParams } = new URL(request.url);
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
@@ -15,15 +11,11 @@ export const GET = withAppApiWrapper(async (request: Request) => {
 
   let result;
   if (dates) {
-    const dateList = dates.split(',');
-    result = await AnticipoRepository.getByDates(user.id.toString(), dateList);
+    result = await AnticipoRepository.getByDates(user.id.toString(), dates.split(','));
   } else if (startDate && endDate) {
     result = await AnticipoRepository.getByUser(user.id.toString(), startDate, endDate);
   } else {
-    return NextResponse.json(
-      { success: false, message: 'Faltan parámetros de fecha' },
-      { status: 400 }
-    );
+    throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
   }
 
   return NextResponse.json({ success: true, data: result });

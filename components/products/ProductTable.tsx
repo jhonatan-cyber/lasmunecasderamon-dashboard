@@ -1,15 +1,15 @@
- 
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
-import { 
-  MoreVertical, 
-  Pencil, 
-  Trash, 
-  Check, 
+import {
+  MoreVertical,
+  Pencil,
+  Trash,
+  Check,
   Power,
   GripVertical,
   Image as ImageIcon
-}  from 'lucide-react';
+} from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,19 +94,14 @@ const SortableRow: React.FC<SortableRowProps> = ({
   canDeactivate,
   hasAnyAction
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: product.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: product.id
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : 1
   };
 
   return (
@@ -121,9 +116,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing inline-flex items-center justify-center hover:bg-gray-100 rounded p-1"
+          className='cursor-grab active:cursor-grabbing inline-flex items-center justify-center hover:bg-gray-100 rounded p-1'
         >
-          <GripVertical className="w-4 h-4 text-gray-400" />
+          <GripVertical className='w-4 h-4 text-gray-400' />
         </div>
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600 font-medium'>
@@ -133,27 +128,27 @@ const SortableRow: React.FC<SortableRowProps> = ({
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center'>
         <div className='w-12 h-12 rounded-xl overflow-hidden border border-gray-100 mx-auto bg-gray-50 flex items-center justify-center shrink-0 shadow-sm group-hover:shadow transition-all relative'>
-          <img 
+          <Image
             src={
               !product.foto || product.foto === 'default.png' || product.foto === ''
                 ? '/img/products/default.png'
-                : product.foto.startsWith('http') 
-                  ? product.foto 
+                : product.foto.startsWith('http')
+                  ? product.foto
                   : `/img/products/${product.foto}`
-            } 
-            alt={product.name} 
+            }
+            alt={product.name}
+            fill
+            sizes='48px'
             className='w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110'
-            onError={e => {
-              const target = e.target as HTMLImageElement;
-              if (!target.src.endsWith('/img/products/default.png')) {
-                target.src = '/img/products/default.png';
-              }
-            }}
           />
         </div>
       </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>{product.code}</TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>{product.name}</TableCell>
+      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        {product.code}
+      </TableCell>
+      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        {product.name}
+      </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
         {formatCurrencyCLP(product.price)}
       </TableCell>
@@ -180,7 +175,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
                 size='icon'
                 className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
               >
-                <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
+                <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
@@ -192,9 +187,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
                         onClick={() => onEdit(product)}
                         className='cursor-pointer group'
                       >
-                        <Pencil
-                          className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors'
-                        />
+                        <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
                         <span className='group-hover:text-purple-700 transition-colors'>
                           Editar
                         </span>
@@ -212,9 +205,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
                         onClick={() => onDeactivate(product)}
                         className='cursor-pointer group'
                       >
-                        <Power
-                          className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors'
-                        />
+                        <Power className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors' />
                         <span className='group-hover:text-orange-700 transition-colors'>
                           Desactivar
                         </span>
@@ -231,9 +222,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
                         onClick={() => onActivate(product)}
                         className='cursor-pointer group'
                       >
-                        <Check
-                          className='mr-2 text-green-600 group-hover:text-green-700 transition-colors'
-                        />
+                        <Check className='mr-2 text-green-600 group-hover:text-green-700 transition-colors' />
                         <span className='group-hover:text-green-700 transition-colors'>
                           Activar
                         </span>
@@ -251,12 +240,8 @@ const SortableRow: React.FC<SortableRowProps> = ({
                         onClick={() => handleDeleteClick(product)}
                         className='cursor-pointer group'
                       >
-                        <Trash
-                          className='mr-2 text-red-600 group-hover:text-red-700 transition-colors'
-                        />
-                        <span className='group-hover:text-red-700 transition-colors'>
-                          Eliminar
-                        </span>
+                        <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
+                        <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
                       </DropdownMenuItem>
                     </TooltipTrigger>
                     <TooltipContent>Eliminar producto</TooltipContent>
@@ -287,13 +272,13 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [localProducts, setLocalProducts] = useState(products);
   const { hasPermission } = useUserPermissions();
-  
+
   // Verificar permisos
   const canEdit = hasPermission('productos', 'editar_categoria');
   const canDelete = hasPermission('productos', 'eliminar');
   const canActivate = hasPermission('productos', 'activar');
   const canDeactivate = hasPermission('productos', 'desactivar');
-  
+
   // Si no tiene ningún permiso de acción, no mostrar el menú
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
@@ -305,11 +290,11 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
-      },
+        distance: 8
+      }
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 
@@ -317,8 +302,8 @@ const ProductTable: React.FC<ProductTableProps> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = localProducts.findIndex((p) => p.id === active.id);
-      const newIndex = localProducts.findIndex((p) => p.id === over.id);
+      const oldIndex = localProducts.findIndex(p => p.id === active.id);
+      const newIndex = localProducts.findIndex(p => p.id === over.id);
 
       const newProducts = arrayMove(localProducts, oldIndex, newIndex);
       setLocalProducts(newProducts);
@@ -354,7 +339,9 @@ const ProductTable: React.FC<ProductTableProps> = ({
             <Table className='min-w-full text-base text-center'>
               <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
                 <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'>Orden</TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'>
+                    Orden
+                  </TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Foto</TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
@@ -380,7 +367,10 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <TableBody>
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
-                    <TableCell colSpan={9} className='text-center py-8 text-gray-400 bg-white text-sm sm:text-base'>
+                    <TableCell
+                      colSpan={9}
+                      className='text-center py-8 text-gray-400 bg-white text-sm sm:text-base'
+                    >
                       No hay productos
                     </TableCell>
                   </TableRow>

@@ -19,14 +19,37 @@ export class ClientRepository {
     });
   }
 
-  static async getAll(): Promise<ClientType[]> {
-    const clients = await query<any[]>(`
-      SELECT c.*, 
-      COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
-      FROM clientes c 
+  static async getAll(params?: {
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ data: ClientType[]; total: number }> {
+    const limit = params?.limit ?? 50;
+    const offset = params?.offset ?? 0;
+    const sqlParams: any[] = [];
+
+    let where = 'WHERE 1=1';
+    if (params?.search) {
+      where += ' AND (c.nombre LIKE ? OR c.apellido LIKE ? OR c.run LIKE ? OR c.telefono LIKE ?)';
+      const s = `%${params.search}%`;
+      sqlParams.push(s, s, s, s);
+    }
+
+    const countSql = `SELECT COUNT(*) as total FROM clientes c ${where}`;
+    const dataSql = `
+      SELECT c.*,
+        COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
+      FROM clientes c
+      ${where}
       ORDER BY c.nombre ASC
-    `);
-    return clients.map(row => this.mapClientFromDB(row));
+      LIMIT ? OFFSET ?
+    `;
+
+    const countRes = await query<any[]>(countSql, sqlParams);
+    const total = Number(countRes[0]?.total ?? 0);
+    const data = await query<any[]>(dataSql, [...sqlParams, limit, offset]);
+
+    return { data: data.map(row => this.mapClientFromDB(row)), total };
   }
 
   static async getById(id: string): Promise<ClientType | null> {

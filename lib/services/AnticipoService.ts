@@ -1,21 +1,30 @@
 import { AnticipoRequestSchema } from '@/lib/business/schemas';
 import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
+import { ValidationError } from '@/lib/errors/errors';
+import { z } from 'zod';
+
+type AnticipoRequestInput = z.input<typeof AnticipoRequestSchema>;
+
+type AnticipoItem = {
+  id: string;
+  empleado_nombre: string;
+};
 
 export class AnticipoService {
 
-  static async requestAnticipo(usuario_id: string, body: any) {
+  static async requestAnticipo(usuario_id: string, body: AnticipoRequestInput) {
     const validated = AnticipoRequestSchema.parse(body);
     return await AnticipoRepository.request(usuario_id, validated.monto, validated.motivo, validated.device_date);
   }
 
 
   static async grantAnticipo(usuario_id: string, monto: number, motivo?: string, device_date?: string) {
-    if (monto <= 0) throw new Error('El monto debe ser positivo');
+    if (monto <= 0) throw new ValidationError('El monto debe ser positivo', { monto });
     return await AnticipoRepository.grant(usuario_id, monto, motivo, device_date);
   }
 
   static async processAnticipoFromCommand(
-    anticiposPendientes: any[],
+    anticiposPendientes: AnticipoItem[],
     anticipoId: string,
     shouldApprove: boolean,
     adminWhatsApp: string
@@ -29,8 +38,9 @@ export class AnticipoService {
     try {
       await AnticipoRepository.processSolicitud(anticipoId, shouldApprove ? 'approve' : 'reject');
       return { ok: true, message: `Anticipo de ${anticipo.empleado_nombre} ${shouldApprove ? 'APROBADO' : 'RECHAZADO'} correctamente.` };
-    } catch (error: any) {
-      return { ok: false, message: `Error al procesar: ${error.message}` };
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      return { ok: false, message: `Error al procesar: ${msg}` };
     }
   }
 }

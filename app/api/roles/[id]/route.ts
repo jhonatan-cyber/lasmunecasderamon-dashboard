@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { RoleRepository } from '@/lib/repositories/RoleRepository';
 
 export const GET = withAppApiWrapper(
@@ -12,8 +12,8 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PUT = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
     await RoleRepository.updateRole(id, body);
@@ -21,8 +21,8 @@ export const PUT = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = withAppAuth(
+  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     await RoleRepository.delete(id);
     return NextResponse.json({ success: true, message: 'Role deleted' });
