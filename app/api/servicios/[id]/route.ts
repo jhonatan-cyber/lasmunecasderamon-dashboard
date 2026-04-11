@@ -34,9 +34,13 @@ export const PATCH = withAppAuth(
 );
 
 export const DELETE = withAppAuth(
-  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
-    const id = (await params).id;
-    await ServiceRepository.delete(id);
-    return NextResponse.json({ success: true, message: 'Servicio eliminado exitosamente' });
+  async () => {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'La eliminacion fisica de servicios esta deshabilitada. Use el flujo de anulacion.'
+      },
+      { status: 409 }
+    );
   }
 );

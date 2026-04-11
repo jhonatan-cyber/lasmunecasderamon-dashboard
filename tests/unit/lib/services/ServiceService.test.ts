@@ -1,10 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValidationError } from '@/lib/errors/errors';
+
+const serviceHarness = vi.hoisted(() => {
+  const queryMock = vi.fn();
+  const transactionMock = vi.fn();
+  return { queryMock, transactionMock };
+});
 
 vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'mock-uuid',
-  withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
-  query: vi.fn().mockResolvedValue([{ comision_anfitriona: 0 }])
+  withTransaction: vi.fn(async (fn: any) => fn(serviceHarness.transactionMock)),
+  query: serviceHarness.queryMock
 }));
 
 vi.mock('@/lib/repositories/ServiceRepository', () => ({
@@ -29,9 +35,17 @@ vi.mock('@/lib/business/timezoneService', () => ({
 
 import { ServiceService } from '@/lib/services/ServiceService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { RoomManager } from '@/lib/services/RoomManager';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  serviceHarness.queryMock.mockResolvedValue([{ comision_anfitriona: 0 }]);
+  serviceHarness.transactionMock.mockImplementation(async (sql: string) => {
+    if (sql.includes('SELECT DISTINCT u.id_usuario')) {
+      return [{ id_usuario: 'user-1' }];
+    }
+    return [];
+  });
 });
 
 const validServiceBody = {
@@ -52,13 +66,13 @@ describe('ServiceService.createService', () => {
     await expect(ServiceService.createService({ total: 0 } as any, 'cajero-1')).rejects.toThrow();
   });
 
-  it('lanza ZodError si usuarios está vacío', async () => {
+  it('lanza ZodError si usuarios esta vacio', async () => {
     await expect(
       ServiceService.createService({ ...validServiceBody, usuarios: [] }, 'cajero-1')
     ).rejects.toThrow();
   });
 
-  it('lanza ValidationError si pago mixto tiene menos de 2 métodos', async () => {
+  it('lanza ValidationError si pago mixto tiene menos de 2 metodos', async () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
 
     await expect(
@@ -84,7 +98,7 @@ describe('ServiceService.createService', () => {
           metodo_pago: 'mixto' as any,
           pagos_mixtos: [
             { metodo: 'efectivo', monto: 20000 },
-            { metodo: 'tarjeta', monto: 20000 } // suma 40000 ≠ 60000
+            { metodo: 'tarjeta', monto: 20000 }
           ]
         },
         'cajero-1'
@@ -92,7 +106,7 @@ describe('ServiceService.createService', () => {
     ).rejects.toThrow(ValidationError);
   });
 
-  it('retorna id, codigo y tiempo si la creación es exitosa', async () => {
+  it('retorna id, codigo y tiempo si la creacion es exitosa', async () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
 
     const result = await ServiceService.createService(validServiceBody, 'cajero-1');
@@ -101,5 +115,51 @@ describe('ServiceService.createService', () => {
     expect(result).toHaveProperty('codigo');
     expect(result).toHaveProperty('tiempo', 60);
     expect(result).toHaveProperty('total', 60000);
+  });
+
+  it('rechaza anfitrionas que no estan logueadas en el local', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    serviceHarness.transactionMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('SELECT DISTINCT u.id_usuario')) {
+        return [{ id_usuario: 'user-1' }];
+      }
+      return [];
+    });
+
+    await expect(
+      ServiceService.createService(
+        { ...validServiceBody, usuarios: ['user-1', 'user-2'] },
+        'cajero-1'
+      )
+    ).rejects.toThrow('Hay anfitrionas seleccionadas que no estan logueadas en el local');
+  });
+
+  it('reparte resto de comision de habitacion sin perder monto total', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    serviceHarness.queryMock.mockResolvedValue([{ comision_anfitriona: 101 }]);
+    serviceHarness.transactionMock.mockImplementation(async (sql: string, params?: unknown[]) => {
+      if (sql.includes('SELECT DISTINCT u.id_usuario')) {
+        return (params || []).map((id: unknown) => ({ id_usuario: String(id) }));
+      }
+      return [];
+    });
+
+    await ServiceService.createService(
+      { ...validServiceBody, usuarios: ['user-1', 'user-2'] },
+      'cajero-1'
+    );
+
+    const commissionCalls = serviceHarness.transactionMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('INSERT INTO detalle_comisiones')
+    );
+    const insertedAmounts = commissionCalls.map(call => Number(call[1]?.[3] || 0));
+
+    expect(insertedAmounts).toEqual([51, 50]);
+    expect(insertedAmounts.reduce((sum, value) => sum + value, 0)).toBe(101);
+    expect(RoomManager.pauseConflictingServices).toHaveBeenCalledWith(
+      expect.any(Function),
+      ['user-1', 'user-2'],
+      'mock-uuid'
+    );
   });
 });

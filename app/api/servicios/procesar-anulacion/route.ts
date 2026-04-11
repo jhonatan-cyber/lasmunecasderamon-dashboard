@@ -37,6 +37,7 @@ export async function POST(request: Request) {
   await processPendingSolicitud(
     {
       tipo: 'servicio',
+      solicitud_id: solicitud.id,
       id_servicio: solicitud.id_servicio,
       codigo: solicitud.codigo,
       cliente_nombre: solicitud.cliente_nombre,
@@ -45,11 +46,6 @@ export async function POST(request: Request) {
     action,
     adminWhatsApp
   );
-
-  await query('UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE id = ?', [
-    action === 'confirmar' ? 'confirmada' : 'rechazada',
-    solicitud.id,
-  ]);
 
   return NextResponse.json({ success: true });
 }
