@@ -22,10 +22,14 @@ export const PATCH = withAppAuth(
 );
 
 export const DELETE = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
-    const id = (await params).id;
-    await SaleRepository.delete(id);
-    return NextResponse.json({ success: true, message: 'Venta eliminada exitosamente' });
+  async () => {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'La eliminacion fisica de ventas esta deshabilitada. Use el flujo de anulacion.'
+      },
+      { status: 409 }
+    );
   },
   { requiredPermission: { module: 'sales', action: 'delete' } }
 );

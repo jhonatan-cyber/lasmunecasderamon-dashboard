@@ -2,6 +2,7 @@ import { query, generateUUID, withTransaction, type TransactionQuery } from '@/l
 import { ServiceSchema, ServiceCreateSchema, type ServiceType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
+import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
 import { NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
@@ -11,6 +12,164 @@ type ServiceUpdateInput = z.input<typeof ServiceCreateSchema>;
 export class ServiceRepository {
   private static readonly TABLE = 'servicios';
   private static readonly ID_COL = 'id_servicio';
+
+  private static parseMixedPayments(raw: unknown): Array<{ metodo: string; monto: number }> {
+    if (!raw) return [];
+
+    let parsed = raw;
+    if (typeof raw === 'string') {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return [];
+      }
+    }
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item: any) => ({
+        metodo: String(item?.metodo || ''),
+        monto: Number(item?.monto || 0)
+      }))
+      .filter(item => item.metodo && item.monto > 0);
+  }
+
+  private static normalizeSolicitudStatus(status: string): 'confirmada' | 'rechazada' {
+    const normalized = String(status || '').toLowerCase();
+    return normalized === 'confirmar' || normalized === 'aprobado' || normalized === 'confirmada'
+      ? 'confirmada'
+      : 'rechazada';
+  }
+
+  static async approveAnulacion(servicioId: string, approvedBy: string): Promise<void> {
+    await withTransaction(async trx => {
+      const serviceRows = await trx<any[]>(
+        `SELECT id_servicio, estado, habitacion_id, cliente_id, caja_id, metodo_pago, total, iva, pagos_mixtos
+         FROM servicios
+         WHERE id_servicio = ?
+         LIMIT 1`,
+        [servicioId]
+      );
+
+      if (!serviceRows.length) throw new NotFoundError('Servicio', servicioId);
+
+      const service = serviceRows[0];
+      const habitacionId = service.habitacion_id;
+      const clienteId = service.cliente_id;
+      const cajaId = service.caja_id;
+      const metodoPago = String(service.metodo_pago || '');
+      const total = Number(service.total || 0);
+      const iva = Number(service.iva || 0);
+      const pagosMixtos = this.parseMixedPayments(service.pagos_mixtos);
+      const now = getNowInBusinessTimezone();
+
+      const prepagoRows = clienteId
+        ? await trx<any[]>(
+            `SELECT COALESCE(SUM(monto), 0) as total_prepago
+             FROM clientes_prepago_movimientos
+             WHERE cliente_id = ?
+               AND UPPER(tipo) = 'CONSUMO'
+               AND (
+                 venta_id = ?
+                 OR JSON_UNQUOTE(JSON_EXTRACT(metadatos, '$.venta_id')) = ?
+               )`,
+            [clienteId, servicioId, servicioId]
+          )
+        : [];
+      const prepagoMonto = Number(prepagoRows[0]?.total_prepago || 0);
+
+      const comisionRows = await trx<any[]>(
+        `SELECT COALESCE(SUM(dc.comision), 0) as total_comision
+         FROM detalle_comisiones dc
+         INNER JOIN comisiones c ON c.id_comision = dc.comision_id
+         WHERE c.servicio_id = ? AND c.estado = 1 AND dc.estado = 1`,
+        [servicioId]
+      );
+      const totalComision = Number(comisionRows[0]?.total_comision || 0);
+
+      let efectivo = 0;
+      let tarjeta = 0;
+      let transferencia = 0;
+      if (metodoPago === 'mixto') {
+        for (const pago of pagosMixtos) {
+          if (pago.metodo === 'efectivo') efectivo += pago.monto;
+          if (pago.metodo === 'tarjeta') tarjeta += pago.monto;
+          if (pago.metodo === 'transferencia') transferencia += pago.monto;
+        }
+      } else {
+        const montoMetodoPrincipal = Math.max(0, total - prepagoMonto);
+        if (metodoPago === 'efectivo') efectivo = montoMetodoPrincipal;
+        if (metodoPago === 'tarjeta') tarjeta = montoMetodoPrincipal;
+        if (metodoPago === 'transferencia') transferencia = montoMetodoPrincipal;
+      }
+
+      await BaseRepository.update(trx, this.TABLE, this.ID_COL, servicioId, {
+        estado: 0,
+        fecha_mod: now
+      });
+
+      if (clienteId && prepagoMonto > 0) {
+        await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
+          prepagoMonto,
+          clienteId
+        ]);
+        await trx(
+          `INSERT INTO clientes_prepago_movimientos
+           (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
+           VALUES (?, ?, 'DEVOLUCION', ?, 'prepago', ?, ?, ?, ?)`,
+          [
+            generateUUID(),
+            clienteId,
+            prepagoMonto,
+            servicioId,
+            approvedBy || null,
+            now,
+            JSON.stringify({ concepto: `Anulacion servicio ${servicioId}` })
+          ]
+        );
+      }
+
+      if (cajaId) {
+        await CashRegisterRepository.updateBalances(trx, cajaId, {
+          servicio: -(total - iva),
+          efectivo: -efectivo,
+          tarjeta: -tarjeta,
+          transferencia: -transferencia,
+          prepago: -prepagoMonto,
+          iva: -iva,
+          comision: -totalComision,
+          devolucion: total
+        });
+      }
+
+      await trx('UPDATE comisiones SET estado = 0 WHERE servicio_id = ?', [servicioId]);
+      await trx(
+        `UPDATE detalle_comisiones dc
+         INNER JOIN comisiones c ON c.id_comision = dc.comision_id
+         SET dc.estado = 0
+         WHERE c.servicio_id = ?`,
+        [servicioId]
+      );
+
+      if (habitacionId) {
+        await RoomManager.resumeRoomLogic(trx, habitacionId, servicioId);
+      }
+
+      const hostessRows = await trx<any[]>(
+        'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
+        [servicioId]
+      );
+      await RoomManager.updateHostessServiceStatus(
+        trx,
+        hostessRows.map(row => row.usuario_id),
+        servicioId
+      );
+
+      const { addServicioLog } = await import('@/lib/utils/logUtils');
+      await addServicioLog(servicioId, 'ANULADO', 'Servicio anulado.', approvedBy);
+    });
+  }
 
   private static mapServiceFromDB(row: any): ServiceType {
     if (!row) return null as any;
@@ -322,45 +481,34 @@ export class ServiceRepository {
   static async processAnulacion(
     requestId: string,
     approvedBy: string,
-    status: 'aprobado' | 'rechazado'
+    status: string
   ): Promise<void> {
     const now = getNowInBusinessTimezone();
-    await withTransaction(async trx => {
-      await trx(
-        'UPDATE solicitudes_anulacion SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
-        [status, approvedBy, now, requestId]
-      );
-      if (status === 'aprobado') {
-        const req = await trx<any[]>('SELECT servicio_id FROM solicitudes_anulacion WHERE id = ?', [
-          requestId
-        ]);
-        if (req.length > 0) {
-          const sId = req[0].servicio_id;
-          await trx('UPDATE servicios SET estado = 0, fecha_mod = ? WHERE id_servicio = ?', [
-            now,
-            sId
-          ]);
-          const s = await trx<any[]>('SELECT cliente_id FROM servicios WHERE id_servicio = ?', [
-            sId
-          ]);
-          if (s.length > 0 && s[0].cliente_id) {
-            const prepagoMovs = await trx<any[]>(
-              `SELECT COALESCE(SUM(monto), 0) as total_prepago
-                 FROM clientes_prepago_movimientos
-                 WHERE venta_id = ? AND cliente_id = ? AND tipo = 'CONSUMO'`,
-              [sId, s[0].cliente_id]
-            );
+    const nextStatus = this.normalizeSolicitudStatus(status);
+    const shouldApprove = nextStatus === 'confirmada';
 
-            const montoRestituir = Number(prepagoMovs[0]?.total_prepago || 0);
-            if (montoRestituir > 0) {
-              await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
-                montoRestituir,
-                s[0].cliente_id
-              ]);
-            }
-          }
-        }
-      }
+    await withTransaction(async trx => {
+      const req = await trx<any[]>(
+        'SELECT servicio_id FROM solicitudes_anulacion_servicios WHERE id = ?',
+        [requestId]
+      );
+      if (!req.length) throw new NotFoundError('Solicitud de anulacion de servicio', requestId);
+
+      await trx(
+        'UPDATE solicitudes_anulacion_servicios SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
+        [nextStatus, approvedBy, now, requestId]
+      );
+
+      return req[0].servicio_id as string;
     });
+
+    if (shouldApprove) {
+      const req = await query<any[]>(
+        'SELECT servicio_id FROM solicitudes_anulacion_servicios WHERE id = ? LIMIT 1',
+        [requestId]
+      );
+      if (!req.length) throw new NotFoundError('Solicitud de anulacion de servicio', requestId);
+      await this.approveAnulacion(req[0].servicio_id, approvedBy);
+    }
   }
 }
