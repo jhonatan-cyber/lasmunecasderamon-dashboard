@@ -26,7 +26,8 @@ export async function processAndSaveImage(
         input = Buffer.from(base64Data, 'base64');
       } else if (imageSource.startsWith('http')) {
         const response = await fetch(imageSource);
-        if (!response.ok) throw new BusinessError('Failed to fetch image from URL', 'IMAGE_FETCH_FAILED');
+        if (!response.ok)
+          throw new BusinessError('Failed to fetch image from URL', 'IMAGE_FETCH_FAILED');
         const arrayBuffer = await response.arrayBuffer();
         input = Buffer.from(arrayBuffer);
       } else {

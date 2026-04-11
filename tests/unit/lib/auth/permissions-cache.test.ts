@@ -11,7 +11,7 @@ const mockPerms: UserPermissions = {
   reports: { read: false, export: false },
   settings: { read: false, write: false },
   orders: { read: true, write: false, delete: false, process: false },
-  advances: { read: false, write: false, delete: false, process: false },
+  advances: { read: false, write: false, delete: false, process: false }
 };
 
 beforeEach(() => {

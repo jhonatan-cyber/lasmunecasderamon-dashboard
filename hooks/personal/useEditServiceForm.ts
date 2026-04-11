@@ -26,7 +26,12 @@ export function useEditServiceForm({
   onResumeMainTimer,
   onTemporaryTimerComplete
 }: UseEditServiceFormProps) {
-  const { startTemporaryTimer: startGlobalTemporaryTimer, pauseTimerByServicioId, resumeTimerByServicioId, getTemporaryTimerByServicioId } = useTimer();
+  const {
+    startTemporaryTimer: startGlobalTemporaryTimer,
+    pauseTimerByServicioId,
+    resumeTimerByServicioId,
+    getTemporaryTimerByServicioId
+  } = useTimer();
   const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas();
   const { habitaciones } = useHabitaciones();
 
@@ -46,8 +51,8 @@ export function useEditServiceForm({
   const precioHabitacionFormatter = useNumberFormatter(formData.precio_habitacion);
 
   const obtenerPrecioHabitacionSinComision = useCallback(() => {
-    const habitacionSinComision = habitaciones.find(h =>
-      !h.comision_anfitriona || h.comision_anfitriona === 0
+    const habitacionSinComision = habitaciones.find(
+      h => !h.comision_anfitriona || h.comision_anfitriona === 0
     );
 
     if (habitacionSinComision) {
@@ -60,58 +65,59 @@ export function useEditServiceForm({
     }
   }, [habitaciones]);
 
-  const fetchAnfitrionasParaEdicion = useCallback(async (servicioId: number) => {
-    try {
-      const disponiblesResponse = await fetch('/api/anfitrionas/disponibles');
-      const disponiblesData = await disponiblesResponse.json();
+  const fetchAnfitrionasParaEdicion = useCallback(
+    async (servicioId: number) => {
+      try {
+        const disponiblesResponse = await fetch('/api/anfitrionas/disponibles');
+        const disponiblesData = await disponiblesResponse.json();
 
-      const servicioResponse = await fetch(`/api/servicios/${servicioId}`);
-      const servicioData = await servicioResponse.json();
+        const servicioResponse = await fetch(`/api/servicios/${servicioId}`);
+        const servicioData = await servicioResponse.json();
 
-      let anfitrionasDelServicioArr: any[] = [];
-      let idsDelServicio: string[] = [];
+        let anfitrionasDelServicioArr: any[] = [];
+        let idsDelServicio: string[] = [];
 
-      if (servicioData.success && servicioData.data.usuarios) {
-        anfitrionasDelServicioArr = servicioData.data.usuarios;
-        idsDelServicio = anfitrionasDelServicioArr.map((user: any) => user.id_usuario.toString());
-      }
-
-      let todasLasAnfitrionas = [...(disponiblesData.data || [])];
-      anfitrionasDelServicioArr.forEach(anfitriona => {
-        const yaExiste = todasLasAnfitrionas.some(a =>
-          (a.id_usuario || a.id) === anfitriona.id_usuario
-        );
-        if (!yaExiste) {
-          todasLasAnfitrionas.push({
-            id_usuario: anfitriona.id_usuario,
-            id: anfitriona.id_usuario,
-            nombre: anfitriona.nombre,
-            name: anfitriona.nombre,
-            apellido: anfitriona.apellido,
-            lastName: anfitriona.apellido,
-            nick: anfitriona.nick,
-            estado: 1
-          });
+        if (servicioData.success && servicioData.data.usuarios) {
+          anfitrionasDelServicioArr = servicioData.data.usuarios;
+          idsDelServicio = anfitrionasDelServicioArr.map((user: any) => user.id_usuario.toString());
         }
-      });
 
-      setAnfitrionasDisponibles(todasLasAnfitrionas);
-      setAnfitrionasDelServicio(idsDelServicio);
-      return idsDelServicio;
-    } catch (error) {
-      console.error('Error fetching anfitrionas for edition:', error);
-      setAnfitrionasDisponibles(anfitrionas);
-      return [];
-    }
-  }, [anfitrionas]);
+        let todasLasAnfitrionas = [...(disponiblesData.data || [])];
+        anfitrionasDelServicioArr.forEach(anfitriona => {
+          const yaExiste = todasLasAnfitrionas.some(
+            a => (a.id_usuario || a.id) === anfitriona.id_usuario
+          );
+          if (!yaExiste) {
+            todasLasAnfitrionas.push({
+              id_usuario: anfitriona.id_usuario,
+              id: anfitriona.id_usuario,
+              nombre: anfitriona.nombre,
+              name: anfitriona.nombre,
+              apellido: anfitriona.apellido,
+              lastName: anfitriona.apellido,
+              nick: anfitriona.nick,
+              estado: 1
+            });
+          }
+        });
+
+        setAnfitrionasDisponibles(todasLasAnfitrionas);
+        setAnfitrionasDelServicio(idsDelServicio);
+        return idsDelServicio;
+      } catch (error) {
+        console.error('Error fetching anfitrionas for edition:', error);
+        setAnfitrionasDisponibles(anfitrionas);
+        return [];
+      }
+    },
+    [anfitrionas]
+  );
   useEffect(() => {
     if (habitaciones.length > 0 && open) {
       const precio = obtenerPrecioHabitacionSinComision();
       if (precio > 0) {
         setFormData(prev => ({ ...prev, precio_habitacion: precio }));
-        precioHabitacionFormatter.setFormattedValue(
-          precioHabitacionFormatter.formatNumber(precio)
-        );
+        precioHabitacionFormatter.setFormattedValue(precioHabitacionFormatter.formatNumber(precio));
       }
     }
   }, [habitaciones, open, obtenerPrecioHabitacionSinComision, precioHabitacionFormatter]);
@@ -148,7 +154,7 @@ export function useEditServiceForm({
         }, 0);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id_servicio, open]);
 
   useEffect(() => {
@@ -161,7 +167,7 @@ export function useEditServiceForm({
       }, 0);
       return () => clearTimeout(timeoutId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, servicio?.id_servicio]);
 
   const numAnfitrionasSeleccionadas = formData.usuarios.length || 1;
@@ -174,13 +180,17 @@ export function useEditServiceForm({
     numAnfitrionas: numAnfitrionasSeleccionadas
   });
 
-  const { iva, subTotal, total, precioServicioTotal, precioHabitacionTotal, multiplicadorTiempo } = pricing;
+  const { iva, subTotal, total, precioServicioTotal, precioHabitacionTotal, multiplicadorTiempo } =
+    pricing;
 
-  const handlePrecioServicioChange = useCallback((value: string) => {
-    precioServicioFormatter.handleChange(value, (numValue) => {
-      setFormData(prev => ({ ...prev, precio_servicio: numValue }));
-    });
-  }, [precioServicioFormatter]);
+  const handlePrecioServicioChange = useCallback(
+    (value: string) => {
+      precioServicioFormatter.handleChange(value, numValue => {
+        setFormData(prev => ({ ...prev, precio_servicio: numValue }));
+      });
+    },
+    [precioServicioFormatter]
+  );
 
   const handleMetodoPagoChange = useCallback((value: string) => {
     setFormData(prev => ({ ...prev, metodo_pago: value }));
@@ -229,7 +239,9 @@ export function useEditServiceForm({
             habitacion_id: servicio.habitacion_id,
             precio_habitacion: formData.precio_habitacion,
             precio_servicio: formData.precio_servicio,
-            iva, sub_total: subTotal, total,
+            iva,
+            sub_total: subTotal,
+            total,
             tiempo: formData.tiempo,
             metodo_pago: formData.metodo_pago,
             usuarios: formData.usuarios,
@@ -248,11 +260,19 @@ export function useEditServiceForm({
           precio_servicio: precioServicioTotal,
           precio_habitacion: precioHabitacionTotal,
           metodo_pago: formData.metodo_pago,
-          iva, sub_total: subTotal, total,
-          anfitrionas_nombres: formData.usuarios.map(id => {
-            const anfitriona = anfitrionasDisponibles.find(a => (a.id_usuario || a.id).toString() === id);
-            return anfitriona ? (anfitriona.nick || anfitriona.nombre || anfitriona.name) : 'Desconocida';
-          }).join(', '),
+          iva,
+          sub_total: subTotal,
+          total,
+          anfitrionas_nombres: formData.usuarios
+            .map(id => {
+              const anfitriona = anfitrionasDisponibles.find(
+                a => (a.id_usuario || a.id).toString() === id
+              );
+              return anfitriona
+                ? anfitriona.nick || anfitriona.nombre || anfitriona.name
+                : 'Desconocida';
+            })
+            .join(', '),
           total_usuarios: formData.usuarios.length,
           servicio_temporal_id: servicioTemporalResult.data.id_servicio,
           servicio_original_id: servicio.id_servicio
@@ -272,7 +292,8 @@ export function useEditServiceForm({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ estado: 0 })
               });
-              if (onTemporaryTimerComplete) onTemporaryTimerComplete(datosTemporales.anfitrionas_nombres);
+              if (onTemporaryTimerComplete)
+                onTemporaryTimerComplete(datosTemporales.anfitrionas_nombres);
               toast.success('Servicio temporal finalizado - Nuevo servicio completado');
               if (onUpdate) onUpdate();
             } catch (error) {
@@ -294,8 +315,20 @@ export function useEditServiceForm({
     } finally {
       setIsSaving(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servicio, formData, iva, subTotal, total, handleClose, onUpdate, precioServicioTotal, precioHabitacionTotal, startGlobalTemporaryTimer, anfitrionasDisponibles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    servicio,
+    formData,
+    iva,
+    subTotal,
+    total,
+    handleClose,
+    onUpdate,
+    precioServicioTotal,
+    precioHabitacionTotal,
+    startGlobalTemporaryTimer,
+    anfitrionasDisponibles
+  ]);
 
   return {
     formData,

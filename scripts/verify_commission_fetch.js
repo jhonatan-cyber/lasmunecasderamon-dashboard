@@ -12,7 +12,7 @@ const config = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'lasmunecasderamon',
-  port: parseInt(process.env.DB_PORT || '3306'),
+  port: parseInt(process.env.DB_PORT || '3306')
 };
 
 async function testFetchWithUUID() {
@@ -107,9 +107,10 @@ async function testFetchWithUUID() {
     const [nanResults] = await connection.execute(sql, ['NaN', 'NaN']);
     console.log(`Results with "NaN": ${nanResults.length}`);
     if (nanResults.length === 0) {
-      console.log('SUCCESS: "NaN" correctly returns no results (prevents accidental data exposure or errors).');
+      console.log(
+        'SUCCESS: "NaN" correctly returns no results (prevents accidental data exposure or errors).'
+      );
     }
-
   } catch (error) {
     console.error('\nERROR during test:', error.message);
     process.exit(1);
@@ -119,4 +120,3 @@ async function testFetchWithUUID() {
 }
 
 testFetchWithUUID();
-

@@ -14,25 +14,30 @@ export class ServiceRepository {
 
   private static mapServiceFromDB(row: any): ServiceType {
     if (!row) return null as any;
-    const creatorName = row.creator_nick
-      || [row.creator_nombre, row.creator_apellido].filter(Boolean).join(' ').trim()
-      || row.usuario_nick
-      || [row.creator_name, row.creator_last_name].filter(Boolean).join(' ').trim()
-      || null;
+    const creatorName =
+      row.creator_nick ||
+      [row.creator_nombre, row.creator_apellido].filter(Boolean).join(' ').trim() ||
+      row.usuario_nick ||
+      [row.creator_name, row.creator_last_name].filter(Boolean).join(' ').trim() ||
+      null;
 
     // Calcular número de anfitrionas
-    const anfitrionasIds = row.anfitrionas_ids ? String(row.anfitrionas_ids).split(',').filter(Boolean) : [];
+    const anfitrionasIds = row.anfitrionas_ids
+      ? String(row.anfitrionas_ids).split(',').filter(Boolean)
+      : [];
     const numAnfitrionas = Math.max(1, anfitrionasIds.length);
 
     // Calcular comisiones
     const habitacionComision = row.habitacion_comision ? Number(row.habitacion_comision) : 0;
     const precioServicio = Number(row.precio_servicio || 0);
-    
+
     // Si tiene comisión de habitación, se usa; si no, el precio del servicio es la comisión total
     const tieneComisionHabitacion = habitacionComision > 0;
-    const totalComision = tieneComisionHabitacion ? habitacionComision : precioServicio * numAnfitrionas;
-    const comisionIndividual = tieneComisionHabitacion 
-      ? Math.floor(habitacionComision / numAnfitrionas) 
+    const totalComision = tieneComisionHabitacion
+      ? habitacionComision
+      : precioServicio * numAnfitrionas;
+    const comisionIndividual = tieneComisionHabitacion
+      ? Math.floor(habitacionComision / numAnfitrionas)
       : precioServicio;
 
     return ServiceSchema.parse({
@@ -68,8 +73,12 @@ export class ServiceRepository {
     });
   }
 
-
-  static async getAll(params: { all?: string; caja_id?: string; limit?: string; page?: string }): Promise<any> {
+  static async getAll(params: {
+    all?: string;
+    caja_id?: string;
+    limit?: string;
+    page?: string;
+  }): Promise<any> {
     const lNum = parseInt(params.limit || '50');
     const pNum = parseInt(params.page || '1');
     const offset = (pNum - 1) * lNum;
@@ -79,12 +88,12 @@ export class ServiceRepository {
     if (params.all === 'true') where = 'WHERE s.estado IN (0, 1)';
     else if (params.all === 'false') where = 'WHERE s.estado IN (2, 3, 4)';
     else where = 'WHERE s.estado IN (1, 2, 3, 4)'; // Default: todos los estados válidos
-    
+
     if (params.caja_id) {
       where += ' AND s.caja_id = ?';
       sqlParams.push(params.caja_id);
     }
-    
+
     const sql = `
       SELECT 
         s.*, h.nombre as habitacion_numero, h.comision_anfitriona as habitacion_comision,
@@ -107,41 +116,49 @@ export class ServiceRepository {
     const data = await query<any[]>(sql, [...sqlParams, lNum, offset]);
     const count = await query<any[]>(countSql, sqlParams);
 
-    return { 
-      data: data.map(row => this.mapServiceFromDB(row)), 
-      total: count[0]?.count || 0 
+    return {
+      data: data.map(row => this.mapServiceFromDB(row)),
+      total: count[0]?.count || 0
     };
   }
-
 
   static async rawInsert(trx: TransactionQuery | typeof query, data: any): Promise<void> {
     await BaseRepository.insert(trx, this.TABLE, data);
   }
 
-  static async updateService(id: string, body: Partial<ServiceUpdateInput>): Promise<ServiceType | null> {
+  static async updateService(
+    id: string,
+    body: Partial<ServiceUpdateInput>
+  ): Promise<ServiceType | null> {
     const validated = ServiceCreateSchema.partial().parse(body);
     const [prev] = await query<any[]>('SELECT iva FROM servicios WHERE id_servicio = ?', [id]);
     const ivaDelta = Number(validated.iva || 0) - Number(prev?.iva || 0);
     const now = getNowInBusinessTimezone(validated.device_date);
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
-          cliente_id: validated.cliente_id || null,
-          habitacion_id: validated.habitacion_id,
-          precio_habitacion: validated.precio_habitacion || 0,
-          precio_servicio: validated.precio_servicio,
-          iva: validated.iva || 0,
-          sub_total: validated.sub_total,
-          total: validated.total,
-          tiempo: validated.tiempo,
-          fecha_mod: now
+        cliente_id: validated.cliente_id || null,
+        habitacion_id: validated.habitacion_id,
+        precio_habitacion: validated.precio_habitacion || 0,
+        precio_servicio: validated.precio_servicio,
+        iva: validated.iva || 0,
+        sub_total: validated.sub_total,
+        total: validated.total,
+        tiempo: validated.tiempo,
+        fecha_mod: now
       });
-      
+
       if (ivaDelta !== 0) {
-        const caja = await trx<any[]>('SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1');
-        if (caja.length > 0) await trx('UPDATE cajas SET iva = GREATEST(0, iva + ?) WHERE id_caja = ?', [ivaDelta, caja[0].id_caja]);
+        const caja = await trx<any[]>(
+          'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+        );
+        if (caja.length > 0)
+          await trx('UPDATE cajas SET iva = GREATEST(0, iva + ?) WHERE id_caja = ?', [
+            ivaDelta,
+            caja[0].id_caja
+          ]);
       }
-      
+
       if (validated.usuarios) {
         await trx('DELETE FROM detalle_servicios WHERE servicio_id = ?', [id]);
         for (const uId of validated.usuarios) {
@@ -156,34 +173,54 @@ export class ServiceRepository {
     return await this.getById(id);
   }
 
-  static async updateStatus(id: string, estado: number, userId?: string): Promise<ServiceType | null> {
-    const prev = await query<any[]>('SELECT estado, habitacion_id FROM servicios WHERE id_servicio = ?', [id]);
+  static async updateStatus(
+    id: string,
+    estado: number,
+    userId?: string
+  ): Promise<ServiceType | null> {
+    const prev = await query<any[]>(
+      'SELECT estado, habitacion_id FROM servicios WHERE id_servicio = ?',
+      [id]
+    );
     if (prev.length === 0) throw new NotFoundError('Servicio', id);
     const estadoAnterior = prev[0].estado;
     const habitacionId = prev[0].habitacion_id;
     const now = getNowInBusinessTimezone();
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado, fecha_mod: now });
 
       if (estado === 1 || estado === 0) {
         if (habitacionId) await RoomManager.resumeRoomLogic(trx, habitacionId, id);
 
-        const anfsResult = await trx<any[]>('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [id]);
+        const anfsResult = await trx<any[]>(
+          'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
+          [id]
+        );
         const hostessIds = anfsResult.map(a => a.usuario_id);
         await RoomManager.updateHostessServiceStatus(trx, hostessIds, id);
       }
 
       const { addServicioLog } = await import('@/lib/utils/logUtils');
-      if (estado === 1 && estadoAnterior !== 1) await addServicioLog(id, 'FINALIZADO', 'Servicio finalizado manualmente.', userId);
-      else if (estado === 0 && estadoAnterior !== 0) await addServicioLog(id, 'ANULADO', 'Servicio anulado.', userId);
+      if (estado === 1 && estadoAnterior !== 1)
+        await addServicioLog(id, 'FINALIZADO', 'Servicio finalizado manualmente.', userId);
+      else if (estado === 0 && estadoAnterior !== 0)
+        await addServicioLog(id, 'ANULADO', 'Servicio anulado.', userId);
       else if (estado === 3 && estadoAnterior !== 3) {
         await addServicioLog(id, 'PAUSA', 'Servicio pausado manualmente.', userId);
-        await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado: 3, paused_at: now });
+        await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
+          estado: 3,
+          paused_at: now
+        });
       } else if (estadoAnterior === 3 && estado === 2) {
-        const psRes = await trx<any[]>('SELECT paused_at FROM servicios WHERE id_servicio = ?', [id]);
+        const psRes = await trx<any[]>('SELECT paused_at FROM servicios WHERE id_servicio = ?', [
+          id
+        ]);
         if (psRes.length > 0 && psRes[0].paused_at) {
-          await trx(`UPDATE ${this.TABLE} SET fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE ${this.ID_COL} = ?`, [now, id]);
+          await trx(
+            `UPDATE ${this.TABLE} SET fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE ${this.ID_COL} = ?`,
+            [now, id]
+          );
           await addServicioLog(id, 'REANUDACION', 'Servicio reanudado manualmente.', userId);
         }
       }
@@ -193,14 +230,15 @@ export class ServiceRepository {
   }
 
   static async delete(id: string): Promise<void> {
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await trx('DELETE FROM detalle_servicios WHERE servicio_id = ?', [id]);
       await trx('DELETE FROM servicios WHERE id_servicio = ?', [id]);
     });
   }
 
   static async getByDates(startDate: string, endDate: string): Promise<ServiceType[]> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT s.*, h.nombre as habitacion_nombre, cl.nombre as cliente_nombre
       , cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto
       FROM servicios s
@@ -209,12 +247,15 @@ export class ServiceRepository {
       LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
       WHERE DATE(s.fecha_crea) BETWEEN ? AND ?
       ORDER BY s.fecha_crea DESC
-    `, [startDate, endDate]);
+    `,
+      [startDate, endDate]
+    );
     return results.map(row => this.mapServiceFromDB(row));
   }
 
   static async getByUser(userId: string): Promise<any[]> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT 
         s.id_servicio, s.codigo, s.tiempo, s.fecha_crea, s.precio_servicio, 
         s.precio_habitacion, s.total, s.metodo_pago, s.estado,
@@ -232,12 +273,15 @@ export class ServiceRepository {
       LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
       GROUP BY s.id_servicio, ds.comision
       ORDER BY s.fecha_crea DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
     return results;
   }
 
   static async getById(id: string): Promise<ServiceType | null> {
-    const res = await query<any[]>(`
+    const res = await query<any[]>(
+      `
       SELECT s.*, h.nombre as habitacion_name, cl.nombre as cliente_name,
              cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
              GROUP_CONCAT(DISTINCT 
@@ -256,46 +300,65 @@ export class ServiceRepository {
       LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
       WHERE s.id_servicio = ?
       GROUP BY s.id_servicio
-    `, [id]);
+    `,
+      [id]
+    );
     return res.length > 0 ? this.mapServiceFromDB(res[0]) : null;
   }
 
   static async requestAnulacion(id: string, reason: string, requestedBy: string): Promise<string> {
     const idAnul = generateUUID();
     const token = generateUUID();
-    await query(`
+    await query(
+      `
       INSERT INTO solicitudes_anulacion_servicios (id, servicio_id, token, estado, fecha_solicitud, solicitado_por, motivo)
       VALUES (?, ?, ?, 'pendiente', ?, ?, ?)
-    `, [idAnul, id, token, getNowInBusinessTimezone(), requestedBy, reason]);
+    `,
+      [idAnul, id, token, getNowInBusinessTimezone(), requestedBy, reason]
+    );
     return token;
   }
 
-  static async processAnulacion(requestId: string, approvedBy: string, status: 'aprobado' | 'rechazado'): Promise<void> {
+  static async processAnulacion(
+    requestId: string,
+    approvedBy: string,
+    status: 'aprobado' | 'rechazado'
+  ): Promise<void> {
     const now = getNowInBusinessTimezone();
-    await withTransaction(async (trx) => {
-      await trx('UPDATE solicitudes_anulacion SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?', [status, approvedBy, now, requestId]);
+    await withTransaction(async trx => {
+      await trx(
+        'UPDATE solicitudes_anulacion SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
+        [status, approvedBy, now, requestId]
+      );
       if (status === 'aprobado') {
-        const req = await trx<any[]>('SELECT servicio_id FROM solicitudes_anulacion WHERE id = ?', [requestId]);
+        const req = await trx<any[]>('SELECT servicio_id FROM solicitudes_anulacion WHERE id = ?', [
+          requestId
+        ]);
         if (req.length > 0) {
-            const sId = req[0].servicio_id;
-            await trx('UPDATE servicios SET estado = 0, fecha_mod = ? WHERE id_servicio = ?', [now, sId]);
-            const s = await trx<any[]>('SELECT cliente_id FROM servicios WHERE id_servicio = ?', [sId]);
-            if (s.length > 0 && s[0].cliente_id) {
-              const prepagoMovs = await trx<any[]>(
-                `SELECT COALESCE(SUM(monto), 0) as total_prepago
+          const sId = req[0].servicio_id;
+          await trx('UPDATE servicios SET estado = 0, fecha_mod = ? WHERE id_servicio = ?', [
+            now,
+            sId
+          ]);
+          const s = await trx<any[]>('SELECT cliente_id FROM servicios WHERE id_servicio = ?', [
+            sId
+          ]);
+          if (s.length > 0 && s[0].cliente_id) {
+            const prepagoMovs = await trx<any[]>(
+              `SELECT COALESCE(SUM(monto), 0) as total_prepago
                  FROM clientes_prepago_movimientos
                  WHERE venta_id = ? AND cliente_id = ? AND tipo = 'CONSUMO'`,
-                [sId, s[0].cliente_id]
-              );
+              [sId, s[0].cliente_id]
+            );
 
-              const montoRestituir = Number(prepagoMovs[0]?.total_prepago || 0);
-              if (montoRestituir > 0) {
-                await trx(
-                  'UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?',
-                  [montoRestituir, s[0].cliente_id]
-                );
-              }
+            const montoRestituir = Number(prepagoMovs[0]?.total_prepago || 0);
+            if (montoRestituir > 0) {
+              await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
+                montoRestituir,
+                s[0].cliente_id
+              ]);
             }
+          }
         }
       }
     });

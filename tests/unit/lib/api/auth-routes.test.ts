@@ -78,7 +78,10 @@ describe('auth route contract', () => {
     }));
 
     const route = await import('@/app/api/auth/logout/route');
-    const response = await route.POST(new Request('http://localhost/api/auth/logout', { method: 'POST' }) as any, { params: {} } as any);
+    const response = await route.POST(
+      new Request('http://localhost/api/auth/logout', { method: 'POST' }) as any,
+      { params: {} } as any
+    );
 
     expect(logoutMock).toHaveBeenCalledWith('user-1');
     expect(deleteCookie).toHaveBeenCalledWith('token');
@@ -113,7 +116,10 @@ describe('auth route contract', () => {
     }));
 
     const route = await import('@/app/api/auth/me/route');
-    const response = await route.GET(new Request('http://localhost/api/auth/me') as any, { params: {} } as any);
+    const response = await route.GET(
+      new Request('http://localhost/api/auth/me') as any,
+      { params: {} } as any
+    );
 
     await expect(response.json()).resolves.toEqual({
       success: true,
@@ -153,7 +159,10 @@ describe('auth route contract', () => {
     }));
 
     const route = await import('@/app/api/auth/check-session/route');
-    const response = await route.GET(new Request('http://localhost/api/auth/check-session') as any, { params: {} } as any);
+    const response = await route.GET(
+      new Request('http://localhost/api/auth/check-session') as any,
+      { params: {} } as any
+    );
 
     expect(checkSessionMock).toHaveBeenCalledWith('user-1');
     await expect(response.json()).resolves.toEqual({

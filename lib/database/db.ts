@@ -5,8 +5,6 @@ import { env } from '@/lib/utils/env';
 
 const dbTzOffset = getSQLTimezoneOffset();
 
-
-
 const defaultConfig: any = {
   host: env.DB_HOST,
   user: env.DB_USER,
@@ -35,19 +33,20 @@ pool.on('connection', async (connection: any) => {
   try {
     const promiseConnection = connection.promise();
     await promiseConnection.query(`SET time_zone = '${getSQLTimezoneOffset()}'`);
-    await promiseConnection.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+    await promiseConnection.query(
+      "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
+    );
   } catch (err) {
     console.error('Error initializing connection:', err);
   }
 });
-
 
 export type TransactionQuery = <R>(sql: string, params?: any[]) => Promise<R>;
 
 /**
  * Database query function - returns an array of objects by default
  * Use query<SpecificType[]>(...) for typed results
- * 
+ *
  * @example
  * const users = await query<{id: number, name: string}[]>('SELECT id, name FROM users')
  * const rows = await query('SELECT * FROM users') // returns any[] - access properties directly
@@ -56,9 +55,8 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
   const safeParams = (params || []).map(p => (p === undefined ? null : p));
 
   try {
-    const [rows] = safeParams.length > 0
-      ? await pool.execute(sql, safeParams)
-      : await pool.query(sql);
+    const [rows] =
+      safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
 
     return (rows || []) as T;
   } catch (error) {
@@ -119,5 +117,3 @@ const database = {
 };
 
 export default database;
-
-

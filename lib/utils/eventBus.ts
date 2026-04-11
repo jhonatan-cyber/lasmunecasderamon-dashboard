@@ -6,7 +6,10 @@
 export interface AppEvents {
   ventaRegistrada: { ventaId?: string; codigo?: string };
   openOrderModal: { orderId: number; codigo?: string };
-  updatePendingOrders: { type?: 'order-processed' | 'order-deleted' | 'order-created'; orderId?: number };
+  updatePendingOrders: {
+    type?: 'order-processed' | 'order-deleted' | 'order-created';
+    orderId?: number;
+  };
   closeOrderModal: { orderId: number };
   openServiceRequestModal: { solicitud: any };
   updateServiceRequests: void;

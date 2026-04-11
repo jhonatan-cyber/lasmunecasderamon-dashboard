@@ -1,5 +1,10 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
-import { OrderSchema, OrderCreateSchema, type OrderType, type OrderCreateType } from '@/lib/business/schemas';
+import {
+  OrderSchema,
+  OrderCreateSchema,
+  type OrderType,
+  type OrderCreateType
+} from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import {
   applyAutoRoomToDetails,
@@ -39,7 +44,8 @@ export class OrderRepository {
   }
 
   static async getAll(limit: number = 200): Promise<OrderType[]> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT 
         P.id_pedido, 
         COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, 
@@ -57,23 +63,39 @@ export class OrderRepository {
       WHERE P.estado IN (1, 2)
       ORDER BY P.fecha_crea DESC
       LIMIT ?
-    `, [limit]);
+    `,
+      [limit]
+    );
     return results.map(row => this.mapOrderFromDB(row));
   }
 
   static async getByUser(userId: string): Promise<OrderType[]> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT P.id_pedido, P.codigo, P.subtotal, P.total, P.estado, P.fecha_crea
       FROM pedidos P
       WHERE P.mesero_id = ?
       ORDER BY P.fecha_crea DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
     return results.map(row => this.mapOrderFromDB(row));
   }
 
   static async create(body: OrderCreateInput): Promise<any> {
     const data = OrderCreateSchema.parse(body);
-    let { codigo, meseroId, clienteId, subtotal, total, totalComision, propina, detalles, usuarios, device_date } = data;
+    let {
+      codigo,
+      meseroId,
+      clienteId,
+      subtotal,
+      total,
+      totalComision,
+      propina,
+      detalles,
+      usuarios,
+      device_date
+    } = data;
 
     const tieneProductosEspeciales = hasSpecialHostessProducts(detalles);
     let habitacionAutoSeleccionada: string | null = null;
@@ -97,7 +119,7 @@ export class OrderRepository {
     const pedidoId = generateUUID();
     const fechaCrea = getNowInBusinessTimezone(device_date || undefined);
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await BaseRepository.insert(trx, 'pedidos', {
         id_pedido: pedidoId,
         codigo,
@@ -148,39 +170,57 @@ export class OrderRepository {
     for (const rid of roomIds as string[]) {
       const room = await BaseRepository.findOne<any>(query, 'habitaciones', 'id_habitacion', rid);
       if (room) {
-        const isFreeRoom = !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
+        const isFreeRoom =
+          !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
         if (!isFreeRoom) {
           await BaseRepository.update(query, 'habitaciones', 'id_habitacion', rid, { estado: 2 });
-          sendNotificationToAll('room_occupied', { roomId: rid, timestamp: getNowInBusinessTimezone() });
+          sendNotificationToAll('room_occupied', {
+            roomId: rid,
+            timestamp: getNowInBusinessTimezone()
+          });
         }
       }
     }
 
-    const notificationData = await buildOrderNotificationData({ pedidoId, codigo, clienteId: clienteId || '', meseroId, total });
+    const notificationData = await buildOrderNotificationData({
+      pedidoId,
+      codigo,
+      clienteId: clienteId || '',
+      meseroId,
+      total
+    });
     sendNotificationToAll('new_order', notificationData);
 
     const pushBody = buildOrderPushBody({ codigo, clienteNombre: notificationData.cliente, total });
     sendPushByRole('cajero', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
     sendPushByRole('administrador', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
 
-    return { id: pedidoId, habitacion_auto_seleccionada: habitacionAutoSeleccionada, tiempo_auto_seleccionado: tiempoAutoSeleccionado };
+    return {
+      id: pedidoId,
+      habitacion_auto_seleccionada: habitacionAutoSeleccionada,
+      tiempo_auto_seleccionado: tiempoAutoSeleccionado
+    };
   }
 
   static async delete(id: string): Promise<void> {
     const pedido = await BaseRepository.findOne<any>(query, 'pedidos', 'id_pedido', id);
     if (!pedido) return;
-    
-    await withTransaction(async (trx) => {
+
+    await withTransaction(async trx => {
       await trx('DELETE FROM detalle_pedidos WHERE pedido_id = ?', [id]);
       await trx('DELETE FROM pedidos_usuarios WHERE pedido_id = ?', [id]);
       await BaseRepository.delete(trx, 'pedidos', 'id_pedido', id);
     });
 
-    sendNotificationToAll('order_deleted', buildOrderDeletionNotificationData(id, String(pedido.mesero_id)));
+    sendNotificationToAll(
+      'order_deleted',
+      buildOrderDeletionNotificationData(id, String(pedido.mesero_id))
+    );
   }
 
   static async getDetail(id: string): Promise<any[]> {
-    return await query<any[]>(`
+    return await query<any[]>(
+      `
       SELECT 
         P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina,
         COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
@@ -202,13 +242,16 @@ export class OrderRepository {
       INNER JOIN detalle_pedidos DP ON DP.pedido_id = P.id_pedido
       INNER JOIN productos PROD ON PROD.id_producto = DP.producto_id
       WHERE P.id_pedido = ?
-    `, [id]);
+    `,
+      [id]
+    );
   }
 
   static async updateStatus(id: string, estado: number): Promise<OrderType | null> {
     await BaseRepository.update(query, 'pedidos', 'id_pedido', id, { estado });
-    
-    const results = await query<any[]>(`
+
+    const results = await query<any[]>(
+      `
       SELECT 
         P.id_pedido, 
         COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, 
@@ -223,20 +266,25 @@ export class OrderRepository {
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
       WHERE P.id_pedido = ?
-    `, [id]);
-    
+    `,
+      [id]
+    );
+
     return results.length > 0 ? this.mapOrderFromDB(results[0]) : null;
   }
 
   private static async buscarVentaActivaConHabitacion(anfitrionaId: string): Promise<any> {
-    const result = await query<any[]>(`
+    const result = await query<any[]>(
+      `
       SELECT v.id_venta, v.habitacion_id, h.nombre as habitacion_nombre, v.tiempo, v.codigo
       FROM ventas v
       INNER JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       INNER JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
       WHERE vu.usuario_id = ? AND v.habitacion_id IS NOT NULL AND v.tiempo > 0 AND v.estado = 2
       ORDER BY v.fecha_crea DESC LIMIT 1
-    `, [anfitrionaId]);
+    `,
+      [anfitrionaId]
+    );
     return result.length > 0 ? result[0] : null;
   }
 }

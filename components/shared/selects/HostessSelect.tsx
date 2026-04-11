@@ -1,8 +1,8 @@
-﻿import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import React, { useState, useMemo } from "react";
+﻿import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import React, { useState, useMemo } from 'react';
 
 interface Hostess {
   id_usuario?: string | number;
@@ -32,25 +32,25 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   anfitrionas,
   value,
   onChange,
-  label = "Anfitriona(s)",
-  placeholder = "Seleccione anfitriona(s)",
-  searchPlaceholder = "Buscar anfitriona...",
-  className = "",
+  label = 'Anfitriona(s)',
+  placeholder = 'Seleccione anfitriona(s)',
+  searchPlaceholder = 'Buscar anfitriona...',
+  className = '',
   required = false,
   maxSelection = 5,
-  disabled = false,
+  disabled = false
 }) => {
   const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Filtrar anfitrionas basado en el tÃ©rmino de bÃºsqueda
   const filteredAnfitrionas = useMemo(() => {
     if (!searchTerm) return anfitrionas;
 
-    return anfitrionas.filter((anfitriona) => {
-      const nombre = anfitriona?.nombre || anfitriona?.name || "";
-      const apellido = anfitriona?.apellido || anfitriona?.lastName || "";
-      const nick = anfitriona?.nick || "";
+    return anfitrionas.filter(anfitriona => {
+      const nombre = anfitriona?.nombre || anfitriona?.name || '';
+      const apellido = anfitriona?.apellido || anfitriona?.lastName || '';
+      const nick = anfitriona?.nick || '';
       const searchLower = searchTerm.toLowerCase();
 
       return (
@@ -66,9 +66,9 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   };
 
   const getHostessName = (anfitriona: Hostess) => {
-    const nombre = anfitriona?.nombre || anfitriona?.name || "";
-    const apellido = anfitriona?.apellido || anfitriona?.lastName || "";
-    const nick = anfitriona?.nick || "";
+    const nombre = anfitriona?.nombre || anfitriona?.name || '';
+    const apellido = anfitriona?.apellido || anfitriona?.lastName || '';
+    const nick = anfitriona?.nick || '';
 
     if (nick) return nick;
     return `${nombre} ${apellido}`.trim();
@@ -76,17 +76,15 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
 
   const handleToggleHostess = (id: string) => {
     const next = value.includes(id)
-      ? value.filter((x) => x !== id)
+      ? value.filter(x => x !== id)
       : value.length < maxSelection
-      ? [...value, id]
-      : value;
+        ? [...value, id]
+        : value;
 
     onChange(next);
   };
 
-  const selectedHostesses = anfitrionas.filter((a) =>
-    value.includes(String(getHostessId(a)))
-  );
+  const selectedHostesses = anfitrionas.filter(a => value.includes(String(getHostessId(a))));
 
   const uniqueId = React.useId();
 
@@ -94,57 +92,61 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
     <div className={`flex flex-col ${className}`}>
       <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide'>
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className='text-red-500 ml-1'>*</span>}
       </Label>
 
-      <div className="relative">
+      <div className='relative'>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
               id={uniqueId}
-              type="button"
-              className="w-full pl-4 pr-8 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[44px] text-left hover:border-gray-400 transition-colors text-sm"
-              onClick={() => !disabled && setOpen((v) => !v)}
+              type='button'
+              className='w-full pl-4 pr-8 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[44px] text-left hover:border-gray-400 transition-colors text-sm'
+              onClick={() => !disabled && setOpen(v => !v)}
               disabled={disabled}
             >
               {value.length === 0 ? (
-                <span className="text-gray-400">{placeholder}</span>
+                <span className='text-gray-400'>{placeholder}</span>
               ) : (
-                <span className="flex flex-wrap gap-1">
+                <span className='flex flex-wrap gap-1'>
                   {selectedHostesses.map((a, index) => (
                     <span
                       key={`${getHostessId(a)}-${index}`}
-                      className="bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs font-medium"
+                      className='bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs font-medium'
                     >
                       {getHostessName(a)}
                     </span>
                   ))}
                 </span>
               )}
-              <span className="ml-auto pl-2 text-gray-400">â–¼</span>
+              <span className='ml-auto pl-2 text-gray-400'>â–¼</span>
             </button>
           </PopoverTrigger>
           {!disabled && (
-            <PopoverContent align="start" className="w-[280px] p-0 z-[9999]">
-            {/* Barra de bÃºsqueda */}
-            <div className="p-2 border-b">
-              <label htmlFor={`${uniqueId}-search`} className="sr-only">Buscar anfitriona</label>
-              <Input
-                id={`${uniqueId}-search`}
-                placeholder={searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            {/* Lista de anfitrionas */}
-            <div className="max-h-60 overflow-y-auto">
-              {filteredAnfitrionas.length === 0 ? (
-                <div className="p-2 text-center text-gray-500 text-sm">
-                  {searchTerm ? "No se encontraron anfitrionas" : "No hay anfitrionas disponibles"}
-                </div>
-              ) : (
-                filteredAnfitrionas.map((anfitriona, index) => {
+            <PopoverContent align='start' className='w-[280px] p-0 z-[9999]'>
+              {/* Barra de bÃºsqueda */}
+              <div className='p-2 border-b'>
+                <label htmlFor={`${uniqueId}-search`} className='sr-only'>
+                  Buscar anfitriona
+                </label>
+                <Input
+                  id={`${uniqueId}-search`}
+                  placeholder={searchPlaceholder}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className='w-full'
+                />
+              </div>
+              {/* Lista de anfitrionas */}
+              <div className='max-h-60 overflow-y-auto'>
+                {filteredAnfitrionas.length === 0 ? (
+                  <div className='p-2 text-center text-gray-500 text-sm'>
+                    {searchTerm
+                      ? 'No se encontraron anfitrionas'
+                      : 'No hay anfitrionas disponibles'}
+                  </div>
+                ) : (
+                  filteredAnfitrionas.map((anfitriona, index) => {
                     const id = String(getHostessId(anfitriona));
                     const name = getHostessName(anfitriona);
                     const isSelected = value.includes(id);
@@ -153,32 +155,35 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
                     return (
                       <label
                         key={`${id}-${index}`}
-                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
+                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors ${
+                          isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                       >
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => handleToggleHostess(id)}
                           disabled={isDisabled}
                         />
-                        <div className="flex flex-col">
-                          <span className={isOcupada ? "text-gray-400" : "text-sm"}>{name || "Sin nombre"}</span>
+                        <div className='flex flex-col'>
+                          <span className={isOcupada ? 'text-gray-400' : 'text-sm'}>
+                            {name || 'Sin nombre'}
+                          </span>
                           {isOcupada && (
-                            <span className="text-xs text-red-500 font-medium">OCUPADA</span>
+                            <span className='text-xs text-red-500 font-medium'>OCUPADA</span>
                           )}
                         </div>
                       </label>
                     );
                   })
-              )}
-            </div>
-            {/* Contador de selecciÃ³n */}
-            {maxSelection > 1 && (
-              <div className="p-2 border-t bg-gray-50 text-xs text-gray-500">
-                Seleccionadas: {value.length} / MÃ¡ximo: {maxSelection}
+                )}
               </div>
-            )}
-          </PopoverContent>
+              {/* Contador de selecciÃ³n */}
+              {maxSelection > 1 && (
+                <div className='p-2 border-t bg-gray-50 text-xs text-gray-500'>
+                  Seleccionadas: {value.length} / MÃ¡ximo: {maxSelection}
+                </div>
+              )}
+            </PopoverContent>
           )}
         </Popover>
       </div>
@@ -186,5 +191,4 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   );
 };
 
-export default HostessSelect; 
-
+export default HostessSelect;

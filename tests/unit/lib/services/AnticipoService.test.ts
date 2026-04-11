@@ -6,8 +6,8 @@ vi.mock('@/lib/repositories/AnticipoRepository', () => ({
   AnticipoRepository: {
     request: vi.fn(),
     grant: vi.fn(),
-    processSolicitud: vi.fn(),
-  },
+    processSolicitud: vi.fn()
+  }
 }));
 
 import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
@@ -33,7 +33,12 @@ describe('AnticipoService.grantAnticipo', () => {
 
     await AnticipoService.grantAnticipo('user-1', 50000, 'Motivo test', '2026-04-09');
 
-    expect(AnticipoRepository.grant).toHaveBeenCalledWith('user-1', 50000, 'Motivo test', '2026-04-09');
+    expect(AnticipoRepository.grant).toHaveBeenCalledWith(
+      'user-1',
+      50000,
+      'Motivo test',
+      '2026-04-09'
+    );
   });
 
   it('retorna el resultado del repositorio', async () => {
@@ -50,12 +55,15 @@ describe('AnticipoService.grantAnticipo', () => {
 describe('AnticipoService.processAnticipoFromCommand', () => {
   const pendientes = [
     { id: 'ant-1', empleado_nombre: 'Juan Pérez' },
-    { id: 'ant-2', empleado_nombre: 'María López' },
+    { id: 'ant-2', empleado_nombre: 'María López' }
   ];
 
   it('retorna ok:false si el anticipo no está en la lista', async () => {
     const result = await AnticipoService.processAnticipoFromCommand(
-      pendientes, 'ant-999', true, 'admin'
+      pendientes,
+      'ant-999',
+      true,
+      'admin'
     );
     expect(result.ok).toBe(false);
     expect(result.message).toContain('no encontrada');
@@ -65,7 +73,10 @@ describe('AnticipoService.processAnticipoFromCommand', () => {
     vi.mocked(AnticipoRepository.processSolicitud).mockResolvedValue(undefined as any);
 
     const result = await AnticipoService.processAnticipoFromCommand(
-      pendientes, 'ant-1', true, 'admin'
+      pendientes,
+      'ant-1',
+      true,
+      'admin'
     );
 
     expect(AnticipoRepository.processSolicitud).toHaveBeenCalledWith('ant-1', 'approve');
@@ -78,7 +89,10 @@ describe('AnticipoService.processAnticipoFromCommand', () => {
     vi.mocked(AnticipoRepository.processSolicitud).mockResolvedValue(undefined as any);
 
     const result = await AnticipoService.processAnticipoFromCommand(
-      pendientes, 'ant-2', false, 'admin'
+      pendientes,
+      'ant-2',
+      false,
+      'admin'
     );
 
     expect(AnticipoRepository.processSolicitud).toHaveBeenCalledWith('ant-2', 'reject');
@@ -90,7 +104,10 @@ describe('AnticipoService.processAnticipoFromCommand', () => {
     vi.mocked(AnticipoRepository.processSolicitud).mockRejectedValue(new Error('DB error'));
 
     const result = await AnticipoService.processAnticipoFromCommand(
-      pendientes, 'ant-1', true, 'admin'
+      pendientes,
+      'ant-1',
+      true,
+      'admin'
     );
 
     expect(result.ok).toBe(false);

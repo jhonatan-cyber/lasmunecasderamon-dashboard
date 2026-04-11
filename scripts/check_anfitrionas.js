@@ -24,7 +24,6 @@ async function checkAnfitrionas() {
       GROUP BY r.nombre
     `);
     console.table(counts);
-
   } catch (error) {
     console.error('Error:', error);
   } finally {
@@ -33,4 +32,3 @@ async function checkAnfitrionas() {
 }
 
 checkAnfitrionas();
-

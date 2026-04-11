@@ -4,18 +4,18 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 const generateUUID = () => crypto.randomUUID();
@@ -44,13 +44,16 @@ class AuditRepository {
   }
 
   static async getLatest(limit = 100) {
-    return await queryMock(`
+    return await queryMock(
+      `
       SELECT a.*, u.nick as usuario_nick, u.nombre as usuario_nombre
       FROM audit_logs a
       LEFT JOIN usuarios u ON a.user_id COLLATE utf8mb4_unicode_ci = u.id_usuario
       ORDER BY a.created_at DESC
       LIMIT ?
-    `, [limit]);
+    `,
+      [limit]
+    );
   }
 
   static async delete(id) {
@@ -59,62 +62,64 @@ class AuditRepository {
 }
 
 async function runTests() {
-    console.log('--- INICIANDO PRUEBAS UNITARIAS: AuditRepository ---');
-    const logsCreated = [];
-    try {
-        // Obtener un usuario existente para asociar al log
-        const users = await queryMock('SELECT id_usuario FROM usuarios LIMIT 1');
-        const userId = users[0]?.id_usuario;
+  console.log('--- INICIANDO PRUEBAS UNITARIAS: AuditRepository ---');
+  const logsCreated = [];
+  try {
+    // Obtener un usuario existente para asociar al log
+    const users = await queryMock('SELECT id_usuario FROM usuarios LIMIT 1');
+    const userId = users[0]?.id_usuario;
 
-        console.log('\n[1] Probando log()...');
-        const testAction = 'TEST_ACTION_' + Math.random().toString(36).substring(2, 7);
-        const testDetails = { key: 'value', random: Math.random() };
-        
-        const logId = await AuditRepository.log({
-            user_id: userId,
-            action: testAction,
-            resource_type: 'test_resource',
-            resource_id: '123',
-            details: testDetails,
-            ip_address: '127.0.0.1'
-        });
-        logsCreated.push(logId);
-        console.log(`Log creado con ID: ${logId}`);
-        if (logId) console.log('âœ… log() OK');
+    console.log('\n[1] Probando log()...');
+    const testAction = 'TEST_ACTION_' + Math.random().toString(36).substring(2, 7);
+    const testDetails = { key: 'value', random: Math.random() };
 
-        console.log('\n[2] Probando getLatest()...');
-        const latestLogs = await AuditRepository.getLatest(10);
-        const myLog = latestLogs.find(l => l.id === logId);
-        
-        if (myLog && myLog.action === testAction) {
-            console.log('âœ… getLatest() encontrÃ³ el log creado');
-            // Verificar que los detalles se guardaron y recuperaron como JSON
-            const detailsRecuperados = typeof myLog.details === 'string' ? JSON.parse(myLog.details) : myLog.details;
-            if (detailsRecuperados.key === 'value') {
-                console.log('âœ… Detalles JSON verificados');
-            } else {
-                throw new Error('Los detalles del log no coinciden');
-            }
-        } else {
-            throw new Error('No se pudo recuperar el log de auditorÃ­a reciÃ©n creado');
-        }
+    const logId = await AuditRepository.log({
+      user_id: userId,
+      action: testAction,
+      resource_type: 'test_resource',
+      resource_id: '123',
+      details: testDetails,
+      ip_address: '127.0.0.1'
+    });
+    logsCreated.push(logId);
+    console.log(`Log creado con ID: ${logId}`);
+    if (logId) console.log('âœ… log() OK');
 
-        console.log('\n--- LIMPIANDO DATOS DE PRUEBA ---');
-        for (const id of logsCreated) {
-            await AuditRepository.delete(id);
-        }
-        console.log('âœ… Limpieza completada');
+    console.log('\n[2] Probando getLatest()...');
+    const latestLogs = await AuditRepository.getLatest(10);
+    const myLog = latestLogs.find(l => l.id === logId);
 
-        console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
-    } catch (error) {
-        console.error('\nâŒ ERROR EN PRUEBAS:', error);
-        // Intentar limpiar incluso si falla
-        for (const id of logsCreated) {
-            try { await AuditRepository.delete(id); } catch(e) {}
-        }
-        process.exit(1);
+    if (myLog && myLog.action === testAction) {
+      console.log('âœ… getLatest() encontrÃ³ el log creado');
+      // Verificar que los detalles se guardaron y recuperaron como JSON
+      const detailsRecuperados =
+        typeof myLog.details === 'string' ? JSON.parse(myLog.details) : myLog.details;
+      if (detailsRecuperados.key === 'value') {
+        console.log('âœ… Detalles JSON verificados');
+      } else {
+        throw new Error('Los detalles del log no coinciden');
+      }
+    } else {
+      throw new Error('No se pudo recuperar el log de auditorÃ­a reciÃ©n creado');
     }
+
+    console.log('\n--- LIMPIANDO DATOS DE PRUEBA ---');
+    for (const id of logsCreated) {
+      await AuditRepository.delete(id);
+    }
+    console.log('âœ… Limpieza completada');
+
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+  } catch (error) {
+    console.error('\nâŒ ERROR EN PRUEBAS:', error);
+    // Intentar limpiar incluso si falla
+    for (const id of logsCreated) {
+      try {
+        await AuditRepository.delete(id);
+      } catch (e) {}
+    }
+    process.exit(1);
+  }
 }
 
 runTests();
-

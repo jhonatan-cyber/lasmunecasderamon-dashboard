@@ -5,57 +5,57 @@ require('dotenv').config();
 
 // Mock de funciones necesarias de db y BaseRepository
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 const generateUUID = () => crypto.randomUUID();
 
 const BaseRepository = {
-    insert: async (q, table, data) => {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const placeholders = keys.map(() => '?').join(', ');
-        const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-        const connection = await mysql.createConnection({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME
-        });
-        try {
-            await connection.execute(sql, values);
-        } finally {
-            await connection.end();
-        }
-    },
-    update: async (q, table, idCol, id, data) => {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const setClause = keys.map(k => `${k} = ?`).join(', ');
-        const sql = `UPDATE ${table} SET ${setClause} WHERE ${idCol} = ?`;
-        const connection = await mysql.createConnection({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME
-        });
-        try {
-            await connection.execute(sql, [...values, id]);
-        } finally {
-            await connection.end();
-        }
+  insert: async (q, table, data) => {
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const placeholders = keys.map(() => '?').join(', ');
+    const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    });
+    try {
+      await connection.execute(sql, values);
+    } finally {
+      await connection.end();
     }
+  },
+  update: async (q, table, idCol, id, data) => {
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const setClause = keys.map(k => `${k} = ?`).join(', ');
+    const sql = `UPDATE ${table} SET ${setClause} WHERE ${idCol} = ?`;
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    });
+    try {
+      await connection.execute(sql, [...values, id]);
+    } finally {
+      await connection.end();
+    }
+  }
 };
 
 const getNowInBusinessTimezone = () => new Date();
@@ -72,11 +72,18 @@ class CommissionRepository {
       FROM comisiones
       WHERE estado = 1
     `);
-    
-    const data = summary[0] || { total_comisiones: 0, cantidad_comisiones: 0, comision_ventas: 0, comision_servicios: 0 };
+
+    const data = summary[0] || {
+      total_comisiones: 0,
+      cantidad_comisiones: 0,
+      comision_ventas: 0,
+      comision_servicios: 0
+    };
     const total = parseFloat(data.total_comisiones) || 1;
     data.porcentaje_ventas = Math.round(((parseFloat(data.comision_ventas) || 0) / total) * 100);
-    data.porcentaje_servicios = Math.round(((parseFloat(data.comision_servicios) || 0) / total) * 100);
+    data.porcentaje_servicios = Math.round(
+      ((parseFloat(data.comision_servicios) || 0) / total) * 100
+    );
     return data;
   }
 
@@ -84,7 +91,7 @@ class CommissionRepository {
     let where = 'WHERE 1=1';
     let sqlParams = [];
     if (params.status && params.status !== 'all') {
-      const statusMap = { 'por_pagar': 1, 'pagado': 2, 'anulado': 0 };
+      const statusMap = { por_pagar: 1, pagado: 2, anulado: 0 };
       if (statusMap[params.status] !== undefined) {
         where += ' AND c.estado = ?';
         sqlParams.push(statusMap[params.status]);
@@ -111,7 +118,8 @@ class CommissionRepository {
   }
 
   static async getDetails(usuarioId) {
-    return await queryMock(`
+    return await queryMock(
+      `
       SELECT 
         c.id_comision AS id,
         c.monto AS monto,
@@ -119,7 +127,9 @@ class CommissionRepository {
       FROM comisiones c
       INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
       WHERE dc.usuario_id = ?
-    `, [usuarioId]);
+    `,
+      [usuarioId]
+    );
   }
 
   static async create(data) {
@@ -160,13 +170,15 @@ async function runTests() {
       console.log('âœ… summary() OK');
     }
 
-    const [users] = await connection.execute('SELECT id_usuario, nombre, nick FROM usuarios WHERE estado = 1 LIMIT 1');
+    const [users] = await connection.execute(
+      'SELECT id_usuario, nombre, nick FROM usuarios WHERE estado = 1 LIMIT 1'
+    );
     if (users.length > 0) {
       const testUser = users[0];
       console.log(`\n[2] Probando list() con usuario: ${testUser.nick}`);
       const listByUser = await CommissionRepository.list({ employeeId: testUser.id_usuario });
       console.log(`Comisiones encontradas: ${listByUser.length}`);
-      
+
       console.log('\n[3] Probando getDetails()...');
       const details = await CommissionRepository.getDetails(testUser.id_usuario);
       console.log(`Detalles encontrados: ${details.length}`);
@@ -175,16 +187,19 @@ async function runTests() {
 
     console.log('\n[4] Probando ciclo de vida (create/update/delete)...');
     const testId = await CommissionRepository.create({
-        venta_id: crypto.randomUUID(),
-        monto: 500.50
+      venta_id: crypto.randomUUID(),
+      monto: 500.5
     });
     console.log(`Creada: ${testId}`);
     await CommissionRepository.update(testId, { monto: 999.99 });
     await CommissionRepository.delete(testId);
-    
-    const [check] = await connection.execute('SELECT estado, monto FROM comisiones WHERE id_comision = ?', [testId]);
+
+    const [check] = await connection.execute(
+      'SELECT estado, monto FROM comisiones WHERE id_comision = ?',
+      [testId]
+    );
     if (check.length > 0 && check[0].estado === 0) {
-        console.log('âœ… Ciclo de vida OK');
+      console.log('âœ… Ciclo de vida OK');
     }
     await connection.execute('DELETE FROM comisiones WHERE id_comision = ?', [testId]);
 
@@ -198,4 +213,3 @@ async function runTests() {
 }
 
 runTests();
-

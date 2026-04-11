@@ -36,7 +36,7 @@ export const PermissionsCache = {
   set(userId: string, permissions: UserPermissions): void {
     cache.set(userId, {
       permissions,
-      expiresAt: Date.now() + TTL_MS,
+      expiresAt: Date.now() + TTL_MS
     });
   },
 
@@ -60,5 +60,5 @@ export const PermissionsCache = {
 
   size(): number {
     return cache.size;
-  },
+  }
 };

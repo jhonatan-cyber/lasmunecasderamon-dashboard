@@ -6,7 +6,7 @@ export function useGenericFilters<T>(
     searchFields?: (keyof T)[];
     initialPageSize?: number;
     initialSortBy?: string;
-    initialSortOrder?: "asc" | "desc";
+    initialSortOrder?: 'asc' | 'desc';
   }
 ) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,28 +14,23 @@ export function useGenericFilters<T>(
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(options?.initialPageSize || 10);
   const [sortBy, setSortBy] = useState(options?.initialSortBy || 'created_at');
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(options?.initialSortOrder || 'desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(options?.initialSortOrder || 'desc');
 
   const filteredData = useMemo(() => {
     let result = data;
 
     if (searchTerm.trim() && options?.searchFields) {
       const lowercasedFilter = searchTerm.toLowerCase();
-      result = result.filter((item) =>
-        options.searchFields!.some((field) => {
+      result = result.filter(item =>
+        options.searchFields!.some(field => {
           const value = item[field];
-          return (
-            typeof value === 'string' &&
-            value.toLowerCase().includes(lowercasedFilter)
-          );
+          return typeof value === 'string' && value.toLowerCase().includes(lowercasedFilter);
         })
       );
     }
 
     if (filterStatus !== null && 'status' in (result[0] || {})) {
-      result = result.filter(
-        (item: any) => item.status === filterStatus
-      );
+      result = result.filter((item: any) => item.status === filterStatus);
     }
 
     // Ordenamiento
@@ -62,7 +57,9 @@ export function useGenericFilters<T>(
 
         // ComparaciÃ³n de fechas
         if (aValue instanceof Date && bValue instanceof Date) {
-          return sortOrder === 'asc' ? aValue.getTime() - bValue.getTime() : bValue.getTime() - aValue.getTime();
+          return sortOrder === 'asc'
+            ? aValue.getTime() - bValue.getTime()
+            : bValue.getTime() - aValue.getTime();
         }
 
         // Convertir strings de fecha a Date si es posible
@@ -70,7 +67,9 @@ export function useGenericFilters<T>(
           const aDate = new Date(aValue);
           const bDate = new Date(bValue);
           if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
-            return sortOrder === 'asc' ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime();
+            return sortOrder === 'asc'
+              ? aDate.getTime() - bDate.getTime()
+              : bDate.getTime() - aDate.getTime();
           }
         }
 
@@ -111,9 +110,6 @@ export function useGenericFilters<T>(
     setPage,
     pageSize,
     setPageSize,
-    totalPages,
+    totalPages
   };
 }
-
-
-

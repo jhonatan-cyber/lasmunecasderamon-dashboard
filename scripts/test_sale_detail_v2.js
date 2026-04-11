@@ -11,19 +11,24 @@ const config = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'lasmunecasderamon',
-  port: parseInt(process.env.DB_PORT || '3306'),
+  port: parseInt(process.env.DB_PORT || '3306')
 };
 
 async function testSaleDetail() {
   let connection;
   try {
-    console.log('Conectando a la base de datos...', { host: config.host, database: config.database });
+    console.log('Conectando a la base de datos...', {
+      host: config.host,
+      database: config.database
+    });
     connection = await mysql.createConnection(config);
     console.log('ConexiÃ³n establecida.');
 
     // 1. Buscar una venta con un pedido asociado para probar el garzon_nombre
-    const [sales] = await connection.execute('SELECT id_venta, pedido_id FROM ventas WHERE pedido_id IS NOT NULL LIMIT 1');
-    
+    const [sales] = await connection.execute(
+      'SELECT id_venta, pedido_id FROM ventas WHERE pedido_id IS NOT NULL LIMIT 1'
+    );
+
     let id;
     if (sales.length === 0) {
       console.log('No se encontraron ventas con pedido asociado para probar.');
@@ -71,12 +76,11 @@ async function testSaleDetail() {
       console.log('- Cajero Nick:', row.cajero_nick);
       console.log('- GarzÃ³n Nombre:', row.garzon_nombre);
       console.log('- Productos Detalle:', row.productos_detalle);
-      
+
       if (!row.garzon_nombre && row.pedido_id) {
         console.warn('Â¡ALERTA! La venta tiene pedido_id pero no se obtuvo garzon_nombre.');
       }
     }
-
   } catch (error) {
     console.error('Error durante la prueba:', error.message);
   } finally {
@@ -86,4 +90,3 @@ async function testSaleDetail() {
 }
 
 testSaleDetail();
-

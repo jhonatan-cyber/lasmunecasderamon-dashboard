@@ -15,9 +15,9 @@ export function parsePagosMixtos(raw: any): MixedPayment[] {
   return raw
     .map((pago: any) => ({
       metodo: String(pago?.metodo || ''),
-      monto: Number(pago?.monto || 0),
+      monto: Number(pago?.monto || 0)
     }))
-    .filter((pago) => pago.metodo && pago.monto > 0);
+    .filter(pago => pago.metodo && pago.monto > 0);
 }
 
 /**
@@ -30,7 +30,10 @@ export function validatePagosMixtos(pagosMixtos: MixedPayment[], total: number):
   }
   const suma = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
   if (Math.abs(suma - total) > 1) {
-    throw new ValidationError('Pago mixto invalido: la suma debe ser igual al total', { suma, total });
+    throw new ValidationError('Pago mixto invalido: la suma debe ser igual al total', {
+      suma,
+      total
+    });
   }
 }
 
@@ -68,26 +71,27 @@ export async function procesarPrepago(
 ): Promise<number> {
   const { clienteId, total, prepagoSolicitado, ventaId, createdBy, now, codigo, concepto } = params;
 
-  const clients = await trx<any[]>(
-    'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
-    [clienteId]
-  );
+  const clients = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [
+    clienteId
+  ]);
   const saldoDisponible = Number(clients[0]?.saldo || 0);
 
   if (saldoDisponible <= 0 || prepagoSolicitado === 0) return 0;
 
   const prepagoMonto =
-    prepagoSolicitado === null
-      ? Math.min(saldoDisponible, total)
-      : prepagoSolicitado;
+    prepagoSolicitado === null ? Math.min(saldoDisponible, total) : prepagoSolicitado;
 
   if (prepagoSolicitado !== null && prepagoSolicitado > saldoDisponible) {
-    throw new BusinessError('Saldo insuficiente para el monto de prepago seleccionado', 'SALDO_INSUFICIENTE', { saldoDisponible, prepagoSolicitado });
+    throw new BusinessError(
+      'Saldo insuficiente para el monto de prepago seleccionado',
+      'SALDO_INSUFICIENTE',
+      { saldoDisponible, prepagoSolicitado }
+    );
   }
 
   await trx('UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?', [
     prepagoMonto,
-    clienteId,
+    clienteId
   ]);
 
   await trx(
@@ -101,7 +105,7 @@ export async function procesarPrepago(
       ventaId,
       createdBy,
       now,
-      JSON.stringify({ venta_id: ventaId, codigo, concepto }),
+      JSON.stringify({ venta_id: ventaId, codigo, concepto })
     ]
   );
 

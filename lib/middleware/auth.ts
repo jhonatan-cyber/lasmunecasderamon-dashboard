@@ -1,7 +1,6 @@
 import type { NextApiRequest } from 'next';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
 
-
 export interface UserPermissions {
   users: {
     read: boolean;
@@ -64,7 +63,6 @@ export interface AuthenticatedUser {
   exp: number;
 }
 
-
 const rolePermissions: Record<string, UserPermissions> = {
   administrador: {
     users: { read: true, write: true, delete: true },
@@ -120,9 +118,12 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
   try {
     const { query } = await import('@/lib/database/db');
 
-    const userResult = await query(`
+    const userResult = (await query(
+      `
       SELECT rol_id FROM usuarios WHERE id_usuario = ?
-    `, [userId]) as Array<{ rol_id: string | number | null }>;
+    `,
+      [userId]
+    )) as Array<{ rol_id: string | number | null }>;
 
     if (!userResult || userResult.length === 0 || !userResult[0].rol_id) {
       return rolePermissions.garzon;
@@ -130,14 +131,17 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
 
     const roleId = userResult[0].rol_id;
 
-    const permissions = await query(`
+    const permissions = (await query(
+      `
       SELECT 
         p.module,
         p.action
       FROM permissions p
       INNER JOIN role_permissions rp ON p.id = rp.permission_id
       WHERE rp.role_id = ? AND p.deleted_at IS NULL
-    `, [String(roleId)]) as Array<{ module: keyof UserPermissions; action: string }>;
+    `,
+      [String(roleId)]
+    )) as Array<{ module: keyof UserPermissions; action: string }>;
 
     const userPerms: UserPermissions = {
       users: { read: false, write: false, delete: false },
@@ -152,17 +156,17 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
     };
 
     const actionMap: Record<string, string> = {
-      'view': 'read',
-      'view_details': 'read',
-      'create': 'write',
-      'edit': 'write',
-      'open': 'write',
-      'close': 'write',
-      'withdraw': 'write',
-      'delete': 'delete',
-      'export': 'export',
-      'anulate': 'anulate',
-      'process': 'process',
+      view: 'read',
+      view_details: 'read',
+      create: 'write',
+      edit: 'write',
+      open: 'write',
+      close: 'write',
+      withdraw: 'write',
+      delete: 'delete',
+      export: 'export',
+      anulate: 'anulate',
+      process: 'process'
     };
 
     permissions.forEach(perm => {
@@ -206,4 +210,3 @@ const authMiddleware = {
 };
 
 export default authMiddleware;
-

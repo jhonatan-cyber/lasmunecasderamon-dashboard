@@ -127,17 +127,17 @@ export class CuentaRepository {
     return {
       remainingMinutes: Math.ceil(remainingSeconds / 60),
       elapsedMinutes: Math.min(duration, Math.ceil(elapsedSeconds / 60)),
-      isActive: remainingSeconds > 0,
+      isActive: remainingSeconds > 0
     };
   }
 
   private static ensureOpenHistorySegment(
     history: CuentaRoomHistoryItem[],
     cuenta: any,
-    roomName: string,
+    roomName: string
   ): CuentaRoomHistoryItem[] {
     if (!cuenta?.habitacion_id) return history;
-    const hasOpen = history.some((item) => item.endedAt === null);
+    const hasOpen = history.some(item => item.endedAt === null);
     if (hasOpen) return history;
 
     const duration = this.getCurrentTimerDuration(cuenta);
@@ -151,8 +151,8 @@ export class CuentaRepository {
         startedAt: this.getCurrentTimerStart(cuenta) || getNowInBusinessTimezone(),
         endedAt: null,
         assignedMinutes: duration,
-        consumedMinutes: 0,
-      },
+        consumedMinutes: 0
+      }
     ];
   }
 
@@ -161,10 +161,10 @@ export class CuentaRepository {
     nowStr: string,
     elapsedMinutes: number,
     markAsCompleted = false,
-    closedReason: CuentaRoomHistoryItem['closedReason'] = 'manual',
+    closedReason: CuentaRoomHistoryItem['closedReason'] = 'manual'
   ): CuentaRoomHistoryItem[] {
     const next = [...history];
-    const openIndex = [...next].reverse().findIndex((item) => item.endedAt === null);
+    const openIndex = [...next].reverse().findIndex(item => item.endedAt === null);
     if (openIndex === -1) return next;
 
     const index = next.length - 1 - openIndex;
@@ -179,7 +179,7 @@ export class CuentaRepository {
       endedAt: nowStr,
       consumedMinutes,
       remainingMinutes: Math.max(0, assignedMinutes - consumedMinutes),
-      closedReason,
+      closedReason
     };
     return next;
   }
@@ -190,7 +190,7 @@ export class CuentaRepository {
     roomName: string,
     nowStr: string,
     assignedMinutes: number,
-    carriedFromPrevious = false,
+    carriedFromPrevious = false
   ): CuentaRoomHistoryItem[] {
     return [
       ...history,
@@ -202,8 +202,8 @@ export class CuentaRepository {
         assignedMinutes: Number(assignedMinutes || 0),
         consumedMinutes: 0,
         remainingMinutes: Number(assignedMinutes || 0),
-        carriedFromPrevious,
-      },
+        carriedFromPrevious
+      }
     ];
   }
 
@@ -214,20 +214,23 @@ export class CuentaRepository {
       ...cuenta,
       tiempo_total: Number(cuenta.tiempo_total ?? cuenta.tiempo ?? 0),
       tiempo_activo: Number(cuenta.tiempo_activo ?? cuenta.tiempo_actual ?? cuenta.tiempo ?? 0),
-      habitaciones_historial_data: history,
+      habitaciones_historial_data: history
     };
   }
 
   private static hydrateRoomHistory(
     history: CuentaRoomHistoryItem[],
-    nowStr = getNowInBusinessTimezone(),
+    nowStr = getNowInBusinessTimezone()
   ): CuentaRoomHistoryViewItem[] {
     const nowObj = parseBusinessDate(nowStr);
 
-    return history.map((item) => {
+    return history.map(item => {
       const assignedMinutes = Number(item.assignedMinutes || 0);
       let consumedMinutes = Math.max(0, Number(item.consumedMinutes || 0));
-      let remainingMinutes = Math.max(0, Number(item.remainingMinutes ?? (assignedMinutes - consumedMinutes)));
+      let remainingMinutes = Math.max(
+        0,
+        Number(item.remainingMinutes ?? assignedMinutes - consumedMinutes)
+      );
 
       if (item.startedAt) {
         const startedAt = parseBusinessDate(item.startedAt);
@@ -267,7 +270,7 @@ export class CuentaRepository {
         assignedMinutes,
         consumedMinutes,
         remainingMinutes,
-        isActive: !item.endedAt && remainingMinutes > 0,
+        isActive: !item.endedAt && remainingMinutes > 0
       };
     });
   }
@@ -275,13 +278,13 @@ export class CuentaRepository {
   private static buildFinancialSummary(cuenta: any, solicitudes: CuentaAnulacionRow[]) {
     const totalActual = Number(cuenta?.total || 0);
     const totalAnuladoAprobado = solicitudes
-      .filter((item) => item.estado === 'aprobado')
+      .filter(item => item.estado === 'aprobado')
       .reduce((sum, item) => sum + Number(item.monto || 0), 0);
     const totalAnulacionPendiente = solicitudes
-      .filter((item) => item.estado === 'pendiente')
+      .filter(item => item.estado === 'pendiente')
       .reduce((sum, item) => sum + Number(item.monto || 0), 0);
     const totalAnulacionRechazada = solicitudes
-      .filter((item) => item.estado === 'rechazado')
+      .filter(item => item.estado === 'rechazado')
       .reduce((sum, item) => sum + Number(item.monto || 0), 0);
 
     const totalOriginal = totalActual + totalAnuladoAprobado;
@@ -293,7 +296,7 @@ export class CuentaRepository {
       total_anulacion_pendiente: totalAnulacionPendiente,
       total_anulacion_rechazada: totalAnulacionRechazada,
       tuvo_anulacion_parcial: totalAnuladoAprobado > 0 && totalActual > 0,
-      fue_anulada_total: totalAnuladoAprobado > 0 && totalActual <= 0,
+      fue_anulada_total: totalAnuladoAprobado > 0 && totalActual <= 0
     };
   }
 
@@ -312,7 +315,11 @@ export class CuentaRepository {
     const nowObj = parseBusinessDate(nowStr);
     const timing = this.getRemainingMinutes(row, nowObj);
     let history = this.parseRoomHistory(row.habitaciones_historial);
-    history = this.ensureOpenHistorySegment(history, row, row.habitacion_numero || 'Sin habitacion');
+    history = this.ensureOpenHistorySegment(
+      history,
+      row,
+      row.habitacion_numero || 'Sin habitacion'
+    );
     history = this.closeOpenHistorySegment(
       history,
       nowStr,
@@ -331,7 +338,9 @@ export class CuentaRepository {
 
   static async getAll(tipo?: string, estado?: string) {
     if (tipo === 'resumen') {
-      const result = await query<any[]>(`SELECT SUM(total) as total_por_cobrar FROM ${this.TABLE} WHERE estado = 1`);
+      const result = await query<any[]>(
+        `SELECT SUM(total) as total_por_cobrar FROM ${this.TABLE} WHERE estado = 1`
+      );
       return { total_por_cobrar: result[0]?.total_por_cobrar || 0 };
     }
 
@@ -342,7 +351,8 @@ export class CuentaRepository {
       params.push(estado);
     }
 
-    return await query(`
+    return await query(
+      `
       SELECT c.*,
              COALESCE(c.tiempo_actual, CASE WHEN c.estado = 1 THEN c.tiempo ELSE 0 END) as tiempo_activo,
              c.tiempo as tiempo_total,
@@ -355,12 +365,15 @@ export class CuentaRepository {
       LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
       LEFT JOIN usuarios u ON c.created_by = u.id_usuario
       ${where} ORDER BY c.fecha_crea DESC
-    `, params);
+    `,
+      params
+    );
   }
 
   static async getById(id: string) {
-    return await withTransaction(async (trx) => {
-      const cuentaRes = await trx<any[]>(`
+    return await withTransaction(async trx => {
+      const cuentaRes = await trx<any[]>(
+        `
         SELECT c.*,
                COALESCE(c.tiempo_actual, CASE WHEN c.estado = 1 THEN c.tiempo ELSE 0 END) as tiempo_activo,
                c.tiempo as tiempo_total,
@@ -372,11 +385,14 @@ export class CuentaRepository {
         LEFT JOIN usuarios u ON u.id_usuario = c.created_by
         LEFT JOIN usuarios uc ON uc.id_usuario = c.cobrado_por
         WHERE c.${this.ID_COL} = ?
-      `, [id]);
+      `,
+        [id]
+      );
 
       if (cuentaRes.length === 0) return null;
 
-      const detalles = await trx(`
+      const detalles = await trx(
+        `
         SELECT DC.*, H.nick as hostess_nick, H.foto as hostess_foto, U.nick as added_by, U.foto as added_by_foto,
                PR.nombre AS producto, C.nombre AS categoria
         FROM detalle_cuentas DC 
@@ -385,16 +401,22 @@ export class CuentaRepository {
         LEFT JOIN usuarios H ON H.id_usuario = DC.hostess_id
         LEFT JOIN usuarios U ON U.id_usuario = DC.created_by
         WHERE DC.cuenta_id = ?
-      `, [id]);
+      `,
+        [id]
+      );
 
-      const usuarios = await trx(`
+      const usuarios = await trx(
+        `
         SELECT cu.*, u.nick as usuario_nombre, u.foto as usuario_foto
         FROM cuentas_usuarios cu
         LEFT JOIN usuarios u ON u.id_usuario = cu.usuario_id
         WHERE cu.cuenta_id = ?
-      `, [id]);
+      `,
+        [id]
+      );
 
-      const solicitudesAnulacion = await trx<CuentaAnulacionRow[]>(`
+      const solicitudesAnulacion = await trx<CuentaAnulacionRow[]>(
+        `
         SELECT sac.id,
                sac.monto,
                sac.motivo,
@@ -408,20 +430,22 @@ export class CuentaRepository {
         LEFT JOIN usuarios app ON BINARY app.id_usuario = BINARY sac.approved_by
         WHERE BINARY sac.cuenta_id = BINARY ?
         ORDER BY sac.fecha_crea DESC
-      `, [id]);
+      `,
+        [id]
+      );
 
       const cuentaNormalizada = this.normalizeCuentaRow({ ...cuentaRes[0], detalles, usuarios });
 
       return {
         ...cuentaNormalizada,
         solicitudes_anulacion: solicitudesAnulacion,
-        resumen_financiero: this.buildFinancialSummary(cuentaNormalizada, solicitudesAnulacion),
+        resumen_financiero: this.buildFinancialSummary(cuentaNormalizada, solicitudesAnulacion)
       };
     });
   }
 
   static async create(body: CuentaCreateBody, createdBy: string) {
-    return await withTransaction(async (trx) => {
+    return await withTransaction(async trx => {
       const id = generateUUID();
       const now = getNowInBusinessTimezone();
       await BaseRepository.insert(trx, this.TABLE, {
@@ -438,40 +462,72 @@ export class CuentaRepository {
         tiempo: body.tiempo || 0,
         tiempo_actual: body.tiempo || 0,
         tiempo_inicio_actual: body.habitacion_id && (body.tiempo ?? 0) > 0 ? now : null,
-        habitaciones_historial: body.habitacion_id && (body.tiempo ?? 0) > 0 ? JSON.stringify([{
-          roomId: String(body.habitacion_id),
-          roomName: body.habitacion_nombre || 'Sin habitacion',
-          startedAt: now,
-          endedAt: null,
-          assignedMinutes: Number(body.tiempo || 0),
-          consumedMinutes: 0
-        }]) : null,
+        habitaciones_historial:
+          body.habitacion_id && (body.tiempo ?? 0) > 0
+            ? JSON.stringify([
+                {
+                  roomId: String(body.habitacion_id),
+                  roomName: body.habitacion_nombre || 'Sin habitacion',
+                  startedAt: now,
+                  endedAt: null,
+                  assignedMinutes: Number(body.tiempo || 0),
+                  consumedMinutes: 0
+                }
+              ])
+            : null,
         created_by: createdBy
       });
 
       for (const d of body.detalles) {
         const hasAnfitrionas = (body.usuarios ?? []).length > 0;
-        const selectedHostesses = (d.hostesses && d.hostesses.length > 0) ? d.hostesses : [null];
+        const selectedHostesses = d.hostesses && d.hostesses.length > 0 ? d.hostesses : [null];
         const isSpecial = d.isChampagne || d.precio >= 160000;
-        const comision = hasAnfitrionas ? (d.comision || 0) : 0;
+        const comision = hasAnfitrionas ? d.comision || 0 : 0;
 
         if (isSpecial) {
           const totalComm = Math.round(comision);
           const commBase = Math.floor(totalComm / selectedHostesses.length);
           const remainder = totalComm % selectedHostesses.length;
           for (let i = 0; i < selectedHostesses.length; i++) {
-            await trx(`INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [generateUUID(), id, d.producto_id, d.precio, i === 0 ? d.cantidad : 0, i === 0 ? d.sub_total : 0, commBase + (i === 0 ? remainder : 0), selectedHostesses[i], now, createdBy]);
+            await trx(
+              `INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                generateUUID(),
+                id,
+                d.producto_id,
+                d.precio,
+                i === 0 ? d.cantidad : 0,
+                i === 0 ? d.sub_total : 0,
+                commBase + (i === 0 ? remainder : 0),
+                selectedHostesses[i],
+                now,
+                createdBy
+              ]
+            );
           }
         } else {
           const baseQty = Math.floor(d.cantidad / selectedHostesses.length);
           let remainingQty = d.cantidad;
           for (let i = 0; i < selectedHostesses.length; i++) {
-            const qty = (i === selectedHostesses.length - 1) ? remainingQty : (baseQty === 0 ? 1 : baseQty);
+            const qty =
+              i === selectedHostesses.length - 1 ? remainingQty : baseQty === 0 ? 1 : baseQty;
             remainingQty -= qty;
             if (qty > 0 || selectedHostesses.length === 1) {
-              await trx(`INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, comision, selectedHostesses[i], now, createdBy]);
+              await trx(
+                `INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  generateUUID(),
+                  id,
+                  d.producto_id,
+                  d.precio,
+                  qty,
+                  d.precio * qty,
+                  comision,
+                  selectedHostesses[i],
+                  now,
+                  createdBy
+                ]
+              );
             }
           }
         }
@@ -479,29 +535,48 @@ export class CuentaRepository {
 
       if ((body.usuarios ?? []).length) {
         for (const uId of body.usuarios ?? []) {
-          await trx(`INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id) VALUES (?, ?, ?)`, [generateUUID(), id, uId]);
+          await trx(
+            `INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id) VALUES (?, ?, ?)`,
+            [generateUUID(), id, uId]
+          );
         }
       }
 
       if (body.habitacion_id && (body.tiempo ?? 0) > 0) {
-        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0 OR comision_anfitriona > 0)', [body.habitacion_id]);
-        const habitacion = await trx<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [body.habitacion_id]);
         await trx(
-          'UPDATE cuentas SET habitaciones_historial = ? WHERE id_cuenta = ?',
-          [JSON.stringify([{
-            roomId: String(body.habitacion_id),
-            roomName: habitacion[0]?.nombre || body.habitacion_id,
-            startedAt: now,
-            endedAt: null,
-            assignedMinutes: Number(body.tiempo || 0),
-            consumedMinutes: 0
-          }]), id]
+          'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0 OR comision_anfitriona > 0)',
+          [body.habitacion_id]
         );
-        const cliente = await trx<any[]>('SELECT nombre FROM clientes WHERE id_cliente = ?', [body.cliente_id]);
+        const habitacion = await trx<any[]>(
+          'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
+          [body.habitacion_id]
+        );
+        await trx('UPDATE cuentas SET habitaciones_historial = ? WHERE id_cuenta = ?', [
+          JSON.stringify([
+            {
+              roomId: String(body.habitacion_id),
+              roomName: habitacion[0]?.nombre || body.habitacion_id,
+              startedAt: now,
+              endedAt: null,
+              assignedMinutes: Number(body.tiempo || 0),
+              consumedMinutes: 0
+            }
+          ]),
+          id
+        ]);
+        const cliente = await trx<any[]>('SELECT nombre FROM clientes WHERE id_cliente = ?', [
+          body.cliente_id
+        ]);
         sendNotificationToAll('timer_started', {
-          servicioId: id, roomId: body.habitacion_id, roomName: habitacion[0]?.nombre || body.habitacion_id,
-          duration: body.tiempo ?? 0, startTime: now, codigo: body.codigo, clienteNombre: cliente[0]?.nombre || 'Cliente',
-          tipoTransaccion: 'cuenta', status: 1
+          servicioId: id,
+          roomId: body.habitacion_id,
+          roomName: habitacion[0]?.nombre || body.habitacion_id,
+          duration: body.tiempo ?? 0,
+          startTime: now,
+          codigo: body.codigo,
+          clienteNombre: cliente[0]?.nombre || 'Cliente',
+          tipoTransaccion: 'cuenta',
+          status: 1
         });
         sendNotificationToAll('timers_updated', { timestamp: now });
       }
@@ -513,40 +588,73 @@ export class CuentaRepository {
     const bizNow = getNowInBusinessTimezone();
     const nowObj = parseBusinessDate(bizNow);
 
-    await withTransaction(async (trx) => {
-      if (body.estado !== undefined) await trx('UPDATE cuentas SET estado = ? WHERE id_cuenta = ?', [body.estado, id]);
+    await withTransaction(async trx => {
+      if (body.estado !== undefined)
+        await trx('UPDATE cuentas SET estado = ? WHERE id_cuenta = ?', [body.estado, id]);
       if (body.detalles?.length) {
         let nuevoSubTotal = body.detalles.reduce((acc: number, d: any) => acc + d.sub_total, 0);
         let nuevaComision = body.detalles.reduce((acc: number, d: any) => acc + d.comision, 0);
-        const actual = await trx<any[]>('SELECT sub_total, total_comision FROM cuentas WHERE id_cuenta = ?', [id]);
+        const actual = await trx<any[]>(
+          'SELECT sub_total, total_comision FROM cuentas WHERE id_cuenta = ?',
+          [id]
+        );
         const finalSub = (actual[0]?.sub_total || 0) + nuevoSubTotal;
         const finalComm = (actual[0]?.total_comision || 0) + nuevaComision;
-        await trx('UPDATE cuentas SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = ? WHERE id_cuenta = ?', [finalSub, finalComm, finalSub, bizNow, id]);
+        await trx(
+          'UPDATE cuentas SET sub_total = ?, total_comision = ?, total = ?, fecha_mod = ? WHERE id_cuenta = ?',
+          [finalSub, finalComm, finalSub, bizNow, id]
+        );
 
         for (const d of body.detalles) {
           const hasAnfitrionas = (body.usuarios ?? []).length > 0;
-          const selectedHostesses = (d.hostesses?.length) ? d.hostesses : [null];
+          const selectedHostesses = d.hostesses?.length ? d.hostesses : [null];
           const isSpecial = d.isChampagne || d.precio >= 160000;
-          const comision = hasAnfitrionas ? (d.comision || 0) : 0;
+          const comision = hasAnfitrionas ? d.comision || 0 : 0;
           if (isSpecial) {
-             const tComm = Math.round(comision);
-             const base = Math.floor(tComm / selectedHostesses.length);
-             const rem = tComm % selectedHostesses.length;
-             for (let i = 0; i < selectedHostesses.length; i++) {
-               await trx('INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                 [generateUUID(), id, d.producto_id, d.precio, i === 0 ? d.cantidad : 0, i === 0 ? d.sub_total : 0, base + (i === 0 ? rem : 0), selectedHostesses[i], bizNow, createdBy]);
-             }
+            const tComm = Math.round(comision);
+            const base = Math.floor(tComm / selectedHostesses.length);
+            const rem = tComm % selectedHostesses.length;
+            for (let i = 0; i < selectedHostesses.length; i++) {
+              await trx(
+                'INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                  generateUUID(),
+                  id,
+                  d.producto_id,
+                  d.precio,
+                  i === 0 ? d.cantidad : 0,
+                  i === 0 ? d.sub_total : 0,
+                  base + (i === 0 ? rem : 0),
+                  selectedHostesses[i],
+                  bizNow,
+                  createdBy
+                ]
+              );
+            }
           } else {
-             const baseQty = Math.floor(d.cantidad / selectedHostesses.length);
-             let remQty = d.cantidad;
-             for (let i = 0; i < selectedHostesses.length; i++) {
-               const qty = (i === selectedHostesses.length - 1) ? remQty : (baseQty === 0 ? 1 : baseQty);
-               remQty -= qty;
-               if (qty > 0 || selectedHostesses.length === 1) {
-                 await trx('INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [generateUUID(), id, d.producto_id, d.precio, qty, d.precio * qty, comision, selectedHostesses[i], bizNow, createdBy]);
-               }
-             }
+            const baseQty = Math.floor(d.cantidad / selectedHostesses.length);
+            let remQty = d.cantidad;
+            for (let i = 0; i < selectedHostesses.length; i++) {
+              const qty = i === selectedHostesses.length - 1 ? remQty : baseQty === 0 ? 1 : baseQty;
+              remQty -= qty;
+              if (qty > 0 || selectedHostesses.length === 1) {
+                await trx(
+                  'INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                  [
+                    generateUUID(),
+                    id,
+                    d.producto_id,
+                    d.precio,
+                    qty,
+                    d.precio * qty,
+                    comision,
+                    selectedHostesses[i],
+                    bizNow,
+                    createdBy
+                  ]
+                );
+              }
+            }
           }
         }
       }
@@ -564,7 +672,9 @@ export class CuentaRepository {
     if ((body.extraTiempo ?? 0) > 0) {
       const c = await query<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
       if (c.length) {
-        const room = await query<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [c[0].habitacion_id]);
+        const room = await query<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [
+          c[0].habitacion_id
+        ]);
         const timing = this.getRemainingMinutes(c[0], nowObj);
         let history = this.parseRoomHistory(c[0].habitaciones_historial);
         history = this.ensureOpenHistorySegment(history, c[0], room[0]?.nombre || 'Sin habitacion');
@@ -572,14 +682,16 @@ export class CuentaRepository {
         const addedMinutes = Number(body.extraTiempo ?? 0);
         const totalAssigned = Number(c[0].tiempo || 0) + addedMinutes;
         const currentRoomId = String(c[0].habitacion_id || '');
-        const openIndex = [...history].reverse().findIndex((item) => item.endedAt === null && String(item.roomId) === currentRoomId);
+        const openIndex = [...history]
+          .reverse()
+          .findIndex(item => item.endedAt === null && String(item.roomId) === currentRoomId);
         const hasOpenSameRoom = openIndex !== -1;
 
         if (timing.isActive && hasOpenSameRoom) {
           const realIndex = history.length - 1 - openIndex;
           history[realIndex] = {
             ...history[realIndex],
-            assignedMinutes: Number(history[realIndex].assignedMinutes || 0) + addedMinutes,
+            assignedMinutes: Number(history[realIndex].assignedMinutes || 0) + addedMinutes
           };
         } else {
           history = this.closeOpenHistorySegment(
@@ -589,7 +701,13 @@ export class CuentaRepository {
             !timing.isActive,
             timing.isActive ? 'changed_room' : 'expired'
           );
-          history = this.appendHistorySegment(history, currentRoomId, room[0]?.nombre || 'Sin habitacion', bizNow, addedMinutes);
+          history = this.appendHistorySegment(
+            history,
+            currentRoomId,
+            room[0]?.nombre || 'Sin habitacion',
+            bizNow,
+            addedMinutes
+          );
         }
 
         const nuevoTiempo = (timing.isActive ? timing.remainingMinutes : 0) + addedMinutes;
@@ -597,12 +715,26 @@ export class CuentaRepository {
           'UPDATE cuentas SET tiempo = ?, tiempo_actual = ?, tiempo_inicio_actual = ?, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
           [totalAssigned, nuevoTiempo, bizNow, this.stringifyRoomHistory(history), bizNow, id]
         );
-        if (c[0].habitacion_id) await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0)', [c[0].habitacion_id]);
-        
-        const client = await query<any[]>('SELECT cl.nombre FROM cuentas c LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id WHERE c.id_cuenta = ?', [id]);
+        if (c[0].habitacion_id)
+          await query(
+            'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (precio > 0 OR tiempo > 0)',
+            [c[0].habitacion_id]
+          );
+
+        const client = await query<any[]>(
+          'SELECT cl.nombre FROM cuentas c LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id WHERE c.id_cuenta = ?',
+          [id]
+        );
         sendNotificationToAll(timing.isActive ? 'timer_updated' : 'timer_started', {
-          servicioId: id, roomId: c[0].habitacion_id, roomName: room[0]?.nombre || '', duration: nuevoTiempo,
-          startTime: bizNow, codigo: c[0].codigo, clienteNombre: client[0]?.nombre || 'Cliente', tipoTransaccion: 'cuenta', status: 1
+          servicioId: id,
+          roomId: c[0].habitacion_id,
+          roomName: room[0]?.nombre || '',
+          duration: nuevoTiempo,
+          startTime: bizNow,
+          codigo: c[0].codigo,
+          clienteNombre: client[0]?.nombre || 'Cliente',
+          tipoTransaccion: 'cuenta',
+          status: 1
         });
       }
     }
@@ -617,23 +749,39 @@ export class CuentaRepository {
         'SELECT codigo, cliente_id, habitacion_id, tiempo, tiempo_actual, tiempo_inicio_actual, fecha_crea, habitaciones_historial FROM cuentas WHERE id_cuenta = ?',
         [id]
       );
-      const client = await query<any[]>('SELECT nombre FROM clientes WHERE id_cliente = ?', [c[0]?.cliente_id]);
+      const client = await query<any[]>('SELECT nombre FROM clientes WHERE id_cliente = ?', [
+        c[0]?.cliente_id
+      ]);
 
       const previousRoomId = c[0]?.habitacion_id || null;
       const sameRoom = previousRoomId && String(previousRoomId) === String(body.habitacion_id);
       const timing = this.getRemainingMinutes(c[0], nowObj);
-      const nuevoTiempo = (timing.isActive ? timing.remainingMinutes : 0) + Number(body.tiempo || 0);
+      const nuevoTiempo =
+        (timing.isActive ? timing.remainingMinutes : 0) + Number(body.tiempo || 0);
       const totalAssigned = Number(c[0]?.tiempo || 0) + Number(body.tiempo || 0);
       let history = this.parseRoomHistory(c[0]?.habitaciones_historial);
       if (previousRoomId) {
-        const previousRoom = await query<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [previousRoomId]);
-        history = this.ensureOpenHistorySegment(history, c[0], previousRoom[0]?.nombre || 'Sin habitacion');
+        const previousRoom = await query<any[]>(
+          'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
+          [previousRoomId]
+        );
+        history = this.ensureOpenHistorySegment(
+          history,
+          c[0],
+          previousRoom[0]?.nombre || 'Sin habitacion'
+        );
         history = this.closeOpenHistorySegment(
           history,
           bizNow,
           timing.elapsedMinutes,
           !timing.isActive,
-          sameRoom ? (timing.isActive ? 'manual' : 'expired') : (timing.isActive ? 'changed_room' : 'expired')
+          sameRoom
+            ? timing.isActive
+              ? 'manual'
+              : 'expired'
+            : timing.isActive
+              ? 'changed_room'
+              : 'expired'
         );
       }
       history = this.appendHistorySegment(
@@ -647,13 +795,26 @@ export class CuentaRepository {
 
       await query(
         'UPDATE cuentas SET habitacion_id = ?, tiempo = ?, tiempo_actual = ?, tiempo_inicio_actual = ?, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
-        [body.habitacion_id, totalAssigned, nuevoTiempo, bizNow, this.stringifyRoomHistory(history), bizNow, id]
+        [
+          body.habitacion_id,
+          totalAssigned,
+          nuevoTiempo,
+          bizNow,
+          this.stringifyRoomHistory(history),
+          bizNow,
+          id
+        ]
       );
 
       const r = room[0];
-      const tieneConfig = Number(r?.precio || 0) > 0 || Number(r?.room_tiempo || 0) > 0 || Number(r?.comision_anfitriona || 0) > 0;
+      const tieneConfig =
+        Number(r?.precio || 0) > 0 ||
+        Number(r?.room_tiempo || 0) > 0 ||
+        Number(r?.comision_anfitriona || 0) > 0;
       if (tieneConfig) {
-        await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [body.habitacion_id]);
+        await query('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
+          body.habitacion_id
+        ]);
       }
 
       if (previousRoomId && !sameRoom) {
@@ -662,9 +823,15 @@ export class CuentaRepository {
       }
 
       sendNotificationToAll('timer_started', {
-        servicioId: id, roomId: body.habitacion_id, roomName: r?.nombre || '',
-        duration: nuevoTiempo, startTime: bizNow, codigo: c[0]?.codigo || '',
-        clienteNombre: client[0]?.nombre || 'Cliente', tipoTransaccion: 'cuenta', status: 1
+        servicioId: id,
+        roomId: body.habitacion_id,
+        roomName: r?.nombre || '',
+        duration: nuevoTiempo,
+        startTime: bizNow,
+        codigo: c[0]?.codigo || '',
+        clienteNombre: client[0]?.nombre || 'Cliente',
+        tipoTransaccion: 'cuenta',
+        status: 1
       });
       sendNotificationToAll('timers_updated', { timestamp: bizNow });
     }
@@ -673,7 +840,7 @@ export class CuentaRepository {
   }
 
   static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
-    return await withTransaction(async (trx) => {
+    return await withTransaction(async trx => {
       const cuenta = await trx<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
       if (!cuenta.length) throw new NotFoundError('Cuenta', id);
       if (![1, 4].includes(Number(cuenta[0].estado))) {
@@ -688,8 +855,14 @@ export class CuentaRepository {
       const timing = this.getRemainingMinutes(cuenta[0], parseBusinessDate(now));
       let history = this.parseRoomHistory(cuenta[0].habitaciones_historial);
       if (cuenta[0].habitacion_id) {
-        const room = await trx<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [cuenta[0].habitacion_id]);
-        history = this.ensureOpenHistorySegment(history, cuenta[0], room[0]?.nombre || 'Sin habitacion');
+        const room = await trx<any[]>('SELECT nombre FROM habitaciones WHERE id_habitacion = ?', [
+          cuenta[0].habitacion_id
+        ]);
+        history = this.ensureOpenHistorySegment(
+          history,
+          cuenta[0],
+          room[0]?.nombre || 'Sin habitacion'
+        );
         history = this.closeOpenHistorySegment(
           history,
           now,
@@ -705,9 +878,16 @@ export class CuentaRepository {
       );
 
       if (tipoPago === 'prepago') {
-        const client = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [cuenta[0].cliente_id]);
-        if (!client.length || client[0].saldo < montoFinal) throw new BusinessError('Saldo insuficiente', 'SALDO_INSUFICIENTE');
-        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [montoFinal, cuenta[0].cliente_id]);
+        const client = await trx<any[]>(
+          'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
+          [cuenta[0].cliente_id]
+        );
+        if (!client.length || client[0].saldo < montoFinal)
+          throw new BusinessError('Saldo insuficiente', 'SALDO_INSUFICIENTE');
+        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [
+          montoFinal,
+          cuenta[0].cliente_id
+        ]);
       }
 
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
@@ -728,11 +908,17 @@ export class CuentaRepository {
       // Aquí solo se actualiza la caja y se libera la habitación.
 
       if (cuenta[0].habitacion_id) {
-        await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [cuenta[0].habitacion_id]);
+        await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
+          cuenta[0].habitacion_id
+        ]);
         sendNotificationToAll('room_available', { roomId: cuenta[0].habitacion_id });
       }
 
-      sendNotificationToAll('timer_stopped', { servicioId: id, status: 0, tipoTransaccion: 'cuenta' });
+      sendNotificationToAll('timer_stopped', {
+        servicioId: id,
+        status: 0,
+        tipoTransaccion: 'cuenta'
+      });
       sendNotificationToAll('timers_updated', { timestamp: now });
     });
 
@@ -742,33 +928,48 @@ export class CuentaRepository {
   static async stopTimer(id: string, userId: string) {
     const now = getNowInBusinessTimezone();
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       const cuenta = await trx<any[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
       if (!cuenta.length) throw new NotFoundError('Cuenta', id);
 
       if (cuenta[0].habitacion_id) {
         await this.finalizeRoomSession(id, now);
-        await RoomManager.resumeRoomLogic(trx as unknown as TransactionQuery, String(cuenta[0].habitacion_id));
+        await RoomManager.resumeRoomLogic(
+          trx as unknown as TransactionQuery,
+          String(cuenta[0].habitacion_id)
+        );
         sendNotificationToAll('room_available', { roomId: cuenta[0].habitacion_id });
       } else {
-        await trx('UPDATE cuentas SET tiempo_actual = 0, tiempo_inicio_actual = NULL, fecha_mod = ? WHERE id_cuenta = ?', [now, id]);
+        await trx(
+          'UPDATE cuentas SET tiempo_actual = 0, tiempo_inicio_actual = NULL, fecha_mod = ? WHERE id_cuenta = ?',
+          [now, id]
+        );
       }
     });
 
-    sendNotificationToAll('timer_stopped', { servicioId: id, status: 1, tipoTransaccion: 'cuenta' });
+    sendNotificationToAll('timer_stopped', {
+      servicioId: id,
+      status: 1,
+      tipoTransaccion: 'cuenta'
+    });
     sendNotificationToAll('timers_updated', { timestamp: now });
 
     return await this.getById(id);
   }
 
-  static async requestAnulacion(id: string, reason: string, requestedBy: string, requestedAmount: number): Promise<string> {
+  static async requestAnulacion(
+    id: string,
+    reason: string,
+    requestedBy: string,
+    requestedAmount: number
+  ): Promise<string> {
     const now = getNowInBusinessTimezone();
     const idAnul = generateUUID();
     const monto = Number(requestedAmount || 0);
     let finalizedTimer = false;
     let roomIdToRelease: string | null = null;
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       const cuenta = await trx<any[]>(
         `SELECT c.id_cuenta, c.estado, c.tiempo_actual, c.tiempo_inicio_actual, c.total, c.habitacion_id,
                 c.habitaciones_historial, c.fecha_crea, h.nombre as habitacion_numero
@@ -778,12 +979,19 @@ export class CuentaRepository {
         [id]
       );
       if (!cuenta.length) throw new NotFoundError('Cuenta', id);
-      if (Number(cuenta[0].estado) !== 1) throw new BusinessError('La cuenta no se puede solicitar para anulacion', 'CUENTA_NO_ANULABLE');
+      if (Number(cuenta[0].estado) !== 1)
+        throw new BusinessError(
+          'La cuenta no se puede solicitar para anulacion',
+          'CUENTA_NO_ANULABLE'
+        );
       if (monto <= 0) {
         throw new BusinessError('El monto solicitado debe ser mayor a 0', 'MONTO_INVALIDO');
       }
       if (monto > Number(cuenta[0].total || 0)) {
-        throw new BusinessError('El monto solicitado no puede ser mayor al total de la cuenta', 'MONTO_EXCEDE_TOTAL');
+        throw new BusinessError(
+          'El monto solicitado no puede ser mayor al total de la cuenta',
+          'MONTO_EXCEDE_TOTAL'
+        );
       }
 
       if (Number(cuenta[0].tiempo_actual || 0) > 0) {
@@ -831,7 +1039,11 @@ export class CuentaRepository {
       if (roomIdToRelease) {
         sendNotificationToAll('room_available', { roomId: roomIdToRelease });
       }
-      sendNotificationToAll('timer_stopped', { servicioId: id, status: 1, tipoTransaccion: 'cuenta' });
+      sendNotificationToAll('timer_stopped', {
+        servicioId: id,
+        status: 1,
+        tipoTransaccion: 'cuenta'
+      });
       sendNotificationToAll('timers_updated', { timestamp: now });
     }
 
@@ -839,11 +1051,10 @@ export class CuentaRepository {
   }
 
   static async delete(id: string) {
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await BaseRepository.delete(trx, 'detalle_cuentas', 'cuenta_id', id);
       await BaseRepository.delete(trx, 'cuentas_usuarios', 'cuenta_id', id);
       await BaseRepository.delete(trx, this.TABLE, this.ID_COL, id);
     });
   }
 }
-

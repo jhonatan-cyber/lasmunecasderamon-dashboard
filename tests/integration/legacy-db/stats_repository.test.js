@@ -3,18 +3,18 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 class StatsRepository {
@@ -22,14 +22,20 @@ class StatsRepository {
     return await queryMock('SELECT COUNT(*) as usersCount FROM usuarios');
   }
   static async getMonthlySales() {
-    return await queryMock('SELECT MONTH(fecha_crea) as mes, SUM(total) as total FROM ventas GROUP BY MONTH(fecha_crea)');
+    return await queryMock(
+      'SELECT MONTH(fecha_crea) as mes, SUM(total) as total FROM ventas GROUP BY MONTH(fecha_crea)'
+    );
   }
   static async getWeeklySales() {
-    return await queryMock('SELECT DAYNAME(fecha_crea) as dia, SUM(total) as total FROM ventas GROUP BY DAYNAME(fecha_crea)');
+    return await queryMock(
+      'SELECT DAYNAME(fecha_crea) as dia, SUM(total) as total FROM ventas GROUP BY DAYNAME(fecha_crea)'
+    );
   }
   static async getDashboardStats() {
     return {
-      activeRooms: (await queryMock('SELECT COUNT(*) as count FROM habitaciones WHERE estado = 2'))[0].count,
+      activeRooms: (
+        await queryMock('SELECT COUNT(*) as count FROM habitaciones WHERE estado = 2')
+      )[0].count,
       totalSales: (await queryMock('SELECT SUM(total) as total FROM ventas'))[0].total || 0
     };
   }
@@ -56,7 +62,8 @@ async function testStatsRepository() {
 
     console.log('Probando getDashboardStats()...');
     const dashboardStats = await StatsRepository.getDashboardStats();
-    if (!dashboardStats || typeof dashboardStats !== 'object') throw new Error('getDashboardStats() debe devolver un objeto');
+    if (!dashboardStats || typeof dashboardStats !== 'object')
+      throw new Error('getDashboardStats() debe devolver un objeto');
     console.log('âœ… getDashboardStats() OK');
 
     console.log('PRUEBAS UNITARIAS StatsRepository COMPLETADAS CON Ã‰XITO');
@@ -67,4 +74,3 @@ async function testStatsRepository() {
 }
 
 testStatsRepository();
-

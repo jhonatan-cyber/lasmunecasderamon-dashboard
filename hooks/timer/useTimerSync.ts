@@ -37,7 +37,7 @@ export function useTimerSync({
       );
       saveTimersToStorage(unique);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTimers.value, isInitialized]);
 
   // --- SINCRONIZACIÃ“N INICIAL ---
@@ -45,7 +45,6 @@ export function useTimerSync({
     if (initialSyncExecutedRef.current) return;
     initialSyncExecutedRef.current = true;
 
-    
     const performInitialSync = async () => {
       const stored = loadTimersFromStorage();
       const serverOffset = serverOffsetSignal.peek();
@@ -57,7 +56,6 @@ export function useTimerSync({
           isActive: calculateRemainingTime(t, serverOffset) > 0
         }))
         .filter(t => t.isActive);
-
 
       try {
         const res = await fetch('/api/timers/active?source=web');
@@ -122,7 +120,7 @@ export function useTimerSync({
 
     initialSyncExecutedRef.current = true;
     performInitialSync();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- SINCRONIZACIÃ“N SSE (REAL TIME) ---
@@ -249,4 +247,3 @@ export function useTimerSync({
     return () => clearInterval(interval);
   }, [isInitialized]);
 }
-
