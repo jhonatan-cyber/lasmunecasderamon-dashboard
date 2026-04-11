@@ -134,6 +134,7 @@ describe('SaleService — lógica de pagos mixtos', () => {
 
 import { SaleService } from '@/lib/services/SaleService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { withTransaction } from '@/lib/database/db';
 
 beforeEach(() => {
@@ -217,5 +218,26 @@ describe('SaleService.createSale', () => {
         'user-1'
       )
     ).rejects.toThrow(ValidationError);
+  });
+
+  it('no vuelve a impactar caja cuando la venta viene de una cuenta', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
+      const trx = vi.fn().mockResolvedValue([]);
+      return fn(trx);
+    });
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        origen: 'cuenta',
+        skip_client_prepago: true
+      },
+      'user-1'
+    );
+
+    expect(SaleRepository.rawInsert).toHaveBeenCalled();
+    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
   });
 });

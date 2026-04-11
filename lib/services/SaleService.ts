@@ -30,6 +30,7 @@ export class SaleService {
   static async createSale(body: SaleCreateInput, createdBy: string) {
     const validated = SaleCreateSchema.parse(body);
     const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
+    const skipCashRegisterPosting = body?.origen === 'cuenta';
 
     const pedidoId = validated.pedido_id || body.pedido_id || body.id_pedido;
     const clienteId = validated.cliente_id || body.cliente_id;
@@ -200,7 +201,7 @@ export class SaleService {
       }
 
       // 6. Actualización de Caja
-      if (cajaId) {
+      if (cajaId && !skipCashRegisterPosting) {
         if (esMixto) {
           const deltas = calcularDeltasCaja(pagosMixtos);
 

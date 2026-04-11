@@ -131,7 +131,8 @@ export class AnticipoRepository {
         usuario_id,
         monto,
         motivo,
-        estado: 1,
+        // El alta directa desde administracion ya descuenta caja y equivale a un anticipo entregado.
+        estado: 0,
         fecha_crea: now
       });
 
