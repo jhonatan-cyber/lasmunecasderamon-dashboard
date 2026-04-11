@@ -12,13 +12,16 @@ const config = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'lasmunecasderamon',
-  port: parseInt(process.env.DB_PORT || '3306'),
+  port: parseInt(process.env.DB_PORT || '3306')
 };
 
 async function testCommissionDetails() {
   let connection;
   try {
-    console.log('Conectando a la base de datos...', { host: config.host, database: config.database });
+    console.log('Conectando a la base de datos...', {
+      host: config.host,
+      database: config.database
+    });
     connection = await mysql.createConnection(config);
     console.log('ConexiÃ³n establecida.');
 
@@ -97,7 +100,7 @@ async function testCommissionDetails() {
     if (results.length > 0) {
       console.log('Primeros 3 resultados:');
       console.table(results.slice(0, 3));
-      
+
       const tipos = results.reduce((acc, curr) => {
         acc[curr.tipo] = (acc[curr.tipo] || 0) + 1;
         return acc;
@@ -105,14 +108,17 @@ async function testCommissionDetails() {
       console.log('DistribuciÃ³n por tipo:', tipos);
     } else {
       console.log('La consulta no devolviÃ³ resultados para este usuario.');
-      
+
       // VerificaciÃ³n extra: Â¿Existen comisiones para este usuario en la tabla comisiones?
-      const [rawCom] = await connection.execute(`
+      const [rawCom] = await connection.execute(
+        `
         SELECT COUNT(*) as count 
         FROM comisiones c 
         JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id 
         WHERE dc.usuario_id = ?
-      `, [usuarioId]);
+      `,
+        [usuarioId]
+      );
       console.log(`Total comisiones crudas en DB para este usuario: ${rawCom[0].count}`);
     }
 
@@ -128,7 +134,6 @@ async function testCommissionDetails() {
       WHERE estado = 1
     `);
     console.table(summary);
-
   } catch (error) {
     console.error('Error durante la prueba:', error.message);
   } finally {
@@ -137,4 +142,3 @@ async function testCommissionDetails() {
 }
 
 testCommissionDetails();
-

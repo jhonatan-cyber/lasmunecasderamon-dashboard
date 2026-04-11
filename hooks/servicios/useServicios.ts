@@ -1,5 +1,4 @@
-﻿  
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -32,19 +31,20 @@ export function useServicios() {
         if (!Array.isArray(rawData)) {
           return [];
         }
-        const filtered = rawData.map((servicio: any) => ({
-          ...servicio,
-          // Asegurar que siempre tenga id_servicio (el API devuelve "id")
-          id_servicio: servicio.id_servicio || servicio.id
-        })).filter((servicio: any) => {
-          return !servicio.es_temporal && !servicio.servicio_original_id;
-        });
+        const filtered = rawData
+          .map((servicio: any) => ({
+            ...servicio,
+            // Asegurar que siempre tenga id_servicio (el API devuelve "id")
+            id_servicio: servicio.id_servicio || servicio.id
+          }))
+          .filter((servicio: any) => {
+            return !servicio.es_temporal && !servicio.servicio_original_id;
+          });
         return filtered;
       }
       return [];
     }
   });
-
 
   const getServicios = useCallback(
     async (includeAllParam: boolean = true) => {
@@ -110,7 +110,9 @@ export function useServicios() {
 
       if (previousServicios) {
         queryClient.setQueryData([endpoint], (old: ServicioWithDetails[] | undefined) =>
-          old?.map((s: ServicioWithDetails) => String(s.id_servicio) === String(id) ? { ...s, ...data } : s)
+          old?.map((s: ServicioWithDetails) =>
+            String(s.id_servicio) === String(id) ? { ...s, ...data } : s
+          )
         );
       }
       return { previousServicios };
@@ -126,7 +128,9 @@ export function useServicios() {
   });
 
   useEffect(() => {
-    const handleServiceUpdate = () => { getServicios(true); };
+    const handleServiceUpdate = () => {
+      getServicios(true);
+    };
     window.addEventListener('updateServiceRequests', handleServiceUpdate);
     window.addEventListener('serviceStatusChanged', handleServiceUpdate);
     return () => {
@@ -137,8 +141,18 @@ export function useServicios() {
 
   return {
     servicios,
-    loading: fetchLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || patchMutation.isPending,
-    error: fetchError || (createMutation.error as any)?.message || (updateMutation.error as any)?.message || (deleteMutation.error as any)?.message || (patchMutation.error as any)?.message,
+    loading:
+      fetchLoading ||
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending ||
+      patchMutation.isPending,
+    error:
+      fetchError ||
+      (createMutation.error as any)?.message ||
+      (updateMutation.error as any)?.message ||
+      (deleteMutation.error as any)?.message ||
+      (patchMutation.error as any)?.message,
     getServicios,
     createServicio: createMutation.mutateAsync,
     updateServicio: (id: string | number, data: any) => updateMutation.mutateAsync({ id, data }),
@@ -146,7 +160,7 @@ export function useServicios() {
     patchServicio: (id: string | number, data: any) => patchMutation.mutateAsync({ id, data }),
     removeServicioFromState: (id: string | number) => {
       if (setServicios) {
-        setServicios((prev: ServicioWithDetails[] | undefined) => 
+        setServicios((prev: ServicioWithDetails[] | undefined) =>
           (prev || []).filter((s: ServicioWithDetails) => String(s.id_servicio) !== String(id))
         );
       }
@@ -157,7 +171,7 @@ export function useServicios() {
 // Hook para obtener TODOS los servicios (sin filtro por estado) para estadÃ­sticas
 export function useAllServicios() {
   const endpoint = '/api/servicios';
-  
+
   const {
     data: servicios,
     isLoading,
@@ -172,7 +186,7 @@ export function useAllServicios() {
           rawData = data.data.data;
         }
         if (!Array.isArray(rawData)) return [];
-        
+
         return rawData.map((servicio: any) => ({
           ...servicio,
           id_servicio: servicio.id_servicio || servicio.id
@@ -193,5 +207,3 @@ export function useAllServicios() {
     getAllServicios
   };
 }
-
-

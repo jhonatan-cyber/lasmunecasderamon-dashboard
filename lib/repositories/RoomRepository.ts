@@ -11,7 +11,7 @@ export class RoomRepository {
     const tieneServiciosActivos = row.servicios_activos > 0;
     const tieneVentasActivas = row.ventas_activas > 0;
     const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
-    
+
     return RoomSchema.parse({
       id: row.id_habitacion,
       name: row.nombre,
@@ -79,10 +79,10 @@ export class RoomRepository {
 
   static async create(data: any): Promise<RoomType | null> {
     const validated = RoomSchema.parse(data);
-    
+
     // Validar duplicado por nombre
     const dup = await query<any[]>(
-      "SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?)",
+      'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?)',
       [validated.name]
     );
     if (dup.length > 0) {
@@ -99,7 +99,7 @@ export class RoomRepository {
       comision_anfitriona: validated.comision_anfitriona,
       fecha_crea: now
     });
-    
+
     return await this.getById(id);
   }
 
@@ -109,7 +109,7 @@ export class RoomRepository {
     // Validar duplicado por nombre (excluyendo el actual)
     if (validated.name) {
       const dup = await query<any[]>(
-        "SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?) AND id_habitacion != ?",
+        'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?) AND id_habitacion != ?',
         [validated.name, id]
       );
       if (dup.length > 0) {
@@ -129,19 +129,23 @@ export class RoomRepository {
 
   static async updateStatus(id: string, action: string): Promise<RoomType | null> {
     let newStatus;
-    if (action === "activate") newStatus = 1;
-    else if (action === "deactivate") newStatus = 0;
-    else if (action === "occupy") newStatus = 2;
-    else throw new ValidationError('Acción no válida', { action, allowed: ['activate', 'deactivate', 'occupy'] });
+    if (action === 'activate') newStatus = 1;
+    else if (action === 'deactivate') newStatus = 0;
+    else if (action === 'occupy') newStatus = 2;
+    else
+      throw new ValidationError('Acción no válida', {
+        action,
+        allowed: ['activate', 'deactivate', 'occupy']
+      });
 
-    await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, { 
+    await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, {
       estado: newStatus,
       fecha_mod: getNowInBusinessTimezone()
     });
     return await this.getById(id);
   }
 
-  static async delete(id: string): Promise<{ success: boolean, deactivated: boolean }> {
+  static async delete(id: string): Promise<{ success: boolean; deactivated: boolean }> {
     // Verificar referencias en servicios
     const refs = await query<any[]>(
       'SELECT COUNT(*) AS cnt FROM servicios WHERE habitacion_id = ?',
@@ -151,7 +155,7 @@ export class RoomRepository {
 
     if (count > 0) {
       // Si hay referencias, no eliminar: desactivar por seguridad
-      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, { 
+      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, {
         estado: 0,
         fecha_mod: getNowInBusinessTimezone()
       });
@@ -162,10 +166,10 @@ export class RoomRepository {
     return { success: true, deactivated: false };
   }
 
-  static async reorder(items: { id: string, display_order: number }[]): Promise<void> {
+  static async reorder(items: { id: string; display_order: number }[]): Promise<void> {
     const now = getNowInBusinessTimezone();
     for (const item of items) {
-      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', item.id, { 
+      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', item.id, {
         display_order: item.display_order,
         fecha_mod: now
       });

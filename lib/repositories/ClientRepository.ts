@@ -53,12 +53,15 @@ export class ClientRepository {
   }
 
   static async getById(id: string): Promise<ClientType | null> {
-    const clients = await query<any[]>(`
+    const clients = await query<any[]>(
+      `
       SELECT c.*, 
       COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
       FROM clientes c 
       WHERE c.id_cliente = ?
-    `, [id]);
+    `,
+      [id]
+    );
     return clients.length > 0 ? this.mapClientFromDB(clients[0]) : null;
   }
 
@@ -71,7 +74,9 @@ export class ClientRepository {
     await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [amount, id]);
   }
 
-  static async create(data: Pick<ClientType, 'run' | 'name' | 'lastName' | 'phone'>): Promise<ClientType | null> {
+  static async create(
+    data: Pick<ClientType, 'run' | 'name' | 'lastName' | 'phone'>
+  ): Promise<ClientType | null> {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
     await BaseRepository.insert(query, 'clientes', {
@@ -82,7 +87,7 @@ export class ClientRepository {
       telefono: data.phone || '',
       fecha_crea: now
     });
-    
+
     return await this.getById(id);
   }
 
@@ -105,7 +110,8 @@ export class ClientRepository {
   }
 
   static async getHistory(clientId: string): Promise<any[]> {
-    const moves = await query<any[]>(`
+    const moves = await query<any[]>(
+      `
       SELECT 
         id_movimiento as id,
         'CARGA' as category,
@@ -131,9 +137,12 @@ export class ClientRepository {
         metadatos as detalle
       FROM clientes_prepago_movimientos cpm
       WHERE cliente_id = ? AND tipo = 'CONSUMO'
-    `, [clientId, clientId]);
+    `,
+      [clientId, clientId]
+    );
 
-    const services = await query<any[]>(`
+    const services = await query<any[]>(
+      `
       SELECT 
         s.id_servicio as id,
         'SERVICIO' as category,
@@ -147,9 +156,12 @@ export class ClientRepository {
       FROM servicios s
       LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
       WHERE s.cliente_id = ? AND s.estado = 1
-    `, [clientId]);
+    `,
+      [clientId]
+    );
 
-    const sales = await query<any[]>(`
+    const sales = await query<any[]>(
+      `
       SELECT 
         v.id_venta as id,
         'CONSUMO' as category,
@@ -162,23 +174,31 @@ export class ClientRepository {
       FROM ventas v
       LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
       WHERE v.cliente_id = ? AND v.estado = 1
-    `, [clientId]);
+    `,
+      [clientId]
+    );
 
     // Enriquecer ventas con productos y anfitrionas
     for (const sale of sales) {
-      const products = await query<any[]>(`
+      const products = await query<any[]>(
+        `
         SELECT p.nombre, dv.cantidad
         FROM detalle_ventas dv
         JOIN productos p ON p.id_producto = dv.producto_id
         WHERE dv.venta_id = ?
-      `, [sale.id]);
+      `,
+        [sale.id]
+      );
 
-      const anfitrionas = await query<any[]>(`
+      const anfitrionas = await query<any[]>(
+        `
         SELECT u.nick
         FROM ventas_usuarios vu
         JOIN usuarios u ON u.id_usuario = vu.usuario_id
         WHERE vu.venta_id = ?
-      `, [sale.id]);
+      `,
+        [sale.id]
+      );
 
       sale.detalle = {
         habitacion: sale.habitacion_nombre,
@@ -205,16 +225,25 @@ export class ClientRepository {
       }))
     ];
 
-    return results.sort((a, b) => new Date(b.fecha_crea).getTime() - new Date(a.fecha_crea).getTime());
+    return results.sort(
+      (a, b) => new Date(b.fecha_crea).getTime() - new Date(a.fecha_crea).getTime()
+    );
   }
 
-  static async addPrepago(data: { cliente_id: string; monto: number; tipo: 'CARGA'; metodo_pago?: string; usuario_id?: string; metadatos?: any }): Promise<void> {
+  static async addPrepago(data: {
+    cliente_id: string;
+    monto: number;
+    tipo: 'CARGA';
+    metodo_pago?: string;
+    usuario_id?: string;
+    metadatos?: any;
+  }): Promise<void> {
     const moveId = generateUUID();
     const now = getNowInBusinessTimezone();
-    
+
     const { withTransaction } = await import('@/lib/database/db');
-    
-    await withTransaction(async (trx) => {
+
+    await withTransaction(async trx => {
       await BaseRepository.insert(trx, 'clientes_prepago_movimientos', {
         id_movimiento: moveId,
         cliente_id: data.cliente_id,
@@ -225,8 +254,11 @@ export class ClientRepository {
         fecha_crea: now,
         metadatos: data.metadatos ? JSON.stringify(data.metadatos) : null
       });
-      
-      await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [data.monto, data.cliente_id]);
+
+      await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
+        data.monto,
+        data.cliente_id
+      ]);
     });
   }
 }

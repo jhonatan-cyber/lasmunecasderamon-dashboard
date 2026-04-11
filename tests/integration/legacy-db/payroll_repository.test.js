@@ -3,41 +3,41 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
-const withTransactionMock = async (callback) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    await connection.beginTransaction();
-    try {
-        const trx = async (sql, params = []) => {
-            return await connection.execute(sql.replace(/@/g, ''), params);
-        };
-        const result = await callback(trx);
-        await connection.commit();
-        return result;
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        await connection.end();
-    }
+const withTransactionMock = async callback => {
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  await connection.beginTransaction();
+  try {
+    const trx = async (sql, params = []) => {
+      return await connection.execute(sql.replace(/@/g, ''), params);
+    };
+    const result = await callback(trx);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.end();
+  }
 };
 
 const PAYROLL_SQL = `
@@ -61,52 +61,78 @@ LEFT JOIN (SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas FROM
 GROUP BY U.id_usuario HAVING total > 0`;
 
 class PayrollRepository {
-    static async getSummary() {
-        return await queryMock(PAYROLL_SQL, []);
-    }
+  static async getSummary() {
+    return await queryMock(PAYROLL_SQL, []);
+  }
 
-    static async pay(userId) {
-        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        await withTransactionMock(async (trx) => {
-            await trx('UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1', [now, userId]);
-            await trx('UPDATE detalle_comisiones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [now, userId]);
-            await trx('UPDATE ventas SET estado = 3, fecha_mod = ? WHERE estado = 1 AND id_venta IN (SELECT c.venta_id FROM comisiones c INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision WHERE dc.usuario_id = ? AND c.venta_id <> 0)', [now, userId]);
-            await trx('UPDATE servicios SET estado = 4, fecha_mod = ? WHERE estado = 1 AND id_servicio IN (SELECT ds.servicio_id FROM detalle_servicios ds WHERE ds.usuario_id = ?)', [now, userId]);
-            await trx('UPDATE detalle_propinas SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [now, userId]);
-            await trx('UPDATE propinas SET estado = 0, fecha_mod = ? WHERE estado = 1 AND id_propina IN (SELECT DISTINCT dp.propina_id FROM detalle_propinas dp WHERE dp.propina_id IN (SELECT DISTINCT propina_id FROM detalle_propinas WHERE usuario_id = ?) AND NOT EXISTS (SELECT 1 FROM detalle_propinas dp2 WHERE dp2.propina_id = dp.propina_id AND dp2.estado = 1))', [now, userId]);
-            await trx('UPDATE anticipos SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [now, userId]);
-            await trx('UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [now, userId]);
-            await trx('UPDATE gratificaciones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1', [now, userId]);
-        });
-    }
+  static async pay(userId) {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    await withTransactionMock(async trx => {
+      await trx(
+        'UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE detalle_comisiones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE ventas SET estado = 3, fecha_mod = ? WHERE estado = 1 AND id_venta IN (SELECT c.venta_id FROM comisiones c INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision WHERE dc.usuario_id = ? AND c.venta_id <> 0)',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE servicios SET estado = 4, fecha_mod = ? WHERE estado = 1 AND id_servicio IN (SELECT ds.servicio_id FROM detalle_servicios ds WHERE ds.usuario_id = ?)',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE detalle_propinas SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE propinas SET estado = 0, fecha_mod = ? WHERE estado = 1 AND id_propina IN (SELECT DISTINCT dp.propina_id FROM detalle_propinas dp WHERE dp.propina_id IN (SELECT DISTINCT propina_id FROM detalle_propinas WHERE usuario_id = ?) AND NOT EXISTS (SELECT 1 FROM detalle_propinas dp2 WHERE dp2.propina_id = dp.propina_id AND dp2.estado = 1))',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE anticipos SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+        [now, userId]
+      );
+      await trx(
+        'UPDATE gratificaciones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+        [now, userId]
+      );
+    });
+  }
 }
 
 async function runTests() {
-    console.log('--- INICIANDO PRUEBAS UNITARIAS: PayrollRepository ---');
-    try {
-        console.log('\n[1] Probando getSummary()...');
-        const summary = await PayrollRepository.getSummary();
-        console.log(`Summary rows count: ${summary.length}`);
-        if (Array.isArray(summary)) console.log('âœ… getSummary() OK');
+  console.log('--- INICIANDO PRUEBAS UNITARIAS: PayrollRepository ---');
+  try {
+    console.log('\n[1] Probando getSummary()...');
+    const summary = await PayrollRepository.getSummary();
+    console.log(`Summary rows count: ${summary.length}`);
+    if (Array.isArray(summary)) console.log('âœ… getSummary() OK');
 
-        console.log('\n[2] Probando pay()...');
-        const users = await queryMock('SELECT id_usuario FROM usuarios LIMIT 1');
-        const userId = users[0]?.id_usuario;
-        if (!userId) {
-            console.log('âš ï¸ No hay usuarios en la DB para probar pay(). Saltando...');
-        } else {
-            // No podemos pagar de verdad sin afectar datos reales, pero como es un test unitario mockeado contra DB de desarrollo
-            // Vamos a intentar ejecutarlo. El estado 1 es activo, pay lo pasa a 0.
-            await PayrollRepository.pay(userId);
-            console.log(`âœ… pay() ejecutado para usuario ${userId}`);
-        }
-
-        console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
-    } catch (error) {
-        console.error('\nâŒ ERROR:', error);
-        process.exit(1);
+    console.log('\n[2] Probando pay()...');
+    const users = await queryMock('SELECT id_usuario FROM usuarios LIMIT 1');
+    const userId = users[0]?.id_usuario;
+    if (!userId) {
+      console.log('âš ï¸ No hay usuarios en la DB para probar pay(). Saltando...');
+    } else {
+      // No podemos pagar de verdad sin afectar datos reales, pero como es un test unitario mockeado contra DB de desarrollo
+      // Vamos a intentar ejecutarlo. El estado 1 es activo, pay lo pasa a 0.
+      await PayrollRepository.pay(userId);
+      console.log(`âœ… pay() ejecutado para usuario ${userId}`);
     }
+
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+  } catch (error) {
+    console.error('\nâŒ ERROR:', error);
+    process.exit(1);
+  }
 }
 
 runTests();
-

@@ -3,36 +3,42 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 class CalendarRepository {
   static async getData(startDate, endDate, type) {
     if (type === 'servicios') {
-      return await queryMock(`
+      return await queryMock(
+        `
         SELECT S.*, H.nombre AS habitacion
         FROM servicios S
         LEFT JOIN habitaciones H ON S.habitacion_id = H.id_habitacion
         WHERE S.fecha_crea >= ? AND S.fecha_crea <= ?
-      `, [startDate + ' 00:00:00', endDate + ' 23:59:59']);
+      `,
+        [startDate + ' 00:00:00', endDate + ' 23:59:59']
+      );
     } else {
-      return await queryMock(`
+      return await queryMock(
+        `
         SELECT V.*, H.nombre AS habitacion
         FROM ventas V
         LEFT JOIN habitaciones H ON V.habitacion_id = H.id_habitacion
         WHERE V.fecha_crea >= ? AND V.fecha_crea <= ?
-      `, [startDate + ' 00:00:00', endDate + ' 23:59:59']);
+      `,
+        [startDate + ' 00:00:00', endDate + ' 23:59:59']
+      );
     }
   }
 }
@@ -42,7 +48,7 @@ async function testCalendarRepository() {
 
   try {
     const today = new Date().toISOString().split('T')[0];
-    
+
     console.log('Probando getData() tipo servicios...');
     const svcData = await CalendarRepository.getData(today, today, 'servicios');
     if (!Array.isArray(svcData)) throw new Error('getData() servicios debe devolver un array');
@@ -61,4 +67,3 @@ async function testCalendarRepository() {
 }
 
 testCalendarRepository();
-

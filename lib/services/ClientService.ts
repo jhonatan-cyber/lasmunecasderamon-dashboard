@@ -14,7 +14,6 @@ type PrepagoInput = {
 };
 
 export class ClientService {
-
   static async createClient(body: ClientCreateInput) {
     const validated = ClientSchema.omit({ id: true }).parse(body);
     return await ClientRepository.create(validated);

@@ -1,5 +1,4 @@
-﻿  
-'use client';
+﻿'use client';
 
 import { useState, useCallback, useMemo } from 'react';
 import { useServicios, useAllServicios } from '@/hooks/servicios/useServicios';
@@ -10,10 +9,10 @@ import { ServicioWithDetails } from '@/types/servicio';
 export function useServiceLogic() {
   const { servicios, loading, getServicios, removeServicioFromState, patchServicio } =
     useServicios();
-  
+
   // Obtener todos los servicios (sin filtro por estado) para los stats
   const { servicios: allServicios, loading: loadingAll } = useAllServicios();
-  
+
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,10 +43,10 @@ export function useServiceLogic() {
       try {
         // Usar patchServicio que ya implementa actualizaciones optimistas
         await patchServicio(servicioId, { estado: 1 }); // 1 = Terminado
-        
+
         // Remover del estado local inmediatamente para que desaparezca de la vista
         removeServicioFromState(servicioId);
-        
+
         toast.success('Servicio finalizado exitosamente');
       } catch (error) {
         console.error('[useServiceLogic] Error al finalizar:', error);
@@ -133,4 +132,3 @@ export function useServiceLogic() {
     getServicios: (p0: boolean) => getServicios(true)
   };
 }
-

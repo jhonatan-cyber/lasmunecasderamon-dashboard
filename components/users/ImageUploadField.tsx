@@ -42,26 +42,29 @@ function ImageUploadFieldComponent({
     };
   }, [previewUrl]);
 
-  const processFile = useCallback((file: File, onChange: (value: string) => void) => {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      alert('Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)');
-      return;
-    }
+  const processFile = useCallback(
+    (file: File, onChange: (value: string) => void) => {
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)');
+        return;
+      }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no puede superar los 5MB');
-      return;
-    }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar los 5MB');
+        return;
+      }
 
-    onImageChange(file);
-    if (previewUrl && previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(URL.createObjectURL(file));
-    onChange(file.name);
-    setUrlValue('');
-  }, [onImageChange, previewUrl]);
+      onImageChange(file);
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(URL.createObjectURL(file));
+      onChange(file.name);
+      setUrlValue('');
+    },
+    [onImageChange, previewUrl]
+  );
 
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -120,22 +123,22 @@ function ImageUploadFieldComponent({
             type='file'
             accept='image/*'
             className='hidden'
-            onChange={(e) => handleImageChange(e, onChange)}
+            onChange={e => handleImageChange(e, onChange)}
             ref={fileInputRef}
             name={name}
             onBlur={onBlur}
           />
 
-          <div 
+          <div
             className={cn(
-              "relative w-full max-w-[200px] aspect-square rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group overflow-hidden shadow-sm",
-              isDragging 
-                ? "border-blue-500 bg-blue-50 scale-105" 
-                : "border-gray-200 hover:border-gray-400 bg-gray-50/50"
+              'relative w-full max-w-[200px] aspect-square rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group overflow-hidden shadow-sm',
+              isDragging
+                ? 'border-blue-500 bg-blue-50 scale-105'
+                : 'border-gray-200 hover:border-gray-400 bg-gray-50/50'
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, onChange)}
+            onDrop={e => handleDrop(e, onChange)}
             onClick={() => fileInputRef.current?.click()}
           >
             {previewUrl ? (
@@ -147,25 +150,32 @@ function ImageUploadFieldComponent({
                   sizes='200px'
                   className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2">
-                  <UploadCloud size={24} className="animate-bounce" />
-                  <span className="text-xs font-medium">Cambiar imagen</span>
+                <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2'>
+                  <UploadCloud size={24} className='animate-bounce' />
+                  <span className='text-xs font-medium'>Cambiar imagen</span>
                 </div>
               </>
             ) : (
               <div className='flex flex-col items-center justify-center p-4 text-center text-gray-400 gap-2'>
-                <div className={cn(
-                  "p-3 rounded-full bg-white shadow-sm border transition-colors",
-                  isDragging ? "text-blue-500 border-blue-200" : "text-gray-400 border-gray-100"
-                )}>
+                <div
+                  className={cn(
+                    'p-3 rounded-full bg-white shadow-sm border transition-colors',
+                    isDragging ? 'text-blue-500 border-blue-200' : 'text-gray-400 border-gray-100'
+                  )}
+                >
                   {isDragging ? <UploadCloud size={32} /> : <ImageIcon size={32} />}
                 </div>
                 <div>
-                  <p className='text-sm font-semibold text-gray-700 dark:text-gray-200'>Subir foto</p>
+                  <p className='text-sm font-semibold text-gray-700 dark:text-gray-200'>
+                    Subir foto
+                  </p>
                   <p className='text-xs text-gray-400 mt-1 px-2'>Arrastra una imagen o haz clic</p>
                   <div className='mt-3 flex flex-wrap justify-center gap-1.5 px-4'>
-                    {['JPG', 'PNG', 'WEBP', 'GIF'].map((ext) => (
-                      <span key={ext} className='px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-[9px] font-bold text-gray-500 dark:text-gray-400 rounded-md border border-gray-200 dark:border-gray-700'>
+                    {['JPG', 'PNG', 'WEBP', 'GIF'].map(ext => (
+                      <span
+                        key={ext}
+                        className='px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-[9px] font-bold text-gray-500 dark:text-gray-400 rounded-md border border-gray-200 dark:border-gray-700'
+                      >
                         {ext}
                       </span>
                     ))}
@@ -178,22 +188,22 @@ function ImageUploadFieldComponent({
             )}
           </div>
 
-          <div className="flex flex-col w-full max-w-[240px] items-center gap-2">
+          <div className='flex flex-col w-full max-w-[240px] items-center gap-2'>
             {!showUrlInput ? (
-              <div className="flex gap-2">
+              <div className='flex gap-2'>
                 {previewUrl && (
                   <Button
                     type='button'
                     variant='ghost'
                     size='sm'
                     className='text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 dark:border-red-900/40 rounded-full h-8 px-3 transition-colors'
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       handleRemoveImage(onChange);
                     }}
                   >
                     <Trash2 className='w-3 h-3 mr-1' />
-                    <span className="text-xs font-medium">Quitar</span>
+                    <span className='text-xs font-medium'>Quitar</span>
                   </Button>
                 )}
                 {!previewUrl && (
@@ -205,21 +215,21 @@ function ImageUploadFieldComponent({
                     onClick={() => setShowUrlInput(true)}
                   >
                     <LinkIcon className='w-3 h-3 mr-1.5' />
-                    <span className="text-xs font-medium">Usar URL</span>
+                    <span className='text-xs font-medium'>Usar URL</span>
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="w-full flex flex-col gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+              <div className='w-full flex flex-col gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-top-2'>
+                <div className='flex items-center gap-2'>
+                  <div className='relative flex-1'>
+                    <LinkIcon className='absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400' />
                     <Input
-                      placeholder="https://ejemplo.com/foto.jpg"
-                      className="h-8 pl-8 text-xs rounded-lg"
+                      placeholder='https://ejemplo.com/foto.jpg'
+                      className='h-8 pl-8 text-xs rounded-lg'
                       value={urlValue}
-                      onChange={(e) => setUrlValue(e.target.value)}
-                      onKeyDown={(e) => {
+                      onChange={e => setUrlValue(e.target.value)}
+                      onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           handleUrlSubmit(onChange);
@@ -227,20 +237,20 @@ function ImageUploadFieldComponent({
                       }}
                     />
                   </div>
-                  <Button 
-                    type="button" 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-8 w-8 rounded-lg"
+                  <Button
+                    type='button'
+                    size='icon'
+                    variant='ghost'
+                    className='h-8 w-8 rounded-lg'
                     onClick={() => setShowUrlInput(false)}
                   >
-                    <X className="w-4 h-4" />
+                    <X className='w-4 h-4' />
                   </Button>
                 </div>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  className="w-full h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs"
+                <Button
+                  type='button'
+                  size='sm'
+                  className='w-full h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs'
                   onClick={() => handleUrlSubmit(onChange)}
                 >
                   Confirmar URL

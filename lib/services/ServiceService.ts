@@ -12,7 +12,7 @@ import {
   validatePagosMixtos,
   calcularDeltasCaja,
   procesarPrepago,
-  type MixedPayment,
+  type MixedPayment
 } from '@/lib/business/pagosMixtos';
 
 type ServiceCreateInput = z.input<typeof ServiceCreateSchema>;
@@ -68,7 +68,7 @@ export class ServiceService {
           createdBy,
           now,
           codigo,
-          concepto: `Pago servicio ${codigo}`,
+          concepto: `Pago servicio ${codigo}`
         });
       }
 
@@ -92,9 +92,7 @@ export class ServiceService {
       });
 
       if (v.habitacion_id) {
-        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
-          v.habitacion_id
-        ]);
+        await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [v.habitacion_id]);
       }
 
       await RoomManager.pauseConflictingServices(trx, v.usuarios, servicioId);

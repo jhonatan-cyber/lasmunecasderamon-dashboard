@@ -4,12 +4,12 @@ import {
   validatePagosMixtos,
   calcularDeltasCaja,
   procesarPrepago,
-  type MixedPayment,
+  type MixedPayment
 } from '@/lib/business/pagosMixtos';
 import { ValidationError, BusinessError } from '@/lib/errors/errors';
 
 vi.mock('@/lib/database/db', () => ({
-  generateUUID: () => 'mock-uuid-1234',
+  generateUUID: () => 'mock-uuid-1234'
 }));
 
 // ─── parsePagosMixtos ────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ describe('parsePagosMixtos', () => {
     const raw = [
       { metodo: '', monto: 1000 },
       { metodo: 'efectivo', monto: 0 },
-      { metodo: null, monto: 500 },
+      { metodo: null, monto: 500 }
     ];
     expect(parsePagosMixtos(raw)).toEqual([]);
   });
@@ -34,11 +34,11 @@ describe('parsePagosMixtos', () => {
   it('normaliza y retorna pagos válidos', () => {
     const raw = [
       { metodo: 'efectivo', monto: 5000 },
-      { metodo: 'tarjeta', monto: 3000 },
+      { metodo: 'tarjeta', monto: 3000 }
     ];
     expect(parsePagosMixtos(raw)).toEqual([
       { metodo: 'efectivo', monto: 5000 },
-      { metodo: 'tarjeta', monto: 3000 },
+      { metodo: 'tarjeta', monto: 3000 }
     ]);
   });
 
@@ -68,7 +68,7 @@ describe('validatePagosMixtos', () => {
   it('lanza ValidationError si la suma no coincide con el total (diferencia > 1)', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'efectivo', monto: 3000 },
-      { metodo: 'tarjeta', monto: 1000 },
+      { metodo: 'tarjeta', monto: 1000 }
     ];
     expect(() => validatePagosMixtos(pagos, 5000)).toThrow(ValidationError);
     expect(() => validatePagosMixtos(pagos, 5000)).toThrow('igual al total');
@@ -77,7 +77,7 @@ describe('validatePagosMixtos', () => {
   it('no lanza si la suma coincide exactamente', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'efectivo', monto: 3000 },
-      { metodo: 'tarjeta', monto: 2000 },
+      { metodo: 'tarjeta', monto: 2000 }
     ];
     expect(() => validatePagosMixtos(pagos, 5000)).not.toThrow();
   });
@@ -85,7 +85,7 @@ describe('validatePagosMixtos', () => {
   it('no lanza si la diferencia es <= 1 (tolerancia de redondeo)', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'efectivo', monto: 3000 },
-      { metodo: 'tarjeta', monto: 2001 },
+      { metodo: 'tarjeta', monto: 2001 }
     ];
     expect(() => validatePagosMixtos(pagos, 5001)).not.toThrow();
   });
@@ -94,7 +94,7 @@ describe('validatePagosMixtos', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'efectivo', monto: 2000 },
       { metodo: 'tarjeta', monto: 2000 },
-      { metodo: 'transferencia', monto: 1000 },
+      { metodo: 'transferencia', monto: 1000 }
     ];
     expect(() => validatePagosMixtos(pagos, 5000)).not.toThrow();
   });
@@ -107,12 +107,12 @@ describe('calcularDeltasCaja', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'efectivo', monto: 3000 },
       { metodo: 'tarjeta', monto: 1500 },
-      { metodo: 'transferencia', monto: 500 },
+      { metodo: 'transferencia', monto: 500 }
     ];
     expect(calcularDeltasCaja(pagos)).toEqual({
       efectivo: 3000,
       tarjeta: 1500,
-      transferencia: 500,
+      transferencia: 500
     });
   });
 
@@ -120,24 +120,24 @@ describe('calcularDeltasCaja', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'efectivo', monto: 1000 },
       { metodo: 'efectivo', monto: 2000 },
-      { metodo: 'tarjeta', monto: 500 },
+      { metodo: 'tarjeta', monto: 500 }
     ];
     expect(calcularDeltasCaja(pagos)).toEqual({
       efectivo: 3000,
       tarjeta: 500,
-      transferencia: 0,
+      transferencia: 0
     });
   });
 
   it('ignora métodos desconocidos (prepago, etc.)', () => {
     const pagos: MixedPayment[] = [
       { metodo: 'prepago', monto: 2000 },
-      { metodo: 'efectivo', monto: 1000 },
+      { metodo: 'efectivo', monto: 1000 }
     ];
     expect(calcularDeltasCaja(pagos)).toEqual({
       efectivo: 1000,
       tarjeta: 0,
-      transferencia: 0,
+      transferencia: 0
     });
   });
 
@@ -145,7 +145,7 @@ describe('calcularDeltasCaja', () => {
     expect(calcularDeltasCaja([])).toEqual({
       efectivo: 0,
       tarjeta: 0,
-      transferencia: 0,
+      transferencia: 0
     });
   });
 });
@@ -161,7 +161,7 @@ describe('procesarPrepago', () => {
     createdBy: 'user-1',
     now: '2026-04-09 10:00:00',
     codigo: 'VNT-001',
-    concepto: 'Pago venta VNT-001',
+    concepto: 'Pago venta VNT-001'
   };
 
   it('retorna 0 si el saldo disponible es 0', async () => {
@@ -178,27 +178,38 @@ describe('procesarPrepago', () => {
   });
 
   it('descuenta el saldo completo si prepagoSolicitado es null y saldo < total', async () => {
-    const trx = vi.fn()
+    const trx = vi
+      .fn()
       .mockResolvedValueOnce([{ saldo: 2000 }]) // SELECT saldo
-      .mockResolvedValueOnce([])                 // UPDATE clientes
-      .mockResolvedValueOnce([]);                // INSERT movimiento
+      .mockResolvedValueOnce([]) // UPDATE clientes
+      .mockResolvedValueOnce([]); // INSERT movimiento
 
-    const result = await procesarPrepago(trx as any, { ...baseParams, total: 5000, prepagoSolicitado: null });
+    const result = await procesarPrepago(trx as any, {
+      ...baseParams,
+      total: 5000,
+      prepagoSolicitado: null
+    });
     expect(result).toBe(2000); // min(2000, 5000)
   });
 
   it('descuenta el total si prepagoSolicitado es null y saldo >= total', async () => {
-    const trx = vi.fn()
+    const trx = vi
+      .fn()
       .mockResolvedValueOnce([{ saldo: 10000 }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
-    const result = await procesarPrepago(trx as any, { ...baseParams, total: 5000, prepagoSolicitado: null });
+    const result = await procesarPrepago(trx as any, {
+      ...baseParams,
+      total: 5000,
+      prepagoSolicitado: null
+    });
     expect(result).toBe(5000); // min(10000, 5000)
   });
 
   it('descuenta el monto exacto si prepagoSolicitado está definido', async () => {
-    const trx = vi.fn()
+    const trx = vi
+      .fn()
       .mockResolvedValueOnce([{ saldo: 10000 }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
@@ -208,8 +219,9 @@ describe('procesarPrepago', () => {
   });
 
   it('lanza BusinessError si prepagoSolicitado > saldo disponible', async () => {
-    const trx = vi.fn()
-      .mockResolvedValueOnce([{ saldo: 1000 }])  // primera llamada
+    const trx = vi
+      .fn()
+      .mockResolvedValueOnce([{ saldo: 1000 }]) // primera llamada
       .mockResolvedValueOnce([{ saldo: 1000 }]); // segunda llamada (el test llama dos veces)
 
     await expect(
@@ -223,7 +235,8 @@ describe('procesarPrepago', () => {
   });
 
   it('ejecuta UPDATE e INSERT cuando hay prepago', async () => {
-    const trx = vi.fn()
+    const trx = vi
+      .fn()
       .mockResolvedValueOnce([{ saldo: 5000 }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);

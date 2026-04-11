@@ -3,46 +3,46 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 const BaseRepository = {
-    insert: async (trx, table, data) => {
-        const keys = Object.keys(data).filter(k => data[k] !== undefined);
-        const columns = keys.join(', ');
-        const placeholders = keys.map(() => '?').join(', ');
-        const values = keys.map(k => data[k]);
-        const sql = `INSERT INTO ${table} (${columns}) VALUES (${placeholders})`;
-        await queryMock(sql, values);
-    },
-    update: async (trx, table, idColumn, idValue, data) => {
-        const keys = Object.keys(data).filter(k => data[k] !== undefined);
-        if (keys.length === 0) return;
-        const setClause = keys.map(k => `${k} = ?`).join(', ');
-        const values = keys.map(k => data[k]).concat(idValue);
-        const sql = `UPDATE ${table} SET ${setClause} WHERE ${idColumn} = ?`;
-        await queryMock(sql, values);
-    },
-    delete: async (trx, table, idColumn, idValue) => {
-        const sql = `DELETE FROM ${table} WHERE ${idColumn} = ?`;
-        await queryMock(sql, [idValue]);
-    },
-    findOne: async (trx, table, column, value) => {
-        const sql = `SELECT * FROM ${table} WHERE ${column} = ? LIMIT 1`;
-        const results = await queryMock(sql, [value]);
-        return (results && Array.isArray(results) && results.length > 0) ? results[0] : null;
-    }
+  insert: async (trx, table, data) => {
+    const keys = Object.keys(data).filter(k => data[k] !== undefined);
+    const columns = keys.join(', ');
+    const placeholders = keys.map(() => '?').join(', ');
+    const values = keys.map(k => data[k]);
+    const sql = `INSERT INTO ${table} (${columns}) VALUES (${placeholders})`;
+    await queryMock(sql, values);
+  },
+  update: async (trx, table, idColumn, idValue, data) => {
+    const keys = Object.keys(data).filter(k => data[k] !== undefined);
+    if (keys.length === 0) return;
+    const setClause = keys.map(k => `${k} = ?`).join(', ');
+    const values = keys.map(k => data[k]).concat(idValue);
+    const sql = `UPDATE ${table} SET ${setClause} WHERE ${idColumn} = ?`;
+    await queryMock(sql, values);
+  },
+  delete: async (trx, table, idColumn, idValue) => {
+    const sql = `DELETE FROM ${table} WHERE ${idColumn} = ?`;
+    await queryMock(sql, [idValue]);
+  },
+  findOne: async (trx, table, column, value) => {
+    const sql = `SELECT * FROM ${table} WHERE ${column} = ? LIMIT 1`;
+    const results = await queryMock(sql, [value]);
+    return results && Array.isArray(results) && results.length > 0 ? results[0] : null;
+  }
 };
 
 async function testBaseRepository() {
@@ -59,7 +59,7 @@ async function testBaseRepository() {
     // 1. Test insert
     console.log('1. Probando insert...');
     await BaseRepository.insert(null, table, testData);
-    
+
     // 2. Test findOne
     console.log('2. Probando findOne...');
     const found = await BaseRepository.findOne(null, table, 'id_rol', testData.id_rol);
@@ -96,4 +96,3 @@ async function testBaseRepository() {
 }
 
 testBaseRepository();
-

@@ -31,7 +31,7 @@ export const formatCurrency = (
   return new Intl.NumberFormat('es-CL', {
     style: 'decimal',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(numValue);
 };
 
@@ -63,7 +63,7 @@ export const formatCurrencyCLP = (value: number | string | null | undefined): st
   }
 
   return `$${new Intl.NumberFormat('es-CL', {
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(Math.round(numValue))}`;
 };
 
@@ -92,7 +92,7 @@ export const formatDate = (dateString: string | null | undefined): string => {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      timeZone: SYSTEM_TIMEZONE,
+      timeZone: SYSTEM_TIMEZONE
     }).format(date);
   } catch {
     return 'Fecha invalida';
@@ -106,7 +106,7 @@ export function formatFechaLarga(fecha: string | Date) {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
-      timeZone: SYSTEM_TIMEZONE,
+      timeZone: SYSTEM_TIMEZONE
     })
       .format(date)
       .toLowerCase();
@@ -125,7 +125,7 @@ export function formatFechaConHora(fecha: string | Date) {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-      timeZone: SYSTEM_TIMEZONE,
+      timeZone: SYSTEM_TIMEZONE
     })
       .format(date)
       .toLowerCase();
@@ -151,7 +151,7 @@ export function formatSoloHora(fecha: string | Date) {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-      timeZone: SYSTEM_TIMEZONE,
+      timeZone: SYSTEM_TIMEZONE
     }).format(date);
   } catch {
     return 'Hora no valida';
@@ -187,7 +187,9 @@ export const formatCurrencyAbbreviated = (value: number | string | null | undefi
     return `${sign}${thousands.toFixed(1)}K`;
   }
 
-  return `${sign}$${Math.round(absValue).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+  return `${sign}$${Math.round(absValue)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 };
 export const toTitleCase = (str: string): string => {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());

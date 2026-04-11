@@ -7,12 +7,12 @@ vi.mock('@/lib/repositories/ProductRepository', () => ({
     getByCodeOrName: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
-    update: vi.fn(),
-  },
+    update: vi.fn()
+  }
 }));
 
 vi.mock('@/lib/utils/logger', () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
@@ -23,7 +23,7 @@ const validProduct = {
   category_id: 'cat-1',
   price: 15000,
   commission: 2000,
-  status: 1,
+  status: 1
 };
 
 beforeEach(() => {
@@ -37,7 +37,9 @@ describe('ProductService.createProduct', () => {
     vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue({ id: 'existing-1' } as any);
 
     await expect(ProductService.createProduct(validProduct)).rejects.toThrow(ConflictError);
-    await expect(ProductService.createProduct(validProduct)).rejects.toThrow('mismo código o nombre');
+    await expect(ProductService.createProduct(validProduct)).rejects.toThrow(
+      'mismo código o nombre'
+    );
   });
 
   it('crea el producto si no existe duplicado', async () => {
@@ -59,21 +61,24 @@ describe('ProductService.createProduct', () => {
 
     await ProductService.createProduct(validProduct);
 
-    expect(ProductRepository.create).toHaveBeenCalledWith(
-      expect.anything(),
-      'default.png'
-    );
+    expect(ProductRepository.create).toHaveBeenCalledWith(expect.anything(), 'default.png');
   });
 
   it('normaliza category_id desde categoryId', async () => {
     vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
     vi.mocked(ProductRepository.create).mockResolvedValue({ id: 'new-1' } as any);
 
-    const bodyWithCategoryId = { ...validProduct, category_id: undefined as any, categoryId: 'cat-2' };
+    const bodyWithCategoryId = {
+      ...validProduct,
+      category_id: undefined as any,
+      categoryId: 'cat-2'
+    };
     await ProductService.createProduct(bodyWithCategoryId);
 
     expect(ProductRepository.getByCodeOrName).toHaveBeenCalledWith(
-      'PROD-001', 'Whisky Premium', 'cat-2'
+      'PROD-001',
+      'Whisky Premium',
+      'cat-2'
     );
   });
 });
@@ -81,7 +86,13 @@ describe('ProductService.createProduct', () => {
 // ─── updateProduct ───────────────────────────────────────────────────────────
 
 describe('ProductService.updateProduct', () => {
-  const existingProduct = { id: 'prod-1', code: 'PROD-001', name: 'Whisky', category_id: 'cat-1', foto: 'old.jpg' };
+  const existingProduct = {
+    id: 'prod-1',
+    code: 'PROD-001',
+    name: 'Whisky',
+    category_id: 'cat-1',
+    foto: 'old.jpg'
+  };
 
   it('lanza ConflictError si otro producto tiene el mismo código/nombre', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue(existingProduct as any);
@@ -109,11 +120,7 @@ describe('ProductService.updateProduct', () => {
 
     await ProductService.updateProduct('prod-1', { name: 'Nuevo nombre' });
 
-    expect(ProductRepository.update).toHaveBeenCalledWith(
-      'prod-1',
-      expect.anything(),
-      'old.jpg'
-    );
+    expect(ProductRepository.update).toHaveBeenCalledWith('prod-1', expect.anything(), 'old.jpg');
   });
 
   it('usa la nueva foto si se pasa fotoName', async () => {
@@ -123,10 +130,6 @@ describe('ProductService.updateProduct', () => {
 
     await ProductService.updateProduct('prod-1', { name: 'Nuevo nombre' }, 'nueva.jpg');
 
-    expect(ProductRepository.update).toHaveBeenCalledWith(
-      'prod-1',
-      expect.anything(),
-      'nueva.jpg'
-    );
+    expect(ProductRepository.update).toHaveBeenCalledWith('prod-1', expect.anything(), 'nueva.jpg');
   });
 });

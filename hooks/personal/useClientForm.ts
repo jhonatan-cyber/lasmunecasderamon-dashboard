@@ -8,7 +8,7 @@ const clientFormSchema = z.object({
   run: z.string().optional().or(z.literal('')),
   name: z.string().min(2, 'Mínimo 2 caracteres'),
   lastName: z.string().min(2, 'Mínimo 2 caracteres'),
-  phone: z.string().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal(''))
 });
 
 export type ClientFormValues = z.infer<typeof clientFormSchema>;
@@ -22,7 +22,7 @@ interface UseClientFormProps {
 export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps) => {
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
-    defaultValues: clientData,
+    defaultValues: clientData
   });
 
   const { reset, handleSubmit, watch, setValue } = form;
@@ -67,13 +67,13 @@ export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps
     }
   }, [lastNameValue, setValue]);
 
-  const onFormSubmit = handleSubmit((data) => {
+  const onFormSubmit = handleSubmit(data => {
     const cleanData = {
       ...data,
       name: data.name.trim(),
       lastName: data.lastName.trim(),
       run: data.run?.trim() || '',
-      phone: data.phone?.trim() || '',
+      phone: data.phone?.trim() || ''
     };
     onSubmit(cleanData);
   });
@@ -83,7 +83,6 @@ export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps
     onFormSubmit,
     errors: form.formState.errors,
     register: form.register,
-    isLoading: false, // Podríamos manejarlo aquí o pasarlo por props
-    
+    isLoading: false // Podríamos manejarlo aquí o pasarlo por props
   };
 };

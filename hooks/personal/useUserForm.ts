@@ -69,9 +69,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
     if (!value) return '';
     return value
       .split(' ')
-      .map(word =>
-        word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
-      )
+      .map(word => (word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''))
       .join(' ');
   }, []);
 
@@ -165,7 +163,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');
       descuento.setFormattedValue(user.discount ? descuento.formatNumber(user.discount) : '');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, form, mapEstadoCivilToSelect]);
 
   const handleFormSubmit = async (values: UserFormValues) => {
@@ -173,15 +171,24 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       setIsSubmitting(true);
 
       if (!values.name || !values.lastName) {
-        form.setError('name', { type: 'manual', message: !values.name ? 'El nombre es requerido' : '' });
-        form.setError('lastName', { type: 'manual', message: !values.lastName ? 'El apellido es requerido' : '' });
+        form.setError('name', {
+          type: 'manual',
+          message: !values.name ? 'El nombre es requerido' : ''
+        });
+        form.setError('lastName', {
+          type: 'manual',
+          message: !values.lastName ? 'El apellido es requerido' : ''
+        });
         return;
       }
 
       if (imageFile) {
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(imageFile.type)) {
-          form.setError('foto', { type: 'manual', message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)' });
+          form.setError('foto', {
+            type: 'manual',
+            message: 'Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)'
+          });
           return;
         }
         if (imageFile.size > 5 * 1024 * 1024) {
