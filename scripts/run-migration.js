@@ -24,11 +24,11 @@ async function runMigrations() {
 
     // 1. Verificar si la base de datos estÃ¡ vacÃ­a (chequeando por ejemplo la tabla 'usuarios')
     const [existingTables] = await connection.query("SHOW TABLES LIKE 'usuarios'");
-    
+
     if (existingTables.length === 0) {
       console.log('ðŸ“¦ Base de datos vacÃ­a detectada. Realizando importaciÃ³n inicial...');
       const baseSqlPath = path.join(__dirname, '../database/lasmunecasderamon.sql');
-      
+
       if (fs.existsSync(baseSqlPath)) {
         const baseSql = fs.readFileSync(baseSqlPath, 'utf8');
         // Separamos por bloques si es necesario o usamos multipleStatements: true
@@ -50,13 +50,14 @@ async function runMigrations() {
 
     // 3. Leer archivos de la carpeta migrations
     const migrationsDir = path.join(__dirname, '../migrations');
-    
+
     if (!fs.existsSync(migrationsDir)) {
       console.log('âš ï¸ Carpeta de migraciones no encontrada.');
       return;
     }
 
-    const files = fs.readdirSync(migrationsDir)
+    const files = fs
+      .readdirSync(migrationsDir)
       .filter(f => f.endsWith('.sql'))
       .sort();
 
@@ -67,23 +68,27 @@ async function runMigrations() {
 
     // 4. Ejecutar migraciones adicionales de la carpeta /migrations
     for (const file of files) {
-      const [rows] = await connection.query('SELECT id FROM _migrations WHERE filename = ?', [file]);
-      
+      const [rows] = await connection.query('SELECT id FROM _migrations WHERE filename = ?', [
+        file
+      ]);
+
       if (rows.length === 0) {
         console.log(`â³ Ejecutando migraciÃ³n: ${file}...`);
         const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
-        
+
         try {
           await connection.query(sql);
           await connection.query('INSERT INTO _migrations (filename) VALUES (?)', [file]);
           console.log(`âœ… MigraciÃ³n ${file} completada.`);
         } catch (err) {
-          console.log(`DEBUG: Error en migraciÃ³n ${file}. Code: ${err.code}, ErrNo: ${err.errno}, Message: ${err.message}`);
-          
+          console.log(
+            `DEBUG: Error en migraciÃ³n ${file}. Code: ${err.code}, ErrNo: ${err.errno}, Message: ${err.message}`
+          );
+
           // Si el error es una columna que ya existe, lo ignoramos amigablemente
-          const isDuplicateError = 
-            err.code === 'ER_DUP_FIELDNAME' || 
-            err.code === 'ER_TABLE_EXISTS_ERROR' || 
+          const isDuplicateError =
+            err.code === 'ER_DUP_FIELDNAME' ||
+            err.code === 'ER_TABLE_EXISTS_ERROR' ||
             err.code === 'ER_DUP_KEYNAME' ||
             err.code === 'ER_FK_DUP_NAME' ||
             err.code === 'ER_CANT_CREATE_TABLE' || // Agregado para MySQL errno 121
@@ -94,7 +99,9 @@ async function runMigrations() {
             err.message.includes('already exists');
 
           if (isDuplicateError) {
-            console.log(`â­ï¸ MigraciÃ³n ${file} ya parecÃ­a aplicada (Error de duplicado controlado: ${err.code || err.errno}). Marcando como hecha.`);
+            console.log(
+              `â­ï¸ MigraciÃ³n ${file} ya parecÃ­a aplicada (Error de duplicado controlado: ${err.code || err.errno}). Marcando como hecha.`
+            );
             await connection.query('INSERT INTO _migrations (filename) VALUES (?)', [file]);
           } else {
             console.error(`âŒ Error en migraciÃ³n ${file}:`, err.message);
@@ -107,7 +114,6 @@ async function runMigrations() {
     }
 
     console.log('ðŸ Proceso de migraciÃ³n finalizado exitosamente.');
-
   } catch (error) {
     console.error('âŒ Error fatal durante la migraciÃ³n:', error.message);
     process.exit(1);
@@ -117,4 +123,3 @@ async function runMigrations() {
 }
 
 runMigrations();
-

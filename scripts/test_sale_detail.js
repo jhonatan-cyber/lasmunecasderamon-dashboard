@@ -6,7 +6,7 @@ async function testSaleDetail() {
     // Buscar una venta con un pedido asociado para probar el garzon_nombre
     const { query } = require('./lib/database/db');
     const sales = await query('SELECT id_venta FROM ventas WHERE pedido_id IS NOT NULL LIMIT 1');
-    
+
     if (sales.length === 0) {
       console.log('No se encontraron ventas con pedido asociado para probar.');
       // Probar con cualquier venta
@@ -34,4 +34,3 @@ async function testSaleDetail() {
 }
 
 testSaleDetail();
-

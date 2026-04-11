@@ -23,7 +23,10 @@ export class TipRepository {
     );
 
     if (distribucionUsuarios.length === 0) {
-      throw new BusinessError('No hay usuarios disponibles para distribuir la propina', 'NO_USERS_FOR_TIP');
+      throw new BusinessError(
+        'No hay usuarios disponibles para distribuir la propina',
+        'NO_USERS_FOR_TIP'
+      );
     }
 
     const montoPorUsuario = monto / distribucionUsuarios.length;

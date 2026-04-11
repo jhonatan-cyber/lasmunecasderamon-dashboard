@@ -5,12 +5,12 @@ import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
 
 export class ProductRepository {
-  private static mapProductFromDB(row: any): ProductType & { 
-    categoria?: string,
-    nombre?: string,
-    precio?: number,
-    comision?: number,
-    id_producto?: string
+  private static mapProductFromDB(row: any): ProductType & {
+    categoria?: string;
+    nombre?: string;
+    precio?: number;
+    comision?: number;
+    id_producto?: string;
   } {
     return {
       ...ProductSchema.parse({
@@ -31,7 +31,7 @@ export class ProductRepository {
       nombre: row.nombre,
       precio: row.precio,
       comision: row.comision,
-      id_producto: row.id_producto,
+      id_producto: row.id_producto
     };
   }
 
@@ -58,9 +58,15 @@ export class ProductRepository {
     return row ? this.mapProductFromDB(row) : null;
   }
 
-  static async getByCodeOrName(code: string, name: string, categoryId: string | number): Promise<ProductType | null> {
-    const results = await query<any[]>('SELECT * FROM productos WHERE (codigo = ? OR (LOWER(nombre) = LOWER(?) AND categoria_id = ?)) LIMIT 1', 
-      [code, name, categoryId]);
+  static async getByCodeOrName(
+    code: string,
+    name: string,
+    categoryId: string | number
+  ): Promise<ProductType | null> {
+    const results = await query<any[]>(
+      'SELECT * FROM productos WHERE (codigo = ? OR (LOWER(nombre) = LOWER(?) AND categoria_id = ?)) LIMIT 1',
+      [code, name, categoryId]
+    );
     return results.length > 0 ? this.mapProductFromDB(results[0]) : null;
   }
 
@@ -79,11 +85,15 @@ export class ProductRepository {
       foto,
       fecha_crea: now
     });
-    
+
     return await this.getById(id);
   }
 
-  static async update(id: string, data: Partial<ProductType>, foto?: string): Promise<ProductType | null> {
+  static async update(
+    id: string,
+    data: Partial<ProductType>,
+    foto?: string
+  ): Promise<ProductType | null> {
     const updateData: any = {
       fecha_mod: getNowInBusinessTimezone()
     };
@@ -106,17 +116,20 @@ export class ProductRepository {
 
   static async search(term: string): Promise<ProductType[]> {
     const termWithWildcards = `%${term}%`;
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT p.*, c.nombre as categoria_nombre
       FROM productos p
       LEFT JOIN categorias c ON p.categoria_id = c.id_categoria
       WHERE p.nombre LIKE ? OR p.codigo LIKE ? OR c.nombre LIKE ?
       ORDER BY p.nombre ASC
-    `, [termWithWildcards, termWithWildcards, termWithWildcards]);
+    `,
+      [termWithWildcards, termWithWildcards, termWithWildcards]
+    );
     return results.map(row => this.mapProductFromDB(row));
   }
 
-  static async reorder(items: { id: string, display_order: number }[]): Promise<void> {
+  static async reorder(items: { id: string; display_order: number }[]): Promise<void> {
     const now = getNowInBusinessTimezone();
     for (const item of items) {
       await BaseRepository.update(query, 'productos', 'id_producto', item.id, {
@@ -130,4 +143,3 @@ export class ProductRepository {
     await BaseRepository.delete(query, 'productos', 'id_producto', id);
   }
 }
-

@@ -9,7 +9,10 @@ type CajaUpdateInput = Omit<z.input<typeof CajaUpdateSchema>, 'id_caja'>;
 export class CashRegisterService {
   static async openCaja(body: CajaOpenInput) {
     const validated = CajaOpenSchema.parse(body);
-    return await CashRegisterRepository.open(validated.usuario_id_apertura, validated.monto_apertura);
+    return await CashRegisterRepository.open(
+      validated.usuario_id_apertura,
+      validated.monto_apertura
+    );
   }
 
   static async closeCaja(body: CajaCloseInput) {
@@ -22,4 +25,3 @@ export class CashRegisterService {
     return await CashRegisterRepository.update(id, validated);
   }
 }
-

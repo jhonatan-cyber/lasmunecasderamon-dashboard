@@ -12,10 +12,13 @@ type UserCreateInput = z.input<typeof UserCreateSchema> & { foto?: unknown };
 type UserUpdateInput = z.input<typeof UserUpdateSchema> & { foto?: unknown };
 
 export class UserService {
-
   static async createUser(body: UserCreateInput, fotoFilename: string = 'default.png') {
     const bodyToValidate = { ...body };
-    if (bodyToValidate.foto && typeof bodyToValidate.foto !== 'string' && 'arrayBuffer' in (bodyToValidate.foto as any)) {
+    if (
+      bodyToValidate.foto &&
+      typeof bodyToValidate.foto !== 'string' &&
+      'arrayBuffer' in (bodyToValidate.foto as any)
+    ) {
       delete bodyToValidate.foto;
     }
 
@@ -31,10 +34,13 @@ export class UserService {
     return await UserRepository.create({ ...validated, email, password }, fotoFilename);
   }
 
-
   static async updateUser(id: string, body: UserUpdateInput, fotoFilename: string | null = null) {
     const bodyToValidate = { ...body, id };
-    if (bodyToValidate.foto && typeof bodyToValidate.foto !== 'string' && 'arrayBuffer' in (bodyToValidate.foto as any)) {
+    if (
+      bodyToValidate.foto &&
+      typeof bodyToValidate.foto !== 'string' &&
+      'arrayBuffer' in (bodyToValidate.foto as any)
+    ) {
       delete bodyToValidate.foto;
     }
     const validated = UserUpdateSchema.parse(bodyToValidate);
@@ -42,10 +48,15 @@ export class UserService {
     const existing = await UserRepository.getById(id.toString());
     if (!existing) throw new NotFoundError('Usuario', id);
 
-    if (fotoFilename && existing.foto && existing.foto !== 'default.png' && !existing.foto.startsWith('http')) {
+    if (
+      fotoFilename &&
+      existing.foto &&
+      existing.foto !== 'default.png' &&
+      !existing.foto.startsWith('http')
+    ) {
       const oldPath = path.join(process.cwd(), 'public', 'img', 'users', existing.foto);
       if (existsSync(oldPath)) {
-        await fs.unlink(oldPath).catch(() => { });
+        await fs.unlink(oldPath).catch(() => {});
       }
     }
     const { id: _validatedId, email: _validatedEmail, ...validatedWithoutId } = validated;
@@ -74,7 +85,10 @@ export class UserService {
 
   static async toggleUserStatus(id: string, action: string) {
     if (!['activate', 'deactivate'].includes(action)) {
-      throw new ValidationError('Acción de estado inválida', { action, allowed: ['activate', 'deactivate'] });
+      throw new ValidationError('Acción de estado inválida', {
+        action,
+        allowed: ['activate', 'deactivate']
+      });
     }
     // Al desactivar un usuario, limpiar su caché de permisos
     if (action === 'deactivate') {
@@ -83,4 +97,3 @@ export class UserService {
     return await UserRepository.updateStatus(id, action);
   }
 }
-

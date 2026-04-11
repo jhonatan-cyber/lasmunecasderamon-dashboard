@@ -13,13 +13,17 @@ export class WithdrawalService {
   static async addRetiro(data: RetiroCajaType) {
     const validated = RetiroCajaSchema.parse(data);
 
-    return await withTransaction(async (trx) => {
+    return await withTransaction(async trx => {
       let cajaId = validated.caja_id;
       if (!cajaId) {
         cajaId = await CashRegisterRepository.getCurrentCajaId(trx);
       }
 
-      if (!cajaId) throw new BusinessError('No hay una caja abierta para realizar el retiro', 'NO_CAJA_ABIERTA');
+      if (!cajaId)
+        throw new BusinessError(
+          'No hay una caja abierta para realizar el retiro',
+          'NO_CAJA_ABIERTA'
+        );
 
       const idRetiro = await WithdrawalRepository.create({
         ...validated,

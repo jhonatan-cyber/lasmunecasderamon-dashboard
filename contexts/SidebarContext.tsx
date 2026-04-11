@@ -34,7 +34,8 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   // Cerrar sidebar cuando cambia el tamaÃ±o de la ventana a desktop
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) { // lg breakpoint
+      if (window.innerWidth >= 1024) {
+        // lg breakpoint
         setIsSidebarOpen(false);
       }
     };
@@ -64,15 +65,17 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SidebarContext.Provider value={{ 
-      isSidebarOpen, 
-      isCollapsed,
-      toggleSidebar, 
-      closeSidebar, 
-      openSidebar,
-      toggleCollapse,
-      setCollapsed
-    }}>
+    <SidebarContext.Provider
+      value={{
+        isSidebarOpen,
+        isCollapsed,
+        toggleSidebar,
+        closeSidebar,
+        openSidebar,
+        toggleCollapse,
+        setCollapsed
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );
@@ -84,5 +87,4 @@ export function useSidebar() {
     throw new Error('useSidebar must be used within a SidebarProvider');
   }
   return context;
-} 
-
+}

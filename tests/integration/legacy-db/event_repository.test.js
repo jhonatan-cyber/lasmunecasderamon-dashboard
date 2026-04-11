@@ -3,24 +3,30 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 class EventRepository {
   static async getStats(userId) {
-    const svcCountRes = await queryMock('SELECT COUNT(*) as count FROM detalle_servicios WHERE usuario_id = ?', [userId]);
-    const earningsRes = await queryMock('SELECT SUM(comision) as total FROM detalle_comisiones WHERE usuario_id = ?', [userId]);
+    const svcCountRes = await queryMock(
+      'SELECT COUNT(*) as count FROM detalle_servicios WHERE usuario_id = ?',
+      [userId]
+    );
+    const earningsRes = await queryMock(
+      'SELECT SUM(comision) as total FROM detalle_comisiones WHERE usuario_id = ?',
+      [userId]
+    );
     return {
       svcCount: svcCountRes[0]?.count || 0,
       totalEarnings: Number(earningsRes[0]?.total || 0)
@@ -58,4 +64,3 @@ async function testEventRepository() {
 }
 
 testEventRepository();
-

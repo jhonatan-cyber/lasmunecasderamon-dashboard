@@ -5,19 +5,19 @@ import { ValidationError, BusinessError } from '@/lib/errors/errors';
 vi.mock('@/lib/repositories/WithdrawalRepository', () => ({
   WithdrawalRepository: {
     getByCajaId: vi.fn(),
-    create: vi.fn(),
-  },
+    create: vi.fn()
+  }
 }));
 
 vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
   CashRegisterRepository: {
     getCurrentCajaId: vi.fn(),
-    updateBalances: vi.fn(),
-  },
+    updateBalances: vi.fn()
+  }
 }));
 
 vi.mock('@/lib/database/db', () => ({
-  withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
+  withTransaction: vi.fn(async (fn: any) => fn(vi.fn()))
 }));
 
 import { WithdrawalRepository } from '@/lib/repositories/WithdrawalRepository';
@@ -60,7 +60,7 @@ describe('WithdrawalService.addRetiro', () => {
     monto: 50000,
     motivo: 'Retiro de prueba',
     caja_id: 'caja-1',
-    usuario_id: 'user-1',
+    usuario_id: 'user-1'
   };
 
   it('lanza BusinessError si no hay caja abierta y no se puede obtener', async () => {

@@ -222,7 +222,7 @@ export class AuthRepository {
     if (hasUsers) throw new ConflictError('Ya existen usuarios registrados');
 
     if (!data.password || data.password.trim().length < 8) {
-      throw new ValidationError('La contraseña inicial debe tener al menos 8 caracteres');
+      throw new ValidationError('La contraseï¿½a inicial debe tener al menos 8 caracteres');
     }
 
     const hashedPassword = await argon2.hash(data.password.trim());
@@ -285,4 +285,3 @@ export class AuthRepository {
     return { success: true, debeDesconectar: false };
   }
 }
-

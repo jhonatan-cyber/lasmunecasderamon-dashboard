@@ -65,8 +65,8 @@ const getLogger = () => {
       error: (msg: string, meta: any) => console.error(`[ERROR] ${msg}`, meta),
       // eslint-disable-next-line no-console
       debug: (msg: string, meta: any) => console.info(`[DEBUG] ${msg}`, meta),
-      add: () => { },
-      remove: () => { },
+      add: () => {},
+      remove: () => {}
     };
   }
   return loggerInstance;
@@ -76,7 +76,7 @@ export const logger = {
   info: (msg: string, meta?: any) => getLogger().info(msg, meta),
   warn: (msg: string, meta?: any) => getLogger().warn(msg, meta),
   error: (msg: string, meta?: any) => getLogger().error(msg, meta),
-  debug: (msg: string, meta?: any) => getLogger().debug(msg, meta),
+  debug: (msg: string, meta?: any) => getLogger().debug(msg, meta)
 };
 
 export const auditLogger = {

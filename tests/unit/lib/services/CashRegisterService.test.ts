@@ -7,8 +7,8 @@ vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
     open: vi.fn(),
     close: vi.fn(),
     update: vi.fn(),
-    getById: vi.fn(),
-  },
+    getById: vi.fn()
+  }
 }));
 
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
@@ -26,7 +26,7 @@ describe('CashRegisterService.openCaja', () => {
 
     const result = await CashRegisterService.openCaja({
       usuario_id_apertura: 'user-1',
-      monto_apertura: 50000,
+      monto_apertura: 50000
     });
 
     expect(CashRegisterRepository.open).toHaveBeenCalledWith('user-1', 50000);
@@ -38,7 +38,7 @@ describe('CashRegisterService.openCaja', () => {
 
     await CashRegisterService.openCaja({
       usuario_id_apertura: 123 as any,
-      monto_apertura: 10000,
+      monto_apertura: 10000
     });
 
     expect(CashRegisterRepository.open).toHaveBeenCalledWith('123', 10000);
@@ -80,7 +80,7 @@ describe('CashRegisterService.closeCaja', () => {
 
     const result = await CashRegisterService.closeCaja({
       id_caja: 'caja-1',
-      usuario_id_cierre: 'user-1',
+      usuario_id_cierre: 'user-1'
     });
 
     expect(CashRegisterRepository.close).toHaveBeenCalledWith('caja-1', 'user-1');
@@ -92,16 +92,14 @@ describe('CashRegisterService.closeCaja', () => {
 
     await CashRegisterService.closeCaja({
       id_caja: 42 as any,
-      usuario_id_cierre: 'user-1',
+      usuario_id_cierre: 'user-1'
     });
 
     expect(CashRegisterRepository.close).toHaveBeenCalledWith('42', 'user-1');
   });
 
   it('propaga NotFoundError si la caja no existe o ya está cerrada', async () => {
-    vi.mocked(CashRegisterRepository.close).mockRejectedValue(
-      new NotFoundError('Caja abierta')
-    );
+    vi.mocked(CashRegisterRepository.close).mockRejectedValue(new NotFoundError('Caja abierta'));
 
     await expect(
       CashRegisterService.closeCaja({ id_caja: 'caja-1', usuario_id_cierre: 'user-1' })
