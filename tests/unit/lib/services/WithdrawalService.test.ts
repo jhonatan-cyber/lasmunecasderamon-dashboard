@@ -81,7 +81,7 @@ describe('WithdrawalService.addRetiro', () => {
     vi.mocked(CashRegisterRepository.updateBalances).mockResolvedValue(undefined);
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      const trx = vi.fn();
+      const trx = vi.fn().mockResolvedValue([{ monto_apertura: 100000, efectivo: 0 }]);
       return fn(trx);
     });
 
@@ -96,7 +96,7 @@ describe('WithdrawalService.addRetiro', () => {
 
     let capturedTrx: any;
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      capturedTrx = vi.fn();
+      capturedTrx = vi.fn().mockResolvedValue([{ monto_apertura: 100000, efectivo: 0 }]);
       vi.mocked(CashRegisterRepository.updateBalances).mockResolvedValue(undefined);
       return fn(capturedTrx);
     });
@@ -108,5 +108,19 @@ describe('WithdrawalService.addRetiro', () => {
       'caja-1',
       { efectivo: -50000 }
     );
+  });
+
+  it('bloquea retiros mayores al efectivo disponible', async () => {
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
+      const trx = vi.fn().mockResolvedValue([{ monto_apertura: 10000, efectivo: 5000 }]);
+      return fn(trx);
+    });
+
+    await expect(
+      WithdrawalService.addRetiro({ ...validRetiro, monto: 20000 } as any)
+    ).rejects.toThrow(BusinessError);
+
+    expect(WithdrawalRepository.create).not.toHaveBeenCalled();
+    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
   });
 });

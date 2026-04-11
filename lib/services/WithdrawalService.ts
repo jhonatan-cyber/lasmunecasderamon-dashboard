@@ -25,6 +25,26 @@ export class WithdrawalService {
           'NO_CAJA_ABIERTA'
         );
 
+      const cajaRows = await trx<any[]>(
+        'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1 FOR UPDATE',
+        [cajaId]
+      );
+
+      if (!cajaRows.length) {
+        throw new BusinessError('La caja indicada no esta abierta', 'CAJA_NO_DISPONIBLE');
+      }
+
+      const efectivoDisponible =
+        Number(cajaRows[0].monto_apertura || 0) + Number(cajaRows[0].efectivo || 0);
+
+      if (efectivoDisponible < Number(validated.monto || 0)) {
+        throw new BusinessError(
+          'No hay suficiente efectivo en caja para realizar el retiro',
+          'SALDO_CAJA_INSUFICIENTE',
+          { efectivoDisponible, montoSolicitado: validated.monto }
+        );
+      }
+
       const idRetiro = await WithdrawalRepository.create({
         ...validated,
         caja_id: cajaId
