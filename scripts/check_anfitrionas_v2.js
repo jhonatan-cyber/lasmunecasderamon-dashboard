@@ -10,13 +10,16 @@ const config = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'lasmunecasderamon',
-  port: parseInt(process.env.DB_PORT || '3306'),
+  port: parseInt(process.env.DB_PORT || '3306')
 };
 
 async function checkAnfitrionas() {
   let connection;
   try {
-    console.log('Conectando a la base de datos...', { host: config.host, database: config.database });
+    console.log('Conectando a la base de datos...', {
+      host: config.host,
+      database: config.database
+    });
     connection = await mysql.createConnection(config);
     console.log('ConexiÃ³n establecida.');
 
@@ -41,7 +44,6 @@ async function checkAnfitrionas() {
       GROUP BY r.nombre
     `);
     console.table(counts);
-
   } catch (error) {
     console.error('Error durante la prueba:', error.message);
   } finally {
@@ -51,4 +53,3 @@ async function checkAnfitrionas() {
 }
 
 checkAnfitrionas();
-

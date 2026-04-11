@@ -8,8 +8,8 @@ vi.mock('@/lib/repositories/UserRepository', () => ({
     getById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
-    updateStatus: vi.fn(),
-  },
+    updateStatus: vi.fn()
+  }
 }));
 
 vi.mock('@/lib/auth/permissions-cache', () => ({
@@ -17,20 +17,20 @@ vi.mock('@/lib/auth/permissions-cache', () => ({
     invalidate: vi.fn(),
     set: vi.fn(),
     get: vi.fn(),
-    clear: vi.fn(),
-  },
+    clear: vi.fn()
+  }
 }));
 
 vi.mock('argon2', () => ({
-  hash: vi.fn().mockResolvedValue('hashed-password'),
+  hash: vi.fn().mockResolvedValue('hashed-password')
 }));
 
 vi.mock('fs/promises', () => ({
   default: { unlink: vi.fn().mockResolvedValue(undefined) },
-  unlink: vi.fn().mockResolvedValue(undefined),
+  unlink: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock('fs', async (importOriginal) => {
+vi.mock('fs', async importOriginal => {
   const actual = await importOriginal<typeof import('fs')>();
   return { ...actual, existsSync: vi.fn().mockReturnValue(false) };
 });
@@ -50,7 +50,7 @@ describe('UserService.createUser', () => {
     nick: 'testuser',
     name: 'Test',
     lastName: 'User',
-    rol_id: 'rol-1',
+    rol_id: 'rol-1'
   };
 
   it('lanza ValidationError si el RUN ya está registrado', async () => {
@@ -70,7 +70,7 @@ describe('UserService.createUser', () => {
       expect.objectContaining({
         run: '12345678-9',
         nick: 'testuser',
-        password: 'hashed-password',
+        password: 'hashed-password'
       }),
       'default.png'
     );
@@ -83,10 +83,7 @@ describe('UserService.createUser', () => {
 
     await UserService.createUser(validBody, 'custom.jpg');
 
-    expect(UserRepository.create).toHaveBeenCalledWith(
-      expect.anything(),
-      'custom.jpg'
-    );
+    expect(UserRepository.create).toHaveBeenCalledWith(expect.anything(), 'custom.jpg');
   });
 
   it('lanza ZodError si faltan campos requeridos', async () => {
@@ -106,14 +103,20 @@ describe('UserService.updateUser', () => {
     name: 'Old',
     lastName: 'Name',
     rol_id: 'rol-1',
-    foto: 'default.png',
+    foto: 'default.png'
   };
 
   it('lanza NotFoundError si el usuario no existe', async () => {
     vi.mocked(UserRepository.getById).mockResolvedValue(null);
 
     await expect(
-      UserService.updateUser('user-1', { id: 'user-1', run: '12345678-9', name: 'New', lastName: 'Name', rol_id: 'rol-1' })
+      UserService.updateUser('user-1', {
+        id: 'user-1',
+        run: '12345678-9',
+        name: 'New',
+        lastName: 'Name',
+        rol_id: 'rol-1'
+      })
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -126,7 +129,7 @@ describe('UserService.updateUser', () => {
       run: '12345678-9',
       name: 'New',
       lastName: 'Name',
-      rol_id: 'rol-1',
+      rol_id: 'rol-1'
     });
 
     expect(UserRepository.update).toHaveBeenCalledWith(
@@ -146,7 +149,7 @@ describe('UserService.updateUser', () => {
       run: '12345678-9',
       name: 'Test',
       lastName: 'User',
-      rol_id: 'rol-2', // rol diferente
+      rol_id: 'rol-2' // rol diferente
     });
 
     expect(PermissionsCache.invalidate).toHaveBeenCalledWith('user-1');
@@ -161,7 +164,7 @@ describe('UserService.updateUser', () => {
       name: 'New Name',
       lastName: 'User',
       run: '12345678-9',
-      rol_id: 'rol-1', // mismo rol
+      rol_id: 'rol-1' // mismo rol
     });
 
     // rol_id está definido → sí invalida (comportamiento actual correcto)
@@ -173,8 +176,12 @@ describe('UserService.updateUser', () => {
 
 describe('UserService.toggleUserStatus', () => {
   it('lanza ValidationError para acción inválida', async () => {
-    await expect(UserService.toggleUserStatus('user-1', 'suspend')).rejects.toThrow(ValidationError);
-    await expect(UserService.toggleUserStatus('user-1', 'suspend')).rejects.toThrow('estado inválida');
+    await expect(UserService.toggleUserStatus('user-1', 'suspend')).rejects.toThrow(
+      ValidationError
+    );
+    await expect(UserService.toggleUserStatus('user-1', 'suspend')).rejects.toThrow(
+      'estado inválida'
+    );
   });
 
   it('activa el usuario correctamente', async () => {

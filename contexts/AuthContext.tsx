@@ -53,35 +53,61 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Modulos equivalentes en ingles (como usa la app) vs espaÃ±ol (como estÃ¡n en la BD)
 const moduleMap: Record<string, string[]> = {
-  'users': ['usuarios', 'users'],
-  'clients': ['clientes', 'clients'],
-  'products': ['productos', 'products'],
-  'categories': ['categorias', 'categories'],
-  'orders': ['pedidos', 'orders'],
-  'reports': ['reportes', 'reports'],
-  'sales': ['ventas', 'sales'],
-  'attendance': ['asistencias', 'attendance'],
-  'overtime': ['horas_extras', 'overtime'],
-  'gratificaciones': ['gratificaciones', 'gratificaciones'],
-  'cash_register': ['caja', 'cash_register'],
-  'accounts': ['cuentas', 'accounts'],
-  'tips': ['propinas', 'tips'],
-  'commissions': ['comisiones', 'commissions'],
-  'payroll': ['pagos_trabajadores', 'payroll'],
-  'payroll_details': ['payroll_details'],
-  'advances': ['anticipos', 'advances'],
-  'returns': ['devoluciones', 'returns'],
-  'roles': ['roles'],
-  'rooms': ['rooms'],
-  'private_rooms': ['private_rooms']
+  users: ['usuarios', 'users'],
+  clients: ['clientes', 'clients'],
+  products: ['productos', 'products'],
+  categories: ['categorias', 'categories'],
+  orders: ['pedidos', 'orders'],
+  reports: ['reportes', 'reports'],
+  sales: ['ventas', 'sales'],
+  attendance: ['asistencias', 'attendance'],
+  overtime: ['horas_extras', 'overtime'],
+  gratificaciones: ['gratificaciones', 'gratificaciones'],
+  cash_register: ['caja', 'cash_register'],
+  accounts: ['cuentas', 'accounts'],
+  tips: ['propinas', 'tips'],
+  commissions: ['comisiones', 'commissions'],
+  payroll: ['pagos_trabajadores', 'payroll'],
+  payroll_details: ['payroll_details'],
+  advances: ['anticipos', 'advances'],
+  returns: ['devoluciones', 'returns'],
+  roles: ['roles'],
+  rooms: ['rooms'],
+  private_rooms: ['private_rooms']
 };
 
 const actionMap: Record<string, string[]> = {
-  'view': ['view', 'listar_usuarios', 'listar_clientes', 'listar_categoria_productos', 'listar_productos_categoria', 'listar_categorias', 'listar_pedidos', 'listar_reportes', 'listar_ventas', 'listar_roles', 'listar_asistencias', 'listar_horas_extras', 'listar_gratificaciones', 'listar_caja', 'listar_cuentas', 'listar_propinas', 'listar_comisiones', 'listar_pagos', 'listar_detalles', 'listar_anticipos', 'listar_devoluciones', 'listar_habitaciones', 'listar_privados', 'ver_detalles', 'ver_dashboard'],
-  'create': ['create', 'crear', 'agregar_productos'],
-  'process': ['process', 'registar_venta', 'registar_cuenta'],
-  'edit': ['edit', 'editar', 'registar_venta', 'registar_cuenta', 'process'],
-  'delete': ['delete', 'eliminar', 'anular']
+  view: [
+    'view',
+    'listar_usuarios',
+    'listar_clientes',
+    'listar_categoria_productos',
+    'listar_productos_categoria',
+    'listar_categorias',
+    'listar_pedidos',
+    'listar_reportes',
+    'listar_ventas',
+    'listar_roles',
+    'listar_asistencias',
+    'listar_horas_extras',
+    'listar_gratificaciones',
+    'listar_caja',
+    'listar_cuentas',
+    'listar_propinas',
+    'listar_comisiones',
+    'listar_pagos',
+    'listar_detalles',
+    'listar_anticipos',
+    'listar_devoluciones',
+    'listar_habitaciones',
+    'listar_privados',
+    'ver_detalles',
+    'ver_dashboard'
+  ],
+  create: ['create', 'crear', 'agregar_productos'],
+  process: ['process', 'registar_venta', 'registar_cuenta'],
+  edit: ['edit', 'editar', 'registar_venta', 'registar_cuenta', 'process'],
+  delete: ['delete', 'eliminar', 'anular']
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -141,48 +167,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   // Fetch del usuario actual
-  const fetchUser = useCallback(async (silent = false) => {
-    if (!isMountedRef.current || isPublicPage || isFetchingUserRef.current) return;
+  const fetchUser = useCallback(
+    async (silent = false) => {
+      if (!isMountedRef.current || isPublicPage || isFetchingUserRef.current) return;
 
-    isFetchingUserRef.current = true;
-    if (!silent || !user) {
-      setUserLoading(true);
-    }
+      isFetchingUserRef.current = true;
+      if (!silent || !user) {
+        setUserLoading(true);
+      }
 
-    try {
-      // Agregar timestamp para evitar cachÃ© del navegador
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/auth/me?t=${timestamp}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          Pragma: 'no-cache'
-        },
-        credentials: 'include',
-        cache: 'no-store' // Forzar no usar cachÃ©
-      });
+      try {
+        // Agregar timestamp para evitar cachÃ© del navegador
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/auth/me?t=${timestamp}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache'
+          },
+          credentials: 'include',
+          cache: 'no-store' // Forzar no usar cachÃ©
+        });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.user) {
-          setUser(result.user);
-          userFetchedRef.current = true;
-        } else if (!result.success) {
-          // SesiÃ³n invÃ¡lida o expirada
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.user) {
+            setUser(result.user);
+            userFetchedRef.current = true;
+          } else if (!result.success) {
+            // SesiÃ³n invÃ¡lida o expirada
+            handleSessionExpired();
+          }
+        } else if (response.status === 401) {
+          // No autenticado o sesiÃ³n expirada
           handleSessionExpired();
         }
-      } else if (response.status === 401) {
-        // No autenticado o sesiÃ³n expirada
-        handleSessionExpired();
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setUserLoading(false);
+        isFetchingUserRef.current = false;
       }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    } finally {
-      setUserLoading(false);
-      isFetchingUserRef.current = false;
-    }
-  }, [handleSessionExpired, isPublicPage, user]);
+    },
+    [handleSessionExpired, isPublicPage, user]
+  );
 
   // Fetch de permisos del usuario
   const fetchPermissions = useCallback(
@@ -263,9 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const allowedModules = moduleMap[module] || [module];
       const allowedActions = actionMap[action] || [action];
 
-      return userPermissions.some(p =>
-        allowedModules.includes(p.module) &&
-        allowedActions.includes(p.action)
+      return userPermissions.some(
+        p => allowedModules.includes(p.module) && allowedActions.includes(p.action)
       );
     },
     [userPermissions, user?.role]
@@ -296,9 +324,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return actions.every(action => {
         const allowedActions = actionMap[action] || [action];
-        return userPermissions.some(p =>
-          allowedModules.includes(p.module) &&
-          allowedActions.includes(p.action)
+        return userPermissions.some(
+          p => allowedModules.includes(p.module) && allowedActions.includes(p.action)
         );
       });
     },
@@ -398,6 +425,3 @@ export function useAuth() {
   }
   return context;
 }
-
-
-

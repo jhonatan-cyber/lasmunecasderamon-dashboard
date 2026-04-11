@@ -3,18 +3,18 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-    const connection = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
-    try {
-        const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
-        return rows;
-    } finally {
-        await connection.end();
-    }
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  try {
+    const [rows] = await connection.execute(sql.replace(/@/g, ''), params);
+    return rows;
+  } finally {
+    await connection.end();
+  }
 };
 
 class TimerRepository {
@@ -48,4 +48,3 @@ async function testTimerRepository() {
 }
 
 testTimerRepository();
-

@@ -7,10 +7,7 @@ import { AuthenticatedUser, UserPermissions } from '@/lib/middleware/auth';
 import { ApiResponse } from './api-response';
 import { normalizeJsonResponseDates } from './date-response';
 
-type AppRouteHandler = (
-  request: Request,
-  context: { params: any }
-) => Promise<Response>;
+type AppRouteHandler = (request: Request, context: { params: any }) => Promise<Response>;
 
 type AuthenticatedAppRouteHandler = (
   request: Request,
@@ -44,7 +41,7 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
       logger.error(`[APP API ERROR] ${method} ${url.pathname}`, {
         message,
         stack,
-        params,
+        params
       });
 
       try {
@@ -58,10 +55,13 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
       }
 
       if (error instanceof ZodError) {
-        return ApiResponse.validationError('Error de validación de datos', error.issues.map((e: any) => ({
-          path: e.path.join('.'),
-          message: e.message,
-        })));
+        return ApiResponse.validationError(
+          'Error de validación de datos',
+          error.issues.map((e: any) => ({
+            path: e.path.join('.'),
+            message: e.message
+          }))
+        );
       }
 
       return ApiResponse.error(error);
@@ -80,7 +80,7 @@ export function withAppAuth(
     if (!user) {
       return ApiResponse.unauthorized();
     }
-    
+
     // Await params for audit log
     const params = await context.params;
 
@@ -90,8 +90,9 @@ export function withAppAuth(
       const { module, action } = requiredPermission;
       const userPermissions = (user.permissions as any)?.[module];
 
-      const hasPermission = isAdministrator || (userPermissions && (userPermissions as any)[action] === true);
-      
+      const hasPermission =
+        isAdministrator || (userPermissions && (userPermissions as any)[action] === true);
+
       if (!hasPermission) {
         return ApiResponse.forbidden('Permisos insuficientes');
       }
@@ -118,6 +119,3 @@ export function withAppAuth(
     return handler(request, { ...context, params: Promise.resolve(params), user });
   });
 }
-
-
-

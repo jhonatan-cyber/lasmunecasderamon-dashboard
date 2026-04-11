@@ -51,19 +51,26 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
     `;
 
     const result = await query<any[]>(mainSql, [usuarioId]);
-    const data = result[0] || { monto_sueldo: 0, monto_aporte: 0, monto_descuento_hab: 0, total_comisiones: 0, total_propinas: 0, total_anticipos: 0, total_gratificaciones: 0, total_horas_extras: 0 };
+    const data = result[0] || {
+      monto_sueldo: 0,
+      monto_aporte: 0,
+      monto_descuento_hab: 0,
+      total_comisiones: 0,
+      total_propinas: 0,
+      total_anticipos: 0,
+      total_gratificaciones: 0,
+      total_horas_extras: 0
+    };
 
-    const ingresos = 
-      Number(data.monto_sueldo) + 
-      Number(data.total_propinas) + 
-      Number(data.total_comisiones) + 
-      Number(data.total_gratificaciones) + 
+    const ingresos =
+      Number(data.monto_sueldo) +
+      Number(data.total_propinas) +
+      Number(data.total_comisiones) +
+      Number(data.total_gratificaciones) +
       Number(data.total_horas_extras);
 
-    const egresos = 
-      Number(data.monto_aporte) + 
-      Number(data.monto_descuento_hab) + 
-      Number(data.total_anticipos);
+    const egresos =
+      Number(data.monto_aporte) + Number(data.monto_descuento_hab) + Number(data.total_anticipos);
 
     const montoMaximo = Math.max(0, ingresos - egresos);
 

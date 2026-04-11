@@ -27,13 +27,12 @@ class SSEManager {
       appEventBus.emit('sse-reconnect');
     };
 
-    this.eventSource.onmessage = (event) => {
+    this.eventSource.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
-        
+
         // Emite un evento genÃ©rico sse-message para todos los payloads
         appEventBus.emit('sse-message', payload);
-        
       } catch (err) {
         console.error('[SSEManager] Error parseando mensaje SSE:', err);
       }

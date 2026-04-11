@@ -9,7 +9,8 @@ export class ProductService {
   static async createProduct(body: ProductInput, fotoName?: string) {
     const normalizedBody = {
       ...body,
-      category_id: body.category_id ?? (body as ProductInput & { categoryId?: string | number }).categoryId,
+      category_id:
+        body.category_id ?? (body as ProductInput & { categoryId?: string | number }).categoryId
     };
 
     const validated = ProductSchema.parse(normalizedBody);
@@ -21,7 +22,9 @@ export class ProductService {
     );
 
     if (existing) {
-      throw new ConflictError('Ya existe un producto con el mismo código o nombre en esta categoría');
+      throw new ConflictError(
+        'Ya existe un producto con el mismo código o nombre en esta categoría'
+      );
     }
 
     const foto = fotoName || body.foto || 'default.png';
@@ -31,7 +34,9 @@ export class ProductService {
   static async updateProduct(id: string, body: Partial<ProductInput>, fotoName?: string) {
     const normalizedBody = {
       ...body,
-      category_id: body.category_id || (body as Partial<ProductInput> & { categoryId?: string | number }).categoryId,
+      category_id:
+        body.category_id ||
+        (body as Partial<ProductInput> & { categoryId?: string | number }).categoryId
     };
 
     const validated = ProductSchema.partial().parse(normalizedBody);
@@ -47,12 +52,13 @@ export class ProductService {
       );
 
       if (existing && String(existing.id) !== String(id)) {
-        throw new ConflictError('Ya existe otro producto con ese código o nombre en esta categoría');
+        throw new ConflictError(
+          'Ya existe otro producto con ese código o nombre en esta categoría'
+        );
       }
     }
 
-    const foto = fotoName || body.foto || (currentProduct?.foto || 'default.png');
+    const foto = fotoName || body.foto || currentProduct?.foto || 'default.png';
     return await ProductRepository.update(id, { ...validated }, foto);
   }
 }
-

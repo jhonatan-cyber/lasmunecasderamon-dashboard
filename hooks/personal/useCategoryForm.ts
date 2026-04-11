@@ -16,9 +16,9 @@ export const useCategoryForm = ({ initialValues, onSubmit, open }: UseCategoryFo
     defaultValues: {
       name: initialValues?.name ?? '',
       description: initialValues?.description ?? '',
-      id: initialValues?.id,
+      id: initialValues?.id
     },
-    mode: 'onChange',
+    mode: 'onChange'
   });
 
   const { reset, handleSubmit, watch, setValue } = form;
@@ -28,7 +28,7 @@ export const useCategoryForm = ({ initialValues, onSubmit, open }: UseCategoryFo
       reset({
         name: initialValues?.name ?? '',
         description: initialValues?.description ?? '',
-        id: initialValues?.id,
+        id: initialValues?.id
       });
     }
   }, [initialValues, reset, open]);
@@ -68,10 +68,10 @@ export const useCategoryForm = ({ initialValues, onSubmit, open }: UseCategoryFo
     }
   }, [descriptionValue, setValue]);
 
-  const onFormSubmit = handleSubmit(async (data) => {
+  const onFormSubmit = handleSubmit(async data => {
     await onSubmit({
       name: data.name.trim(),
-      description: data.description.trim(),
+      description: data.description.trim()
     });
   });
 
@@ -81,6 +81,6 @@ export const useCategoryForm = ({ initialValues, onSubmit, open }: UseCategoryFo
     errors: form.formState.errors,
     register: form.register,
     isValid: form.formState.isValid,
-    isSubmitting: form.formState.isSubmitting,
+    isSubmitting: form.formState.isSubmitting
   };
 };

@@ -6,7 +6,7 @@ const { spawnSync } = require('child_process');
 const testsDir = path.resolve(__dirname, '../tests/integration/legacy-db');
 const testFiles = fs
   .readdirSync(testsDir)
-  .filter((file) => file.endsWith('.test.js'))
+  .filter(file => file.endsWith('.test.js'))
   .sort();
 
 if (testFiles.length === 0) {
@@ -18,7 +18,7 @@ for (const file of testFiles) {
   console.log(`${file}`);
   const result = spawnSync(process.execPath, [path.join(testsDir, file)], {
     stdio: 'inherit',
-    env: process.env,
+    env: process.env
   });
 
   if (result.status !== 0) {

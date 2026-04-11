@@ -38,7 +38,7 @@ export class SaleRepository {
     return parsed
       .map((item: any) => ({
         metodo: String(item?.metodo || ''),
-        monto: Number(item?.monto || 0),
+        monto: Number(item?.monto || 0)
       }))
       .filter((item: MixedPayment) => item.metodo && item.monto > 0);
   }
@@ -49,19 +49,19 @@ export class SaleRepository {
     targetTotal: number
   ): AllocationRow<T>[] {
     const normalizedTarget = Math.max(0, Math.round(Number(targetTotal || 0)));
-    const baseRows = rows.map((row) => ({
+    const baseRows = rows.map(row => ({
       ...row,
-      currentAmount: Math.max(0, Math.round(Number(getAmount(row) || 0))),
+      currentAmount: Math.max(0, Math.round(Number(getAmount(row) || 0)))
     }));
 
     const currentTotal = baseRows.reduce((sum, row) => sum + row.currentAmount, 0);
     if (currentTotal <= 0 || normalizedTarget <= 0) {
-      return baseRows.map((row) => ({ ...row, nextAmount: 0 }));
+      return baseRows.map(row => ({ ...row, nextAmount: 0 }));
     }
 
-    const allocated = baseRows.map((row) => ({
+    const allocated = baseRows.map(row => ({
       ...row,
-      nextAmount: Math.floor((row.currentAmount * normalizedTarget) / currentTotal),
+      nextAmount: Math.floor((row.currentAmount * normalizedTarget) / currentTotal)
     }));
 
     let assigned = allocated.reduce((sum, row) => sum + Number(row.nextAmount || 0), 0);
@@ -78,7 +78,10 @@ export class SaleRepository {
     return allocated;
   }
 
-  private static async getVentaStateAfterRequest(trx: TransactionQuery, ventaId: string): Promise<number> {
+  private static async getVentaStateAfterRequest(
+    trx: TransactionQuery,
+    ventaId: string
+  ): Promise<number> {
     const ventaRows = await trx<any[]>(
       'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ? LIMIT 1',
       [ventaId]
@@ -123,7 +126,7 @@ export class SaleRepository {
     const metodoPago = String(venta.metodo_pago || '');
     const pagosMixtos = this.parseMixedPayments(venta.pagos_mixtos);
 
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       const prepagoRows = clienteId
         ? await trx<any[]>(
             `SELECT COALESCE(SUM(monto), 0) as total_prepago
@@ -140,17 +143,15 @@ export class SaleRepository {
 
       const currentPrepago = Math.max(0, Math.round(Number(prepagoRows[0]?.total_prepago || 0)));
       const newTotal = Math.max(0, currentTotal - approvedAmount);
-      const newPropina = currentTotal > 0
-        ? Math.max(0, Math.round((currentPropina * newTotal) / currentTotal))
-        : 0;
-      const newComision = currentTotal > 0
-        ? Math.max(0, Math.round((currentComision * newTotal) / currentTotal))
-        : 0;
+      const newPropina =
+        currentTotal > 0 ? Math.max(0, Math.round((currentPropina * newTotal) / currentTotal)) : 0;
+      const newComision =
+        currentTotal > 0 ? Math.max(0, Math.round((currentComision * newTotal) / currentTotal)) : 0;
       const newSubTotal = Math.max(0, newTotal - newPropina);
 
       const prepagoAllocation = this.allocateProportionally(
         currentPrepago > 0 ? [{ key: 'prepago', amount: currentPrepago }] : [],
-        (row) => row.amount,
+        row => row.amount,
         currentTotal > 0 ? Math.round((currentPrepago * newTotal) / currentTotal) : 0
       );
       const newPrepago = Number(prepagoAllocation[0]?.nextAmount || 0);
@@ -161,27 +162,27 @@ export class SaleRepository {
           ? pagosMixtos.map((payment, index) => ({
               key: `${payment.metodo}_${index}`,
               metodo: payment.metodo,
-              amount: Math.max(0, Math.round(Number(payment.monto || 0))),
+              amount: Math.max(0, Math.round(Number(payment.monto || 0)))
             }))
           : [
               {
                 key: `${metodoPago || 'efectivo'}_principal`,
                 metodo: metodoPago || 'efectivo',
-                amount: Math.max(0, currentTotal - currentPrepago),
-              },
+                amount: Math.max(0, currentTotal - currentPrepago)
+              }
             ];
 
       const targetMixedTotal = Math.max(0, newTotal - newPrepago);
       const updatedMixedRows = this.allocateProportionally(
         mixedSourceRows,
-        (row) => row.amount,
+        row => row.amount,
         targetMixedTotal
       );
 
       const methodRefunds = {
         efectivo: 0,
         tarjeta: 0,
-        transferencia: 0,
+        transferencia: 0
       };
 
       for (const row of updatedMixedRows) {
@@ -192,7 +193,10 @@ export class SaleRepository {
       }
 
       if (clienteId && prepagoRefund > 0) {
-        await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [prepagoRefund, clienteId]);
+        await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
+          prepagoRefund,
+          clienteId
+        ]);
         await trx(
           `INSERT INTO clientes_prepago_movimientos
            (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
@@ -204,7 +208,7 @@ export class SaleRepository {
             ventaId,
             approvedBy || null,
             getNowInBusinessTimezone(),
-            JSON.stringify({ concepto: `Anulacion parcial venta ${ventaId}` }),
+            JSON.stringify({ concepto: `Anulacion parcial venta ${ventaId}` })
           ]
         );
       }
@@ -218,7 +222,7 @@ export class SaleRepository {
           prepago: -prepagoRefund,
           propina: -(currentPropina - newPropina),
           comision: -(currentComision - newComision),
-          devolucion: approvedAmount,
+          devolucion: approvedAmount
         });
       }
 
@@ -233,12 +237,12 @@ export class SaleRepository {
           newComision,
           JSON.stringify(
             updatedMixedRows
-              .filter((row) => Number(row.nextAmount || 0) > 0)
-              .map((row) => ({ metodo: row.metodo, monto: Number(row.nextAmount || 0) }))
+              .filter(row => Number(row.nextAmount || 0) > 0)
+              .map(row => ({ metodo: row.metodo, monto: Number(row.nextAmount || 0) }))
           ),
           await this.getVentaStateAfterRequest(trx, ventaId),
           getNowInBusinessTimezone(),
-          ventaId,
+          ventaId
         ]
       );
 
@@ -249,16 +253,16 @@ export class SaleRepository {
 
       const updatedDetailSubtotals = this.allocateProportionally(
         detailRows,
-        (row) => row.sub_total,
+        row => row.sub_total,
         newSubTotal
       );
       const updatedDetailComisiones = this.allocateProportionally(
         detailRows,
-        (row) => row.comision,
+        row => row.comision,
         newComision
       );
       const comisionByDetailId = new Map(
-        updatedDetailComisiones.map((row) => [row.id_detalle_venta, Number(row.nextAmount || 0)])
+        updatedDetailComisiones.map(row => [row.id_detalle_venta, Number(row.nextAmount || 0)])
       );
 
       for (const row of updatedDetailSubtotals) {
@@ -267,7 +271,7 @@ export class SaleRepository {
           [
             Number(row.nextAmount || 0),
             comisionByDetailId.get(row.id_detalle_venta) || 0,
-            row.id_detalle_venta,
+            row.id_detalle_venta
           ]
         );
       }
@@ -283,18 +287,18 @@ export class SaleRepository {
 
       const updatedComisiones = this.allocateProportionally(
         comisionRows,
-        (row) => row.comision,
+        row => row.comision,
         newComision
       );
 
       for (const row of updatedComisiones) {
         await trx('UPDATE detalle_comisiones SET comision = ? WHERE id_detalle_comision = ?', [
           Number(row.nextAmount || 0),
-          row.id_detalle_comision,
+          row.id_detalle_comision
         ]);
         await trx('UPDATE comisiones SET monto = ? WHERE id_comision = ?', [
           Number(row.nextAmount || 0),
-          row.id_comision,
+          row.id_comision
         ]);
       }
 
@@ -313,7 +317,7 @@ export class SaleRepository {
 
       const updatedPropinas = this.allocateProportionally(
         propinaDetailRows,
-        (row) => row.monto,
+        row => row.monto,
         newPropina
       );
       const propinaByHeaderId = new Map();
@@ -321,7 +325,7 @@ export class SaleRepository {
       for (const row of updatedPropinas) {
         await trx('UPDATE detalle_propinas SET monto = ? WHERE id_detalle_propina = ?', [
           Number(row.nextAmount || 0),
-          row.id_detalle_propina,
+          row.id_detalle_propina
         ]);
         propinaByHeaderId.set(
           row.propina_id,
@@ -333,7 +337,7 @@ export class SaleRepository {
         await trx('UPDATE propinas SET propina = ?, fecha_mod = ? WHERE id_propina = ?', [
           propinaByHeaderId.get(header.id_propina) || 0,
           getNowInBusinessTimezone(),
-          header.id_propina,
+          header.id_propina
         ]);
       }
 
@@ -380,7 +384,7 @@ export class SaleRepository {
         cliente_nombre: row.cliente_nombre,
         habitacion_nombre: row.habitacion_nombre,
         item_count: Number(row.item_count || 0),
-        anfitrionas_nicks: row.anfitrionas_nicks || null,
+        anfitrionas_nicks: row.anfitrionas_nicks || null
       });
     } catch (err) {
       logger.warn('[SaleRepository] Skipping invalid sale row:', { id: row.id_venta, err });
@@ -388,9 +392,18 @@ export class SaleRepository {
     }
   }
 
-  static async getAll(params: { tipo?: string; page?: string; limit?: string; estado?: string; caja_id?: string; search?: string }): Promise<any> {
+  static async getAll(params: {
+    tipo?: string;
+    page?: string;
+    limit?: string;
+    estado?: string;
+    caja_id?: string;
+    search?: string;
+  }): Promise<any> {
     if (params.tipo === 'resumen') {
-      const cajaResult = await query<any[]>('SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1');
+      const cajaResult = await query<any[]>(
+        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+      );
       const cajaId = cajaResult[0]?.id_caja;
       let where = 'WHERE v.estado IN (1, 2, 3)';
       let sqlParams: any[] = [];
@@ -398,7 +411,7 @@ export class SaleRepository {
         where += ' AND v.caja_id = ?';
         sqlParams.push(cajaId);
       }
-      
+
       const sql = `
         SELECT 
           SUM(total) as total_ventas,
@@ -428,7 +441,7 @@ export class SaleRepository {
       where += ' AND v.caja_id = ?';
       sqlParams.push(params.caja_id);
     }
-    
+
     const sql = `
       SELECT v.*,
         c.nombre as cliente_nombre,
@@ -452,9 +465,11 @@ export class SaleRepository {
     const data = await query<any[]>(sql, [...sqlParams, lNum, offset]);
     const count = await query<any[]>(countSql, sqlParams);
 
-    return { 
-      data: data.map(row => this.mapSaleFromDB(row)).filter((item): item is SaleType => item !== null), 
-      total: count[0]?.count || 0 
+    return {
+      data: data
+        .map(row => this.mapSaleFromDB(row))
+        .filter((item): item is SaleType => item !== null),
+      total: count[0]?.count || 0
     };
   }
 
@@ -469,7 +484,11 @@ export class SaleRepository {
   /**
    * Registra la relación entre una venta y el personal involucrado.
    */
-  static async insertUserRelation(trx: TransactionQuery, ventaId: string, usuarioId: string): Promise<void> {
+  static async insertUserRelation(
+    trx: TransactionQuery,
+    ventaId: string,
+    usuarioId: string
+  ): Promise<void> {
     await trx(
       'INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id, fecha_crea) VALUES (?, ?, ?, NOW())',
       [generateUUID(), ventaId, usuarioId]
@@ -478,7 +497,8 @@ export class SaleRepository {
 
   static async getById(id: string): Promise<any | null> {
     // 1. Fetch main venta data
-    const res = await query<any[]>(`
+    const res = await query<any[]>(
+      `
       SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_nombre,
              u.nick as cajero_nick, u.nombre as cajero_nombre,
              CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
@@ -493,7 +513,9 @@ export class SaleRepository {
       LEFT JOIN productos p ON p.id_producto = dv.producto_id
       WHERE v.id_venta = ?
       GROUP BY v.id_venta
-    `, [id]);
+    `,
+      [id]
+    );
 
     if (res.length === 0) return null;
 
@@ -501,35 +523,45 @@ export class SaleRepository {
     if (!venta) return null;
 
     // 2. Fetch detalle items with product info
-    const detalles = await query<any[]>(`
+    const detalles = await query<any[]>(
+      `
       SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
              p.nombre as producto_nombre, p.precio as producto_precio
       FROM detalle_ventas dv
       LEFT JOIN productos p ON p.id_producto = dv.producto_id
       WHERE dv.venta_id = ?
       ORDER BY dv.id_detalle_venta ASC
-    `, [id]);
+    `,
+      [id]
+    );
 
     // 3. Fetch anfitrionas/users assigned to this venta
-    const usuarios = await query<any[]>(`
+    const usuarios = await query<any[]>(
+      `
       SELECT vu.usuario_id, u.nick, u.nombre as usuario_nombre
       FROM ventas_usuarios vu
       LEFT JOIN usuarios u ON u.id_usuario = vu.usuario_id
       WHERE vu.venta_id = ?
-    `, [id]);
+    `,
+      [id]
+    );
 
     // 4. Fetch comisiones por anfitriona
-    const comisiones = await query<any[]>(`
+    const comisiones = await query<any[]>(
+      `
       SELECT u.nick, u.foto, SUM(dv.comision) as monto
       FROM detalle_ventas dv
       JOIN ventas_usuarios vu ON vu.venta_id = dv.venta_id AND vu.usuario_id = dv.hostess_id
       JOIN usuarios u ON u.id_usuario = dv.hostess_id
       WHERE dv.venta_id = ? AND dv.comision > 0
       GROUP BY dv.hostess_id, u.nick, u.foto
-    `, [id]);
+    `,
+      [id]
+    );
 
     // 5. Fetch distribución de propinas
-    const propinas = await query<any[]>(`
+    const propinas = await query<any[]>(
+      `
       SELECT
         dp.usuario_id,
         u.nick,
@@ -543,7 +575,9 @@ export class SaleRepository {
       WHERE p.venta_id = ?
       GROUP BY dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto
       ORDER BY monto DESC
-    `, [id]);
+    `,
+      [id]
+    );
 
     const totalComision = comisiones.reduce((sum: number, c: any) => sum + Number(c.monto || 0), 0);
 
@@ -557,7 +591,7 @@ export class SaleRepository {
       comisiones_detalle: comisiones.map((c: any) => ({
         nick: c.nick,
         foto: c.foto,
-        monto: Number(c.monto || 0),
+        monto: Number(c.monto || 0)
       })),
       propinas_detalle: propinas.map((p: any) => ({
         usuario_id: p.usuario_id,
@@ -565,7 +599,7 @@ export class SaleRepository {
         nombre: p.nombre,
         apellido: p.apellido,
         foto: p.foto,
-        monto: Number(p.monto || 0),
+        monto: Number(p.monto || 0)
       })),
       detalles: detalles.map(d => ({
         id: d.id,
@@ -576,14 +610,14 @@ export class SaleRepository {
         cantidad: Number(d.cantidad || 0),
         sub_total: Number(d.sub_total || 0),
         producto_nombre: d.producto_nombre,
-        producto_precio: d.producto_precio ? Number(d.producto_precio) : undefined,
+        producto_precio: d.producto_precio ? Number(d.producto_precio) : undefined
       })),
       usuarios: usuarios.map(u => ({
         id: u.usuario_id,
         usuario_id: u.usuario_id,
         nick: u.nick,
-        usuario_nombre: u.usuario_nombre,
-      })),
+        usuario_nombre: u.usuario_nombre
+      }))
     };
   }
 
@@ -604,19 +638,26 @@ export class SaleRepository {
     const totalComision = Number(prev[0].total_comision || 0);
     const pagosMixtos = this.parseMixedPayments(prev[0].pagos_mixtos);
 
-    await withTransaction(async (trx) => {
-      await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado, fecha_mod: getNowInBusinessTimezone() });
+    await withTransaction(async trx => {
+      await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
+        estado,
+        fecha_mod: getNowInBusinessTimezone()
+      });
 
-      if ((estado === 1 || estado === 0)) {
+      if (estado === 1 || estado === 0) {
         if (habitacionId) await RoomManager.resumeRoomLogic(trx, habitacionId, undefined, id);
 
-        const anfsResult = await trx<any[]>('SELECT usuario_id FROM ventas_usuarios WHERE venta_id = ?', [id]);
+        const anfsResult = await trx<any[]>(
+          'SELECT usuario_id FROM ventas_usuarios WHERE venta_id = ?',
+          [id]
+        );
         const hostessIds = anfsResult.map(a => a.usuario_id);
         await RoomManager.updateHostessServiceStatus(trx, hostessIds, undefined, id);
       }
-      
+
       const { addVentaLog } = await import('@/lib/utils/logUtils');
-      if (estado === 1 && estadoAnterior !== 1) await addVentaLog(id, 'FINALIZADO', 'Venta finalizada manualmente.', userId);
+      if (estado === 1 && estadoAnterior !== 1)
+        await addVentaLog(id, 'FINALIZADO', 'Venta finalizada manualmente.', userId);
       else if (estado === 0 && estadoAnterior !== 0) {
         const prepagoRows = clienteId
           ? await trx<any[]>(
@@ -634,7 +675,10 @@ export class SaleRepository {
         const prepagoMonto = Number(prepagoRows[0]?.total_prepago || 0);
 
         if (clienteId && prepagoMonto > 0) {
-          await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [prepagoMonto, clienteId]);
+          await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
+            prepagoMonto,
+            clienteId
+          ]);
           await trx(
             `INSERT INTO clientes_prepago_movimientos
              (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
@@ -646,7 +690,7 @@ export class SaleRepository {
               id,
               userId || null,
               getNowInBusinessTimezone(),
-              JSON.stringify({ concepto: `Anulacion venta ${id}` }),
+              JSON.stringify({ concepto: `Anulacion venta ${id}` })
             ]
           );
         }
@@ -677,7 +721,7 @@ export class SaleRepository {
             prepago: -prepagoMonto,
             propina: -propina,
             comision: -totalComision,
-            devolucion: total,
+            devolucion: total
           });
         }
 
@@ -690,7 +734,10 @@ export class SaleRepository {
            WHERE c.venta_id = ?`,
           [id]
         );
-        await trx('DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)', [id]);
+        await trx(
+          'DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)',
+          [id]
+        );
         await trx('DELETE FROM propinas WHERE venta_id = ?', [id]);
 
         if (pedidoId) {
@@ -711,32 +758,52 @@ export class SaleRepository {
     const idAnul = generateUUID();
     const token = generateUUID();
     const now = getNowInBusinessTimezone();
-    await withTransaction(async (trx) => {
-      await trx(`
+    await withTransaction(async trx => {
+      await trx(
+        `
         INSERT INTO solicitudes_anulacion_ventas (id, venta_id, token, estado, fecha_solicitud, solicitado_por, motivo, monto)
         VALUES (?, ?, ?, 'pendiente', ?, ?, ?, ?)
-      `, [idAnul, id, token, now, requestedBy, reason, amount]);
+      `,
+        [idAnul, id, token, now, requestedBy, reason, amount]
+      );
       await trx('UPDATE ventas SET estado = 3, fecha_mod = ? WHERE id_venta = ?', [now, id]);
     });
     return token;
   }
 
-  static async processAnulacion(requestId: string, approvedBy: string, status: 'aprobado' | 'rechazado'): Promise<SaleType | null> {
+  static async processAnulacion(
+    requestId: string,
+    approvedBy: string,
+    status: 'aprobado' | 'rechazado'
+  ): Promise<SaleType | null> {
     const now = getNowInBusinessTimezone();
     let ventaId: string | null = null;
 
-    await withTransaction(async (trx) => {
-      await trx('UPDATE solicitudes_anulacion_ventas SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?', [status, approvedBy, now, requestId]);
-      const req = await trx<any[]>('SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?', [requestId]);
+    await withTransaction(async trx => {
+      await trx(
+        'UPDATE solicitudes_anulacion_ventas SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
+        [status, approvedBy, now, requestId]
+      );
+      const req = await trx<any[]>(
+        'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?',
+        [requestId]
+      );
       if (req.length > 0) {
         ventaId = req[0].venta_id;
         if (status === 'rechazado') {
-          const ventaRows = await trx<any[]>('SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ?', [ventaId]);
+          const ventaRows = await trx<any[]>(
+            'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ?',
+            [ventaId]
+          );
           const nextState =
             ventaRows.length && ventaRows[0].habitacion_id && Number(ventaRows[0].tiempo || 0) > 0
               ? 2
               : 1;
-          await trx('UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?', [nextState, now, ventaId]);
+          await trx('UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?', [
+            nextState,
+            now,
+            ventaId
+          ]);
         }
       }
     });
@@ -754,7 +821,7 @@ export class SaleRepository {
   }
 
   static async delete(id: string): Promise<void> {
-    await withTransaction(async (trx) => {
+    await withTransaction(async trx => {
       await trx('DELETE FROM detalle_ventas WHERE venta_id = ?', [id]);
       await trx('DELETE FROM ventas WHERE id_venta = ?', [id]);
     });

@@ -34,21 +34,43 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
   static async getStats() {
     const bizNow = getNowInBusinessTimezone();
     const fechaHoy = bizNow.substring(0, 10);
-    const cajaRes = await query<any[]>('SELECT id_caja, fecha_apertura, fecha_cierre FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1');
+    const cajaRes = await query<any[]>(
+      'SELECT id_caja, fecha_apertura, fecha_cierre FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+    );
     const caja = cajaRes[0];
 
-    const totalUsuariosRes = await query<any[]>("SELECT COUNT(*) as total FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id WHERE r.nombre != 'administrador' AND u.estado = 1");
+    const totalUsuariosRes = await query<any[]>(
+      "SELECT COUNT(*) as total FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id WHERE r.nombre != 'administrador' AND u.estado = 1"
+    );
     const totalUsuarios = Number(totalUsuariosRes[0]?.total || 0);
 
-    const asistenciasHoy = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha = ? AND estado = 1', [fechaHoy]);
+    const asistenciasHoy = await query<any[]>(
+      'SELECT DISTINCT usuario_id FROM asistencias WHERE fecha = ? AND estado = 1',
+      [fechaHoy]
+    );
     const presentesHoy = asistenciasHoy.length;
 
-    let stats = { presentes: presentesHoy, ausentes: totalUsuarios - presentesHoy, porcentaje: totalUsuarios > 0 ? Math.round((presentesHoy / totalUsuarios) * 100) : 0, fechaApertura: fechaHoy, fechaCierre: fechaHoy };
+    let stats = {
+      presentes: presentesHoy,
+      ausentes: totalUsuarios - presentesHoy,
+      porcentaje: totalUsuarios > 0 ? Math.round((presentesHoy / totalUsuarios) * 100) : 0,
+      fechaApertura: fechaHoy,
+      fechaCierre: fechaHoy
+    };
 
     if (caja) {
-      const perCaja = await query<any[]>('SELECT DISTINCT usuario_id FROM asistencias WHERE fecha >= ? AND (fecha <= ? OR ? IS NULL) AND estado = 1', [caja.fecha_apertura, caja.fecha_cierre, caja.fecha_cierre]);
+      const perCaja = await query<any[]>(
+        'SELECT DISTINCT usuario_id FROM asistencias WHERE fecha >= ? AND (fecha <= ? OR ? IS NULL) AND estado = 1',
+        [caja.fecha_apertura, caja.fecha_cierre, caja.fecha_cierre]
+      );
       if (presentesHoy === 0 && perCaja.length > 0) {
-        stats = { presentes: perCaja.length, ausentes: totalUsuarios - perCaja.length, porcentaje: totalUsuarios > 0 ? Math.round((perCaja.length / totalUsuarios) * 100) : 0, fechaApertura: caja.fecha_apertura, fechaCierre: caja.fecha_cierre || fechaHoy };
+        stats = {
+          presentes: perCaja.length,
+          ausentes: totalUsuarios - perCaja.length,
+          porcentaje: totalUsuarios > 0 ? Math.round((perCaja.length / totalUsuarios) * 100) : 0,
+          fechaApertura: caja.fecha_apertura,
+          fechaCierre: caja.fecha_cierre || fechaHoy
+        };
       }
     }
 
@@ -61,7 +83,10 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     let isSystemCode = false;
 
     if (qrData.length <= 4) {
-      const codes = await query<any[]>('SELECT codigo FROM codigos WHERE estado = 1 AND codigo = ? LIMIT 1', [qrData]);
+      const codes = await query<any[]>(
+        'SELECT codigo FROM codigos WHERE estado = 1 AND codigo = ? LIMIT 1',
+        [qrData]
+      );
 
       if (codes.length === 0) {
         throw new ValidationError('Codigo invalido, expirado o ya utilizado');
@@ -71,7 +96,10 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
         throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
 
-      const logged = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1', [currentUser.id]);
+      const logged = await query<any[]>(
+        'SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1',
+        [currentUser.id]
+      );
       if (logged.length > 0) {
         targetUser = logged[0];
         isSystemCode = true;
@@ -79,7 +107,10 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
         throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
     } else {
-      const users = await query<any[]>('SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1', [qrData]);
+      const users = await query<any[]>(
+        'SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1',
+        [qrData]
+      );
       if (users.length > 0) {
         targetUser = users[0];
       } else {
@@ -95,16 +126,23 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     if (hour >= 23) return { success: false, message: 'Horario cerrado (despues de las 23:00)' };
 
     const fechaHoy = nowStr.substring(0, 10);
-    const existing = await query<any[]>('SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?', [targetUser.id_usuario, fechaHoy]);
+    const existing = await query<any[]>(
+      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+      [targetUser.id_usuario, fechaHoy]
+    );
     const alreadyRegistered = existing.length > 0;
 
     if (alreadyRegistered) {
       const ipLimpia = ip?.split(',')[0].trim() || null;
       await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
         en_local: 1,
-        ...(ipLimpia && { ip_address: ipLimpia }),
+        ...(ipLimpia && { ip_address: ipLimpia })
       });
-      return { success: true, alreadyRegistered: true, message: 'Ya tienes asistencias registrada hoy. Ubicacion actualizada.' };
+      return {
+        success: true,
+        alreadyRegistered: true,
+        message: 'Ya tienes asistencias registrada hoy. Ubicacion actualizada.'
+      };
     }
 
     const timeStr = nowStr.substring(11, 19);
@@ -120,7 +158,7 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     const ipLimpia = ip?.split(',')[0].trim() || null;
     await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
       en_local: 1,
-      ...(ipLimpia && { ip_address: ipLimpia }),
+      ...(ipLimpia && { ip_address: ipLimpia })
     });
 
     if (isSystemCode) {
@@ -203,7 +241,8 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
 
   static async getHoy() {
     const fechaHoy = getNowInBusinessTimezone().substring(0, 10);
-    return await query(`
+    return await query(
+      `
       SELECT
         A.id_asistencia, A.fecha, A.hora,
         U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) as nombre_completo,
@@ -213,15 +252,20 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       INNER JOIN roles R ON U.rol_id = R.id_rol
       WHERE A.fecha = ? AND A.estado = 1
       ORDER BY A.hora DESC
-    `, [fechaHoy]);
+    `,
+      [fechaHoy]
+    );
   }
 
   static async getByDates(userId: string, dates: string[]) {
     if (dates.length === 0) return [];
-    return await query(`
+    return await query(
+      `
       SELECT * FROM asistencias
       WHERE usuario_id = ? AND DATE(fecha) IN (?)
       ORDER BY fecha DESC
-    `, [userId, dates]);
+    `,
+      [userId, dates]
+    );
   }
 }

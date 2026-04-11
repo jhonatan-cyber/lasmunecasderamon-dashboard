@@ -35,13 +35,15 @@ export class CashRegisterRepository {
 
   static async getCurrentCajaId(trx?: TransactionQuery): Promise<string | null> {
     const qFunc = trx || query;
-    const res = await qFunc<any[]>('SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1');
+    const res = await qFunc<any[]>(
+      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+    );
     return res[0]?.id_caja || null;
   }
 
   static async updateBalances(
-    trx: TransactionQuery, 
-    id_caja: string, 
+    trx: TransactionQuery,
+    id_caja: string,
     deltas: {
       venta?: number;
       servicio?: number;
@@ -96,7 +98,10 @@ export class CashRegisterRepository {
     const values = dedupedEntries.map(([_, v]) => v);
 
     logger.debug('[CashRegisterRepository] updateBalances:', { id_caja, setClause, values });
-    await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [...values, id_caja]);
+    await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [
+      ...values,
+      id_caja
+    ]);
   }
 
   static async summary(): Promise<any> {
@@ -107,16 +112,31 @@ export class CashRegisterRepository {
       WHERE c.estado = 1
       ORDER BY c.fecha_apertura DESC LIMIT 1
     `);
-    
+
     if (row.length === 0) return { balance_total: 0, cajas_abiertas: 0 };
     const cajaRow = row[0];
 
     const stats = {
-      ventas: (await query<any[]>('SELECT COUNT(*) AS cantidad, COALESCE(AVG(total), 0) AS promedio FROM ventas WHERE estado = 1 AND fecha_crea >= ?', [cajaRow.fecha_apertura]))[0],
-      servicios: (await query<any[]>('SELECT COUNT(*) AS cantidad, COALESCE(AVG(total), 0) AS promedio FROM servicios WHERE estado = 1 AND fecha_crea >= ?', [cajaRow.fecha_apertura]))[0]
+      ventas: (
+        await query<any[]>(
+          'SELECT COUNT(*) AS cantidad, COALESCE(AVG(total), 0) AS promedio FROM ventas WHERE estado = 1 AND fecha_crea >= ?',
+          [cajaRow.fecha_apertura]
+        )
+      )[0],
+      servicios: (
+        await query<any[]>(
+          'SELECT COUNT(*) AS cantidad, COALESCE(AVG(total), 0) AS promedio FROM servicios WHERE estado = 1 AND fecha_crea >= ?',
+          [cajaRow.fecha_apertura]
+        )
+      )[0]
     };
 
-    const balanceTotal = Number(cajaRow.efectivo || 0) + Number(cajaRow.tarjeta || 0) + Number(cajaRow.transferencia || 0) + Number(cajaRow.monto_apertura || 0) - Number(cajaRow.devolucion || 0);
+    const balanceTotal =
+      Number(cajaRow.efectivo || 0) +
+      Number(cajaRow.tarjeta || 0) +
+      Number(cajaRow.transferencia || 0) +
+      Number(cajaRow.monto_apertura || 0) -
+      Number(cajaRow.devolucion || 0);
 
     return {
       ...this.mapCajaFromDB(cajaRow),
@@ -143,17 +163,23 @@ export class CashRegisterRepository {
   }
 
   static async getById(id: string): Promise<CajaType | null> {
-    const res = await query<any[]>(`
+    const res = await query<any[]>(
+      `
       SELECT c.*, CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre
       FROM cajas c
       LEFT JOIN usuarios u1 ON c.usuario_id_apertura = u1.id_usuario
       WHERE c.id_caja = ?
-    `, [id]);
+    `,
+      [id]
+    );
     return res.length > 0 ? this.mapCajaFromDB(res[0]) : null;
   }
 
   static async open(usuario_id: string, monto_apertura: number): Promise<CajaType | null> {
-    const open = await query<any[]>('SELECT id_caja FROM cajas WHERE usuario_id_apertura = ? AND estado = 1', [usuario_id]);
+    const open = await query<any[]>(
+      'SELECT id_caja FROM cajas WHERE usuario_id_apertura = ? AND estado = 1',
+      [usuario_id]
+    );
     if (open.length > 0) throw new ConflictError('Usuario ya tiene una caja abierta');
 
     const id = generateUUID();
@@ -177,8 +203,12 @@ export class CashRegisterRepository {
     const caja = await BaseRepository.findOne<any>(query, 'cajas', 'id_caja', id);
     if (!caja || caja.estado !== 1) throw new NotFoundError('Caja abierta');
 
-    const montoCierre = Number(caja.monto_apertura || 0) + Number(caja.efectivo || 0) + 
-                        Number(caja.tarjeta || 0) + Number(caja.transferencia || 0) - Number(caja.devolucion || 0);
+    const montoCierre =
+      Number(caja.monto_apertura || 0) +
+      Number(caja.efectivo || 0) +
+      Number(caja.tarjeta || 0) +
+      Number(caja.transferencia || 0) -
+      Number(caja.devolucion || 0);
 
     // Cerrar sesiones de todos los usuarios al cerrar caja
     await query(`

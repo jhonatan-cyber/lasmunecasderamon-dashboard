@@ -1,16 +1,19 @@
 import { query } from '@/lib/database/db';
 import {
-  StatsGeneralSchema, type StatsGeneralType,
-  MonthlySalesSchema, type MonthlySalesType,
-  WeeklySalesSchema, type WeeklySalesType
+  StatsGeneralSchema,
+  type StatsGeneralType,
+  MonthlySalesSchema,
+  type MonthlySalesType,
+  WeeklySalesSchema,
+  type WeeklySalesType
 } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError } from '@/lib/errors/errors';
 
 export class StatsRepository {
-
   static async getHabitacionesStats(cajaId: string) {
-    const habitacionesStats = (await query(`
+    const habitacionesStats = (await query(
+      `
       SELECT 
         h.id_habitacion as habitacion_id,
         h.nombre as habitacion_nombre,
@@ -26,30 +29,40 @@ export class StatsRepository {
       GROUP BY h.id_habitacion, h.nombre, h.comision_anfitriona
       HAVING total_servicios > 0
       ORDER BY total_generado DESC, h.nombre ASC
-    `, [cajaId])) as any[];
+    `,
+      [cajaId]
+    )) as any[];
 
-    const comisionesVentas = await query(`
+    const comisionesVentas = await query(
+      `
       SELECT 
         COALESCE(SUM(dv.comision), 0) as total_comisiones_venta
       FROM ventas v
       INNER JOIN detalle_ventas dv ON v.id_venta = dv.venta_id
       WHERE v.caja_id = ?
-    `, [cajaId]);
+    `,
+      [cajaId]
+    );
 
     const totalComisionesVenta = (comisionesVentas as any)[0]?.total_comisiones_venta || 0;
-    const totalServicios = habitacionesStats.reduce((sum: number, h: any) => sum + h.total_servicios, 0);
+    const totalServicios = habitacionesStats.reduce(
+      (sum: number, h: any) => sum + h.total_servicios,
+      0
+    );
 
     return habitacionesStats.map((habitacion: any) => ({
       ...habitacion,
-      comisiones_venta: totalServicios > 0
-        ? Math.round((habitacion.total_servicios / totalServicios) * totalComisionesVenta)
-        : 0
+      comisiones_venta:
+        totalServicios > 0
+          ? Math.round((habitacion.total_servicios / totalServicios) * totalComisionesVenta)
+          : 0
     }));
   }
 
   static async getCajaGeneralStats(): Promise<StatsGeneralType> {
     const now = getNowInBusinessTimezone();
-    const cajaAbierta = await query<any[]>(`
+    const cajaAbierta = await query<any[]>(
+      `
       SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
         tarjeta, transferencia, comision, propina, iva, anticipo, devolucion,
         TIMESTAMPDIFF(HOUR, fecha_apertura, ?) as horas_abierta,
@@ -58,7 +71,9 @@ export class StatsRepository {
       WHERE estado = 1
       ORDER BY fecha_apertura DESC
       LIMIT 1
-    `, [now, now]);
+    `,
+      [now, now]
+    );
 
     const cajaRow = cajaAbierta[0] || null;
 
@@ -72,7 +87,8 @@ export class StatsRepository {
       `) as Promise<any[]>,
 
       cajaRow?.id_caja
-        ? query(`
+        ? (query(
+            `
             SELECT 
               COALESCE(SUM(total), 0) as total_ventas,
               COALESCE(COUNT(*), 0) as cantidad_ventas,
@@ -82,19 +98,35 @@ export class StatsRepository {
               COALESCE(SUM(CASE WHEN metodo_pago = 'transferencia' THEN total ELSE 0 END), 0) as total_transferencia
             FROM ventas
             WHERE caja_id = ? AND estado IN (1, 2)
-          `, [cajaRow.id_caja]) as Promise<any[]>
-        : Promise.resolve([{ total_ventas: 0, cantidad_ventas: 0, promedio_venta: 0, total_efectivo: 0, total_tarjeta: 0, total_transferencia: 0 }] as any[]),
+          `,
+            [cajaRow.id_caja]
+          ) as Promise<any[]>)
+        : Promise.resolve([
+            {
+              total_ventas: 0,
+              cantidad_ventas: 0,
+              promedio_venta: 0,
+              total_efectivo: 0,
+              total_tarjeta: 0,
+              total_transferencia: 0
+            }
+          ] as any[]),
 
       cajaRow?.id_caja
-        ? query(`
+        ? (query(
+            `
             SELECT 
               COALESCE(SUM(total), 0) as total_servicios,
               COALESCE(COUNT(*), 0) as cantidad_servicios,
               COALESCE(AVG(total), 0) as promedio_servicio
             FROM servicios
             WHERE caja_id = ? AND estado IN (1, 2)
-          `, [cajaRow.id_caja]) as Promise<any[]>
-        : Promise.resolve([{ total_servicios: 0, cantidad_servicios: 0, promedio_servicio: 0 }] as any[]),
+          `,
+            [cajaRow.id_caja]
+          ) as Promise<any[]>)
+        : Promise.resolve([
+            { total_servicios: 0, cantidad_servicios: 0, promedio_servicio: 0 }
+          ] as any[]),
 
       query(`
         SELECT 
@@ -107,7 +139,8 @@ export class StatsRepository {
     return StatsGeneralSchema.parse({
       caja_id: cajaRow?.id_caja,
       monto_apertura: parseFloat(cajaRow?.monto_apertura || '0'),
-      efectivo_en_caja: parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
+      efectivo_en_caja:
+        parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
       total_efectivo: parseFloat(cajaRow?.efectivo || '0'),
       total_tarjeta: parseFloat(cajaRow?.tarjeta || '0'),
       total_transferencia: parseFloat(cajaRow?.transferencia || '0'),
@@ -147,8 +180,10 @@ export class StatsRepository {
       GROUP BY r.nombre
     `)) as any[];
 
-    const findTotal = (rol: string) => totalUsers.find((t: any) => t.rol.toLowerCase().includes(rol))?.total || 0;
-    const filterLogged = (rol: string) => loggedUsers.filter(u => u.rol.toLowerCase().includes(rol));
+    const findTotal = (rol: string) =>
+      totalUsers.find((t: any) => t.rol.toLowerCase().includes(rol))?.total || 0;
+    const filterLogged = (rol: string) =>
+      loggedUsers.filter(u => u.rol.toLowerCase().includes(rol));
 
     const formatRole = (rol: string) => {
       const users = filterLogged(rol);
@@ -170,7 +205,8 @@ export class StatsRepository {
 
   static async getSalesByMonth(offset: number = 0) {
     const now = getNowInBusinessTimezone();
-    const rows = await query<any[]>(`
+    const rows = await query<any[]>(
+      `
       SELECT 
         DATE_FORMAT(fecha_crea, '%Y-%m') as mes,
         COUNT(*) as cantidad_ventas,
@@ -183,7 +219,9 @@ export class StatsRepository {
       GROUP BY mes
       ORDER BY mes DESC
       LIMIT 12
-    `, [now, offset, now, offset]);
+    `,
+      [now, offset, now, offset]
+    );
 
     const data = rows.map(r => ({
       mes: r.mes,
@@ -212,7 +250,8 @@ export class StatsRepository {
 
   static async getSalesByWeek(offset: number = 0) {
     const now = getNowInBusinessTimezone();
-    const rows = (await query(`
+    const rows = (await query(
+      `
       WITH RECURSIVE days AS (
         SELECT DATE(DATE_SUB(?, INTERVAL (WEEKDAY(?) + (? * 7)) DAY)) as d, 0 as i
         UNION ALL
@@ -238,7 +277,9 @@ export class StatsRepository {
         AND v.estado IN (1, 2)
       GROUP BY days.d, dia_semana, dia_espanol, orden
       ORDER BY orden ASC
-    `, [now, now, offset])) as any[];
+    `,
+      [now, now, offset]
+    )) as any[];
 
     const startDate = rows[0]?.fecha;
     const endDate = rows[rows.length - 1]?.fecha;
@@ -267,14 +308,15 @@ export class StatsRepository {
     };
   }
 
-
   static async getUserDashboardSummary(userId: string, role: string) {
     const roleLower = role.toLowerCase();
 
-    const userRes = await query<any[]>('SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?', [userId]);
+    const userRes = await query<any[]>(
+      'SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?',
+      [userId]
+    );
     if (userRes.length === 0) throw new NotFoundError('Usuario', userId);
     const userBase = userRes[0];
-
 
     const [
       asistencias,
@@ -286,24 +328,39 @@ export class StatsRepository {
       comisiones,
       semanasAsistencia
     ] = await Promise.all([
-
-      query('SELECT * FROM asistencias WHERE usuario_id = ? AND estado = 1', [userId]) as Promise<any[]>,
+      query('SELECT * FROM asistencias WHERE usuario_id = ? AND estado = 1', [userId]) as Promise<
+        any[]
+      >,
       query('SELECT * FROM anticipos WHERE usuario_id = ?', [userId]) as Promise<any[]>,
-      query(`
+      query(
+        `
         SELECT P.id_propina, P.estado, DP.monto 
         FROM propinas P 
         INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina 
-        WHERE DP.usuario_id = ?`, [userId]) as Promise<any[]>,
+        WHERE DP.usuario_id = ?`,
+        [userId]
+      ) as Promise<any[]>,
       query('SELECT * FROM horas_extras WHERE usuario_id = ?', [userId]) as Promise<any[]>,
       roleLower === 'garzon'
-        ? query('SELECT id_pedido, estado FROM pedidos WHERE mesero_id = ?', [userId]) as Promise<any[]>
-        : query('SELECT P.id_pedido, P.estado FROM pedidos P INNER JOIN pedidos_usuarios PU ON P.id_pedido = PU.pedido_id WHERE PU.usuario_id = ?', [userId]) as Promise<any[]>,
-      query('SELECT S.* FROM servicios S INNER JOIN detalle_servicios DS ON S.id_servicio = DS.servicio_id WHERE DS.usuario_id = ?', [userId]) as Promise<any[]>,
+        ? (query('SELECT id_pedido, estado FROM pedidos WHERE mesero_id = ?', [userId]) as Promise<
+            any[]
+          >)
+        : (query(
+            'SELECT P.id_pedido, P.estado FROM pedidos P INNER JOIN pedidos_usuarios PU ON P.id_pedido = PU.pedido_id WHERE PU.usuario_id = ?',
+            [userId]
+          ) as Promise<any[]>),
+      query(
+        'SELECT S.* FROM servicios S INNER JOIN detalle_servicios DS ON S.id_servicio = DS.servicio_id WHERE DS.usuario_id = ?',
+        [userId]
+      ) as Promise<any[]>,
       query('SELECT * FROM detalle_comisiones WHERE usuario_id = ?', [userId]) as Promise<any[]>,
-      query(`
+      query(
+        `
         SELECT COUNT(DISTINCT YEARWEEK(fecha, 1)) as semanas 
         FROM asistencias 
-        WHERE usuario_id = ? AND estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)`, [userId]) as Promise<any[]>
+        WHERE usuario_id = ? AND estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)`,
+        [userId]
+      ) as Promise<any[]>
     ]);
 
     const filterEstado1 = (arr: any[]) => arr.filter(i => i.estado === 1);
@@ -315,21 +372,32 @@ export class StatsRepository {
     const totalPropinasPendientes = propinasPendientesArr.reduce((s, p) => s + (p.monto || 0), 0);
 
     const horasExtrasPendientesArr = filterEstado1(horasExtras);
-    const totalHorasExtrasPendientes = horasExtrasPendientesArr.reduce((s, h) => s + (h.total || 0), 0);
+    const totalHorasExtrasPendientes = horasExtrasPendientesArr.reduce(
+      (s, h) => s + (h.total || 0),
+      0
+    );
 
     const totalAsistenciasCount = asistencias.length;
     const totalSueldoAsistencias = totalAsistenciasCount * (userBase.sueldo || 0);
     const totalAporteAsistencias = totalAsistenciasCount * (userBase.aporte || 0);
-    const totalDescuentoAsistencias = (semanasAsistencia[0]?.semanas || 0) * (userBase.descuento || 0);
+    const totalDescuentoAsistencias =
+      (semanasAsistencia[0]?.semanas || 0) * (userBase.descuento || 0);
 
     let totalACobrar = 0;
 
     if (roleLower === 'garzon') {
-      const totalACobrarAsistencias = totalSueldoAsistencias + totalAporteAsistencias - totalDescuentoAsistencias;
-      totalACobrar = totalACobrarAsistencias + totalPropinasPendientes + totalHorasExtrasPendientes - totalAnticiposPendientes;
-    }
-    else if (roleLower === 'anfitriona') {
-      const totalACobrarAsistencias = Math.max(0, totalSueldoAsistencias - totalAporteAsistencias - totalDescuentoAsistencias);
+      const totalACobrarAsistencias =
+        totalSueldoAsistencias + totalAporteAsistencias - totalDescuentoAsistencias;
+      totalACobrar =
+        totalACobrarAsistencias +
+        totalPropinasPendientes +
+        totalHorasExtrasPendientes -
+        totalAnticiposPendientes;
+    } else if (roleLower === 'anfitriona') {
+      const totalACobrarAsistencias = Math.max(
+        0,
+        totalSueldoAsistencias - totalAporteAsistencias - totalDescuentoAsistencias
+      );
 
       const comisionesVentas = comisiones.filter(c => c.tipo === 'venta' && c.estado === 1);
       const totalComisionesVentas = comisionesVentas.reduce((s, c) => s + (c.comision || 0), 0);
@@ -337,10 +405,18 @@ export class StatsRepository {
       const comisionesServicios = comisiones.filter(c => c.tipo === 'servicio' && c.estado === 1);
       const totalGanadoServicios = comisionesServicios.reduce((s, c) => s + (c.comision || 0), 0);
 
-      totalACobrar = totalACobrarAsistencias + totalComisionesVentas + totalGanadoServicios - totalAnticiposPendientes;
-    }
-    else if (roleLower === 'cajero') {
-      totalACobrar = (totalSueldoAsistencias - totalAporteAsistencias) - totalAnticiposPendientes + totalPropinasPendientes + totalHorasExtrasPendientes;
+      totalACobrar =
+        totalACobrarAsistencias +
+        totalComisionesVentas +
+        totalGanadoServicios -
+        totalAnticiposPendientes;
+    } else if (roleLower === 'cajero') {
+      totalACobrar =
+        totalSueldoAsistencias -
+        totalAporteAsistencias -
+        totalAnticiposPendientes +
+        totalPropinasPendientes +
+        totalHorasExtrasPendientes;
     }
 
     return {

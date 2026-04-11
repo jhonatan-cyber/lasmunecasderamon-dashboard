@@ -4,27 +4,27 @@ import { ValidationError } from '@/lib/errors/errors';
 vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'mock-uuid',
   withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
-  query: vi.fn().mockResolvedValue([{ comision_anfitriona: 0 }]),
+  query: vi.fn().mockResolvedValue([{ comision_anfitriona: 0 }])
 }));
 
 vi.mock('@/lib/repositories/ServiceRepository', () => ({
-  ServiceRepository: { rawInsert: vi.fn() },
+  ServiceRepository: { rawInsert: vi.fn() }
 }));
 
 vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
-  CashRegisterRepository: { getCurrentCajaId: vi.fn(), updateBalances: vi.fn() },
+  CashRegisterRepository: { getCurrentCajaId: vi.fn(), updateBalances: vi.fn() }
 }));
 
 vi.mock('@/lib/services/RoomManager', () => ({
-  RoomManager: { pauseConflictingServices: vi.fn() },
+  RoomManager: { pauseConflictingServices: vi.fn() }
 }));
 
 vi.mock('@/lib/api/sseService', () => ({
-  sendNotificationToAll: vi.fn(),
+  sendNotificationToAll: vi.fn()
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
-  getNowInBusinessTimezone: () => '2026-04-10 10:00:00',
+  getNowInBusinessTimezone: () => '2026-04-10 10:00:00'
 }));
 
 import { ServiceService } from '@/lib/services/ServiceService';
@@ -44,14 +44,12 @@ const validServiceBody = {
   tiempo: 60,
   metodo_pago: 'efectivo' as const,
   usuarios: ['user-1'],
-  clientes: [],
+  clientes: []
 };
 
 describe('ServiceService.createService', () => {
   it('lanza ZodError si faltan campos requeridos', async () => {
-    await expect(
-      ServiceService.createService({ total: 0 } as any, 'cajero-1')
-    ).rejects.toThrow();
+    await expect(ServiceService.createService({ total: 0 } as any, 'cajero-1')).rejects.toThrow();
   });
 
   it('lanza ZodError si usuarios está vacío', async () => {
@@ -68,7 +66,7 @@ describe('ServiceService.createService', () => {
         {
           ...validServiceBody,
           metodo_pago: 'mixto' as any,
-          pagos_mixtos: [{ metodo: 'efectivo', monto: 60000 }],
+          pagos_mixtos: [{ metodo: 'efectivo', monto: 60000 }]
         },
         'cajero-1'
       )
@@ -86,8 +84,8 @@ describe('ServiceService.createService', () => {
           metodo_pago: 'mixto' as any,
           pagos_mixtos: [
             { metodo: 'efectivo', monto: 20000 },
-            { metodo: 'tarjeta', monto: 20000 }, // suma 40000 ≠ 60000
-          ],
+            { metodo: 'tarjeta', monto: 20000 } // suma 40000 ≠ 60000
+          ]
         },
         'cajero-1'
       )
