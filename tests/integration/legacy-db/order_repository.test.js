@@ -244,7 +244,7 @@ async function runTests() {
     mockTransactions = [];
     try {
       await fn();
-      console.log(`âœ… ${name}`);
+      console.log(`✅ ${name}`);
       passed++;
     } catch (error) {
       console.error(`âŒ ${name}`);
@@ -254,7 +254,7 @@ async function runTests() {
   };
 
   // --- TEST 1: getAll ---
-  await test('getAll() deberÃ­a mapear correctamente los resultados de DB', async () => {
+  await test('getAll() debería mapear correctamente los resultados de DB', async () => {
     mockQueryResults = [
       [
         {
@@ -270,23 +270,23 @@ async function runTests() {
       ]
     ];
     const res = await OrderRepository.getAll();
-    if (res.length !== 1) throw new Error('DeberÃ­a retornar 1 pedido');
+    if (res.length !== 1) throw new Error('Debería retornar 1 pedido');
     if (res[0].id !== 'order-uuid') throw new Error('ID no coincide');
     if (res[0].mesero_nombre !== 'Lola') throw new Error('Nombre del mesero no coincide');
   });
 
   // --- TEST 2: getByUser ---
-  await test('getByUser() deberÃ­a filtrar por usuario y mapear resultados', async () => {
+  await test('getByUser() debería filtrar por usuario y mapear resultados', async () => {
     mockQueryResults = [
       [{ id_pedido: 'order-u1', codigo: 'PED-U1', total: 5000, subtotal: 5000, estado: 1 }]
     ];
     const res = await OrderRepository.getByUser('user-id');
-    if (res.length !== 1) throw new Error('DeberÃ­a retornar resultados');
-    if (res[0].codigo !== 'PED-U1') throw new Error('CÃ³digo incorrecto');
+    if (res.length !== 1) throw new Error('Debería retornar resultados');
+    if (res[0].codigo !== 'PED-U1') throw new Error('Código incorrecto');
   });
 
   // --- TEST 3: create ---
-  await test('create() deberÃ­a insertar pedido, detalles y usuarios en una transacciÃ³n', async () => {
+  await test('create() debería insertar pedido, detalles y usuarios en una transacción', async () => {
     const body = {
       codigo: 'NEW-PED',
       meseroId: 'm1',
@@ -299,7 +299,7 @@ async function runTests() {
     };
 
     const res = await OrderRepository.create(body);
-    if (!res.id.startsWith('test-uuid')) throw new Error('No retornÃ³ un ID vÃ¡lido');
+    if (!res.id.startsWith('test-uuid')) throw new Error('No retornó un ID válido');
 
     // Verificar inserciones
     const orderInsert = mockTransactions.find(t => t.action === 'insert' && t.table === 'pedidos');
@@ -310,14 +310,14 @@ async function runTests() {
       t => t.action === 'insert' && t.table === 'pedidos_usuarios'
     );
 
-    if (!orderInsert) throw new Error('No se insertÃ³ el pedido');
+    if (!orderInsert) throw new Error('No se insertó el pedido');
     if (!detailInsert) throw new Error('No se insertaron los detalles');
-    if (!userInsert) throw new Error('No se vinculÃ³ el usuario');
-    if (orderInsert.data.total !== 1100) throw new Error('Total incorrecto en inserciÃ³n');
+    if (!userInsert) throw new Error('No se vinculó el usuario');
+    if (orderInsert.data.total !== 1100) throw new Error('Total incorrecto en inserción');
   });
 
   // --- TEST 4: delete ---
-  await test('delete() deberÃ­a eliminar el pedido y sus relaciones', async () => {
+  await test('delete() debería eliminar el pedido y sus relaciones', async () => {
     mockQueryResults = [{ id_pedido: 'del-id', mesero_id: 'm1' }]; // findOne result
     await OrderRepository.delete('del-id');
 
@@ -326,19 +326,19 @@ async function runTests() {
       t => t.sql && t.sql.includes('DELETE FROM detalle_pedidos')
     );
 
-    if (!deleteOrder) throw new Error('No se eliminÃ³ el pedido');
+    if (!deleteOrder) throw new Error('No se eliminó el pedido');
     if (!deleteDetails) throw new Error('No se eliminaron los detalles');
   });
 
   // --- TEST 5: getDetail ---
-  await test('getDetail() deberÃ­a retornar filas de la DB', async () => {
+  await test('getDetail() debería retornar filas de la DB', async () => {
     mockQueryResults = [[{ id_pedido: 'det-id', producto_nombre: 'Cerveza' }]];
     const res = await OrderRepository.getDetail('det-id');
     if (res[0].producto_nombre !== 'Cerveza') throw new Error('Detalle incorrecto');
   });
 
   // --- TEST 6: updateStatus ---
-  await test('updateStatus() deberÃ­a actualizar y refrescar el objeto', async () => {
+  await test('updateStatus() debería actualizar y refrescar el objeto', async () => {
     mockQueryResults = [
       [{ id_pedido: 'upd-id', estado: 2, total: 2000 }] // result for re-fetching
     ];
@@ -346,7 +346,7 @@ async function runTests() {
 
     const updateAction = mockTransactions.find(t => t.action === 'update' && t.table === 'pedidos');
     if (!updateAction || updateAction.data.estado !== 2)
-      throw new Error('No se ejecutÃ³ la actualizaciÃ³n correctamente');
+      throw new Error('No se ejecutó la actualización correctamente');
     if (res.estado !== 2) throw new Error('El objeto retornado no tiene el estado actualizado');
   });
 

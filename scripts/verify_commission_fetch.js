@@ -78,7 +78,7 @@ async function testFetchWithUUID() {
           WHEN c.estado = 2 THEN 'Pagado'
           ELSE 'Anulado'
         END AS estado,
-        'Servicio de AcompaÃ±ante' AS producto,
+        'Servicio de Acompañante' AS producto,
         NULL AS fecha_pago,
         s.codigo AS descripcion
       FROM comisiones c

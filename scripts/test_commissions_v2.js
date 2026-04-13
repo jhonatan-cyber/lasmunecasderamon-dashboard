@@ -23,7 +23,7 @@ async function testCommissionDetails() {
       database: config.database
     });
     connection = await mysql.createConnection(config);
-    console.log('ConexiÃ³n establecida.');
+    console.log('Conexión establecida.');
 
     // 1. Buscar un usuario que tenga comisiones
     const [usuarios] = await connection.execute(`
@@ -81,7 +81,7 @@ async function testCommissionDetails() {
           WHEN c.estado = 2 THEN 'Pagado'
           ELSE 'Anulado'
         END AS estado,
-        'Servicio de AcompaÃ±ante' AS producto,
+        'Servicio de Acompañante' AS producto,
         NULL AS fecha_pago,
         s.codigo AS descripcion
       FROM comisiones c
@@ -105,11 +105,11 @@ async function testCommissionDetails() {
         acc[curr.tipo] = (acc[curr.tipo] || 0) + 1;
         return acc;
       }, {});
-      console.log('DistribuciÃ³n por tipo:', tipos);
+      console.log('Distribución por tipo:', tipos);
     } else {
-      console.log('La consulta no devolviÃ³ resultados para este usuario.');
+      console.log('La consulta no devolvió resultados para este usuario.');
 
-      // VerificaciÃ³n extra: Â¿Existen comisiones para este usuario en la tabla comisiones?
+      // Verificación extra: ¿Existen comisiones para este usuario en la tabla comisiones?
       const [rawCom] = await connection.execute(
         `
         SELECT COUNT(*) as count 

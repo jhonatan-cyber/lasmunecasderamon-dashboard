@@ -60,7 +60,7 @@ const BaseRepository = {
 
 const getNowInBusinessTimezone = () => new Date();
 
-// ImplementaciÃ³n mÃ­nima del Repositorio para la prueba
+// Implementación mínima del Repositorio para la prueba
 class CommissionRepository {
   static async summary() {
     const summary = await queryMock(`
@@ -167,7 +167,7 @@ async function runTests() {
     const summary = await CommissionRepository.summary();
     console.log('Summary result:', summary);
     if (summary && typeof summary.total_comisiones !== 'undefined') {
-      console.log('âœ… summary() OK');
+      console.log('✅ summary() OK');
     }
 
     const [users] = await connection.execute(
@@ -182,7 +182,7 @@ async function runTests() {
       console.log('\n[3] Probando getDetails()...');
       const details = await CommissionRepository.getDetails(testUser.id_usuario);
       console.log(`Detalles encontrados: ${details.length}`);
-      console.log('âœ… getDetails() OK');
+      console.log('✅ getDetails() OK');
     }
 
     console.log('\n[4] Probando ciclo de vida (create/update/delete)...');
@@ -199,11 +199,11 @@ async function runTests() {
       [testId]
     );
     if (check.length > 0 && check[0].estado === 0) {
-      console.log('âœ… Ciclo de vida OK');
+      console.log('✅ Ciclo de vida OK');
     }
     await connection.execute('DELETE FROM comisiones WHERE id_comision = ?', [testId]);
 
-    console.log('\n--- PRUEBAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

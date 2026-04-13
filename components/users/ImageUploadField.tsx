@@ -4,7 +4,7 @@ import { Control } from 'react-hook-form';
 import { FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Image as ImageIcon, Trash2, UploadCloud, Link as LinkIcon, X } from 'lucide-react';
+import { Image as ImageIcon, Trash2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 import { type UserFormValues } from '@/hooks/personal/useUserForm';
 import { cn } from '@/lib/utils/utils';
 
@@ -21,7 +21,6 @@ function ImageUploadFieldComponent({
 }: ImageUploadFieldProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlValue, setUrlValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,6 +31,7 @@ function ImageUploadFieldComponent({
         : `/img/users/${initialImageUrl}`;
       setPreviewUrl(imageUrl);
     }
+    setUrlValue('');
   }, [initialImageUrl]);
 
   useEffect(() => {
@@ -85,14 +85,17 @@ function ImageUploadFieldComponent({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleUrlSubmit = (onChange: (value: string) => void) => {
-    if (urlValue.trim() && urlValue.startsWith('http')) {
-      setPreviewUrl(urlValue.trim());
-      onImageChange(null);
-      onChange(urlValue.trim());
-      setShowUrlInput(false);
+  const handleUrlChange = (value: string, onChange: (value: string) => void) => {
+    setUrlValue(value);
+    onImageChange(null);
+
+    const trimmedValue = value.trim();
+    if (trimmedValue) {
+      setPreviewUrl(trimmedValue);
+      onChange(trimmedValue);
     } else {
-      alert('Por favor, ingresa una URL válida (ej. https://...)');
+      setPreviewUrl(null);
+      onChange('');
     }
   };
 
@@ -188,75 +191,44 @@ function ImageUploadFieldComponent({
             )}
           </div>
 
-          <div className='flex flex-col w-full max-w-[240px] items-center gap-2'>
-            {!showUrlInput ? (
+          <div className='flex flex-col w-full items-center gap-2'>
+            {previewUrl && (
               <div className='flex gap-2'>
-                {previewUrl && (
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    className='text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 dark:border-red-900/40 rounded-full h-8 px-3 transition-colors'
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleRemoveImage(onChange);
-                    }}
-                  >
-                    <Trash2 className='w-3 h-3 mr-1' />
-                    <span className='text-xs font-medium'>Quitar</span>
-                  </Button>
-                )}
-                {!previewUrl && (
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    className='text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 dark:border-blue-900/40 rounded-full h-8 px-3 transition-colors'
-                    onClick={() => setShowUrlInput(true)}
-                  >
-                    <LinkIcon className='w-3 h-3 mr-1.5' />
-                    <span className='text-xs font-medium'>Usar URL</span>
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className='w-full flex flex-col gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-top-2'>
-                <div className='flex items-center gap-2'>
-                  <div className='relative flex-1'>
-                    <LinkIcon className='absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400' />
-                    <Input
-                      placeholder='https://ejemplo.com/foto.jpg'
-                      className='h-8 pl-8 text-xs rounded-lg'
-                      value={urlValue}
-                      onChange={e => setUrlValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleUrlSubmit(onChange);
-                        }
-                      }}
-                    />
-                  </div>
-                  <Button
-                    type='button'
-                    size='icon'
-                    variant='ghost'
-                    className='h-8 w-8 rounded-lg'
-                    onClick={() => setShowUrlInput(false)}
-                  >
-                    <X className='w-4 h-4' />
-                  </Button>
-                </div>
                 <Button
                   type='button'
+                  variant='ghost'
                   size='sm'
-                  className='w-full h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs'
-                  onClick={() => handleUrlSubmit(onChange)}
+                  className='text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 dark:border-red-900/40 rounded-full h-8 px-3 transition-colors'
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleRemoveImage(onChange);
+                  }}
                 >
-                  Confirmar URL
+                  <Trash2 className='w-3 h-3 mr-1' />
+                  <span className='text-xs font-medium'>Quitar</span>
                 </Button>
               </div>
             )}
+
+            <div className='flex flex-col justify-center w-full'>
+              <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1'>
+                URL de imagen
+              </label>
+              <div className='relative'>
+                <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10'>
+                  <LinkIcon className='w-4 h-4' />
+                </span>
+                <Input
+                  placeholder='https://ejemplo.com/imagen.jpg'
+                  value={urlValue}
+                  onChange={e => handleUrlChange(e.target.value, onChange)}
+                  className='h-11 pl-10 rounded-xl bg-white dark:bg-slate-800'
+                />
+              </div>
+              <p className='text-[10px] text-gray-400 mt-1.5 ml-1'>
+                Pegá el enlace de una imagen externa
+              </p>
+            </div>
           </div>
 
           <FormMessage />

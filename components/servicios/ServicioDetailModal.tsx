@@ -35,7 +35,7 @@ export function ServicioDetailModal({
   const hasAnfitrionas =
     selectedServicio.anfitrionas_nombres && selectedServicio.anfitrionas_nombres.length > 0;
 
-  // Mostrar botÃ³n editar si precio_servicio es 0 Y la habitaciÃ³n tiene comisiÃ³n mayor a 0
+  // Mostrar botón editar si precio_servicio es 0 Y la habitación tiene comisión mayor a 0
   const precioServicioInput = Number(selectedServicio.precio_servicio) || 0;
   const habitacionComision = Number(selectedServicio.habitacion_comision) || 0;
   const mostrarBotonEditar = precioServicioInput === 0 && habitacionComision > 0;
@@ -45,13 +45,13 @@ export function ServicioDetailModal({
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-neutral-900'>
         <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-center text-lg font-bold text-black dark:text-neutral-100'>
-            InformaciÃ³n del Servicio
+            Información del Servicio
           </DialogTitle>
         </DialogHeader>
 
         <div className='flex-1 overflow-y-auto px-6 py-4'>
           <div className='space-y-6'>
-            {/* InformaciÃ³n general */}
+            {/* Información general */}
             <div className='grid grid-cols-2 gap-6'>
               <div className='space-y-3'>
                 <div className='flex items-center gap-2'>
@@ -79,7 +79,7 @@ export function ServicioDetailModal({
                 <div className='flex items-center gap-2'>
                   <Tag className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
-                    CÃ³digo:
+                    Código:
                   </Label>
                   <span className='text-sm font-mono bg-gray-100 dark:bg-neutral-800 text-black dark:text-neutral-100 px-2 py-1 rounded'>
                     {selectedServicio.codigo}
@@ -100,10 +100,10 @@ export function ServicioDetailModal({
                 <div className='flex items-center gap-2'>
                   <Home className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
-                    HabitaciÃ³n:
+                    Habitación:
                   </Label>
                   <span className='text-sm text-black dark:text-neutral-100'>
-                    {selectedServicio.habitacion_numero || 'Sin habitaciÃ³n'}
+                    {selectedServicio.habitacion_numero || 'Sin habitación'}
                   </span>
                 </div>
                 <div className='flex items-center gap-2'>
@@ -118,7 +118,7 @@ export function ServicioDetailModal({
                 <div className='flex items-center gap-2'>
                   <CreditCard className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
-                    MÃ©todo de Pago:
+                    Método de Pago:
                   </Label>
                   <Badge
                     variant='outline'
@@ -153,11 +153,11 @@ export function ServicioDetailModal({
               </div>
             )}
 
-            {/* InformaciÃ³n financiera */}
+            {/* Información financiera */}
             <div className='space-y-3'>
               <Label className='text-sm font-medium flex items-center gap-2 text-black dark:text-neutral-200'>
                 <DollarSign className='text-gray-500 dark:text-neutral-400 w-4' />
-                InformaciÃ³n Financiera:
+                Información Financiera:
               </Label>
               <Table>
                 <TableHeader>
@@ -171,7 +171,7 @@ export function ServicioDetailModal({
                 <TableBody>
                   <TableRow>
                     <TableCell className='text-black dark:text-neutral-100'>
-                      Precio HabitaciÃ³n
+                      Precio Habitación
                     </TableCell>
                     <TableCell className='text-right text-black dark:text-neutral-100'>
                       {formatCurrency(Number(selectedServicio.precio_habitacion) || 0)}
@@ -206,10 +206,10 @@ export function ServicioDetailModal({
                       {formatCurrency(Number(selectedServicio.total) || 0)}
                     </TableCell>
                   </TableRow>
-                  {/* SecciÃ³n de Comisiones */}
+                  {/* Sección de Comisiones */}
                   <TableRow className='bg-green-50 dark:bg-green-900/20'>
                     <TableCell className='text-green-700 dark:text-green-400 font-semibold'>
-                      Total ComisiÃ³n
+                      Total Comisión
                     </TableCell>
                     <TableCell className='text-right text-green-700 dark:text-green-400 font-bold'>
                       {formatCurrency(
@@ -220,7 +220,7 @@ export function ServicioDetailModal({
                   </TableRow>
                   <TableRow className='bg-green-50 dark:bg-green-900/20'>
                     <TableCell className='text-green-700 dark:text-green-400'>
-                      ComisiÃ³n por Anfitriona
+                      Comisión por Anfitriona
                     </TableCell>
                     <TableCell className='text-right text-green-700 dark:text-green-400 font-medium'>
                       {formatCurrency(Number(selectedServicio.precio_servicio) || 0)} c/u

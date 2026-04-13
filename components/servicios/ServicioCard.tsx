@@ -29,7 +29,13 @@ import {
 } from '@/components/ui/dialog';
 import { ServiceTimeline } from './ServiceTimeline';
 import { ServicioWithDetails } from '@/types/servicio';
-import { formatCurrencyNoDecimals, formatSoloFecha, formatSoloHora } from '@/lib/utils/formatters';
+import {
+  formatCurrencyNoDecimals,
+  formatNumberInput,
+  parseNumberInput,
+  formatSoloFecha,
+  formatSoloHora
+} from '@/lib/utils/formatters';
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useServicioAnfitrionas } from '@/contexts/ServicioAnfitrionasContext';
@@ -70,15 +76,33 @@ export default function ServicioCard({
   // El API devuelve "id" pero el tipo espera "id_servicio"
   const rawId = servicio.id_servicio ?? servicio.id;
   const servicioIdStr = String(rawId || 'NO-ID');
-  
-  console.log('[ServicioCard] Raw ID:', rawId, 'String:', servicioIdStr, 'Keys:', Object.keys(servicio));
-  
+
+  console.log(
+    '[ServicioCard] Raw ID:',
+    rawId,
+    'String:',
+    servicioIdStr,
+    'Keys:',
+    Object.keys(servicio)
+  );
+
   const globalTimer = getTimerByServicioId(servicioIdStr);
   const temporaryTimer = getTemporaryTimerByServicioId(servicioIdStr);
 
   // Debug: mostrar info del timer cada vez que cambia
   useEffect(() => {
-    console.log('[ServicioCard] servicioId:', servicioIdStr, 'has globalTimer:', !!globalTimer, 'has tempTimer:', !!temporaryTimer, 'remaining:', globalTimer?.remainingTime, 'active:', globalTimer?.isActive);
+    console.log(
+      '[ServicioCard] servicioId:',
+      servicioIdStr,
+      'has globalTimer:',
+      !!globalTimer,
+      'has tempTimer:',
+      !!temporaryTimer,
+      'remaining:',
+      globalTimer?.remainingTime,
+      'active:',
+      globalTimer?.isActive
+    );
   }, [servicioIdStr, globalTimer, temporaryTimer]);
 
   const displayTimer = temporaryTimer || globalTimer;
@@ -320,19 +344,21 @@ export default function ServicioCard({
               #{servicio.codigo}
             </span>
             {/* Botón editar solo para servicios NO finalizados */}
-            {Number(servicio.habitacion_comision || 0) > 0 && !isEditing && servicio.estado !== 1 && (
-              <>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  onClick={() => setShowEditModal(true)}
-                  className='h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  title='Editar servicio'
-                >
-                  <Edit2 className='w-3 h-3 text-gray-600 dark:text-gray-400' />
-                </Button>
-              </>
-            )}
+            {Number(servicio.habitacion_comision || 0) > 0 &&
+              !isEditing &&
+              servicio.estado !== 1 && (
+                <>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => setShowEditModal(true)}
+                    className='h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    title='Editar servicio'
+                  >
+                    <Edit2 className='w-3 h-3 text-gray-600 dark:text-gray-400' />
+                  </Button>
+                </>
+              )}
           </div>
         </div>
 
@@ -474,126 +500,127 @@ export default function ServicioCard({
             <div>
               <span className='text-gray-500 dark:text-gray-400'>Servicio: </span>
               {isEditing ? (
-                  <Input
-                    type='number'
-                    value={editPrecio}
-                    onChange={e => setEditPrecio(Number(e.target.value))}
-                    className='h-6 w-20 text-xs inline-block ml-1'
-                    disabled={isSaving}
-                  />
-                ) : (
-                  <span
-                    className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
-                  >
-                    {formatCurrencyNoDecimals(finalDisplayData.precio_servicio)}
-                    {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
-                  </span>
-                )}
-              </div>
-              <div>
-                <span className='text-gray-500 dark:text-gray-400'>Habitacion: </span>
+                <Input
+                  type='text'
+                  inputMode='numeric'
+                  value={editPrecio ? formatNumberInput(editPrecio) : ''}
+                  onChange={e => setEditPrecio(parseNumberInput(e.target.value))}
+                  className='h-6 w-20 text-xs inline-block ml-1'
+                  disabled={isSaving}
+                />
+              ) : (
                 <span
                   className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
                 >
-                  {formatCurrencyNoDecimals(finalDisplayData.precio_habitacion)}
+                  {formatCurrencyNoDecimals(finalDisplayData.precio_servicio)}
                   {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
                 </span>
-              </div>
-              {finalDisplayData.habitacion_comision &&
-                finalDisplayData.habitacion_comision > 0 &&
-                !isTemporaryActive && (
-                  <div>
-                    <span className='text-gray-500 dark:text-gray-400'>Comisión: </span>
-                    <span
-                      className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}
-                    >
-                      {formatCurrencyNoDecimals(finalDisplayData.habitacion_comision)}
-                    </span>
-                  </div>
-                )}
+              )}
             </div>
-            {finalDisplayData.iva > 0 && (
-              <div>
-                <span className='text-gray-500 dark:text-gray-400'>IVA: </span>
-                <span
-                  className={`font-medium text-purple-600 dark:text-purple-400 ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : ''}`}
-                >
-                  {formatCurrencyNoDecimals(finalDisplayData.iva)}
-                  {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Total, Método de pago y Fecha en la misma línea */}
-          <div className='flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800'>
-            {/* Fecha a la izquierda */}
-            <div className='text-xs text-gray-500 dark:text-gray-400'>
-              <div>{formatSoloFecha(servicio.fecha_crea || '')}</div>
-              <div>{formatSoloHora(servicio.fecha_crea || '')}</div>
-            </div>
-            
-            {/* Total y método de pago a la derecha */}
-            <div className='text-right'>
-              <div
-                className={`text-lg font-bold ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
+            <div>
+              <span className='text-gray-500 dark:text-gray-400'>Habitacion: </span>
+              <span
+                className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
               >
-                {formatCurrencyNoDecimals(finalDisplayData.total)}
+                {formatCurrencyNoDecimals(finalDisplayData.precio_habitacion)}
                 {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
-              </div>
-              <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400'>
-                <CreditCard className='w-3 h-3' />
-                <span className='capitalize'>{finalDisplayData.metodo_pago || 'efectivo'}</span>
-              </div>
+              </span>
             </div>
+            {finalDisplayData.habitacion_comision &&
+              finalDisplayData.habitacion_comision > 0 &&
+              !isTemporaryActive && (
+                <div>
+                  <span className='text-gray-500 dark:text-gray-400'>Comisión: </span>
+                  <span
+                    className={`font-medium ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}
+                  >
+                    {formatCurrencyNoDecimals(finalDisplayData.habitacion_comision)}
+                  </span>
+                </div>
+              )}
           </div>
-
-          {/* Nota sobre valores temporales */}
-          {isTemporaryActive && (
-            <div className='text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border-t border-blue-200 dark:border-blue-800'>
-              <span className='font-medium'>* Valores temporales</span> - Precios se restaurarán,
-              anfitrionas se mantendrán cuando termine el timer temporal
+          {finalDisplayData.iva > 0 && (
+            <div>
+              <span className='text-gray-500 dark:text-gray-400'>IVA: </span>
+              <span
+                className={`font-medium text-purple-600 dark:text-purple-400 ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : ''}`}
+              >
+                {formatCurrencyNoDecimals(finalDisplayData.iva)}
+                {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
+              </span>
             </div>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className='flex gap-2 pt-2'>
-            {isEditing && (
-              <>
-                <Button
-                  size='sm'
-                  variant='ghost'
-                  onClick={() => setIsEditing(false)}
-                  disabled={isSaving}
-                  className='hover:bg-gray-100 dark:hover:bg-gray-800'
-                >
-                  <X className='w-3 h-3 text-gray-600 dark:text-gray-400' />
-                </Button>
-                <Button size='sm' onClick={handleSaveEdit} disabled={isSaving}>
-                  <Save className='w-3 h-3 mr-1' />
-                  Guardar
-                </Button>
-              </>
-            )}
-            {isAdminOrCajero &&
-              displayTimer &&
-              displayTimer.isActive &&
-              !showAllServices &&
-              !isEditing && (
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={handleStopTimer}
-                  className='text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20'
-                >
-                  <Square className='w-3 h-3 mr-1' />
-                  Finalizar
-                </Button>
-              )}
+        {/* Total, Método de pago y Fecha en la misma línea */}
+        <div className='flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800'>
+          {/* Fecha a la izquierda */}
+          <div className='text-xs text-gray-500 dark:text-gray-400'>
+            <div>{formatSoloFecha(servicio.fecha_crea || '')}</div>
+            <div>{formatSoloHora(servicio.fecha_crea || '')}</div>
+          </div>
+
+          {/* Total y método de pago a la derecha */}
+          <div className='text-right'>
+            <div
+              className={`text-lg font-bold ${isTemporaryActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}
+            >
+              {formatCurrencyNoDecimals(finalDisplayData.total)}
+              {isTemporaryActive && <span className='text-blue-500 ml-1'>*</span>}
+            </div>
+            <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400'>
+              <CreditCard className='w-3 h-3' />
+              <span className='capitalize'>{finalDisplayData.metodo_pago || 'efectivo'}</span>
+            </div>
           </div>
         </div>
 
-        {/* Edit Service Modal */}
+        {/* Nota sobre valores temporales */}
+        {isTemporaryActive && (
+          <div className='text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border-t border-blue-200 dark:border-blue-800'>
+            <span className='font-medium'>* Valores temporales</span> - Precios se restaurarán,
+            anfitrionas se mantendrán cuando termine el timer temporal
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className='flex gap-2 pt-2'>
+          {isEditing && (
+            <>
+              <Button
+                size='sm'
+                variant='ghost'
+                onClick={() => setIsEditing(false)}
+                disabled={isSaving}
+                className='hover:bg-gray-100 dark:hover:bg-gray-800'
+              >
+                <X className='w-3 h-3 text-gray-600 dark:text-gray-400' />
+              </Button>
+              <Button size='sm' onClick={handleSaveEdit} disabled={isSaving}>
+                <Save className='w-3 h-3 mr-1' />
+                Guardar
+              </Button>
+            </>
+          )}
+          {isAdminOrCajero &&
+            displayTimer &&
+            displayTimer.isActive &&
+            !showAllServices &&
+            !isEditing && (
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={handleStopTimer}
+                className='text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20'
+              >
+                <Square className='w-3 h-3 mr-1' />
+                Finalizar
+              </Button>
+            )}
+        </div>
+      </div>
+
+      {/* Edit Service Modal */}
       <EditServiceModal
         open={showEditModal}
         onOpenChange={setShowEditModal}

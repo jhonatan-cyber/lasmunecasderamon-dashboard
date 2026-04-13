@@ -39,13 +39,13 @@ export function DeleteProductConfirmModal({
         <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
           <DialogTitle className='flex items-center gap-2'>
             <AlertTriangle className='text-red-500 w-5 h-5' />
-            <span className='text-gray-900 dark:text-neutral-100'>Confirmar EliminaciÃ³n</span>
+            <span className='text-gray-900 dark:text-neutral-100'>Confirmar Eliminación</span>
           </DialogTitle>
         </DialogHeader>
         <div className='flex-1 px-6 py-6'>
           <div className='text-left'>
             <p className='font-medium text-gray-900 dark:text-neutral-100 mb-4 text-center'>
-              Â¿EstÃ¡s seguro de que quieres eliminar el producto?
+              ¿Estás seguro de que quieres eliminar el producto?
             </p>
             <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-xl border border-red-200 dark:border-red-800'>
               <div className='space-y-2 text-sm text-red-900 dark:text-red-100 text-center'>
@@ -58,7 +58,7 @@ export function DeleteProductConfirmModal({
               </div>
             </div>
             <p className='mt-4 text-xs text-red-500 dark:text-red-400 font-medium text-center uppercase tracking-wider'>
-              Esta acciÃ³n no se puede revertir
+              Esta acción no se puede revertir
             </p>
           </div>
         </div>

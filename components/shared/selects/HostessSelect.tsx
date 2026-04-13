@@ -1,7 +1,8 @@
-﻿import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React, { useState, useMemo } from 'react';
 
 interface Hostess {
@@ -26,6 +27,7 @@ interface HostessSelectProps {
   required?: boolean;
   maxSelection?: number;
   disabled?: boolean;
+  disabledReason?: string;
 }
 
 const HostessSelect: React.FC<HostessSelectProps> = ({
@@ -38,12 +40,12 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   className = '',
   required = false,
   maxSelection = 5,
-  disabled = false
+  disabled = false,
+  disabledReason
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filtrar anfitrionas basado en el tÃ©rmino de bÃºsqueda
   const filteredAnfitrionas = useMemo(() => {
     if (!searchTerm) return anfitrionas;
 
@@ -85,8 +87,96 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   };
 
   const selectedHostesses = anfitrionas.filter(a => value.includes(String(getHostessId(a))));
-
   const uniqueId = React.useId();
+  const showTooltip = Boolean(disabledReason);
+  const disabledState = disabled || showTooltip;
+
+  const selectButton = (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          id={uniqueId}
+          type='button'
+          className='w-full pl-4 pr-4 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[44px] text-left hover:border-gray-400 transition-colors text-sm'
+          onClick={() => !disabledState && setOpen(v => !v)}
+          disabled={disabledState}
+        >
+          {value.length === 0 ? (
+            <span className='text-gray-400'>{placeholder}</span>
+          ) : (
+            <span className='flex flex-wrap gap-1'>
+              {selectedHostesses.map((a, index) => (
+                <span
+                  key={`${getHostessId(a)}-${index}`}
+                  className='bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs font-medium'
+                >
+                  {getHostessName(a)}
+                </span>
+              ))}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      {!disabledState && (
+        <PopoverContent align='start' className='w-[280px] p-0 z-[9999]'>
+          <div className='p-2 border-b'>
+            <label htmlFor={`${uniqueId}-search`} className='sr-only'>
+              Buscar anfitriona
+            </label>
+            <Input
+              id={`${uniqueId}-search`}
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className='w-full'
+            />
+          </div>
+          <div className='max-h-60 overflow-y-auto'>
+            {filteredAnfitrionas.length === 0 ? (
+              <div className='p-2 text-center text-gray-500 text-sm'>
+                {searchTerm ? 'No se encontraron anfitrionas' : 'No hay anfitrionas disponibles'}
+              </div>
+            ) : (
+              filteredAnfitrionas.map((anfitriona, index) => {
+                const id = String(getHostessId(anfitriona));
+                const name = getHostessName(anfitriona);
+                const isSelected = value.includes(id);
+                const isOcupada = Number(anfitriona.estado_servicio) === 1;
+                const isDisabled = (!isSelected && value.length >= maxSelection) || isOcupada;
+                return (
+                  <label
+                    key={`${id}-${index}`}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors ${
+                      isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => handleToggleHostess(id)}
+                      disabled={isDisabled}
+                    />
+                    <div className='flex flex-col'>
+                      <span className={isOcupada ? 'text-gray-400' : 'text-sm'}>
+                        {name || 'Sin nombre'}
+                      </span>
+                      {isOcupada && (
+                        <span className='text-xs text-red-500 font-medium'>OCUPADA</span>
+                      )}
+                    </div>
+                  </label>
+                );
+              })
+            )}
+          </div>
+          {maxSelection > 1 && (
+            <div className='p-2 border-t bg-gray-50 text-xs text-gray-500'>
+              Seleccionadas: {value.length} / Máximo: {maxSelection}
+            </div>
+          )}
+        </PopoverContent>
+      )}
+    </Popover>
+  );
 
   return (
     <div className={`flex flex-col ${className}`}>
@@ -96,96 +186,20 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
       </Label>
 
       <div className='relative'>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <button
-              id={uniqueId}
-              type='button'
-              className='w-full pl-4 pr-8 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[44px] text-left hover:border-gray-400 transition-colors text-sm'
-              onClick={() => !disabled && setOpen(v => !v)}
-              disabled={disabled}
-            >
-              {value.length === 0 ? (
-                <span className='text-gray-400'>{placeholder}</span>
-              ) : (
-                <span className='flex flex-wrap gap-1'>
-                  {selectedHostesses.map((a, index) => (
-                    <span
-                      key={`${getHostessId(a)}-${index}`}
-                      className='bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs font-medium'
-                    >
-                      {getHostessName(a)}
-                    </span>
-                  ))}
-                </span>
-              )}
-              <span className='ml-auto pl-2 text-gray-400'>â–¼</span>
-            </button>
-          </PopoverTrigger>
-          {!disabled && (
-            <PopoverContent align='start' className='w-[280px] p-0 z-[9999]'>
-              {/* Barra de bÃºsqueda */}
-              <div className='p-2 border-b'>
-                <label htmlFor={`${uniqueId}-search`} className='sr-only'>
-                  Buscar anfitriona
-                </label>
-                <Input
-                  id={`${uniqueId}-search`}
-                  placeholder={searchPlaceholder}
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className='w-full'
-                />
-              </div>
-              {/* Lista de anfitrionas */}
-              <div className='max-h-60 overflow-y-auto'>
-                {filteredAnfitrionas.length === 0 ? (
-                  <div className='p-2 text-center text-gray-500 text-sm'>
-                    {searchTerm
-                      ? 'No se encontraron anfitrionas'
-                      : 'No hay anfitrionas disponibles'}
-                  </div>
-                ) : (
-                  filteredAnfitrionas.map((anfitriona, index) => {
-                    const id = String(getHostessId(anfitriona));
-                    const name = getHostessName(anfitriona);
-                    const isSelected = value.includes(id);
-                    const isOcupada = Number(anfitriona.estado_servicio) === 1;
-                    const isDisabled = (!isSelected && value.length >= maxSelection) || isOcupada;
-                    return (
-                      <label
-                        key={`${id}-${index}`}
-                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors ${
-                          isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => handleToggleHostess(id)}
-                          disabled={isDisabled}
-                        />
-                        <div className='flex flex-col'>
-                          <span className={isOcupada ? 'text-gray-400' : 'text-sm'}>
-                            {name || 'Sin nombre'}
-                          </span>
-                          {isOcupada && (
-                            <span className='text-xs text-red-500 font-medium'>OCUPADA</span>
-                          )}
-                        </div>
-                      </label>
-                    );
-                  })
-                )}
-              </div>
-              {/* Contador de selecciÃ³n */}
-              {maxSelection > 1 && (
-                <div className='p-2 border-t bg-gray-50 text-xs text-gray-500'>
-                  Seleccionadas: {value.length} / MÃ¡ximo: {maxSelection}
-                </div>
-              )}
-            </PopoverContent>
-          )}
-        </Popover>
+        {showTooltip ? (
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <div className='w-full'>{selectButton}</div>
+              </TooltipTrigger>
+              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                <p>{disabledReason}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          selectButton
+        )}
       </div>
     </div>
   );

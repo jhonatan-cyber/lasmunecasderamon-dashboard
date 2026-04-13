@@ -5,6 +5,14 @@ import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
 
 export class ProductRepository {
+  private static normalizeSearchText(value: string | null | undefined): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
   private static mapProductFromDB(row: any): ProductType & {
     categoria?: string;
     nombre?: string;
@@ -115,18 +123,47 @@ export class ProductRepository {
   }
 
   static async search(term: string): Promise<ProductType[]> {
-    const termWithWildcards = `%${term}%`;
+    const normalizedTerm = this.normalizeSearchText(term);
+    if (!normalizedTerm) return [];
+
+    const searchTerm = term.trim();
+    const termWithWildcards = `%${searchTerm}%`;
     const results = await query<any[]>(
       `
-      SELECT p.*, c.nombre as categoria_nombre
+      SELECT p.*, c.nombre as categoria
       FROM productos p
       LEFT JOIN categorias c ON p.categoria_id = c.id_categoria
-      WHERE p.nombre LIKE ? OR p.codigo LIKE ? OR c.nombre LIKE ?
+      WHERE (LOWER(p.nombre) LIKE LOWER(?)
+         OR LOWER(p.codigo) LIKE LOWER(?)
+         OR LOWER(p.descripcion) LIKE LOWER(?)
+         OR LOWER(c.nombre) LIKE LOWER(?))
+         AND p.estado = 1
       ORDER BY p.nombre ASC
     `,
-      [termWithWildcards, termWithWildcards, termWithWildcards]
+      [termWithWildcards, termWithWildcards, termWithWildcards, termWithWildcards]
     );
-    return results.map(row => this.mapProductFromDB(row));
+
+    // Si encontramos resultados exactos con LIKE, mapeamos y devolvemos
+    // Pero aún así corremos el fallback si el término tiene caracteres especiales para ser más permisivos con acentos
+    if (results.length > 0 && searchTerm === normalizedTerm) {
+      return results.map(row => this.mapProductFromDB(row));
+    }
+
+    // Fallback más potente: carga todo y filtra por texto normalizado (sin acentos)
+    const allProducts = await this.getAll();
+    return allProducts.filter(product => {
+      const haystack = [
+        (product as any).nombre,
+        product.name,
+        product.code,
+        product.description,
+        (product as any).categoria // Incluimos la categoría en el buscador manual
+      ]
+        .map(value => this.normalizeSearchText(value))
+        .join(' ');
+
+      return haystack.includes(normalizedTerm);
+    });
   }
 
   static async reorder(items: { id: string; display_order: number }[]): Promise<void> {

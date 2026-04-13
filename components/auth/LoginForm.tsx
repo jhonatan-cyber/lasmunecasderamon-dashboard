@@ -26,6 +26,7 @@ interface LoginFormProps {
   onShowRegister: () => void;
   theme: string;
   toggleTheme: () => void;
+  setThemeMode: (mode: string) => void;
   onSetStep: (step: 'login' | 'codigo') => void;
 }
 
@@ -49,9 +50,9 @@ export const LoginForm = ({
   onShowRegister,
   theme,
   toggleTheme,
+  setThemeMode,
   onSetStep
 }: LoginFormProps) => {
-
   const themeOptions = [
     { value: 'light', label: 'Light', icon: Sun },
     { value: 'dark', label: 'Dark', icon: Moon },
@@ -78,7 +79,10 @@ export const LoginForm = ({
               onKeyDown={e => handleKeyDown(e, passwordInputRef)}
             />
             {loginData.email && (
-              <span className='absolute top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none' style={{ left: `${48 + (loginData.email.length * 8.5)}px` }}>
+              <span
+                className='absolute top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none'
+                style={{ left: `${48 + loginData.email.length * 8.5}px` }}
+              >
                 @lasmuñecasderamon.com
               </span>
             )}
@@ -101,18 +105,33 @@ export const LoginForm = ({
               onKeyDown={handlePasswordKeyDown}
               autoComplete='current-password'
             />
-            <button type='button' onClick={() => setShowPassword(!showPassword)} className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 transition-colors'>
+            <button
+              type='button'
+              onClick={() => setShowPassword(!showPassword)}
+              className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 transition-colors'
+            >
               <Eye className='w-5 h-5' />
             </button>
           </div>
         </div>
 
-        <Button ref={submitButtonRef} type='submit' variant='outline' disabled={loading} className='rounded-full px-6 bg-black dark:bg-white text-white dark:text-black border-black dark:border-white  dark:hover:bg-gray-200 hover:scale-110 transition-all w-full'>
+        <Button
+          ref={submitButtonRef}
+          type='submit'
+          variant='outline'
+          disabled={loading}
+          className='rounded-full px-6 bg-black dark:bg-white text-white dark:text-black border-black dark:border-white  dark:hover:bg-gray-200 hover:scale-110 transition-all w-full'
+        >
           {loading ? 'Validando...' : 'Iniciar sesión'}
         </Button>
 
         {hasUsers === false && (
-          <Button type='button' variant='outline' className='mt-4 rounded-full px-6 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:scale-110 transition-all w-full' onClick={onShowRegister}>
+          <Button
+            type='button'
+            variant='outline'
+            className='mt-4 rounded-full px-6 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:scale-110 transition-all w-full'
+            onClick={onShowRegister}
+          >
             Crear primer usuario administrador
           </Button>
         )}
@@ -121,16 +140,28 @@ export const LoginForm = ({
         <div className='flex justify-center mt-4'>
           <Popover>
             <PopoverTrigger asChild>
-              <Button type='button' variant='ghost' className='rounded-full text-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'>
+              <Button
+                type='button'
+                variant='ghost'
+                className='rounded-full text-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+              >
                 {theme === 'light' && <Sun className='text-yellow-500' />}
                 {theme === 'dark' && <Moon className='text-blue-600' />}
                 {theme === 'system' && <Monitor className='text-gray-600' />}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align='center' className='w-40 p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg'>
+            <PopoverContent
+              align='center'
+              className='w-40 p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg'
+            >
               <div className='py-2'>
                 {themeOptions.map(opt => (
-                  <button key={opt.value} className={`flex items-center w-full px-4 py-2 gap-2 text-sm transition-all ${theme === opt.value ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`} onClick={() => toggleTheme()}>
+                  <button
+                    key={opt.value}
+                    type='button'
+                    className={`flex items-center w-full px-4 py-2 gap-2 text-sm transition-all ${theme === opt.value ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                    onClick={() => setThemeMode(opt.value)}
+                  >
                     <opt.icon className='w-4 h-4' />
                     {opt.label}
                   </button>
@@ -152,15 +183,20 @@ export const LoginForm = ({
               <span className='text-2xl'>🔐</span>
             </div>
           </div>
-          <h3 className='text-xl font-bold text-blue-900 dark:text-blue-100 mb-2'>Verificación de Seguridad</h3>
+          <h3 className='text-xl font-bold text-blue-900 dark:text-blue-100 mb-2'>
+            Verificación de Seguridad
+          </h3>
           <p className='text-sm text-blue-700 dark:text-blue-300 leading-relaxed'>
-            Para completar el acceso, ingrese el código de verificación proporcionado por el administrador.
+            Para completar el acceso, ingrese el código de verificación proporcionado por el
+            administrador.
           </p>
         </div>
       </div>
 
       <div>
-        <Label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 text-center'>Código de Verificación</Label>
+        <Label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 text-center'>
+          Código de Verificación
+        </Label>
         <div className='relative'>
           <Lock className='absolute left-4 top-1/2 -translate-y-1/2 text-blue-500' />
           <Input
@@ -175,12 +211,21 @@ export const LoginForm = ({
         </div>
       </div>
 
-      <Button type='submit' variant='outline' className='rounded-full px-6 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:scale-105 transition-all w-full font-semibold' disabled={loading || codigo.length !== 4}>
+      <Button
+        type='submit'
+        variant='outline'
+        className='rounded-full px-6 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:scale-105 transition-all w-full font-semibold'
+        disabled={loading || codigo.length !== 4}
+      >
         {loading ? 'Validando...' : 'Verificar Código'}
       </Button>
 
       <div className='text-center'>
-        <button type='button' onClick={() => onSetStep('login')} className='text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1 mx-auto'>
+        <button
+          type='button'
+          onClick={() => onSetStep('login')}
+          className='text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1 mx-auto'
+        >
           <span>← Volver al login</span>
         </button>
       </div>

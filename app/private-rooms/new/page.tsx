@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { ArrowLeft, DollarSign, Coins, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, DollarSign, Coins, ShoppingCart, Split } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatCurrencyCLP, parseNumberInput } from '@/lib/utils/formatters';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import CustomersSelect from '@/components/shared/selects/CustomersSelect';
 import HostessSelect from '@/components/shared/selects/HostessSelect';
@@ -62,6 +62,7 @@ export default function NuevoServicioPage() {
   const [tiempoHabitacion, setTiempoHabitacion] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
   const [total, setTotal] = useState(0);
+  const [pagosMixtos, setPagosMixtos] = useState<any[]>([]);
 
   // Dynamic limits calculation
   const selectedRoom = useMemo(() => {
@@ -69,6 +70,11 @@ export default function NuevoServicioPage() {
       h => String(h.id_habitacion || h.id) === String(formData.habitacion_id)
     );
   }, [formData.habitacion_id, habitaciones]);
+
+  const selectedClientData = useMemo(() => {
+    if (formData.clientes.length === 0) return null;
+    return clientes.find(c => String(c.id_cliente ?? c.id ?? '') === String(formData.clientes[0]));
+  }, [clientes, formData.clientes]);
 
   const hasComision = useMemo(() => {
     return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
@@ -176,6 +182,43 @@ export default function NuevoServicioPage() {
     }
   }, [formData.metodo_pago, formData.precio_servicio]);
 
+  // Pre-pago y Pago Mixto logic from remote
+  useEffect(() => {
+    if (!selectedClientData || total <= 0) return;
+
+    const saldo = Number(selectedClientData.saldo || 0);
+
+    if (saldo >= total) {
+      setFormData(prev => ({
+        ...prev,
+        metodo_pago: 'prepago'
+      }));
+      setPagosMixtos([]);
+      return;
+    }
+
+    if (saldo > 0 && saldo < total && formData.metodo_pago !== 'mixto') {
+      setFormData(prev => ({ ...prev, metodo_pago: 'mixto' }));
+      setPagosMixtos([
+        {
+          metodo: 'prepago',
+          monto: saldo,
+          display: formatNumberWithSeparators(saldo)
+        }
+      ]);
+    }
+  }, [selectedClientData, total, formData.metodo_pago]);
+
+  useEffect(() => {
+    if (selectedClientData) return;
+
+    if (formData.metodo_pago === 'prepago') {
+      setFormData(prev => ({ ...prev, metodo_pago: '' }));
+    }
+
+    setPagosMixtos(prev => prev.filter(pago => pago.metodo !== 'prepago'));
+  }, [selectedClientData, formData.metodo_pago]);
+
   const handleSubmit = async () => {
     if (formData.usuarios.length === 0) {
       toast.error('Selecciona al menos una anfitriona');
@@ -212,7 +255,8 @@ export default function NuevoServicioPage() {
       total: total,
       tiempo: formData.tiempo,
       metodo_pago: formData.metodo_pago,
-      usuarios: formData.usuarios.map(normalizeId)
+      usuarios: formData.usuarios.map(normalizeId),
+      pagos_mixtos: formData.metodo_pago === 'mixto' ? pagosMixtos : null
     };
 
     setServicioDataToSubmit(servicioData);
@@ -240,7 +284,7 @@ export default function NuevoServicioPage() {
         if (selectedRoom) {
           // Obtener nombres de anfitrionas seleccionadas
           const anfitrionasSeleccionadas = servicioDataToSubmit.usuarios
-            .map((userId: number) => {
+            .map((userId: any) => {
               const anfitriona = anfitrionas.find(
                 a => String(a.id_usuario ?? a.id ?? '') === String(userId)
               );
@@ -256,7 +300,7 @@ export default function NuevoServicioPage() {
             servicioDataToSubmit.tiempo,
             servicioDataToSubmit.codigo,
             clientes.find(
-              c => String(c.id_cliente ?? c.id ?? '') === String(servicioDataToSubmit.cliente_id)
+              c => String(c.id_cliente ?? c.id ?? '') === String(servicioDataToSubmit.client_id)
             )?.nombre || '',
             anfitrionasSeleccionadas // Pasar las anfitrionas
           );
@@ -304,7 +348,7 @@ export default function NuevoServicioPage() {
 
       <div className='p-4 sm:p-6 lg:p-8 bg-white mx-4 sm:mx-6 lg:mx-8 space-y-4 sm:space-y-6 shadow-md rounded-xl'>
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
-          {/* Habitación - AHORA PRIMERO */}
+          {/* Habitación */}
           <RoomSelect
             habitaciones={habitaciones}
             value={formData.habitacion_id ? formData.habitacion_id.toString() : ''}
@@ -340,7 +384,7 @@ export default function NuevoServicioPage() {
             maxSelection={maxHostesses}
             className='w-full'
           />
-          {/* Cliente - AHORA OPCIONAL Y MÚLTIPLE */}
+          {/* Cliente */}
           <CustomersSelect
             clientes={clientes}
             value={formData.clientes}
@@ -401,16 +445,37 @@ export default function NuevoServicioPage() {
           <div>
             <PaymentMethodSelect
               value={formData.metodo_pago}
-              onChange={value =>
+              onChange={value => {
                 setFormData(prev => ({
                   ...prev,
                   metodo_pago: value
-                }))
-              }
+                }));
+
+                if (value !== 'mixto') {
+                  setPagosMixtos([]);
+                  return;
+                }
+
+                const saldo = Number(selectedClientData?.saldo || 0);
+                setPagosMixtos(
+                  saldo > 0
+                    ? [
+                        {
+                          metodo: 'prepago',
+                          monto: saldo,
+                          display: formatNumberWithSeparators(saldo)
+                        }
+                      ]
+                    : []
+                );
+              }}
               label='MÉTODO DE PAGO'
               placeholder='Seleccionar método de pago'
               required={true}
               className='w-full'
+              showPrepago={!!selectedClientData}
+              showMixto={true}
+              disabledMethods={Number(selectedClientData?.saldo || 0) <= 0 ? ['prepago'] : []}
             />
           </div>
 
@@ -443,6 +508,111 @@ export default function NuevoServicioPage() {
           </div>
         </div>
 
+        {formData.metodo_pago === 'mixto' && (
+          <div className='rounded-2xl border border-dotted border-slate-300 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60 transition-all duration-300'>
+            <div className='mb-3 flex items-center gap-2'>
+              <Split className='h-4 w-4 text-slate-700 dark:text-slate-200' />
+              <p className='text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-200'>
+                Distribución de pagos
+              </p>
+            </div>
+
+            <div className='space-y-3'>
+              {pagosMixtos.map((pago, index) => (
+                <div key={`${pago.metodo}-${index}`} className='flex items-center gap-2'>
+                  <div className='w-28 text-[11px] font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300'>
+                    {pago.metodo}
+                  </div>
+                  <div className='relative flex-1'>
+                    <span className='absolute inset-y-0 left-3 flex items-center text-slate-400 dark:text-slate-500'>
+                      <DollarSign className='h-4 w-4' />
+                    </span>
+                    <input
+                      type='text'
+                      value={pago.display}
+                      placeholder='0'
+                      onChange={e => {
+                        const monto = parseNumberInput(e.target.value);
+                        setPagosMixtos(prev =>
+                          prev.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  monto,
+                                  display: monto > 0 ? formatNumberWithSeparators(monto) : ''
+                                }
+                              : item
+                          )
+                        );
+                      }}
+                      className='w-full rounded-full border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-black focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-400'
+                    />
+                  </div>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={() =>
+                      setPagosMixtos(prev => prev.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                    className='rounded-full px-3 h-10 border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-colors'
+                  >
+                    Quitar
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className='mt-4 flex flex-wrap gap-2'>
+              {(['efectivo', 'tarjeta', 'transferencia', 'prepago'] as const).map(metodo => {
+                if (pagosMixtos.some(pago => pago.metodo === metodo)) return null;
+
+                const sinSaldo =
+                  metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
+
+                return (
+                  <Button
+                    key={metodo}
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    disabled={sinSaldo}
+                    onClick={() =>
+                      setPagosMixtos(prev => [...prev, { metodo, monto: 0, display: '' }])
+                    }
+                    className='rounded-full uppercase text-[10px] font-black h-8 px-4 border-slate-300 shadow-sm'
+                  >
+                    + {metodo}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <div className='mt-4 border-t border-slate-200 border-dashed pt-3 text-sm dark:border-slate-800'>
+              <div className='flex items-center justify-between text-slate-600 dark:text-slate-300'>
+                <span className='font-bold uppercase text-[10px]'>Suma actual</span>
+                <span
+                  className={
+                    pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0) === total
+                      ? 'font-black text-emerald-600'
+                      : 'font-black text-red-500'
+                  }
+                >
+                  {formatCurrencyCLP(pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0))}
+                </span>
+              </div>
+              {pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0) !== total && (
+                <p className='mt-1 text-[10px] font-bold text-red-500 uppercase text-right'>
+                  Falta{' '}
+                  {formatCurrencyCLP(
+                    total - pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0)
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Total y botón centrados */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
@@ -456,9 +626,9 @@ export default function NuevoServicioPage() {
             size='sm'
             onClick={handleSubmit}
             disabled={loading}
-            className='gap-2 rounded-full bg-black text-white font-bold hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto'
+            className='gap-2 rounded-full bg-black text-white font-bold hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto h-[48px]'
           >
-            <ShoppingCart className='w-3 h-3 sm:w-4 sm:h-4' />
+            <ShoppingCart className='w-4 h-4' />
             Generar Servicio
           </Button>
         </div>
@@ -466,12 +636,12 @@ export default function NuevoServicioPage() {
 
       {/* Modal de confirmación */}
       {showConfirmModal && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 sm:p-8 shadow-lg max-w-md mx-4'>
-            <h3 className='text-lg sm:text-xl font-bold text-gray-900 mb-2'>
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200'>
+            <h3 className='text-lg sm:text-xl font-black text-gray-900 mb-2 uppercase tracking-tight'>
               Confirmar creación de servicio
             </h3>
-            <p className='text-sm sm:text-base text-gray-600 mb-6'>
+            <p className='text-sm sm:text-base text-gray-500 mb-6 font-medium'>
               ¿Deseas crear el servicio y comenzar el tiempo?
             </p>
             <div className='flex gap-3 justify-center'>
@@ -481,7 +651,7 @@ export default function NuevoServicioPage() {
                 size='sm'
                 onClick={() => setShowConfirmModal(false)}
                 disabled={loading}
-                className='px-4 sm:px-6 py-2 text-sm sm:text-base rounded-full'
+                className='px-6 py-2 text-sm font-bold rounded-full border-gray-200 h-11'
               >
                 Cancelar
               </Button>
@@ -490,9 +660,9 @@ export default function NuevoServicioPage() {
                 size='sm'
                 onClick={confirmAndSubmit}
                 disabled={loading}
-                className='gap-2 bg-black text-white hover:bg-gray-800 px-4 sm:px-6 py-2 text-sm sm:text-base rounded-full'
+                className='gap-2 bg-black text-white hover:bg-gray-800 px-8 py-2 text-sm font-black rounded-full h-11'
               >
-                <ShoppingCart className='w-3 h-3 sm:w-4 sm:h-4' />
+                <ShoppingCart className='w-4 h-4' />
                 Confirmar
               </Button>
             </div>

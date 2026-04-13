@@ -106,26 +106,26 @@ async function runTests() {
     const count = await ServiceRequestRepository.getPendingCount();
     console.log(`Solicitudes pendientes: ${count}`);
     if (count > 0) {
-      console.log('âœ… getPendingCount() OK');
+      console.log('✅ getPendingCount() OK');
     } else {
-      throw new Error('La cuenta de pendientes deberÃ­a ser mayor a 0');
+      throw new Error('La cuenta de pendientes debería ser mayor a 0');
     }
 
     console.log('\n[3] Probando getAll()...');
     const all = await ServiceRequestRepository.getAll(0);
     const found = all.find(s => s.id_solicitud === requestId);
     if (found) {
-      console.log('âœ… getAll() OK');
+      console.log('✅ getAll() OK');
     } else {
-      throw new Error('No se pudo encontrar la solicitud reciÃ©n creada en getAll()');
+      throw new Error('No se pudo encontrar la solicitud recién creada en getAll()');
     }
 
     // Cleanup
     console.log('\n[4] Limpiando datos de prueba...');
     await ServiceRequestRepository.delete(requestId);
-    console.log('âœ… delete() OK');
+    console.log('✅ delete() OK');
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

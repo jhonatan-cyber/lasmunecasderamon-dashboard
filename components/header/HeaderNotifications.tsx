@@ -310,7 +310,7 @@ export function HeaderNotifications() {
               >
                 <div className='flex justify-between w-full'>
                   <span className='font-semibold text-sm'>
-                    HabitaciÃ³n: {solicitud.habitacion_nombre || solicitud.habitacion_id}
+                    Habitación: {solicitud.habitacion_nombre || solicitud.habitacion_id}
                   </span>
                   <span className='text-xs text-gray-500'>
                     {formatShortTimeEs(solicitud.fecha_solicitud)}

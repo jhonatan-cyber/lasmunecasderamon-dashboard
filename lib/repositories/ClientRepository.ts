@@ -4,14 +4,32 @@ import { ClientSchema, type ClientType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
 import { CashRegisterRepository } from './CashRegisterRepository';
 import { BusinessError } from '@/lib/errors/errors';
+import {
+  parsePagosMixtos,
+  validatePagosMixtos,
+  calcularDeltasCaja
+} from '@/lib/business/pagosMixtos';
 
 export class ClientRepository {
-  private static getPrepagoCajaDeltas(monto: number, metodoPago?: string) {
+  private static getPrepagoCajaDeltas(
+    monto: number,
+    metodoPago?: string,
+    pagosMixtos: Array<{ metodo: string; monto: number }> = []
+  ) {
     const metodo = String(metodoPago || 'efectivo');
+    const pagosCaja =
+      metodo === 'mixto'
+        ? calcularDeltasCaja(pagosMixtos)
+        : {
+            efectivo: metodo === 'efectivo' ? monto : 0,
+            tarjeta: metodo === 'tarjeta' ? monto : 0,
+            transferencia: metodo === 'transferencia' ? monto : 0
+          };
+
     return {
-      efectivo: metodo === 'efectivo' ? monto : 0,
-      tarjeta: metodo === 'tarjeta' ? monto : 0,
-      transferencia: metodo === 'transferencia' ? monto : 0,
+      efectivo: pagosCaja.efectivo || 0,
+      tarjeta: pagosCaja.tarjeta || 0,
+      transferencia: pagosCaja.transferencia || 0,
       prepago: monto
     };
   }
@@ -247,11 +265,18 @@ export class ClientRepository {
     monto: number;
     tipo: 'CARGA';
     metodo_pago?: string;
+    pagos_mixtos?: Array<{ metodo: string; monto: number }>;
     usuario_id?: string;
     metadatos?: any;
   }): Promise<void> {
     const moveId = generateUUID();
     const now = getNowInBusinessTimezone();
+    const metodoPago = String(data.metodo_pago || 'efectivo');
+    const pagosMixtos = parsePagosMixtos(data.pagos_mixtos);
+
+    if (metodoPago === 'mixto') {
+      validatePagosMixtos(pagosMixtos, Number(data.monto || 0));
+    }
 
     const { withTransaction } = await import('@/lib/database/db');
 
@@ -264,15 +289,23 @@ export class ClientRepository {
         );
       }
 
+      const metadatos =
+        data.metadatos || metodoPago === 'mixto'
+          ? JSON.stringify({
+              ...(data.metadatos || {}),
+              ...(metodoPago === 'mixto' ? { pagos_mixtos: pagosMixtos } : {})
+            })
+          : null;
+
       await BaseRepository.insert(trx, 'clientes_prepago_movimientos', {
         id_movimiento: moveId,
         cliente_id: data.cliente_id,
         tipo: data.tipo,
         monto: data.monto,
-        metodo_pago: data.metodo_pago || 'efectivo',
+        metodo_pago: metodoPago,
         usuario_id: data.usuario_id || null,
         fecha_crea: now,
-        metadatos: data.metadatos ? JSON.stringify(data.metadatos) : null
+        metadatos
       });
 
       await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
@@ -283,7 +316,7 @@ export class ClientRepository {
       await CashRegisterRepository.updateBalances(
         trx,
         idCaja,
-        this.getPrepagoCajaDeltas(data.monto, data.metodo_pago)
+        this.getPrepagoCajaDeltas(data.monto, metodoPago, pagosMixtos)
       );
     });
   }
