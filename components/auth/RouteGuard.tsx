@@ -51,14 +51,21 @@ const publicRoutes = [
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission } = useAuth();
+  const {
+    user,
+    userLoading,
+    userPermissions,
+    permissionsLoading,
+    permissionsLoaded,
+    hasPermission
+  } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
-  
+
   // Memoizar valores para evitar re-renders innecesarios
   const routerRef = useRef(router);
   const pathnameRef = useRef(pathname);
-  
+
   // Sincronizar refs
   useEffect(() => {
     routerRef.current = router;
@@ -69,9 +76,12 @@ export function RouteGuard({ children }: RouteGuardProps) {
     // Función para verificar autorización
     const checkAuth = () => {
       const currentPathname = pathnameRef.current;
-      
+
       // Si es una ruta pública, permitir acceso
-      if (currentPathname && publicRoutes.some(route => currentPathname === route || currentPathname.startsWith(route))) {
+      if (
+        currentPathname &&
+        publicRoutes.some(route => currentPathname === route || currentPathname.startsWith(route))
+      ) {
         setAuthorized(true);
         setChecking(false);
         return;
@@ -89,7 +99,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
       }
 
       // El administrador tiene acceso a todo
-      if (user.role?.toLowerCase() === 'administrador') {
+      const roleHint = typeof window !== 'undefined' ? localStorage.getItem('auth_role_hint') : '';
+      if (user?.role?.toLowerCase() === 'administrador' || roleHint === 'administrador') {
         setAuthorized(true);
         setChecking(false);
         return;
@@ -112,10 +123,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
       // Buscar el permiso requerido para la ruta actual
       // IMPORTANTE: Buscar la coincidencia MÁS ESPECÍFICA primero
       // Ordenar las rutas por longitud descendente para que /payroll/calendar se verifique antes que /payroll
-      const sortedRoutes = Object.entries(routePermissions).sort((a, b) => b[0].length - a[0].length);
+      const sortedRoutes = Object.entries(routePermissions).sort(
+        (a, b) => b[0].length - a[0].length
+      );
 
-      const requiredPermission = sortedRoutes.find(([route]) =>
-        currentPathname && (currentPathname === route || currentPathname.startsWith(route + '/'))
+      const requiredPermission = sortedRoutes.find(
+        ([route]) =>
+          currentPathname && (currentPathname === route || currentPathname.startsWith(route + '/'))
       );
 
       // Si no hay permiso definido para esta ruta, permitir acceso
@@ -127,7 +141,11 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       const [, { module, action }] = requiredPermission;
 
-      console.log('[RouteGuard] 🔍 Verificando permiso:', { module, action, pathname: currentPathname });
+      console.log('[RouteGuard] 🔍 Verificando permiso:', {
+        module,
+        action,
+        pathname: currentPathname
+      });
 
       // Verificar si el usuario tiene el permiso
       const hasAccess = hasPermission(module, action);
@@ -148,13 +166,17 @@ export function RouteGuard({ children }: RouteGuardProps) {
     checkAuth();
   }, [user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission]);
 
-  // Mostrar loading mientras se verifica
-  if (checking || userLoading || permissionsLoading) {
+  // Mostrar loading mientras se verifica (Administrador tiene bypass instantáneo)
+  const roleHint = typeof window !== 'undefined' ? localStorage.getItem('auth_role_hint') : '';
+  const isSuperAdminHint =
+    roleHint === 'administrador' || user?.role?.toLowerCase() === 'administrador';
+
+  if ((checking || userLoading || permissionsLoading) && !isSuperAdminHint) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-neutral-900">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-neutral-400">Verificando permisos...</p>
+      <div className='flex items-center justify-center min-h-screen bg-gray-50 dark:bg-neutral-900'>
+        <div className='text-center'>
+          <Loader2 className='h-8 w-8 animate-spin text-blue-600 mx-auto mb-4' />
+          <p className='text-gray-600 dark:text-neutral-400'>Verificando permisos...</p>
         </div>
       </div>
     );

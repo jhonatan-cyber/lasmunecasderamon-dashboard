@@ -123,7 +123,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await GratificacionRepository.getAll();
     console.log(`Gratificaciones encontradas: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testId = await GratificacionRepository.create({
@@ -131,32 +131,32 @@ async function runTests() {
       monto: 15000,
       descripcion: 'Test Gratificacion'
     });
-    console.log(`GratificaciÃ³n creada: ${testId}`);
+    console.log(`Gratificación creada: ${testId}`);
 
     const grat = await GratificacionRepository.getById(testId);
     if (grat && Number(grat.monto) === 15000) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
-      throw new Error('No se pudo recuperar la gratificaciÃ³n creada');
+      throw new Error('No se pudo recuperar la gratificación creada');
     }
 
     await GratificacionRepository.update(testId, { monto: 20000 });
     const gratUpdated = await GratificacionRepository.getById(testId);
     if (gratUpdated && Number(gratUpdated.monto) === 20000) {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
-      throw new Error('No se pudo actualizar la gratificaciÃ³n');
+      throw new Error('No se pudo actualizar la gratificación');
     }
 
     await GratificacionRepository.delete(testId);
     const gratDeleted = await GratificacionRepository.getById(testId);
     if (!gratDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
-      throw new Error('La gratificaciÃ³n no fue eliminada');
+      throw new Error('La gratificación no fue eliminada');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

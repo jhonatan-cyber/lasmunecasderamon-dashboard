@@ -19,7 +19,7 @@ function generateUUID() {
 }
 
 async function testOrderSubmission() {
-  console.log('--- Iniciando prueba de envÃ­o de pedido ---');
+  console.log('--- Iniciando prueba de envío de pedido ---');
   let connection;
 
   try {
@@ -62,7 +62,7 @@ async function testOrderSubmission() {
     );
     console.log('- Anfitriona ID:', anfitrionaId);
 
-    // 2. Simular el objeto de pedido que envÃ­a el frontend
+    // 2. Simular el objeto de pedido que envía el frontend
     const subtotal = Number(producto.precio);
     const propina = subtotal * 0.1; // 10% de propina
     const total = subtotal + propina;
@@ -71,7 +71,7 @@ async function testOrderSubmission() {
     const pedidoId = generateUUID();
     const fechaCrea = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-    console.log('\nSimulando envÃ­o de pedido (Payload conceptual):');
+    console.log('\nSimulando envío de pedido (Payload conceptual):');
     console.log({
       codigo,
       meseroId,
@@ -185,7 +185,7 @@ async function testOrderSubmission() {
       console.log('- Registros encontrados:', usuariosPedido.length);
     }
 
-    console.log('\n--- Prueba finalizada con Ã‰XITO ---');
+    console.log('\n--- Prueba finalizada con ÉXITO ---');
   } catch (error) {
     if (connection) await connection.rollback();
     console.error('\n--- ERROR durante la prueba ---');

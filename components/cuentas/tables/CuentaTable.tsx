@@ -12,7 +12,13 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -330,7 +336,9 @@ export default function CuentaTable({
                 {cuenta.estado === 4 && (
                   <div className='flex items-center gap-2 sm:col-span-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/20'>
                     <DollarSign className='text-amber-600 w-4 h-4' />
-                    <span className='font-medium text-amber-700 dark:text-amber-300'>Saldo restante:</span>
+                    <span className='font-medium text-amber-700 dark:text-amber-300'>
+                      Saldo restante:
+                    </span>
                     <span className='font-semibold text-amber-700 dark:text-amber-300'>
                       {formatCurrencyNoDecimals(cuenta.total)}
                     </span>
@@ -463,41 +471,37 @@ export default function CuentaTable({
                   key={cuenta.id_cuenta}
                   className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
                 >
-                  <TableCell className='font-medium text-sm'>{cuenta.codigo}</TableCell>
-                  <TableCell className='text-sm'>
+                  <TableCell className='font-medium text-sm text-left'>{cuenta.codigo}</TableCell>
+                  <TableCell className='text-sm text-left'>
                     {cuenta.cliente_nombre || `Cliente ${cuenta.cliente_id}`}
                   </TableCell>
-                  <TableCell className='text-sm'>
+                  <TableCell className='text-sm text-left'>
                     {cuenta.habitacion_numero || cuenta.habitacion_id || 'N/A'}
                   </TableCell>
-                  <TableCell className='text-sm'>
+                  <TableCell className='text-sm text-left'>
                     {formatCurrencyNoDecimals(cuenta.sub_total)}
                   </TableCell>
-                  <TableCell className='text-sm'>
+                  <TableCell className='text-sm text-left'>
                     {formatCurrencyNoDecimals(cuenta.total_comision)}
                   </TableCell>
-                  <TableCell className='font-bold text-sm'>
+                  <TableCell className='font-bold text-sm text-left'>
                     {formatCurrencyNoDecimals(cuenta.total)}
                   </TableCell>
                   <TableCell>
                     {(() => {
                       const estadoBadge = getEstadoBadge(cuenta.estado);
-                      return (
-                        <Badge variant={estadoBadge.variant}>
-                          {estadoBadge.label}
-                        </Badge>
-                      );
+                      return <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>;
                     })()}
                   </TableCell>
-                  <TableCell className='text-sm'>
+                  <TableCell className='text-sm text-left'>
                     <CuentaTimerStatus cuenta={cuenta} compact />
                   </TableCell>
-                  <TableCell className='text-sm text-gray-500'>
+                  <TableCell className='text-sm text-gray-500 text-left'>
                     {formatShortDmyDateEs(cuenta.fecha_crea)}
                   </TableCell>
                   <TableCell>
                     {hasAnyAction && (
-                      <div className='flex justify-center'>
+                      <div className='flex justify-start'>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -610,7 +614,7 @@ export default function CuentaTable({
 
       <Dialog
         open={anulacionDialogOpen}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (anulandoCuenta) return;
           setAnulacionDialogOpen(open);
           if (!open) {
@@ -654,11 +658,12 @@ export default function CuentaTable({
                 type='text'
                 inputMode='numeric'
                 value={montoAnulacion}
-                onChange={(event) => setMontoAnulacion(formatMontoInput(event.target.value))}
+                onChange={event => setMontoAnulacion(formatMontoInput(event.target.value))}
                 placeholder='Ingresa el monto'
               />
               <p className='text-xs text-slate-500 dark:text-slate-400 mt-1'>
-                Total de referencia: {formatCurrencyNoDecimals(Number(cuentaParaAnular?.total || 0))}
+                Total de referencia:{' '}
+                {formatCurrencyNoDecimals(Number(cuentaParaAnular?.total || 0))}
               </p>
             </div>
 
@@ -670,7 +675,7 @@ export default function CuentaTable({
               <Textarea
                 id='motivo-anulacion-cuenta'
                 value={motivoAnulacion}
-                onChange={(event) => setMotivoAnulacion(event.target.value)}
+                onChange={event => setMotivoAnulacion(event.target.value)}
                 placeholder='Escribe el motivo de la anulacion'
                 rows={5}
                 className='mt-2'

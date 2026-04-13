@@ -18,7 +18,7 @@ export default function Footer({ menuItems }: FooterProps) {
     { name: 'Nosotros', href: '#about' },
     { name: 'Servicios', href: '#services' },
     { name: 'Ubicación', href: '#location' },
-    { name: 'Trabaja con Nosotros', href: '#careers' },
+    { name: 'Trabaja con Nosotros', href: '#careers' }
   ];
 
   const safeMenuItems = Array.isArray(menuItems) ? menuItems : fallbackMenuItems;
@@ -32,10 +32,10 @@ export default function Footer({ menuItems }: FooterProps) {
               <NextImage
                 src='/img/system/logo2.png'
                 alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'
-                width={200}
-                height={96}
+                width={1124}
+                height={721}
                 className='hidden md:block object-contain brightness-110 drop-shadow-lg'
-                style={{ width: 'auto', height: '96px' }}
+                style={{ width: '200px', height: 'auto' }}
               />
               {/* Logo para mobile */}
               <NextImage
@@ -79,7 +79,9 @@ export default function Footer({ menuItems }: FooterProps) {
             </div>
           </div>
           <div>
-            <h4 className='text-gold-400 font-medium mb-6 sm:mb-8 text-lg tracking-widest uppercase text-center md:text-left'>Enlaces Rápidos</h4>
+            <h4 className='text-gold-400 font-medium mb-6 sm:mb-8 text-lg tracking-widest uppercase text-center md:text-left'>
+              Enlaces Rápidos
+            </h4>
             <ul className='space-y-4 text-center md:text-left'>
               {safeMenuItems.map(item => (
                 <li key={item.name}>
@@ -95,10 +97,12 @@ export default function Footer({ menuItems }: FooterProps) {
             </ul>
           </div>
           <div>
-            <h4 className='text-gold-400 font-medium mb-6 sm:mb-8 text-lg tracking-widest uppercase text-center md:text-left'>Horario</h4>
+            <h4 className='text-gold-400 font-medium mb-6 sm:mb-8 text-lg tracking-widest uppercase text-center md:text-left'>
+              Horario
+            </h4>
             <div className='space-y-6 text-center md:text-left'>
               <div className='flex items-start gap-4 justify-center md:justify-start'>
-                <div className="p-2 bg-zinc-900 rounded-full border border-white/5">
+                <div className='p-2 bg-zinc-900 rounded-full border border-white/5'>
                   <Clock className='w-5 h-5 text-gold-500' />
                 </div>
                 <div>
@@ -107,7 +111,7 @@ export default function Footer({ menuItems }: FooterProps) {
                 </div>
               </div>
               <div className='flex items-start gap-4 justify-center md:justify-start'>
-                <div className="p-2 bg-zinc-900 rounded-full border border-white/5">
+                <div className='p-2 bg-zinc-900 rounded-full border border-white/5'>
                   <Phone className='w-5 h-5 text-gold-500' />
                 </div>
                 <div>
@@ -144,4 +148,3 @@ export default function Footer({ menuItems }: FooterProps) {
     </footer>
   );
 }
-

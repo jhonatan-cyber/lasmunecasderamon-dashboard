@@ -115,12 +115,12 @@ async function runTests() {
   try {
     const cats = await queryMock('SELECT id_categoria FROM categorias LIMIT 1');
     const catId = cats[0]?.id_categoria;
-    if (!catId) throw new Error('No hay categorÃ­as en la DB para probar ProductRepository');
+    if (!catId) throw new Error('No hay categorías en la DB para probar ProductRepository');
 
     console.log('\n[1] Probando getAll()...');
     const listado = await ProductRepository.getAll();
     console.log(`Productos encontrados: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testName = 'Test Prod ' + Math.random().toString(36).substring(2, 7);
@@ -134,7 +134,7 @@ async function runTests() {
 
     const prod = await ProductRepository.getById(testId);
     if (prod && prod.nombre === testName) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el producto creado');
     }
@@ -142,7 +142,7 @@ async function runTests() {
     await ProductRepository.update(testId, { nombre: testName + ' UPDATED' });
     const prodUpdated = await ProductRepository.getById(testId);
     if (prodUpdated && prodUpdated.nombre === testName + ' UPDATED') {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
       throw new Error('No se pudo actualizar el producto');
     }
@@ -150,12 +150,12 @@ async function runTests() {
     await ProductRepository.delete(testId);
     const prodDeleted = await ProductRepository.getById(testId);
     if (!prodDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('El producto no fue eliminado');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

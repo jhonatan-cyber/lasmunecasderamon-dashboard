@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ProductTableRow } from './ProductTableRow';
 import {
   CUENTA_TABLE_CARD_CLASS,
@@ -46,6 +40,9 @@ export const ProductSelectionTable: React.FC<ProductSelectionTableProps> = ({
                 Precio
               </TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                Categoría
+              </TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                 Comisión
               </TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
@@ -74,7 +71,9 @@ export const ProductSelectionTable: React.FC<ProductSelectionTableProps> = ({
                     showSelection && onAddToSelection ? () => onAddToSelection(producto) : () => {}
                   }
                   onRemoveFromSelection={
-                    showSelection && onRemoveFromSelection ? () => onRemoveFromSelection(id) : () => {}
+                    showSelection && onRemoveFromSelection
+                      ? () => onRemoveFromSelection(id)
+                      : () => {}
                   }
                   onAddToCart={() => onAddToCart(producto)}
                   isFirst={index === 0}

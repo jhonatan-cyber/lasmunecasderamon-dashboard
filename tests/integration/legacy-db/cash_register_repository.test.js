@@ -117,7 +117,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await CashRegisterRepository.getAll();
     console.log(`Cajas encontradas: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (open/getById/close/delete)...');
     const testCajaId = await CashRegisterRepository.open(userId, 50000);
@@ -125,7 +125,7 @@ async function runTests() {
 
     const caja = await CashRegisterRepository.getById(testCajaId);
     if (caja && Number(caja.monto_apertura) === 50000) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar la caja abierta');
     }
@@ -133,7 +133,7 @@ async function runTests() {
     await CashRegisterRepository.close(testCajaId, userId, 75000);
     const cajaCerrada = await CashRegisterRepository.getById(testCajaId);
     if (cajaCerrada && cajaCerrada.estado === 0) {
-      console.log('âœ… close() OK');
+      console.log('✅ close() OK');
     } else {
       throw new Error('No se pudo cerrar la caja');
     }
@@ -141,15 +141,15 @@ async function runTests() {
     await CashRegisterRepository.delete(testCajaId);
     const cajaEliminada = await CashRegisterRepository.getById(testCajaId);
     if (cajaEliminada && cajaEliminada.estado === -1) {
-      console.log('âœ… delete() (soft delete) OK');
+      console.log('✅ delete() (soft delete) OK');
     } else {
       throw new Error('No se pudo marcar la caja como eliminada');
     }
 
     await CashRegisterRepository.hardDelete(testCajaId);
-    console.log('âœ… hardDelete() OK');
+    console.log('✅ hardDelete() OK');
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

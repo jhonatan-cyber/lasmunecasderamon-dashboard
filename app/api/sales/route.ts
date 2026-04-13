@@ -21,7 +21,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   const body = await request.json();
   const result = await SaleService.createSale(body, user.id.toString());
   return NextResponse.json(
-    { success: true, message: 'Venta procesada', ...result },
+    { success: true, message: 'Venta procesada', data: result },
     { status: 201 }
   );
 });
