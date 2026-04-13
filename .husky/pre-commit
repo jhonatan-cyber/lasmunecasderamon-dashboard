@@ -1,4 +1,14 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npx lint-staged
+echo "🚀 Ejecutando pre-commit hooks..."
+
+# 1. Lint and format staged files
+echo "🧐 Linting y formateo de archivos staged..."
+npx lint-staged || exit 1
+
+# 2. Type check the whole project
+echo "Checking tipos con TypeScript..."
+npm run typecheck || exit 1
+
+echo "✅ Todo listo para el commit!"
