@@ -2,7 +2,6 @@
 import { Sparkles, Music, Users, Wine, ChevronDown } from 'lucide-react';
 
 export default function HeroSection({ scrollY }: { scrollY: number }) {
-  // Calcular opacidad y escala basado en scroll
   const logoOpacity = Math.max(0, 1 - scrollY / 300);
   const logoScale = Math.max(0.4, 1 - scrollY / 500);
   const logoTranslateY = -scrollY * 0.5;
@@ -21,7 +20,6 @@ export default function HeroSection({ scrollY }: { scrollY: number }) {
         <div
           className='flex justify-center mb-10 sm:mb-12 lg:sticky lg:top-20'
           style={{
-            // Asegurar siempre un valor numÃ©rico vÃ¡lido para evitar NaN en estilos
             opacity: Number.isFinite(logoOpacity) ? logoOpacity : 1,
             transform: `translateY(${logoTranslateY}px) scale(${logoScale})`,
             transition: 'transform 0.1s linear, opacity 0.1s linear'
@@ -29,10 +27,9 @@ export default function HeroSection({ scrollY }: { scrollY: number }) {
         >
           <NextImage
             src='/img/system/logo2.png'
-            alt='Las MuÃ±ecas de RamÃ³n'
-            width={960}
-            height={320}
-            priority
+            alt='Las Muñecas de Ramón'
+            width={1124}
+            height={721}
             loading='eager'
             className='max-w-[680px] md:max-w-[780px] lg:max-w-[950px] object-contain drop-shadow-[0_0_25px_rgba(217,119,6,0.3)] animate-in fade-in zoom-in duration-1000 px-2 sm:px-0'
             style={{ width: '100%', height: 'auto' }}
@@ -41,9 +38,9 @@ export default function HeroSection({ scrollY }: { scrollY: number }) {
 
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-12 sm:mt-16 lg:mt-20 max-w-6xl mx-auto'>
           {[
-            { icon: Music, title: 'MÃºsica Premium', desc: 'DJs de clase mundial' },
+            { icon: Music, title: 'Música Premium', desc: 'DJs de clase mundial' },
             { icon: Sparkles, title: 'Ambiente VIP', desc: 'Lujo y exclusividad' },
-            { icon: Users, title: 'Servicio Exclusivo', desc: 'AtenciÃ³n personalizada' },
+            { icon: Users, title: 'Servicio Exclusivo', desc: 'Atención personalizada' },
             { icon: Wine, title: 'Bar Premium', desc: 'Licores de primera' }
           ].map((feature, i) => (
             <div
@@ -73,7 +70,7 @@ export default function HeroSection({ scrollY }: { scrollY: number }) {
             <div className='absolute -inset-1 bg-gradient-to-r from-gold-600 via-gold-400 to-gold-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200'></div>
             <button className='relative w-full sm:w-auto bg-black border border-gold-500/50 text-gold-400 hover:text-gold-300 font-medium px-10 sm:px-12 py-4 rounded-full text-base sm:text-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] tracking-widest uppercase min-h-11'>
               <span className='flex items-center gap-2'>
-                Conocer MÃ¡s
+                Conocer Más
                 <ChevronDown className='w-4 h-4 group-hover:translate-y-1 transition-transform duration-300' />
               </span>
             </button>

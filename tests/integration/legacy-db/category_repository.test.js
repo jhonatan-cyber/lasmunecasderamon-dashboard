@@ -111,38 +111,38 @@ async function runTests() {
   try {
     console.log('\n[1] Probando getAll()...');
     const listado = await CategoryRepository.getAll();
-    console.log(`CategorÃ­as encontradas: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    console.log(`Categorías encontradas: ${listado.length}`);
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testName = 'Test Cat ' + Math.random().toString(36).substring(2, 7);
     const testId = await CategoryRepository.create(testName, 'Test Description');
-    console.log(`CategorÃ­a creada: ${testId}`);
+    console.log(`Categoría creada: ${testId}`);
 
     const cat = await CategoryRepository.getById(testId);
     if (cat && cat.nombre === testName) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
-      throw new Error('No se pudo recuperar la categorÃ­a creada');
+      throw new Error('No se pudo recuperar la categoría creada');
     }
 
     await CategoryRepository.update(testId, { nombre: testName + ' UPDATED' });
     const catUpdated = await CategoryRepository.getById(testId);
     if (catUpdated && catUpdated.nombre === testName + ' UPDATED') {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
-      throw new Error('No se pudo actualizar la categorÃ­a');
+      throw new Error('No se pudo actualizar la categoría');
     }
 
     await CategoryRepository.delete(testId);
     const catDeleted = await CategoryRepository.getById(testId);
     if (!catDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
-      throw new Error('La categorÃ­a no fue eliminada');
+      throw new Error('La categoría no fue eliminada');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

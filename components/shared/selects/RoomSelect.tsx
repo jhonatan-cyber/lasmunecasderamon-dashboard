@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Select,
   SelectTrigger,
@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Home } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface Habitacion {
@@ -35,6 +35,7 @@ interface RoomSelectProps {
   className?: string;
   required?: boolean;
   disabled?: boolean;
+  disabledReason?: string;
   showPrice?: boolean;
   showTime?: boolean;
   filterByStatus?: number;
@@ -45,12 +46,13 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   habitaciones,
   value,
   onChange,
-  label = 'HabitaciÃ³n',
-  placeholder = 'Seleccione una habitaciÃ³n',
-  searchPlaceholder = 'Buscar habitaciÃ³n...',
+  label = 'Habitación',
+  placeholder = 'Seleccione una habitación',
+  searchPlaceholder = 'Buscar habitación...',
   className = '',
   required = false,
   disabled = false,
+  disabledReason,
   showPrice = false,
   showTime = false,
   filterByStatus,
@@ -90,7 +92,6 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     });
   }, [habitaciones, searchTerm, filterByStatus, includeRoomIds]);
 
-  // Formatear tiempo (ej: 2 horas)
   const formatTime = (min: number) => {
     if (!min || isNaN(min)) return '';
     if (min % 60 === 0) return `${min / 60} horas`;
@@ -98,7 +99,6 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     return `${Math.floor(min / 60)}h ${min % 60}m`;
   };
 
-  // Formatear precio CLP
   const formatPrice = (price: number) => {
     if (!price || isNaN(price)) return '';
     return formatCurrencyCLP(price);
@@ -129,7 +129,6 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   };
 
   const handleValueChange = (newValue: string) => {
-    // Convertir el valor especial "__none__" a string vacÃ­o
     const resolved = newValue === '__none__' ? '' : newValue;
     onChange(resolved);
   };
@@ -139,6 +138,65 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     setSearchTerm(e.target.value);
   };
 
+  const showTooltip = Boolean(disabledReason);
+  const disabledState = disabled || showTooltip;
+
+  const selectNode = (
+    <Select value={value || ''} onValueChange={handleValueChange} disabled={disabledState}>
+      <SelectTrigger
+        className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11'
+        disabled={disabledState}
+      >
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className='max-h-80'>
+        <div className='p-2 border-b'>
+          <Input
+            placeholder={searchPlaceholder}
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className='w-full'
+            disabled={disabledState}
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+
+        <div className='max-h-60 overflow-y-auto'>
+          {value && (
+            <SelectItem value='__none__'>
+              <span className='text-gray-500 italic'>Sin habitación</span>
+            </SelectItem>
+          )}
+
+          {filteredHabitaciones.length === 0 ? (
+            <div className='p-2 text-center text-gray-500 text-sm'>
+              {searchTerm ? 'No se encontraron habitaciones' : 'No hay habitaciones disponibles'}
+            </div>
+          ) : (
+            filteredHabitaciones.map(habitacion => {
+              const id = getHabitacionId(habitacion);
+              const displayName = getHabitacionDisplayName(habitacion);
+              const estado = habitacion.estado || habitacion.status;
+              const isOcupada = estado === 2;
+              const isItemDisabled = disabledState || isOcupada;
+
+              return (
+                <SelectItem key={id} value={id ? id.toString() : ''} disabled={isItemDisabled}>
+                  <div className='flex items-center justify-between w-full gap-2'>
+                    <span className={isOcupada ? 'text-gray-400' : ''}>
+                      {displayName || 'Sin nombre'}
+                    </span>
+                    {isOcupada && <span className='text-xs text-red-500 font-medium'>OCUPADA</span>}
+                  </div>
+                </SelectItem>
+              );
+            })
+          )}
+        </div>
+      </SelectContent>
+    </Select>
+  );
+
   return (
     <div className={`flex flex-col ${className}`}>
       <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide'>
@@ -147,66 +205,20 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
       </Label>
 
       <div className='relative'>
-        <Select value={value || ''} onValueChange={handleValueChange} disabled={disabled}>
-          <SelectTrigger
-            className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11'
-            disabled={disabled}
-          >
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent className='max-h-80'>
-            {/* Barra de bÃºsqueda */}
-            <div className='p-2 border-b'>
-              <Input
-                placeholder={searchPlaceholder}
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className='w-full'
-                disabled={disabled}
-                onClick={e => e.stopPropagation()}
-              />
-            </div>
-
-            {/* Lista de habitaciones */}
-            <div className='max-h-60 overflow-y-auto'>
-              {/* OpciÃ³n para limpiar selecciÃ³n */}
-              {value && (
-                <SelectItem value='__none__'>
-                  <span className='text-gray-500 italic'>Sin habitaciÃ³n</span>
-                </SelectItem>
-              )}
-
-              {filteredHabitaciones.length === 0 ? (
-                <div className='p-2 text-center text-gray-500 text-sm'>
-                  {searchTerm
-                    ? 'No se encontraron habitaciones'
-                    : 'No hay habitaciones disponibles'}
-                </div>
-              ) : (
-                filteredHabitaciones.map(habitacion => {
-                  const id = getHabitacionId(habitacion);
-                  const displayName = getHabitacionDisplayName(habitacion);
-                  const estado = habitacion.estado || habitacion.status;
-                  const isOcupada = estado === 2;
-                  const isDisabled = disabled || isOcupada;
-
-                  return (
-                    <SelectItem key={id} value={id ? id.toString() : ''} disabled={isDisabled}>
-                      <div className='flex items-center justify-between w-full gap-2'>
-                        <span className={isOcupada ? 'text-gray-400' : ''}>
-                          {displayName || 'Sin nombre'}
-                        </span>
-                        {isOcupada && (
-                          <span className='text-xs text-red-500 font-medium'>OCUPADA</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  );
-                })
-              )}
-            </div>
-          </SelectContent>
-        </Select>
+        {showTooltip ? (
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <div className='w-full'>{selectNode}</div>
+              </TooltipTrigger>
+              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                <p>{disabledReason}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          selectNode
+        )}
       </div>
     </div>
   );

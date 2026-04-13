@@ -83,11 +83,11 @@ async function testBaseRepository() {
     await BaseRepository.delete(null, table, 'id_rol', testData.id_rol);
     const deleted = await BaseRepository.findOne(null, table, 'id_rol', testData.id_rol);
     if (deleted) {
-      throw new Error('Error en delete: El registro aÃºn existe');
+      throw new Error('Error en delete: El registro aún existe');
     }
     console.log('   - Registro eliminado correctamente');
 
-    console.log('\nPRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO');
+    console.log('\nPRUEBAS UNITARIAS COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('\nERROR EN LAS PRUEBAS:', error.message);
     await queryMock(`DELETE FROM ${table} WHERE id_rol = ?`, [testData.id_rol]).catch(() => {});

@@ -114,7 +114,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await RoomRepository.getAll();
     console.log(`Habitaciones encontradas: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testName = 'Room ' + Math.random().toString(36).substring(2, 7);
@@ -124,32 +124,32 @@ async function runTests() {
       tiempo: 60,
       comision_anfitriona: 5000
     });
-    console.log(`HabitaciÃ³n creada: ${testId}`);
+    console.log(`Habitación creada: ${testId}`);
 
     const room = await RoomRepository.getById(testId);
     if (room && room.nombre === testName) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
-      throw new Error('No se pudo recuperar la habitaciÃ³n creada');
+      throw new Error('No se pudo recuperar la habitación creada');
     }
 
     await RoomRepository.update(testId, { nombre: testName + ' UPDATED' });
     const roomUpdated = await RoomRepository.getById(testId);
     if (roomUpdated && roomUpdated.nombre === testName + ' UPDATED') {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
-      throw new Error('No se pudo actualizar la habitaciÃ³n');
+      throw new Error('No se pudo actualizar la habitación');
     }
 
     await RoomRepository.delete(testId);
     const roomDeleted = await RoomRepository.getById(testId);
     if (!roomDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
-      throw new Error('La habitaciÃ³n no fue eliminada');
+      throw new Error('La habitación no fue eliminada');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

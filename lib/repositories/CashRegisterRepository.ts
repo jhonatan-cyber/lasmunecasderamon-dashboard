@@ -84,7 +84,7 @@ export class CashRegisterRepository {
     const knownEntries = entries.filter(([k]) => k in columnMap);
     if (knownEntries.length === 0) return;
 
-    // Deduplicate by mapped column name (e.g. both 'venta' and 'cuenta' â†’ 'venta'), summing their values
+    // Deduplicate by mapped column name (e.g. both 'venta' and 'cuenta' → 'venta'), summing their values
     const colTotals: Record<string, number> = {};
     for (const [k, v] of knownEntries) {
       const col = columnMap[k];

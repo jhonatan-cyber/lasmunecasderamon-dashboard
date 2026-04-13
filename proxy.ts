@@ -103,29 +103,29 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/codigo',
   '/api/users/user',
   '/api/users',
-  // Attendance â€” acceso por autenticacion, sin verificacion de permisos extra
+  // Attendance — acceso por autenticacion, sin verificacion de permisos extra
   '/api/attendance',
   '/api/attendance-stats',
-  // Anticipos â€” acceso por autenticacion, sin verificacion de permisos extra
+  // Anticipos — acceso por autenticacion, sin verificacion de permisos extra
   '/api/anticipos',
-  // Tips â€” acceso por autenticacion
+  // Tips — acceso por autenticacion
   '/api/tips',
-  // Overtime â€” acceso por autenticacion
+  // Overtime — acceso por autenticacion
   '/api/overtime',
-  // Pedidos â€” acceso por autenticacion
+  // Pedidos — acceso por autenticacion
   '/api/orders',
-  // Comisiones â€” acceso por autenticacion
+  // Comisiones — acceso por autenticacion
   '/api/commissions',
-  // Servicios â€” acceso por autenticacion
+  // Servicios — acceso por autenticacion
   '/api/servicios',
-  // Ventas â€” acceso por autenticacion
+  // Ventas — acceso por autenticacion
   '/api/sales',
-  // Caja â€” acceso por autenticacion
+  // Caja — acceso por autenticacion
   '/api/cashregister',
   '/api/caja',
-  // Cuentas â€” acceso por autenticacion
+  // Cuentas — acceso por autenticacion
   '/api/cuentas',
-  // Gratificaciones â€” acceso por autenticacion
+  // Gratificaciones — acceso por autenticacion
   '/api/gratificaciones',
   // Otros endpoints de empleados
   '/api/stats/logged-users',
@@ -184,7 +184,7 @@ const routePermissions: Record<string, { module: string; action: string }> = {
 
 // Solo rutas de administracion que requieren verificacion de permisos explicita.
 // Los endpoints de empleados (anticipos, attendance, comisiones, servicios, etc.)
-// estan en AUTHENTICATED_ONLY_APIS â€” solo requieren token valido.
+// estan en AUTHENTICATED_ONLY_APIS — solo requieren token valido.
 const apiRoutePermissions: Record<string, { module: string; action: string }> = {
   '/api/roles': { module: 'roles', action: 'view' },
   '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
@@ -239,7 +239,7 @@ export default async function proxy(request: NextRequest) {
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
   // Add CSP nonce to request headers
-  const { nonce, cspHeader } = addCspHeaders(request);
+  const { nonce, cspHeader, headers: cspRequestHeaders } = addCspHeaders(request);
 
   const origin = request.headers.get('origin');
   const isApi = pathname.startsWith('/api/');
@@ -288,7 +288,7 @@ export default async function proxy(request: NextRequest) {
   if (isPublicPath) {
     const response = NextResponse.next({
       request: {
-        headers: request.headers
+        headers: cspRequestHeaders
       }
     });
     response.headers.set('Content-Security-Policy', cspHeader);
@@ -318,7 +318,7 @@ export default async function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return addApiHeaders(
         NextResponse.json(
-          { success: false, message: 'Token invÃ¡lido', code: 'INVALID_TOKEN' },
+          { success: false, message: 'Token inválido', code: 'INVALID_TOKEN' },
           { status: 401 }
         )
       );
@@ -330,7 +330,13 @@ export default async function proxy(request: NextRequest) {
   const userId = payload.id as number;
 
   if (userRole === 'administrador') {
-    return addApiHeaders(NextResponse.next());
+    return addApiHeaders(
+      NextResponse.next({
+        request: {
+          headers: cspRequestHeaders
+        }
+      })
+    );
   }
 
   if (!pathname.startsWith('/api/')) {
@@ -341,7 +347,13 @@ export default async function proxy(request: NextRequest) {
     if (requiredPermission) {
       const [, { module, action }] = requiredPermission;
       if (module === 'dashboard') {
-        return addApiHeaders(NextResponse.next());
+        return addApiHeaders(
+          NextResponse.next({
+            request: {
+              headers: cspRequestHeaders
+            }
+          })
+        );
       }
 
       const hasPermission = await checkUserPermission(userId, module, action, request);
@@ -363,7 +375,13 @@ export default async function proxy(request: NextRequest) {
     const isOwnPermissionsApi = /^\/api\/users\/\d+\/permissions$/.test(pathname);
 
     if (isAuthenticatedOnlyApi || isUsersApi || isOwnPermissionsApi) {
-      return addApiHeaders(NextResponse.next());
+      return addApiHeaders(
+        NextResponse.next({
+          request: {
+            headers: cspRequestHeaders
+          }
+        })
+      );
     }
 
     const requiredPermission = Object.entries(apiRoutePermissions).find(([route]) =>
@@ -385,7 +403,7 @@ export default async function proxy(request: NextRequest) {
           NextResponse.json(
             {
               success: false,
-              message: 'No tienes permisos para esta acciÃ³n',
+              message: 'No tienes permisos para esta acción',
               code: 'INSUFFICIENT_PERMISSIONS'
             },
             { status: 403 }
@@ -395,7 +413,13 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  return addApiHeaders(NextResponse.next());
+  return addApiHeaders(
+    NextResponse.next({
+      request: {
+        headers: cspRequestHeaders
+      }
+    })
+  );
 }
 
 export const config = {

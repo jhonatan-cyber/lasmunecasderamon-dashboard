@@ -202,14 +202,14 @@ async function runTests() {
     const resumen = await SaleRepository.getAll({ tipo: 'resumen' });
     console.log('Resumen result:', resumen);
     if (resumen && resumen.resumen_general) {
-      console.log('âœ… getAll(resumen) OK');
+      console.log('✅ getAll(resumen) OK');
     }
 
     console.log('\n[2] Probando getAll(listado)...');
     const listado = await SaleRepository.getAll({ limit: '5' });
     console.log(`Ventas encontradas: ${listado.data.length}, Total: ${listado.total}`);
     if (Array.isArray(listado.data)) {
-      console.log('âœ… getAll(listado) OK');
+      console.log('✅ getAll(listado) OK');
     }
 
     console.log('\n[3] Probando ciclo de vida (create/getById/updateStatus/delete)...');
@@ -245,15 +245,15 @@ async function runTests() {
 
     const venta = await SaleRepository.getById(testVentaId);
     if (venta && venta.codigo === testCode) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
-      throw new Error('No se pudo recuperar la venta creada o el cÃ³digo no coincide');
+      throw new Error('No se pudo recuperar la venta creada o el código no coincide');
     }
 
     await SaleRepository.updateStatus(testVentaId, 0); // Anular
     const ventaAnulada = await SaleRepository.getById(testVentaId);
     if (ventaAnulada && ventaAnulada.estado === 0) {
-      console.log('âœ… updateStatus() OK');
+      console.log('✅ updateStatus() OK');
     } else {
       throw new Error('No se pudo actualizar el estado de la venta');
     }
@@ -261,12 +261,12 @@ async function runTests() {
     await SaleRepository.delete(testVentaId);
     const ventaEliminada = await SaleRepository.getById(testVentaId);
     if (!ventaEliminada) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('La venta no fue eliminada correctamente');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);
