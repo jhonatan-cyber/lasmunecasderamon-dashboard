@@ -62,6 +62,10 @@ export default function Clients() {
     prepagoClient,
     prepagoAmount,
     setPrepagoAmount,
+    prepagoPaymentMethod,
+    setPrepagoPaymentMethod,
+    prepagoMixedPayments,
+    setPrepagoMixedPayments,
     prepagoSubmitting,
     closePrepagoModal,
 
@@ -70,7 +74,7 @@ export default function Clients() {
     openEditModal,
     openDetailsModal,
     openPrepagoModal,
-    handlePrepagoSubmit,
+    handlePrepagoSubmit
   } = useClientModals();
 
   const handleClearFilters = useCallback(() => {
@@ -79,24 +83,24 @@ export default function Clients() {
     setPage(1);
   }, [setSearchTerm, setFilterStatus, setPage]);
 
-  const handleDeleteClient = useCallback(async (client: Client) => {
-    try {
-      await deleteClient(client.id);
-      toast.success('Cliente eliminado correctamente');
-    } catch {
-      toast.error('Error al eliminar el cliente');
-    }
-  }, [deleteClient]);
+  const handleDeleteClient = useCallback(
+    async (client: Client) => {
+      try {
+        await deleteClient(client.id);
+        toast.success('Cliente eliminado correctamente');
+      } catch {
+        toast.error('Error al eliminar el cliente');
+      }
+    },
+    [deleteClient]
+  );
 
   if (isLoading && allClients.length === 0) return <ClientsSkeleton />;
 
   return (
     <PermissionGuard module='clients' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <ClientHeader
-          allClients={allClients}
-          onCreateClick={openCreateModal}
-        />
+        <ClientHeader allClients={allClients} onCreateClick={openCreateModal} />
 
         <div className='px-4 sm:px-8'>
           <ClientStatsCards clients={allClients || []} />
@@ -161,19 +165,21 @@ export default function Clients() {
           }}
           onFormCancel={closeFormModal}
           isFormLoading={isMutating}
-
           // Details Modal Props
           isDetailsModalOpen={isDetailsModalOpen}
           onDetailsModalChange={setIsDetailsOpen}
           selectedClient={selectedClient}
-
           // Prepago Modal Props
           isPrepagoModalOpen={isPrepagoModalOpen}
           onPrepagoModalChange={setIsPrepagoModalOpen}
           prepagoClient={prepagoClient}
           prepagoAmount={prepagoAmount}
           onPrepagoAmountChange={setPrepagoAmount}
-          onPrepagoSubmit={(e) => handlePrepagoSubmit(e, updateClientSaldo)}
+          prepagoPaymentMethod={prepagoPaymentMethod}
+          onPrepagoPaymentMethodChange={setPrepagoPaymentMethod}
+          prepagoMixedPayments={prepagoMixedPayments}
+          onPrepagoMixedPaymentsChange={setPrepagoMixedPayments}
+          onPrepagoSubmit={e => handlePrepagoSubmit(e, updateClientSaldo)}
           isPrepagoSubmitting={prepagoSubmitting}
         />
       </div>

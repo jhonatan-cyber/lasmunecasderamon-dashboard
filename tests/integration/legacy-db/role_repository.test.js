@@ -110,7 +110,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await RoleRepository.getAll();
     console.log(`Roles encontrados: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testRoleName = 'TEST_ROLE_' + Math.random().toString(36).substring(2, 7);
@@ -123,7 +123,7 @@ async function runTests() {
 
     const role = await RoleRepository.getById(testRoleId);
     if (role && role.nombre === testRoleName) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el rol creado');
     }
@@ -131,7 +131,7 @@ async function runTests() {
     await RoleRepository.update(testRoleId, { nombre: testRoleName + '_UPDATED' });
     const roleUpdated = await RoleRepository.getById(testRoleId);
     if (roleUpdated && roleUpdated.nombre === testRoleName + '_UPDATED') {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
       throw new Error('No se pudo actualizar el rol');
     }
@@ -139,12 +139,12 @@ async function runTests() {
     await RoleRepository.delete(testRoleId);
     const roleDeleted = await RoleRepository.getById(testRoleId);
     if (!roleDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('El rol no fue eliminado');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

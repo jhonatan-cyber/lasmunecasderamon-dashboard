@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   formatCurrencyNoDecimals,
   formatFechaConHora,
-  formatSoloHora,
+  formatSoloHora
 } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import { useCuentaDetail } from '@/hooks/cuentas';
@@ -30,7 +30,6 @@ interface CuentaUsuario {
 
 const formatMinutesLabel = (value?: number) => `${Number(value || 0)} min`;
 
-
 const getClosedReasonLabel = (reason?: CuentaRoomHistoryItem['closedReason']) => {
   switch (reason) {
     case 'expired':
@@ -40,9 +39,9 @@ const getClosedReasonLabel = (reason?: CuentaRoomHistoryItem['closedReason']) =>
     case 'charged':
       return 'Cobrada';
     case 'cancelled':
-      return 'Solicitud de anulaci?n';
+      return 'Solicitud de anulación';
     case 'changed_room':
-      return 'Cambio de habitaci?n';
+      return 'Cambio de habitación';
     default:
       return null;
   }
@@ -61,7 +60,7 @@ const getAnulacionBadgeClass = (estado?: string) => {
 export default function CuentaDetailModal({
   open,
   onOpenChange,
-  cuentaId,
+  cuentaId
 }: CuentaDetailModalProps) {
   const { cuenta, loading, hasFetched, handleClose, getEstadoBadge } = useCuentaDetail(
     cuentaId ? String(cuentaId) : null,
@@ -75,7 +74,8 @@ export default function CuentaDetailModal({
   const estadoBadge = cuenta ? getEstadoBadge(cuenta.estado) : null;
   const showLoading = loading || (open && !hasFetched);
   const resumenFinanciero = cuenta?.resumen_financiero;
-  const historialHabitaciones = (cuenta?.habitaciones_historial_data ?? []) as CuentaRoomHistoryItem[];
+  const historialHabitaciones = (cuenta?.habitaciones_historial_data ??
+    []) as CuentaRoomHistoryItem[];
   const solicitudesAnulacion = (cuenta?.solicitudes_anulacion ?? []) as CuentaAnulacionItem[];
 
   const productosTabla = useMemo(
@@ -90,7 +90,7 @@ export default function CuentaDetailModal({
         cantidad: detalle.cantidad || 0,
         sub_total: detalle.sub_total || 0,
         categoria_nombre: detalle.categoria || detalle.categoria_nombre || '',
-        comision: detalle.comision || 0,
+        comision: detalle.comision || 0
       })),
     [detalleResumen.groupedDetalles]
   );
@@ -110,16 +110,16 @@ export default function CuentaDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={localHandleClose}>
-      <DialogContent className='sm:max-w-5xl max-h-[90vh] flex flex-col p-0 bg-white rounded-xl shadow-md'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+      <DialogContent className='sm:max-w-5xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md'>
+        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800'>
           <div className='flex items-center justify-center'>
-            <DialogTitle className='text-start text-xl font-semibold tracking-tight'>
+            <DialogTitle className='text-start text-xl font-semibold tracking-tight text-slate-900 dark:text-white'>
               Detalles de Cuenta
             </DialogTitle>
           </div>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='flex-1 overflow-y-auto px-6 py-4 bg-white dark:bg-slate-900'>
           {showLoading ? (
             <div className='flex items-center justify-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900' />
@@ -164,46 +164,57 @@ export default function CuentaDetailModal({
                     <span className='font-medium'>
                       <b>Estado:</b>
                     </span>
-                    {estadoBadge && <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>}
+                    {estadoBadge && (
+                      <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>
+                    )}
                   </div>
                   <div>
                     <span className='font-medium'>
-                      <b>Habitaci?n actual:</b>
+                      <b>Habitación actual:</b>
                     </span>{' '}
-                    <span className='font-normal'>{cuenta.habitacion_numero || 'Sin habitaci?n'}</span>
+                    <span className='font-normal'>
+                      {cuenta.habitacion_numero || 'Sin habitación'}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className='space-y-3'>
-                <h3 className='text-sm font-semibold text-gray-700'>Resumen financiero</h3>
+                <h3 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
+                  Resumen financiero
+                </h3>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                  <div className='rounded-2xl border bg-slate-50 p-4'>
-                    <p className='text-xs uppercase tracking-wide text-slate-500'>Total original</p>
-                    <p className='mt-2 text-xl font-bold text-slate-900'>
+                  <div className='rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
+                    <p className='text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400'>
+                      Total original
+                    </p>
+                    <p className='mt-2 text-xl font-bold text-slate-900 dark:text-slate-100'>
                       {formatCurrencyNoDecimals(resumenFinanciero?.total_original ?? cuenta.total)}
                     </p>
                   </div>
 
-                  <div className='rounded-2xl border bg-rose-50 p-4'>
-                    <p className='text-xs uppercase tracking-wide text-rose-500'>
+                  <div className='rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/50 dark:bg-rose-950/40'>
+                    <p className='text-xs uppercase tracking-wide text-rose-500 dark:text-rose-400'>
                       Total anulado aprobado
                     </p>
-                    <p className='mt-2 text-xl font-bold text-rose-700'>
+                    <p className='mt-2 text-xl font-bold text-rose-700 dark:text-rose-400'>
                       {formatCurrencyNoDecimals(resumenFinanciero?.total_anulado_aprobado ?? 0)}
                     </p>
                     {Number(resumenFinanciero?.total_anulacion_pendiente || 0) > 0 && (
-                      <p className='mt-1 text-xs text-amber-700'>
-                        Pendiente: {formatCurrencyNoDecimals(resumenFinanciero?.total_anulacion_pendiente ?? 0)}
+                      <p className='mt-1 text-xs text-amber-700 dark:text-amber-400'>
+                        Pendiente:{' '}
+                        {formatCurrencyNoDecimals(
+                          resumenFinanciero?.total_anulacion_pendiente ?? 0
+                        )}
                       </p>
                     )}
                   </div>
 
-                  <div className='rounded-2xl border bg-emerald-50 p-4'>
-                    <p className='text-xs uppercase tracking-wide text-emerald-600'>
+                  <div className='rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/40'>
+                    <p className='text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-400'>
                       Total actual a cobrar
                     </p>
-                    <p className='mt-2 text-xl font-bold text-emerald-700'>
+                    <p className='mt-2 text-xl font-bold text-emerald-700 dark:text-emerald-400'>
                       {formatCurrencyNoDecimals(resumenFinanciero?.total_actual ?? cuenta.total)}
                     </p>
                   </div>
@@ -212,9 +223,10 @@ export default function CuentaDetailModal({
 
               <div className='space-y-3'>
                 <div className='flex items-center justify-between'>
-                  <h3 className='text-sm font-semibold text-gray-700'>Historial de habitaci?n</h3>
+                  <h3 className='text-sm font-semibold text-gray-700'>Historial de habitación</h3>
                   <span className='text-xs text-gray-500'>
-                    {historialHabitaciones.length} tramo{historialHabitaciones.length !== 1 ? 's' : ''}
+                    {historialHabitaciones.length} tramo
+                    {historialHabitaciones.length !== 1 ? 's' : ''}
                   </span>
                 </div>
 
@@ -226,21 +238,25 @@ export default function CuentaDetailModal({
                         className='rounded-2xl border bg-white p-4 shadow-sm'
                       >
                         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
-                            {getClosedReasonLabel(item.closedReason) && (
-                              <p className='mt-1 text-xs text-sky-700'>
-                                Cierre: {getClosedReasonLabel(item.closedReason)}
-                              </p>
-                            )}
+                          {getClosedReasonLabel(item.closedReason) && (
+                            <p className='mt-1 text-xs text-sky-700'>
+                              Cierre: {getClosedReasonLabel(item.closedReason)}
+                            </p>
+                          )}
                           <div>
                             <div className='flex items-center gap-2'>
-                              <p className='text-sm font-semibold text-slate-900'>{item.roomName}</p>
+                              <p className='text-sm font-semibold text-slate-900'>
+                                {item.roomName}
+                              </p>
                               <Badge variant={item.isActive ? 'default' : 'secondary'}>
                                 {item.isActive ? 'Activo' : 'Finalizado'}
                               </Badge>
                             </div>
                             <p className='mt-1 text-xs text-slate-500'>
                               Inicio: {formatFechaConHora(item.startedAt)}
-                              {item.endedAt ? ` ? Fin: ${formatFechaConHora(item.endedAt)}` : ' ? En curso'}
+                              {item.endedAt
+                                ? ` — Fin: ${formatFechaConHora(item.endedAt)}`
+                                : ' — En curso'}
                             </p>
                             {getClosedReasonLabel(item.closedReason) && (
                               <p className='mt-1 text-xs text-sky-700'>
@@ -249,26 +265,32 @@ export default function CuentaDetailModal({
                             )}
                             {item.carriedFromPrevious && (
                               <p className='mt-1 text-xs text-amber-700'>
-                                Tiempo agregado despu?s de cambiar de habitaci?n.
+                                Tiempo agregado después de cambiar de habitación.
                               </p>
                             )}
                           </div>
 
                           <div className='grid grid-cols-1 sm:grid-cols-3 gap-2 md:min-w-[320px]'>
                             <div className='rounded-xl bg-slate-50 px-3 py-2'>
-                              <p className='text-[11px] uppercase tracking-wide text-slate-500'>Asignado</p>
+                              <p className='text-[11px] uppercase tracking-wide text-slate-500'>
+                                Asignado
+                              </p>
                               <p className='text-sm font-semibold text-slate-900'>
                                 {formatMinutesLabel(item.assignedMinutes)}
                               </p>
                             </div>
                             <div className='rounded-xl bg-amber-50 px-3 py-2'>
-                              <p className='text-[11px] uppercase tracking-wide text-amber-600'>Consumido</p>
+                              <p className='text-[11px] uppercase tracking-wide text-amber-600'>
+                                Consumido
+                              </p>
                               <p className='text-sm font-semibold text-amber-700'>
                                 {formatMinutesLabel(item.consumedMinutes)}
                               </p>
                             </div>
                             <div className='rounded-xl bg-emerald-50 px-3 py-2'>
-                              <p className='text-[11px] uppercase tracking-wide text-emerald-600'>Restante</p>
+                              <p className='text-[11px] uppercase tracking-wide text-emerald-600'>
+                                Restante
+                              </p>
                               <p className='text-sm font-semibold text-emerald-700'>
                                 {formatMinutesLabel(item.remainingMinutes)}
                               </p>
@@ -285,7 +307,7 @@ export default function CuentaDetailModal({
                   </div>
                 ) : (
                   <div className='rounded-2xl border border-dashed p-4 text-sm text-gray-500'>
-                    Esta cuenta no tiene historial de habitaci?n registrado.
+                    Esta cuenta no tiene historial de habitación registrado.
                   </div>
                 )}
               </div>
@@ -293,7 +315,7 @@ export default function CuentaDetailModal({
               {solicitudesAnulacion.length > 0 && (
                 <div className='space-y-3'>
                   <div className='flex items-center justify-between'>
-                    <h3 className='text-sm font-semibold text-gray-700'>Historial de anulaci?n</h3>
+                    <h3 className='text-sm font-semibold text-gray-700'>Historial de anulación</h3>
                     <span className='text-xs text-gray-500'>
                       {solicitudesAnulacion.length} solicitud
                       {solicitudesAnulacion.length !== 1 ? 'es' : ''}
@@ -301,7 +323,7 @@ export default function CuentaDetailModal({
                   </div>
 
                   <div className='space-y-3'>
-                    {solicitudesAnulacion.map((solicitud) => (
+                    {solicitudesAnulacion.map(solicitud => (
                       <div key={solicitud.id} className='rounded-2xl border bg-white p-4 shadow-sm'>
                         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
                           <div className='space-y-1'>
@@ -377,7 +399,9 @@ export default function CuentaDetailModal({
                       </div>
                       <div className='text-xs font-normal text-slate-500'>
                         Total original:{' '}
-                        {formatCurrencyNoDecimals(resumenFinanciero?.total_original ?? cuenta.total)}
+                        {formatCurrencyNoDecimals(
+                          resumenFinanciero?.total_original ?? cuenta.total
+                        )}
                       </div>
                     </div>
                   </div>

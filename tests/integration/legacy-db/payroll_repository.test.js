@@ -114,7 +114,7 @@ async function runTests() {
     console.log('\n[1] Probando getSummary()...');
     const summary = await PayrollRepository.getSummary();
     console.log(`Summary rows count: ${summary.length}`);
-    if (Array.isArray(summary)) console.log('âœ… getSummary() OK');
+    if (Array.isArray(summary)) console.log('✅ getSummary() OK');
 
     console.log('\n[2] Probando pay()...');
     const users = await queryMock('SELECT id_usuario FROM usuarios LIMIT 1');
@@ -125,10 +125,10 @@ async function runTests() {
       // No podemos pagar de verdad sin afectar datos reales, pero como es un test unitario mockeado contra DB de desarrollo
       // Vamos a intentar ejecutarlo. El estado 1 es activo, pay lo pasa a 0.
       await PayrollRepository.pay(userId);
-      console.log(`âœ… pay() ejecutado para usuario ${userId}`);
+      console.log(`✅ pay() ejecutado para usuario ${userId}`);
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

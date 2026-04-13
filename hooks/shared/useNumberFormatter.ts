@@ -1,35 +1,36 @@
 import { useState, useCallback, useMemo } from 'react';
-
-const formatNumberHelper = (value: string | number) => {
-  const numericValue = String(value).replace(/\D/g, '');
-  return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-};
-
+import { formatNumberInput } from '@/lib/utils/formatters';
 
 export function useNumberFormatter(initialValue: number = 0) {
   const [formattedValue, setFormattedValue] = useState<string>(
-    initialValue ? formatNumberHelper(initialValue) : ''
+    initialValue ? formatNumberInput(initialValue) : ''
   );
 
   const formatNumber = useCallback((value: string | number) => {
-    return formatNumberHelper(value);
+    return formatNumberInput(value);
   }, []);
 
   const getNumericValue = useCallback((formatted: string) => {
-    return formatted.replace(/\./g, '');
+    return String(formatted).replace(/\D/g, '');
   }, []);
 
-  const handleChange = useCallback((value: string, onChange: (value: number) => void) => {
-    const formatted = formatNumber(value);
-    setFormattedValue(formatted);
-    onChange(Number(getNumericValue(formatted)) || 0);
-  }, [formatNumber, getNumericValue]);
+  const handleChange = useCallback(
+    (value: string, onChange: (value: number) => void) => {
+      const formatted = formatNumber(value);
+      setFormattedValue(formatted);
+      onChange(Number(getNumericValue(formatted)) || 0);
+    },
+    [formatNumber, getNumericValue]
+  );
 
-  return useMemo(() => ({
-    formattedValue,
-    setFormattedValue,
-    formatNumber,
-    getNumericValue,
-    handleChange,
-  }), [formattedValue, formatNumber, getNumericValue, handleChange]);
+  return useMemo(
+    () => ({
+      formattedValue,
+      setFormattedValue,
+      formatNumber,
+      getNumericValue,
+      handleChange
+    }),
+    [formattedValue, formatNumber, getNumericValue, handleChange]
+  );
 }

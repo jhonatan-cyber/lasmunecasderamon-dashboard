@@ -49,10 +49,11 @@ export default function ProductSearch({
 
   // Sincronizar props externas con el hook cuando estamos en modo controlado
   useEffect(() => {
-    if (isControlled && externalSearchTerm !== undefined) {
-      handleSearchChange(externalSearchTerm);
+    const termToSync = externalSearchTerm ?? searchProducto;
+    if (isControlled && termToSync !== undefined) {
+      handleSearchChange(termToSync);
     }
-  }, [isControlled, externalSearchTerm, handleSearchChange]);
+  }, [isControlled, externalSearchTerm, searchProducto, handleSearchChange]);
 
   const itemsPerPage = 5;
   const paginatedResults = searchResults.slice(

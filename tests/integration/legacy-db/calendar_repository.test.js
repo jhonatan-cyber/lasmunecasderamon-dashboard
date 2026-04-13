@@ -52,14 +52,14 @@ async function testCalendarRepository() {
     console.log('Probando getData() tipo servicios...');
     const svcData = await CalendarRepository.getData(today, today, 'servicios');
     if (!Array.isArray(svcData)) throw new Error('getData() servicios debe devolver un array');
-    console.log(`âœ… getData(servicios) OK. Recuperados ${svcData.length} registros.`);
+    console.log(`✅ getData(servicios) OK. Recuperados ${svcData.length} registros.`);
 
     console.log('Probando getData() tipo ventas...');
     const salesData = await CalendarRepository.getData(today, today, 'ventas');
     if (!Array.isArray(salesData)) throw new Error('getData() ventas debe devolver un array');
-    console.log(`âœ… getData(ventas) OK. Recuperados ${salesData.length} registros.`);
+    console.log(`✅ getData(ventas) OK. Recuperados ${salesData.length} registros.`);
 
-    console.log('PRUEBAS UNITARIAS CalendarRepository COMPLETADAS CON Ã‰XITO');
+    console.log('PRUEBAS UNITARIAS CalendarRepository COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('ERROR EN PRUEBAS UNITARIAS:', error);
     process.exit(1);

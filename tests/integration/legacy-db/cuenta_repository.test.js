@@ -216,14 +216,14 @@ async function runTests() {
     const resumen = await CuentaRepository.getAll('resumen');
     console.log('Resumen result:', resumen);
     if (resumen && typeof resumen.total_por_cobrar === 'number') {
-      console.log('âœ… getAll(resumen) OK');
+      console.log('✅ getAll(resumen) OK');
     }
 
     console.log('\n[2] Probando getAll(listado)...');
     const listado = await CuentaRepository.getAll();
     console.log(`Cuentas encontradas: ${listado.length}`);
     if (Array.isArray(listado)) {
-      console.log('âœ… getAll(listado) OK');
+      console.log('✅ getAll(listado) OK');
     }
 
     console.log('\n[3] Probando ciclo de vida (create/getById/delete)...');
@@ -267,23 +267,23 @@ async function runTests() {
 
     const cuenta = await CuentaRepository.getById(testId);
     if (cuenta && cuenta.codigo === testCode) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
       if (cuenta.detalles.length > 0) {
-        console.log('âœ… Detalles persistidos OK');
+        console.log('✅ Detalles persistidos OK');
       }
     } else {
-      throw new Error('No se pudo recuperar la cuenta creada o el cÃ³digo no coincide');
+      throw new Error('No se pudo recuperar la cuenta creada o el código no coincide');
     }
 
     await CuentaRepository.delete(testId);
     const cuentaEliminada = await CuentaRepository.getById(testId);
     if (!cuentaEliminada) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('La cuenta no fue eliminada correctamente');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

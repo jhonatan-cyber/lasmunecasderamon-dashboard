@@ -7,7 +7,11 @@ import { Input } from '@/components/ui/input';
 import { useCuentas } from '@/hooks/caja/useCuentas';
 import { useCuentaFormLogic } from '@/hooks/cuentas';
 import { toast } from 'sonner';
-import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import {
+  formatCurrencyNoDecimals,
+  formatNumberInput,
+  parseNumberInput
+} from '@/lib/utils/formatters';
 import { CreateCuentaRequest } from '@/types/cuenta';
 
 interface CuentaFormDialogProps {
@@ -195,11 +199,11 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
                       <div>
                         <Label className='text-xs'>Precio</Label>
                         <Input
-                          type='number'
-                          step='0.01'
-                          value={detalle.precio}
+                          type='text'
+                          inputMode='numeric'
+                          value={detalle.precio ? formatNumberInput(detalle.precio) : ''}
                           onChange={e =>
-                            handleUpdateDetalle(index, 'precio', parseFloat(e.target.value))
+                            handleUpdateDetalle(index, 'precio', parseNumberInput(e.target.value))
                           }
                           className='text-sm'
                         />
@@ -218,11 +222,11 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
                       <div>
                         <Label className='text-xs'>Comisión</Label>
                         <Input
-                          type='number'
-                          step='0.01'
-                          value={detalle.comision}
+                          type='text'
+                          inputMode='numeric'
+                          value={detalle.comision ? formatNumberInput(detalle.comision) : ''}
                           onChange={e =>
-                            handleUpdateDetalle(index, 'comision', parseFloat(e.target.value))
+                            handleUpdateDetalle(index, 'comision', parseNumberInput(e.target.value))
                           }
                           className='text-sm'
                         />

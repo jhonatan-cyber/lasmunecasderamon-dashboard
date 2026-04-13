@@ -1,58 +1,57 @@
- 
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import OrderForm from "@/components/orders/OrderForm";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { useClients } from "@/hooks/clientes/useClients";
-import { useAnfitrionas } from "@/hooks/personal/useAnfitrionas";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ServiceOrderForm from "@/components/orders/ServiceOrderFormNew";
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import OrderForm from '@/components/orders/OrderForm';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useClients } from '@/hooks/clientes/useClients';
+import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ServiceOrderForm from '@/components/orders/ServiceOrderFormNew';
 
 export default function NewOrder() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("productos");
-  const [selectedCliente, setSelectedCliente] = useState("");
+  const [activeTab, setActiveTab] = useState('productos');
+  const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]); // productos agregados
   const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
   const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas(false); // false = todas las anfitrionas
-  const [searchCliente, setSearchCliente] = useState("");
-  const [searchAnfitriona, setSearchAnfitriona] = useState("");
+  const [searchCliente, setSearchCliente] = useState('');
+  const [searchAnfitriona, setSearchAnfitriona] = useState('');
   const [categorias, setCategorias] = useState<any[]>([]);
 
-
-
-
-
   useEffect(() => {
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((data) => {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => {
         if (data.success) setCategorias(data.data);
       });
   }, []);
 
-  const clientesFiltrados = searchCliente
-    ? clientes.filter((c) => {
-      const texto = `${c.name || ""} ${c.lastName || ""} ${c.run || ""
-        }`.toLowerCase();
-      return texto.includes(searchCliente.toLowerCase());
-    })
-    : clientes; 
+  const clientesFiltrados = useMemo(() => {
+    if (!searchCliente) return clientes;
+    const term = searchCliente.toLowerCase();
+    return clientes.filter(c => {
+      const texto = `${c.name || ''} ${c.lastName || ''} ${c.run || ''}`.toLowerCase();
+      return texto.includes(term);
+    });
+  }, [clientes, searchCliente]);
 
-  const anfitrionasFiltradas = anfitrionas.filter((a) => {
-    const estado = a.estado || a.status;
-    if (estado !== 1 && estado !== 2) return false;
-    const texto = `${a.nick || a.nombre || ""}`.toLowerCase();
-    return texto.includes(searchAnfitriona.toLowerCase());
-  });
+  const anfitrionasFiltradas = useMemo(() => {
+    const term = searchAnfitriona.toLowerCase();
+    return anfitrionas.filter(a => {
+      const estado = a.estado || a.status;
+      if (estado !== 1 && estado !== 2) return false;
+      const texto = `${a.nick || a.nombre || ''}`.toLowerCase();
+      return texto.includes(term);
+    });
+  }, [anfitrionas, searchAnfitriona]);
 
-  const categoriasFiltradas = categorias.filter(
-    (cat) => cat.status === 1 && (cat.total_products || 0) > 0
-  );
+  const categoriasFiltradas = useMemo(() => {
+    return categorias.filter(cat => cat.status === 1 && (cat.total_products || 0) > 0);
+  }, [categorias]);
 
   // Handler para eliminar producto
   const handleRemoveProducto = (idx: number) => {
@@ -72,7 +71,8 @@ export default function NewOrder() {
 
         // Obtener la comisión unitaria
         // Si ya existe comisionUnitaria, usarla; si no, calcularla desde la comisión actual
-        const comisionUnitaria = producto.comisionUnitaria ??
+        const comisionUnitaria =
+          producto.comisionUnitaria ??
           (producto.cantidad > 0 ? (producto.comision || 0) / producto.cantidad : 0);
 
         return {
@@ -80,16 +80,14 @@ export default function NewOrder() {
           cantidad: nuevaCantidad,
           subtotal: (producto.precio || producto.price) * nuevaCantidad,
           comision: comisionUnitaria * nuevaCantidad,
-          comisionUnitaria: comisionUnitaria, // Guardar para futuros cálculos
+          comisionUnitaria: comisionUnitaria // Guardar para futuros cálculos
         };
       })
     );
   };
 
   const handleAssignHostess = (index: number, hostessId: string) => {
-    setProductos((prev: any[]) =>
-      prev.map((p, i) => (i === index ? { ...p, hostessId } : p))
-    );
+    setProductos((prev: any[]) => prev.map((p, i) => (i === index ? { ...p, hostessId } : p)));
   };
 
   // Handler para toggle de comisión
@@ -98,10 +96,10 @@ export default function NewOrder() {
       prev.map((producto, i) =>
         i === index
           ? {
-            ...producto,
-            generaComision: producto.generaComision === 1 ? 0 : 1,
-            hostessId: producto.generaComision === 1 ? "" : producto.hostessId,
-          }
+              ...producto,
+              generaComision: producto.generaComision === 1 ? 0 : 1,
+              hostessId: producto.generaComision === 1 ? '' : producto.hostessId
+            }
           : producto
       )
     );
@@ -110,49 +108,46 @@ export default function NewOrder() {
   // Handler para submit (mock)
   const handleSubmit = () => {
     // Si no hay cliente seleccionado, usar cliente ID 1 por defecto
-    const clienteId = selectedCliente || "1";
-
+    const clienteId = selectedCliente || '1';
   };
 
   const hasChampagne = productos.some((item: any) => {
-    const cat = (item.categoria || "").toLowerCase();
-    return (
-      cat.includes("champaña") ||
-      cat.includes("shampaña") ||
-      cat.includes("champagne")
-    );
+    const cat = (item.categoria || '').toLowerCase();
+    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
   });
 
   return (
     <>
-      <div className="flex items-center justify-between mt-10 p-8">
+      <div className='flex items-center justify-between mt-10 p-8'>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Datos Ticket Pedido
-          </h2>
-          <div className="uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1">
+          <h2 className='text-2xl font-bold text-gray-900'>Datos Ticket Pedido</h2>
+          <div className='uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1'>
             Las muñecas de Ramón
           </div>
         </div>
 
         <Button
-          variant="outline"
-          className="rounded-full  bg-black text-white hover:scale-105 transition-all duration-200"
+          variant='outline'
+          className='rounded-full  bg-black text-white hover:scale-105 transition-all duration-200'
           onClick={() => router.back()}
-          type="button"
+          type='button'
         >
           <ArrowLeft />
           Atrás
         </Button>
       </div>
-      <div className="p-8 bg-white ml-8 mr-8 space-y-6 shadow-md rounded-xl">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 rounded-full">
-            <TabsTrigger value="productos" className="rounded-full">Pedidos de Productos</TabsTrigger>
-            <TabsTrigger value="servicios" className="rounded-full">Pedidos de Servicio</TabsTrigger>
+      <div className='p-8 bg-white ml-8 mr-8 space-y-6 shadow-md rounded-xl'>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
+          <TabsList className='grid w-full grid-cols-2 mb-6 rounded-full'>
+            <TabsTrigger value='productos' className='rounded-full'>
+              Pedidos de Productos
+            </TabsTrigger>
+            <TabsTrigger value='servicios' className='rounded-full'>
+              Pedidos de Servicio
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="productos" className="space-y-6">
+          <TabsContent value='productos' className='space-y-6'>
             <OrderForm
               clientes={clientesFiltrados}
               anfitrionas={anfitrionasFiltradas}
@@ -175,7 +170,7 @@ export default function NewOrder() {
             />
           </TabsContent>
 
-          <TabsContent value="servicios" className="space-y-6">
+          <TabsContent value='servicios' className='space-y-6'>
             <ServiceOrderForm
               clientes={clientes}
               anfitrionas={anfitrionas}
@@ -190,4 +185,3 @@ export default function NewOrder() {
     </>
   );
 }
-

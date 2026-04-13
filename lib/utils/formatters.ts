@@ -81,6 +81,24 @@ export const formatNumberCL = (value: number | string | null | undefined): strin
   return Math.round(numValue).toLocaleString('es-CL');
 };
 
+export const parseNumberInput = (value: string | number | null | undefined): number => {
+  if (value === undefined || value === null) {
+    return 0;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;
+  }
+
+  const digits = String(value).replace(/\D/g, '');
+  return digits ? Number(digits) : 0;
+};
+
+export const formatNumberInput = (value: string | number | null | undefined): string => {
+  const numValue = parseNumberInput(value);
+  return Number.isFinite(numValue) ? Math.round(numValue).toLocaleString('es-CL') : '';
+};
+
 export const SYSTEM_TIMEZONE = getSystemTimezone();
 
 export const formatDate = (dateString: string | null | undefined): string => {
