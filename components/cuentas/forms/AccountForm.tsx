@@ -40,6 +40,7 @@ export default function AccountFormData({
   selectedAnfitrionas,
   selectedHabitacion,
   selectedTime,
+  hasCommissionProducts,
   maxAnfitrionas,
   loading,
   onClienteChange,
@@ -88,13 +89,33 @@ export default function AccountFormData({
           value={selectedAnfitrionas}
           onChange={onAnfitrionaChange}
           maxSelection={maxAnfitrionas}
+          disabled={loading || !hasCommissionProducts}
+          disabledReason={
+            !hasCommissionProducts
+              ? 'Agregue productos con comisión para seleccionar anfitrionas.'
+              : undefined
+          }
+          placeholder={
+            hasCommissionProducts ? 'Seleccione anfitriona(s)' : 'Agregue productos con comisión'
+          }
         />
 
         <RoomSelect
           habitaciones={habitacionesFiltradas}
           value={selectedHabitacion}
           onChange={onHabitacionChange}
-          disabled={loading || !selectedCliente || selectedCliente === 'none'}
+          disabled={
+            loading || !selectedCliente || selectedCliente === 'none' || !hasCommissionProducts
+          }
+          disabledReason={
+            !selectedCliente || selectedCliente === 'none'
+              ? !hasCommissionProducts
+                ? 'Seleccione un cliente y agregue productos con comisión para seleccionar habitaciones.'
+                : 'Seleccione un cliente primero.'
+              : !hasCommissionProducts
+                ? 'Agregue productos con comisión para seleccionar habitaciones.'
+                : undefined
+          }
           placeholder='Seleccione una habitación'
           label='Habitación'
           showPrice={true}

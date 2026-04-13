@@ -128,7 +128,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await UserRepository.getAll({ limit: 5 });
     console.log(`Usuarios encontrados: ${listado.data.length}`);
-    if (Array.isArray(listado.data)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado.data)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testUserId = generateUUID();
@@ -146,7 +146,7 @@ async function runTests() {
 
     const user = await UserRepository.getById(testUserId);
     if (user && user.nick === testNick) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el usuario creado');
     }
@@ -154,7 +154,7 @@ async function runTests() {
     await UserRepository.update(testUserId, { nombre: 'Updated' });
     const userUpdated = await UserRepository.getById(testUserId);
     if (userUpdated && userUpdated.nombre === 'Updated') {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
       throw new Error('No se pudo actualizar el usuario');
     }
@@ -162,12 +162,12 @@ async function runTests() {
     await UserRepository.delete(testUserId);
     const userDeleted = await UserRepository.getById(testUserId);
     if (!userDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('El usuario no fue eliminado');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

@@ -34,7 +34,7 @@ const cardPageSizes = [8, 12, 24, 48];
 const ProductCategoryPage = () => {
   const params = useParams();
   const rawId = params?.id;
-  // El categoryId ya es el UUID correcto de la categorÃ­a
+  // El categoryId ya es el UUID correcto de la categoría
   const categoryId = typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : '';
 
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
@@ -195,7 +195,7 @@ const ProductCategoryPage = () => {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
-          CategorÃ­a no encontrada. ID: {categoryId}
+          Categoría no encontrada. ID: {categoryId}
         </div>
       </div>
     );
@@ -205,7 +205,7 @@ const ProductCategoryPage = () => {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
-          ID de categorÃ­a invÃ¡lido
+          ID de categoría inválido
         </div>
       </div>
     );
@@ -294,7 +294,7 @@ const ProductCategoryPage = () => {
           )}
         </div>
 
-        {/* Vista de cards siempre en mÃ³vil */}
+        {/* Vista de cards siempre en móvil */}
         <div className='lg:hidden'>
           <DndContext
             sensors={sensors}

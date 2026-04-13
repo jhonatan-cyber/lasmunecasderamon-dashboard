@@ -44,7 +44,7 @@ async function testOrderProcessing() {
     const codigo = 'TEST-' + Math.random().toString(36).substring(2, 7).toUpperCase();
     const now = new Date();
 
-    console.log(`Simulando Pedido: ${pedidoId} (CÃ³digo: ${codigo})`);
+    console.log(`Simulando Pedido: ${pedidoId} (Código: ${codigo})`);
 
     // 2. Crear Pedido (Simular lo que hace OrderRepository.create)
     await connection.beginTransaction();
@@ -87,13 +87,13 @@ async function testOrderProcessing() {
     );
 
     await connection.commit();
-    console.log('âœ” Pedido creado exitosamente.');
+    console.log('✔ Pedido creado exitosamente.');
 
     // 3. Simular Venta (Lo que hace SaleService.createSale)
     console.log('Simulando Venta del Pedido...');
     const ventaId = uuidv4();
 
-    // Simular que el usuario estÃ¡ logueado para que la propina se distribuya
+    // Simular que el usuario está logueado para que la propina se distribuya
     const [logins] = await connection.execute(
       'SELECT * FROM logins WHERE usuario_id = ? AND estado = 1',
       [userId]
@@ -103,7 +103,7 @@ async function testOrderProcessing() {
         'INSERT INTO logins (id_login, usuario_id, estado, en_local, last_login) VALUES (?, ?, 1, 1, NOW())',
         [uuidv4(), userId]
       );
-      console.log('âœ” Login simulado para el usuario.');
+      console.log('✔ Login simulado para el usuario.');
     }
 
     // Usaremos los datos del pedido para la venta
@@ -146,7 +146,7 @@ async function testOrderProcessing() {
       ]
     );
 
-    // Insertar Detalle Venta y ComisiÃ³n
+    // Insertar Detalle Venta y Comisión
     const detalleVentaId = uuidv4();
     await connection.execute(
       `INSERT INTO detalle_ventas (id_detalle_venta, venta_id, producto_id, precio, comision, cantidad, sub_total, hostess_id, fecha_crea)
@@ -163,7 +163,7 @@ async function testOrderProcessing() {
       ]
     );
 
-    // ComisiÃ³n
+    // Comisión
     const comisionId = uuidv4();
     await connection.execute(
       `INSERT INTO comisiones (id_comision, venta_id, monto, estado, fecha_crea) VALUES (?, ?, ?, 1, ?)`,
@@ -180,7 +180,7 @@ async function testOrderProcessing() {
       `INSERT INTO propinas (id_propina, venta_id, propina, estado, fecha_crea) VALUES (?, ?, ?, 1, ?)`,
       [propinaId, ventaId, 1000, now]
     );
-    // DistribuciÃ³n de propina
+    // Distribución de propina
     await connection.execute(
       `INSERT INTO detalle_propinas (id_detalle_propina, propina_id, usuario_id, monto, estado, fecha_crea) VALUES (?, ?, ?, ?, 1, ?)`,
       [uuidv4(), propinaId, userId, 1000, now]
@@ -190,7 +190,7 @@ async function testOrderProcessing() {
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
 
     await connection.commit();
-    console.log('âœ” Venta, ComisiÃ³n y Propina procesadas exitosamente.');
+    console.log('✔ Venta, Comisión y Propina procesadas exitosamente.');
 
     // 4. Verificaciones Finales
     console.log('\n--- VERIFICACIONES ---');
@@ -198,33 +198,33 @@ async function testOrderProcessing() {
     const [v] = await connection.execute('SELECT * FROM ventas WHERE id_venta = ?', [ventaId]);
     console.log(
       'Venta registrada:',
-      v.length > 0 ? 'SÃ' : 'NO',
+      v.length > 0 ? 'SÍ' : 'NO',
       `(Total: ${v[0]?.total}, Propina: ${v[0]?.propina})`
     );
 
     const [c] = await connection.execute('SELECT * FROM comisiones WHERE venta_id = ?', [ventaId]);
-    console.log('ComisiÃ³n registrada:', c.length > 0 ? 'SÃ' : 'NO', `(Monto: ${c[0]?.monto})`);
+    console.log('Comisión registrada:', c.length > 0 ? 'SÍ' : 'NO', `(Monto: ${c[0]?.monto})`);
 
     const [dc] = await connection.execute(
       'SELECT * FROM detalle_comisiones dc JOIN comisiones c ON c.id_comision = dc.comision_id WHERE c.venta_id = ?',
       [ventaId]
     );
     console.log(
-      'Detalle ComisiÃ³n registrado:',
-      dc.length > 0 ? 'SÃ' : 'NO',
+      'Detalle Comisión registrado:',
+      dc.length > 0 ? 'SÍ' : 'NO',
       `(Usuario: ${dc[0]?.usuario_id}, Monto: ${dc[0]?.comision})`
     );
 
     const [p] = await connection.execute('SELECT * FROM propinas WHERE venta_id = ?', [ventaId]);
-    console.log('Propina registrada:', p.length > 0 ? 'SÃ' : 'NO', `(Monto: ${p[0]?.propina})`);
+    console.log('Propina registrada:', p.length > 0 ? 'SÍ' : 'NO', `(Monto: ${p[0]?.propina})`);
 
     const [dp] = await connection.execute(
       'SELECT * FROM detalle_propinas dp JOIN propinas p ON p.id_propina = dp.propina_id WHERE p.venta_id = ?',
       [ventaId]
     );
     console.log(
-      'DistribuciÃ³n Propina registrada:',
-      dp.length > 0 ? 'SÃ' : 'NO',
+      'Distribución Propina registrada:',
+      dp.length > 0 ? 'SÍ' : 'NO',
       `(Usuario: ${dp[0]?.usuario_id}, Monto: ${dp[0]?.monto})`
     );
 

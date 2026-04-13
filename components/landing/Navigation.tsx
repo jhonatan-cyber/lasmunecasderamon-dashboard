@@ -9,7 +9,7 @@ const menuItems = [
   { name: 'Nosotros', href: '#about' },
   { name: 'Servicios', href: '#services' },
   { name: 'Eventos', href: '#events' },
-  { name: 'Ubicacion', href: '#location' },
+  { name: 'Ubicaci?n', href: '#location' },
   { name: 'Trabaja con Nosotros', href: '#careers' }
 ];
 
@@ -52,11 +52,12 @@ export default function Navigation({ scrollY }: { scrollY: number }) {
               <NextImage
                 src='/img/system/logo2.png'
                 alt='Las Munecas de Ramon - Nightclub exclusivo en Linares'
-                width={384}
-                height={128}
-                sizes='(min-width: 1024px) 25vw, 0px'
+                width={1124}
+                height={721}
+                sizes='(min-width: 1024px) 288px, 0px'
+                loading='eager'
                 className='mt-4 hidden lg:block object-contain drop-shadow-md transition-all duration-500 ease-in-out group-hover:scale-110'
-                style={{ width: 'auto', height: '128px' }}
+                style={{ width: '288px', height: 'auto' }}
               />
               <NextImage
                 src='/img/system/logo1.png'

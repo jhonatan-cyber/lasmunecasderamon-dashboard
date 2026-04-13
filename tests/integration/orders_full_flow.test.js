@@ -4,7 +4,7 @@ require('dotenv').config();
 const crypto = require('crypto');
 
 async function runTest() {
-  console.log('ðŸš€ Iniciando Prueba de IntegraciÃ³n: Ciclo Completo de Pedido (v3)');
+  console.log('🚀 Iniciando Prueba de Integración: Ciclo Completo de Pedido (v3)');
 
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -34,7 +34,7 @@ async function runTest() {
     const producto = productos[0];
 
     console.log(
-      `âœ… Datos base listos: Cliente ${clienteId}, Usuario ${usuarioId}, Producto ${producto.nombre}`
+      `✅ Datos base listos: Cliente ${clienteId}, Usuario ${usuarioId}, Producto ${producto.nombre}`
     );
 
     // 2. Crear Pedido
@@ -49,7 +49,7 @@ async function runTest() {
       'INSERT INTO pedidos (id_pedido, codigo, cliente_id, mesero_id, subtotal, propina, total, total_comision, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())',
       [pedidoId, pedidoCodigo, clienteId, usuarioId, subtotal, propina, total, totalComision]
     );
-    console.log(`âœ… Pedido creado: ${pedidoCodigo} (ID: ${pedidoId})`);
+    console.log(`✅ Pedido creado: ${pedidoCodigo} (ID: ${pedidoId})`);
 
     // 3. Agregar Detalle del Pedido
     const detalleId = crypto.randomUUID();
@@ -64,9 +64,9 @@ async function runTest() {
         producto.comision
       ]
     );
-    console.log(`âœ… Detalle de pedido agregado para ${producto.nombre}`);
+    console.log(`✅ Detalle de pedido agregado para ${producto.nombre}`);
 
-    // 4. Procesar Venta (FacturaciÃ³n)
+    // 4. Procesar Venta (Facturación)
     const ventaId = crypto.randomUUID();
     const ventaCodigo = `V-${Math.floor(Math.random() * 10000)}`;
     await connection.execute(
@@ -83,11 +83,11 @@ async function runTest() {
         totalComision
       ]
     );
-    console.log(`âœ… Venta registrada: ID ${ventaId} (CÃ³digo: ${ventaCodigo})`);
+    console.log(`✅ Venta registrada: ID ${ventaId} (Código: ${ventaCodigo})`);
 
     // 5. Actualizar Estado del Pedido a Finalizado (0)
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
-    console.log(`âœ… Pedido ${pedidoCodigo} marcado como FINALIZADO`);
+    console.log(`✅ Pedido ${pedidoCodigo} marcado como FINALIZADO`);
 
     // 6. VERIFICACIONES FINALES
     console.log('\n--- VERIFICACIONES ---');
@@ -116,7 +116,7 @@ async function runTest() {
       dCheck.length > 0 ? 'âœ”ï¸ Detalle del pedido verificado' : 'âŒ Error: Detalle no encontrado'
     );
 
-    console.log('\nðŸŒŸ VALIDACIÃ“N EXITOSA: El ciclo completo de pedido funciona correctamente.');
+    console.log('\n🌟 VALIDACIÓN EXITOSA: El ciclo completo de pedido funciona correctamente.');
   } catch (error) {
     console.error('\nâŒ ERROR DURANTE LA PRUEBA:', error.message);
     process.exit(1);

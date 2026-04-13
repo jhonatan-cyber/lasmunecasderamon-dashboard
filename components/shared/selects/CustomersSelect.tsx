@@ -1,4 +1,4 @@
-﻿import { Users } from 'lucide-react';
+﻿import { Users, ChevronDown } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -95,7 +95,7 @@ const CustomersSelect = ({
             <button
               id={uniqueId}
               type='button'
-              className='w-full pl-10 pr-8 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors'
+              className='w-full pl-10 pr-10 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors'
               onClick={() => !disabled && setOpen(!open)}
               disabled={disabled}
             >
@@ -113,7 +113,7 @@ const CustomersSelect = ({
                   ))}
                 </span>
               )}
-              <span className='ml-auto pl-2 text-gray-400 text-xs'>â–¼</span>
+              <span className='ml-auto pl-2 text-gray-400 text-xs'>▼</span>
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -160,7 +160,7 @@ const CustomersSelect = ({
             </div>
             {maxSelection > 1 && (
               <div className='p-2 border-t bg-gray-50 text-[10px] text-gray-400 text-center uppercase tracking-wider font-semibold'>
-                Seleccionados: {value.length} / MÃ¡ximo: {maxSelection}
+                Seleccionados: {value.length} / Máximo: {maxSelection}
               </div>
             )}
           </PopoverContent>

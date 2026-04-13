@@ -91,7 +91,7 @@ async function runIntegrationTest() {
       ]
     );
 
-    // RelaciÃ³n venta-usuario (anfitriona)
+    // Relación venta-usuario (anfitriona)
     await connection.execute(
       'INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id, fecha_crea) VALUES (?, ?, ?, ?)',
       [crypto.randomUUID(), ventaId, anfitrionaId, now]
@@ -101,9 +101,9 @@ async function runIntegrationTest() {
       ventaId
     ]);
     if (ventaRows.length === 1) {
-      console.log('âœ… Venta persistida correctamente');
+      console.log('✅ Venta persistida correctamente');
     } else {
-      throw new Error('La venta no se guardÃ³');
+      throw new Error('La venta no se guardó');
     }
 
     const [detalleRows] = await connection.execute(
@@ -111,16 +111,16 @@ async function runIntegrationTest() {
       [ventaId]
     );
     if (detalleRows.length === 1) {
-      console.log('âœ… Detalle de venta persistido correctamente');
+      console.log('✅ Detalle de venta persistido correctamente');
     } else {
-      throw new Error('El detalle de venta no se guardÃ³');
+      throw new Error('El detalle de venta no se guardó');
     }
 
     const [relRows] = await connection.execute('SELECT * FROM ventas_usuarios WHERE venta_id = ?', [
       ventaId
     ]);
     if (relRows.length === 1) {
-      console.log('âœ… RelaciÃ³n con anfitriona persistida correctamente');
+      console.log('✅ Relación con anfitriona persistida correctamente');
     }
 
     console.log(`\n[5] Limpiando datos de prueba`);
@@ -129,8 +129,8 @@ async function runIntegrationTest() {
     await connection.execute('DELETE FROM ventas WHERE id_venta = ?', [ventaId]);
     await connection.execute('DELETE FROM pedidos WHERE id_pedido = ?', [pedidoId]);
 
-    console.log('âœ… Limpieza completada');
-    console.log('\n--- PRUEBA DE INTEGRACIÃ“N EXITOSA ---');
+    console.log('✅ Limpieza completada');
+    console.log('\n--- PRUEBA DE INTEGRACIÓN EXITOSA ---');
   } catch (error) {
     console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
     process.exit(1);

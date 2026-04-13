@@ -79,12 +79,12 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
 
   const validate = () => {
     const newErrors: Partial<Record<keyof ProductFormValues, string>> = {};
-    if (!form.code.trim()) newErrors.code = 'El cÃ³digo es requerido';
+    if (!form.code.trim()) newErrors.code = 'El código es requerido';
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
     if (!getNumericValue(form.price) || isNaN(Number(getNumericValue(form.price))))
-      newErrors.price = 'Precio vÃ¡lido requerido';
+      newErrors.price = 'Precio válido requerido';
     if (form.commission.trim() && isNaN(Number(getNumericValue(form.commission))))
-      newErrors.commission = 'ComisiÃ³n debe ser un nÃºmero vÃ¡lido';
+      newErrors.commission = 'Comisión debe ser un número válido';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -165,7 +165,7 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     ) {
       data.append('category_id', String(finalCategoryId));
     } else {
-      console.warn('[useProductForm] Intento de submit sin category_id vÃ¡lido:', {
+      console.warn('[useProductForm] Intento de submit sin category_id válido:', {
         initialCategoryId: initialValues?.category_id,
         propCategoryId: categoryId
       });

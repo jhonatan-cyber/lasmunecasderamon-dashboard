@@ -6,9 +6,9 @@ import { Eye, Lock, Wallet, ArrowDownCircle, User, Calendar, Hash } from 'lucide
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
-// FunciÃ³n para obtener el dÃ­a de la semana en espaÃ±ol
+// Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
-  const dias = ['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'];
+  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const fechaObj = new Date(fecha);
   return dias[fechaObj.getDay()];
 };

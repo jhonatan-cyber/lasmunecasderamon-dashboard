@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { Toaster } from 'sonner';
 import LayoutContent from '@/components/LayoutContent';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
@@ -67,12 +68,15 @@ export const viewport = {
   themeColor: '#0b0b0f'
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+
   return (
-    <html lang='es' suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang='es' suppressHydrationWarning data-scroll-behavior='smooth'>
       <body className='font-sans antialiased'>
         <ErrorBoundary>
-          <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+          <ThemeProvider nonce={nonce} attribute='class' defaultTheme='system' enableSystem>
             <LayoutContent>{children}</LayoutContent>
             <Toaster
               richColors

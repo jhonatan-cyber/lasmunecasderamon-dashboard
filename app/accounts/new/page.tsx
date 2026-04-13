@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useUsers } from '@/hooks/personal/useUsers';
@@ -61,7 +61,6 @@ export default function NewCuentaPage() {
   const [productosCategoria, setProductosCategoria] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
 
-
   const anfitrionas = users.filter(
     user => user.role?.toLowerCase().includes('anfitriona') && user.status === 1
   );
@@ -71,7 +70,6 @@ export default function NewCuentaPage() {
       setClientes(allClients);
     }
   }, [allClients]);
-
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -100,9 +98,11 @@ export default function NewCuentaPage() {
     setCategoriasConProductos(categoriasConConteo);
   };
 
-  const categoriasFiltradas = Array.isArray(categoriasConProductos)
-    ? categoriasConProductos.filter(cat => cat?.estado === 1 && cat?.productCount > 0)
-    : [];
+  const categoriasFiltradas = useMemo(() => {
+    return Array.isArray(categoriasConProductos)
+      ? categoriasConProductos.filter(cat => cat?.estado === 1 && (cat?.productCount || 0) > 0)
+      : [];
+  }, [categoriasConProductos]);
 
   const handleOpenCategoria = async (cat: any) => {
     setModalCategoria(cat);
@@ -187,7 +187,6 @@ export default function NewCuentaPage() {
             onRemoveProducto={handleRemoveProducto}
           />
         </div>
-
       </div>
 
       <ProductModal
