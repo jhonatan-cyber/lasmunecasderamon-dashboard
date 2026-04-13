@@ -10,6 +10,7 @@ export const LoginView = () => {
     loading,
     theme,
     toggleTheme,
+    setThemeMode,
     codigo,
     setCodigo,
     loginData,
@@ -39,7 +40,15 @@ export const LoginView = () => {
       <div className='flex w-full max-w-6xl mx-auto items-center justify-center gap-8'>
         {/* Lado izquierdo: Logo y presentación */}
         <div className='hidden md:flex flex-1 flex-col items-center justify-center'>
-          <Image src='/img/system/logo2.png' alt='Logo' width={320} height={120} className='mb-4' />
+          <Image
+            src='/img/system/logo2.png'
+            alt='Logo'
+            width={1124}
+            height={721}
+            className='mb-4 w-[320px] h-auto'
+            sizes='320px'
+            loading='eager'
+          />
           <h1 className='text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
             Bien venido, Las Muñecas de Ramón
           </h1>
@@ -49,7 +58,13 @@ export const LoginView = () => {
             &quot;Un lugar para caballeros&quot;
           </p>
           <div className='flex justify-center mt-8'>
-            <Image src='/img/system/presentation.png' alt='Presentación' width={600} height={200} />
+            <Image
+              src='/img/system/presentation.png'
+              alt='Presentación'
+              width={600}
+              height={200}
+              loading='eager'
+            />
           </div>
         </div>
 
@@ -58,7 +73,15 @@ export const LoginView = () => {
           <div className='w-full flex flex-col items-center'>
             {/* Logo solo en móvil */}
             <div className='md:hidden mb-6 flex justify-center w-full'>
-              <Image src='/img/system/logo2.png' alt='Logo' width={200} height={80} />
+              <Image
+                src='/img/system/logo2.png'
+                alt='Logo'
+                width={1124}
+                height={721}
+                className='w-[200px] h-auto'
+                sizes='200px'
+                loading='eager'
+              />
             </div>
 
             <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
@@ -91,6 +114,7 @@ export const LoginView = () => {
                 onShowRegister={() => setShowRegisterModal(true)}
                 theme={theme}
                 toggleTheme={toggleTheme}
+                setThemeMode={setThemeMode}
                 onSetStep={setStep}
               />
             </div>

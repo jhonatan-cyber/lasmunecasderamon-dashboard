@@ -22,24 +22,24 @@ async function runMigrations() {
     console.log('ðŸš€ Iniciando migraciones...');
     connection = await mysql.createConnection(dbConfig);
 
-    // 1. Verificar si la base de datos estÃ¡ vacÃ­a (chequeando por ejemplo la tabla 'usuarios')
+    // 1. Verificar si la base de datos está vacía (chequeando por ejemplo la tabla 'usuarios')
     const [existingTables] = await connection.query("SHOW TABLES LIKE 'usuarios'");
 
     if (existingTables.length === 0) {
-      console.log('ðŸ“¦ Base de datos vacÃ­a detectada. Realizando importaciÃ³n inicial...');
+      console.log('📦 Base de datos vacía detectada. Realizando importación inicial...');
       const baseSqlPath = path.join(__dirname, '../database/lasmunecasderamon.sql');
 
       if (fs.existsSync(baseSqlPath)) {
         const baseSql = fs.readFileSync(baseSqlPath, 'utf8');
         // Separamos por bloques si es necesario o usamos multipleStatements: true
         await connection.query(baseSql);
-        console.log('âœ… ImportaciÃ³n inicial completada desde lasmunecasderamon.sql');
+        console.log('✅ Importación inicial completada desde lasmunecasderamon.sql');
       } else {
         console.warn('âš ï¸ No se encontrÃ³ el archivo base database/lasmunecasderamon.sql');
       }
     }
 
-    // 2. Crear tabla de migraciones si no existe (importante despuÃ©s de la importaciÃ³n inicial)
+    // 2. Crear tabla de migraciones si no existe (importante después de la importación inicial)
     await connection.query(`
       CREATE TABLE IF NOT EXISTS _migrations (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,7 +62,7 @@ async function runMigrations() {
       .sort();
 
     if (files.length === 0) {
-      console.log('âœ… No hay archivos de migraciÃ³n pendientes.');
+      console.log('✅ No hay archivos de migración pendientes.');
       return;
     }
 
@@ -73,16 +73,16 @@ async function runMigrations() {
       ]);
 
       if (rows.length === 0) {
-        console.log(`â³ Ejecutando migraciÃ³n: ${file}...`);
+        console.log(`⏳ Ejecutando migración: ${file}...`);
         const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
 
         try {
           await connection.query(sql);
           await connection.query('INSERT INTO _migrations (filename) VALUES (?)', [file]);
-          console.log(`âœ… MigraciÃ³n ${file} completada.`);
+          console.log(`✅ Migración ${file} completada.`);
         } catch (err) {
           console.log(
-            `DEBUG: Error en migraciÃ³n ${file}. Code: ${err.code}, ErrNo: ${err.errno}, Message: ${err.message}`
+            `DEBUG: Error en migración ${file}. Code: ${err.code}, ErrNo: ${err.errno}, Message: ${err.message}`
           );
 
           // Si el error es una columna que ya existe, lo ignoramos amigablemente
@@ -100,7 +100,7 @@ async function runMigrations() {
 
           if (isDuplicateError) {
             console.log(
-              `â­ï¸ MigraciÃ³n ${file} ya parecÃ­a aplicada (Error de duplicado controlado: ${err.code || err.errno}). Marcando como hecha.`
+              `⏭️ Migración ${file} ya parecía aplicada (Error de duplicado controlado: ${err.code || err.errno}). Marcando como hecha.`
             );
             await connection.query('INSERT INTO _migrations (filename) VALUES (?)', [file]);
           } else {
@@ -109,7 +109,7 @@ async function runMigrations() {
           }
         }
       } else {
-        console.log(`â­ï¸ Saltando migraciÃ³n ya ejecutada: ${file}`);
+        console.log(`⏭️ Saltando migración ya ejecutada: ${file}`);
       }
     }
 

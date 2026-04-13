@@ -43,7 +43,7 @@ export default function TipsPage() {
     }
   };
 
-  // Filtrar y ordenar datos por tÃ©rmino de bÃºsqueda
+  // Filtrar y ordenar datos por término de búsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
 
@@ -80,7 +80,7 @@ export default function TipsPage() {
     });
   }, [tipsCajaActiva, searchTerm]);
 
-  // Calcular estadÃ­sticas
+  // Calcular estadísticas
   const stats = useMemo(() => {
     if (!filteredTips) {
       return {
@@ -110,7 +110,7 @@ export default function TipsPage() {
     };
   }, [filteredTips, filteredTipsCajaActiva]);
 
-  // FunciÃ³n para formatear moneda
+  // Función para formatear moneda
   const formatCurrency = (n: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -120,7 +120,7 @@ export default function TipsPage() {
     }).format(n);
   };
 
-  // PaginaciÃ³n
+  // Paginación
   const paginatedTips = filteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const totalPages = Math.ceil(filteredTips.length / rowsPerPage) || 1;
 
@@ -159,7 +159,7 @@ export default function TipsPage() {
             </div>
           </div>
 
-          {/* EstadÃ­sticas */}
+          {/* Estadísticas */}
           <TipsStatsCards
             totalTips={stats.totalTips}
             totalUsuarios={stats.totalUsuarios}

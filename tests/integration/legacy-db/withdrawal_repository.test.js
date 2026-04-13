@@ -82,17 +82,17 @@ async function runTests() {
     const withdrawals = await WithdrawalRepository.getByCajaId(cajaId);
     const found = withdrawals.find(w => w.id_retiro === withdrawalId);
     if (found && Number(found.monto) === 15000) {
-      console.log('âœ… create() y getByCajaId() OK');
+      console.log('✅ create() y getByCajaId() OK');
     } else {
-      throw new Error('No se pudo encontrar el retiro reciÃ©n creado');
+      throw new Error('No se pudo encontrar el retiro recién creado');
     }
 
     // Cleanup
     console.log('\n[3] Limpiando datos de prueba...');
     await queryMock('DELETE FROM retiros_caja WHERE id_retiro = ?', [withdrawalId]);
-    console.log('âœ… Cleanup OK');
+    console.log('✅ Cleanup OK');
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

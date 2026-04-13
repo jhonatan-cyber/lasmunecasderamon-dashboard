@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Home, Search, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -13,9 +15,7 @@ export default function NotFound() {
         </div>
 
         {/* Title */}
-        <h1 className='text-4xl font-bold text-gray-900 dark:text-gray-100'>
-          404
-        </h1>
+        <h1 className='text-4xl font-bold text-gray-900 dark:text-gray-100'>404</h1>
         <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-300'>
           Página no encontrada
         </h2>
@@ -34,11 +34,7 @@ export default function NotFound() {
             </Button>
           </Link>
 
-          <Button
-            variant='outline'
-            onClick={() => window.history.back()}
-            className='gap-2'
-          >
+          <Button variant='outline' onClick={() => window.history.back()} className='gap-2'>
             <ArrowLeft className='w-4 h-4' />
             Volver atrás
           </Button>
@@ -46,9 +42,7 @@ export default function NotFound() {
 
         {/* Quick links */}
         <div className='pt-6 border-t border-gray-200 dark:border-gray-800'>
-          <p className='text-sm text-gray-500 dark:text-gray-500 mb-4'>
-           快速链接:
-          </p>
+          <p className='text-sm text-gray-500 dark:text-gray-500 mb-4'>快速链接:</p>
           <div className='flex gap-2 justify-center flex-wrap'>
             <Link href='/dashboard' className='text-sm text-blue-600 hover:underline'>
               Dashboard

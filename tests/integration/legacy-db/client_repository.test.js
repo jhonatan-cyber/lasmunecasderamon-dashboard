@@ -115,7 +115,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await ClientRepository.getAll();
     console.log(`Clientes encontrados: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testClientName = 'Test Client ' + Math.random().toString(36).substring(2, 7);
@@ -130,7 +130,7 @@ async function runTests() {
 
     const client = await ClientRepository.getById(testClientId);
     if (client && client.nombre === testClientName) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el cliente creado');
     }
@@ -138,7 +138,7 @@ async function runTests() {
     await ClientRepository.update(testClientId, { name: testClientName + ' Updated' });
     const clientUpdated = await ClientRepository.getById(testClientId);
     if (clientUpdated && clientUpdated.nombre === testClientName + ' Updated') {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
       throw new Error('No se pudo actualizar el cliente');
     }
@@ -146,12 +146,12 @@ async function runTests() {
     await ClientRepository.delete(testClientId);
     const clientDeleted = await ClientRepository.getById(testClientId);
     if (!clientDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('El cliente no fue eliminado');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

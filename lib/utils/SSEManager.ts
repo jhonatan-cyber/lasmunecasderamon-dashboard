@@ -10,7 +10,7 @@ class SSEManager {
     if (typeof window === 'undefined') return;
 
     if (this.url === url && this.isConnected && this.eventSource) {
-      return; // Ya estÃ¡ conectado al mismo endpoint
+      return; // Ya está conectado al mismo endpoint
     }
 
     this.url = url;
@@ -31,7 +31,7 @@ class SSEManager {
       try {
         const payload = JSON.parse(event.data);
 
-        // Emite un evento genÃ©rico sse-message para todos los payloads
+        // Emite un evento genérico sse-message para todos los payloads
         appEventBus.emit('sse-message', payload);
       } catch (err) {
         console.error('[SSEManager] Error parseando mensaje SSE:', err);
@@ -39,7 +39,7 @@ class SSEManager {
     };
 
     this.eventSource.onerror = () => {
-      console.warn('[SSEManager] Error de conexiÃ³n, reintentando en 5s...');
+      console.warn('[SSEManager] Error de conexión, reintentando en 5s...');
       this.isConnected = false;
       this.cleanup(false);
       this.reconnectTimeout = setTimeout(() => {

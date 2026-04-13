@@ -3,12 +3,7 @@
 import React from 'react';
 import { Control, Controller, ControllerProps } from 'react-hook-form';
 import { Users } from 'lucide-react';
-import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
+import { FormControl, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -41,20 +36,14 @@ export function RoleSelect({
       render={({ field }) => (
         <FormItem>
           <FormLabel className='text-sm sm:text-base'>{label}</FormLabel>
-          <div className='relative'>
+          <div className='relative w-full'>
             <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 dark:text-gray-400 pointer-events-none'>
               <Users className='w-4 h-4' />
             </span>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value}
-              disabled={isLoading}
-            >
+            <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
               <FormControl>
-                <SelectTrigger className='pl-12 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'>
-                  <SelectValue
-                    placeholder={isLoading ? 'Cargando roles...' : placeholder}
-                  />
+                <SelectTrigger className='w-full pl-12 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'>
+                  <SelectValue placeholder={isLoading ? 'Cargando roles...' : placeholder} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent className='rounded-xl border-gray-200 dark:border-gray-700'>
@@ -62,11 +51,7 @@ export function RoleSelect({
                   roles
                     .filter((role: any) => role.status === 1)
                     .map((role: any) => (
-                      <SelectItem
-                        key={role.id}
-                        value={role.id.toString()}
-                        className='rounded-lg'
-                      >
+                      <SelectItem key={role.id} value={role.id.toString()} className='rounded-lg'>
                         {role.name}
                       </SelectItem>
                     ))

@@ -74,16 +74,13 @@ export default function NuevoServicioPage() {
   // Dynamic limits calculation
   const selectedRoom = useMemo(() => {
     return habitaciones.find(
-      (h) =>
-        String(h.id_habitacion || h.id) === String(formData.habitacion_id)
+      h => String(h.id_habitacion || h.id) === String(formData.habitacion_id)
     );
   }, [formData.habitacion_id, habitaciones]);
 
   const selectedClientData = useMemo(() => {
     if (formData.clientes.length === 0) return null;
-    return clientes.find(
-      c => String(c.id_cliente ?? c.id ?? '') === String(formData.clientes[0])
-    );
+    return clientes.find(c => String(c.id_cliente ?? c.id ?? '') === String(formData.clientes[0]));
   }, [clientes, formData.clientes]);
 
   const hasComision = useMemo(() => {
@@ -217,7 +214,7 @@ export default function NuevoServicioPage() {
         {
           metodo: 'prepago',
           monto: saldo,
-          display: saldo.toLocaleString('es-CL')
+          display: formatNumberWithSeparators(saldo)
         }
       ]);
     }
@@ -542,7 +539,7 @@ export default function NuevoServicioPage() {
                         {
                           metodo: 'prepago',
                           monto: saldo,
-                          display: saldo.toLocaleString('es-CL')
+                          display: formatNumberWithSeparators(saldo)
                         }
                       ]
                     : []
@@ -554,9 +551,7 @@ export default function NuevoServicioPage() {
               className='w-full'
               showPrepago={!!selectedClientData}
               showMixto={true}
-              disabledMethods={
-                Number(selectedClientData?.saldo || 0) <= 0 ? ['prepago'] : []
-              }
+              disabledMethods={Number(selectedClientData?.saldo || 0) <= 0 ? ['prepago'] : []}
             />
           </div>
 
@@ -620,22 +615,7 @@ export default function NuevoServicioPage() {
                               ? {
                                   ...item,
                                   monto,
-                                  display: e.target.value.replace(/\D/g, '')
-                                }
-                              : item
-                          )
-                        );
-                      }}
-                      onBlur={() => {
-                        setPagosMixtos(prev =>
-                          prev.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  display:
-                                    item.monto > 0
-                                      ? item.monto.toLocaleString('es-CL')
-                                      : ''
+                                  display: monto > 0 ? formatNumberWithSeparators(monto) : ''
                                 }
                               : item
                           )
@@ -663,7 +643,8 @@ export default function NuevoServicioPage() {
               {(['efectivo', 'tarjeta', 'transferencia', 'prepago'] as const).map(metodo => {
                 if (pagosMixtos.some(pago => pago.metodo === metodo)) return null;
 
-                const sinSaldo = metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
+                const sinSaldo =
+                  metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
 
                 return (
                   <Button
@@ -673,10 +654,7 @@ export default function NuevoServicioPage() {
                     size='sm'
                     disabled={sinSaldo}
                     onClick={() =>
-                      setPagosMixtos(prev => [
-                        ...prev,
-                        { metodo, monto: 0, display: '' }
-                      ])
+                      setPagosMixtos(prev => [...prev, { metodo, monto: 0, display: '' }])
                     }
                     className='rounded-full uppercase dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
                   >
@@ -701,13 +679,15 @@ export default function NuevoServicioPage() {
               </div>
               {pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0) !== total && (
                 <p className='mt-1 text-xs text-red-500'>
-                  Falta {formatCurrencyCLP(total - pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0))}
+                  Falta{' '}
+                  {formatCurrencyCLP(
+                    total - pagosMixtos.reduce((sum, pago) => sum + pago.monto, 0)
+                  )}
                 </p>
               )}
             </div>
           </div>
         )}
-
 
         {/* Total y boton centrados */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>

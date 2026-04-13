@@ -34,7 +34,7 @@ const VentasStatsRepository = {
               SELECT 1 FROM detalle_ventas dv2
               INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
               WHERE dv2.venta_id = v.id_venta
-                AND (LOWER(p2.nombre) REGEXP 'champagne|champaÃ±a|shampage|champan')
+                AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
             )
         `,
       [caja_id]
@@ -57,7 +57,7 @@ const VentasStatsRepository = {
               FROM detalle_ventas dv
               INNER JOIN productos p ON p.id_producto = dv.producto_id
               WHERE dv.venta_id = v.id_venta
-                AND (LOWER(p.nombre) REGEXP 'champagne|champaÃ±a|shampage|champan')
+                AND (LOWER(p.nombre) REGEXP 'champagne|champaña|shampage|champan')
             ) as monto_champagne,
             (
               SELECT COALESCE(SUM(dc.comision), 0)
@@ -71,7 +71,7 @@ const VentasStatsRepository = {
               SELECT 1 FROM detalle_ventas dv2
               INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
               WHERE dv2.venta_id = v.id_venta
-                AND (LOWER(p2.nombre) REGEXP 'champagne|champaÃ±a|shampage|champan')
+                AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
             )
           GROUP BY v.id_venta
         `,
@@ -111,7 +111,7 @@ const VentasStatsRepository = {
               SELECT 1 FROM detalle_ventas dv2
               INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
               WHERE dv2.venta_id = v.id_venta
-                AND (LOWER(p2.nombre) REGEXP 'champagne|champaÃ±a|shampage|champan')
+                AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
             )
           GROUP BY v.id_venta
         `,
@@ -141,7 +141,7 @@ async function testVentasStatsRepository() {
   try {
     const activeCaja = await queryMock('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1');
     if (activeCaja.length === 0) {
-      console.log('   - No hay cajas abiertas para probar, usando la Ãºltima cerrada...');
+      console.log('   - No hay cajas abiertas para probar, usando la última cerrada...');
       const lastCaja = await queryMock(
         'SELECT id_caja FROM cajas ORDER BY fecha_apertura DESC LIMIT 1'
       );
@@ -156,7 +156,7 @@ async function testVentasStatsRepository() {
     const barras = await VentasStatsRepository.getVentasBarras(cajaId);
     console.log(`   - Total Ventas Barras: ${barras.total_venta}`);
     if (typeof barras.total_venta !== 'number')
-      throw new Error('getVentasBarras no retornÃ³ un nÃºmero');
+      throw new Error('getVentasBarras no retornó un número');
 
     // 2. Test getVentasChampagne
     console.log('2. Probando getVentasChampagne...');
@@ -168,7 +168,7 @@ async function testVentasStatsRepository() {
     const tragos = await VentasStatsRepository.getVentasTragosChicas(cajaId);
     console.log(`   - Total Ventas Tragos Chicas: ${tragos.total_venta}`);
 
-    console.log('\nPRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO');
+    console.log('\nPRUEBAS UNITARIAS COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('\nERROR EN LAS PRUEBAS:', error.message);
     process.exit(1);

@@ -6,12 +6,12 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 /**
- * PRUEBA DE INTEGRACIÃ“N: MÃ³dulo de ConfiguraciÃ³n - Limpieza de Base de Datos
+ * PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza de Base de Datos
  *
  * Esta prueba verifica el endpoint /api/settings/database-clean
- * que vacÃ­a todas las tablas excepto: usuarios, roles, permissions, role_permissions
+ * que vacía todas las tablas excepto: usuarios, roles, permissions, role_permissions
  *
- * IMPORTANTE: hace backup antes de limpiar y restaura despuÃ©s
+ * IMPORTANTE: hace backup antes de limpiar y restaura después
  */
 
 const BACKUP_DIR = path.join(__dirname, 'backups');
@@ -51,9 +51,7 @@ async function restoreTable(connection, tableName, data) {
 }
 
 async function runIntegrationTest() {
-  console.log(
-    '--- INICIANDO PRUEBA DE INTEGRACIÃ“N: MÃ³dulo de ConfiguraciÃ³n - Limpieza BD ---\n'
-  );
+  console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza BD ---\n');
   console.log('âš ï¸  Esta prueba harÃ¡ backup y restauraciÃ³n de datos\n');
 
   const connection = await mysql.createConnection({
@@ -100,7 +98,7 @@ async function runIntegrationTest() {
 
     // Guardar backup a archivo
     fs.writeFileSync(backupFile, JSON.stringify(backupData, null, 2));
-    console.log(`\n   âœ… Backup guardado en: ${backupFile}`);
+    console.log(`\n   ✅ Backup guardado en: ${backupFile}`);
 
     // Mostrar resumen del backup
     let totalBackupRecords = 0;
@@ -134,8 +132,8 @@ async function runIntegrationTest() {
     // Reactivar foreign keys
     await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
 
-    console.log(`   âœ… ${deletedTables.length} tablas vaciadas`);
-    console.log(`   âœ… ${skippedTables.length} tablas protegidas (omitidas)`);
+    console.log(`   ✅ ${deletedTables.length} tablas vaciadas`);
+    console.log(`   ✅ ${skippedTables.length} tablas protegidas (omitidas)`);
 
     // 3. Verificar que las tablas protegidas conservaron sus datos
     console.log('\n[3] Verificando tablas protegidas...\n');
@@ -174,7 +172,7 @@ async function runIntegrationTest() {
     if (rolePermissionsAfter[0].count !== rolePermissionsBefore[0].count)
       throw new Error('Role permissions fueron eliminadas');
 
-    console.log('   âœ… Todas las tablas protegidas mantienen sus datos');
+    console.log('   ✅ Todas las tablas protegidas mantienen sus datos');
 
     // 4. Verificar que las tablas no protegidas fueron vaciadas
     console.log('\n[4] Verificando tablas vaciadas...\n');
@@ -185,7 +183,7 @@ async function runIntegrationTest() {
     const [productosAfter] = await connection.execute('SELECT COUNT(*) as count FROM productos');
 
     console.log(`   - Ventas: ${ventasAfter[0].count}`);
-    console.log(`   - CategorÃ­as: ${categoriasAfter[0].count}`);
+    console.log(`   - Categorías: ${categoriasAfter[0].count}`);
     console.log(`   - Clientes: ${clientesAfter[0].count}`);
     console.log(`   - Productos: ${productosAfter[0].count}`);
 
@@ -198,7 +196,7 @@ async function runIntegrationTest() {
       throw new Error('Las tablas no fueron vaciadas completamente');
     }
 
-    console.log('   âœ… Tablas correctamente vaciadas');
+    console.log('   ✅ Tablas correctamente vaciadas');
 
     // 5. Restaurar datos desde backup
     console.log('\n[5] Restaurando datos desde backup...\n');
@@ -212,10 +210,10 @@ async function runIntegrationTest() {
 
     await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
 
-    console.log('   âœ… Datos restaurados correctamente');
+    console.log('   ✅ Datos restaurados correctamente');
 
-    // 6. Verificar restauraciÃ³n
-    console.log('\n[6] Verificando restauraciÃ³n...\n');
+    // 6. Verificar restauración
+    console.log('\n[6] Verificando restauración...\n');
 
     const [ventasRestored] = await connection.execute('SELECT COUNT(*) as count FROM ventas');
     const [categoriasRestored] = await connection.execute(
@@ -225,7 +223,7 @@ async function runIntegrationTest() {
     const [productosRestored] = await connection.execute('SELECT COUNT(*) as count FROM productos');
 
     console.log(`   - Ventas: ${ventasRestored[0].count}`);
-    console.log(`   - CategorÃ­as: ${categoriasRestored[0].count}`);
+    console.log(`   - Categorías: ${categoriasRestored[0].count}`);
     console.log(`   - Clientes: ${clientesRestored[0].count}`);
     console.log(`   - Productos: ${productosRestored[0].count}`);
 
@@ -240,24 +238,24 @@ async function runIntegrationTest() {
     if (ventasRestored[0].count !== originalCounts.ventas)
       throw new Error('Ventas no restauradas correctamente');
     if (categoriasRestored[0].count !== originalCounts.categorias)
-      throw new Error('CategorÃ­as no restauradas correctamente');
+      throw new Error('Categorías no restauradas correctamente');
     if (clientesRestored[0].count !== originalCounts.clientes)
       throw new Error('Clientes no restaurados correctamente');
     if (productosRestored[0].count !== originalCounts.productos)
       throw new Error('Productos no restaurados correctamente');
 
-    console.log('   âœ… RestauraciÃ³n verificada');
+    console.log('   ✅ Restauración verificada');
 
     // Limpiar archivo de backup
     fs.unlinkSync(backupFile);
     console.log(`\n   ðŸ—‘ï¸  Archivo de backup eliminado`);
 
-    console.log('\n--- PRUEBA DE INTEGRACIÃ“N EXITOSA ---');
+    console.log('\n--- PRUEBA DE INTEGRACIÓN EXITOSA ---');
     console.log('\nRESUMEN:');
     console.log(`  - ${deletedTables.length} tablas vaciadas y restauradas`);
     console.log(`  - ${skippedTables.length} tablas protegidas`);
     console.log('  - Datos de usuarios, roles, permissions intactos');
-    console.log('  - Backup automÃ¡tico creado y eliminado tras prueba');
+    console.log('  - Backup automático creado y eliminado tras prueba');
   } catch (error) {
     console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error.message);
     console.log('\nâš ï¸  Intentando restaurar desde backup...');
@@ -272,7 +270,7 @@ async function runIntegrationTest() {
         }
 
         await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
-        console.log('âœ… RestauraciÃ³n de emergencia completada');
+        console.log('✅ Restauración de emergencia completada');
       }
     } catch (restoreError) {
       console.error('âŒ Error en restauraciÃ³n de emergencia:', restoreError.message);

@@ -22,7 +22,7 @@ async function testSaleDetail() {
       database: config.database
     });
     connection = await mysql.createConnection(config);
-    console.log('ConexiÃ³n establecida.');
+    console.log('Conexión establecida.');
 
     // 1. Buscar una venta con un pedido asociado para probar el garzon_nombre
     const [sales] = await connection.execute(
@@ -69,16 +69,16 @@ async function testSaleDetail() {
     } else {
       const row = results[0];
       console.log('Datos principales de la venta:');
-      console.log('- CÃ³digo:', row.codigo);
+      console.log('- Código:', row.codigo);
       console.log('- Total:', row.total);
-      console.log('- MÃ©todo Pago:', row.metodo_pago);
+      console.log('- Método Pago:', row.metodo_pago);
       console.log('- Fecha Crea:', row.fecha_crea);
       console.log('- Cajero Nick:', row.cajero_nick);
-      console.log('- GarzÃ³n Nombre:', row.garzon_nombre);
+      console.log('- Garzón Nombre:', row.garzon_nombre);
       console.log('- Productos Detalle:', row.productos_detalle);
 
       if (!row.garzon_nombre && row.pedido_id) {
-        console.warn('Â¡ALERTA! La venta tiene pedido_id pero no se obtuvo garzon_nombre.');
+        console.warn('¡ALERTA! La venta tiene pedido_id pero no se obtuvo garzon_nombre.');
       }
     }
   } catch (error) {

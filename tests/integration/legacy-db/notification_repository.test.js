@@ -58,32 +58,32 @@ async function runTests() {
       'Test Title',
       'Test notification message'
     );
-    console.log(`NotificaciÃ³n creada: ${notifId}`);
+    console.log(`Notificación creada: ${notifId}`);
 
     console.log('\n[2] Probando getByUser()...');
     const notifications = await NotificationRepository.getByUser(userId);
     const found = notifications.find(n => n.id === notifId);
     if (found) {
-      console.log('âœ… create() y getByUser() OK');
+      console.log('✅ create() y getByUser() OK');
     } else {
-      throw new Error('No se encontrÃ³ la notificaciÃ³n creada');
+      throw new Error('No se encontró la notificación creada');
     }
 
     console.log('\n[3] Probando markAsRead()...');
     await NotificationRepository.markAsRead(notifId);
     const [notif] = await queryMock('SELECT leida FROM notificaciones WHERE id = ?', [notifId]);
     if (notif && notif.leida === 1) {
-      console.log('âœ… markAsRead() OK');
+      console.log('✅ markAsRead() OK');
     } else {
-      throw new Error('La notificaciÃ³n no se marcÃ³ como leÃ­da');
+      throw new Error('La notificación no se marcó como leída');
     }
 
     // Cleanup
     console.log('\n[4] Limpiando datos de prueba...');
     await queryMock('DELETE FROM notificaciones WHERE id = ?', [notifId]);
-    console.log('âœ… Cleanup OK');
+    console.log('✅ Cleanup OK');
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

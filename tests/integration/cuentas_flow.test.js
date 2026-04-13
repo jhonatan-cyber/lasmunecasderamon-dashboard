@@ -4,7 +4,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 async function runIntegrationTest() {
-  console.log('--- INICIANDO PRUEBA DE INTEGRACIÃ“N: Flujo de Cuentas Completo ---');
+  console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Flujo de Cuentas Completo ---');
 
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -54,7 +54,7 @@ async function runIntegrationTest() {
     const codigo = 'INT-C-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const now = new Date();
 
-    console.log(`\n[1] Creando Cuenta vinculada a habitaciÃ³n: ${roomId}`);
+    console.log(`\n[1] Creando Cuenta vinculada a habitación: ${roomId}`);
     await connection.execute(
       `
             INSERT INTO cuentas (
@@ -79,7 +79,7 @@ async function runIntegrationTest() {
       ]
     );
 
-    // Marcar habitaciÃ³n como ocupada
+    // Marcar habitación como ocupada
     await connection.execute('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
       roomId
     ]);
@@ -107,15 +107,15 @@ async function runIntegrationTest() {
       ]
     );
 
-    console.log(`\n[3] Verificando Estado de HabitaciÃ³n (Ocupada)`);
+    console.log(`\n[3] Verificando Estado de Habitación (Ocupada)`);
     const [roomRows] = await connection.execute(
       'SELECT estado FROM habitaciones WHERE id_habitacion = ?',
       [roomId]
     );
     if (roomRows[0].estado === 2) {
-      console.log('âœ… HabitaciÃ³n marcada como ocupada OK');
+      console.log('✅ Habitación marcada como ocupada OK');
     } else {
-      throw new Error('La habitaciÃ³n no cambiÃ³ a estado ocupado');
+      throw new Error('La habitación no cambió a estado ocupado');
     }
 
     console.log(`\n[4] Simulando Cobro de Cuenta`);
@@ -133,12 +133,12 @@ async function runIntegrationTest() {
       [metodoPago, userId, new Date(), cuentaId]
     );
 
-    // Liberar habitaciÃ³n
+    // Liberar habitación
     await connection.execute('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
       roomId
     ]);
 
-    // Actualizar Caja (SimulaciÃ³n de CashRegisterRepository.updateBalances)
+    // Actualizar Caja (Simulación de CashRegisterRepository.updateBalances)
     await connection.execute(
       `
             UPDATE cajas 
@@ -150,15 +150,15 @@ async function runIntegrationTest() {
       [product.precio, propina, product.precio, cajaId]
     );
 
-    console.log(`\n[5] Verificando LiberaciÃ³n de HabitaciÃ³n`);
+    console.log(`\n[5] Verificando Liberación de Habitación`);
     const [roomRowsFinal] = await connection.execute(
       'SELECT estado FROM habitaciones WHERE id_habitacion = ?',
       [roomId]
     );
     if (roomRowsFinal[0].estado === 1) {
-      console.log('âœ… HabitaciÃ³n liberada OK');
+      console.log('✅ Habitación liberada OK');
     } else {
-      throw new Error('La habitaciÃ³n no se liberÃ³ tras el cobro');
+      throw new Error('La habitación no se liberó tras el cobro');
     }
 
     console.log(`\n[6] Limpiando datos de prueba`);
@@ -166,7 +166,7 @@ async function runIntegrationTest() {
     await connection.execute('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [cuentaId]);
     await connection.execute('DELETE FROM cuentas WHERE id_cuenta = ?', [cuentaId]);
 
-    // Revertir cambios en caja (opcional, pero buena prÃ¡ctica en tests)
+    // Revertir cambios en caja (opcional, pero buena práctica en tests)
     await connection.execute(
       `
             UPDATE cajas 
@@ -178,8 +178,8 @@ async function runIntegrationTest() {
       [product.precio, propina, product.precio, cajaId]
     );
 
-    console.log('âœ… Limpieza completada');
-    console.log('\n--- PRUEBA DE INTEGRACIÃ“N EXITOSA ---');
+    console.log('✅ Limpieza completada');
+    console.log('\n--- PRUEBA DE INTEGRACIÓN EXITOSA ---');
   } catch (error) {
     console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
     process.exit(1);

@@ -123,7 +123,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await OvertimeRepository.getAll();
     console.log(`Horas extras encontradas: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/update/delete)...');
     const testId = await OvertimeRepository.create({
@@ -135,7 +135,7 @@ async function runTests() {
 
     const hx = await OvertimeRepository.getById(testId);
     if (hx && Number(hx.total) === 10000) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar la hora extra creada');
     }
@@ -143,7 +143,7 @@ async function runTests() {
     await OvertimeRepository.update(testId, { hora: 3, total: 15000 });
     const hxUpdated = await OvertimeRepository.getById(testId);
     if (hxUpdated && Number(hxUpdated.hora) === 3) {
-      console.log('âœ… update() OK');
+      console.log('✅ update() OK');
     } else {
       throw new Error('No se pudo actualizar la hora extra');
     }
@@ -151,12 +151,12 @@ async function runTests() {
     await OvertimeRepository.delete(testId);
     const hxDeleted = await OvertimeRepository.getById(testId);
     if (!hxDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('La hora extra no fue eliminada');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

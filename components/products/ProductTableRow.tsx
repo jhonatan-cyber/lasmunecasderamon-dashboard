@@ -47,7 +47,7 @@ export const ProductTableRow = React.memo<ProductTableRowProps>(
             ) : null}
             <div>
               <div className='font-medium'>{producto.nombre || producto.name}</div>
-              {(producto.codigo || producto.code) ? (
+              {producto.codigo || producto.code ? (
                 <div className='text-xs text-gray-500'>{producto.codigo || producto.code}</div>
               ) : null}
             </div>
@@ -57,6 +57,9 @@ export const ProductTableRow = React.memo<ProductTableRowProps>(
           <span className='text-green-600 font-medium'>
             {formatCurrencyNoDecimals(producto.precio || producto.price)}
           </span>
+        </TableCell>
+        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+          <span className='text-gray-600'>{producto.categoria || 'Sin categoría'}</span>
         </TableCell>
         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
           <span className='text-orange-600'>
