@@ -122,7 +122,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await ServiceRepository.getAll();
     console.log(`Servicios encontrados: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/updateStatus/delete)...');
     const testId = await ServiceRepository.create({
@@ -137,7 +137,7 @@ async function runTests() {
 
     const service = await ServiceRepository.getById(testId);
     if (service && Number(service.total) === 85000) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el servicio creado');
     }
@@ -145,7 +145,7 @@ async function runTests() {
     await ServiceRepository.updateStatus(testId, 0); // Anular
     const serviceAnulado = await ServiceRepository.getById(testId);
     if (serviceAnulado && serviceAnulado.estado === 0) {
-      console.log('âœ… updateStatus() OK');
+      console.log('✅ updateStatus() OK');
     } else {
       throw new Error('No se pudo anular el servicio');
     }
@@ -153,12 +153,12 @@ async function runTests() {
     await ServiceRepository.delete(testId);
     const serviceDeleted = await ServiceRepository.getById(testId);
     if (!serviceDeleted) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('El servicio no fue eliminado');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

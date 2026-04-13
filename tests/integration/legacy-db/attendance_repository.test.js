@@ -92,7 +92,7 @@ async function runTests() {
     console.log('\n[1] Probando getSummary()...');
     const summary = await AttendanceRepository.getSummary();
     console.log('Summary result:', summary);
-    if (Array.isArray(summary)) console.log('âœ… getSummary() OK');
+    if (Array.isArray(summary)) console.log('✅ getSummary() OK');
 
     console.log('\n[2] Probando ciclo de vida (register/getByUser/delete)...');
     const testFecha = '2026-01-01';
@@ -106,7 +106,7 @@ async function runTests() {
       found &&
       (found.fecha === testFecha || found.fecha?.toISOString()?.substring(0, 10) === testFecha)
     ) {
-      console.log('âœ… register() y getByUser() OK');
+      console.log('✅ register() y getByUser() OK');
     } else {
       throw new Error('No se pudo recuperar la asistencia registrada');
     }
@@ -114,12 +114,12 @@ async function runTests() {
     await AttendanceRepository.delete(testId);
     const listAfterDelete = await AttendanceRepository.getByUser(userId);
     if (!listAfterDelete.find(a => a.id_asistencia === testId)) {
-      console.log('âœ… delete() OK');
+      console.log('✅ delete() OK');
     } else {
       throw new Error('La asistencia no fue eliminada');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

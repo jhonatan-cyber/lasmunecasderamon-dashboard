@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,19 +33,25 @@ export function PermissionGuard({
   } = useAuth();
 
   const [mounted, setMounted] = useState(false);
+  const [roleHint, setRoleHint] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== 'undefined') {
+      setRoleHint(localStorage.getItem('auth_role_hint'));
+    }
   }, []);
 
   if (!mounted) {
     return null;
   }
 
-  const isSuperAdmin = user?.role?.toLowerCase() === 'administrador';
+  const isSuperAdmin =
+    user?.role?.toLowerCase() === 'administrador' || roleHint === 'administrador';
   const isDashboardModule = module === 'dashboard' || module === 'Dashboard';
   const waitingForPermissions = user && !isSuperAdmin && !isDashboardModule && !permissionsLoaded;
 
-  if (userLoading || waitingForPermissions) {
+  if ((userLoading && !isSuperAdmin) || waitingForPermissions) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <div className='text-center'>
@@ -56,9 +62,7 @@ export function PermissionGuard({
     );
   }
 
-  const isAdmin = user?.role?.toLowerCase() === 'administrador';
-
-  if (isAdmin || isDashboardModule) {
+  if (isSuperAdmin || isDashboardModule) {
     return <>{children}</>;
   }
 
@@ -95,11 +99,11 @@ export function PermissionGuard({
               <div className='text-sm text-yellow-800'>
                 <p className='font-medium'>Permisos requeridos:</p>
                 <p className='mt-1'>
-                  MÃ³dulo: <span className='font-mono'>{module}</span>
+                  Módulo: <span className='font-mono'>{module}</span>
                   {action && (
                     <>
                       <br />
-                      AcciÃ³n: <span className='font-mono'>{action}</span>
+                      Acción: <span className='font-mono'>{action}</span>
                     </>
                   )}
                   {actions.length > 0 && (

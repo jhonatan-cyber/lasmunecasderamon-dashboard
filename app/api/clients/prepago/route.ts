@@ -6,7 +6,7 @@ import { ApiResponse } from '@/lib/api/api-response';
 export const POST = withAppAuth(
   async (request, { user }) => {
     const body = await request.json();
-    const { cliente_id, monto, tipo, metodo_pago, metadatos } = body;
+    const { cliente_id, monto, tipo, metodo_pago, pagos_mixtos, metadatos } = body;
 
     if (!cliente_id || !monto || tipo !== 'CARGA') {
       return ApiResponse.error(new Error('Datos de recarga inválidos'));
@@ -18,6 +18,7 @@ export const POST = withAppAuth(
         monto,
         tipo,
         metodo_pago,
+        pagos_mixtos,
         usuario_id: user.id,
         metadatos
       });

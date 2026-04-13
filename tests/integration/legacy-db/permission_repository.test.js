@@ -45,7 +45,7 @@ class PermissionRepository {
     await queryMock('UPDATE permissions SET deleted_at = ? WHERE id = ?', [new Date(), id]);
   }
 
-  // FunciÃ³n auxiliar para limpieza real en tests
+  // Función auxiliar para limpieza real en tests
   static async hardDelete(id) {
     await queryMock('DELETE FROM permissions WHERE id = ?', [id]);
   }
@@ -57,7 +57,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await PermissionRepository.getAll();
     console.log(`Permisos encontrados: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/delete)...');
     const testName = 'Test Permission ' + Math.random().toString(36).substring(2, 7);
@@ -72,7 +72,7 @@ async function runTests() {
 
     const perm = await PermissionRepository.getById(testId);
     if (perm && perm.name === testName) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el permiso creado');
     }
@@ -80,7 +80,7 @@ async function runTests() {
     await PermissionRepository.delete(testId);
     const permDeleted = await PermissionRepository.getById(testId);
     if (permDeleted && permDeleted.deleted_at !== null) {
-      console.log('âœ… delete() (soft delete) OK');
+      console.log('✅ delete() (soft delete) OK');
     } else {
       throw new Error('El permiso no fue marcado como eliminado');
     }
@@ -88,10 +88,10 @@ async function runTests() {
     await PermissionRepository.hardDelete(testId);
     const permHardDeleted = await PermissionRepository.getById(testId);
     if (!permHardDeleted) {
-      console.log('âœ… hardDelete() OK');
+      console.log('✅ hardDelete() OK');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

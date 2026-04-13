@@ -56,6 +56,12 @@ export function useAccountForm() {
     ? productos.some(p => (p.comision ?? p.commission ?? 0) > 0)
     : false;
 
+  useEffect(() => {
+    if (!hasCommissionProducts && selectedAnfitrionas.length > 0) {
+      setSelectedAnfitrionas([]);
+    }
+  }, [hasCommissionProducts, selectedAnfitrionas.length, setSelectedAnfitrionas]);
+
   const handleCantidadChange = (id: string, value: string) => {
     setCantidades(prev => ({
       ...prev,

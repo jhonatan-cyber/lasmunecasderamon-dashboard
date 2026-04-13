@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -53,15 +53,19 @@ export const useLoginForm = () => {
     }
   };
 
-  const toggleTheme = () => {
+  const setThemeMode = useCallback((mode: string) => {
+    setTheme(mode);
+    if (typeof window !== 'undefined') localStorage.setItem('theme', mode);
+    applyTheme(mode);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
     let next;
     if (theme === 'light') next = 'dark';
     else if (theme === 'dark') next = 'system';
     else next = 'light';
-    setTheme(next);
-    if (typeof window !== 'undefined') localStorage.setItem('theme', next);
-    applyTheme(next);
-  };
+    setThemeMode(next);
+  }, [theme, setThemeMode]);
 
   // Efectos de carga
   useEffect(() => {
@@ -81,9 +85,9 @@ export const useLoginForm = () => {
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
-    const initialTheme = saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system';
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
+    const initialTheme =
+      saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system';
+    setThemeMode(initialTheme);
 
     async function fetchData() {
       try {
@@ -104,7 +108,7 @@ export const useLoginForm = () => {
       }
     }
     fetchData();
-  }, [router]);
+  }, [router, setThemeMode]);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -228,7 +232,10 @@ export const useLoginForm = () => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, nextRef: React.RefObject<HTMLInputElement | null>) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    nextRef: React.RefObject<HTMLInputElement | null>
+  ) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (e.currentTarget.value.trim() === '') {
@@ -261,6 +268,7 @@ export const useLoginForm = () => {
     loading,
     theme,
     toggleTheme,
+    setThemeMode,
     codigo,
     setCodigo,
     loginData,

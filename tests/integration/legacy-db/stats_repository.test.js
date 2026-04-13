@@ -48,25 +48,25 @@ async function testStatsRepository() {
     console.log('Probando getGeneral()...');
     const genStats = await StatsRepository.getGeneral();
     if (!Array.isArray(genStats)) throw new Error('getGeneral() debe devolver un array');
-    console.log('âœ… getGeneral() OK');
+    console.log('✅ getGeneral() OK');
 
     console.log('Probando getMonthlySales()...');
     const monthlySales = await StatsRepository.getMonthlySales();
     if (!Array.isArray(monthlySales)) throw new Error('getMonthlySales() debe devolver un array');
-    console.log('âœ… getMonthlySales() OK');
+    console.log('✅ getMonthlySales() OK');
 
     console.log('Probando getWeeklySales()...');
     const weeklySales = await StatsRepository.getWeeklySales();
     if (!Array.isArray(weeklySales)) throw new Error('getWeeklySales() debe devolver un array');
-    console.log('âœ… getWeeklySales() OK');
+    console.log('✅ getWeeklySales() OK');
 
     console.log('Probando getDashboardStats()...');
     const dashboardStats = await StatsRepository.getDashboardStats();
     if (!dashboardStats || typeof dashboardStats !== 'object')
       throw new Error('getDashboardStats() debe devolver un objeto');
-    console.log('âœ… getDashboardStats() OK');
+    console.log('✅ getDashboardStats() OK');
 
-    console.log('PRUEBAS UNITARIAS StatsRepository COMPLETADAS CON Ã‰XITO');
+    console.log('PRUEBAS UNITARIAS StatsRepository COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('ERROR EN PRUEBAS UNITARIAS:', error);
     process.exit(1);

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import LandingPage from './landing/page';
 import { createMarketingMetadata, siteConfig } from '@/lib/api/site';
 
@@ -17,7 +18,10 @@ export const metadata: Metadata = createMarketingMetadata({
   ]
 });
 
-export default function HomePage() {
+export default async function HomePage() {
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'NightClub',
@@ -44,9 +48,14 @@ export default function HomePage() {
   return (
     <>
       <script
+        id='home-jsonld'
+        nonce={nonce}
         type='application/ld+json'
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c')
+        }}
+      ></script>
       <LandingPage />
     </>
   );

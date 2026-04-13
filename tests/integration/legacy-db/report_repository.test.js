@@ -67,13 +67,13 @@ async function testReportRepository() {
     console.log('1. Probando getSales...');
     const sales = await ReportRepository.getSales(today, today);
     console.log(`   - Ventas encontradas hoy: ${sales.length}`);
-    if (!Array.isArray(sales)) throw new Error('getSales no retornÃ³ un array');
+    if (!Array.isArray(sales)) throw new Error('getSales no retornó un array');
 
     // 2. Test getCommissions
     console.log('2. Probando getCommissions...');
     const commissions = await ReportRepository.getCommissions(today, today);
     console.log(`   - Comisiones encontradas hoy: ${commissions.length}`);
-    if (!Array.isArray(commissions)) throw new Error('getCommissions no retornÃ³ un array');
+    if (!Array.isArray(commissions)) throw new Error('getCommissions no retornó un array');
 
     // 3. Test getCashRegister
     console.log('3. Probando getCashRegister...');
@@ -86,7 +86,7 @@ async function testReportRepository() {
       console.log('   - No hay cajas abiertas para probar getCashRegister, saltando...');
     }
 
-    console.log('\nPRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO');
+    console.log('\nPRUEBAS UNITARIAS COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('\nERROR EN LAS PRUEBAS:', error.message);
     process.exit(1);

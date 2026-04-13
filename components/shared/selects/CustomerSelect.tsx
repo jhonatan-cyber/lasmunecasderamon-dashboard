@@ -66,7 +66,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
       const nombre = cliente?.nombre || cliente?.name || '';
       const apellido = cliente?.apellido || cliente?.lastName || '';
       const fullName = `${nombre} ${apellido}`.toLowerCase();
-      return !fullName.includes('genÃ©rico') && !fullName.includes('generico');
+      return !fullName.includes('genérico') && !fullName.includes('generico');
     });
 
     if (!searchTerm) return base;
@@ -124,7 +124,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className='max-h-80'>
-            {/* Barra de bÃºsqueda */}
+            {/* Barra de búsqueda */}
             <div className='p-2 border-b sticky top-0 bg-white z-20'>
               <Input
                 placeholder={searchPlaceholder}

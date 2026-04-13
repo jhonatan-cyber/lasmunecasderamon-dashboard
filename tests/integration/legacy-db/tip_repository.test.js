@@ -61,7 +61,7 @@ const withTransaction = async callback => {
   }
 };
 
-// ImplementaciÃ³n mÃ­nima del Repositorio para la prueba basÃ¡ndose en lib/repositories/TipRepository.ts
+// Implementación mínima del Repositorio para la prueba basándose en lib/repositories/TipRepository.ts
 class TipRepository {
   static async getSummary(isAdmin, userId, cajaActiva) {
     let where = '';
@@ -128,7 +128,7 @@ class TipRepository {
     const id = generateUUID();
 
     await withTransaction(async trx => {
-      // SimulaciÃ³n de BaseRepository.insert usando el trx
+      // Simulación de BaseRepository.insert usando el trx
       const insertWithTrx = async (table, data) => {
         const keys = Object.keys(data);
         const values = Object.values(data);
@@ -215,7 +215,7 @@ async function runTests() {
     await queryMock('DELETE FROM detalle_propinas WHERE propina_id = ?', [regResult.id]);
     await queryMock('DELETE FROM propinas WHERE id_propina = ?', [regResult.id]);
 
-    console.log('\n--- PRUEBAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nERROR DURANTE LAS PRUEBAS:', error.message);
     process.exit(1);

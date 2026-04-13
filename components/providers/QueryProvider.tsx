@@ -14,9 +14,9 @@ export function QueryProvider({ children }: QueryProviderProps) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Tiempo de vida del cachÃ© (5 minutos)
+            // Tiempo de vida del caché (5 minutos)
             staleTime: 5 * 60 * 1000,
-            // Tiempo de cachÃ© en memoria (10 minutos)
+            // Tiempo de caché en memoria (10 minutos)
             gcTime: 10 * 60 * 1000,
             // Reintentos en caso de error
             retry: (failureCount, error: any) => {
@@ -29,7 +29,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
               ) {
                 return false;
               }
-              // MÃ¡ximo 3 reintentos
+              // Máximo 3 reintentos
               return failureCount < 3;
             },
             // Reintentar con delay exponencial
@@ -38,13 +38,13 @@ export function QueryProvider({ children }: QueryProviderProps) {
             refetchOnWindowFocus: false,
             // Refetch en reconnect
             refetchOnReconnect: 'always',
-            // Optimizado: No refetch en mount si no estÃ¡ stale
+            // Optimizado: No refetch en mount si no está stale
             refetchOnMount: false,
-            // Optimizado: Refetch interval solo para datos crÃ­ticos
+            // Optimizado: Refetch interval solo para datos críticos
             refetchInterval: false,
             // Optimizado: Mantener datos en background
-            structuralSharing: true, // OptimizaciÃ³n de memoria
-            // DeduplicaciÃ³n automÃ¡tica de requests
+            structuralSharing: true, // Optimización de memoria
+            // Deduplicación automática de requests
             networkMode: 'online'
           },
           mutations: {
@@ -56,7 +56,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
             networkMode: 'online'
           }
         },
-        // ConfiguraciÃ³n global de deduplicaciÃ³n
+        // Configuración global de deduplicación
         queryCache: undefined,
         mutationCache: undefined
       })

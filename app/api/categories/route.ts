@@ -5,7 +5,14 @@ import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppApiWrapper(async () => {
   const data = await CategoryRepository.getAll();
-  return NextResponse.json({ success: true, data });
+  return NextResponse.json(
+    { success: true, data },
+    {
+      headers: {
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59'
+      }
+    }
+  );
 });
 
 export const POST = withAppAuth(async (request: Request) => {
