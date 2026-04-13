@@ -21,7 +21,7 @@ async function checkAnfitrionas() {
       database: config.database
     });
     connection = await mysql.createConnection(config);
-    console.log('ConexiÃ³n establecida.');
+    console.log('Conexión establecida.');
 
     console.log('\n--- Roles ---');
     const [roles] = await connection.execute('SELECT * FROM roles');

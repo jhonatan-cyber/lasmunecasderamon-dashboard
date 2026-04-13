@@ -9,6 +9,7 @@ type PrepagoInput = {
   monto: number;
   tipo: 'CARGA';
   metodo_pago?: string;
+  pagos_mixtos?: Array<{ metodo: string; monto: number }>;
   usuario_id?: string;
   metadatos?: Record<string, unknown>;
 };

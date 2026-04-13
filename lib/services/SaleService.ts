@@ -271,7 +271,14 @@ export class SaleService {
         }
       }
 
-      return { id: ventaId, codigo, total: validated.total };
+      return {
+        id_venta: ventaId,
+        id: ventaId,
+        codigo,
+        total: validated.total,
+        estado,
+        fecha_crea: now
+      };
     });
 
     // Notificar a todos los clientes SSE para que actualicen los timers activos

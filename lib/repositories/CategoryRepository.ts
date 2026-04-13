@@ -22,10 +22,8 @@ export class CategoryRepository {
     const results = (await query(`
       SELECT 
         C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
-        COUNT(P.id_producto) AS total_productos
+        (SELECT COUNT(*) FROM productos P WHERE P.categoria_id = C.id_categoria AND P.estado = 1) AS total_productos
       FROM categorias C
-      LEFT JOIN productos P ON P.categoria_id = C.id_categoria AND P.estado = 1
-      GROUP BY C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order
       ORDER BY C.display_order ASC, C.nombre ASC
     `)) as any[];
     return results.map(this.mapCategoryFromDB);

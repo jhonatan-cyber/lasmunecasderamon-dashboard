@@ -168,7 +168,7 @@ export function useServicios() {
   };
 }
 
-// Hook para obtener TODOS los servicios (sin filtro por estado) para estadÃ­sticas
+// Hook para obtener TODOS los servicios (sin filtro por estado) para estadísticas
 export function useAllServicios() {
   const endpoint = '/api/servicios';
 

@@ -21,7 +21,8 @@ import { AlertTriangle, RotateCcw, Wallet, Plus, Info } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CashRegister() {
-  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero } = useCashRegister();
+  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero } =
+    useCashRegister();
   const { user } = useCurrentUser();
   const { hasPermission } = useUserPermissions();
 
@@ -34,7 +35,7 @@ export default function CashRegister() {
 
   // Verificar si el usuario es cajero
   const isCajero = user?.role === 'cajero';
-  
+
   // Verificar permisos específicos
   const canOpenCaja = hasPermission('cash_register', 'open');
   const canCloseCaja = hasPermission('cash_register', 'close');
@@ -125,11 +126,13 @@ export default function CashRegister() {
   if (error) {
     return (
       <div className='p-6 min-h-[60vh] flex items-center justify-center'>
-        <Card className="max-w-md w-full border-none shadow-2xl bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] p-8 text-center">
-          <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+        <Card className='max-w-md w-full border-none shadow-2xl bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] p-8 text-center'>
+          <div className='w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6'>
             <AlertTriangle className='h-10 w-10 text-rose-500' />
           </div>
-          <h3 className='text-2xl font-black text-slate-900 dark:text-white mb-2'>¡Ups! Algo salió mal</h3>
+          <h3 className='text-2xl font-black text-slate-900 dark:text-white mb-2'>
+            ¡Ups! Algo salió mal
+          </h3>
           <p className='text-slate-500 dark:text-slate-400 mb-8'>{error}</p>
           <Button
             onClick={handleRefresh}
@@ -146,36 +149,34 @@ export default function CashRegister() {
   const openCajasCount = cajas.filter(c => c.estado === 1).length;
 
   return (
-    <PermissionGuard module="cash_register" action="view">
-      <div className='p-4 sm:p-6 lg:p-10 space-y-8 mt-4 sm:mt-6 lg:mt-10 max-w-[1600px] mx-auto'>
+    <PermissionGuard module='cash_register' action='view'>
+      <div className='w-full p-4 sm:p-6 lg:p-10 space-y-8 mt-4 sm:mt-6 lg:mt-10'>
         {/* Header Section */}
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
-          <div className="space-y-1">
+          <div className='space-y-1'>
             <h1 className='text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 dark:text-white'>
               {isCajero ? 'Mi Caja' : 'Control de Cajas'}
             </h1>
             <p className='text-slate-500 font-medium'>
-              {isCajero 
-                ? 'Monitorea y gestiona tus transacciones diarias' 
-                : 'Administración centralizada de flujos de efectivo'
-              }
+              {isCajero
+                ? 'Monitorea y gestiona tus transacciones diarias'
+                : 'Administración centralizada de flujos de efectivo'}
             </p>
           </div>
-          
+
           <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto'>
             {openCajasCount > 0 ? (
               <div className='flex items-center gap-3 pl-4 pr-6 py-3 bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/10 rounded-2xl shadow-sm animate-pulse'>
-                <div className="bg-amber-100 dark:bg-amber-500/20 p-2 rounded-xl">
+                <div className='bg-amber-100 dark:bg-amber-500/20 p-2 rounded-xl'>
                   <Info className='h-4 w-4 text-amber-600' />
                 </div>
                 <span className='text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-tight'>
-                  {openCajasCount} caja{openCajasCount > 1 ? 's' : ''} abierta{openCajasCount > 1 ? 's' : ''}
+                  {openCajasCount} caja{openCajasCount > 1 ? 's' : ''} abierta
+                  {openCajasCount > 1 ? 's' : ''}
                 </span>
               </div>
             ) : (
-              canOpenCaja && (
-                <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
-              )
+              canOpenCaja && <CajaFormDialog onCajaCreated={handleCreateCaja} loading={loading} />
             )}
           </div>
         </div>
@@ -218,9 +219,12 @@ export default function CashRegister() {
             {loading ? (
               <div className='grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className='border border-slate-100 dark:border-white/10 shadow-sm bg-white dark:bg-slate-900/40 rounded-[2rem] overflow-hidden p-8 space-y-6'>
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
+                  <Card
+                    key={i}
+                    className='border border-slate-100 dark:border-white/10 shadow-sm bg-white dark:bg-slate-900/40 rounded-[2rem] overflow-hidden p-8 space-y-6'
+                  >
+                    <div className='flex justify-between items-start'>
+                      <div className='space-y-2'>
                         <Skeleton className='h-6 w-32 rounded-lg' />
                         <Skeleton className='h-4 w-24 rounded-lg' />
                       </div>
@@ -236,9 +240,11 @@ export default function CashRegister() {
                 <div className='w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center'>
                   <Wallet className='h-12 w-12 text-slate-300' />
                 </div>
-                <div className="space-y-2">
+                <div className='space-y-2'>
                   <h3 className='text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter'>
-                    {searchTerm || filterStatus !== 'all' ? 'Sin coincidencias' : 'Sin cajas activas'}
+                    {searchTerm || filterStatus !== 'all'
+                      ? 'Sin coincidencias'
+                      : 'Sin cajas activas'}
                   </h3>
                   <p className='text-slate-500 font-medium max-w-sm mx-auto'>
                     {searchTerm || filterStatus !== 'all'

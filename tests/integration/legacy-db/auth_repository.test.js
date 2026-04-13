@@ -62,9 +62,9 @@ async function runTests() {
     console.log('\n[1] Probando loginByQR()...');
     const result = await AuthRepository.loginByQR(testQR);
     if (result && result.id_usuario === userId && result.qr_token !== testQR) {
-      console.log('âœ… loginByQR() OK (Token rotado)');
+      console.log('✅ loginByQR() OK (Token rotado)');
     } else {
-      throw new Error('El login por QR fallÃ³ o el token no rotÃ³');
+      throw new Error('El login por QR falló o el token no rotó');
     }
 
     console.log('\n[2] Probando logout()...');
@@ -75,12 +75,12 @@ async function runTests() {
     await AuthRepository.logout(userId);
     const activeLogins = await queryMock('SELECT * FROM logins WHERE usuario_id = ?', [userId]);
     if (activeLogins.length === 0) {
-      console.log('âœ… logout() OK');
+      console.log('✅ logout() OK');
     } else {
-      throw new Error('El logout no eliminÃ³ los registros de la tabla logins');
+      throw new Error('El logout no eliminó los registros de la tabla logins');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

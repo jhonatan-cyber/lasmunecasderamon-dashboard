@@ -62,13 +62,13 @@ async function testErrorLogRepository() {
       request_body: JSON.stringify({ key: 'value' })
     };
     await ErrorLogRepository.log(testError);
-    console.log('Log registrado con Ã©xito.');
+    console.log('Log registrado con éxito.');
 
     console.log('Probando getAll()...');
     const logs = await ErrorLogRepository.getAll();
     const createdLog = logs.find(l => l.error_message === testError.error_message);
-    if (!createdLog) throw new Error('El log creado no se encontrÃ³ en la lista');
-    console.log('âœ… getAll() OK');
+    if (!createdLog) throw new Error('El log creado no se encontró en la lista');
+    console.log('✅ getAll() OK');
 
     console.log('Limpiando datos de prueba...');
     const connection = await mysql.createConnection({
@@ -86,7 +86,7 @@ async function testErrorLogRepository() {
     }
     console.log('Limpieza completada.');
 
-    console.log('PRUEBAS UNITARIAS ErrorLogRepository COMPLETADAS CON Ã‰XITO');
+    console.log('PRUEBAS UNITARIAS ErrorLogRepository COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('ERROR EN PRUEBAS UNITARIAS:', error);
     process.exit(1);

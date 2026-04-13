@@ -22,7 +22,7 @@ class TimerRepository {
     return await queryMock('SELECT * FROM servicios WHERE estado IN (2, 3) AND tiempo > 0');
   }
   static async runAutoCleanup() {
-    // SimulaciÃ³n de lÃ³gica
+    // Simulación de lógica
     return true;
   }
 }
@@ -34,13 +34,13 @@ async function testTimerRepository() {
     console.log('Probando getActive()...');
     const activeTimers = await TimerRepository.getActive();
     if (!Array.isArray(activeTimers)) throw new Error('getActive() debe devolver un array');
-    console.log(`âœ… getActive() OK. Recuperados ${activeTimers.length} timers.`);
+    console.log(`✅ getActive() OK. Recuperados ${activeTimers.length} timers.`);
 
     console.log('Probando runAutoCleanup()...');
     await TimerRepository.runAutoCleanup();
-    console.log('âœ… runAutoCleanup() OK');
+    console.log('✅ runAutoCleanup() OK');
 
-    console.log('PRUEBAS UNITARIAS TimerRepository COMPLETADAS CON Ã‰XITO');
+    console.log('PRUEBAS UNITARIAS TimerRepository COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('ERROR EN PRUEBAS UNITARIAS:', error);
     process.exit(1);

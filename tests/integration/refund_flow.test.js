@@ -39,7 +39,7 @@ const BaseRepository = {
 };
 
 async function runTests() {
-  console.log('--- INICIANDO PRUEBA DE INTEGRACIÃ“N: FLUJO DE DEVOLUCIÃ“N/CANCELACIÃ“N ---');
+  console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: FLUJO DE DEVOLUCIÓN/CANCELACIÓN ---');
 
   let testData = {
     userId: null,
@@ -58,9 +58,9 @@ async function runTests() {
     );
     testData.habitId = habits[0].id_habitacion;
 
-    console.log(`\n[1] Escenario: CancelaciÃ³n de Venta con HabitaciÃ³n asociada`);
+    console.log(`\n[1] Escenario: Cancelación de Venta con Habitación asociada`);
 
-    // 1. Crear una venta activa y marcar habitaciÃ³n como ocupada (simulado)
+    // 1. Crear una venta activa y marcar habitación como ocupada (simulado)
     testData.saleId = generateUUID();
     await BaseRepository.insert(null, 'ventas', {
       id_venta: testData.saleId,
@@ -73,13 +73,13 @@ async function runTests() {
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 2
     }); // OCUPADA
-    console.log('Venta creada y habitaciÃ³n marcada como ocupada.');
+    console.log('Venta creada y habitación marcada como ocupada.');
 
-    // 2. Ejecutar cancelaciÃ³n (devoluciÃ³n)
-    console.log('Cancelando venta (devoluciÃ³n)...');
+    // 2. Ejecutar cancelación (devolución)
+    console.log('Cancelando venta (devolución)...');
     await BaseRepository.update(null, 'ventas', 'id_venta', testData.saleId, { estado: 0 }); // CANCELADA
 
-    // SimulaciÃ³n de RoomManager.resumeRoomLogic: Si se cancela la venta, liberar habitaciÃ³n
+    // Simulación de RoomManager.resumeRoomLogic: Si se cancela la venta, liberar habitación
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 1
     }); // LIBRE
@@ -93,16 +93,16 @@ async function runTests() {
     )[0];
 
     if (sale.estado === 0 && habit.estado === 1) {
-      console.log('âœ… Venta cancelada y habitaciÃ³n liberada correctamente.');
+      console.log('✅ Venta cancelada y habitación liberada correctamente.');
     } else {
       throw new Error(
-        `Falla en verificaciÃ³n de cancelaciÃ³n de venta: SaleState=${sale.estado}, HabitState=${habit.estado}`
+        `Falla en verificación de cancelación de venta: SaleState=${sale.estado}, HabitState=${habit.estado}`
       );
     }
 
-    console.log(`\n[2] Escenario: CancelaciÃ³n de Servicio con HabitaciÃ³n asociada`);
+    console.log(`\n[2] Escenario: Cancelación de Servicio con Habitación asociada`);
 
-    // 1. Crear un servicio activo y marcar habitaciÃ³n como ocupada (simulado)
+    // 1. Crear un servicio activo y marcar habitación como ocupada (simulado)
     testData.serviceId = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: testData.serviceId,
@@ -115,15 +115,15 @@ async function runTests() {
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 2
     }); // OCUPADA
-    console.log('Servicio creado y habitaciÃ³n marcada como ocupada.');
+    console.log('Servicio creado y habitación marcada como ocupada.');
 
-    // 2. Ejecutar cancelaciÃ³n (devoluciÃ³n)
-    console.log('Cancelando servicio (devoluciÃ³n)...');
+    // 2. Ejecutar cancelación (devolución)
+    console.log('Cancelando servicio (devolución)...');
     await BaseRepository.update(null, 'servicios', 'id_servicio', testData.serviceId, {
       estado: 0
     }); // CANCELADO
 
-    // SimulaciÃ³n de liberaciÃ³n
+    // Simulación de liberación
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 1
     }); // LIBRE
@@ -137,10 +137,10 @@ async function runTests() {
     )[0];
 
     if (service.estado === 0 && habit2.estado === 1) {
-      console.log('âœ… Servicio cancelado y habitaciÃ³n liberada correctamente.');
+      console.log('✅ Servicio cancelado y habitación liberada correctamente.');
     } else {
       throw new Error(
-        `Falla en verificaciÃ³n de cancelaciÃ³n de servicio: ServiceState=${service.estado}, HabitState=${habit2.estado}`
+        `Falla en verificación de cancelación de servicio: ServiceState=${service.estado}, HabitState=${habit2.estado}`
       );
     }
   } catch (error) {
@@ -156,10 +156,10 @@ async function runTests() {
       await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
         estado: 1
       });
-    console.log('âœ… Cleanup OK');
+    console.log('✅ Cleanup OK');
   }
 
-  console.log('\n--- PRUEBA DE INTEGRACIÃ“N COMPLETADA CON Ã‰XITO ---');
+  console.log('\n--- PRUEBA DE INTEGRACIÓN COMPLETADA CON ÉXITO ---');
 }
 
 runTests();

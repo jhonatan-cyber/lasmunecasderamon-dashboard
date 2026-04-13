@@ -162,8 +162,11 @@ export function SalesList({
     }
   };
 
-  const renderSkeletonCard = (key: number) => (
-    <div className='rounded-[2rem] border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6'>
+  const renderSkeletonCard = (index: number) => (
+    <div
+      key={index}
+      className='rounded-[2rem] border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6'
+    >
       <div className='flex items-center justify-between mb-5'>
         <Skeleton className='h-12 w-12 rounded-2xl' />
         <Skeleton className='h-6 w-28 rounded-full' />

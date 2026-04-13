@@ -27,7 +27,7 @@ export function useServiceLogic() {
   const handleShowActiveServices = useCallback(() => {
     setShowAllServices(false);
     setCurrentPage(1);
-    // TambiÃ©n recargar con all=false para obtener activos
+    // También recargar con all=false para obtener activos
     getServicios(false);
   }, [getServicios]);
 
@@ -81,7 +81,7 @@ export function useServiceLogic() {
         (servicio: ServicioWithDetails) => servicio.estado === 1 || servicio.estado === 0
       );
     } else {
-      // Mostrar servicios en proceso (2), pausados (3) o solicitud de anulaciÃ³n (4)
+      // Mostrar servicios en proceso (2), pausados (3) o solicitud de anulación (4)
       return servicios.filter(
         (servicio: ServicioWithDetails) =>
           servicio.estado === 2 || servicio.estado === 3 || servicio.estado === 4

@@ -112,7 +112,7 @@ async function runTests() {
     console.log('\n[1] Probando getAll()...');
     const listado = await AnticipoRepository.getAll();
     console.log(`Anticipos encontrados: ${listado.length}`);
-    if (Array.isArray(listado)) console.log('âœ… getAll() OK');
+    if (Array.isArray(listado)) console.log('✅ getAll() OK');
 
     console.log('\n[2] Probando ciclo de vida (create/getById/updateStatus/hardDelete)...');
     const testId = await AnticipoRepository.create({
@@ -124,7 +124,7 @@ async function runTests() {
 
     const anticipo = await AnticipoRepository.getById(testId);
     if (anticipo && Number(anticipo.monto) === 25000) {
-      console.log('âœ… getById() OK');
+      console.log('✅ getById() OK');
     } else {
       throw new Error('No se pudo recuperar el anticipo creado');
     }
@@ -132,7 +132,7 @@ async function runTests() {
     await AnticipoRepository.updateStatus(testId, 1); // Aprobar
     const anticipoAprobado = await AnticipoRepository.getById(testId);
     if (anticipoAprobado && anticipoAprobado.estado === 1) {
-      console.log('âœ… updateStatus() OK');
+      console.log('✅ updateStatus() OK');
     } else {
       throw new Error('No se pudo actualizar el estado del anticipo');
     }
@@ -140,12 +140,12 @@ async function runTests() {
     await AnticipoRepository.hardDelete(testId);
     const anticipoEliminado = await AnticipoRepository.getById(testId);
     if (!anticipoEliminado) {
-      console.log('âœ… hardDelete() OK');
+      console.log('✅ hardDelete() OK');
     } else {
       throw new Error('El anticipo no fue eliminado');
     }
 
-    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON Ã‰XITO ---');
+    console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR:', error);
     process.exit(1);

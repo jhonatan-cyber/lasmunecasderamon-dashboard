@@ -166,7 +166,7 @@ async function testRefunds() {
     const clients = await queryMock('SELECT id_cliente FROM clientes LIMIT 1');
     testData.clientId = clients[0].id_cliente;
 
-    console.log('\n[1] Test: AnulaciÃ³n de Venta (updateStatus)');
+    console.log('\n[1] Test: Anulación de Venta (updateStatus)');
     testData.saleId = generateUUID();
     await BaseRepository.insert(null, 'ventas', {
       id_venta: testData.saleId,
@@ -182,11 +182,11 @@ async function testRefunds() {
     const sale = (
       await queryMock('SELECT estado FROM ventas WHERE id_venta = ?', [testData.saleId])
     )[0];
-    if (sale.estado !== 0) throw new Error('La venta no cambiÃ³ a estado 0');
-    console.log('âœ… Venta anulada correctamente');
+    if (sale.estado !== 0) throw new Error('La venta no cambió a estado 0');
+    console.log('✅ Venta anulada correctamente');
 
     console.log(
-      '\n[2] Test: Proceso de AnulaciÃ³n de Venta (Solicitud + AprobaciÃ³n + Reintegro Prepago)'
+      '\n[2] Test: Proceso de Anulación de Venta (Solicitud + Aprobación + Reintegro Prepago)'
     );
     const salePrepagoId = generateUUID();
     const initialBalanceRes = await queryMock('SELECT saldo FROM clientes WHERE id_cliente = ?', [
@@ -220,14 +220,14 @@ async function testRefunds() {
       await queryMock('SELECT saldo FROM clientes WHERE id_cliente = ?', [testData.clientId])
     )[0];
 
-    if (saleP.estado !== 0) throw new Error('La venta prepago no cambiÃ³ a estado 0');
+    if (saleP.estado !== 0) throw new Error('La venta prepago no cambió a estado 0');
     if (Number(clientP.saldo) !== initialBalance + 50)
-      throw new Error('No se reintegrÃ³ el saldo al cliente. Saldo actual: ' + clientP.saldo);
+      throw new Error('No se reintegró el saldo al cliente. Saldo actual: ' + clientP.saldo);
 
-    console.log('âœ… Solicitud de anulaciÃ³n de venta procesada y saldo reintegrado correctamente');
+    console.log('✅ Solicitud de anulación de venta procesada y saldo reintegrado correctamente');
     await queryMock('DELETE FROM ventas WHERE id_venta = ?', [salePrepagoId]);
 
-    console.log('\n[3] Test: AnulaciÃ³n de Servicio (updateStatus)');
+    console.log('\n[3] Test: Anulación de Servicio (updateStatus)');
     testData.serviceId = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: testData.serviceId,
@@ -243,10 +243,10 @@ async function testRefunds() {
     const service = (
       await queryMock('SELECT estado FROM servicios WHERE id_servicio = ?', [testData.serviceId])
     )[0];
-    if (service.estado !== 0) throw new Error('El servicio no cambiÃ³ a estado 0');
-    console.log('âœ… Servicio anulado correctamente');
+    if (service.estado !== 0) throw new Error('El servicio no cambió a estado 0');
+    console.log('✅ Servicio anulado correctamente');
 
-    console.log('\n[4] Test: Solicitud de AnulaciÃ³n de Servicio');
+    console.log('\n[4] Test: Solicitud de Anulación de Servicio');
     const serviceId2 = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: serviceId2,
@@ -258,7 +258,7 @@ async function testRefunds() {
     });
     const reqIdService = await ServiceRepository.requestAnulacion(
       serviceId2,
-      'Prueba de anulaciÃ³n',
+      'Prueba de anulación',
       testData.userNick
     );
     testData.requestIdService = reqIdService;
@@ -266,8 +266,8 @@ async function testRefunds() {
     const service2 = (
       await queryMock('SELECT estado FROM servicios WHERE id_servicio = ?', [serviceId2])
     )[0];
-    if (service2.estado !== 0) throw new Error('El servicio 2 no cambiÃ³ a estado 0');
-    console.log('âœ… Solicitud de anulaciÃ³n de servicio procesada correctamente');
+    if (service2.estado !== 0) throw new Error('El servicio 2 no cambió a estado 0');
+    console.log('✅ Solicitud de anulación de servicio procesada correctamente');
     await queryMock('DELETE FROM servicios WHERE id_servicio = ?', [serviceId2]);
   } catch (error) {
     console.error('\nâŒ ERROR EN TEST:', error);
@@ -284,7 +284,7 @@ async function testRefunds() {
       await queryMock('DELETE FROM solicitudes_anulacion_servicios WHERE id = ?', [
         testData.requestIdService
       ]);
-    console.log('âœ… Cleanup completo');
+    console.log('✅ Cleanup completo');
   }
 
   console.log('\n--- TODAS LAS PRUEBAS DE REEMBOLSOS PASARON ---');

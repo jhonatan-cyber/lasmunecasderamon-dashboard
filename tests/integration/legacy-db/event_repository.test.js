@@ -49,14 +49,14 @@ async function testEventRepository() {
     console.log(`Probando getStats() para usuario ${userId}...`);
     const stats = await EventRepository.getStats(userId);
     if (!stats || typeof stats !== 'object') throw new Error('getStats() debe devolver un objeto');
-    console.log('âœ… getStats() OK');
+    console.log('✅ getStats() OK');
 
     console.log(`Probando getUserEvents() para usuario ${userId}...`);
     const events = await EventRepository.getUserEvents(userId);
     if (!Array.isArray(events)) throw new Error('getUserEvents() debe devolver un array');
-    console.log(`âœ… getUserEvents() OK. Recuperados ${events.length} eventos.`);
+    console.log(`✅ getUserEvents() OK. Recuperados ${events.length} eventos.`);
 
-    console.log('PRUEBAS UNITARIAS EventRepository COMPLETADAS CON Ã‰XITO');
+    console.log('PRUEBAS UNITARIAS EventRepository COMPLETADAS CON ÉXITO');
   } catch (error) {
     console.error('ERROR EN PRUEBAS UNITARIAS:', error);
     process.exit(1);
