@@ -58,6 +58,11 @@ export function getServiceStatusBadge(estado: number) {
         text: "Pausado",
         className: "bg-orange-100 text-orange-800",
       };
+    case 4:
+      return {
+        text: "Solicitud Anulación",
+        className: "bg-amber-100 text-amber-800",
+      };
     default:
       return {
         text: "Desconocido",
@@ -101,8 +106,8 @@ export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   const totalServicios = servicios.length;
   // Activos = En Proceso (2) o Pausado (3)
   const serviciosActivos = servicios.filter((s) => s.estado === 2 || s.estado === 3).length;
-  // Terminados = Finalizado (1) o Anulado (0)
-  const serviciosTerminados = servicios.filter((s) => s.estado === 1 || s.estado === 0).length;
+  // Terminados = Finalizado (1), Anulado (0) o Solicitud de Anulación (4)
+  const serviciosTerminados = servicios.filter((s) => s.estado === 1 || s.estado === 0 || s.estado === 4).length;
 
   // Ingresos totales de servicios finalizados (estado 1)
   const ingresosTotales = servicios

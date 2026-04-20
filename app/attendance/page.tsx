@@ -11,11 +11,17 @@ import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';
 import AsistenciaForm from '@/components/attendance/AsistenciaForm';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ReportSkeleton } from '@/components/shared/Skeletons';
+import { LazyQRCode } from '@/components/shared/LazyQRCode';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUsers } from '@/hooks/personal/useUsers';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { QRCodeSVG } from 'qrcode.react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { RefreshCw, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -105,13 +111,13 @@ export default function AttendancePage() {
     fetchCodigo();
 
     const es = new EventSource('/api/notifications/sse');
-    es.onmessage = (event) => {
+    es.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === 'code_changed' && payload.data?.codigo) {
           setCodigoAsistencia(payload.data.codigo);
         }
-      } catch { }
+      } catch {}
     };
 
     return () => {
@@ -121,9 +127,8 @@ export default function AttendancePage() {
 
   // Polling para actualización del QR en tiempo real
   useEffect(() => {
-
     if (!selectedUserForQR) return;
-    
+
     const checkQR = async () => {
       try {
         const res = await fetch(`/api/users/${selectedUserForQR.id}`);
@@ -132,12 +137,12 @@ export default function AttendancePage() {
           setSelectedUserForQR(data.user);
         }
       } catch (e) {
-        console.error("Error polling QR status:", e);
+        console.error('Error polling QR status:', e);
       }
     };
 
     const interval = setInterval(checkQR, 15000); // Polling cada 15 segundos
-    
+
     window.addEventListener('focus', checkQR);
 
     return () => {
@@ -171,9 +176,9 @@ export default function AttendancePage() {
 
       if (result.success) {
         toast.success('Token QR generado con éxito');
-        
+
         // Actualizar el usuario seleccionado localmente
-        setSelectedUserForQR((prev: any) => 
+        setSelectedUserForQR((prev: any) =>
           prev && prev.id === userId ? { ...prev, qr_token: result.qr_token } : prev
         );
       } else {
@@ -189,13 +194,13 @@ export default function AttendancePage() {
   // Usar estadísticas del hook basadas en el estado de la caja
   const stats = attendanceStats;
 
-
   return (
     <PermissionGuard module='attendance' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>Asistencias</h1>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>
+            Asistencias
+          </h1>
         </div>
 
         {error ? (
@@ -233,13 +238,13 @@ export default function AttendancePage() {
 
             <Tabs defaultValue='history' className='w-full'>
               <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-sm'>
-                <TabsTrigger 
-                  value='history' 
+                <TabsTrigger
+                  value='history'
                   className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
                 >
                   Historial de Asistencias
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value='personnel'
                   className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
                 >
@@ -272,24 +277,28 @@ export default function AttendancePage() {
                           src={person.foto ? `/img/users/${person.foto}` : `/placeholder-user.jpg`}
                           alt={`${person.name} ${person.lastName}`}
                           className='h-full w-full object-cover transition-all duration-500 group-hover:scale-105'
-                          onError={(e) => {
-                             e.currentTarget.src = '/placeholder-user.jpg';
+                          onError={e => {
+                            e.currentTarget.src = '/placeholder-user.jpg';
                           }}
                         />
                         <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity' />
                       </div>
-              
+
                       {/* Content */}
                       <div className='relative h-[280px] flex flex-col justify-end p-5'>
                         <div className='transform translate-y-2 group-hover:translate-y-0 transition-all duration-300'>
                           <h3 className='text-2xl font-black text-white leading-tight tracking-tight uppercase drop-shadow-lg'>
                             {person.name}
-                            <span className='block text-slate-300 font-bold'>{person.lastName}</span>
+                            <span className='block text-slate-300 font-bold'>
+                              {person.lastName}
+                            </span>
                           </h3>
-              
+
                           <div className='flex items-center justify-between mt-3 gap-2'>
                             <div className='flex flex-col'>
-                              <span className='text-[9px] font-black text-slate-400 uppercase tracking-widest'>Username</span>
+                              <span className='text-[9px] font-black text-slate-400 uppercase tracking-widest'>
+                                Username
+                              </span>
                               <span className='text-sm font-bold text-white'>@{person.nick}</span>
                             </div>
                             <Badge className='bg-white/20 backdrop-blur-sm text-white font-black text-[10px] px-3 py-1.5 rounded-xl border border-white/20 uppercase tracking-wider'>
@@ -301,7 +310,7 @@ export default function AttendancePage() {
                     </Card>
                   ))}
                 </div>
-              
+
                 {activePersonnel.length === 0 && (
                   <div className='text-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700'>
                     <p className='text-slate-500'>No se encontró personal activo registrado.</p>
@@ -313,54 +322,67 @@ export default function AttendancePage() {
         )}
       </div>
 
-      <Dialog open={!!selectedUserForQR} onOpenChange={(open) => !open && setSelectedUserForQR(null)}>
-        <DialogContent className="w-[92vw] max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-white">
+      <Dialog open={!!selectedUserForQR} onOpenChange={open => !open && setSelectedUserForQR(null)}>
+        <DialogContent className='w-[92vw] max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-white'>
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
+            <DialogTitle className='text-lg sm:text-xl font-black uppercase tracking-tight text-white'>
               Código QR de Asistencia
             </DialogTitle>
-            <DialogDescription className="text-slate-400 text-xs sm:text-sm">
-              Muestra este código a la app móvil para registrar la asistencia de {selectedUserForQR?.name}.
+            <DialogDescription className='text-slate-400 text-xs sm:text-sm'>
+              Muestra este código a la app móvil para registrar la asistencia de{' '}
+              {selectedUserForQR?.name}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-3 bg-white rounded-2xl">
+          <div className='p-3 bg-white rounded-2xl'>
             {selectedUserForQR?.qr_token ? (
-              <QRCodeSVG
+              <LazyQRCode
                 value={selectedUserForQR.qr_token}
                 size={220}
                 style={{ width: '100%', height: 'auto' }}
-                level="H"
+                level='H'
                 includeMargin={true}
                 fgColor={
-                  selectedUserForQR.role?.toLowerCase().includes('anfitriona') ? '#E11D48' :
-                  selectedUserForQR.role?.toLowerCase().includes('garzon') ? '#F97316' :
-                  '#4F46E5'
+                  selectedUserForQR.role?.toLowerCase().includes('anfitriona')
+                    ? '#E11D48'
+                    : selectedUserForQR.role?.toLowerCase().includes('garzon')
+                      ? '#F97316'
+                      : '#4F46E5'
                 }
-                imageSettings={selectedUserForQR.foto ? {
-                  src: `/img/users/${selectedUserForQR.foto}`,
-                  x: undefined,
-                  y: undefined,
-                  height: 44,
-                  width: 44,
-                  excavate: true,
-                } : undefined}
+                imageSettings={
+                  selectedUserForQR.foto
+                    ? {
+                        src: `/img/users/${selectedUserForQR.foto}`,
+                        x: undefined,
+                        y: undefined,
+                        height: 44,
+                        width: 44,
+                        excavate: true
+                      }
+                    : undefined
+                }
               />
             ) : (
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
-                  <UserPlus className="h-8 w-8 text-slate-400" />
+              <div className='flex flex-col items-center gap-3 py-6'>
+                <div className='w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300'>
+                  <UserPlus className='h-8 w-8 text-slate-400' />
                 </div>
-                <div className="text-center">
-                  <p className="text-slate-900 font-black uppercase tracking-tight text-sm">Sin Token Asignado</p>
-                  <p className="text-slate-500 text-xs mt-1">Este usuario aún no tiene un código QR configurado.</p>
+                <div className='text-center'>
+                  <p className='text-slate-900 font-black uppercase tracking-tight text-sm'>
+                    Sin Token Asignado
+                  </p>
+                  <p className='text-slate-500 text-xs mt-1'>
+                    Este usuario aún no tiene un código QR configurado.
+                  </p>
                 </div>
                 <Button
                   onClick={() => handleGenerateQR(selectedUserForQR.id)}
                   disabled={isGeneratingToken}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95"
+                  className='bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95'
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isGeneratingToken ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${isGeneratingToken ? 'animate-spin' : ''}`}
+                  />
                   Generar QR
                 </Button>
               </div>
@@ -368,13 +390,15 @@ export default function AttendancePage() {
           </div>
 
           {codigoAsistencia && (
-            <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10">
-              <span className="text-slate-400 text-xs font-semibold">Código:</span>
-              <span className="text-indigo-400 text-2xl font-black tracking-[0.3em] font-mono">{codigoAsistencia}</span>
+            <div className='flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10'>
+              <span className='text-slate-400 text-xs font-semibold'>Código:</span>
+              <span className='text-indigo-400 text-2xl font-black tracking-[0.3em] font-mono'>
+                {codigoAsistencia}
+              </span>
             </div>
           )}
 
-          <p className="text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
+          <p className='text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]'>
             El código se actualizará automáticamente tras el escaneo
           </p>
         </DialogContent>

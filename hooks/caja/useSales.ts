@@ -90,6 +90,12 @@ export const useSales = () => {
           showErrorToast(errorMessage);
           throw new Error(errorMessage);
         }
+        if (errorData.errorCode === 'HOSTESS_NOT_LOGGED_IN') {
+          const errorMessage =
+            errorData.message || 'Las anfitrionas seleccionadas deben estar logueadas en el local.';
+          showErrorToast(errorMessage);
+          throw new Error(errorMessage);
+        }
         throw new Error(errorData.message || 'Error al crear venta');
       }
 

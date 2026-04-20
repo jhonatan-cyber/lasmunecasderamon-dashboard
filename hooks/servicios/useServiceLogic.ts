@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { ServicioWithDetails } from '@/types/servicio';
 
 export function useServiceLogic() {
-  const { servicios, loading, getServicios, removeServicioFromState, patchServicio } =
+  const { servicios, loading, getServicios, removeServicioFromState, patchServicio, includeAll } =
     useServicios();
 
   // Obtener todos los servicios (sin filtro por estado) para los stats
@@ -76,15 +76,15 @@ export function useServiceLogic() {
   const serviciosByStatus = useMemo(() => {
     if (!servicios || servicios.length === 0) return [];
     if (showAllServices) {
-      // Mostrar servicios finalizados (1) o anulados (0)
-      return servicios.filter(
-        (servicio: ServicioWithDetails) => servicio.estado === 1 || servicio.estado === 0
-      );
-    } else {
-      // Mostrar servicios en proceso (2), pausados (3) o solicitud de anulación (4)
+      // Mostrar servicios finalizados (1), anulados (0) o con solicitud de anulación (4)
       return servicios.filter(
         (servicio: ServicioWithDetails) =>
-          servicio.estado === 2 || servicio.estado === 3 || servicio.estado === 4
+          servicio.estado === 1 || servicio.estado === 0 || servicio.estado === 4
+      );
+    } else {
+      // Mostrar solo servicios en proceso (2) o pausados (3)
+      return servicios.filter(
+        (servicio: ServicioWithDetails) => servicio.estado === 2 || servicio.estado === 3
       );
     }
   }, [servicios, showAllServices]);
@@ -129,6 +129,7 @@ export function useServiceLogic() {
     handleServiceAutoFinished,
     handleServiceFinalized,
 
-    getServicios: (p0: boolean) => getServicios(true)
+    includeAll,
+    getServicios
   };
 }

@@ -1,5 +1,4 @@
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -30,6 +29,10 @@ interface NewSaleConfigurationProps {
   setEnableTip: (val: boolean) => void;
 }
 
+const fieldWrapperClass = 'flex flex-col gap-1.5';
+const fieldLabelClass =
+  'block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-neutral-400';
+
 export const NewSaleConfiguration = ({
   clientes,
   selectedCliente,
@@ -47,30 +50,24 @@ export const NewSaleConfiguration = ({
   setEnableTip
 }: NewSaleConfigurationProps) => {
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-2'>
-      <div className='space-y-1'>
-        <Label className='text-xs text-gray-400 font-bold uppercase tracking-wider'>Cliente</Label>
+    <div className='grid grid-cols-1 items-end gap-6 px-2 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className={fieldWrapperClass}>
         <CustomerSelect clientes={clientes} value={selectedCliente} onChange={setSelectedCliente} />
       </div>
 
       {requiresRoom && (
         <>
-          <div className='space-y-1'>
-            <Label className='text-xs text-gray-400 font-bold uppercase tracking-wider'>
-              Habitación
-            </Label>
+          <div className={fieldWrapperClass}>
             <RoomSelect
               habitaciones={habitaciones}
               value={selectedHabitacion}
               onChange={handleHabitacionChange}
             />
           </div>
-          <div className='space-y-1'>
-            <Label className='text-xs text-gray-400 font-bold uppercase tracking-wider'>
-              Tiempo (min)
-            </Label>
+          <div className={fieldWrapperClass}>
+            <Label className={fieldLabelClass}>Tiempo (min)</Label>
             <Select value={manualTime} onValueChange={setManualTime}>
-              <SelectTrigger className='rounded-full h-11 border-gray-200 focus:ring-2 focus:ring-black transition-all'>
+              <SelectTrigger className='h-11 rounded-full border-gray-200 transition-all focus:ring-2 focus:ring-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:ring-white'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -85,28 +82,38 @@ export const NewSaleConfiguration = ({
         </>
       )}
 
-      <div className='space-y-1'>
-        <Label className='text-xs text-gray-400 font-bold uppercase tracking-wider'>
-          Método de Pago
-        </Label>
+      <div className={fieldWrapperClass}>
         <PaymentMethodSelect value={metodoPago} onChange={setMetodoPago} />
       </div>
-
-      <div className='space-y-1'>
-        <Label className='text-xs text-gray-400 font-bold uppercase tracking-wider'>
-          Propina Sugerida (10%)
-        </Label>
-        <div className='flex items-center gap-3 bg-gray-50/50 p-1 rounded-full border border-gray-100'>
-          <Input
-            value={formatCurrencyNoDecimals(propina)}
-            readOnly
-            className='bg-transparent border-none rounded-full h-9 font-bold text-gray-700'
-          />
-          <div className='pr-2'>
+      <div className={fieldWrapperClass}>
+        <Label className={fieldLabelClass}>Propina Sugerida (10%)</Label>
+        <div
+          role='button'
+          tabIndex={0}
+          onClick={() => setEnableTip(!enableTip)}
+          onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              setEnableTip(!enableTip);
+            }
+          }}
+          className='flex h-11 items-center justify-between gap-3 rounded-full border border-gray-200 bg-gray-50/80 px-3 text-left transition-colors hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/80 dark:hover:bg-neutral-800'
+          aria-pressed={enableTip}
+        >
+          <div className='min-w-0'>
+            <span className='block text-sm font-bold text-gray-800 dark:text-neutral-100'>
+              {formatCurrencyNoDecimals(propina)}
+            </span>
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400'>
+              {enableTip ? 'Activa' : 'Inactiva'}
+            </span>
             <Checkbox
               checked={enableTip}
+              onClick={event => event.stopPropagation()}
               onCheckedChange={c => setEnableTip(c === true)}
-              className='w-5 h-5 rounded-md border-gray-300 data-[state=checked]:bg-black data-[state=checked]:border-black'
+              className='h-5 w-5 rounded-md border-gray-300 dark:border-neutral-500 data-[state=checked]:border-black data-[state=checked]:bg-black dark:data-[state=checked]:border-white dark:data-[state=checked]:bg-white dark:data-[state=checked]:text-black'
             />
           </div>
         </div>

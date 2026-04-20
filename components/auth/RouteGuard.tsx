@@ -1,4 +1,3 @@
-/* eslint-disable */
 'use client';
 
 import { useEffect, useState, useRef, ReactNode } from 'react';
@@ -10,8 +9,6 @@ interface RouteGuardProps {
   children: ReactNode;
 }
 
-// Mapeo de rutas a módulos y acciones requeridas
-// IMPORTANTE: Los nombres de módulos y acciones deben coincidir con la tabla 'permissions' en la BD
 const routePermissions: Record<string, { module: string; action: string }> = {
   '/dashboard': { module: 'dashboard', action: 'view' },
   '/users': { module: 'users', action: 'view' },
@@ -38,7 +35,6 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/settings': { module: 'settings', action: 'view' }
 };
 
-// Rutas públicas que no requieren autenticación
 const publicRoutes = [
   '/',
   '/login',
@@ -51,78 +47,51 @@ const publicRoutes = [
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const {
-    user,
-    userLoading,
-    userPermissions,
-    permissionsLoading,
-    permissionsLoaded,
-    hasPermission
-  } = useAuth();
+  const { user, userLoading, hasPermission } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
-
-  // Memoizar valores para evitar re-renders innecesarios
   const routerRef = useRef(router);
   const pathnameRef = useRef(pathname);
 
-  // Sincronizar refs
   useEffect(() => {
     routerRef.current = router;
     pathnameRef.current = pathname;
   }, [router, pathname]);
 
   useEffect(() => {
-    // Función para verificar autorización
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const currentPathname = pathnameRef.current;
 
-      // Si es una ruta pública, permitir acceso
       if (
         currentPathname &&
-        publicRoutes.some(route => currentPathname === route || currentPathname.startsWith(route))
+        publicRoutes.some(route =>
+          route === '/'
+            ? currentPathname === route
+            : currentPathname === route || currentPathname.startsWith(route + '/')
+        )
       ) {
         setAuthorized(true);
         setChecking(false);
         return;
       }
 
-      // Si está cargando el usuario, esperar
       if (userLoading) {
         return;
       }
 
-      // Si no hay usuario, redirigir a login
       if (!user) {
+        setChecking(false);
         routerRef.current.push(`/login?redirect=${encodeURIComponent(currentPathname || '/')}`);
         return;
       }
 
-      // El administrador tiene acceso a todo
-      const roleHint = typeof window !== 'undefined' ? localStorage.getItem('auth_role_hint') : '';
-      if (user?.role?.toLowerCase() === 'administrador' || roleHint === 'administrador') {
+      // Es admin - autorizar directamente
+      if (user.role?.toLowerCase() === 'administrador') {
         setAuthorized(true);
         setChecking(false);
         return;
       }
 
-      // IMPORTANTE: Esperar a que los permisos se carguen antes de verificar acceso
-      if (permissionsLoading) {
-        console.log('[RouteGuard] ⏳ Esperando a que se carguen los permisos...');
-        return;
-      }
-
-      // Si no hay permisos cargados aún, esperar
-      if (!permissionsLoaded) {
-        console.log('[RouteGuard] ⏳ Permisos aún no cargados, esperando...');
-        return;
-      }
-
-      console.log('[RouteGuard] ✅ Permisos cargados:', userPermissions.length);
-
-      // Buscar el permiso requerido para la ruta actual
-      // IMPORTANTE: Buscar la coincidencia MÁS ESPECÍFICA primero
-      // Ordenar las rutas por longitud descendente para que /payroll/calendar se verifique antes que /payroll
       const sortedRoutes = Object.entries(routePermissions).sort(
         (a, b) => b[0].length - a[0].length
       );
@@ -132,7 +101,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
           currentPathname && (currentPathname === route || currentPathname.startsWith(route + '/'))
       );
 
-      // Si no hay permiso definido para esta ruta, permitir acceso
       if (!requiredPermission) {
         setAuthorized(true);
         setChecking(false);
@@ -141,20 +109,16 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       const [, { module, action }] = requiredPermission;
 
-      console.log('[RouteGuard] 🔍 Verificando permiso:', {
-        module,
-        action,
-        pathname: currentPathname
-      });
+      if (module === 'dashboard') {
+        setAuthorized(true);
+        setChecking(false);
+        return;
+      }
 
-      // Verificar si el usuario tiene el permiso
       const hasAccess = hasPermission(module, action);
 
-      console.log('[RouteGuard] 🔑 Tiene acceso?', hasAccess);
-
       if (!hasAccess) {
-        console.log('[RouteGuard] ❌ Acceso denegado, redirigiendo...');
-        // Redirigir a página de acceso denegado
+        setChecking(false);
         routerRef.current.push(`/access-denied?module=${module}&action=${action}`);
         return;
       }
@@ -164,14 +128,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [user, userLoading, userPermissions, permissionsLoading, permissionsLoaded, hasPermission]);
+  }, [user, userLoading, hasPermission]);
 
-  // Mostrar loading mientras se verifica (Administrador tiene bypass instantáneo)
-  const roleHint = typeof window !== 'undefined' ? localStorage.getItem('auth_role_hint') : '';
-  const isSuperAdminHint =
-    roleHint === 'administrador' || user?.role?.toLowerCase() === 'administrador';
-
-  if ((checking || userLoading || permissionsLoading) && !isSuperAdminHint) {
+  // Siempre mostrar loader mientras carga
+  if (checking || userLoading) {
     return (
       <div className='flex items-center justify-center min-h-screen bg-gray-50 dark:bg-neutral-900'>
         <div className='text-center'>
@@ -182,11 +142,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
     );
   }
 
-  // Si no está autorizado, no mostrar nada (ya se redirigió)
   if (!authorized) {
     return null;
   }
 
-  // Si está autorizado, mostrar el contenido
   return <>{children}</>;
 }

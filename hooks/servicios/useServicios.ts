@@ -47,11 +47,14 @@ export function useServicios() {
   });
 
   const getServicios = useCallback(
-    async (includeAllParam: boolean = true) => {
-      setIncludeAll(includeAllParam);
+    async (includeAllParam: boolean = includeAll) => {
+      if (includeAllParam !== includeAll) {
+        setIncludeAll(includeAllParam);
+        return;
+      }
       await refetch();
     },
-    [refetch]
+    [includeAll, refetch]
   );
 
   const createMutation = useMutation({
@@ -65,7 +68,7 @@ export function useServicios() {
       if (!data.success) throw new Error(data.message);
       return data;
     },
-    onSuccess: () => getServicios(true)
+    onSuccess: () => getServicios(includeAll)
   });
 
   const updateMutation = useMutation({
@@ -79,7 +82,7 @@ export function useServicios() {
       if (!result.success) throw new Error(result.message);
       return result;
     },
-    onSuccess: () => getServicios(true)
+    onSuccess: () => getServicios(includeAll)
   });
 
   const deleteMutation = useMutation({
@@ -89,7 +92,7 @@ export function useServicios() {
       if (!data.success) throw new Error(data.message);
       return data;
     },
-    onSuccess: () => getServicios(true)
+    onSuccess: () => getServicios(includeAll)
   });
 
   // Optimistic Mutation for PATCH (status changes)
@@ -129,7 +132,7 @@ export function useServicios() {
 
   useEffect(() => {
     const handleServiceUpdate = () => {
-      getServicios(true);
+      getServicios(includeAll);
     };
     window.addEventListener('updateServiceRequests', handleServiceUpdate);
     window.addEventListener('serviceStatusChanged', handleServiceUpdate);
@@ -137,7 +140,7 @@ export function useServicios() {
       window.removeEventListener('updateServiceRequests', handleServiceUpdate);
       window.removeEventListener('serviceStatusChanged', handleServiceUpdate);
     };
-  }, [getServicios]);
+  }, [getServicios, includeAll]);
 
   return {
     servicios,
@@ -158,6 +161,7 @@ export function useServicios() {
     updateServicio: (id: string | number, data: any) => updateMutation.mutateAsync({ id, data }),
     deleteServicio: (id: string | number) => deleteMutation.mutateAsync(id),
     patchServicio: (id: string | number, data: any) => patchMutation.mutateAsync({ id, data }),
+    includeAll,
     removeServicioFromState: (id: string | number) => {
       if (setServicios) {
         setServicios((prev: ServicioWithDetails[] | undefined) =>

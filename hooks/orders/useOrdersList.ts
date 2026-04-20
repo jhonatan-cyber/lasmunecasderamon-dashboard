@@ -3,7 +3,8 @@ import { toast } from 'sonner';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 
 export interface Order {
-  id_pedido: number;
+  id: string;
+  id_pedido: string;
   cliente: string;
   codigo: string;
   garzon: string;
@@ -15,19 +16,19 @@ export interface Order {
 }
 
 export interface SolicitudServicio {
-  id_solicitud: number;
-  cliente_id?: number;
-  habitacion_id: number;
+  id_solicitud: string;
+  cliente_id?: string;
+  habitacion_id: string;
   precio_servicio: number;
   precio_habitacion: number;
-  anfitrionas_ids: number[];
+  anfitrionas_ids: string[];
   metodo_pago: string;
   tiempo: number;
   total: number;
-  solicitado_por: number;
+  solicitado_por: string;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   motivo_rechazo?: string;
-  procesado_por?: number;
+  procesado_por?: string;
   fecha_solicitud: string;
   fecha_procesamiento?: string;
   solicitado_por_nombre: string;
@@ -37,6 +38,28 @@ export interface SolicitudServicio {
   habitacion_nombre: string;
   habitacion_numero: number;
 }
+
+
+const normalizeOrder = (order: any): Order => {
+  const normalizedId = String(order?.id_pedido ?? order?.id ?? '');
+  return {
+    ...order,
+    id: String(order?.id ?? normalizedId),
+    id_pedido: normalizedId,
+  };
+};
+
+const normalizeServicio = (servicio: any): SolicitudServicio => ({
+  ...servicio,
+  id_solicitud: String(servicio?.id_solicitud ?? servicio?.id ?? ''),
+  cliente_id: servicio?.cliente_id ? String(servicio.cliente_id) : undefined,
+  habitacion_id: String(servicio?.habitacion_id ?? ''),
+  anfitrionas_ids: Array.isArray(servicio?.anfitrionas_ids)
+    ? servicio.anfitrionas_ids.map((id: any) => String(id))
+    : [],
+  solicitado_por: String(servicio?.solicitado_por ?? ''),
+  procesado_por: servicio?.procesado_por ? String(servicio.procesado_por) : undefined,
+});
 
 export const useOrdersList = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -51,7 +74,7 @@ export const useOrdersList = () => {
       setLoadingOrders(true);
       const res = await fetch('/api/orders');
       const data = await res.json();
-      if (data.success) setOrders(data.data);
+      if (data.success) setOrders((data.data || []).map(normalizeOrder));
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -65,7 +88,7 @@ export const useOrdersList = () => {
       const res = await fetch('/api/solicitudes-servicios?estado=pendiente');
       const data = await res.json();
       if (data.success) {
-        setServicios((data.data || []).filter((s: any) => s.estado === 'pendiente'));
+        setServicios((data.data || []).map(normalizeServicio).filter((s: any) => s.estado === 'pendiente'));
       }
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -75,7 +98,7 @@ export const useOrdersList = () => {
   }, []);
 
   const handleOrderUpdate = useCallback(
-    (data: { type: string; orderId: number }) => {
+    (data: { type: string; orderId: string }) => {
       if (data.type === 'order-processed' || data.type === 'order-deleted') {
         setOrders(prev => prev.filter(o => o.id_pedido !== data.orderId));
         fetchServicios();
@@ -119,7 +142,7 @@ export const useOrdersList = () => {
     );
   }, [servicios, searchServiciosTerm]);
 
-  const deleteOrder = async (orderId: number) => {
+  const deleteOrder = async (orderId: string) => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
       const data = await res.json();
@@ -136,7 +159,7 @@ export const useOrdersList = () => {
     }
   };
 
-  const deleteServicio = async (servicioId: number) => {
+  const deleteServicio = async (servicioId: string) => {
     try {
       const res = await fetch(`/api/solicitudes-servicios?id=${servicioId}`, { method: 'DELETE' });
       const data = await res.json();

@@ -5,9 +5,9 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
+import { LazyQRCode } from '@/components/shared/LazyQRCode';
 
 import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
 
@@ -68,12 +68,16 @@ export default function GarzonDashboard() {
 
   if (summaryError || !dashboardData) {
     return (
-      <div className="p-6">
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-8 text-center text-red-600">
-            <h2 className="text-xl font-bold mb-2">Error al cargar el dashboard</h2>
-            <p className="mb-4">No pudimos conectar con el servidor para obtener tus estadísticas.</p>
-            <Button onClick={() => refreshDashboard()} variant="destructive">Reintentar</Button>
+      <div className='p-6'>
+        <Card className='border-red-200 bg-red-50'>
+          <CardContent className='p-8 text-center text-red-600'>
+            <h2 className='text-xl font-bold mb-2'>Error al cargar el dashboard</h2>
+            <p className='mb-4'>
+              No pudimos conectar con el servidor para obtener tus estadísticas.
+            </p>
+            <Button onClick={() => refreshDashboard()} variant='destructive'>
+              Reintentar
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -166,7 +170,7 @@ export default function GarzonDashboard() {
           </CardHeader>
           <CardContent className='flex flex-col items-center'>
             <div className='bg-white p-3 rounded-xl shadow-sm border border-orange-100'>
-              <QRCodeSVG
+              <LazyQRCode
                 value={user.qr_token}
                 size={160}
                 level='H'
@@ -175,11 +179,11 @@ export default function GarzonDashboard() {
                 imageSettings={
                   user.foto
                     ? {
-                      src: `/img/users/${user.foto}`,
-                      height: 35,
-                      width: 35,
-                      excavate: true
-                    }
+                        src: `/img/users/${user.foto}`,
+                        height: 35,
+                        width: 35,
+                        excavate: true
+                      }
                     : undefined
                 }
               />

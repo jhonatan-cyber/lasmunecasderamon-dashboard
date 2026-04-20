@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build && echo 'Build completed successfully'",
     "build:analyze": "ANALYZE=true next build",
-    "dev": "cross-env TZ=UTC next dev --webpack --hostname 0.0.0.0",
+    "dev": "cross-env TZ=UTC next dev --hostname 0.0.0.0",
     "lint": "eslint app/layout.tsx app/page.tsx app/landing components/LayoutContent.tsx components/providers/ProtectedAppProviders.tsx components/landing/Navigation.tsx lib/api/site.ts --ignore-pattern .next --ignore-pattern node_modules",
     "lint:full": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern .next --ignore-pattern node_modules",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",

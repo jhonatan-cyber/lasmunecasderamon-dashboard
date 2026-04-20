@@ -116,8 +116,13 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         const response = await fetch('/api/servicios?estado=1');
         const data = await response.json();
         if (data.success) {
+          const servicios = Array.isArray(data.data)
+            ? data.data
+            : Array.isArray(data.data?.data)
+              ? data.data.data
+              : [];
           const ocupadas: number[] = [];
-          data.data.forEach((servicio: any) => {
+          servicios.forEach((servicio: any) => {
             if (servicio.anfitrionas_ids && Array.isArray(servicio.anfitrionas_ids)) {
               ocupadas.push(...servicio.anfitrionas_ids);
             }

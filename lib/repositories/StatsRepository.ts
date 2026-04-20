@@ -11,6 +11,77 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError } from '@/lib/errors/errors';
 
 export class StatsRepository {
+  static async getRecentActivity(limit: number = 8) {
+    const rows = (await query<any[]>(
+      `
+      SELECT *
+      FROM (
+        SELECT 
+          CONCAT('venta-', v.id_venta) AS id,
+          'venta' AS type,
+          CONCAT('Venta ', COALESCE(v.codigo, v.id_venta)) AS description,
+          v.total AS amount,
+          COALESCE(c.nombre, 'Sin cliente registrado') AS metadata,
+          v.fecha_crea AS created_at
+        FROM ventas v
+        LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
+        WHERE v.estado IN (1, 2)
+
+        UNION ALL
+
+        SELECT 
+          CONCAT('servicio-', s.id_servicio) AS id,
+          'servicio' AS type,
+          CONCAT('Servicio ', COALESCE(s.codigo, s.id_servicio)) AS description,
+          s.total AS amount,
+          COALESCE(c.nombre, 'Sin cliente registrado') AS metadata,
+          s.fecha_crea AS created_at
+        FROM servicios s
+        LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
+        WHERE s.estado IN (1, 2, 3, 4)
+
+        UNION ALL
+
+        SELECT 
+          CONCAT('pedido-', p.id_pedido) AS id,
+          'pedido' AS type,
+          CONCAT('Pedido ', COALESCE(p.codigo, p.id_pedido)) AS description,
+          p.total AS amount,
+          COALESCE(c.nombre, 'Sin cliente registrado') AS metadata,
+          p.fecha_crea AS created_at
+        FROM pedidos p
+        LEFT JOIN clientes c ON c.id_cliente = p.cliente_id
+
+        UNION ALL
+
+        SELECT 
+          CONCAT('login-', l.usuario_id, '-', UNIX_TIMESTAMP(l.fecha_login)) AS id,
+          'login' AS type,
+          CONCAT(u.nombre, ' ', u.apellido, ' inició sesión') AS description,
+          NULL AS amount,
+          r.nombre AS metadata,
+          l.fecha_login AS created_at
+        FROM logins l
+        INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
+        INNER JOIN roles r ON r.id_rol = u.rol_id
+        WHERE l.estado = 1
+      ) recent_activity
+      ORDER BY created_at DESC
+      LIMIT ?
+    `,
+      [limit]
+    )) as any[];
+
+    return rows.map(row => ({
+      id: row.id,
+      type: row.type,
+      description: row.description,
+      amount: row.amount !== null ? Number(row.amount) : null,
+      metadata: row.metadata,
+      createdAt: row.created_at
+    }));
+  }
+
   static async getHabitacionesStats(cajaId: string) {
     const habitacionesStats = (await query(
       `

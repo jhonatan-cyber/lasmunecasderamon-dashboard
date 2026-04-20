@@ -18,6 +18,8 @@ export const GET = withAppAuth(async (request: Request) => {
     search: searchParams.get('search') || undefined,
     status: searchParams.get('status') || undefined,
     role: searchParams.get('role') || undefined,
+    loggedIn: searchParams.get('loggedIn') === '1' || searchParams.get('loggedIn') === 'true',
+    enLocal: searchParams.get('enLocal') === '1' || searchParams.get('enLocal') === 'true',
     limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
     offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
   };

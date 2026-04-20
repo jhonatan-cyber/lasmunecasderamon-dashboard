@@ -47,7 +47,12 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
 
   const adminWhatsApp =
     process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-  const baseUrl = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.PUBLIC_BASE_URL ||
+    'https://dev.lasmuñecasderamon.com';
+
+  console.log('[Anulacion] baseUrl configurada:', baseUrl);
 
   await enviarMensajeSolicitudAnulacion({
     numeroAdmin: adminWhatsApp,

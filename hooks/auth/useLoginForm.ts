@@ -13,6 +13,7 @@ export const useLoginForm = () => {
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rateLimitRemaining, setRateLimitRemaining] = useState(0);
   const [registerData, setRegisterData] = useState({
     nombre: '',
     apellido: '',
@@ -20,13 +21,10 @@ export const useLoginForm = () => {
     ci: ''
   });
   const [registerLoading, setRegisterLoading] = useState(false);
-
-  // Referencias para los inputs
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
-  // URL Base correcta
   const getBaseUrl = () => {
     if (typeof window !== 'undefined') {
       const protocol = window.location.protocol;
@@ -36,7 +34,6 @@ export const useLoginForm = () => {
     return '';
   };
 
-  // Temas (Lógica que estaba en el page)
   const applyTheme = (mode: string) => {
     if (typeof window === 'undefined') return;
     const html = document.documentElement;
@@ -84,6 +81,16 @@ export const useLoginForm = () => {
   }, [step]);
 
   useEffect(() => {
+    if (rateLimitRemaining <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setRateLimitRemaining(prev => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [rateLimitRemaining]);
+
+  useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     const initialTheme =
       saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system';
@@ -112,6 +119,7 @@ export const useLoginForm = () => {
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (rateLimitRemaining > 0) return;
     setLoading(true);
     try {
       let emailToSend = loginData.email.trim();
@@ -128,9 +136,20 @@ export const useLoginForm = () => {
 
       const data = await res.json();
 
-      if (data.requiereCodigo === true) {
+      if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
+        const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
+        setRateLimitRemaining(retryAfter);
+        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
+        setLoading(false);
+        return;
+      }
+
+if (data.requiereCodigo === true) {
         setUserTmp(data.user);
-        if (data.user?.role) localStorage.setItem('userRole', data.user.role);
+        if (data.user?.role) {
+          localStorage.setItem('userRole', data.user.role);
+          localStorage.setItem('auth_role_hint', data.user.role);
+        }
         setStep('codigo');
         setLoading(false);
         return;
@@ -142,9 +161,13 @@ export const useLoginForm = () => {
         return;
       }
 
-      toast.success('¡Bienvenido al sistema!');
-      if (data.user?.role) localStorage.setItem('userRole', data.user.role);
-      window.location.href = '/dashboard';
+toast.success('¡Bienvenido al sistema!');
+      if (data.user?.role) {
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('auth_role_hint', data.user.role);
+      }
+      setLoading(false);
+      window.location.replace('/dashboard');
     } catch (err) {
       toast.error('Error de red o servidor');
       setLoading(false);
@@ -153,6 +176,7 @@ export const useLoginForm = () => {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (rateLimitRemaining > 0) return;
     if (codigo.length !== 4) {
       toast.error('El código debe tener 4 dígitos');
       return;
@@ -175,14 +199,25 @@ export const useLoginForm = () => {
         })
       });
       const data = await res.json();
+      if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
+        const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
+        setRateLimitRemaining(retryAfter);
+        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
+        setLoading(false);
+        return;
+      }
       if (!data.success) {
         toast.error(data.message || 'Código incorrecto');
         setLoading(false);
         return;
       }
-      toast.success('¡Bienvenido al sistema!');
-      if (data.user?.role) localStorage.setItem('userRole', data.user.role);
-      window.location.href = '/dashboard';
+toast.success('¡Bienvenido al sistema!');
+      if (data.user?.role) {
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('auth_role_hint', data.user.role);
+      }
+      setLoading(false);
+      window.location.replace('/dashboard');
     } catch (err) {
       toast.error('Error de red o servidor');
       setLoading(false);
@@ -284,6 +319,7 @@ export const useLoginForm = () => {
     registerData,
     setRegisterData,
     registerLoading,
+    rateLimitRemaining,
     handleLogin,
     handleVerifyCode,
     handleRegister,
