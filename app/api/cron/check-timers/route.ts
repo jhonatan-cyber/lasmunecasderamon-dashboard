@@ -79,15 +79,22 @@ export const GET = withAppApiWrapper(async () => {
         type: item.type,
         room_name: item.room_name
       });
-      
-      // Liberar habitación y anfitrionas
+
+      // Liberar habitación, marcar venta/servicio como finalizado y actualizarListing
       if (item.habitacion_id) {
-        await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [item.habitacion_id]);
-        
-        // Si es un servicio, liberar las anfitrionas
+        // Liberar la habitación
+        await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
+          item.habitacion_id
+        ]);
+
         if (item.type === 'servicio') {
-          await withTransaction(async (trx) => {
-            const anfsResult = await trx<any[]>('SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [item.id]);
+          // Finalizar servicio
+          await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [item.id]);
+          await withTransaction(async trx => {
+            const anfsResult = await trx<any[]>(
+              'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
+              [item.id]
+            );
             const hostessIds = anfsResult.map(a => a.usuario_id);
             if (hostessIds.length > 0) {
               await RoomManager.updateHostessServiceStatus(trx, hostessIds, item.id);
@@ -95,7 +102,20 @@ export const GET = withAppApiWrapper(async () => {
             // Liberar la habitación usando el RoomManager
             await RoomManager.resumeRoomLogic(trx, item.habitacion_id, item.id);
           });
+        } else if (item.type === 'venta') {
+          // Finalizar venta
+          await query('UPDATE ventas SET estado = 1 WHERE id_venta = ?', [item.id]);
+        } else if (item.type === 'cuenta') {
+          // Finalizar cuenta
+          await query('UPDATE cuentas SET estado = 0 WHERE id_cuenta = ?', [item.id]);
         }
+      }
+
+      // Dispatch evento para actualizar el listado en Tiempo real
+      if (item.type === 'venta') {
+        sendNotificationToAll('updateSales', { id: item.id, type: item.type });
+      } else if (item.type === 'servicio') {
+        sendNotificationToAll('updateSales', { id: item.id, type: item.type });
       }
     }
   }

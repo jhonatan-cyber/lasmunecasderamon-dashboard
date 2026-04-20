@@ -41,6 +41,7 @@ export class UserRepository {
     status?: string | number;
     role?: string;
     loggedIn?: boolean;
+    enLocal?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<{ data: UserType[]; total: number }> {
@@ -72,6 +73,10 @@ export class UserRepository {
     const loginJoin = params?.loggedIn
       ? 'INNER JOIN logins l ON l.usuario_id = u.id_usuario AND l.estado = 1'
       : '';
+
+    if (params?.enLocal && params?.loggedIn) {
+      where += ' AND l.en_local = 1';
+    }
 
     const countSql = `
       SELECT COUNT(*) as total 

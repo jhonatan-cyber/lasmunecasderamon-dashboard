@@ -22,6 +22,7 @@ export const SaleSchema = z.object({
   fecha_crea: z.string().or(z.date()).nullable().optional(),
   fecha_mod: z.string().or(z.date()).nullable().optional(),
   cliente_nombre: z.string().nullable().optional(),
+  habitacion_numero: z.string().nullable().optional(),
   habitacion_nombre: z.string().nullable().optional(),
   item_count: z.number().optional().default(0),
   anfitrionas_nicks: z.string().nullable().optional(),
@@ -51,7 +52,8 @@ export const SaleCreateSchema = z.object({
     cantidad: z.number().min(1),
     sub_total: z.number().optional(),
     hostess_id: z.string().nullable().optional(),
-    hostesses: z.array(z.string()).optional()
+    hostesses: z.array(z.string()).optional(),
+    isChampagne: z.boolean().optional()
   })).min(1, 'Al menos un detalle es requerido')
 });
 

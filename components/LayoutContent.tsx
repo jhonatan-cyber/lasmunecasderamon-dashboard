@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Sidebar } from '@/components/sidebar';
 import { SidebarProvider } from '@/contexts/SidebarContext';
-import { UserImageProvider } from '@/contexts/UserImageContext';
 import { RouteGuard } from '@/components/auth/RouteGuard';
 import { ProtectedAppProviders } from '@/components/providers/ProtectedAppProviders';
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
@@ -17,26 +16,20 @@ interface LayoutUser {
   role?: string;
 }
 
-function MainLayout({
-  children,
-  user
-}: {
-  children: React.ReactNode;
-  user: LayoutUser | null;
-}) {
+function MainLayout({ children, user }: { children: React.ReactNode; user: LayoutUser | null }) {
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
   return (
     <div className={cn('flex h-screen bg-background', !isAdminOrCajero && 'hide-sidebar')}>
-      <Sidebar />
+      {isAdminOrCajero ? <Sidebar /> : null}
       <div
         className={cn(
           'flex-1 flex flex-col overflow-hidden transition-all duration-300',
           !isAdminOrCajero && 'lg:ml-0'
         )}
       >
-        <Header />
+        <Header showSidebarControls={isAdminOrCajero} />
         <main className='flex-1 overflow-x-auto overflow-y-auto bg-background pb-4 sm:pb-6'>
           <div className='min-h-full'>{children}</div>
         </main>
@@ -51,13 +44,18 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
 
   useSessionCheck();
 
+  const isAdminOrCajero =
+    user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
+
   return (
     <RouteGuard>
-      <UserImageProvider>
+      {isAdminOrCajero ? (
         <SidebarProvider>
           <MainLayout user={user}>{children}</MainLayout>
         </SidebarProvider>
-      </UserImageProvider>
+      ) : (
+        <MainLayout user={user}>{children}</MainLayout>
+      )}
     </RouteGuard>
   );
 }

@@ -13,20 +13,15 @@ interface TimerActionsProps {
 export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerActionsProps) {
   const updateRoomStatus = async (roomId: string, status: number) => {
     try {
-      const roomRes = await fetch(`/api/rooms?id=${roomId}`);
-      const { success, data } = await roomRes.json();
-      if (!success) return;
-      const hasPrice = data.price > 0,
-        hasTime = data.time > 0,
-        hasComm = data.comision_anfitriona > 0;
-      if (!hasPrice && !hasTime && !hasComm) return;
+      // Siempre liberamos/ocupamos la habitación sin condiciones
       await fetch(`/api/rooms?id=${roomId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: status === 2 ? 'occupy' : 'activate' })
       });
     } catch (e) {
-      toast.error('Error actualizando habitación');
+      console.error('Error actualizando habitación:', e);
+      // No mostramos toast para no molestar al usuario en cada operación
     }
   };
 

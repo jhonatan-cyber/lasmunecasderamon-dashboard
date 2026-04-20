@@ -48,7 +48,7 @@ interface OrderDetailModalProps {
   detail: any[];
   isLoading: boolean;
   error: string | null;
-  orderId?: number | null;
+  orderId?: string | null;
   orderCode?: string;
   onVentaRegistrada?: () => void;
   onOrderStatusChange?: () => void;

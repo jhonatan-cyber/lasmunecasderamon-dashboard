@@ -24,7 +24,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       
       const data = users.map((user, index) => ({
         "#": index + 1,
-        RUN: user.run || "Sin RUN",
+        RUT: user.run || "Sin RUT",
         Nombre: user.name || "",
         Apellido: user.lastName || "",
         Email: user.email || "Sin email",
@@ -48,7 +48,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       // Definir columnas
       worksheet.columns = [
         { header: "#", key: "index", width: 6 },
-        { header: "RUN", key: "run", width: 20 },
+        { header: "RUT", key: "run", width: 20 },
         { header: "Nombre", key: "name", width: 20 },
         { header: "Apellido", key: "lastName", width: 20 },
         { header: "Email", key: "email", width: 30 },
@@ -65,7 +65,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       data.forEach((row) => {
         worksheet.addRow({
           index: row['#'],
-          run: row.RUN,
+          run: row.RUT,
           name: row.Nombre,
           lastName: row.Apellido,
           email: row.Email,
@@ -111,11 +111,11 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       
       const doc = new jsPDF();
       const title = "Listado de Usuarios";
-      const headers = [["#", "RUN", "Nombre", "Apellido", "Email", "Teléfono", "Rol", "Estado"]];
+      const headers = [["#", "RUT", "Nombre", "Apellido", "Email", "Teléfono", "Rol", "Estado"]];
 
       const data = users.map((user, index) => [
         (index + 1).toString(),
-        user.run || "Sin RUN",
+        user.run || "Sin RUT",
         user.name || "",
         user.lastName || "",
         user.email || "Sin email",
@@ -215,7 +215,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
             <thead>
               <tr className="bg-gray-100">
                 <th className="py-3 px-4 text-center border w-16 text-lg">#</th>
-                <th className="py-3 px-4 text-left border text-lg">RUN</th>
+                <th className="py-3 px-4 text-left border text-lg">RUT</th>
                 <th className="py-3 px-4 text-left border text-lg">Nombre</th>
                 <th className="py-3 px-4 text-left border text-lg">Apellido</th>
                 <th className="py-3 px-4 text-left border text-lg">Email</th>

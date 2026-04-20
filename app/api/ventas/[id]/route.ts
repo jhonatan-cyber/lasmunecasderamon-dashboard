@@ -15,7 +15,15 @@ export const GET = withAppApiWrapper(
 export const PATCH = withAppAuth(
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    const { estado } = await request.json();
+    const body = await request.json();
+
+    // Si es acción stop, marcamos la venta como finalizada (estado 1)
+    if (body.action === 'stop') {
+      await SaleRepository.updateStatus(id, 1, user.id.toString());
+      return NextResponse.json({ success: true, message: 'Venta finalizada' });
+    }
+
+    const { estado } = body;
     await SaleRepository.updateStatus(id, estado, user.id.toString());
     return NextResponse.json({ success: true, message: 'Estado actualizado' });
   }

@@ -25,6 +25,7 @@ export const LoginView = () => {
     registerData,
     setRegisterData,
     registerLoading,
+    rateLimitRemaining,
     handleLogin,
     handleVerifyCode,
     handleRegister,
@@ -110,6 +111,7 @@ export const LoginView = () => {
                 codigo={codigo}
                 setCodigo={setCodigo}
                 loading={loading}
+                rateLimitRemaining={rateLimitRemaining}
                 hasUsers={hasUsers}
                 onShowRegister={() => setShowRegisterModal(true)}
                 theme={theme}

@@ -1,10 +1,9 @@
- 
 'use client';
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, User, Home, CreditCard, Square, Users, ShoppingBag } from 'lucide-react';
+import { Clock, User, Home, CreditCard, Square, Users, ShoppingBag, Eye } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
@@ -15,14 +14,16 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 interface SaleCardProps {
   venta: VentaWithDetails;
   onRefresh?: () => void;
+  onVerDetalles?: (ventaId: string | number) => void;
 }
 
-export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
+export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardProps) {
   const { getTimerByServicioId, formatTime, stopTimerByServicioId, timers } = useTimer();
   const [stopping, setStopping] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const { user } = useCurrentUser();
-  const isAdminOrCajero = user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
+  const isAdminOrCajero =
+    user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
   // Obtener el timer sincronizado con el contexto global
   const timer = getTimerByServicioId(String(venta.id));
@@ -53,12 +54,28 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
 
   const isLowTime = isAdminOrCajero && timer && timer.isActive && remainingTime <= 300;
 
-  // Filtrar nombres de anfitrionas únicos
-  const hostesses = venta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) || [];
+  // En listado la API trae `anfitrionas_nicks`; en detalle trae `usuarios`
+  const hostesses = Array.from(
+    new Set(
+      (venta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) ||
+        venta.anfitrionas_nicks
+          ?.split(',')
+          .map(nick => nick.trim())
+          .filter(Boolean) ||
+        []) as string[]
+    )
+  );
+
+  const handleCardClick = () => {
+    if (onVerDetalles) {
+      onVerDetalles(venta.id);
+    }
+  };
 
   return (
     <Card
-      className={`w-full transition-all duration-200 hover:shadow-md ${isLowTime ? 'border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20' : ''}`}
+      className={`w-full transition-all duration-200 hover:shadow-md cursor-pointer ${isLowTime ? 'border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20' : ''}`}
+      onClick={handleCardClick}
     >
       <div className='p-4 space-y-4'>
         {/* Header Row */}
@@ -153,7 +170,7 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
               </span>
               <span className='text-sm font-medium truncate block text-gray-900 dark:text-neutral-100'>
                 {venta.cliente_nombre?.toLowerCase() === 'sin cliente' || !venta.cliente_nombre
-                  ? 'cliente sin registrar'
+                  ? 'sin cliente registrado'
                   : venta.cliente_nombre}
               </span>
             </div>
@@ -182,27 +199,6 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
                     Sin anfitrionas
                   </span>
                 )}
-              </div>
-            </div>
-          </div>
-
-          {/* Productos */}
-          <div className='flex items-start gap-2'>
-            <ShoppingBag className='w-4 h-4 text-orange-500 flex-shrink-0 mt-1' />
-            <div className='min-w-0 flex-1'>
-              <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                Productos
-              </span>
-              <div className='mt-1 space-y-1'>
-                {venta.detalles?.map((det, idx) => (
-                  <div
-                    key={idx}
-                    className='text-xs text-gray-600 dark:text-gray-400 flex justify-between gap-2'
-                  >
-                    <span className='truncate flex-1'>• {det.producto_nombre || 'Producto'}</span>
-                    <span className='font-medium whitespace-nowrap'>x{det.cantidad}</span>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -242,13 +238,30 @@ export default function SaleCard({ venta, onRefresh }: SaleCardProps) {
         </div>
 
         {/* Actions */}
-        <div className='flex items-center justify-end pt-2'>
+        <div className='flex items-center justify-end pt-2 gap-2'>
+          {onVerDetalles && (
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={e => {
+                e.stopPropagation();
+                onVerDetalles(venta.id);
+              }}
+              className='flex-1 rounded-full'
+            >
+              <Eye className='w-3 h-3 mr-1' />
+              Ver detalles
+            </Button>
+          )}
           {timer && timer.isActive && (
             <Button
               size='sm'
               variant='default'
-              onClick={() => setShowConfirm(true)}
-              className='bg-blue-600 hover:bg-blue-700 text-white rounded-full w-full'
+              onClick={e => {
+                e.stopPropagation();
+                setShowConfirm(true);
+              }}
+              className='bg-blue-600 hover:bg-blue-700 text-white rounded-full'
             >
               <Square className='w-3 h-3 mr-1' />
               Finalizar

@@ -36,7 +36,7 @@ import {
 } from 'recharts';
 
 interface CommissionData {
-  id_usuario: number;
+  id_usuario: number | string | null;
   nombre: string;
   apellido: string;
   nombre_completo: string;
@@ -235,6 +235,11 @@ const DailyTooltip = ({ active, payload }: DailyTooltipProps) => {
 };
 
 const ITEMS_PER_PAGE = 5;
+
+const getCommissionRowKey = (commission: CommissionData, absoluteIndex: number) => {
+  const identity = commission.id_usuario ?? commission.nombre_completo ?? `${commission.nombre}-${commission.apellido}`;
+  return `${identity}-${absoluteIndex}`;
+};
 
 export function CommissionsReport() {
   const [state, dispatch] = useReducer(reportReducer, initialReportState);
@@ -585,8 +590,8 @@ export function CommissionsReport() {
             <tbody>
               {data.commissions
                 .slice(tablePage * ITEMS_PER_PAGE, (tablePage + 1) * ITEMS_PER_PAGE)
-                .map((commission) => (
-                  <tr key={commission.id_usuario} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                .map((commission, index) => (
+                  <tr key={getCommissionRowKey(commission, tablePage * ITEMS_PER_PAGE + index)} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <td className="py-3 px-4">
                       <p className="font-medium text-gray-900 dark:text-gray-100">{commission.nombre_completo}</p>
                     </td>
