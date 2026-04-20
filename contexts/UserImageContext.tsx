@@ -1,32 +1,46 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-interface UserImageContextType {
-  imageVersion: number;
-  updateImage: () => void;
+const USER_IMAGE_EVENT = 'user-image-updated';
+const USER_IMAGE_KEY = '__userImageVersion';
+
+declare global {
+  interface Window {
+    __userImageVersion?: number;
+  }
 }
 
-const UserImageContext = createContext<UserImageContextType | undefined>(undefined);
-
-export const UserImageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [imageVersion, setImageVersion] = useState(0);
-
-  const updateImage = () => {
-    setImageVersion(prev => prev + 1);
-  };
-
-  return (
-    <UserImageContext.Provider value={{ imageVersion, updateImage }}>
-      {children}
-    </UserImageContext.Provider>
-  );
-};
+function getCurrentVersion() {
+  if (typeof window === 'undefined') return 0;
+  return window[USER_IMAGE_KEY] ?? 0;
+}
 
 export const useUserImage = () => {
-  const context = useContext(UserImageContext);
-  if (context === undefined) {
-    throw new Error('useUserImage must be used within a UserImageProvider');
-  }
-  return context;
+  const [imageVersion, setImageVersion] = useState(0);
+
+  useEffect(() => {
+    setImageVersion(getCurrentVersion());
+
+    const handleImageUpdate = () => {
+      setImageVersion(getCurrentVersion());
+    };
+
+    window.addEventListener(USER_IMAGE_EVENT, handleImageUpdate);
+    return () => window.removeEventListener(USER_IMAGE_EVENT, handleImageUpdate);
+  }, []);
+
+  const updateImage = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const nextVersion = getCurrentVersion() + 1;
+    window[USER_IMAGE_KEY] = nextVersion;
+    window.dispatchEvent(new Event(USER_IMAGE_EVENT));
+    setImageVersion(nextVersion);
+  }, []);
+
+  return {
+    imageVersion,
+    updateImage
+  };
 };

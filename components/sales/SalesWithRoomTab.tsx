@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { VentaWithDetails } from '@/types/venta';
@@ -10,9 +10,15 @@ interface SalesWithRoomTabProps {
   ventas: VentaWithDetails[];
   loading: boolean;
   onRefresh: () => void;
+  onVerDetalles?: (ventaId: string | number) => void;
 }
 
-export default function SalesWithRoomTab({ ventas, loading, onRefresh }: SalesWithRoomTabProps) {
+export default function SalesWithRoomTab({
+  ventas,
+  loading,
+  onRefresh,
+  onVerDetalles
+}: SalesWithRoomTabProps) {
   const { getTimerByServicioId, timers } = useTimer();
   const [, forceUpdate] = useState({});
 
@@ -20,6 +26,15 @@ export default function SalesWithRoomTab({ ventas, loading, onRefresh }: SalesWi
   useEffect(() => {
     forceUpdate({});
   }, [timers]);
+
+  // Escuchar evento updateSales para refrescar cuando el tiempoexpira automáticamente
+  useEffect(() => {
+    const handleUpdateSales = () => {
+      if (onRefresh) onRefresh();
+    };
+    window.addEventListener('updateSales', handleUpdateSales);
+    return () => window.removeEventListener('updateSales', handleUpdateSales);
+  }, [onRefresh]);
 
   // Filtrar ventas que tienen habitación asignada
   // Y que están en estado 2 (En Proceso) O tienen un temporizador activo
@@ -78,7 +93,12 @@ export default function SalesWithRoomTab({ ventas, loading, onRefresh }: SalesWi
 
       <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
         {ventasConHabitacion.map(venta => (
-          <SaleCard key={venta.id} venta={venta} onRefresh={onRefresh} />
+          <SaleCard
+            key={venta.id}
+            venta={venta}
+            onRefresh={onRefresh}
+            onVerDetalles={onVerDetalles}
+          />
         ))}
       </div>
     </div>

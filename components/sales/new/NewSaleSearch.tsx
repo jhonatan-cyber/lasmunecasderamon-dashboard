@@ -131,6 +131,15 @@ export const NewSaleSearch = ({
                     const id = String(producto.id_producto || producto.id);
                     const isChampagne = isChampagneProduct(producto);
                     const hasComm = (producto.comision || producto.commission || 0) > 0;
+                    const quantityLimit = 1;
+                    const champagneHostessLimit = (() => {
+                      const precio = Number(producto.precio || producto.price || 0);
+                      if (precio >= 240000) return 5;
+                      if (precio >= 200000) return 4;
+                      if (precio >= 160000) return 3;
+                      if (precio >= 120000) return 2;
+                      return 1;
+                    })();
                     return (
                       <TableRow key={idx} className={CUENTA_TABLE_ROW_CLASS}>
                         <TableCell className={CUENTA_TABLE_CELL_CLASS}>{producto.nombre}</TableCell>
@@ -146,34 +155,67 @@ export const NewSaleSearch = ({
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                           {hasComm ? (
                             isChampagne ? (
-                              <HostessMultiSelect
-                                anfitrionas={anfitrionas.filter(
-                                  h => h.status === 1 || h.status === 2
-                                )}
-                                value={champagneHostessSelections[id] || []}
-                                onChange={ids => handleChampagneHostessChange(id, ids)}
-                                searchValue={hostessSearchValues[id] || ''}
-                                onSearchChange={val =>
-                                  setHostessSearchValues((prev: any) => ({ ...prev, [id]: val }))
-                                }
-                                maxSelection={
-                                  Number(producto.precio) >= 240000
-                                    ? 5
-                                    : Number(producto.precio) >= 120000
-                                      ? 2
-                                      : 1
-                                }
-                              />
+                              <div className='space-y-2'>
+                                <HostessMultiSelect
+                                  anfitrionas={anfitrionas.filter(
+                                    h => h.status === 1 || h.status === 2
+                                  )}
+                                  value={champagneHostessSelections[id] || []}
+                                  onChange={ids => handleChampagneHostessChange(id, ids)}
+                                  searchValue={hostessSearchValues[id] || ''}
+                                  onSearchChange={val =>
+                                    setHostessSearchValues((prev: any) => ({ ...prev, [id]: val }))
+                                  }
+                                  maxSelection={Math.min(champagneHostessLimit, quantityLimit)}
+                                />
+                                <div className='text-xs text-gray-500'>
+                                  {(champagneHostessSelections[id] || []).length} de{' '}
+                                  {Math.min(champagneHostessLimit, quantityLimit)} seleccionadas
+                                </div>
+                              </div>
                             ) : (
-                              <IndividualHostessSelect
-                                anfitrionas={anfitrionas.filter(
-                                  h => h.status === 1 || h.status === 2
-                                )}
-                                value={otherProductHostessSelections[id]?.[0] || ''}
-                                onChange={val =>
-                                  handleOtherProductHostessChange(id, val ? [val] : [])
+                              (() => {
+                                const precio = Number(producto.precio || producto.price || 0);
+                                const cantidad = 1;
+
+                                if (precio >= 30000) {
+                                  return (
+                                    <div className='space-y-2'>
+                                      <HostessMultiSelect
+                                        anfitrionas={anfitrionas.filter(
+                                          h => h.status === 1 || h.status === 2
+                                        )}
+                                        value={otherProductHostessSelections[id] || []}
+                                        onChange={ids => handleOtherProductHostessChange(id, ids)}
+                                        searchValue={hostessSearchValues[id] || ''}
+                                        onSearchChange={val =>
+                                          setHostessSearchValues((prev: any) => ({
+                                            ...prev,
+                                            [id]: val
+                                          }))
+                                        }
+                                        maxSelection={cantidad}
+                                      />
+                                      <div className='text-xs text-gray-500'>
+                                        {(otherProductHostessSelections[id] || []).length} de{' '}
+                                        {cantidad} seleccionadas
+                                      </div>
+                                    </div>
+                                  );
                                 }
-                              />
+
+                                return (
+                                  <IndividualHostessSelect
+                                    anfitrionas={anfitrionas.filter(
+                                      h => h.status === 1 || h.status === 2
+                                    )}
+                                    value={otherProductHostessSelections[id]?.[0] || ''}
+                                    onChange={val =>
+                                      handleOtherProductHostessChange(id, val ? [val] : [])
+                                    }
+                                  />
+                                );
+                              })()
                             )
                           ) : (
                             <span className='text-gray-400 text-xs'>Sin comisión</span>

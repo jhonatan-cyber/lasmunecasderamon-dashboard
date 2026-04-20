@@ -57,7 +57,7 @@ export default function OrdersPage() {
 
   const [activeTab, setActiveTab] = useState('productos');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState('');
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -71,7 +71,7 @@ export default function OrdersPage() {
   const canDelete = hasPermission('orders', 'delete');
   const canProcess = hasPermission('orders', 'process') || hasPermission('pedidos', 'ventas');
 
-  const handleOrderClick = (id: number, code: string) => {
+  const handleOrderClick = (id: string, code: string) => {
     if (!canProcess) {
       toast.error('No tienes permisos para interactuar con pedidos');
       return;
@@ -184,7 +184,7 @@ export default function OrdersPage() {
               <div className='grid grid-cols-1 xl:grid-cols-2 gap-4'>
                 {filteredOrders.map(order => (
                   <OrderCard
-                    key={order.id_pedido}
+                    key={order.id_pedido || order.id}
                     order={order}
                     canDelete={canDelete}
                     canProcess={canProcess}

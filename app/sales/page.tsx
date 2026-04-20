@@ -57,16 +57,12 @@ export default function Sales() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      getVentas(),
-      getResumen(),
-      getHabitaciones()
-    ]);
+    await Promise.all([getVentas(), getResumen(), getHabitaciones()]);
   }, [getHabitaciones, getResumen, getVentas]);
 
   // Ref para mantener la función de refresh estable
   const handleRefreshRef = useRef(handleRefresh);
-  
+
   useEffect(() => {
     handleRefreshRef.current = handleRefresh;
   }, [handleRefresh]);
@@ -82,10 +78,24 @@ export default function Sales() {
       handleRefreshRef.current();
     };
 
+    const handleUpdateSales = () => {
+      console.log('[Sales] Evento updateSales recibido - refrescando ventas');
+      handleRefreshRef.current();
+    };
+
+    const handleTimerEnded = () => {
+      console.log('[Sales] Evento timerEnded recibido - refrescando ventas');
+      handleRefreshRef.current();
+    };
+
     window.addEventListener('ventaRegistrada', handleVentaRegistrada);
+    window.addEventListener('updateSales', handleUpdateSales);
+    window.addEventListener('timer_ended_event', handleTimerEnded);
 
     return () => {
       window.removeEventListener('ventaRegistrada', handleVentaRegistrada);
+      window.removeEventListener('updateSales', handleUpdateSales);
+      window.removeEventListener('timer_ended_event', handleTimerEnded);
     };
   }, []);
 
@@ -101,7 +111,10 @@ export default function Sales() {
   const sortedAndFilteredVentas = sortVentas(filteredVentas, sortBy, sortOrder);
 
   const totalPages = Math.ceil(sortedAndFilteredVentas.length / rowsPerPage);
-  const paginatedVentas = sortedAndFilteredVentas.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const paginatedVentas = sortedAndFilteredVentas.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -238,6 +251,7 @@ export default function Sales() {
                   ventas={sortedAndFilteredVentas as VentaWithDetails[]}
                   loading={loading}
                   onRefresh={handleRefresh}
+                  onVerDetalles={handleViewDetails}
                 />
               </TabsContent>
             </Tabs>

@@ -76,14 +76,13 @@ export const useNewSaleForm = () => {
 
   const hasChampagneProducts = useMemo(() => productos.some(isChampagneProduct), [productos]);
 
-  const isTragosArribaProduct = (producto: any) => {
-    const cat = (producto?.categoria || producto?.category || '').toLowerCase();
+  const isHighValueProduct = (producto: any) => {
     const precio = Number(producto.precio ?? producto.price ?? 0);
-    return (cat.includes('trago') || cat.includes('barra')) && precio >= 30000;
+    return precio > 30000;
   };
 
-  const hasTragosArriba = useMemo(() => productos.some(isTragosArribaProduct), [productos]);
-  const requiresRoom = hasChampagneProducts || hasTragosArriba;
+  const hasHighValueProducts = useMemo(() => productos.some(isHighValueProduct), [productos]);
+  const requiresRoom = hasChampagneProducts || hasHighValueProducts;
 
   const handleHabitacionChange = async (habitacionId: string) => {
     if (!habitacionId) {
@@ -223,13 +222,40 @@ export const useNewSaleForm = () => {
         propina: totals.propina,
         sub_total: totals.subtotal,
         total: totals.total,
-        detalles: productos.map(p => ({
-          producto_id: p.id,
-          precio: p.precio,
-          comision: (p.comision || 0) * p.cantidad,
-          cantidad: p.cantidad,
-          sub_total: p.subtotal
-        })),
+        detalles: productos.map(p => {
+          const selectedHostesses = Array.isArray(p.selectedHostesses) ? p.selectedHostesses : [];
+          const normalizedDetail = {
+            producto_id: p.id,
+            precio: p.precio,
+            comision: (p.comision || 0) * p.cantidad,
+            cantidad: p.cantidad,
+            sub_total: p.subtotal,
+            isChampagne: Boolean(p.isChampagne)
+          };
+
+          if (selectedHostesses.length === 0) {
+            return normalizedDetail;
+          }
+
+          if (p.isChampagne) {
+            return {
+              ...normalizedDetail,
+              hostesses: selectedHostesses
+            };
+          }
+
+          if (selectedHostesses.length === 1) {
+            return {
+              ...normalizedDetail,
+              hostess_id: selectedHostesses[0]
+            };
+          }
+
+          return {
+            ...normalizedDetail,
+            hostesses: selectedHostesses
+          };
+        }),
         usuarios: todasAnf,
         ...(selectedHabitacion && { habitacion_id: selectedHabitacion }),
         ...(selectedHabitacion && {

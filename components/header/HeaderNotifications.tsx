@@ -46,7 +46,7 @@ export function HeaderNotifications() {
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Order modal state
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState<string>('');
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -98,8 +98,11 @@ export function HeaderNotifications() {
 
   // Order handling
   const pendingOrders = orders.filter((o: any) => String(o.estado) === '1');
+  const getOrderId = (order: any) => order?.id_pedido ?? order?.id ?? order?.pedidoId ?? null;
+  const getOrderKey = (order: any, index: number) =>
+    getOrderId(order) ?? order?.codigo ?? order?.fecha_crea ?? `fallback-${index}`;
 
-  const handleOrderClick = (orderId: number) => {
+  const handleOrderClick = (orderId: string) => {
     if (!hasPermission('orders', 'process')) {
       toast.error('No tienes permisos para procesar pedidos');
       setShowDropdown(false);
@@ -113,7 +116,7 @@ export function HeaderNotifications() {
       return;
     }
 
-    const order = orders.find((o: any) => o.id_pedido === orderId);
+    const order = orders.find((o: any) => String(getOrderId(o)) === orderId);
     setSelectedOrderId(orderId);
     setSelectedOrderCode(order?.codigo || '');
     setModalOpen(true);
@@ -142,11 +145,12 @@ export function HeaderNotifications() {
       }
 
       const { orderId, codigo } = event.detail;
-      const order = orders.find((o: any) => o.id_pedido === orderId);
-      setSelectedOrderId(orderId);
+      const normalizedOrderId = String(orderId);
+      const order = orders.find((o: any) => String(getOrderId(o)) === normalizedOrderId);
+      setSelectedOrderId(normalizedOrderId);
       setSelectedOrderCode(codigo || order?.codigo || '');
       setModalOpen(true);
-      fetchOrderDetail(orderId);
+      fetchOrderDetail(normalizedOrderId);
     };
 
     window.addEventListener('openOrderModal', handleOpenOrderModal as EventListener);
@@ -181,8 +185,11 @@ export function HeaderNotifications() {
     const handleUpdatePendingOrders = (event?: CustomEvent) => {
       if (event && event.detail) {
         const { type, orderId } = event.detail;
+        const normalizedOrderId = String(orderId);
         if (type === 'order-processed' || type === 'order-deleted') {
-          setOrders((prevOrders: any[]) => prevOrders.filter((o: any) => o.id_pedido !== orderId));
+          setOrders((prevOrders: any[]) =>
+            prevOrders.filter((o: any) => String(getOrderId(o)) !== normalizedOrderId)
+          );
         } else if (type === 'order-created') {
           refetch();
         }
@@ -199,7 +206,7 @@ export function HeaderNotifications() {
   // Close order modal from external event
   useEffect(() => {
     const handleCloseOrderModal = (event: CustomEvent) => {
-      const { orderId: processedOrderId } = event.detail;
+      const processedOrderId = String(event.detail.orderId);
       if (modalOpen && selectedOrderId === processedOrderId) {
         handleCloseModal();
       }
@@ -272,11 +279,14 @@ export function HeaderNotifications() {
           {pendingOrders.length === 0 ? (
             <div className='text-xs text-gray-400 px-4 py-2'>No hay pedidos pendientes</div>
           ) : (
-            pendingOrders.map((order: any) => (
+            pendingOrders.map((order: any, index: number) => (
               <DropdownMenuItem
-                key={`pedido-${order.id_pedido}`}
+                key={`pedido-${getOrderKey(order, index)}`}
                 className='flex flex-col items-start gap-1 cursor-pointer hover:bg-gray-100'
-                onClick={() => handleOrderClick(order.id_pedido)}
+                onClick={() => {
+                  const orderId = getOrderId(order);
+                  if (orderId) handleOrderClick(String(orderId));
+                }}
               >
                 <div className='flex justify-between w-full'>
                   <span className='font-semibold text-sm'>{order.garzon}</span>

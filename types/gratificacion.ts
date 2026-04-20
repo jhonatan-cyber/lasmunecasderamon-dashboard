@@ -9,6 +9,7 @@ export interface Gratificacion {
   fecha_crea: string;
   fecha_mod: string | null;
   estado: number;
+  estado_texto?: 'pagado' | 'por_pagar' | 'pendiente_aprobacion' | 'rechazada' | 'desconocido';
 }
 
 export interface CreateGratificacionRequest {

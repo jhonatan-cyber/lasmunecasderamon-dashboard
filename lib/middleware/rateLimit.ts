@@ -73,7 +73,7 @@ export function createRateLimiter(windowMs: number, max: number) {
 }
 
 // Pre-configured limiters for Pages Router (backward compatible with tests)
-export const loginLimiter = createRateLimiter(15 * 60 * 1000, 5);
+export const loginLimiter = createRateLimiter(60 * 1000, 5);
 export const generalLimiter = createRateLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiter = createRateLimiter(5 * 60 * 1000, 20);
 
@@ -165,7 +165,7 @@ export function createAppRouterLimiter(windowMs: number, max: number) {
 }
 
 // Pre-configured limiters for App Router
-export const loginLimiterApp = createAppRouterLimiter(15 * 60 * 1000, 5);
+export const loginLimiterApp = createAppRouterLimiter(60 * 1000, 5);
 export const generalLimiterApp = createAppRouterLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiterApp = createAppRouterLimiter(5 * 60 * 1000, 20);
 

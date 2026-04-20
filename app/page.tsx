@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import Script from 'next/script';
 import LandingPage from './landing/page';
 import { createMarketingMetadata, siteConfig } from '@/lib/api/site';
 
@@ -47,15 +48,14 @@ export default async function HomePage() {
 
   return (
     <>
-      <script
+      <Script
         id='home-jsonld'
         nonce={nonce}
         type='application/ld+json'
-        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c')
         }}
-      ></script>
+      />
       <LandingPage />
     </>
   );

@@ -33,9 +33,11 @@ export const NewSaleCart = ({
   handleRemoveProducto
 }: NewSaleCartProps) => {
   return (
-    <div className={`mt-8 ${CUENTA_TABLE_CARD_CLASS}`}>
-      <div className='bg-gray-50/50 py-3 px-6 border-b border-gray-100'>
-        <div className='text-xs text-gray-500 font-bold uppercase tracking-widest'>
+    <div
+      className={`mt-8 ${CUENTA_TABLE_CARD_CLASS} dark:border-neutral-800 dark:bg-neutral-950/80`}
+    >
+      <div className='border-b border-gray-100 bg-gray-50/50 px-6 py-3 dark:border-neutral-800 dark:bg-neutral-900/80'>
+        <div className='text-center text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-neutral-300'>
           Resumen de Productos
         </div>
       </div>

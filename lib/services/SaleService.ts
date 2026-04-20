@@ -162,20 +162,57 @@ export class SaleService {
           }
         }
 
-        if (hostesses.length === 0) {
-          hostesses = [null];
+        const totalComm = Math.round(d.comision || 0);
+        const totalQty = Math.max(1, Number(d.cantidad || 1));
+        const isChampagne = Boolean(d.isChampagne);
+        const effectiveHostesses =
+          hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
+        const hostessCount = Math.max(1, effectiveHostesses.length);
+
+        const commissionByIndex = new Array(hostessCount).fill(0);
+        const quantityByIndex = new Array(hostessCount).fill(0);
+        const subtotalByIndex = new Array(hostessCount).fill(0);
+
+        if (isChampagne) {
+          const commBase = Math.floor(totalComm / hostessCount);
+          const remainder = totalComm % hostessCount;
+
+          for (let i = 0; i < hostessCount; i++) {
+            commissionByIndex[i] = commBase + (i === 0 ? remainder : 0);
+            quantityByIndex[i] = i === 0 ? totalQty : 0;
+            subtotalByIndex[i] = i === 0 ? d.sub_total || d.precio * totalQty : 0;
+          }
+        } else {
+          const unitBaseCommission = Math.floor(totalComm / totalQty);
+          let remainingCommissionRemainder = totalComm % totalQty;
+          const baseQty = Math.floor(totalQty / hostessCount);
+          let remainingQty = totalQty;
+
+          for (let i = 0; i < hostessCount; i++) {
+            const qtyPart =
+              i === hostessCount - 1
+                ? remainingQty
+                : baseQty === 0
+                  ? 1
+                  : baseQty;
+
+            remainingQty -= qtyPart;
+            quantityByIndex[i] = qtyPart;
+            subtotalByIndex[i] = d.precio * qtyPart;
+
+            let commPart = unitBaseCommission * qtyPart;
+            const remainderForThisHostess = Math.min(remainingCommissionRemainder, qtyPart);
+            commPart += remainderForThisHostess;
+            remainingCommissionRemainder -= remainderForThisHostess;
+            commissionByIndex[i] = commPart;
+          }
         }
 
-        const numAnfs = hostesses.length;
-        const totalComm = Math.round(d.comision || 0);
-        const commBase = Math.floor(totalComm / numAnfs);
-        const remainder = totalComm % numAnfs;
-
-        for (let i = 0; i < numAnfs; i++) {
-          const hostessId = hostesses[i];
-          const commPart = commBase + (i === 0 ? remainder : 0);
-          const qtyPart = i === 0 ? d.cantidad : 0;
-          const subPart = i === 0 ? d.sub_total || d.precio * d.cantidad : 0;
+        for (let i = 0; i < hostessCount; i++) {
+          const hostessId = effectiveHostesses[i];
+          const commPart = commissionByIndex[i];
+          const qtyPart = quantityByIndex[i];
+          const subPart = subtotalByIndex[i];
 
           await SaleRepository.insertDetail(trx, {
             id_detalle_venta: generateUUID(),

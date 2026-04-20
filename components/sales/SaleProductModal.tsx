@@ -3,23 +3,23 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus, Minus } from "lucide-react";
-import React, { useState, useEffect } from "react";
-import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Plus, Minus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import HostessMultiSelect from "@/components/orders/HostessMultiSelect";
-import IndividualHostessSelect from "@/components/shared/selects/IndividualHostessSelect";
-import Paginate from "@/components/shared/Paginate";
+  TableRow
+} from '@/components/ui/table';
+import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
+import IndividualHostessSelect from '@/components/shared/selects/IndividualHostessSelect';
+import Paginate from '@/components/shared/Paginate';
 import {
   CUENTA_TABLE_CARD_CLASS,
   CUENTA_TABLE_CELL_CLASS,
@@ -27,8 +27,8 @@ import {
   CUENTA_TABLE_HEAD_CLASS,
   CUENTA_TABLE_HEADER_CLASS,
   CUENTA_TABLE_HEADER_ROW_CLASS,
-  CUENTA_TABLE_ROW_CLASS,
-} from "@/components/cuentas/tables/cuentaTableStyles";
+  CUENTA_TABLE_ROW_CLASS
+} from '@/components/cuentas/tables/cuentaTableStyles';
 
 interface SaleProductModalProps {
   open: boolean;
@@ -42,7 +42,7 @@ interface SaleProductModalProps {
   anfitrionas: any[]; // NUEVO: Lista de anfitrionas disponibles
   champagneHostessSelections: { [key: string]: string[] }; // NUEVO: Selecciones de champañas
   onChampagneHostessChange: (productId: string, hostessIds: string[]) => void; // NUEVO
-  otherProductHostessSelections: { [key: string]: string[] }; // NUEVO: Selecciones de bebidas
+  otherProductHostessSelections: { [key: string]: string[] }; // NUEVO: Selecciones de otros productos
   onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void; // NUEVO
   productosEnCarrito: any[]; // NUEVO: Productos ya agregados
 }
@@ -61,7 +61,7 @@ export default function SaleProductModal({
   onChampagneHostessChange,
   otherProductHostessSelections,
   onOtherProductHostessChange,
-  productosEnCarrito,
+  productosEnCarrito
 }: SaleProductModalProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
@@ -74,8 +74,12 @@ export default function SaleProductModal({
 
   // Función para verificar si un producto es champaña
   const isChampagneProduct = (producto: any) => {
-    const categoria = (producto.categoria || producto.category_name || "").toLowerCase();
-    return categoria.includes("champaña") || categoria.includes("shampaña") || categoria.includes("champagne");
+    const categoria = (producto.categoria || producto.category_name || '').toLowerCase();
+    return (
+      categoria.includes('champaña') ||
+      categoria.includes('shampaña') ||
+      categoria.includes('champagne')
+    );
   };
 
   // Función para verificar si un producto tiene comisión
@@ -165,29 +169,27 @@ export default function SaleProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+      <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle>
-            {categoria
-              ? `Productos de ${categoria.nombre || categoria.name}`
-              : "Productos"}
+            {categoria ? `Productos de ${categoria.nombre || categoria.name}` : 'Productos'}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
           {loading ? (
-            <div className="text-center text-gray-400 py-8 flex justify-center items-center">
+            <div className='text-center text-gray-400 py-8 flex justify-center items-center'>
               Cargando productos...
             </div>
           ) : (
-            <div className="w-full">
+            <div className='w-full'>
               {!Array.isArray(productos) || productos.length === 0 ? (
-                <div className="text-center text-gray-400 py-8 w-full">
+                <div className='text-center text-gray-400 py-8 w-full'>
                   No hay productos en esta categoría.
                 </div>
               ) : (
                 <>
                   <div className={CUENTA_TABLE_CARD_CLASS}>
-                    <div className="overflow-x-auto">
+                    <div className='overflow-x-auto'>
                       <Table className={CUENTA_TABLE_CLASS}>
                         <TableHeader className={CUENTA_TABLE_HEADER_CLASS}>
                           <TableRow className={CUENTA_TABLE_HEADER_ROW_CLASS}>
@@ -214,6 +216,15 @@ export default function SaleProductModal({
                             const id = String(p.id_producto || p.id);
                             const isChampagne = isChampagneProduct(p);
                             const hasComm = hasCommission(p);
+                            const quantityLimit = cantidades[id] || 1;
+                            const champagneHostessLimit = (() => {
+                              const precio = Number(p.precio || p.price || 0);
+                              if (precio >= 240000) return 5;
+                              if (precio >= 200000) return 4;
+                              if (precio >= 160000) return 3;
+                              if (precio >= 120000) return 2;
+                              return 1;
+                            })();
 
                             return (
                               <TableRow
@@ -221,7 +232,7 @@ export default function SaleProductModal({
                                 className={`${CUENTA_TABLE_ROW_CLASS} ${index === 0 ? 'first:rounded-t-xl' : ''} ${index === currentProductos.length - 1 ? 'last:rounded-b-xl' : ''}`}
                               >
                                 <TableCell className={CUENTA_TABLE_CELL_CLASS}>
-                                  <div className="font-medium">{p.nombre || p.name}</div>
+                                  <div className='font-medium'>{p.nombre || p.name}</div>
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                                   {formatCurrencyNoDecimals(p.price || p.precio)}
@@ -230,70 +241,64 @@ export default function SaleProductModal({
                                   {formatCurrencyNoDecimals(p.commission || p.comision || 0)}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                                  <div className="flex items-center justify-center gap-2">
+                                  <div className='flex items-center justify-center gap-2'>
                                     <Button
-                                      size="sm"
-                                      variant="outline"
+                                      size='sm'
+                                      variant='outline'
                                       onClick={() => {
                                         const currentCantidad = cantidades[id] || 1;
                                         if (currentCantidad > 1) {
-                                          handleCantidadChange(id, (currentCantidad - 1).toString());
+                                          handleCantidadChange(
+                                            id,
+                                            (currentCantidad - 1).toString()
+                                          );
                                         }
                                       }}
-                                      className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
+                                      className='w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200'
                                       disabled={(cantidades[id] || 1) <= 1}
                                     >
-                                      <Minus className="w-3 h-3" />
+                                      <Minus className='w-3 h-3' />
                                     </Button>
-                                    <span className="w-8 text-center">{cantidades[id] || 1}</span>
+                                    <span className='w-8 text-center'>{cantidades[id] || 1}</span>
                                     <Button
-                                      size="sm"
-                                      variant="outline"
+                                      size='sm'
+                                      variant='outline'
                                       onClick={() => {
                                         const currentCantidad = cantidades[id] || 1;
                                         handleCantidadChange(id, (currentCantidad + 1).toString());
                                       }}
-                                      className="w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200"
+                                      className='w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200'
                                     >
-                                      <Plus className="w-3 h-3" />
+                                      <Plus className='w-3 h-3' />
                                     </Button>
                                   </div>
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                                   {hasComm ? (
                                     isChampagne ? (
-                                      <div className="space-y-2">
-                                        <div className="w-full">
+                                      <div className='space-y-2'>
+                                        <div className='w-full'>
                                           <HostessMultiSelect
                                             anfitrionas={getAvailableHostessesForChampagne(id)}
                                             value={champagneHostessSelections[id] || []}
-                                            onChange={(selectedIds) => {
+                                            onChange={selectedIds => {
                                               onChampagneHostessChange(id, selectedIds);
                                             }}
                                             searchValue={hostessSearchValues[id] || ''}
-                                            onSearchChange={(searchValue) => {
+                                            onSearchChange={searchValue => {
                                               setHostessSearchValues(prev => ({
                                                 ...prev,
-                                                [id]: searchValue,
+                                                [id]: searchValue
                                               }));
                                             }}
-                                            maxSelection={(() => {
-                                              const currentProduct = productos.find(
-                                                p => String(p.id_producto || p.id) === id
-                                              );
-                                              const precio = Number(
-                                                currentProduct?.precio || currentProduct?.price || 0
-                                              );
-                                              if (precio >= 240000) return 5;
-                                              if (precio >= 200000) return 4;
-                                              if (precio >= 140000) return 3;
-                                              if (precio >= 120000) return 2;
-                                              return 1;
-                                            })()}
+                                            maxSelection={Math.min(
+                                              champagneHostessLimit,
+                                              quantityLimit
+                                            )}
                                           />
                                         </div>
 
-                                        <div className="text-xs text-gray-500">
+                                        <div className='text-xs text-gray-500'>
                                           {(() => {
                                             const currentProduct = productos.find(
                                               p => String(p.id_producto || p.id) === id
@@ -301,68 +306,119 @@ export default function SaleProductModal({
                                             const precio = Number(
                                               currentProduct?.precio || currentProduct?.price || 0
                                             );
-                                            let champagneLimit = 1;
-                                            if (precio >= 240000) champagneLimit = 5;
-                                            else if (precio >= 200000) champagneLimit = 4;
-                                            else if (precio >= 140000) champagneLimit = 3;
-                                            else if (precio >= 120000) champagneLimit = 2;
-
-                                            const currentCount = champagneHostessSelections[id]?.length || 0;
-                                            return `${currentCount} de ${champagneLimit} seleccionadas`;
+                                            const currentCount =
+                                              champagneHostessSelections[id]?.length || 0;
+                                            return `${currentCount} de ${Math.min(champagneHostessLimit, quantityLimit)} seleccionadas`;
                                           })()}
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="space-y-2">
-                                        <IndividualHostessSelect
-                                          anfitrionas={getAvailableHostessesForOtherProducts(id)}
-                                          value={otherProductHostessSelections[id]?.[0] || ''}
-                                          onChange={(selectedValue) => {
-                                            onOtherProductHostessChange(
-                                              id,
-                                              selectedValue ? [selectedValue] : []
+                                      <div className='space-y-2'>
+                                        {(() => {
+                                          const currentProduct = productos.find(
+                                            p => String(p.id_producto || p.id) === id
+                                          );
+                                          const precio = Number(
+                                            currentProduct?.precio || currentProduct?.price || 0
+                                          );
+                                          const cantidad = cantidades[id] || 1;
+
+                                          if (precio >= 30000) {
+                                            return (
+                                              <>
+                                                <HostessMultiSelect
+                                                  anfitrionas={getAvailableHostessesForOtherProducts(
+                                                    id
+                                                  )}
+                                                  value={otherProductHostessSelections[id] || []}
+                                                  onChange={selectedIds => {
+                                                    onOtherProductHostessChange(id, selectedIds);
+                                                  }}
+                                                  searchValue={hostessSearchValues[id] || ''}
+                                                  onSearchChange={searchValue => {
+                                                    setHostessSearchValues(prev => ({
+                                                      ...prev,
+                                                      [id]: searchValue
+                                                    }));
+                                                  }}
+                                                  maxSelection={cantidad}
+                                                />
+                                                <div className='text-xs text-gray-500'>
+                                                  {otherProductHostessSelections[id]?.length || 0}{' '}
+                                                  de {cantidad} seleccionadas
+                                                </div>
+                                              </>
                                             );
-                                          }}
-                                          placeholder={
-                                            getAvailableHostessesForOtherProducts(id).length === 0
-                                              ? 'No hay anfitrionas disponibles'
-                                              : 'Seleccionar anfitriona'
                                           }
-                                          className="w-full"
-                                        />
-                                        {otherProductHostessSelections[id]?.length > 0 ? (
-                                          <div className="text-xs text-green-600 font-medium">
-                                            ✓ Asignada: {(() => {
-                                              const hostessId = otherProductHostessSelections[id][0];
-                                              const hostess = availableHostesses.find(
-                                                h => String(h.id || h.id_usuario) === hostessId
-                                              );
-                                              return hostess?.nick || hostess?.name || hostess?.nombre || hostessId;
-                                            })()}
-                                          </div>
-                                        ) : (
-                                          <div className="text-xs text-gray-500">
-                                            Una anfitriona por bebida
-                                          </div>
-                                        )}
+
+                                          return (
+                                            <>
+                                              <IndividualHostessSelect
+                                                anfitrionas={getAvailableHostessesForOtherProducts(
+                                                  id
+                                                )}
+                                                value={otherProductHostessSelections[id]?.[0] || ''}
+                                                onChange={selectedValue => {
+                                                  onOtherProductHostessChange(
+                                                    id,
+                                                    selectedValue ? [selectedValue] : []
+                                                  );
+                                                }}
+                                                placeholder={
+                                                  getAvailableHostessesForOtherProducts(id)
+                                                    .length === 0
+                                                    ? 'No hay anfitrionas disponibles'
+                                                    : 'Seleccionar anfitriona'
+                                                }
+                                                className='w-full'
+                                              />
+                                              {otherProductHostessSelections[id]?.length > 0 ? (
+                                                <div className='text-xs text-green-600 font-medium'>
+                                                  ? Asignada:{' '}
+                                                  {(() => {
+                                                    const hostessId =
+                                                      otherProductHostessSelections[id][0];
+                                                    const hostess = availableHostesses.find(
+                                                      h =>
+                                                        String(h.id || h.id_usuario) === hostessId
+                                                    );
+                                                    return (
+                                                      hostess?.nick ||
+                                                      hostess?.name ||
+                                                      hostess?.nombre ||
+                                                      hostessId
+                                                    );
+                                                  })()}
+                                                </div>
+                                              ) : (
+                                                <div className='text-xs text-gray-500'>
+                                                  {getAvailableHostessesForOtherProducts(id)
+                                                    .length === 0
+                                                    ? 'Todas las anfitrionas est?n asignadas'
+                                                    : 'Una anfitriona por bebida'}
+                                                </div>
+                                              )}
+                                            </>
+                                          );
+                                        })()}
                                       </div>
                                     )
                                   ) : (
-                                    <div className="text-xs text-gray-400">Sin comisión</div>
+                                    <div className='text-xs text-gray-400'>Sin comisión</div>
                                   )}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                                   <Button
-                                    size="icon"
-                                    variant="outline"
-                                    className="rounded-full bg-black text-white hover:scale-110 transition-all duration-200"
+                                    size='icon'
+                                    variant='outline'
+                                    className='rounded-full bg-black text-white hover:scale-110 transition-all duration-200'
                                     onClick={() => {
                                       const productWithHostess = {
                                         ...p,
                                         selectedHostesses: isChampagne
                                           ? champagneHostessSelections[id] || []
                                           : otherProductHostessSelections[id] || [],
-                                        isChampagne: isChampagne,
+                                        isChampagne: isChampagne
                                       };
                                       handleAgregarProducto(productWithHostess);
                                     }}
@@ -376,7 +432,7 @@ export default function SaleProductModal({
                                             otherProductHostessSelections[id].length === 0)))
                                     }
                                   >
-                                    <Plus className="w-4 h-4" />
+                                    <Plus className='w-4 h-4' />
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -389,7 +445,7 @@ export default function SaleProductModal({
 
                   {/* Paginador */}
                   {totalPages > 1 && (
-                    <div className="flex justify-center mt-4">
+                    <div className='flex justify-center mt-4'>
                       <Paginate
                         page={currentPage}
                         totalPages={totalPages}
@@ -402,12 +458,12 @@ export default function SaleProductModal({
             </div>
           )}
         </div>
-        <DialogFooter className="flex-shrink-0 border-t px-6 py-4">
-          <div className="w-full flex justify-center">
+        <DialogFooter className='flex-shrink-0 border-t px-6 py-4'>
+          <div className='w-full flex justify-center'>
             <Button
               onClick={onClose}
-              variant="outline"
-              className="rounded-full px-4 bg-black text-white hover:scale-110 transition-all duration-200"
+              variant='outline'
+              className='rounded-full px-4 bg-black text-white hover:scale-110 transition-all duration-200'
             >
               Aceptar
             </Button>
@@ -417,4 +473,3 @@ export default function SaleProductModal({
     </Dialog>
   );
 }
-

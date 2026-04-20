@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -6,8 +5,8 @@ import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/shared/Skeletons';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { QRCodeSVG } from 'qrcode.react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LazyQRCode } from '@/components/shared/LazyQRCode';
 
 const LoggedUsersCards = dynamic(() => import('@/components/dashboard/LoggedUsersCards'), {
   loading: () => <StatsCardSkeleton />
@@ -62,7 +61,7 @@ export default function Dashboard() {
           refetch(true);
         }
       } catch (e) {
-        console.error("Error polling user status:", e);
+        console.error('Error polling user status:', e);
       }
     };
 
@@ -81,22 +80,24 @@ export default function Dashboard() {
     if (!user?.qr_token) return;
     const fetchCodigo = async () => {
       try {
-        const res = await fetch('/api/codigo/actual', { headers: { 'x-user-role': user.role || '' } });
+        const res = await fetch('/api/codigo/actual', {
+          headers: { 'x-user-role': user.role || '' }
+        });
         const data = await res.json();
         if (data.success) setCodigoAsistencia(data.codigo);
-      } catch { }
+      } catch {}
     };
     fetchCodigo();
 
     // Escuchar cambios en tiempo real via SSE (sin polling)
     const es = new EventSource('/api/notifications/sse');
-    es.onmessage = (event) => {
+    es.onmessage = event => {
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === 'code_changed' && payload.data?.codigo) {
           setCodigoAsistencia(payload.data.codigo);
         }
-      } catch { }
+      } catch {}
     };
 
     return () => {
@@ -105,7 +106,8 @@ export default function Dashboard() {
   }, [user?.qr_token, user?.role]);
 
   const isCajero = user?.role?.toLowerCase() === 'cajero';
-  const shouldShowSkeleton = loading || user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon';
+  const shouldShowSkeleton =
+    loading || user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon';
 
   return (
     <div className='p-6 space-y-6'>
@@ -119,32 +121,44 @@ export default function Dashboard() {
       ) : (
         <>
           {user?.qr_token && (
-            <Card className="max-w-md border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden">
-              <CardHeader className="text-center pb-2">
-                <CardTitle className="text-lg">Mi Registro de Asistencia</CardTitle>
-                <CardDescription>Escanea este código con tu celular para marcar entrada</CardDescription>
+            <Card className='max-w-md border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden'>
+              <CardHeader className='text-center pb-2'>
+                <CardTitle className='text-lg'>Mi Registro de Asistencia</CardTitle>
+                <CardDescription>
+                  Escanea este código con tu celular para marcar entrada
+                </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col items-center">
-                <div className="bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
-                  <QRCodeSVG
+              <CardContent className='flex flex-col items-center'>
+                <div className='bg-white p-3 rounded-xl shadow-sm border border-indigo-100'>
+                  <LazyQRCode
                     value={user.qr_token}
                     size={160}
-                    level="H"
+                    level='H'
                     includeMargin={true}
-                    fgColor="#4F46E5"
-                    imageSettings={user.foto ? {
-                      src: `/img/users/${user.foto}`,
-                      height: 35,
-                      width: 35,
-                      excavate: true,
-                    } : undefined}
+                    fgColor='#4F46E5'
+                    imageSettings={
+                      user.foto
+                        ? {
+                            src: `/img/users/${user.foto}`,
+                            height: 35,
+                            width: 35,
+                            excavate: true
+                          }
+                        : undefined
+                    }
                   />
                 </div>
-                <p className="text-[10px] mt-2 text-indigo-400 font-mono select-all uppercase">ID: {user.qr_token}</p>
+                <p className='text-[10px] mt-2 text-indigo-400 font-mono select-all uppercase'>
+                  ID: {user.qr_token}
+                </p>
                 {codigoAsistencia && (
-                  <div className="mt-3 flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2">
-                    <span className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Código:</span>
-                    <span className="text-2xl font-black font-mono tracking-widest text-indigo-700">{codigoAsistencia}</span>
+                  <div className='mt-3 flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2'>
+                    <span className='text-xs font-semibold text-indigo-400 uppercase tracking-widest'>
+                      Código:
+                    </span>
+                    <span className='text-2xl font-black font-mono tracking-widest text-indigo-700'>
+                      {codigoAsistencia}
+                    </span>
                   </div>
                 )}
               </CardContent>

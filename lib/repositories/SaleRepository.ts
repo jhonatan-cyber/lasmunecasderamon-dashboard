@@ -389,6 +389,7 @@ export class SaleRepository {
         fecha_crea: row.fecha_crea,
         fecha_mod: row.fecha_mod,
         cliente_nombre: row.cliente_nombre,
+        habitacion_numero: row.habitacion_numero || row.habitacion_nombre,
         habitacion_nombre: row.habitacion_nombre,
         item_count: Number(row.item_count || 0),
         anfitrionas_nicks: row.anfitrionas_nicks || null
@@ -454,7 +455,7 @@ export class SaleRepository {
         c.nombre as cliente_nombre,
         u.nick as staff_nick,
         u.nombre as cajero_nombre,
-        h.nombre as habitacion_nombre,
+        h.nombre as habitacion_numero,
         (SELECT COUNT(*) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
         (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
          FROM ventas_usuarios vu
@@ -506,7 +507,7 @@ export class SaleRepository {
     // 1. Fetch main venta data
     const res = await query<any[]>(
       `
-      SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_nombre,
+      SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_numero,
              u.nick as cajero_nick, u.nombre as cajero_nombre,
              CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
@@ -790,8 +791,8 @@ export class SaleRepository {
 
     await withTransaction(async trx => {
       await trx(
-        'UPDATE solicitudes_anulacion_ventas SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
-        [nextStatus, approvedBy, now, requestId]
+        'UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?',
+        [nextStatus, requestId]
       );
       const req = await trx<any[]>(
         'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?',
