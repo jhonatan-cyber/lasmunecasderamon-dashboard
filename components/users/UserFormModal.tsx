@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,51 @@ import { RoleSelect } from '@/components/users/RoleSelect';
 import { useUserForm, type UserFormValues } from '@/hooks/personal/useUserForm';
 export type { UserFormValues };
 
+// Función para formatear RUT chileno
+const formatRUT = (value: string): string => {
+  // Limpiar todo excepto números y K
+  const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
+  if (!clean) return '';
+  
+  // Si tiene menos de 2 dígitos, retornar solo números
+  if (clean.length <= 1) return clean;
+  
+  // Separar cuerpo y dígito verificador
+  const cuerpo = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  
+  // Formatear cuerpo con puntos
+  const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  
+  return `${formattedCuerpo}-${dv}`;
+};
+
+// Función para validar RUT chileno
+const isValidRUT = (rut: string): boolean => {
+  const clean = rut.replace(/[^0-9kK]/gi, '');
+  if (clean.length < 2) return false;
+  
+  const cuerpo = clean.slice(0, -1);
+  const dv = clean.slice(-1).toUpperCase();
+  
+  let sum = 0;
+  let mul = 2;
+  
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    sum += parseInt(cuerpo[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  
+  let result = 11 - (sum % 11);
+  let expectedDv = '';
+  
+  if (result === 11) expectedDv = '0';
+  else if (result === 10) expectedDv = 'K';
+  else expectedDv = result.toString();
+  
+  return dv === expectedDv;
+};
+
 interface UserFormModalProps {
   user: UserType | null;
   isOpen: boolean;
@@ -51,6 +97,49 @@ export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, o
     handleFormSubmit
   } = useUserForm({ user: user || undefined, onSubmit, isEditMode: isEditing });
 
+  const [runFormatted, setRunFormatted] = useState(user?.run || '');
+  const [runError, setRunError] = useState('');
+
+  // Sincronizar el valor inicial
+  useEffect(() => {
+    if (user?.run) {
+      const formatted = formatRUT(user.run);
+      setRunFormatted(formatted);
+    } else {
+      setRunFormatted('');
+    }
+  }, [user?.run]);
+
+  const handleRunChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatRUT(value);
+    setRunFormatted(formatted);
+    form.setValue('run', formatted);
+    
+    // Validar en tiempo real si tiene suficientes caracteres
+    const clean = value.replace(/[^0-9kK]/gi, '');
+    if (clean && clean.length >= 2) {
+      if (!isValidRUT(clean)) {
+        setRunError('RUT inválido');
+      } else {
+        setRunError('');
+      }
+    } else {
+      setRunError('');
+    }
+  };
+
+  const handleRunBlur = () => {
+    const clean = runFormatted.replace(/[^0-9kK]/gi, '');
+    if (clean && clean.length >= 2) {
+      if (!isValidRUT(clean)) {
+        setRunError('RUT inválido');
+      } else {
+        setRunError('');
+      }
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
       <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden'>
@@ -69,20 +158,32 @@ export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, o
                 <Info className='h-5 w-5 text-blue-600 dark:text-blue-400' />
                 <AlertTitle className='text-sm font-bold'>Credenciales de Acceso</AlertTitle>
                 <AlertDescription className='text-xs opacity-90'>
-                  Por seguridad y simplicidad, la <strong>contraseña</strong> del usuario será exactamente igual a su <strong>RUN</strong>.
+                  Por seguridad y simplicidad, la <strong>contraseña</strong> del usuario será exactamente igual a su <strong>RUT</strong>.
                 </AlertDescription>
               </Alert>
 
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
                 <div className='flex flex-col gap-4 sm:gap-6'>
-                  {/* RUN */}
-                  <FormFieldWithIcon
-                    control={form.control}
-                    name='run'
-                    label='RUN'
-                    placeholder='Run del usuario'
-                    icon={CreditCard}
-                  />
+                  {/* RUT */}
+                  <div>
+                    <label className='block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200 mb-1'>
+                      RUT
+                    </label>
+                    <div className='relative'>
+                      <CreditCard className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 w-3 h-3 sm:w-4 sm:h-4 pointer-events-none' />
+                      <input
+                        type='text'
+                        value={runFormatted}
+                        onChange={handleRunChange}
+                        onBlur={handleRunBlur}
+                        placeholder='12.345.678-5'
+                        className='flex h-10 w-full rounded-full border border-input bg-gray-100 pl-10 sm:pl-12 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
+                      />
+                    </div>
+                    {runError && (
+                      <p className='text-red-500 text-xs mt-1'>{runError}</p>
+                    )}
+                  </div>
 
                   {/* Nick */}
                   <FormFieldWithIcon

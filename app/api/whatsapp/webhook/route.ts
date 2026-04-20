@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/db';
 import {
   isApprovalAction,
+  parseGratificacionCommand,
   normalizeWhatsAppMessage,
   parseAnticipoCommand,
   parseSolicitudResponseCommand
 } from '@/lib/integrations/whatsappCommandUtils';
 import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
 import { AnticipoService } from '@/lib/services/AnticipoService';
+import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
 
 export async function POST(request: Request) {
   try {
@@ -68,6 +70,17 @@ export async function POST(request: Request) {
         adminWhatsApp
       );
       return NextResponse.json({ message: result.message });
+    }
+
+    const comandoGratificacion = parseGratificacionCommand(mensaje);
+    if (comandoGratificacion) {
+      await GratificacionRepository.processSolicitud(
+        comandoGratificacion.gratificacionId,
+        comandoGratificacion.action === 'aprobar' ? 'approve' : 'reject'
+      );
+      return NextResponse.json({
+        message: `Gratificación ${comandoGratificacion.action === 'aprobar' ? 'aprobada' : 'rechazada'} correctamente.`
+      });
     }
 
     const respuestaEspecifica = parseSolicitudResponseCommand(mensaje);

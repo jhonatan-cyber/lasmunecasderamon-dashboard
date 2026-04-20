@@ -1,4 +1,3 @@
- 
 import React from 'react';
 import {
   Dialog,
@@ -10,14 +9,14 @@ import {
 } from '@/components/ui/dialog';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
-import { 
-  User as UserIcon, 
-  Calendar, 
-  DollarSign, 
-  FileText, 
-  Hash, 
-  Clock, 
-  CheckCircle, 
+import {
+  User as UserIcon,
+  Calendar,
+  DollarSign,
+  FileText,
+  Hash,
+  Clock,
+  CheckCircle,
   XCircle,
   History
 } from 'lucide-react';
@@ -65,15 +64,33 @@ export default function GratificacionesDetailModal({
                 <span className='text-xs font-mono uppercase'>ID: {gratificacion.id}</span>
               </div>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
-              gratificacion.estado === 1 
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
-                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-            }`}>
-              {gratificacion.estado === 1 ? (
-                <><Clock className='h-3 w-3' /> Por pagar</>
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
+                gratificacion.estado === 0
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : gratificacion.estado === 1
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                    : gratificacion.estado === 2
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              }`}
+            >
+              {gratificacion.estado === 0 ? (
+                <>
+                  <CheckCircle className='h-3 w-3' /> Pagado
+                </>
+              ) : gratificacion.estado === 1 ? (
+                <>
+                  <Clock className='h-3 w-3' /> Por pagar
+                </>
+              ) : gratificacion.estado === 2 ? (
+                <>
+                  <History className='h-3 w-3' /> Pendiente
+                </>
               ) : (
-                <><CheckCircle className='h-3 w-3' /> Pagado</>
+                <>
+                  <XCircle className='h-3 w-3' /> Rechazada
+                </>
               )}
             </div>
           </div>
@@ -84,7 +101,9 @@ export default function GratificacionesDetailModal({
             {/* Información Principal */}
             <div className='space-y-6'>
               <section>
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>Información General</h3>
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>
+                  Información General
+                </h3>
                 <div className='space-y-4'>
                   <div className='flex items-start gap-3'>
                     <div className='mt-1 p-2 bg-zinc-100 dark:bg-neutral-800 rounded-lg'>
@@ -92,10 +111,12 @@ export default function GratificacionesDetailModal({
                     </div>
                     <div>
                       <p className='text-xs text-zinc-500 font-medium'>Empleado</p>
-                      <p className='text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100'>{gratificacion.usuario}</p>
+                      <p className='text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100'>
+                        {gratificacion.usuario}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className='flex items-start gap-3'>
                     <div className='mt-1 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg'>
                       <DollarSign className='h-4 w-4 text-green-600 dark:text-green-400' />
@@ -114,7 +135,9 @@ export default function GratificacionesDetailModal({
                     </div>
                     <div>
                       <p className='text-xs text-zinc-500 font-medium'>Fecha de Aplicación</p>
-                      <p className='text-sm sm:text-base font-medium'>{formatDateTime(gratificacion.fecha_hora || gratificacion.fecha_crea)}</p>
+                      <p className='text-sm sm:text-base font-medium'>
+                        {formatDateTime(gratificacion.fecha_hora || gratificacion.fecha_crea)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -124,13 +147,17 @@ export default function GratificacionesDetailModal({
             {/* Auditoría y Descripción */}
             <div className='space-y-6'>
               <section>
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>Registro y Auditoría</h3>
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>
+                  Registro y Auditoría
+                </h3>
                 <div className='space-y-4 p-4 bg-zinc-50 dark:bg-neutral-900/50 rounded-2xl border border-zinc-100 dark:border-neutral-800'>
                   <div className='flex items-start gap-2'>
                     <Clock className='h-3 w-3 text-zinc-400 mt-0.5' />
                     <div>
                       <p className='text-[10px] text-zinc-500 uppercase'>Creado el</p>
-                      <p className='text-xs font-medium'>{formatDateTime(gratificacion.fecha_crea)}</p>
+                      <p className='text-xs font-medium'>
+                        {formatDateTime(gratificacion.fecha_crea)}
+                      </p>
                     </div>
                   </div>
                   {gratificacion.fecha_mod && (
@@ -138,7 +165,9 @@ export default function GratificacionesDetailModal({
                       <History className='h-3 w-3 text-zinc-400 mt-0.5' />
                       <div>
                         <p className='text-[10px] text-zinc-500 uppercase'>Última modificación</p>
-                        <p className='text-xs font-medium'>{formatDateTime(gratificacion.fecha_mod)}</p>
+                        <p className='text-xs font-medium'>
+                          {formatDateTime(gratificacion.fecha_mod)}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -146,7 +175,9 @@ export default function GratificacionesDetailModal({
               </section>
 
               <section>
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>Descripción / Nota</h3>
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>
+                  Descripción / Nota
+                </h3>
                 <div className='p-4 bg-white dark:bg-neutral-800 rounded-2xl border border-zinc-100 dark:border-neutral-700'>
                   <div className='flex gap-3'>
                     <FileText className='h-4 w-4 text-zinc-400 mt-0.5 shrink-0' />

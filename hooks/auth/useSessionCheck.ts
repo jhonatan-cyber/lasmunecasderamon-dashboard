@@ -1,20 +1,16 @@
-/* eslint-disable */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 
 /**
- * Hook para verificar el estado de la sesión periódicamente
- * NOTA: Este hook ahora trabaja en conjunto con AuthContext y fetchInterceptor
- * Solo hace verificaciones periódicas como respaldo
+ * Revalida sesión solo cuando la pestaña vuelve a estar activa.
+ * El flujo principal de expiración ya lo cubren fetchInterceptor y SSE.
  */
 export const useSessionCheck = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const checkInterval = useRef<NodeJS.Timeout | null>(null);
   const isCheckingRef = useRef(false);
 
-  // Páginas públicas que no requieren verificación
   const isPublicPage =
     pathname === '/' ||
     pathname === '/landing' ||
@@ -25,12 +21,8 @@ export const useSessionCheck = () => {
     pathname === '/confirmar-anulacion' ||
     pathname === '/confirmar-anulacion-servicio';
 
-  const checkSessionStatus = async () => {
-    // No verificar en páginas públicas
-    if (isPublicPage) return;
-
-    // Evitar verificaciones simultáneas
-    if (isCheckingRef.current) return;
+  const checkSessionStatus = useCallback(async () => {
+    if (isPublicPage || isCheckingRef.current) return;
 
     isCheckingRef.current = true;
 
@@ -39,14 +31,7 @@ export const useSessionCheck = () => {
         credentials: 'include'
       });
 
-      // Si es 401, el fetchInterceptor ya lo manejará
-      if (response.status === 401) {
-        isCheckingRef.current = false;
-        return; // Dejar que fetchInterceptor maneje la redirección
-      }
-
-      if (!response.ok) {
-        isCheckingRef.current = false;
+      if (response.status === 401 || !response.ok) {
         return;
       }
 
@@ -64,36 +49,34 @@ export const useSessionCheck = () => {
           router.push(`/login?redirect=${encodeURIComponent(pathname || '/')}`);
         }, 500);
       }
-    } catch (error) {
+    } catch {
+      // ignorar error puntual de red
     } finally {
       isCheckingRef.current = false;
     }
-  };
+  }, [isPublicPage, pathname, router]);
 
   useEffect(() => {
     if (isPublicPage) return;
-    checkInterval.current = setInterval(checkSessionStatus, 300000);
-
-    const initialCheckTimeout = setTimeout(() => {
-      checkSessionStatus();
-    }, 5000);
 
     const handleVisibilityChange = () => {
-      if (!document.hidden && !isPublicPage) {
-        setTimeout(checkSessionStatus, 1000);
+      if (!document.hidden) {
+        void checkSessionStatus();
       }
+    };
+
+    const handleWindowFocus = () => {
+      void checkSessionStatus();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
 
     return () => {
-      if (checkInterval.current) {
-        clearInterval(checkInterval.current);
-      }
-      clearTimeout(initialCheckTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [router, isPublicPage]);
+  }, [checkSessionStatus, isPublicPage]);
 
   return {
     checkSessionStatus

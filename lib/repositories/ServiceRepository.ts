@@ -234,6 +234,7 @@ export class ServiceRepository {
 
   static async getAll(params: {
     all?: string;
+    estado?: string;
     caja_id?: string;
     limit?: string;
     page?: string;
@@ -244,9 +245,12 @@ export class ServiceRepository {
 
     let where = 'WHERE 1=1';
     let sqlParams: any[] = [];
-    if (params.all === 'true') where = 'WHERE s.estado IN (0, 1)';
-    else if (params.all === 'false') where = 'WHERE s.estado IN (2, 3, 4)';
-    else where = 'WHERE s.estado IN (1, 2, 3, 4)'; // Default: todos los estados válidos
+    if (params.estado) {
+      where = 'WHERE s.estado = ?';
+      sqlParams.push(Number(params.estado));
+    } else if (params.all === 'true') where = 'WHERE s.estado IN (0, 1, 4)';
+    else if (params.all === 'false') where = 'WHERE s.estado IN (2, 3)';
+    else where = 'WHERE s.estado IN (1, 2, 3, 4)'; // Default: todos los estados v?lidos
 
     if (params.caja_id) {
       where += ' AND s.caja_id = ?';
@@ -495,8 +499,8 @@ export class ServiceRepository {
       if (!req.length) throw new NotFoundError('Solicitud de anulacion de servicio', requestId);
 
       await trx(
-        'UPDATE solicitudes_anulacion_servicios SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
-        [nextStatus, approvedBy, now, requestId]
+        'UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE id = ?',
+        [nextStatus, requestId]
       );
 
       return req[0].servicio_id as string;

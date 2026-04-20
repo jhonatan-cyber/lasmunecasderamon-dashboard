@@ -139,7 +139,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     <div className='flex items-start'>
                       <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
                       <div>
-                        <p className='text-xs sm:text-sm font-medium'>RUN</p>
+                        <p className='text-xs sm:text-sm font-medium'>RUT</p>
                         <p className='text-xs sm:text-sm text-gray-600'>
                           {user.run || 'No especificado'}
                         </p>

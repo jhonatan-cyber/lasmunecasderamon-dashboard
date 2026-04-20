@@ -4,7 +4,6 @@ import { Mail, Lock, Eye, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 interface LoginFormProps {
   step: 'login' | 'codigo';
@@ -22,6 +21,7 @@ interface LoginFormProps {
   codigo: string;
   setCodigo: (val: string) => void;
   loading: boolean;
+  rateLimitRemaining: number;
   hasUsers: boolean | null;
   onShowRegister: () => void;
   theme: string;
@@ -46,6 +46,7 @@ export const LoginForm = ({
   codigo,
   setCodigo,
   loading,
+  rateLimitRemaining,
   hasUsers,
   onShowRegister,
   theme,
@@ -138,37 +139,39 @@ export const LoginForm = ({
 
         {/* Theme Selector */}
         <div className='flex justify-center mt-4'>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type='button'
-                variant='ghost'
-                className='rounded-full text-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
-              >
-                {theme === 'light' && <Sun className='text-yellow-500' />}
-                {theme === 'dark' && <Moon className='text-blue-600' />}
-                {theme === 'system' && <Monitor className='text-gray-600' />}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align='center'
-              className='w-40 p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg'
+          <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-gray-900'>
+            {themeOptions.map(opt => {
+              const Icon = opt.icon;
+              const isActive = theme === opt.value;
+
+              return (
+                <Button
+                  key={opt.value}
+                  type='button'
+                  variant='ghost'
+                  onClick={() => setThemeMode(opt.value)}
+                  aria-pressed={isActive}
+                  title={opt.label}
+                  className={`rounded-full text-xl transition-colors ${
+                    isActive
+                      ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <Icon className='h-4 w-4' />
+                </Button>
+              );
+            })}
+            <Button
+              type='button'
+              variant='ghost'
+              onClick={toggleTheme}
+              title='Cambiar tema'
+              className='sr-only'
             >
-              <div className='py-2'>
-                {themeOptions.map(opt => (
-                  <button
-                    key={opt.value}
-                    type='button'
-                    className={`flex items-center w-full px-4 py-2 gap-2 text-sm transition-all ${theme === opt.value ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                    onClick={() => setThemeMode(opt.value)}
-                  >
-                    <opt.icon className='w-4 h-4' />
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+              Cambiar tema
+            </Button>
+          </div>
         </div>
       </form>
     );

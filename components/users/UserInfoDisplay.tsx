@@ -6,6 +6,17 @@ import Image from 'next/image';
 import { AtSign, Phone, MapPin, User, Calendar, DollarSign, PiggyBank, Home } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
+// Función para formatear RUT chileno
+const formatRUTDisplay = (run: string): string => {
+  if (!run) return '-';
+  const clean = run.replace(/[^0-9kK]/gi, '').toUpperCase();
+  if (clean.length < 2) return run;
+  const cuerpo = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${formattedCuerpo}-${dv}`;
+};
+
 interface UserInfoDisplayProps {
   user: UserType;
   formatDate: (dateString: string) => string;
@@ -56,7 +67,7 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
             </Badge>
           </div>
           <p className='text-xs sm:text-sm text-gray-500'>@{user.nick}</p>
-          <p className='text-xs text-gray-400'>RUN: {user.run}</p>
+          <p className='text-xs text-gray-400'>RUT: {formatRUTDisplay(user.run)}</p>
           <div className='text-xs sm:text-sm text-gray-400'>
             Institucion de aporte:{' '}
             <Badge className='text-xs bg-blue-100 text-blue-700'>
@@ -116,7 +127,7 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
 
         <div className='flex items-center gap-2'>
           <User className='h-3 w-3 text-gray-400' />
-          <span className='text-xs sm:text-sm text-gray-600'>RUN: {user.run}</span>
+          <span className='text-xs sm:text-sm text-gray-600'>RUT: {formatRUTDisplay(user.run)}</span>
         </div>
 
         <div className='flex items-center gap-2'>

@@ -31,6 +31,16 @@ export function parseAnticipoCommand(message: string) {
   };
 }
 
+export function parseGratificacionCommand(message: string) {
+  const match = message.match(/^(aprobar|rechazar)\s+gratificacion\s+([a-f\d-]+)$/i);
+  if (!match) return null;
+
+  return {
+    action: match[1].toLowerCase() as 'aprobar' | 'rechazar',
+    gratificacionId: match[2]
+  };
+}
+
 export function isApprovalAction(action: WhatsAppSolicitudAction) {
   return action === 'si' || action === 'confirmar' || action === 'confirmo' || action === 'aprobar';
 }

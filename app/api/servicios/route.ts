@@ -7,6 +7,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const params = {
     all: searchParams.get('all') || undefined,
+    estado: searchParams.get('estado') || undefined,
     caja_id: searchParams.get('caja_id') || undefined,
     limit: searchParams.get('limit') || undefined,
     page: searchParams.get('page') || undefined

@@ -55,6 +55,7 @@ export default function NewSale() {
   const [habitaciones, setHabitaciones] = useState<any[]>([]);
   const [categoriasConProductos, setCategoriasConProductos] = useState<any[]>([]);
   const [hasOpenCaja, setHasOpenCaja] = useState<boolean | null>(null);
+  const [loadingCategorias, setLoadingCategorias] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalCategoria, setModalCategoria] = useState<any>(null);
@@ -67,7 +68,7 @@ export default function NewSale() {
       try {
         const [c, a, h, cat] = await Promise.all([
           fetch('/api/clients').then(r => r.json()),
-          fetch('/api/users?anfitrionas=1').then(r => r.json()),
+          fetch('/api/users?anfitrionas=1&status=active&loggedIn=1&enLocal=1').then(r => r.json()),
           fetch('/api/rooms').then(r => r.json()),
           fetch('/api/categories').then(r => r.json())
         ]);
@@ -87,6 +88,8 @@ export default function NewSale() {
         }
       } catch (error) {
         console.error('Error cargando datos maestros:', error);
+      } finally {
+        setLoadingCategorias(false);
       }
     };
     fetchData();
@@ -115,7 +118,7 @@ export default function NewSale() {
     <>
       <NewSaleHeader />
 
-      <div className='p-4 sm:p-6 lg:p-8 bg-white mx-4 sm:mx-6 lg:mx-8 space-y-4 sm:space-y-6 shadow-md rounded-xl mb-10'>
+      <div className='mx-4 mb-10 space-y-4 rounded-xl bg-white p-4 shadow-md sm:mx-6 sm:space-y-6 sm:p-6 lg:mx-8 lg:p-8 dark:bg-neutral-950 dark:text-neutral-100 dark:shadow-black/30'>
         <CajaStatusCheck onStatusChange={setHasOpenCaja} />
 
         <NewSaleSearch
@@ -132,6 +135,8 @@ export default function NewSale() {
               const price = Number(prod.precio || prod.price || 0);
               let max = 1;
               if (price >= 240000) max = 5;
+              else if (price >= 200000) max = 4;
+              else if (price >= 160000) max = 3;
               else if (price >= 120000) max = 2;
               if (ids.length <= max) {
                 setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }));
@@ -152,6 +157,7 @@ export default function NewSale() {
           categorias={categoriasFiltradas}
           onSelect={handleOpenCategoria}
           center={true}
+          loading={loadingCategorias}
         />
 
         <NewSaleConfiguration

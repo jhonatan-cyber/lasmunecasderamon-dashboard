@@ -1,16 +1,9 @@
-﻿'use client';
+'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { syncOfflineRequests, getQueuedRequests } from '@/lib/utils/offlineStore';
-import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { WifiOff, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface SyncContextType {
-  isOnline: boolean;
-  pendingCount: number;
-}
-
-const SyncContext = createContext<SyncContextType>({ isOnline: true, pendingCount: 0 });
 
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true);
@@ -26,6 +19,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Conexión restaurada. Sincronizando datos...');
       syncOfflineRequests();
     };
+
     const handleOffline = () => {
       setIsOnline(false);
       toast.error('Sin conexión. Las acciones se guardarán localmente.');
@@ -49,10 +43,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <SyncContext.Provider value={{ isOnline, pendingCount }}>
+    <>
       {children}
 
-      {/* Sync Status Overlay */}
       {mounted && (!isOnline || pendingCount > 0) && (
         <div className='fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2'>
           {!isOnline && (
@@ -75,8 +68,6 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
           )}
         </div>
       )}
-    </SyncContext.Provider>
+    </>
   );
 };
-
-export const useSync = () => useContext(SyncContext);

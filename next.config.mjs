@@ -3,8 +3,6 @@ import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
   allowedDevOrigins: [
-    'e03a-192-223-121-195.ngrok-free.app',
-    '*.ngrok-free.app',
     'dev.xn--lasmuecasderamon-bub.com',
     'dev.lasmuñecasderamon.com'
   ],
@@ -124,7 +122,7 @@ const nextConfig = {
       ];
     }
 
-    if (!isServer) {
+    if (!isServer && !dev) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {

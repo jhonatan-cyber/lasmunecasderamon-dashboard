@@ -22,7 +22,59 @@ function ImageUploadFieldComponent({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [urlValue, setUrlValue] = useState('');
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 }); // pixeles de offset
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handler para arrastrar la imagen con el mouse
+  // Estado para drag
+  const startDragRef = useRef({ x: 0, y: 0 });
+  const startOffsetRef = useRef({ x: 0, y: 0 });
+
+  const handleImageMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Guardar posición inicial del mouse y offset actual
+    startDragRef.current = { x: e.clientX, y: e.clientY };
+    startOffsetRef.current = { ...imageOffset };
+    setIsDraggingImage(true);
+  };
+
+  const handleImageMouseMoveInternal = useCallback((e: MouseEvent) => {
+    if (!isDraggingImage) return;
+    
+    // Calcular cuánto se movió el mouse desde que empezó el drag
+    const deltaX = e.clientX - startDragRef.current.x;
+    const deltaY = e.clientY - startDragRef.current.y;
+    
+    // Sumar al offset inicial
+    const newX = startOffsetRef.current.x + deltaX;
+    const newY = startOffsetRef.current.y + deltaY;
+    
+    // Limitar movimiento a +/- 100px desde el centro
+    const clampedX = Math.max(-100, Math.min(100, newX));
+    const clampedY = Math.max(-100, Math.min(100, newY));
+    
+    setImageOffset({ x: clampedX, y: clampedY });
+  }, [isDraggingImage]);
+
+  const handleImageMouseUpInternal = useCallback(() => {
+    setIsDraggingImage(false);
+  }, []);
+
+  // Event listeners para drag
+  useEffect(() => {
+    if (!isDraggingImage) return;
+    
+    window.addEventListener('mousemove', handleImageMouseMoveInternal);
+    window.addEventListener('mouseup', handleImageMouseUpInternal);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleImageMouseMoveInternal);
+      window.removeEventListener('mouseup', handleImageMouseUpInternal);
+    };
+  }, [isDraggingImage, handleImageMouseMoveInternal, handleImageMouseUpInternal]);
 
   useEffect(() => {
     if (initialImageUrl) {
@@ -133,31 +185,61 @@ function ImageUploadFieldComponent({
           />
 
           <div
+            ref={containerRef}
             className={cn(
-              'relative w-full max-w-[200px] aspect-square rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group overflow-hidden shadow-sm',
+              'relative w-full max-w-[200px] aspect-square rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center cursor-pointer shadow-sm',
               isDragging
                 ? 'border-blue-500 bg-blue-50 scale-105'
-                : 'border-gray-200 hover:border-gray-400 bg-gray-50/50'
+                : 'border-gray-200 hover:border-gray-400 bg-gray-50/50',
+              previewUrl && 'group'
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={e => handleDrop(e, onChange)}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => !previewUrl && fileInputRef.current?.click()}
           >
             {previewUrl ? (
-              <>
-                <NextImage
-                  src={previewUrl}
-                  alt='Vista previa'
-                  fill
-                  sizes='200px'
-                  className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
-                />
-                <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2'>
-                  <UploadCloud size={24} className='animate-bounce' />
-                  <span className='text-xs font-medium'>Cambiar imagen</span>
+              <div
+                className='absolute inset-0 bg-cover'
+                style={{
+                  backgroundImage: `url(${previewUrl})`,
+                  backgroundPosition: `calc(50% + ${imageOffset.x}px) calc(50% + ${imageOffset.y}px)`,
+                  backgroundRepeat: 'no-repeat'
+                }}
+                onMouseDown={handleImageMouseDown}
+                onMouseMove={(e) => {
+                  if (!isDraggingImage) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left - rect.width / 2;
+                  const y = e.clientY - rect.top - rect.height / 2;
+                  setImageOffset({ x, y });
+                }}
+                onMouseUp={() => setIsDraggingImage(false)}
+                onMouseLeave={() => setIsDraggingImage(false)}
+                onClick={(e) => {
+                  if (isDraggingImage) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+              >
+                {/* Overlay para mostrar estado */}
+                <div className={cn(
+                  'absolute inset-0 flex items-center justify-center',
+                  isDraggingImage ? 'bg-black/50' : 'bg-black/0 group-hover:bg-black/40'
+                )}>
+                  {isDraggingImage ? (
+                    <span className='text-xs font-medium bg-black/70 text-white px-3 py-1 rounded-full'>
+                      Moviendo...
+                    </span>
+                  ) : (
+                    <span className='opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-medium flex items-center gap-1'>
+                      <UploadCloud size={14} />
+                      Cambiar
+                    </span>
+                  )}
                 </div>
-              </>
+              </div>
             ) : (
               <div className='flex flex-col items-center justify-center p-4 text-center text-gray-400 gap-2'>
                 <div
@@ -193,7 +275,7 @@ function ImageUploadFieldComponent({
 
           <div className='flex flex-col w-full items-center gap-2'>
             {previewUrl && (
-              <div className='flex gap-2'>
+              <div className='flex gap-2 flex-wrap justify-center'>
                 <Button
                   type='button'
                   variant='ghost'

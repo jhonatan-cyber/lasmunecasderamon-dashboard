@@ -9,7 +9,7 @@ interface OrderCardProps {
   canDelete: boolean;
   canProcess: boolean;
   hasOpenCaja: boolean | null;
-  onOrderClick: (id: number, code: string) => void;
+  onOrderClick: (id: string, code: string) => void;
   onDeleteClick: (e: React.MouseEvent, order: Order) => void;
 }
 

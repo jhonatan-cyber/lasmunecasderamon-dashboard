@@ -12,6 +12,7 @@ export interface Venta {
   fecha_mod?: string;
   estado: number; // 0 = Anulada, 1 = Completada/Finalizada, 2 = En proceso (con temporizador)
   tiempo?: number; // Tiempo de habitación en minutos
+  anfitrionas_nicks?: string | null;
 }
 
 export interface VentaDetalle {
@@ -64,6 +65,9 @@ export interface VentaDetalleCreate {
   comision: number;
   cantidad: number;
   sub_total: number;
+  hostess_id?: string | number | null;
+  hostesses?: Array<string | number>;
+  isChampagne?: boolean;
 }
 
 export interface VentaUpdate {

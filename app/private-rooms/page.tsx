@@ -56,7 +56,8 @@ export default function ServiciosPage() {
     handleStopTimer,
     handleServiceAutoFinished,
     handleServiceFinalized,
-    getServicios
+    getServicios,
+    includeAll
   } = useServiceLogic();
 
   // Refs para mantener referencias estables
@@ -176,7 +177,7 @@ export default function ServiciosPage() {
             itemsPerPage={itemsPerPage}
             setItemsPerPage={setItemsPerPage}
             setCurrentPage={setCurrentPage}
-            onRefresh={() => getServicios(true)}
+            onRefresh={() => getServicios(includeAll)}
           />
 
           {/* Tabs de estado: En Proceso / Finalizados */}

@@ -9,15 +9,11 @@ interface SwaggerUIWrapperProps {
   className?: string;
 }
 
-export const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ 
-  url, 
-  className = '' 
-}) => {
+export const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ url, className = '' }) => {
   const swaggerRef = useRef<HTMLDivElement>(null);
   const swaggerProps = swaggerConfig as React.ComponentProps<typeof SwaggerUI>;
 
   useEffect(() => {
-    // Limpiar cualquier instancia previa de Swagger UI
     if (swaggerRef.current) {
       const existingSwagger = swaggerRef.current.querySelector('.swagger-ui');
       if (existingSwagger) {
@@ -28,11 +24,7 @@ export const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({
 
   return (
     <div ref={swaggerRef} className={className}>
-      <SwaggerUI
-        url={url}
-        {...swaggerProps}
-      />
+      <SwaggerUI url={url} {...swaggerProps} />
     </div>
   );
 };
-

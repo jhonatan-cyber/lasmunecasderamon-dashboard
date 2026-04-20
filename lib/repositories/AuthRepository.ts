@@ -4,13 +4,17 @@ import { generateToken, registrarLogin } from '@/lib/auth/auth';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import crypto from 'crypto';
 import { ValidationError, NotFoundError, BusinessError, ConflictError } from '@/lib/errors/errors';
+import type { UserPermissions } from '@/lib/middleware/auth';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 20 * 60;
 const SHIFT_END = 23 * 60;
 
 export class AuthRepository {
-  private static mapAuthenticatedUser(user: any) {
+  private static async mapAuthenticatedUser(user: any) {
+    // Cargar permisos del usuario desde la DB
+    const permissions = await this.getUserPermissions(user.id_usuario, user.rol_id, user.rol_nombre);
+    
     return {
       id: user.id_usuario,
       username: user.nick || user.username || user.nombre,
@@ -24,8 +28,118 @@ export class AuthRepository {
       address: user.direccion,
       estado_civil: user.estado_civil,
       qr_token: user.qr_token,
-      two_factor_enabled: Boolean(user.two_factor_enabled)
+      two_factor_enabled: Boolean(user.two_factor_enabled),
+      permissions
     };
+  }
+
+  private static async getUserPermissions(userId: string, roleId: string | number, roleName?: string): Promise<UserPermissions> {
+    // Permisos por defecto según el rol
+    const defaultPermissions: Record<string, UserPermissions> = {
+      administrador: {
+        users: { read: true, write: true, delete: true },
+        sales: { read: true, write: true, delete: true, anulate: true },
+        products: { read: true, write: true, delete: true },
+        clients: { read: true, write: true, delete: true },
+        finances: { read: true, write: true, delete: true },
+        reports: { read: true, export: true },
+        settings: { read: true, write: true },
+        orders: { read: true, write: true, delete: true, process: true },
+        advances: { read: true, write: true, delete: true, process: true }
+      },
+      cajero: {
+        users: { read: true, write: true, delete: false },
+        sales: { read: true, write: true, delete: false, anulate: false },
+        products: { read: true, write: false, delete: false },
+        clients: { read: true, write: true, delete: false },
+        finances: { read: true, write: true, delete: false },
+        reports: { read: false, export: false },
+        settings: { read: false, write: false },
+        orders: { read: true, write: true, delete: false, process: true },
+        advances: { read: true, write: true, delete: false, process: true }
+      },
+      garzon: {
+        users: { read: false, write: false, delete: false },
+        sales: { read: false, write: false, delete: false, anulate: false },
+        products: { read: false, write: false, delete: false },
+        clients: { read: false, write: false, delete: false },
+        finances: { read: false, write: false, delete: false },
+        reports: { read: false, export: false },
+        settings: { read: false, write: false },
+        orders: { read: true, write: true, delete: false, process: true },
+        advances: { read: true, write: true, delete: false, process: false }
+      },
+      anfitriona: {
+        users: { read: false, write: false, delete: false },
+        sales: { read: false, write: false, delete: false, anulate: false },
+        products: { read: false, write: false, delete: false },
+        clients: { read: false, write: false, delete: false },
+        finances: { read: false, write: false, delete: false },
+        reports: { read: false, export: false },
+        settings: { read: false, write: false },
+        orders: { read: false, write: false, delete: false, process: false },
+        advances: { read: true, write: false, delete: false, process: false }
+      }
+    };
+
+    // Si no hay roleId, usar permisos por defecto según el rol
+    if (!roleId) {
+      const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
+      return defaultPermissions[roleKey] || defaultPermissions.administrador;
+    }
+
+    try {
+      const perms = await query<Array<{ module: keyof UserPermissions; action: string }>>(
+        `SELECT p.module, p.action 
+         FROM permissions p 
+         INNER JOIN role_permissions rp ON p.id = rp.permission_id 
+         WHERE rp.role_id = ? AND p.deleted_at IS NULL`,
+        [String(roleId)]
+      );
+
+      // Si no hay permisos en la DB, usar los permisos por defecto del rol
+      if (!perms || perms.length === 0) {
+        const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
+        console.log('[Auth] No hay permisos en DB para rol:', roleKey, '- usando permisos por defecto');
+        return defaultPermissions[roleKey] || defaultPermissions.administrador;
+      }
+
+      const userPerms: UserPermissions = {
+        users: { read: false, write: false, delete: false },
+        sales: { read: false, write: false, delete: false, anulate: false },
+        products: { read: false, write: false, delete: false },
+        clients: { read: false, write: false, delete: false },
+        finances: { read: false, write: false, delete: false },
+        reports: { read: false, export: false },
+        settings: { read: false, write: false },
+        orders: { read: false, write: false, delete: false, process: false },
+        advances: { read: false, write: false, delete: false, process: false }
+      };
+
+      const actionMap: Record<string, string> = {
+        view: 'read', view_details: 'read', create: 'write', edit: 'write',
+        open: 'write', close: 'write', withdraw: 'write', delete: 'delete',
+        export: 'export', anulate: 'anulate', process: 'process'
+      };
+
+      perms.forEach(perm => {
+        const mappedAction = actionMap[perm.action] || perm.action;
+        let moduleName = perm.module as string;
+        if (moduleName === 'cash_register' || moduleName === 'cashregister') moduleName = 'finances';
+        if (moduleName === 'habitaciones') moduleName = 'rooms';
+        
+        if (userPerms[moduleName as keyof typeof userPerms]) {
+          (userPerms as any)[moduleName][mappedAction] = true;
+        }
+      });
+
+      return userPerms;
+    } catch (err) {
+      console.error('[Auth] Error getting user permissions:', err);
+      // En caso de error, usar permisos por defecto del rol
+      const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
+      return defaultPermissions[roleKey] || defaultPermissions.administrador;
+    }
   }
 
   static getSystemDateTime() {
@@ -59,9 +173,21 @@ export class AuthRepository {
       ]);
       user.qr_token = nextQR;
     } else if (creds.email && creds.password) {
+      const normalizedIdentifier = String(creds.email).trim();
+      const nickIdentifier = normalizedIdentifier.includes('@')
+        ? normalizedIdentifier.split('@')[0]
+        : normalizedIdentifier;
       const users = await query<any[]>(
-        `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.email = ? AND u.estado = 1`,
-        [creds.email]
+        `SELECT u.*, r.nombre as rol_nombre
+         FROM usuarios u
+         LEFT JOIN roles r ON u.rol_id = r.id_rol
+         WHERE u.estado = 1
+           AND (
+             LOWER(u.email) = LOWER(?)
+             OR LOWER(u.nick) = LOWER(?)
+           )
+         LIMIT 1`,
+        [normalizedIdentifier, nickIdentifier]
       );
       if (users.length === 0) throw new ValidationError('Credenciales inválidas');
       user = users[0];
@@ -73,6 +199,7 @@ export class AuthRepository {
 
     const { hora, totalMinutos, dateString, timeString } = this.getSystemDateTime();
     const rol = user.rol_nombre?.toLowerCase() || '';
+    const isCajeroRole = rol === 'cajero' || rol === 'cajera';
     const needsCode =
       ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
     const hasAsis =
@@ -83,7 +210,7 @@ export class AuthRepository {
         )
       ).length > 0;
 
-    if (needsCode && !hasAsis && !creds.qr_token) {
+    if (needsCode && !hasAsis && !creds.qr_token && !isCajeroRole) {
       if (!creds.codigo)
         return {
           requiereCodigo: true,
@@ -106,9 +233,8 @@ export class AuthRepository {
     });
     await registrarLogin(user.id_usuario);
 
-    const marksAsis =
-      (rol === 'cajero' && hora >= 21 && hora < 23) ||
-      (needsCode && (creds.qr_token || creds.codigo));
+    const marksAsis = (isCajeroRole && needsCode) || (needsCode && (creds.qr_token || creds.codigo));
+    let asistenciaRegistrada = false;
     if (marksAsis && !hasAsis) {
       await query(
         'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
@@ -121,9 +247,10 @@ export class AuthRepository {
         const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
         await regenerateAttendanceCode();
       }
+      asistenciaRegistrada = true;
     }
 
-    return { success: true, token, user: this.mapAuthenticatedUser(user) };
+    return { success: true, token, user: await this.mapAuthenticatedUser(user), asistenciaRegistrada };
   }
 
   static async logout(userId: string) {

@@ -4,52 +4,61 @@ import { query } from '@/lib/database/db';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAppApiWrapper(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type');
+export const GET = withAppApiWrapper(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
 
-  if (!type) {
-    return NextResponse.json({ success: false, message: 'Tipo de evento requerido' }, { status: 400 });
+    if (!type) {
+      return NextResponse.json(
+        { success: false, message: 'Tipo de evento requerido' },
+        { status: 400 }
+      );
+    }
+
+    let data = null;
+
+    switch (type) {
+      case 'propina':
+        data = await getPropinaDetail(id);
+        break;
+      case 'comision':
+        data = await getComisionDetail(id);
+        break;
+      case 'asistencia':
+        data = await getAsistenciaDetail(id);
+        break;
+      case 'anticipo':
+        data = await getAnticipoDetail(id);
+        break;
+      case 'servicio':
+        data = await getServicioDetail(id);
+        break;
+      case 'venta':
+        data = await getVentaDetail(id);
+        break;
+      case 'gratificacion':
+        data = await getGratificacionDetail(id);
+        break;
+      case 'hora_extra':
+        data = await getHoraExtraDetail(id);
+        break;
+      default:
+        return NextResponse.json(
+          { success: false, message: `Tipo no soportado: ${type}` },
+          { status: 400 }
+        );
+    }
+
+    return NextResponse.json({ success: true, data });
   }
-
-  let data = null;
-
-  switch (type) {
-    case 'propina':
-      data = await getPropinaDetail(id);
-      break;
-    case 'comision':
-      data = await getComisionDetail(id);
-      break;
-    case 'asistencia':
-      data = await getAsistenciaDetail(id);
-      break;
-    case 'anticipo':
-      data = await getAnticipoDetail(id);
-      break;
-    case 'servicio':
-      data = await getServicioDetail(id);
-      break;
-    case 'venta':
-      data = await getVentaDetail(id);
-      break;
-    case 'gratificacion':
-      data = await getGratificacionDetail(id);
-      break;
-    case 'hora_extra':
-      data = await getHoraExtraDetail(id);
-      break;
-    default:
-      return NextResponse.json({ success: false, message: `Tipo no soportado: ${type}` }, { status: 400 });
-  }
-
-  return NextResponse.json({ success: true, data });
-});
+);
 
 async function getPropinaDetail(id: string) {
   // Obtener detalle de la propina
-  const detalPropina = await query<any[]>(`
+  const detalPropina = await query<any[]>(
+    `
     SELECT 
       dp.id_detalle_propina,
       dp.monto,
@@ -73,7 +82,9 @@ async function getPropinaDetail(id: string) {
     LEFT JOIN ventas v ON v.id_venta = p.venta_id
     LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
     WHERE dp.id_detalle_propina = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (detalPropina.length === 0) {
     return { message: 'Propina no encontrada', tipo: 'propina' };
@@ -82,65 +93,83 @@ async function getPropinaDetail(id: string) {
   const dp = detalPropina[0];
 
   // Obtener información del usuario que recibió la propina
-  const usuario = await query<any[]>(`
+  const usuario = await query<any[]>(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, u.foto
     FROM usuarios u WHERE u.id_usuario = ?
-  `, [dp.usuario_id]);
+  `,
+    [dp.usuario_id]
+  );
 
   // Obtener información del garzón (quién hizo la venta)
   let garzon = null;
   if (dp.venta_id) {
-    const garzonData = await query<any[]>(`
+    const garzonData = await query<any[]>(
+      `
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_ventas dv
       INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
       WHERE dv.venta_id = ? LIMIT 1
-    `, [dp.venta_id]);
+    `,
+      [dp.venta_id]
+    );
     if (garzonData.length > 0) garzon = garzonData[0];
   }
 
   // Obtener Cajero
   let cajero = null;
   if (dp.venta_id) {
-    const cajeroData = await query<any[]>(`
+    const cajeroData = await query<any[]>(
+      `
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM ventas v2
       INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
       WHERE v2.id_venta = ?
-    `, [dp.venta_id]);
+    `,
+      [dp.venta_id]
+    );
     if (cajeroData.length > 0) cajero = cajeroData[0];
   }
 
   // Obtener detalles del pedido/venta
   let detalles: any[] = [];
   if (dp.venta_id) {
-    detalles = await query<any[]>(`
+    detalles = await query<any[]>(
+      `
       SELECT dv.cantidad, dv.sub_total as subtotal, p.nombre as producto_nombre
       FROM detalle_ventas dv
       INNER JOIN productos p ON p.id_producto = dv.producto_id
       WHERE dv.venta_id = ?
-    `, [dp.venta_id]);
+    `,
+      [dp.venta_id]
+    );
   }
 
   // Obtener todas las propinas de esta venta (para mostrar cómo se dividió)
   let propinas_detalle: any[] = [];
   if (dp.venta_id) {
-    propinas_detalle = await query<any[]>(`
+    propinas_detalle = await query<any[]>(
+      `
       SELECT dp2.monto, u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_propinas dp2
       INNER JOIN propinas p2 ON p2.id_propina = dp2.propina_id
       INNER JOIN usuarios u ON u.id_usuario = dp2.usuario_id
       WHERE p2.venta_id = ?
-    `, [dp.venta_id]);
+    `,
+      [dp.venta_id]
+    );
   }
 
   // Obtener tiempo del servicio si aplica
   let tiempo = null;
   if (dp.venta_id) {
-    const tiempoData = await query<any[]>(`
+    const tiempoData = await query<any[]>(
+      `
       SELECT TIMESTAMPDIFF(MINUTE, v.hora_inicio, v.hora_fin) as minutos
       FROM servicios v WHERE v.id_servicio = ?
-    `, [dp.venta_id]);
+    `,
+      [dp.venta_id]
+    );
     if (tiempoData.length > 0 && tiempoData[0].minutos) {
       tiempo = tiempoData[0].minutos;
     }
@@ -170,16 +199,17 @@ async function getPropinaDetail(id: string) {
       nick: p.nick,
       nombre: p.nombre,
       comision: p.monto
-    })),
+    }))
   };
 }
 
 async function getComisionDetail(id: string) {
   // Obtener detalle de la comisión
-  const detalComision = await query(`
+  const detalComision = await query(
+    `
     SELECT 
       dc.id_detalle_comision,
-      dc.monto as comision,
+      dc.comision as comision,
       dc.estado,
       dc.fecha_crea,
       dc.usuario_id,
@@ -192,7 +222,7 @@ async function getComisionDetail(id: string) {
       v.fecha_crea as fecha_venta,
       v.total as total_venta,
       v.habitacion_id,
-      h.numero as habitacion_nombre,
+      h.nombre as habitacion_nombre,
       s.codigo as codigo_servicio,
       s.fecha_crea as fecha_servicio,
       s.total as total_servicio,
@@ -205,7 +235,9 @@ async function getComisionDetail(id: string) {
     LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
     LEFT JOIN servicios s ON s.id_servicio = c.servicio_id
     WHERE dc.id_detalle_comision = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (detalComision.length === 0) {
     return { message: 'Comisión no encontrada', tipo: 'comision' };
@@ -214,50 +246,65 @@ async function getComisionDetail(id: string) {
   const dc = detalComision[0];
 
   // Obtener información del usuario
-  const usuario = await query(`
+  const usuario = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, u.foto
     FROM usuarios u WHERE u.id_usuario = ?
-  `, [dc.usuario_id]);
+  `,
+    [dc.usuario_id]
+  );
 
   // Es de venta o servicio?
-  const esVenta = dc.venta_id && dc.venta_id > 0;
-  const esServicio = dc.servicio_id && dc.servicio_id > 0;
+  const esVenta = !!dc.venta_id;
+  const esServicio = !!dc.servicio_id;
 
   // Obtener garzón y cajero
-  let garzon = null, cajero = null;
+  let garzon = null,
+    cajero = null;
   if (esVenta) {
-    const garzonData = await query(`
+    const garzonData = await query(
+      `
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_ventas dv
       INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
       WHERE dv.venta_id = ? LIMIT 1
-    `, [dc.venta_id]);
+    `,
+      [dc.venta_id]
+    );
     if (garzonData.length > 0) garzon = garzonData[0];
-    
-    const cajeroData = await query(`
+
+    const cajeroData = await query(
+      `
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM ventas v2
       INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
       WHERE v2.id_venta = ?
-    `, [dc.venta_id]);
+    `,
+      [dc.venta_id]
+    );
     if (cajeroData.length > 0) cajero = cajeroData[0];
   }
 
   // Tiempo del servicio
   let tiempo = null;
   if (esServicio && dc.hora_inicio && dc.hora_fin) {
-    tiempo = Math.round((new Date(dc.hora_fin).getTime() - new Date(dc.hora_inicio).getTime()) / 60000);
+    tiempo = Math.round(
+      (new Date(dc.hora_fin).getTime() - new Date(dc.hora_inicio).getTime()) / 60000
+    );
   }
 
   // Obtener detalles del pedido si es venta
   let detalles = [];
   if (esVenta) {
-    detalles = await query(`
+    detalles = await query(
+      `
       SELECT dv.cantidad, dv.sub_total as subtotal, p.nombre as producto_nombre
       FROM detalle_ventas dv
       INNER JOIN productos p ON p.id_producto = dv.producto_id
       WHERE dv.venta_id = ?
-    `, [dc.venta_id]);
+    `,
+      [dc.venta_id]
+    );
   }
 
   return {
@@ -277,13 +324,14 @@ async function getComisionDetail(id: string) {
     cajero_nick: cajero?.nick,
     cajero_nombre: cajero?.nombre,
     // Productos
-    detalles: detalles,
+    detalles: detalles
   };
 }
 
 async function getAsistenciaDetail(id: string) {
   // La tabla correcta es "asistencias" (plural)
-  const asistencia = await query(`
+  const asistencia = await query(
+    `
     SELECT 
       a.id_asistencia,
       a.fecha,
@@ -301,7 +349,9 @@ async function getAsistenciaDetail(id: string) {
     INNER JOIN usuarios u ON u.id_usuario = a.usuario_id
     LEFT JOIN roles r ON r.id_rol = u.rol_id
     WHERE a.id_asistencia = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (asistencia.length === 0) {
     return { message: 'Asistencia no encontrada', tipo: 'asistencia' };
@@ -312,13 +362,16 @@ async function getAsistenciaDetail(id: string) {
   // Calcular liquidación
   const liquiSueldo = Number(a.sueldo || 0);
   const liquiAporte = Number(a.aporte || 0);
-  
+
   // Obtener descuento de habitación si hay semanas
-  const semanasData = await query(`
+  const semanasData = await query(
+    `
     SELECT COUNT(DISTINCT YEARWEEK(fecha, 1)) as semanas
     FROM asistencias
     WHERE usuario_id = ? AND fecha <= ? AND estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)
-  `, [a.id_usuario, a.fecha]);
+  `,
+    [a.id_usuario, a.fecha]
+  );
 
   // Si no hay datos de semanas, continuar con 0
   const semanas = semanasData.length > 0 ? Number(semanasData[0]?.semanas || 0) : 0;
@@ -338,13 +391,14 @@ async function getAsistenciaDetail(id: string) {
     neto: neto,
     // Fechas
     fecha: a.fecha,
-    hora: a.hora,
+    hora: a.hora
   };
 }
 
 async function getAnticipoDetail(id: string) {
   // Obtener detalle del anticipo
-  const anticipo = await query(`
+  const anticipo = await query(
+    `
     SELECT 
       a.id_anticipo,
       a.monto,
@@ -361,7 +415,9 @@ async function getAnticipoDetail(id: string) {
     FROM anticipos a
     INNER JOIN usuarios u ON u.id_usuario = a.usuario_id
     WHERE a.id_anticipo = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (anticipo.length === 0) {
     return { message: 'Anticipo no encontrado', tipo: 'anticipo' };
@@ -370,13 +426,16 @@ async function getAnticipoDetail(id: string) {
   const a = anticipo[0];
 
   // Obtener historial de aprobaciones
-  const historial = await query(`
+  const historial = await query(
+    `
     SELECT h.accion, h.fecha_crea, u.nick as usuario_accion_nick
     FROM anticipo_historial h
     LEFT JOIN usuarios u ON u.id_usuario = h.usuario_id
     WHERE h.anticipo_id = ?
     ORDER BY h.fecha_crea DESC
-  `, [id]);
+  `,
+    [id]
+  );
 
   return {
     tipo: 'anticipo',
@@ -390,13 +449,14 @@ async function getAnticipoDetail(id: string) {
     // Fechas
     fecha: a.fecha_crea,
     // Historial
-    historial: historial,
+    historial: historial
   };
 }
 
 async function getServicioDetail(id: string) {
   // Obtener detalle del servicio
-  const servicio = await query(`
+  const servicio = await query(
+    `
     SELECT 
       s.id_servicio,
       s.codigo,
@@ -416,7 +476,9 @@ async function getServicioDetail(id: string) {
     LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
     LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
     WHERE s.id_servicio = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (servicio.length === 0) {
     return { message: 'Servicio no encontrado', tipo: 'servicio' };
@@ -427,11 +489,14 @@ async function getServicioDetail(id: string) {
   // Calcular tiempo
   let tiempo = null;
   if (s.hora_inicio && s.hora_fin) {
-    tiempo = Math.round((new Date(s.hora_fin).getTime() - new Date(s.hora_inicio).getTime()) / 60000);
+    tiempo = Math.round(
+      (new Date(s.hora_fin).getTime() - new Date(s.hora_inicio).getTime()) / 60000
+    );
   }
 
   // Obtener detalle de los productos
-  const productos = await query(`
+  const productos = await query(
+    `
     SELECT 
       ds.cantidad,
       ds.sub_total,
@@ -443,10 +508,13 @@ async function getServicioDetail(id: string) {
     INNER JOIN productos p ON p.id_producto = ds.producto_id
     LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
     WHERE ds.servicio_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener comisiones
-  const comisiones = await query(`
+  const comisiones = await query(
+    `
     SELECT 
       dc.monto as comision,
       u.id_usuario,
@@ -457,35 +525,46 @@ async function getServicioDetail(id: string) {
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
     WHERE c.servicio_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener anfitrionas (usuarios con comisión en servicio)
-  const anfitrionas = await query(`
+  const anfitrionas = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, dc.monto as comision
     FROM detalle_comisiones dc
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
     WHERE c.servicio_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener garzón (quien hizo el servicio)
   let garzon = null;
-  const garzonData = await query(`
+  const garzonData = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido
     FROM detalle_servicios ds
     INNER JOIN usuarios u ON u.id_usuario = ds.usuario_id
     WHERE ds.servicio_id = ? LIMIT 1
-  `, [id]);
+  `,
+    [id]
+  );
   if (garzonData.length > 0) garzon = garzonData[0];
 
   // Obtener cajero
   let cajero = null;
-  const cajeroData = await query(`
+  const cajeroData = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido
     FROM servicios s2
     INNER JOIN usuarios u ON u.id_usuario = s2.cajero_id
     WHERE s2.id_servicio = ?
-  `, [id]);
+  `,
+    [id]
+  );
   if (cajeroData.length > 0) cajero = cajeroData[0];
 
   return {
@@ -515,13 +594,14 @@ async function getServicioDetail(id: string) {
       nick: c.nick,
       nombre: c.nombre,
       apellido: c.apellido
-    })),
+    }))
   };
 }
 
 async function getVentaDetail(id: string) {
   // Obtener detalle de la venta
-  const venta = await query(`
+  const venta = await query(
+    `
     SELECT 
       v.id_venta,
       v.codigo,
@@ -541,7 +621,9 @@ async function getVentaDetail(id: string) {
     LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
     LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
     WHERE v.id_venta = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (venta.length === 0) {
     return { message: 'Venta no encontrada', tipo: 'venta' };
@@ -550,7 +632,8 @@ async function getVentaDetail(id: string) {
   const v = venta[0];
 
   // Obtener detalle de los productos
-  const productos = await query(`
+  const productos = await query(
+    `
     SELECT 
       dv.cantidad,
       dv.sub_total,
@@ -558,10 +641,13 @@ async function getVentaDetail(id: string) {
     FROM detalle_ventas dv
     INNER JOIN productos p ON p.id_producto = dv.producto_id
     WHERE dv.venta_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener comisiones
-  const comisiones = await query(`
+  const comisiones = await query(
+    `
     SELECT 
       dc.monto as comision,
       u.id_usuario,
@@ -572,10 +658,13 @@ async function getVentaDetail(id: string) {
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
     WHERE c.venta_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener propinas
-  const propinas = await query(`
+  const propinas = await query(
+    `
     SELECT 
       dp.monto,
       u.id_usuario,
@@ -586,45 +675,59 @@ async function getVentaDetail(id: string) {
     INNER JOIN propinas p ON p.id_propina = dp.propina_id
     INNER JOIN usuarios u ON u.id_usuario = dp.usuario_id
     WHERE p.venta_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener garzón
   let garzon = null;
-  const garzonData = await query(`
+  const garzonData = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido
     FROM detalle_ventas dv
     INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
     WHERE dv.venta_id = ? LIMIT 1
-  `, [id]);
+  `,
+    [id]
+  );
   if (garzonData.length > 0) garzon = garzonData[0];
 
   // Obtener cajero
   let cajero = null;
-  const cajeroData = await query(`
+  const cajeroData = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido
     FROM ventas v2
     INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
     WHERE v2.id_venta = ?
-  `, [id]);
+  `,
+    [id]
+  );
   if (cajeroData.length > 0) cajero = cajeroData[0];
 
   // Obtener anfitrionas
-  const anfitrionas = await query(`
+  const anfitrionas = await query(
+    `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, dc.monto as comision
     FROM detalle_comisiones dc
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
     WHERE c.venta_id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   // Obtener tiempo si hay servicio relacionado
   let tiempo = null;
-  const tiempoData = await query(`
+  const tiempoData = await query(
+    `
     SELECT TIMESTAMPDIFF(MINUTE, s.hora_inicio, s.hora_fin) as minutos
     FROM servicios s
     INNER JOIN ventas v2 ON v2.pedido_id = s.id_servicio
     WHERE v2.id_venta = ?
-  `, [id]);
+  `,
+    [id]
+  );
   if (tiempoData.length > 0 && tiempoData[0].minutos) {
     tiempo = tiempoData[0].minutos;
   }
@@ -657,12 +760,13 @@ async function getVentaDetail(id: string) {
       nick: p.nick,
       nombre: p.nombre,
       apellido: p.apellido
-    })),
+    }))
   };
 }
 
 async function getGratificacionDetail(id: string) {
-  const gratificacion = await query(`
+  const gratificacion = await query(
+    `
     SELECT 
       g.id,
       g.monto,
@@ -677,7 +781,9 @@ async function getGratificacionDetail(id: string) {
     FROM gratificaciones g
     INNER JOIN usuarios u ON u.id_usuario = g.usuario_id
     WHERE g.id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (gratificacion.length === 0) {
     return { message: 'Gratificación no encontrada', tipo: 'gratificacion' };
@@ -692,12 +798,13 @@ async function getGratificacionDetail(id: string) {
     usuario_nick: g.nick,
     usuario_nombre: g.nombre,
     fecha: g.fecha_crea,
-    estado: g.estado,
+    estado: g.estado
   };
 }
 
 async function getHoraExtraDetail(id: string) {
-  const horaExtra = await query(`
+  const horaExtra = await query(
+    `
     SELECT 
       he.id_hora_extra,
       he.hora,
@@ -713,7 +820,9 @@ async function getHoraExtraDetail(id: string) {
     FROM horas_extras he
     INNER JOIN usuarios u ON u.id_usuario = he.usuario_id
     WHERE he.id_hora_extra = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   if (horaExtra.length === 0) {
     return { message: 'Hora extra no encontrada', tipo: 'hora_extra' };
@@ -729,6 +838,6 @@ async function getHoraExtraDetail(id: string) {
     usuario_nick: he.nick,
     usuario_nombre: he.nombre,
     fecha: he.fecha_crea,
-    estado: he.estado,
+    estado: he.estado
   };
 }
