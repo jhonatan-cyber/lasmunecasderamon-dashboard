@@ -124,7 +124,7 @@ export default function OrderForm({
         }
       />
 
-      <div className='flex flex-col md:flex-row gap-6 mb-6'>
+      <div className='mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start'>
         <div className='flex-1'>
           <CustomerSelect
             clientes={clientes}
@@ -136,6 +136,15 @@ export default function OrderForm({
             className='w-full'
           />
         </div>
+
+        <OrderTotalHeader
+          total={total}
+          subtotal={subtotal}
+          onSubmit={handleSubmitInternal}
+          tipPercentage={propina}
+          tipEnabled={propinaHabilitada}
+          onTipChange={handleTipChange}
+        />
       </div>
 
       <CategoryProductsModal
@@ -164,17 +173,15 @@ export default function OrderForm({
         </div>
       )}
 
-      <OrderTotalHeader
-        total={total}
-        subtotal={subtotal}
-        onSubmit={handleSubmitInternal}
-        tipPercentage={propina}
-        tipEnabled={propinaHabilitada}
-        onTipChange={handleTipChange}
-      />
-
       <div className='mt-8'>
-        <div className='mb-2 text-center text-sm text-gray-400 dark:text-zinc-500'>Detalles Producto</div>
+        <div className='mb-4 text-center'>
+          <div className='text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500'>
+            Detalles del pedido
+          </div>
+          <div className='mt-1 text-sm text-zinc-500 dark:text-zinc-400'>
+            Revisá cantidades, comisiones y asignaciones antes de generar el pedido
+          </div>
+        </div>
         <OrderProductTable
           productos={productos}
           onRemoveProducto={onRemoveProducto}

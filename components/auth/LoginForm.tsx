@@ -114,6 +114,9 @@ export const LoginForm = ({
               <Eye className='w-5 h-5' />
             </button>
           </div>
+          <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+            Si nunca cambiaste tu contraseña, ingresá tu RUT con formato chileno.
+          </p>
         </div>
 
         <Button

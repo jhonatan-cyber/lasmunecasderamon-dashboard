@@ -41,6 +41,13 @@ import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
 import { formatNumberCL } from '@/lib/utils/formatters';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
+import {
+  ORDER_FIELD_INPUT_CLASS,
+  ORDER_FIELD_INPUT_WITH_ICON_CLASS,
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_TRIGGER_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 interface OrderDetailModalProps {
   open: boolean;
@@ -809,23 +816,23 @@ export default function OrderDetailModal({
                         />
                         {habitacionId && (
                           <div>
-                            <Label className='mb-2 block text-xs font-medium text-muted-foreground dark:text-zinc-400'>
+                            <Label className={ORDER_FIELD_LABEL_CLASS}>
                               Tiempo de uso (minutos)
                             </Label>
                             <Select
                               value={tiempoHabitacion.toString()}
                               onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
                             >
-                              <SelectTrigger className='w-full rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'>
+                              <SelectTrigger className={ORDER_FIELD_TRIGGER_CLASS}>
                                 <SelectValue placeholder='Seleccionar tiempo' />
                               </SelectTrigger>
-                              <SelectContent className='dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100'>
-                                <SelectItem value='5'>5 minutos</SelectItem>
-                                <SelectItem value='10'>10 minutos</SelectItem>
-                                <SelectItem value='15'>15 minutos</SelectItem>
-                                <SelectItem value='20'>20 minutos</SelectItem>
-                                <SelectItem value='25'>25 minutos</SelectItem>
-                                <SelectItem value='30'>30 minutos</SelectItem>
+                              <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
+                                <SelectItem value='5' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>5 minutos</SelectItem>
+                                <SelectItem value='10' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>10 minutos</SelectItem>
+                                <SelectItem value='15' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>15 minutos</SelectItem>
+                                <SelectItem value='20' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>20 minutos</SelectItem>
+                                <SelectItem value='25' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>25 minutos</SelectItem>
+                                <SelectItem value='30' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>30 minutos</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -833,14 +840,14 @@ export default function OrderDetailModal({
                       </>
                     )}
                     <div>
-                      <Label className='mb-2 block text-xs font-medium text-muted-foreground dark:text-zinc-400'>
+                      <Label className={ORDER_FIELD_LABEL_CLASS}>
                         Propina
                       </Label>
                       <div className='flex items-center space-x-2'>
                         <div className='relative flex-1'>
                           <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
                           <Input
-                            className='pl-8 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
+                            className={`${ORDER_FIELD_INPUT_CLASS} pl-8`}
                             placeholder='Sin propina'
                             type='text'
                             value={propinaDisplayValue}
@@ -876,13 +883,13 @@ export default function OrderDetailModal({
                       )}
                     </div>
                     <div>
-                      <Label className='mb-1 block text-xs font-medium text-muted-foreground dark:text-zinc-400'>
+                      <Label className={ORDER_FIELD_LABEL_CLASS}>
                         Total Comisión
                       </Label>
                       <div className='relative'>
                         <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
                         <Input
-                          className='pl-8 font-semibold dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
+                          className={`${ORDER_FIELD_INPUT_WITH_ICON_CLASS} font-semibold`}
                           value={formatNumberCL(detail[0]?.total_comision || 0)}
                           disabled
                         />

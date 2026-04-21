@@ -1,14 +1,14 @@
-﻿import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import React, { useMemo, useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import React, { useState, useMemo } from 'react';
+import {
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_SEARCH_INPUT_CLASS,
+  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
+  ORDER_MULTISELECT_TRIGGER_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 interface Customer {
   id_cliente?: string | number;
@@ -44,7 +44,10 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
   required = false,
   disabled = false
 }) => {
+  const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const uniqueId = React.useId();
+
   const getCustomerId = (cliente: Customer) => {
     return cliente?.id_cliente || cliente?.id;
   };
@@ -59,20 +62,24 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
     return run ? `${displayName} (${run})${balanceText}` : `${displayName}${balanceText}`;
   };
 
-  const filteredClientes = useMemo(() => {
+  const normalizedClientes = useMemo(() => {
     let base = Array.isArray(clientes) ? clientes : [];
 
     base = base.filter(cliente => {
       const nombre = cliente?.nombre || cliente?.name || '';
       const apellido = cliente?.apellido || cliente?.lastName || '';
       const fullName = `${nombre} ${apellido}`.toLowerCase();
-      return !fullName.includes('genérico') && !fullName.includes('generico');
+      return !fullName.includes('gen?rico') && !fullName.includes('generico');
     });
 
-    if (!searchTerm) return base;
+    return base;
+  }, [clientes]);
+
+  const filteredClientes = useMemo(() => {
+    if (!searchTerm) return normalizedClientes;
 
     const searchLower = searchTerm.toLowerCase();
-    return base.filter(cliente => {
+    return normalizedClientes.filter(cliente => {
       const nombre = (cliente?.nombre || cliente?.name || '').toLowerCase();
       const apellido = (cliente?.apellido || cliente?.lastName || '').toLowerCase();
       const run = (cliente?.run || '').toLowerCase();
@@ -81,74 +88,104 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
         nombre.includes(searchLower) || apellido.includes(searchLower) || run.includes(searchLower)
       );
     });
-  }, [clientes, searchTerm]);
+  }, [normalizedClientes, searchTerm]);
 
-  const displayClientes = useMemo(() => {
+  const displayClientes = (() => {
     if (!value || value === 'none') return filteredClientes;
 
-    const isSelectedInFiltered = filteredClientes.some(c => {
-      const id = getCustomerId(c);
+    const isSelectedInFiltered = filteredClientes.some(cliente => {
+      const id = getCustomerId(cliente);
       return id && id.toString() === value;
     });
 
     if (isSelectedInFiltered) return filteredClientes;
 
-    const selectedClient = (Array.isArray(clientes) ? clientes : []).find(c => {
-      const id = getCustomerId(c);
+    const selectedClient = normalizedClientes.find(cliente => {
+      const id = getCustomerId(cliente);
       return id && id.toString() === value;
     });
 
     return selectedClient ? [selectedClient, ...filteredClientes] : filteredClientes;
-  }, [filteredClientes, value, clientes]);
+  })();
+
+  const selectedClient = normalizedClientes.find(cliente => {
+    const id = getCustomerId(cliente);
+    return id && id.toString() === value;
+  });
+
+  const selectedLabel = selectedClient ? getCustomerDisplayName(selectedClient) : '';
+
+  const handleValueChange = (newValue: string) => {
+    const resolved = newValue === 'none' ? '' : newValue;
+    setSearchTerm('');
+    setOpen(false);
+    onChange(resolved);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide'>
+      <Label htmlFor={uniqueId} className={ORDER_FIELD_LABEL_CLASS}>
         {label}
-        {required && <span className='text-red-500 ml-1'>*</span>}
+        {required && <span className='ml-1 text-red-500'>*</span>}
       </Label>
 
       <div className='relative'>
-        <Select
-          value={value || ''}
-          onValueChange={(val: string) => {
-            onChange(val);
-            setSearchTerm('');
-          }}
-          disabled={disabled}
-        >
-          <SelectTrigger
-            className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11'
-            disabled={disabled}
-          >
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent className='max-h-80'>
-            {/* Barra de búsqueda */}
-            <div className='p-2 border-b sticky top-0 bg-white z-20'>
+        <Popover open={open} onOpenChange={nextOpen => !disabled && setOpen(nextOpen)}>
+          <PopoverTrigger asChild>
+            <button
+              id={uniqueId}
+              type='button'
+              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} pr-10`}
+              onClick={() => !disabled && setOpen(!open)}
+              disabled={disabled}
+            >
+              {selectedLabel ? (
+                <span className='truncate text-sm text-white'>{selectedLabel}</span>
+              ) : (
+                <span className='text-sm text-gray-400'>{placeholder}</span>
+              )}
+              <span className='ml-auto pl-2 text-xs text-gray-400'>?</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>
+            <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
+              <label htmlFor={`${uniqueId}-search`} className='sr-only'>
+                Buscar cliente
+              </label>
               <Input
+                id={`${uniqueId}-search`}
                 placeholder={searchPlaceholder}
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 onKeyDown={e => {
                   if (e.key === ' ') {
                     e.stopPropagation();
                   }
                 }}
-                className='w-full'
+                className={ORDER_FIELD_SEARCH_INPUT_CLASS}
                 disabled={disabled}
+                onClick={e => e.stopPropagation()}
               />
             </div>
 
-            {/* Lista de clientes */}
-            <div className='overflow-y-auto'>
-              {!searchTerm && (
-                <SelectItem value='none'>
-                  <span className='text-gray-400 italic'>Sin cliente</span>
-                </SelectItem>
+            <div className='max-h-60 overflow-y-auto p-1'>
+              {value && (
+                <button
+                  type='button'
+                  className='flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm italic text-gray-400 transition-colors hover:bg-gray-100'
+                  onClick={() => handleValueChange('none')}
+                >
+                  Sin cliente
+                </button>
               )}
+
               {displayClientes.length === 0 ? (
-                <div className='p-4 text-center text-gray-500 text-sm'>
+                <div className='p-4 text-center text-sm text-gray-500'>
                   {searchTerm ? 'No se encontraron clientes' : 'No hay clientes disponibles'}
                 </div>
               ) : (
@@ -156,17 +193,27 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
                   const id = getCustomerId(cliente);
                   const displayName = getCustomerDisplayName(cliente);
                   const stringId = id ? id.toString() : 'none';
+                  const isSelected = stringId === value;
 
                   return (
-                    <SelectItem key={`${stringId}`} value={stringId} disabled={disabled}>
-                      {displayName || 'Sin nombre'}
-                    </SelectItem>
+                    <button
+                      key={stringId}
+                      type='button'
+                      className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${isSelected ? 'bg-gray-100' : ''}`}
+                      onClick={() => handleValueChange(stringId)}
+                      disabled={disabled}
+                    >
+                      <span className='text-gray-700'>{displayName || 'Sin nombre'}</span>
+                      {isSelected ? (
+                        <span className='text-xs font-semibold text-gray-500'>SELECCIONADO</span>
+                      ) : null}
+                    </button>
                   );
                 })
               )}
             </div>
-          </SelectContent>
-        </Select>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
