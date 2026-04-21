@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { User as UserType } from '@/types/user';
 import { FormProvider, useForm } from 'react-hook-form';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   CreditCard,
   UserCircle,
@@ -35,17 +37,17 @@ const formatRUT = (value: string): string => {
   // Limpiar todo excepto números y K
   const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
   if (!clean) return '';
-  
+
   // Si tiene menos de 2 dígitos, retornar solo números
   if (clean.length <= 1) return clean;
-  
+
   // Separar cuerpo y dígito verificador
   const cuerpo = clean.slice(0, -1);
   const dv = clean.slice(-1);
-  
+
   // Formatear cuerpo con puntos
   const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  
+
   return `${formattedCuerpo}-${dv}`;
 };
 
@@ -53,25 +55,25 @@ const formatRUT = (value: string): string => {
 const isValidRUT = (rut: string): boolean => {
   const clean = rut.replace(/[^0-9kK]/gi, '');
   if (clean.length < 2) return false;
-  
+
   const cuerpo = clean.slice(0, -1);
   const dv = clean.slice(-1).toUpperCase();
-  
+
   let sum = 0;
   let mul = 2;
-  
+
   for (let i = cuerpo.length - 1; i >= 0; i--) {
     sum += parseInt(cuerpo[i]) * mul;
     mul = mul === 7 ? 2 : mul + 1;
   }
-  
+
   let result = 11 - (sum % 11);
   let expectedDv = '';
-  
+
   if (result === 11) expectedDv = '0';
   else if (result === 10) expectedDv = 'K';
   else expectedDv = result.toString();
-  
+
   return dv === expectedDv;
 };
 
@@ -84,7 +86,14 @@ interface UserFormModalProps {
   onCancel: () => void;
 }
 
-export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, onCancel }: UserFormModalProps) {
+export function UserFormModal({
+  user,
+  isOpen,
+  isEditing,
+  isMutating,
+  onSubmit,
+  onCancel
+}: UserFormModalProps) {
   const {
     form,
     roles,
@@ -115,7 +124,7 @@ export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, o
     const formatted = formatRUT(value);
     setRunFormatted(formatted);
     form.setValue('run', formatted);
-    
+
     // Validar en tiempo real si tiene suficientes caracteres
     const clean = value.replace(/[^0-9kK]/gi, '');
     if (clean && clean.length >= 2) {
@@ -144,21 +153,22 @@ export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, o
     <Dialog open={isOpen} onOpenChange={onCancel}>
       <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden'>
         <DialogHeader className='p-6 pb-2 border-b'>
-          <DialogTitle className='text-xl font-bold'>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
-          <DialogDescription className='sr-only'>Formulario para crear o editar usuarios</DialogDescription>
+          <DialogTitle className='text-xl font-bold'>
+            {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
+          </DialogTitle>
+          <DialogDescription className='sr-only'>
+            Formulario para crear o editar usuarios
+          </DialogDescription>
         </DialogHeader>
         <div className='flex-1 overflow-y-auto p-6'>
           <FormProvider {...form}>
-            <form
-              id='user-form'
-              onSubmit={handleFormSubmit}
-              className='space-y-4 sm:space-y-6'
-            >
+            <form id='user-form' onSubmit={handleFormSubmit} className='space-y-4 sm:space-y-6'>
               <Alert className='bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/10 dark:border-blue-900/30 dark:text-blue-300 rounded-2xl'>
                 <Info className='h-5 w-5 text-blue-600 dark:text-blue-400' />
                 <AlertTitle className='text-sm font-bold'>Credenciales de Acceso</AlertTitle>
                 <AlertDescription className='text-xs opacity-90'>
-                  Por seguridad y simplicidad, la <strong>contraseña</strong> del usuario será exactamente igual a su <strong>RUT</strong>.
+                  Por seguridad y simplicidad, la <strong>contraseña</strong> del usuario será
+                  exactamente igual a su <strong>RUT</strong>.
                 </AlertDescription>
               </Alert>
 
@@ -180,9 +190,7 @@ export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, o
                         className='flex h-10 w-full rounded-full border border-input bg-gray-100 pl-10 sm:pl-12 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
                       />
                     </div>
-                    {runError && (
-                      <p className='text-red-500 text-xs mt-1'>{runError}</p>
-                    )}
+                    {runError && <p className='text-red-500 text-xs mt-1'>{runError}</p>}
                   </div>
 
                   {/* Nick */}
@@ -248,16 +256,10 @@ export function UserFormModal({ user, isOpen, isEditing, isMutating, onSubmit, o
                 />
 
                 {/* Estado Civil */}
-                <MaritalStatusSelect
-                  control={form.control}
-                  name='maritalStatus'
-                />
+                <MaritalStatusSelect control={form.control} name='maritalStatus' />
 
                 {/* AFP */}
-                <AfpInputField
-                  control={form.control}
-                  name='afp'
-                />
+                <AfpInputField control={form.control} name='afp' />
 
                 {/* Rol */}
                 <RoleSelect

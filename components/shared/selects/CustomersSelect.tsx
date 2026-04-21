@@ -1,9 +1,16 @@
-﻿import { Users, ChevronDown } from 'lucide-react';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+﻿import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import React, { useState, useMemo } from 'react';
+import {
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_SEARCH_INPUT_CLASS,
+  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
+  ORDER_MULTISELECT_TRIGGER_CLASS,
+  ORDER_SELECTED_TAG_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 interface Customer {
   id_cliente?: string | number;
@@ -83,7 +90,7 @@ const CustomersSelect = ({
     <div className={`flex flex-col ${className}`}>
       <Label
         htmlFor={uniqueId}
-        className='block text-xs font-medium text-gray-500 mb-1 leading-none uppercase tracking-wide'
+        className={ORDER_FIELD_LABEL_CLASS}
       >
         {label}
         {required && <span className='text-red-500 ml-0.5'>*</span>}
@@ -95,7 +102,7 @@ const CustomersSelect = ({
             <button
               id={uniqueId}
               type='button'
-              className='w-full pl-10 pr-10 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[40px] text-left hover:border-gray-400 transition-colors'
+              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} pr-10`}
               onClick={() => !disabled && setOpen(!open)}
               disabled={disabled}
             >
@@ -106,7 +113,7 @@ const CustomersSelect = ({
                   {selectedNames.map((name, i) => (
                     <span
                       key={i}
-                      className='bg-blue-100 text-blue-700 rounded px-2 py-0.5 text-xs font-medium'
+                      className={ORDER_SELECTED_TAG_CLASS}
                     >
                       {name}
                     </span>
@@ -118,10 +125,10 @@ const CustomersSelect = ({
           </PopoverTrigger>
           <PopoverContent
             align='start'
-            className='w-[280px] p-0 shadow-xl border border-gray-200 z-[9999]'
+            className={ORDER_FIELD_POPOVER_CLASS}
             sideOffset={5}
           >
-            <div className='p-2 border-b bg-gray-50'>
+            <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
               <label htmlFor={`${uniqueId}-search`} className='sr-only'>
                 Buscar cliente
               </label>
@@ -130,7 +137,7 @@ const CustomersSelect = ({
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='w-full h-8 text-sm'
+                className={ORDER_FIELD_SEARCH_INPUT_CLASS}
               />
             </div>
             <div className='max-h-60 overflow-y-auto p-1'>

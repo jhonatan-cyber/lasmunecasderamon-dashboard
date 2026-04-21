@@ -13,8 +13,12 @@ const SHIFT_END = 23 * 60;
 export class AuthRepository {
   private static async mapAuthenticatedUser(user: any) {
     // Cargar permisos del usuario desde la DB
-    const permissions = await this.getUserPermissions(user.id_usuario, user.rol_id, user.rol_nombre);
-    
+    const permissions = await this.getUserPermissions(
+      user.id_usuario,
+      user.rol_id,
+      user.rol_nombre
+    );
+
     return {
       id: user.id_usuario,
       username: user.nick || user.username || user.nombre,
@@ -33,7 +37,11 @@ export class AuthRepository {
     };
   }
 
-  private static async getUserPermissions(userId: string, roleId: string | number, roleName?: string): Promise<UserPermissions> {
+  private static async getUserPermissions(
+    userId: string,
+    roleId: string | number,
+    roleName?: string
+  ): Promise<UserPermissions> {
     // Permisos por defecto según el rol
     const defaultPermissions: Record<string, UserPermissions> = {
       administrador: {
@@ -100,7 +108,11 @@ export class AuthRepository {
       // Si no hay permisos en la DB, usar los permisos por defecto del rol
       if (!perms || perms.length === 0) {
         const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
-        console.log('[Auth] No hay permisos en DB para rol:', roleKey, '- usando permisos por defecto');
+        console.log(
+          '[Auth] No hay permisos en DB para rol:',
+          roleKey,
+          '- usando permisos por defecto'
+        );
         return defaultPermissions[roleKey] || defaultPermissions.administrador;
       }
 
@@ -117,17 +129,26 @@ export class AuthRepository {
       };
 
       const actionMap: Record<string, string> = {
-        view: 'read', view_details: 'read', create: 'write', edit: 'write',
-        open: 'write', close: 'write', withdraw: 'write', delete: 'delete',
-        export: 'export', anulate: 'anulate', process: 'process'
+        view: 'read',
+        view_details: 'read',
+        create: 'write',
+        edit: 'write',
+        open: 'write',
+        close: 'write',
+        withdraw: 'write',
+        delete: 'delete',
+        export: 'export',
+        anulate: 'anulate',
+        process: 'process'
       };
 
       perms.forEach(perm => {
         const mappedAction = actionMap[perm.action] || perm.action;
         let moduleName = perm.module as string;
-        if (moduleName === 'cash_register' || moduleName === 'cashregister') moduleName = 'finances';
+        if (moduleName === 'cash_register' || moduleName === 'cashregister')
+          moduleName = 'finances';
         if (moduleName === 'habitaciones') moduleName = 'rooms';
-        
+
         if (userPerms[moduleName as keyof typeof userPerms]) {
           (userPerms as any)[moduleName][mappedAction] = true;
         }
@@ -233,7 +254,8 @@ export class AuthRepository {
     });
     await registrarLogin(user.id_usuario);
 
-    const marksAsis = (isCajeroRole && needsCode) || (needsCode && (creds.qr_token || creds.codigo));
+    const marksAsis =
+      (isCajeroRole && needsCode) || (needsCode && (creds.qr_token || creds.codigo));
     let asistenciaRegistrada = false;
     if (marksAsis && !hasAsis) {
       await query(
@@ -250,7 +272,12 @@ export class AuthRepository {
       asistenciaRegistrada = true;
     }
 
-    return { success: true, token, user: await this.mapAuthenticatedUser(user), asistenciaRegistrada };
+    return {
+      success: true,
+      token,
+      user: await this.mapAuthenticatedUser(user),
+      asistenciaRegistrada
+    };
   }
 
   static async logout(userId: string) {

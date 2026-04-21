@@ -6,7 +6,10 @@ export const SaleSchema = z.object({
   cliente_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
-  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']).optional().default('efectivo'),
+  metodo_pago: z
+    .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
+    .optional()
+    .default('efectivo'),
   metodologia_pago: z.string().nullable().optional(),
   monto_prepago: z.number().optional().default(0),
   monto_adicional: z.number().optional().default(0),
@@ -25,7 +28,7 @@ export const SaleSchema = z.object({
   habitacion_numero: z.string().nullable().optional(),
   habitacion_nombre: z.string().nullable().optional(),
   item_count: z.number().optional().default(0),
-  anfitrionas_nicks: z.string().nullable().optional(),
+  anfitrionas_nicks: z.string().nullable().optional()
 });
 
 export const SaleCreateSchema = z.object({
@@ -35,8 +38,14 @@ export const SaleCreateSchema = z.object({
   cliente_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
-  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']).optional().default('efectivo'),
-  metodo_pago_adicional: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']).nullable().optional(),
+  metodo_pago: z
+    .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
+    .optional()
+    .default('efectivo'),
+  metodo_pago_adicional: z
+    .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
+    .nullable()
+    .optional(),
   monto_prepago: z.number().optional().default(0),
   monto_adicional: z.number().optional().default(0),
   pagos_mixtos: z.any().optional(),
@@ -45,16 +54,20 @@ export const SaleCreateSchema = z.object({
   tiempo: z.number().optional().default(0),
   codigo: z.string().optional(),
   device_date: z.string().optional(),
-  detalles: z.array(z.object({
-    producto_id: z.string(),
-    precio: z.number(),
-    comision: z.number().optional().default(0),
-    cantidad: z.number().min(1),
-    sub_total: z.number().optional(),
-    hostess_id: z.string().nullable().optional(),
-    hostesses: z.array(z.string()).optional(),
-    isChampagne: z.boolean().optional()
-  })).min(1, 'Al menos un detalle es requerido')
+  detalles: z
+    .array(
+      z.object({
+        producto_id: z.string(),
+        precio: z.number(),
+        comision: z.number().optional().default(0),
+        cantidad: z.number().min(1),
+        sub_total: z.number().optional(),
+        hostess_id: z.string().nullable().optional(),
+        hostesses: z.array(z.string()).optional(),
+        isChampagne: z.boolean().optional()
+      })
+    )
+    .min(1, 'Al menos un detalle es requerido')
 });
 
 export type SaleType = z.infer<typeof SaleSchema>;

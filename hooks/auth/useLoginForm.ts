@@ -161,7 +161,7 @@ if (data.requiereCodigo === true) {
         return;
       }
 
-toast.success('¡Bienvenido al sistema!');
+      toast.success('¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('auth_role_hint', data.user.role);
@@ -211,7 +211,7 @@ toast.success('¡Bienvenido al sistema!');
         setLoading(false);
         return;
       }
-toast.success('¡Bienvenido al sistema!');
+      toast.success('¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('auth_role_hint', data.user.role);

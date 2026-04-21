@@ -85,6 +85,15 @@ export function useOrderForm({
   const router = useRouter();
   const { user } = useCurrentUser();
   const { rooms, fetchRooms } = useRooms();
+  
+  const toNullableStringId = useCallback((value: unknown): string | null => {
+    if (value === null || value === undefined) return null;
+    const stringValue = String(value).trim();
+    if (!stringValue || stringValue === 'NaN' || stringValue === 'undefined' || stringValue === 'null') {
+      return null;
+    }
+    return stringValue;
+  }, []);
 
   const subtotal = useMemo(() => productos.reduce((acc, p) => acc + (p.subtotal || 0), 0), [productos]);
   const tipAmount = useMemo(() => (propinaHabilitada ? (subtotal * propina) / 100 : 0), [propinaHabilitada, subtotal, propina]);
@@ -211,7 +220,8 @@ export function useOrderForm({
       }
     }
 
-    if (!user?.id) {
+    const meseroId = toNullableStringId(user?.id);
+    if (!meseroId) {
       setError('No se pudo identificar al mesero');
       return;
     }
@@ -220,23 +230,35 @@ export function useOrderForm({
     try {
       const payload = {
         codigo: generateRandomCode(),
-        meseroId: Number(user.id),
-        clienteId: selectedCliente ? Number(selectedCliente) : null,
+        meseroId,
+        clienteId: toNullableStringId(selectedCliente),
         subtotal, total: subtotal, propina: tipAmount,
         totalComision: productos.reduce((sum, item) => sum + (item.comision || 0), 0),
         detalles: productos.map(item => ({
-          productoId: Number(item.id_producto || item.id),
+          productoId: toNullableStringId(item.id_producto || item.id),
           cantidad: Number(item.cantidad),
           precio: Number(item.precio || item.price),
           subtotal: Number(item.subtotal),
           comision: Number(item.comision || 0),
           generaComision: Number(item.generaComision ?? 1),
-          hostessId: (item.selectedHostesses || []).length === 1 ? Number((item.selectedHostesses || [])[0]) : null,
+          hostessId:
+            (item.selectedHostesses || []).length === 1
+              ? toNullableStringId((item.selectedHostesses || [])[0])
+              : null,
           selectedHostesses: item.selectedHostesses || [],
-          roomId: item.selectedRoom ? Number(item.selectedRoom) : null
+          roomId: toNullableStringId(item.selectedRoom)
         })),
-        usuarios: Array.from(new Set(bebidasConComision.flatMap(p => p.selectedHostesses || []))).map(id => ({ usuarioId: Number(id) }))
+        usuarios: Array.from(new Set(bebidasConComision.flatMap(p => p.selectedHostesses || [])))
+          .map(id => toNullableStringId(id))
+          .filter((id): id is string => Boolean(id))
+          .map(id => ({ usuarioId: id }))
       };
+
+      const detallesInvalidos = payload.detalles.some(detalle => !detalle.productoId);
+      if (detallesInvalidos) {
+        setError('Hay productos sin identificador válido. Recargá la pantalla e intentá nuevamente.');
+        return;
+      }
 
       const res = await fetch('/api/orders', {
         method: 'POST',

@@ -371,7 +371,8 @@ export class ReportRepository {
       { tipo: 'iva', monto: summary.iva }
     ].filter(item => item.monto > 0);
 
-    const entradas = summary.apertura_total + summary.efectivo + summary.tarjeta + summary.transferencia;
+    const entradas =
+      summary.apertura_total + summary.efectivo + summary.tarjeta + summary.transferencia;
     const salidas = summary.devoluciones + summary.comision + summary.iva;
 
     return {
