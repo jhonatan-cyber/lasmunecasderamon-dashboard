@@ -180,7 +180,9 @@ export function ProfilePersonalInfoCard({
                 <Label htmlFor='estado_civil'>Estado Civil</Label>
                 <Select
                   value={userData.estado_civil || ''}
-                  onValueChange={value => onUserDataChange({ ...userData, estado_civil: value })}
+                  onValueChange={(value: string) =>
+                    onUserDataChange({ ...userData, estado_civil: value })
+                  }
                   disabled={!isEditing}
                 >
                   <SelectTrigger className='rounded-full'>
@@ -215,7 +217,9 @@ export function ProfilePersonalInfoCard({
                 <Label htmlFor='rol_id'>Rol</Label>
                 <Select
                   value={userData.rol_id?.toString() || ''}
-                  onValueChange={value => onUserDataChange({ ...userData, rol_id: value })}
+                  onValueChange={(value: string) =>
+                    onUserDataChange({ ...userData, rol_id: value })
+                  }
                   disabled={!isEditing}
                 >
                   <SelectTrigger className='rounded-full'>
@@ -313,7 +317,9 @@ export function ProfilePersonalInfoCard({
                 <Label htmlFor='estado_civil'>Estado Civil</Label>
                 <Select
                   value={userData.estado_civil || ''}
-                  onValueChange={value => onUserDataChange({ ...userData, estado_civil: value })}
+                  onValueChange={(value: string) =>
+                    onUserDataChange({ ...userData, estado_civil: value })
+                  }
                   disabled={!isEditing}
                 >
                   <SelectTrigger className='rounded-full'>

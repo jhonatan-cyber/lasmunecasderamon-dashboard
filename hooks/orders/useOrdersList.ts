@@ -98,9 +98,10 @@ export const useOrdersList = () => {
   }, []);
 
   const handleOrderUpdate = useCallback(
-    (data: { type: string; orderId: string }) => {
+    (data: { type: string; orderId: string | number }) => {
+      const normalizedOrderId = String(data.orderId);
       if (data.type === 'order-processed' || data.type === 'order-deleted') {
-        setOrders(prev => prev.filter(o => o.id_pedido !== data.orderId));
+        setOrders(prev => prev.filter(o => o.id_pedido !== normalizedOrderId));
         fetchServicios();
       } else if (data.type === 'order-created') {
         fetchOrders();

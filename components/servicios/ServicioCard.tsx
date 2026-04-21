@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -77,33 +76,8 @@ export default function ServicioCard({
   const rawId = servicio.id_servicio ?? servicio.id;
   const servicioIdStr = String(rawId || 'NO-ID');
 
-  console.log(
-    '[ServicioCard] Raw ID:',
-    rawId,
-    'String:',
-    servicioIdStr,
-    'Keys:',
-    Object.keys(servicio)
-  );
-
   const globalTimer = getTimerByServicioId(servicioIdStr);
   const temporaryTimer = getTemporaryTimerByServicioId(servicioIdStr);
-
-  // Debug: mostrar info del timer cada vez que cambia
-  useEffect(() => {
-    console.log(
-      '[ServicioCard] servicioId:',
-      servicioIdStr,
-      'has globalTimer:',
-      !!globalTimer,
-      'has tempTimer:',
-      !!temporaryTimer,
-      'remaining:',
-      globalTimer?.remainingTime,
-      'active:',
-      globalTimer?.isActive
-    );
-  }, [servicioIdStr, globalTimer, temporaryTimer]);
 
   const displayTimer = temporaryTimer || globalTimer;
   const isTemporaryActive = !!temporaryTimer;
@@ -292,14 +266,12 @@ export default function ServicioCard({
 
   const handlePauseMainTimer = useCallback(() => {
     if (servicio.id_servicio) {
-      console.log('ServicioCard: Pausando timer principal para servicio:', servicio.id_servicio);
       pauseTimerByServicioId(String(servicio.id_servicio));
     }
   }, [servicio.id_servicio, pauseTimerByServicioId]);
 
   const handleResumeMainTimer = useCallback(() => {
     if (servicio.id_servicio) {
-      console.log('ServicioCard: Reanudando timer principal para servicio:', servicio.id_servicio);
       resumeTimerByServicioId(String(servicio.id_servicio));
     }
   }, [servicio.id_servicio, resumeTimerByServicioId]);
@@ -674,3 +646,6 @@ export default function ServicioCard({
     </Card>
   );
 }
+
+
+
