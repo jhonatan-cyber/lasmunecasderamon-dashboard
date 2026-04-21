@@ -39,13 +39,12 @@ export interface SolicitudServicio {
   habitacion_numero: number;
 }
 
-
 const normalizeOrder = (order: any): Order => {
   const normalizedId = String(order?.id_pedido ?? order?.id ?? '');
   return {
     ...order,
     id: String(order?.id ?? normalizedId),
-    id_pedido: normalizedId,
+    id_pedido: normalizedId
   };
 };
 
@@ -58,7 +57,7 @@ const normalizeServicio = (servicio: any): SolicitudServicio => ({
     ? servicio.anfitrionas_ids.map((id: any) => String(id))
     : [],
   solicitado_por: String(servicio?.solicitado_por ?? ''),
-  procesado_por: servicio?.procesado_por ? String(servicio.procesado_por) : undefined,
+  procesado_por: servicio?.procesado_por ? String(servicio.procesado_por) : undefined
 });
 
 export const useOrdersList = () => {
@@ -88,7 +87,9 @@ export const useOrdersList = () => {
       const res = await fetch('/api/solicitudes-servicios?estado=pendiente');
       const data = await res.json();
       if (data.success) {
-        setServicios((data.data || []).map(normalizeServicio).filter((s: any) => s.estado === 'pendiente'));
+        setServicios(
+          (data.data || []).map(normalizeServicio).filter((s: any) => s.estado === 'pendiente')
+        );
       }
     } catch (error) {
       console.error('Error fetching services:', error);

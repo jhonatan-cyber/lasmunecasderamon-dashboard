@@ -8,6 +8,12 @@ import {
 import { Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import React, { useState, useMemo } from "react";
+import {
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_SEARCH_INPUT_CLASS,
+  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
+  ORDER_FIELD_TRIGGER_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 interface Hostess {
   id_usuario?: number;
@@ -78,17 +84,17 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
           <Users className="w-4 h-4" />
         </span>
         <Select value={value || ""} onValueChange={onChange} disabled={disabled}>
-          <SelectTrigger className="w-full pl-10 rounded-full text-xs" disabled={disabled}>
+          <SelectTrigger className={ORDER_FIELD_TRIGGER_CLASS} disabled={disabled}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent className="max-h-80">
+          <SelectContent className={`${ORDER_FIELD_POPOVER_CLASS} max-h-80`}>
             {/* Barra de búsqueda */}
-            <div className="p-2 border-b">
+            <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
               <Input
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className={ORDER_FIELD_SEARCH_INPUT_CLASS}
                 disabled={disabled}
               />
             </div>

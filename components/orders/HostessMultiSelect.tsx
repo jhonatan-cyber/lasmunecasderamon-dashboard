@@ -4,6 +4,11 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import SearchInput from "@/components/shared/SearchInput";
 import React, { useRef, useState } from "react";
+import {
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_MULTISELECT_TRIGGER_CLASS,
+  ORDER_SELECTED_TAG_CLASS
+} from "@/components/orders/orderFieldStyles";
 
 interface HostessMultiSelectProps {
   anfitrionas: any[];
@@ -37,7 +42,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
             <button
               ref={triggerRef}
               type="button"
-              className="w-full pl-8 pr-2 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-1 rounded-full flex items-center min-h-[35px] text-center"
+              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} pl-8 pr-10`}
               onClick={() => setOpen((v) => !v)}
             >
               {value.length === 0 ? (
@@ -49,7 +54,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                   {anfitrionas
                     .filter((a) => value.includes(String(a.id_usuario || a.id)))
                     .map((a) => (
-                      <span key={a.id_usuario || a.id} className="bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs">{a.nick || a.nombre}</span>
+                      <span key={a.id_usuario || a.id} className={ORDER_SELECTED_TAG_CLASS}>{a.nick || a.nombre}</span>
                     ))}
                   {maxSelection && (
                     <span className="text-xs text-gray-500 ml-1">
@@ -61,7 +66,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
               <span className="ml-auto pl-2 text-gray-400">▼</span>
             </button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-[260px] p-0">
+          <PopoverContent align="start" className={ORDER_FIELD_POPOVER_CLASS}>
             <div className="px-2 py-1 sticky top-0 z-10 bg-white">
               <SearchInput value={searchValue} onChange={onSearchChange} placeholder="Buscar anfitriona..." className="w-full mb-2" />
             </div>

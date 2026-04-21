@@ -17,7 +17,7 @@ export function parseSolicitudResponseCommand(message: string) {
 
   return {
     index: Number(match[1]) - 1,
-    action: match[2].toLowerCase() as WhatsAppSolicitudAction,
+    action: match[2].toLowerCase() as WhatsAppSolicitudAction
   };
 }
 
@@ -27,7 +27,7 @@ export function parseAnticipoCommand(message: string) {
 
   return {
     action: match[1].toLowerCase() as 'aprobar' | 'rechazar',
-    anticipoId: match[2],
+    anticipoId: match[2]
   };
 }
 

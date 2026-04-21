@@ -1,5 +1,5 @@
-import { ServicioWithDetails } from "@/types/servicio";
-import { formatDateTimeDmyLabel } from "@/lib/utils/calendarUtils";
+import { ServicioWithDetails } from '@/types/servicio';
+import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 
 type HabitacionStatsRow = {
@@ -23,7 +23,7 @@ export function calculateServiceTotals(
 
   return {
     subTotal,
-    total,
+    total
   };
 }
 
@@ -40,33 +40,33 @@ export function getServiceStatusBadge(estado: number) {
   switch (estadoNum) {
     case 0:
       return {
-        text: "Anulado",
-        className: "bg-red-100 text-red-800",
+        text: 'Anulado',
+        className: 'bg-red-100 text-red-800'
       };
     case 1:
       return {
-        text: "Finalizado",
-        className: "bg-gray-100 text-gray-800",
+        text: 'Finalizado',
+        className: 'bg-gray-100 text-gray-800'
       };
     case 2:
       return {
-        text: "En Proceso",
-        className: "bg-green-100 text-green-800",
+        text: 'En Proceso',
+        className: 'bg-green-100 text-green-800'
       };
     case 3:
       return {
-        text: "Pausado",
-        className: "bg-orange-100 text-orange-800",
+        text: 'Pausado',
+        className: 'bg-orange-100 text-orange-800'
       };
     case 4:
       return {
-        text: "Solicitud Anulación",
-        className: "bg-amber-100 text-amber-800",
+        text: 'Solicitud Anulación',
+        className: 'bg-amber-100 text-amber-800'
       };
     default:
       return {
-        text: "Desconocido",
-        className: "bg-gray-100 text-gray-800",
+        text: 'Desconocido',
+        className: 'bg-gray-100 text-gray-800'
       };
   }
 }
@@ -83,19 +83,19 @@ export function validateServiceData(data: {
   const errors: string[] = [];
 
   if (!data.usuarios || data.usuarios.length === 0) {
-    errors.push("Selecciona al menos una anfitriona");
+    errors.push('Selecciona al menos una anfitriona');
   }
 
   if (!data.habitacion_id) {
-    errors.push("Selecciona una habitación");
+    errors.push('Selecciona una habitación');
   }
 
   if (data.precio_servicio <= 0) {
-    errors.push("El precio de servicio debe ser mayor a 0");
+    errors.push('El precio de servicio debe ser mayor a 0');
   }
 
   if (!data.metodo_pago) {
-    errors.push("Selecciona un método de pago");
+    errors.push('Selecciona un método de pago');
   }
 
   return errors;
@@ -105,45 +105,47 @@ export function validateServiceData(data: {
 export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   const totalServicios = servicios.length;
   // Activos = En Proceso (2) o Pausado (3)
-  const serviciosActivos = servicios.filter((s) => s.estado === 2 || s.estado === 3).length;
+  const serviciosActivos = servicios.filter(s => s.estado === 2 || s.estado === 3).length;
   // Terminados = Finalizado (1), Anulado (0) o Solicitud de Anulación (4)
-  const serviciosTerminados = servicios.filter((s) => s.estado === 1 || s.estado === 0 || s.estado === 4).length;
+  const serviciosTerminados = servicios.filter(
+    s => s.estado === 1 || s.estado === 0 || s.estado === 4
+  ).length;
 
   // Ingresos totales de servicios finalizados (estado 1)
   const ingresosTotales = servicios
-    .filter((s) => s.estado === 1) // Solo servicios finalizados
+    .filter(s => s.estado === 1) // Solo servicios finalizados
     .reduce((sum, s) => sum + (s.total || 0), 0);
 
   // Promedio de tiempo de servicios activos
-  const serviciosActivosArray = servicios.filter((s) => s.estado === 2 || s.estado === 3);
-  const promedioTiempo = serviciosActivosArray.length > 0
-    ? Math.round(
-      serviciosActivosArray.reduce((sum, s) => sum + (s.tiempo || 0), 0) /
-      serviciosActivosArray.length
-    )
-    : 0;
+  const serviciosActivosArray = servicios.filter(s => s.estado === 2 || s.estado === 3);
+  const promedioTiempo =
+    serviciosActivosArray.length > 0
+      ? Math.round(
+          serviciosActivosArray.reduce((sum, s) => sum + (s.tiempo || 0), 0) /
+            serviciosActivosArray.length
+        )
+      : 0;
 
   return {
     totalServicios,
     serviciosActivos,
     serviciosTerminados,
     ingresosTotales,
-    promedioTiempo,
+    promedioTiempo
   };
 }
 
 // Calcular estadísticas de habitaciones
 export function calculateRoomStats(habitaciones: HabitacionStatsRow[]) {
   const habitacionesDisponibles = habitaciones.filter(
-    (h) => Number(h.estado) === 1 || Number(h.status) === 1
+    h => Number(h.estado) === 1 || Number(h.status) === 1
   ).length;
   const habitacionesOcupadas = habitaciones.filter(
-    (h) => Number(h.estado) === 2 || Number(h.status) === 2
+    h => Number(h.estado) === 2 || Number(h.status) === 2
   ).length;
 
   return {
     habitacionesDisponibles,
-    habitacionesOcupadas,
+    habitacionesOcupadas
   };
 }
-

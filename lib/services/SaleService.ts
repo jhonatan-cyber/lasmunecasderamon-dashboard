@@ -189,12 +189,7 @@ export class SaleService {
           let remainingQty = totalQty;
 
           for (let i = 0; i < hostessCount; i++) {
-            const qtyPart =
-              i === hostessCount - 1
-                ? remainingQty
-                : baseQty === 0
-                  ? 1
-                  : baseQty;
+            const qtyPart = i === hostessCount - 1 ? remainingQty : baseQty === 0 ? 1 : baseQty;
 
             remainingQty -= qtyPart;
             quantityByIndex[i] = qtyPart;

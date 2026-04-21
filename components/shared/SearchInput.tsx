@@ -1,6 +1,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
+import { ORDER_FIELD_INPUT_CLASS } from '@/components/orders/orderFieldStyles';
 
 interface SearchInputProps {
   id?: string;
@@ -26,7 +27,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
         id={id}
         type="text"
         placeholder={placeholder}
-        className="pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+        className={`${ORDER_FIELD_INPUT_CLASS} pl-10`}
         value={value}
         onChange={e => onChange(e.target.value)}
       />

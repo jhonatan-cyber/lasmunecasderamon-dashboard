@@ -790,10 +790,10 @@ export class SaleRepository {
     let ventaId: string | null = null;
 
     await withTransaction(async trx => {
-      await trx(
-        'UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?',
-        [nextStatus, requestId]
-      );
+      await trx('UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?', [
+        nextStatus,
+        requestId
+      ]);
       const req = await trx<any[]>(
         'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?',
         [requestId]

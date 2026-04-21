@@ -4,6 +4,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React, { useState, useMemo } from 'react';
+import {
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_SEARCH_INPUT_CLASS,
+  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
+  ORDER_MULTISELECT_TRIGGER_CLASS,
+  ORDER_SELECTED_TAG_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 interface Hostess {
   id_usuario?: string | number;
@@ -97,7 +105,7 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
         <button
           id={uniqueId}
           type='button'
-          className='w-full pl-4 pr-4 border border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-black bg-gray-100 dark:bg-slate-900/50 py-2 rounded-full flex items-center min-h-[44px] text-left hover:border-gray-400 transition-colors text-sm'
+          className={ORDER_MULTISELECT_TRIGGER_CLASS}
           onClick={() => !disabledState && setOpen(v => !v)}
           disabled={disabledState}
         >
@@ -108,7 +116,7 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
               {selectedHostesses.map((a, index) => (
                 <span
                   key={`${getHostessId(a)}-${index}`}
-                  className='bg-pink-100 text-pink-700 rounded px-2 py-0.5 text-xs font-medium'
+                  className={ORDER_SELECTED_TAG_CLASS}
                 >
                   {getHostessName(a)}
                 </span>
@@ -118,8 +126,8 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
         </button>
       </PopoverTrigger>
       {!disabledState && (
-        <PopoverContent align='start' className='w-[280px] p-0 z-[9999]'>
-          <div className='p-2 border-b'>
+        <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS}>
+          <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
             <label htmlFor={`${uniqueId}-search`} className='sr-only'>
               Buscar anfitriona
             </label>
@@ -128,7 +136,7 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className='w-full'
+              className={ORDER_FIELD_SEARCH_INPUT_CLASS}
             />
           </div>
           <div className='max-h-60 overflow-y-auto'>
@@ -180,7 +188,7 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide'>
+      <Label className={ORDER_FIELD_LABEL_CLASS}>
         {label}
         {required && <span className='text-red-500 ml-1'>*</span>}
       </Label>
