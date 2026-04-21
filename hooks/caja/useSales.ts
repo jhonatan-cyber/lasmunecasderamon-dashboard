@@ -1,4 +1,3 @@
- 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   VentaWithDetails,
@@ -15,7 +14,6 @@ export const useSales = () => {
   const [mutationLoading, setMutationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentFilters, setCurrentFilters] = useState<VentaFiltros | undefined>(undefined);
-
 
   const endpoint = useMemo(() => {
     const params = new URLSearchParams();
@@ -41,21 +39,32 @@ export const useSales = () => {
     setData: setVentas
   } = useGenericFetch<VentaWithDetails>(endpoint, {
     initialFetch: false,
-    transform: (data) => {
+    transform: data => {
       // API returns: { success: true, data: { data: [...], total: N } }
       const payload = data?.data;
-      const ventasArray = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : (Array.isArray(data) ? data : []));
-      return ventasArray.filter((item: unknown): item is VentaWithDetails => item != null && typeof item === 'object' && 'estado' in item);
+      const ventasArray = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+          ? payload
+          : Array.isArray(data)
+            ? data
+            : [];
+      return ventasArray.filter(
+        (item: unknown): item is VentaWithDetails =>
+          item != null && typeof item === 'object' && 'estado' in item
+      );
     }
   });
 
   const loading = fetchLoading || mutationLoading;
 
-  const getVentas = useCallback(async (filtros?: VentaFiltros) => {
-
-    setCurrentFilters(filtros);
-    await refetch();
-  }, [refetch]);
+  const getVentas = useCallback(
+    async (filtros?: VentaFiltros) => {
+      setCurrentFilters(filtros);
+      await refetch();
+    },
+    [refetch]
+  );
 
   const getVentaById = async (id: string | number): Promise<VentaWithDetails | null> => {
     try {
@@ -70,109 +79,126 @@ export const useSales = () => {
     }
   };
 
-  const createVenta = useCallback(async (ventaData: VentaCreate): Promise<any> => {
-    setMutationLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(ventaData)
-      });
+  const createVenta = useCallback(
+    async (ventaData: VentaCreate): Promise<any> => {
+      setMutationLoading(true);
+      setError(null);
+      try {
+        const response = await fetch('/api/sales', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(ventaData)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.errorCode === 'CAJA_CERRADA') {
-          const errorMessage =
-            errorData.message || 'No se puede realizar la venta. No hay una caja abierta.';
-          showErrorToast(errorMessage);
-          throw new Error(errorMessage);
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.errorCode === 'CAJA_CERRADA') {
+            const errorMessage =
+              errorData.message || 'No se puede realizar la venta. No hay una caja abierta.';
+            showErrorToast(errorMessage);
+            throw new Error(errorMessage);
+          }
+          if (errorData.errorCode === 'HOSTESS_NOT_LOGGED_IN') {
+            const errorMessage =
+              errorData.message ||
+              'Las anfitrionas seleccionadas deben estar logueadas en el local.';
+            showErrorToast(errorMessage);
+            throw new Error(errorMessage);
+          }
+          throw new Error(errorData.message || 'Error al crear venta');
         }
-        if (errorData.errorCode === 'HOSTESS_NOT_LOGGED_IN') {
-          const errorMessage =
-            errorData.message || 'Las anfitrionas seleccionadas deben estar logueadas en el local.';
-          showErrorToast(errorMessage);
-          throw new Error(errorMessage);
+
+        const nuevaVenta = await response.json();
+        if (
+          setVentas &&
+          nuevaVenta?.data &&
+          typeof nuevaVenta.data === 'object' &&
+          'estado' in nuevaVenta.data
+        ) {
+          setVentas((prev: VentaWithDetails[] | undefined) => [nuevaVenta.data, ...(prev || [])]);
         }
-        throw new Error(errorData.message || 'Error al crear venta');
+        return nuevaVenta;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+        setError(errorMessage);
+
+        if (!errorMessage.includes('caja abierta') && !errorMessage.includes('caja cerrada')) {
+          showErrorToast('Error al generar la venta');
+        }
+
+        return null;
+      } finally {
+        setMutationLoading(false);
       }
+    },
+    [setVentas]
+  );
 
-      const nuevaVenta = await response.json();
-      if (setVentas && nuevaVenta?.data && typeof nuevaVenta.data === 'object' && 'estado' in nuevaVenta.data) {
-        setVentas((prev: VentaWithDetails[] | undefined) => [nuevaVenta.data, ...(prev || [])]);
+  const updateVenta = useCallback(
+    async (id: string | number, ventaData: VentaUpdate): Promise<boolean> => {
+      setMutationLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/ventas/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(ventaData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al actualizar venta');
+        }
+
+        await getVentas(currentFilters);
+        return true;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+        setError(errorMessage);
+        showErrorToast('Error al actualizar la venta');
+        return false;
+      } finally {
+        setMutationLoading(false);
       }
-      return nuevaVenta;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
+    },
+    [getVentas, currentFilters]
+  );
 
-      if (!errorMessage.includes('caja abierta') && !errorMessage.includes('caja cerrada')) {
-        showErrorToast('Error al generar la venta');
+  const deleteVenta = useCallback(
+    async (id: string | number): Promise<boolean> => {
+      setMutationLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/ventas/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al eliminar venta');
+        }
+
+        if (setVentas) {
+          setVentas((prev: VentaWithDetails[] | undefined) =>
+            (prev || []).filter((venta: VentaWithDetails) => String(venta.id) !== String(id))
+          );
+        }
+        return true;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+        setError(errorMessage);
+        showErrorToast('Error al eliminar la venta');
+        return false;
+      } finally {
+        setMutationLoading(false);
       }
-
-      return null;
-    } finally {
-      setMutationLoading(false);
-    }
-  }, [setVentas]);
-
-  const updateVenta = useCallback(async (id: string | number, ventaData: VentaUpdate): Promise<boolean> => {
-    setMutationLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/ventas/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(ventaData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar venta');
-      }
-
-      await getVentas(currentFilters);
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-      showErrorToast('Error al actualizar la venta');
-      return false;
-    } finally {
-      setMutationLoading(false);
-    }
-  }, [getVentas, currentFilters]);
-
-  const deleteVenta = useCallback(async (id: string | number): Promise<boolean> => {
-    setMutationLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/ventas/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar venta');
-      }
-
-      if (setVentas) {
-        setVentas((prev: VentaWithDetails[] | undefined) => (prev || []).filter((venta: VentaWithDetails) => String(venta.id) !== String(id)));
-      }
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-      showErrorToast('Error al eliminar la venta');
-      return false;
-    } finally {
-      setMutationLoading(false);
-    }
-  }, [setVentas]);
+    },
+    [setVentas]
+  );
 
   const getResumen = useCallback(async (filtros?: VentaFiltros) => {
     setMutationLoading(true);
@@ -202,47 +228,53 @@ export const useSales = () => {
     }
   }, []);
 
-  const cancelarVenta = useCallback(async (id: string | number, motivo?: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`/api/ventas/${id}/solicitar-anulacion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ motivo })
-      });
+  const cancelarVenta = useCallback(
+    async (id: string | number, motivo?: string): Promise<boolean> => {
+      try {
+        const response = await fetch(`/api/ventas/${id}/solicitar-anulacion`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ motivo })
+        });
 
-      if (!response.ok) {
-        throw new Error('Error al cancelar venta');
+        if (!response.ok) {
+          throw new Error('Error al cancelar venta');
+        }
+
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+        return false;
       }
+    },
+    []
+  );
 
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      return false;
-    }
-  }, []);
+  const devolverVenta = useCallback(
+    async (id: string | number, motivo?: string): Promise<boolean> => {
+      try {
+        const response = await fetch(`/api/ventas/${id}/devolver`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ motivo })
+        });
 
-  const devolverVenta = useCallback(async (id: string | number, motivo?: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`/api/ventas/${id}/devolver`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ motivo })
-      });
+        if (!response.ok) {
+          throw new Error('Error al devolver venta');
+        }
 
-      if (!response.ok) {
-        throw new Error('Error al devolver venta');
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+        return false;
       }
-
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      return false;
-    }
-  }, []);
+    },
+    []
+  );
 
   const clearError = useCallback(() => {
     setError(null);
@@ -277,4 +309,3 @@ export const useSales = () => {
     clearError
   };
 };
-

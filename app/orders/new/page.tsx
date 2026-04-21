@@ -138,11 +138,11 @@ export default function NewOrder() {
       </div>
       <div className='p-8 bg-white dark:bg-zinc-950 ml-8 mr-8 space-y-6 shadow-md dark:shadow-black/20 rounded-xl border border-transparent dark:border-zinc-800'>
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='grid w-full grid-cols-2 mb-6 rounded-full bg-gray-100 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
-            <TabsTrigger value='productos' className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'>
+          <TabsList className='mb-6 flex w-full justify-start gap-2 rounded-full bg-gray-100 p-1 dark:bg-gray-800'>
+            <TabsTrigger value='productos' className='flex-1 rounded-full'>
               Pedidos de Productos
             </TabsTrigger>
-            <TabsTrigger value='servicios' className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'>
+            <TabsTrigger value='servicios' className='flex-1 rounded-full'>
               Pedidos de Servicio
             </TabsTrigger>
           </TabsList>

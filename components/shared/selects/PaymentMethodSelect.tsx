@@ -9,6 +9,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { CreditCard, DollarSign, Building2, Wallet, Split } from 'lucide-react';
 import { metodoPagoLabels } from '@/lib/business/salesUtils';
+import {
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_TRIGGER_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 export type PaymentMethod =
   | 'efectivo'
@@ -76,7 +81,7 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide'>
+      <Label className={ORDER_FIELD_LABEL_CLASS}>
         {label}
         {required && <span className='text-red-500'>*</span>}
       </Label>
@@ -87,17 +92,18 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
         </span>
         <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
           <SelectTrigger
-            className='w-full pl-10 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 h-11'
+            className={`${ORDER_FIELD_TRIGGER_CLASS} pl-10`}
             disabled={disabled}
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
             {paymentMethods.map(method => (
               <SelectItem
                 key={method.value}
                 value={method.value}
                 disabled={disabledMethods.includes(method.value)}
+                className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
               >
                 {method.label}
               </SelectItem>

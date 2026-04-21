@@ -24,7 +24,12 @@ interface UserInfoDisplayProps {
   variant?: 'card' | 'table';
 }
 
-function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant = 'card' }: UserInfoDisplayProps) {
+function UserInfoDisplayComponent({
+  user,
+  formatDate,
+  getRoleBadgeColor,
+  variant = 'card'
+}: UserInfoDisplayProps) {
   const getMaritalStatusColor = (status: string) => {
     if (['Soltero', 'Soltera'].includes(status)) return 'bg-green-100 text-green-700';
     if (['Casado', 'Casada'].includes(status)) return 'bg-red-100 text-red-700';
@@ -36,21 +41,29 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
       <div className='flex items-center space-x-2 sm:space-x-3'>
         <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
           <AvatarImage
-            src={user.foto 
-              ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
-              : '/img/users/default.png'}
+            src={
+              user.foto
+                ? user.foto.startsWith('http')
+                  ? user.foto
+                  : `/img/users/${user.foto}`
+                : '/img/users/default.png'
+            }
             alt={user.name || user.nick || 'Usuario'}
             asChild
           >
             <Image
-              src={user.foto 
-                ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
-                : '/img/users/default.png'}
+              src={
+                user.foto
+                  ? user.foto.startsWith('http')
+                    ? user.foto
+                    : `/img/users/${user.foto}`
+                  : '/img/users/default.png'
+              }
               alt={user.name || user.nick || 'Usuario'}
               width={40}
               height={40}
-              loading="lazy"
-              className="object-cover"
+              loading='lazy'
+              className='object-cover'
             />
           </AvatarImage>
           <AvatarFallback className='text-xs sm:text-sm'>
@@ -70,9 +83,7 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
           <p className='text-xs text-gray-400'>RUT: {formatRUTDisplay(user.run)}</p>
           <div className='text-xs sm:text-sm text-gray-400'>
             Institucion de aporte:{' '}
-            <Badge className='text-xs bg-blue-100 text-blue-700'>
-              {user.afp || 'Sin AFP'}
-            </Badge>
+            <Badge className='text-xs bg-blue-100 text-blue-700'>{user.afp || 'Sin AFP'}</Badge>
           </div>
         </div>
       </div>
@@ -84,25 +95,33 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
       {/* Columna izquierda - Información personal */}
       <div className='space-y-2'>
         <div className='flex items-center gap-2'>
-        <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
-          <AvatarImage
-            src={user.foto 
-              ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
-              : '/img/users/default.png'}
-            alt={user.name || user.nick || 'Usuario'}
-            asChild
-          >
-            <Image
-              src={user.foto 
-                ? (user.foto.startsWith('http') ? user.foto : `/img/users/${user.foto}`) 
-                : '/img/users/default.png'}
+          <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
+            <AvatarImage
+              src={
+                user.foto
+                  ? user.foto.startsWith('http')
+                    ? user.foto
+                    : `/img/users/${user.foto}`
+                  : '/img/users/default.png'
+              }
               alt={user.name || user.nick || 'Usuario'}
-              width={40}
-              height={40}
-              loading="lazy"
-              className="object-cover"
-            />
-          </AvatarImage>
+              asChild
+            >
+              <Image
+                src={
+                  user.foto
+                    ? user.foto.startsWith('http')
+                      ? user.foto
+                      : `/img/users/${user.foto}`
+                    : '/img/users/default.png'
+                }
+                alt={user.name || user.nick || 'Usuario'}
+                width={40}
+                height={40}
+                loading='lazy'
+                className='object-cover'
+              />
+            </AvatarImage>
             <AvatarFallback className='text-xs sm:text-sm'>
               {user.name?.charAt(0) || 'U'}
             </AvatarFallback>
@@ -127,7 +146,9 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
 
         <div className='flex items-center gap-2'>
           <User className='h-3 w-3 text-gray-400' />
-          <span className='text-xs sm:text-sm text-gray-600'>RUT: {formatRUTDisplay(user.run)}</span>
+          <span className='text-xs sm:text-sm text-gray-600'>
+            RUT: {formatRUTDisplay(user.run)}
+          </span>
         </div>
 
         <div className='flex items-center gap-2'>
@@ -137,9 +158,7 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
 
         <div className='flex items-center gap-2'>
           <Phone className='h-3 w-3 text-gray-400' />
-          <span className='text-xs sm:text-sm text-gray-600'>
-            Telefono : {user.phone}
-          </span>
+          <span className='text-xs sm:text-sm text-gray-600'>Telefono : {user.phone}</span>
         </div>
 
         <div className='flex items-center gap-2'>
@@ -156,12 +175,10 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
           </span>
         </div>
       </div>
-      
+
       {/* Columna derecha - Información financiera */}
       <div className='space-y-2'>
-        <div className='text-xs font-medium text-gray-700 mb-2'>
-          Información Financiera
-        </div>
+        <div className='text-xs font-medium text-gray-700 mb-2'>Información Financiera</div>
 
         <div className='flex items-center gap-2'>
           <DollarSign className='h-3 w-3 text-green-600' />
@@ -186,7 +203,7 @@ function UserInfoDisplayComponent({ user, formatDate, getRoleBadgeColor, variant
               : 'Sin descuento'}
           </span>
         </div>
-        
+
         <div className='flex items-center gap-2'>
           <Home className='h-3 w-3 text-blue-600' />
           <span className='text-xs sm:text-sm text-gray-600'>

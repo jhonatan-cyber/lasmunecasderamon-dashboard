@@ -10,6 +10,12 @@ import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useClients } from '@/hooks/clientes/useClients';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import {
+  ORDER_FIELD_INPUT_WITH_ICON_CLASS,
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_TRIGGER_CLASS
+} from '@/components/orders/orderFieldStyles';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -19,6 +25,7 @@ import {
 
 import CustomersSelect from '@/components/shared/selects/CustomersSelect';
 import HostessSelect from '@/components/shared/selects/HostessSelect';
+import RoomSelect from '@/components/shared/selects/RoomSelect';
 
 interface ServiceOrderFormProps {
   clientes: any[];
@@ -41,7 +48,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
   const [selectedClienteId, setSelectedClienteId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchHabitacion, setSearchHabitacion] = useState('');
   const [searchCliente, setSearchCliente] = useState('');
   const [searchAnfitriona, setSearchAnfitriona] = useState('');
   const [anfitrionaDropdownOpen, setAnfitrionaDropdownOpen] = useState(false);
@@ -51,9 +57,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     precio_servicio: 0,
     precio_habitacion: 0,
     comision_anfitriona: 0,
-    habitacion_id: undefined as number | undefined,
-    anfitrionas_ids: [] as number[],
-    clientes_ids: [] as number[], // Array para múltiples clientes
+    habitacion_id: undefined as string | undefined,
+    anfitrionas_ids: [] as string[],
+    clientes_ids: [] as string[], // Array para múltiples clientes
     metodo_pago: 'efectivo',
     tiempo: 0
   });
@@ -64,7 +70,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   });
 
   // Estados para controlar qué campos están habilitados
-  const habitacionSeleccionada = tempForm.habitacion_id !== undefined && tempForm.habitacion_id > 0;
+  const habitacionSeleccionada = Boolean(tempForm.habitacion_id);
   const tieneComision = tempForm.comision_anfitriona > 0;
 
   // REGLA: Limitar selección de anfitrionas y clientes según el total de 4 personas
@@ -139,10 +145,10 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   // Filtrar anfitrionas disponibles (no ocupadas y no seleccionadas)
   const anfitrionasDisponibles =
     anfitrionas?.filter(a => {
-      const id = a.id_usuario || a.id;
+      const id = String(a.id_usuario || a.id || '');
       return (
-        !anfitrionasOcupadas.includes(id as number) &&
-        !tempForm.anfitrionas_ids.includes(id as number)
+        !anfitrionasOcupadas.includes(Number(id)) &&
+        !tempForm.anfitrionas_ids.includes(id)
       );
     }) || [];
 
@@ -181,7 +187,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   };
 
   const handleCreateOrder = async () => {
-    if (!tempForm.habitacion_id || tempForm.habitacion_id === 0) {
+    if (!tempForm.habitacion_id) {
       showErrorToast('Selecciona una habitación');
       return;
     }
@@ -202,6 +208,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           habitacion_id: tempForm.habitacion_id,
           precio_servicio: tempForm.precio_servicio,
           precio_habitacion: tempForm.precio_habitacion,
+          comision_anfitriona: tempForm.comision_anfitriona,
           anfitrionas_ids: tempForm.anfitrionas_ids,
           metodo_pago: tempForm.metodo_pago,
           tiempo: tempForm.tiempo,
@@ -322,64 +329,29 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
         {/* Habitación */}
         <div>
-          <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>Habitación*</Label>
-          <Select
+          <RoomSelect
+            habitaciones={habitacionesDisponibles}
             value={tempForm.habitacion_id ? String(tempForm.habitacion_id) : ''}
-            onValueChange={(value: string) => {
-              const habitacionId = parseInt(value, 10);
+            onChange={(value: string) => {
               const habitacion = habitacionesDisponibles.find(
-                h => (h.id_habitacion || h.id) === habitacionId
+                h => String(h.id_habitacion || h.id || '') === value
               );
+
               setTempForm({
                 ...tempForm,
-                habitacion_id: habitacionId,
+                habitacion_id: value,
                 precio_habitacion: habitacion?.precio || habitacion?.price || 0,
                 comision_anfitriona: habitacion?.comision_anfitriona || 0,
                 tiempo: habitacion?.tiempo || habitacion?.time || 0
               });
             }}
-          >
-            <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
-              <SelectValue placeholder='Seleccione una habitación' />
-            </SelectTrigger>
-            <SelectContent className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700'>
-              <div className='p-2'>
-                <Input
-                  placeholder='Buscar habitación...'
-                  value={searchHabitacion}
-                  onChange={e => setSearchHabitacion(e.target.value)}
-                  className='bg-gray-100 dark:bg-[#1a1a1a] border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white mb-2'
-                  onClick={e => e.stopPropagation()}
-                />
-              </div>
-              {habitacionesDisponibles && habitacionesDisponibles.length > 0 ? (
-                habitacionesDisponibles
-                  .filter(h => {
-                    const nombre = (h.nombre || h.name || '').toLowerCase();
-                    return nombre.includes(searchHabitacion.toLowerCase());
-                  })
-                  .map(h => (
-                    <SelectItem
-                      key={h.id_habitacion || h.id}
-                      value={String(h.id_habitacion || h.id)}
-                      className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                    >
-                      <div className='flex flex-col'>
-                        <span className='font-semibold'>{h.nombre || h.name}</span>
-                        <span className='text-xs text-gray-500 dark:text-gray-400'>
-                          Precio: {formatCurrencyCLP(h.precio || h.price || 0)} | Tiempo:{' '}
-                          {h.tiempo || h.time || 0} min
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))
-              ) : (
-                <SelectItem value='0' disabled className='text-gray-500'>
-                  No hay habitaciones disponibles
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+            label='Habitación'
+            placeholder='Seleccione una habitación'
+            searchPlaceholder='Buscar habitación...'
+            required
+            showTime
+            showPrice
+          />
         </div>
 
         {/* Anfitrionas */}
@@ -388,7 +360,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
             anfitrionas={anfitrionas}
             value={tempForm.anfitrionas_ids.map(id => id.toString())}
             onChange={(values: string[]) =>
-              setTempForm({ ...tempForm, anfitrionas_ids: values.map(v => parseInt(v)) })
+              setTempForm({ ...tempForm, anfitrionas_ids: values })
             }
             label='Anfitrionas'
             placeholder='Seleccionar anfitrionas'
@@ -403,7 +375,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
             clientes={clientesDB || []}
             value={tempForm.clientes_ids.map(id => id.toString())}
             onChange={(values: string[]) =>
-              setTempForm({ ...tempForm, clientes_ids: values.map(v => parseInt(v)) })
+              setTempForm({ ...tempForm, clientes_ids: values })
             }
             label='Clientes'
             placeholder='Seleccionar clientes'
@@ -417,7 +389,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
         {/* Precio de servicio */}
         <div>
-          <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>
             Precio de servicio
           </Label>
           <div className='relative'>
@@ -435,7 +407,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
                   precio_servicio: formatNumberWithDots(parsed)
                 });
               }}
-              className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white pl-8 rounded-full'
+              className={ORDER_FIELD_INPUT_WITH_ICON_CLASS}
               placeholder='0'
             />
           </div>
@@ -443,17 +415,17 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
         {/* Método de pago */}
         <div>
-          <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>
             Método de pago*
           </Label>
           <Select
             value={tempForm.metodo_pago}
             onValueChange={(value: string) => setTempForm({ ...tempForm, metodo_pago: value })}
           >
-            <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
+            <SelectTrigger className={ORDER_FIELD_TRIGGER_CLASS}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700'>
+            <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
               <SelectItem
                 value='efectivo'
                 className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -478,7 +450,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
         {/* IVA */}
         <div>
-          <Label className='text-gray-600 dark:text-gray-400 text-sm mb-2 block'>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>
             Impuesto IVA ({tempForm.metodo_pago === 'tarjeta' ? '20%' : '0%'})
           </Label>
           <div className='relative'>
@@ -496,7 +468,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
                 )
               )}
               disabled
-              className='bg-gray-100 dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white pl-8 opacity-60 rounded-full'
+              className={`${ORDER_FIELD_INPUT_WITH_ICON_CLASS} opacity-60`}
               placeholder='0'
             />
           </div>
@@ -517,7 +489,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           onClick={handleCreateOrder}
           disabled={
             !tempForm.habitacion_id ||
-            tempForm.habitacion_id === 0 ||
             tempForm.anfitrionas_ids.length === 0 ||
             !tempForm.metodo_pago ||
             isSubmitting

@@ -41,23 +41,26 @@ function ImageUploadFieldComponent({
     setIsDraggingImage(true);
   };
 
-  const handleImageMouseMoveInternal = useCallback((e: MouseEvent) => {
-    if (!isDraggingImage) return;
-    
-    // Calcular cuánto se movió el mouse desde que empezó el drag
-    const deltaX = e.clientX - startDragRef.current.x;
-    const deltaY = e.clientY - startDragRef.current.y;
-    
-    // Sumar al offset inicial
-    const newX = startOffsetRef.current.x + deltaX;
-    const newY = startOffsetRef.current.y + deltaY;
-    
-    // Limitar movimiento a +/- 100px desde el centro
-    const clampedX = Math.max(-100, Math.min(100, newX));
-    const clampedY = Math.max(-100, Math.min(100, newY));
-    
-    setImageOffset({ x: clampedX, y: clampedY });
-  }, [isDraggingImage]);
+  const handleImageMouseMoveInternal = useCallback(
+    (e: MouseEvent) => {
+      if (!isDraggingImage) return;
+
+      // Calcular cuánto se movió el mouse desde que empezó el drag
+      const deltaX = e.clientX - startDragRef.current.x;
+      const deltaY = e.clientY - startDragRef.current.y;
+
+      // Sumar al offset inicial
+      const newX = startOffsetRef.current.x + deltaX;
+      const newY = startOffsetRef.current.y + deltaY;
+
+      // Limitar movimiento a +/- 100px desde el centro
+      const clampedX = Math.max(-100, Math.min(100, newX));
+      const clampedY = Math.max(-100, Math.min(100, newY));
+
+      setImageOffset({ x: clampedX, y: clampedY });
+    },
+    [isDraggingImage]
+  );
 
   const handleImageMouseUpInternal = useCallback(() => {
     setIsDraggingImage(false);
@@ -66,10 +69,10 @@ function ImageUploadFieldComponent({
   // Event listeners para drag
   useEffect(() => {
     if (!isDraggingImage) return;
-    
+
     window.addEventListener('mousemove', handleImageMouseMoveInternal);
     window.addEventListener('mouseup', handleImageMouseUpInternal);
-    
+
     return () => {
       window.removeEventListener('mousemove', handleImageMouseMoveInternal);
       window.removeEventListener('mouseup', handleImageMouseUpInternal);
@@ -207,7 +210,7 @@ function ImageUploadFieldComponent({
                   backgroundRepeat: 'no-repeat'
                 }}
                 onMouseDown={handleImageMouseDown}
-                onMouseMove={(e) => {
+                onMouseMove={e => {
                   if (!isDraggingImage) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   const x = e.clientX - rect.left - rect.width / 2;
@@ -216,7 +219,7 @@ function ImageUploadFieldComponent({
                 }}
                 onMouseUp={() => setIsDraggingImage(false)}
                 onMouseLeave={() => setIsDraggingImage(false)}
-                onClick={(e) => {
+                onClick={e => {
                   if (isDraggingImage) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -224,10 +227,12 @@ function ImageUploadFieldComponent({
                 }}
               >
                 {/* Overlay para mostrar estado */}
-                <div className={cn(
-                  'absolute inset-0 flex items-center justify-center',
-                  isDraggingImage ? 'bg-black/50' : 'bg-black/0 group-hover:bg-black/40'
-                )}>
+                <div
+                  className={cn(
+                    'absolute inset-0 flex items-center justify-center',
+                    isDraggingImage ? 'bg-black/50' : 'bg-black/0 group-hover:bg-black/40'
+                  )}
+                >
                   {isDraggingImage ? (
                     <span className='text-xs font-medium bg-black/70 text-white px-3 py-1 rounded-full'>
                       Moviendo...

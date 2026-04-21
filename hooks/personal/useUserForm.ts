@@ -12,13 +12,16 @@ const cleanRUT = (rut: string): string => {
 };
 
 export const userFormSchema = z.object({
-  run: z.string().min(7, 'El RUT es requerido').refine(
-    (val) => {
-      const cleaned = cleanRUT(val);
-      return cleaned.length >= 7 && cleaned.length <= 9;
-    },
-    { message: 'El RUT debe tener entre 7 y 9 dígitos' }
-  ),
+  run: z
+    .string()
+    .min(7, 'El RUT es requerido')
+    .refine(
+      val => {
+        const cleaned = cleanRUT(val);
+        return cleaned.length >= 7 && cleaned.length <= 9;
+      },
+      { message: 'El RUT debe tener entre 7 y 9 dígitos' }
+    ),
   nick: z.string().min(3, 'El nick debe tener al menos 3 caracteres'),
   name: z.string().min(2, 'El nombre es requerido'),
   lastName: z.string().min(2, 'El apellido es requerido'),
@@ -217,7 +220,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       processedValues.contributions = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
       processedValues.discount = Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
       processedValues.maritalStatus = mapSelectToEstadoCivil(processedValues.maritalStatus);
-      
+
       // Limpiar el RUT (quitar puntos y guiones) antes de guardar
       processedValues.run = cleanRUT(processedValues.run);
 

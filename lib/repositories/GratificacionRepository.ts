@@ -81,7 +81,10 @@ export class GratificacionRepository {
   ) {
     const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
     if (tableCheck.length === 0) {
-      throw new BusinessError('La tabla de gratificaciones no existe', 'GRATIFICACIONES_TABLE_MISSING');
+      throw new BusinessError(
+        'La tabla de gratificaciones no existe',
+        'GRATIFICACIONES_TABLE_MISSING'
+      );
     }
 
     const [targetRows, requesterRows, pendingRows] = await Promise.all([
@@ -106,7 +109,8 @@ export class GratificacionRepository {
     ]);
 
     if (targetRows.length === 0) throw new NotFoundError('Usuario', targetUserId);
-    if (requesterRows.length === 0) throw new NotFoundError('Usuario solicitante', requestedByUserId);
+    if (requesterRows.length === 0)
+      throw new NotFoundError('Usuario solicitante', requestedByUserId);
     if (Number(pendingRows[0]?.count || 0) > 0) {
       throw new BusinessError(
         'Ya existe una gratificaci?n pendiente para este empleado',
@@ -132,8 +136,9 @@ export class GratificacionRepository {
     const adminWhatsApp =
       process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
     const baseUrl = process.env.PUBLIC_BASE_URL || '';
-    const confirmUrl =
-      baseUrl ? `${baseUrl}/confirmar-gratificacion?token=${encodeURIComponent(id)}` : null;
+    const confirmUrl = baseUrl
+      ? `${baseUrl}/confirmar-gratificacion?token=${encodeURIComponent(id)}`
+      : null;
 
     const message = `*NUEVA SOLICITUD DE GRATIFICACI?N*
 
@@ -143,12 +148,14 @@ export class GratificacionRepository {
 *Descripci?n:* ${descripcion || 'Sin descripci?n'}
 *Solicitado por:* ${requester.nombre} ${requester.apellido}${requester.nick ? ` (@${requester.nick})` : ''}
 
-${confirmUrl
-      ? `*Para procesar:* ${confirmUrl}
+${
+  confirmUrl
+    ? `*Para procesar:* ${confirmUrl}
 
 _Haz clic en el link para aprobar o rechazar la solicitud._`
-      : `*Para aprobar:* responde "APROBAR GRATIFICACION ${id}"
-*Para rechazar:* responde "RECHAZAR GRATIFICACION ${id}"`}`;
+    : `*Para aprobar:* responde "APROBAR GRATIFICACION ${id}"
+*Para rechazar:* responde "RECHAZAR GRATIFICACION ${id}"`
+}`;
 
     await enviarWhatsApp(adminWhatsApp, message);
 
@@ -262,8 +269,12 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
 
 Hola ${employeeName}, tu gratificaci?n por *${amountText}* ha sido *${approved ? 'aprobada' : 'rechazada'}*.
 
-${solicitud.descripcion ? `*Descripci?n:* ${solicitud.descripcion}
-` : ''}${approved ? 'Qued? registrada como pendiente de pago.' : 'Si necesit?s m?s informaci?n, habl? con administraci?n.'}`;
+${
+  solicitud.descripcion
+    ? `*Descripci?n:* ${solicitud.descripcion}
+`
+    : ''
+}${approved ? 'Qued? registrada como pendiente de pago.' : 'Si necesit?s m?s informaci?n, habl? con administraci?n.'}`;
 
       const adminWhatsApp =
         process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
@@ -274,14 +285,15 @@ ${solicitud.descripcion ? `*Descripci?n:* ${solicitud.descripcion}
 *Solicitud:* ${id}`;
 
       await Promise.allSettled([
-        solicitud.telefono ? enviarWhatsApp(solicitud.telefono, employeeMessage) : Promise.resolve(true),
+        solicitud.telefono
+          ? enviarWhatsApp(solicitud.telefono, employeeMessage)
+          : Promise.resolve(true),
         enviarWhatsApp(adminWhatsApp, adminMessage),
-        sendPushByRole(
-          'cajero',
-          title,
-          `${employeeName} ? ${amountText}`,
-          { id_gratificacion: id, type: 'gratificacion', action }
-        ),
+        sendPushByRole('cajero', title, `${employeeName} ? ${amountText}`, {
+          id_gratificacion: id,
+          type: 'gratificacion',
+          action
+        }),
         sendPushNotification(solicitud.usuario_id, title, `${amountText}`, {
           id_gratificacion: id,
           type: 'gratificacion',

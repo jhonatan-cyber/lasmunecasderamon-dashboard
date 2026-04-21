@@ -498,10 +498,10 @@ export class ServiceRepository {
       );
       if (!req.length) throw new NotFoundError('Solicitud de anulacion de servicio', requestId);
 
-      await trx(
-        'UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE id = ?',
-        [nextStatus, requestId]
-      );
+      await trx('UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE id = ?', [
+        nextStatus,
+        requestId
+      ]);
 
       return req[0].servicio_id as string;
     });

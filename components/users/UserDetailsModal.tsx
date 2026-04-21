@@ -103,10 +103,11 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </h2>
                   <div className='flex items-center mt-1 space-x-2'>
                     <Badge
-                      className={`text-xs sm:text-sm ${user.status === 1
+                      className={`text-xs sm:text-sm ${
+                        user.status === 1
                           ? 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-700'
-                        }`}
+                      }`}
                     >
                       {user.status === 1 ? 'Activo' : 'Inactivo'}
                     </Badge>
@@ -181,12 +182,13 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Estado Civil</p>
                         <Badge
-                          className={`mt-1 text-xs sm:text-sm ${['Soltero', 'Soltera'].includes(user.maritalStatus || '')
+                          className={`mt-1 text-xs sm:text-sm ${
+                            ['Soltero', 'Soltera'].includes(user.maritalStatus || '')
                               ? 'bg-green-100 text-green-700'
                               : ['Casado', 'Casada'].includes(user.maritalStatus || '')
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-100 text-gray-700'
-                            }`}
+                          }`}
                         >
                           {user.maritalStatus || 'Sin estado civil'}
                         </Badge>
