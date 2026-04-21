@@ -134,10 +134,10 @@ export default function OrdersPage() {
 
         <OrdersStats activeTab={activeTab} orders={orders} servicios={servicios} />
 
-        <Card className='border-none bg-gray-50/30'>
+        <Card className='border border-border/60 bg-white/80 shadow-sm backdrop-blur dark:bg-zinc-900/80 dark:border-zinc-800'>
           <CardContent className='p-4'>
             <div className='relative'>
-              <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
+              <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-zinc-500' />
               <Input
                 placeholder={
                   activeTab === 'productos'
@@ -150,23 +150,23 @@ export default function OrdersPage() {
                     ? setSearchTerm(e.target.value)
                     : setSearchServiciosTerm(e.target.value)
                 }
-                className='pl-12 h-12 rounded-full border-gray-200 focus:ring-2 focus:ring-black transition-all bg-white'
+                className='pl-12 h-12 rounded-full border-gray-200 focus:ring-2 focus:ring-black transition-all bg-white text-gray-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-zinc-300'
               />
             </div>
           </CardContent>
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='grid w-full max-w-md mx-auto grid-cols-2 rounded-full bg-gray-100 p-1 mb-8'>
+          <TabsList className='grid w-full max-w-md mx-auto grid-cols-2 rounded-full bg-gray-100 p-1 mb-8 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
             <TabsTrigger
               value='productos'
-              className='rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm'
+              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
             >
               Productos
             </TabsTrigger>
             <TabsTrigger
               value='servicios'
-              className='rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm'
+              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
             >
               Servicios
             </TabsTrigger>
@@ -177,8 +177,8 @@ export default function OrdersPage() {
             className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'
           >
             {filteredOrders.length === 0 ? (
-              <div className='text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200'>
-                <p className='text-gray-400 font-medium'>No se encontraron órdenes de productos</p>
+              <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
+                <p className='font-medium text-gray-400 dark:text-zinc-500'>No se encontraron ??rdenes de productos</p>
               </div>
             ) : (
               <div className='grid grid-cols-1 xl:grid-cols-2 gap-4'>
@@ -202,8 +202,8 @@ export default function OrdersPage() {
             className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'
           >
             {filteredServicios.length === 0 ? (
-              <div className='text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200'>
-                <p className='text-gray-400 font-medium'>
+              <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
+                <p className='font-medium text-gray-400 dark:text-zinc-500'>
                   No hay solicitudes de servicio pendientes
                 </p>
               </div>
@@ -243,10 +243,10 @@ export default function OrdersPage() {
 
       {/* Dialogs de eliminación (Product Order) */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className='rounded-2xl'>
+        <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
-            <DialogTitle>¿Confirmar eliminación?</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className='text-gray-900 dark:text-zinc-100'>??Confirmar eliminaci??n?</DialogTitle>
+            <DialogDescription className='text-gray-600 dark:text-zinc-400'>
               Eliminarás el pedido {orderToDelete?.codigo}. Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
@@ -254,7 +254,7 @@ export default function OrdersPage() {
             <Button
               variant='outline'
               onClick={() => setDeleteModalOpen(false)}
-              className='rounded-full'
+              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
             >
               Cancelar
             </Button>
@@ -262,7 +262,7 @@ export default function OrdersPage() {
               variant='destructive'
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className='rounded-full'
+              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
             >
               {isDeleting ? 'Eliminando...' : 'Eliminar Pedido'}
             </Button>
@@ -272,10 +272,10 @@ export default function OrdersPage() {
 
       {/* Dialogs de eliminación (Service) */}
       <Dialog open={deleteServicioModalOpen} onOpenChange={setDeleteServicioModalOpen}>
-        <DialogContent className='rounded-2xl'>
+        <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
-            <DialogTitle>¿Confirmar eliminación?</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className='text-gray-900 dark:text-zinc-100'>??Confirmar eliminaci??n?</DialogTitle>
+            <DialogDescription className='text-gray-600 dark:text-zinc-400'>
               Eliminarás la solicitud de servicio #{servicioToDelete?.id_solicitud}.
             </DialogDescription>
           </DialogHeader>
@@ -283,7 +283,7 @@ export default function OrdersPage() {
             <Button
               variant='outline'
               onClick={() => setDeleteServicioModalOpen(false)}
-              className='rounded-full'
+              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
             >
               Cancelar
             </Button>
@@ -291,7 +291,7 @@ export default function OrdersPage() {
               variant='destructive'
               onClick={handleConfirmDeleteServicio}
               disabled={isDeletingServicio}
-              className='rounded-full'
+              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
             >
               {isDeletingServicio ? 'Eliminando...' : 'Eliminar Solicitud'}
             </Button>
@@ -301,3 +301,5 @@ export default function OrdersPage() {
     </PermissionGuard>
   );
 }
+
+

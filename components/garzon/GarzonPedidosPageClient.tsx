@@ -57,7 +57,6 @@ export default function GarzonPedidosPage() {
 
       if (data.success) {
         setOrders(data.data || []);
-        console.log('✅ Pedidos actualizados:', data.data?.length || 0);
       } else {
         console.error('Error fetching orders:', data.message);
       }
@@ -70,14 +69,12 @@ export default function GarzonPedidosPage() {
 
   useEffect(() => {
     if (user && !userLoading) {
-      console.log('🔄 Iniciando carga de pedidos para usuario:', user.id);
       fetchOrders();
     }
   }, [user, userLoading]);
 
   // Escuchar actualizaciones en tiempo real mediante SSE
   useOrdersSSE(data => {
-    console.log('📢 [GARZON PEDIDOS] Actualización SSE recibida:', data);
 
     if (data.type === 'order-processed') {
       // Actualizar el estado del pedido procesado a "Aprobado" (estado = 0)
@@ -86,15 +83,12 @@ export default function GarzonPedidosPage() {
           order.id_pedido === data.orderId ? { ...order, estado: 0 } : order
         )
       );
-      console.log('✅ [GARZON PEDIDOS] Pedido actualizado a Aprobado:', data.orderId);
     } else if (data.type === 'order-deleted') {
       // Remover el pedido eliminado de la lista
       setOrders(prevOrders => prevOrders.filter(order => order.id_pedido !== data.orderId));
-      console.log('✅ [GARZON PEDIDOS] Pedido eliminado:', data.orderId);
     } else if (data.type === 'order-created') {
       // Recargar todos los pedidos cuando se crea uno nuevo
       fetchOrders();
-      console.log('✅ [GARZON PEDIDOS] Nuevo pedido creado, recargando lista');
     }
   });
 
@@ -456,3 +450,4 @@ export default function GarzonPedidosPage() {
     </div>
   );
 }
+

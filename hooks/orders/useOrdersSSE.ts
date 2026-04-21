@@ -2,7 +2,7 @@ import { useSSE } from '@/hooks/shared/useSSE';
 
 interface OrderUpdateData {
   type: 'order-processed' | 'order-deleted' | 'order-created';
-  orderId: number;
+  orderId: string | number;
   timestamp: string;
 }
 

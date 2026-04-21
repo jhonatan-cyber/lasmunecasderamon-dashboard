@@ -12,8 +12,8 @@ export const OrdersHeader = ({ hasOpenCaja, cajaLoading, onCreateOrder }: Orders
   return (
     <div className='flex items-center justify-between mb-6'>
       <div>
-        <h1 className='text-2xl font-bold text-gray-900'>Gestión de Órdenes</h1>
-        <p className='text-gray-600'>Administra todas las órdenes del sistema</p>
+        <h1 className='text-2xl font-bold text-gray-900 dark:text-zinc-100'>Gestión de Órdenes</h1>
+        <p className='text-gray-600 dark:text-zinc-400'>Administra todas las órdenes del sistema</p>
       </div>
       <div className='flex gap-2'>
         <PermissionGuard module='orders' action='create' fallback={null}>
@@ -22,8 +22,8 @@ export const OrdersHeader = ({ hasOpenCaja, cajaLoading, onCreateOrder }: Orders
             disabled={cajaLoading || !hasOpenCaja}
             className={`rounded-full px-6 py-2 transition-all duration-200 ${
               hasOpenCaja
-                ? 'bg-black text-white hover:bg-white/90 hover:text-black hover:scale-105 shadow-md shadow-gray-200'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-black text-white hover:bg-white/90 hover:text-black hover:scale-105 shadow-md shadow-gray-200 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white dark:shadow-black/20'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-500'
             }`}
           >
             {cajaLoading ? (
@@ -48,3 +48,4 @@ export const OrdersHeader = ({ hasOpenCaja, cajaLoading, onCreateOrder }: Orders
     </div>
   );
 };
+

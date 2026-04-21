@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -36,10 +35,8 @@ function ConfirmarAnulacionServicioContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🔍 Token recibido:', token);
 
     if (!token) {
-      console.log('🔍 No hay token, mostrando error');
       setError('Token de anulación no válido');
       setLoading(false);
       return;
@@ -48,18 +45,14 @@ function ConfirmarAnulacionServicioContent() {
     // Cargar datos de la solicitud
     const cargarSolicitud = async () => {
       try {
-        console.log('🔍 Cargando solicitud con token:', token);
         const response = await fetch(`/api/servicios/solicitud-anulacion?token=${token}`);
-        console.log('🔍 Response status:', response.status);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.log('🔍 Error data:', errorData);
           throw new Error(errorData.message || 'Solicitud no encontrada o ya procesada');
         }
 
         const data = await response.json();
-        console.log('🔍 Response data:', data);
         setSolicitud(data.solicitud);
       } catch (err) {
         console.error('🔍 Error cargando solicitud:', err);
@@ -75,18 +68,12 @@ function ConfirmarAnulacionServicioContent() {
   const procesarAnulacion = async (accion: 'confirmar' | 'rechazar') => {
     if (!token) return;
 
-    console.log(`🔍 Frontend: Procesando anulación`);
-    console.log(`🔍 Frontend: Token: ${token}`);
-    console.log(`🔍 Frontend: Acción: ${accion}`);
-
     setProcessing(true);
     try {
       const requestBody = {
         token,
         action: accion
       };
-
-      console.log(`🔍 Frontend: Request body:`, requestBody);
 
       const response = await fetch(`/api/servicios/procesar-anulacion`, {
         method: 'POST',
@@ -96,22 +83,16 @@ function ConfirmarAnulacionServicioContent() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log(`🔍 Frontend: Response status: ${response.status}`);
-      console.log(`🔍 Frontend: Response ok: ${response.ok}`);
-
       if (!response.ok) {
         let errorMessage = 'Error al procesar la anulación';
         try {
           const errorData = await response.json();
-          console.log(`🔍 Frontend: Error data:`, errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (jsonError) {
           try {
             const errorText = await response.text();
-            console.log(`🔍 Frontend: Error text:`, errorText);
             errorMessage = `Error del servidor: ${response.status}`;
           } catch (textError) {
-            console.log(`🔍 Frontend: Error reading response:`, textError);
             errorMessage = `Error de conexión: ${response.status}`;
           }
         }
@@ -119,7 +100,6 @@ function ConfirmarAnulacionServicioContent() {
       }
 
       const result = await response.json();
-      console.log(`🔍 Frontend: Success result:`, result);
 
       if (result.success) {
         toast.success(
@@ -326,3 +306,4 @@ export default function ConfirmarAnulacionServicioPage() {
     </Suspense>
   );
 }
+

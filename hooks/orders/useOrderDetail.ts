@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export const useOrderDetail = (orderId: number | null) => {
+export const useOrderDetail = (orderId: string | number | null) => {
   const [detail, setDetail] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

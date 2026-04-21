@@ -74,17 +74,14 @@ export default function Sales() {
   // Escuchar evento de venta registrada para refrescar automáticamente
   useEffect(() => {
     const handleVentaRegistrada = () => {
-      console.log('[Sales] Evento ventaRegistrada recibido - refrescando ventas');
       handleRefreshRef.current();
     };
 
     const handleUpdateSales = () => {
-      console.log('[Sales] Evento updateSales recibido - refrescando ventas');
       handleRefreshRef.current();
     };
 
     const handleTimerEnded = () => {
-      console.log('[Sales] Evento timerEnded recibido - refrescando ventas');
       handleRefreshRef.current();
     };
 
@@ -269,3 +266,4 @@ export default function Sales() {
     </PermissionGuard>
   );
 }
+
