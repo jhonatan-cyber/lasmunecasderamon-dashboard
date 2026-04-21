@@ -93,13 +93,9 @@ export default function OrderDetailModal({
   useEffect(() => {
     const handleCloseOrderModal = (event: CustomEvent) => {
       const { orderId: processedOrderId } = event.detail;
-      console.log('🔔 [ORDER MODAL] Evento closeOrderModal recibido:', processedOrderId);
-      console.log('🔔 [ORDER MODAL] Modal abierto:', open);
-      console.log('🔔 [ORDER MODAL] Order ID actual:', orderId);
 
       // Si el modal está abierto y es el pedido que se procesó, cerrarlo
       if (open && orderId === processedOrderId) {
-        console.log('✅ [ORDER MODAL] Cerrando modal automáticamente...');
         onClose();
       }
     };
@@ -139,10 +135,6 @@ export default function OrderDetailModal({
         if (detalleConHabitacion && detalleConHabitacion.habitacion_id) {
           const habitacionId = String(detalleConHabitacion.habitacion_id);
           setHabitacionId(habitacionId);
-          console.log(
-            '[ORDER MODAL] 🏠 Habitación auto-seleccionada del pedido (guardada):',
-            habitacionId
-          );
         } else {
           // Si no hay habitación guardada, buscar dinámicamente si alguna anfitriona está en venta activa
           buscarHabitacionActiva();
@@ -154,19 +146,16 @@ export default function OrderDetailModal({
   // Función para buscar si alguna anfitriona del pedido está en una venta activa con habitación
   const buscarHabitacionActiva = async () => {
     if (!detail || detail.length === 0) {
-      console.log('[ORDER MODAL] ⚠️ No hay detalles del pedido');
       return;
     }
 
     try {
-      console.log('[ORDER MODAL] 📋 Detalles del pedido:', detail);
 
       // Obtener IDs de todas las anfitrionas del pedido
       const anfitrionasIds: number[] = [];
 
       // Obtener anfitrionas del primer detalle (anfitrionas generales del pedido)
       const anfitrionaIdsStr = detail[0]?.anfitrionaIds;
-      console.log('[ORDER MODAL] 📝 anfitrionaIds del detalle[0]:', anfitrionaIdsStr);
 
       if (anfitrionaIdsStr) {
         const ids = anfitrionaIdsStr
@@ -174,17 +163,10 @@ export default function OrderDetailModal({
           .map((id: string) => parseInt(id.trim()))
           .filter((id: number) => !isNaN(id));
         anfitrionasIds.push(...ids);
-        console.log('[ORDER MODAL] ✅ IDs extraídos de anfitrionaIds:', ids);
       }
 
       // También obtener anfitrionas asignadas específicamente a productos
-      detail.forEach((d, index) => {
-        console.log(`[ORDER MODAL] 📝 Detalle[${index}] hostess_id:`, d.hostess_id);
-        console.log(
-          `[ORDER MODAL] 📝 Detalle[${index}] anfitrionas_asignadas_ids:`,
-          d.anfitrionas_asignadas_ids
-        );
-
+      detail.forEach(d => {
         if (d.hostess_id) {
           anfitrionasIds.push(d.hostess_id);
         }
@@ -201,11 +183,8 @@ export default function OrderDetailModal({
       const anfitrionasUnicas = [...new Set(anfitrionasIds)];
 
       if (anfitrionasUnicas.length === 0) {
-        console.log('[ORDER MODAL] ℹ️ No hay anfitrionas en el pedido');
         return;
       }
-
-      console.log('[ORDER MODAL] 🔍 Buscando venta activa para anfitrionas:', anfitrionasUnicas);
 
       // Llamar al endpoint para verificar si alguna anfitriona está en venta activa
       const response = await fetch('/api/orders/check-active-room', {
@@ -217,18 +196,11 @@ export default function OrderDetailModal({
       });
 
       const data = await response.json();
-      console.log('[ORDER MODAL] 📡 Respuesta del servidor:', data);
 
       if (data.success && data.hasActiveRoom && data.data) {
         const habitacionId = String(data.data.habitacionId);
         setHabitacionId(habitacionId);
         setTiempoHabitacion(data.data.tiempo || 30);
-        console.log('[ORDER MODAL] ✅ Habitación auto-seleccionada (venta activa):', habitacionId);
-        console.log('[ORDER MODAL] 📍 Anfitriona en venta:', data.data.anfitrionaId);
-        console.log('[ORDER MODAL] 🏠 Habitación:', data.data.habitacionNombre);
-        console.log('[ORDER MODAL] ⏱️ Tiempo:', data.data.tiempo, 'minutos');
-      } else {
-        console.log('[ORDER MODAL] ℹ️ Ninguna anfitriona está en venta activa con habitación');
       }
     } catch (error) {
       console.error('[ORDER MODAL] ❌ Error buscando habitación activa:', error);
@@ -698,7 +670,6 @@ export default function OrderDetailModal({
 
     // También incluir la habitación pre-seleccionada aunque esté ocupada
     if (habitacionId && room.id_habitacion === parseInt(habitacionId)) {
-      console.log('[ORDER MODAL] 📍 Incluyendo habitación ocupada pre-seleccionada:', room.nombre);
       return true;
     }
 
@@ -729,18 +700,18 @@ export default function OrderDetailModal({
   };
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-[56rem] sm:max-w-3xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0'>
-          <DialogTitle className='text-lg sm:text-xl'>
+      <DialogContent className='flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col border border-border/60 bg-white p-0 sm:w-[56rem] sm:max-w-3xl dark:border-zinc-800 dark:bg-zinc-950'>
+        <DialogHeader className='flex-shrink-0 border-b border-border/60 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 dark:border-zinc-800'>
+          <DialogTitle className='text-lg text-gray-900 dark:text-zinc-100 sm:text-xl'>
             Detalles del Pedido - {orderCode}
           </DialogTitle>
         </DialogHeader>
         {isLoading ? (
-          <div className='text-center py-8 sm:py-12'>
+          <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
             <div className='text-sm sm:text-base'>Cargando detalles...</div>
           </div>
         ) : error ? (
-          <div className='text-center py-8 sm:py-12'>
+          <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
             <div className='text-red-500 text-sm sm:text-base'>{error}</div>
           </div>
         ) : detail && detail.length > 0 ? (
@@ -838,17 +809,17 @@ export default function OrderDetailModal({
                         />
                         {habitacionId && (
                           <div>
-                            <Label className='block text-xs font-medium text-muted-foreground dark:text-gray-400 mb-2'>
+                            <Label className='mb-2 block text-xs font-medium text-muted-foreground dark:text-zinc-400'>
                               Tiempo de uso (minutos)
                             </Label>
                             <Select
                               value={tiempoHabitacion.toString()}
                               onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
                             >
-                              <SelectTrigger className='w-full rounded-full'>
+                              <SelectTrigger className='w-full rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'>
                                 <SelectValue placeholder='Seleccionar tiempo' />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className='dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100'>
                                 <SelectItem value='5'>5 minutos</SelectItem>
                                 <SelectItem value='10'>10 minutos</SelectItem>
                                 <SelectItem value='15'>15 minutos</SelectItem>
@@ -862,14 +833,14 @@ export default function OrderDetailModal({
                       </>
                     )}
                     <div>
-                      <Label className='block text-xs font-medium text-muted-foreground mb-2'>
+                      <Label className='mb-2 block text-xs font-medium text-muted-foreground dark:text-zinc-400'>
                         Propina
                       </Label>
                       <div className='flex items-center space-x-2'>
                         <div className='relative flex-1'>
                           <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
                           <Input
-                            className='pl-8 bg-gray-50'
+                            className='pl-8 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
                             placeholder='Sin propina'
                             type='text'
                             value={propinaDisplayValue}
@@ -885,7 +856,7 @@ export default function OrderDetailModal({
                           />
                           <label
                             htmlFor='agregar-propina'
-                            className='text-xs text-gray-700 whitespace-nowrap cursor-pointer'
+                            className='cursor-pointer whitespace-nowrap text-xs text-gray-700 dark:text-zinc-300'
                           >
                             10%
                           </label>
@@ -905,13 +876,13 @@ export default function OrderDetailModal({
                       )}
                     </div>
                     <div>
-                      <Label className='block text-xs font-medium text-muted-foreground mb-1'>
+                      <Label className='mb-1 block text-xs font-medium text-muted-foreground dark:text-zinc-400'>
                         Total Comisión
                       </Label>
                       <div className='relative'>
                         <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
                         <Input
-                          className='pl-8 font-semibold'
+                          className='pl-8 font-semibold dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
                           value={formatNumberCL(detail[0]?.total_comision || 0)}
                           disabled
                         />
@@ -921,7 +892,7 @@ export default function OrderDetailModal({
                 </div>
 
                 {/* Tabla de productos */}
-                <div className='border rounded-lg p-4'>
+                <div className='rounded-lg border border-border/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40'>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -987,12 +958,12 @@ export default function OrderDetailModal({
               </div>
             </div>
             {/* Footer con botones - fijo en la parte inferior */}
-            <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4 bg-white'>
+            <div className='flex-shrink-0 border-t border-border/60 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-6'>
               <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
                 <Button
                   size='sm'
                   variant='outline'
-                  className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  className='w-full rounded-full bg-black px-4 text-xs text-white transition-all duration-200 hover:scale-105 sm:w-auto sm:px-6 sm:text-sm dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white'
                   onClick={handleRegistrarVenta}
                   disabled={isRegistering}
                   type='button'
@@ -1003,7 +974,7 @@ export default function OrderDetailModal({
                   <Button
                     size='sm'
                     variant='outline'
-                    className='rounded-full px-4 sm:px-6 bg-black text-white hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                    className='w-full rounded-full bg-black px-4 text-xs text-white transition-all duration-200 hover:scale-105 sm:w-auto sm:px-6 sm:text-sm dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white'
                     onClick={handleRegistrarCuenta}
                     disabled={isRegistering}
                     type='button'
@@ -1015,7 +986,7 @@ export default function OrderDetailModal({
                 <Button
                   size='sm'
                   variant='outline'
-                  className='rounded-full px-4 sm:px-6 bg-gray-500 text-white hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto'
+                  className='w-full rounded-full bg-gray-500 px-4 text-xs text-white transition-all duration-200 hover:scale-105 hover:bg-gray-600 sm:w-auto sm:px-6 sm:text-sm dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700'
                   onClick={e => {
                     e.preventDefault();
                     onClose();
@@ -1028,20 +999,20 @@ export default function OrderDetailModal({
             </div>
           </>
         ) : (
-          <div className='text-center py-8 sm:py-12'>
-            <div className='text-sm sm:text-base text-gray-500'>No hay detalles disponibles</div>
+          <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
+            <div className='text-sm text-gray-500 dark:text-zinc-400 sm:text-base'>No hay detalles disponibles</div>
           </div>
         )}
       </DialogContent>
 
       {/* Modal de confirmación de registro de venta */}
       <Dialog open={confirmVentaModalOpen} onOpenChange={setConfirmVentaModalOpen}>
-        <DialogContent className='sm:max-w-md'>
+        <DialogContent className='sm:max-w-md border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
-            <DialogTitle>Confirmar registro de venta</DialogTitle>
-            <DialogDescription>¿Estás seguro de que deseas registrar esta venta?</DialogDescription>
+            <DialogTitle className='text-gray-900 dark:text-zinc-100'>Confirmar registro de venta</DialogTitle>
+            <DialogDescription className='text-gray-600 dark:text-zinc-400'>??Est??s seguro de que deseas registrar esta venta?</DialogDescription>
           </DialogHeader>
-          <div className='px-6 py-4'>
+          <div className='px-6 py-4 text-gray-800 dark:text-zinc-200'>
             <div className='space-y-2 text-sm'>
               <div>
                 <strong>Pedido:</strong> {orderCode}
@@ -1079,7 +1050,7 @@ export default function OrderDetailModal({
                 handleCancelRegistrarVenta();
               }}
               disabled={isRegistering}
-              className='rounded-full'
+              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
               type='button'
             >
               Cancelar
@@ -1088,7 +1059,7 @@ export default function OrderDetailModal({
               variant='outline'
               onClick={handleConfirmRegistrarVenta}
               disabled={isRegistering}
-              className='rounded-full bg-green-600 hover:bg-green-700 text-white'
+              className='rounded-full bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400'
               type='button'
             >
               {isRegistering ? (
@@ -1106,3 +1077,9 @@ export default function OrderDetailModal({
     </Dialog>
   );
 }
+
+
+
+
+
+

@@ -9,9 +9,9 @@ import { useOrderForm, type OrderProducto, type OrderCategory, type OrderProduct
 const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {
   loading: () => (
     <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6'>
+      <div className='rounded-lg bg-white p-6 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
         <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto'></div>
-        <p className='mt-2 text-sm text-gray-600'>Cargando productos...</p>
+        <p className='mt-2 text-sm text-gray-600 dark:text-zinc-400'>Cargando productos...</p>
       </div>
     </div>
   ),
@@ -159,7 +159,7 @@ export default function OrderForm({
       />
 
       {error && (
-        <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm'>
+        <div className='rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300'>
           {error}
         </div>
       )}
@@ -174,7 +174,7 @@ export default function OrderForm({
       />
 
       <div className='mt-8'>
-        <div className='text-center text-gray-400 text-sm mb-2'>Detalles Producto</div>
+        <div className='mb-2 text-center text-sm text-gray-400 dark:text-zinc-500'>Detalles Producto</div>
         <OrderProductTable
           productos={productos}
           onRemoveProducto={onRemoveProducto}
@@ -188,3 +188,4 @@ export default function OrderForm({
     </div>
   );
 }
+

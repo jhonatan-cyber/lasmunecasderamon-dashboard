@@ -120,15 +120,15 @@ export default function NewOrder() {
     <>
       <div className='flex items-center justify-between mt-10 p-8'>
         <div>
-          <h2 className='text-2xl font-bold text-gray-900'>Datos Ticket Pedido</h2>
-          <div className='uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1'>
+          <h2 className='text-2xl font-bold text-gray-900 dark:text-zinc-100'>Datos Ticket Pedido</h2>
+          <div className='uppercase text-xs tracking-widest text-gray-400 dark:text-zinc-500 font-semibold mb-1'>
             Las muñecas de Ramón
           </div>
         </div>
 
         <Button
           variant='outline'
-          className='rounded-full  bg-black text-white hover:scale-105 transition-all duration-200'
+          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white'
           onClick={() => router.back()}
           type='button'
         >
@@ -136,13 +136,13 @@ export default function NewOrder() {
           Atrás
         </Button>
       </div>
-      <div className='p-8 bg-white ml-8 mr-8 space-y-6 shadow-md rounded-xl'>
+      <div className='p-8 bg-white dark:bg-zinc-950 ml-8 mr-8 space-y-6 shadow-md dark:shadow-black/20 rounded-xl border border-transparent dark:border-zinc-800'>
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='grid w-full grid-cols-2 mb-6 rounded-full'>
-            <TabsTrigger value='productos' className='rounded-full'>
+          <TabsList className='grid w-full grid-cols-2 mb-6 rounded-full bg-gray-100 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
+            <TabsTrigger value='productos' className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'>
               Pedidos de Productos
             </TabsTrigger>
-            <TabsTrigger value='servicios' className='rounded-full'>
+            <TabsTrigger value='servicios' className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'>
               Pedidos de Servicio
             </TabsTrigger>
           </TabsList>
