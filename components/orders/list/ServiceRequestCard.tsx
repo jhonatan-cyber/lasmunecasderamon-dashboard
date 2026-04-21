@@ -20,11 +20,11 @@ export const ServiceRequestCard = ({
   const getStatusBadge = (estado: string) => {
     switch (estado) {
       case 'pendiente':
-        return <Badge className='bg-yellow-50 text-yellow-700 border-yellow-200'>Pendiente</Badge>;
+        return <Badge className='border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/70 dark:bg-yellow-950/40 dark:text-yellow-300'>Pendiente</Badge>;
       case 'aprobada':
-        return <Badge className='bg-green-50 text-green-700 border-green-200'>Aprobada</Badge>;
+        return <Badge className='border-green-200 bg-green-50 text-green-700 dark:border-green-900/70 dark:bg-green-950/40 dark:text-green-300'>Aprobada</Badge>;
       case 'rechazada':
-        return <Badge className='bg-red-50 text-red-700 border-red-200'>Rechazada</Badge>;
+        return <Badge className='border-red-200 bg-red-50 text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300'>Rechazada</Badge>;
       default:
         return <Badge variant='outline'>Desconocido</Badge>;
     }
@@ -32,13 +32,13 @@ export const ServiceRequestCard = ({
 
   return (
     <div
-      className='p-5 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group'
+      className='group cursor-pointer rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:border-gray-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/95 dark:hover:border-zinc-700 dark:hover:shadow-black/20'
       onClick={() => onServicioClick(servicio)}
     >
       <div className='flex items-center justify-between'>
         <div className='flex-1'>
           <div className='flex items-center gap-3 mb-4'>
-            <div className='bg-gray-900 text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-xs'>
+            <div className='flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-black text-white dark:bg-zinc-100 dark:text-zinc-950'>
               #{servicio.id_solicitud}
             </div>
             {getStatusBadge(servicio.estado)}
@@ -46,46 +46,46 @@ export const ServiceRequestCard = ({
 
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
             <div className='flex items-center gap-2'>
-              <div className='p-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors'>
-                <MapPin className='w-4 h-4 text-gray-400 group-hover:text-blue-500' />
+              <div className='rounded-lg bg-gray-50 p-2 transition-colors group-hover:bg-blue-50 dark:bg-zinc-800/80 dark:group-hover:bg-blue-950/40'>
+                <MapPin className='h-4 w-4 text-gray-400 group-hover:text-blue-500 dark:text-zinc-500 dark:group-hover:text-blue-300' />
               </div>
               <div className='flex flex-col'>
-                <span className='text-[9px] font-black text-gray-400 uppercase'>Habitación</span>
-                <span className='text-sm font-bold text-gray-700'>
+                <span className='text-[9px] font-black uppercase text-gray-400 dark:text-zinc-500'>Habitación</span>
+                <span className='text-sm font-bold text-gray-700 dark:text-zinc-200'>
                   {servicio.habitacion_nombre}
                 </span>
               </div>
             </div>
 
             <div className='flex items-center gap-2'>
-              <div className='p-2 bg-gray-50 rounded-lg group-hover:bg-green-50 transition-colors'>
-                <User className='w-4 h-4 text-gray-400 group-hover:text-green-500' />
+              <div className='rounded-lg bg-gray-50 p-2 transition-colors group-hover:bg-green-50 dark:bg-zinc-800/80 dark:group-hover:bg-green-950/40'>
+                <User className='h-4 w-4 text-gray-400 group-hover:text-green-500 dark:text-zinc-500 dark:group-hover:text-green-300' />
               </div>
               <div className='flex flex-col'>
-                <span className='text-[9px] font-black text-gray-400 uppercase'>Solicitante</span>
-                <span className='text-sm font-bold text-gray-700'>
+                <span className='text-[9px] font-black uppercase text-gray-400 dark:text-zinc-500'>Solicitante</span>
+                <span className='text-sm font-bold text-gray-700 dark:text-zinc-200'>
                   {servicio.solicitado_por_nick}
                 </span>
               </div>
             </div>
 
             <div className='flex items-center gap-2'>
-              <div className='p-2 bg-gray-50 rounded-lg group-hover:bg-purple-50 transition-colors'>
-                <Clock className='w-4 h-4 text-gray-400 group-hover:text-purple-500' />
+              <div className='rounded-lg bg-gray-50 p-2 transition-colors group-hover:bg-purple-50 dark:bg-zinc-800/80 dark:group-hover:bg-fuchsia-950/40'>
+                <Clock className='h-4 w-4 text-gray-400 group-hover:text-purple-500 dark:text-zinc-500 dark:group-hover:text-fuchsia-300' />
               </div>
               <div className='flex flex-col'>
-                <span className='text-[9px] font-black text-gray-400 uppercase'>Tiempo</span>
-                <span className='text-sm font-bold text-gray-700'>{servicio.tiempo} min</span>
+                <span className='text-[9px] font-black uppercase text-gray-400 dark:text-zinc-500'>Tiempo</span>
+                <span className='text-sm font-bold text-gray-700 dark:text-zinc-200'>{servicio.tiempo} min</span>
               </div>
             </div>
 
             <div className='flex items-center gap-2'>
-              <div className='p-2 bg-gray-50 rounded-lg group-hover:bg-emerald-50 transition-colors'>
-                <span className='text-gray-400 group-hover:text-emerald-500 font-bold'>$</span>
+              <div className='rounded-lg bg-gray-50 p-2 transition-colors group-hover:bg-emerald-50 dark:bg-zinc-800/80 dark:group-hover:bg-emerald-950/40'>
+                <span className='font-bold text-gray-400 group-hover:text-emerald-500 dark:text-zinc-500 dark:group-hover:text-emerald-300'>$</span>
               </div>
               <div className='flex flex-col'>
-                <span className='text-[9px] font-black text-gray-400 uppercase'>Costo total</span>
-                <span className='text-sm font-black text-emerald-700'>
+                <span className='text-[9px] font-black uppercase text-gray-400 dark:text-zinc-500'>Costo total</span>
+                <span className='text-sm font-black text-emerald-700 dark:text-emerald-300'>
                   ${formatNumberCL(servicio.total)}
                 </span>
               </div>
@@ -98,7 +98,7 @@ export const ServiceRequestCard = ({
             <Button
               size='sm'
               variant='ghost'
-              className='rounded-full w-9 h-9 p-0 text-gray-300 hover:text-red-600 hover:bg-red-50 transition-all duration-300'
+              className='h-9 w-9 rounded-full p-0 text-gray-300 transition-all duration-300 hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-950/40 dark:hover:text-red-300'
               onClick={e => onDeleteClick(e, servicio)}
             >
               <Trash2 className='w-4 h-4' />
@@ -109,3 +109,4 @@ export const ServiceRequestCard = ({
     </div>
   );
 };
+

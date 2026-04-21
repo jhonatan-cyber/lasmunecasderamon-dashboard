@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -17,11 +16,11 @@ import { toast } from 'sonner';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { StatsCardSkeleton, CardSkeleton } from '@/components/shared/Skeletons';
+import { StatsCardSkeleton } from '@/components/shared/Skeletons';
 import { ServicioWithDetails } from '@/types/servicio';
 
 export default function ServiciosPage() {
-  const { habitaciones, loading: habitacionLoading } = useHabitaciones();
+  useHabitaciones();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
   const { hasPermission } = useUserPermissions();
@@ -31,8 +30,6 @@ export default function ServiciosPage() {
   const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);
 
   const canCreate = hasPermission('private_rooms', 'create');
-  const canEdit = hasPermission('private_rooms', 'edit');
-  const canFinalize = hasPermission('private_rooms', 'finalize');
 
   const {
     servicios,
@@ -75,24 +72,15 @@ export default function ServiciosPage() {
 
   // Configurar callback de actualización para cuando termine un timer
   useEffect(() => {
-    console.log('🔧 Configurando refreshCallback');
     setRefreshCallback((servicioId?: string | number) => {
-      console.log(
-        '🔄 RefreshCallback llamado desde TimerContext, servicioId:',
-        servicioId,
-        'tipo:',
-        typeof servicioId
-      );
 
       // Usar refs estables en lugar de funciones que pueden cambiar
       if (servicioId) {
         const numericId = typeof servicioId === 'string' ? servicioId : String(servicioId);
-        console.log('🔄 Llamando handleServiceFinalized con:', numericId);
         handleServiceFinalizedRef.current(numericId as any);
       }
 
       // Luego recargar todos los datos
-      console.log('🔄 Llamando handleServiceAutoFinished');
       handleServiceAutoFinishedRef.current();
     });
   }, [setRefreshCallback]);
@@ -237,3 +225,6 @@ export default function ServiciosPage() {
     </PermissionGuard>
   );
 }
+
+
+

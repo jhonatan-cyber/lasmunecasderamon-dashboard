@@ -50,20 +50,21 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
 
 const StatCard = ({ value, label, color }: { value: number; label: string; color: string }) => {
   const colorClasses: Record<string, string> = {
-    blue: 'text-blue-600',
-    yellow: 'text-yellow-600',
-    green: 'text-green-600',
-    red: 'text-red-600'
+    blue: 'text-blue-600 dark:text-blue-400',
+    yellow: 'text-yellow-600 dark:text-yellow-400',
+    green: 'text-green-600 dark:text-green-400',
+    red: 'text-red-600 dark:text-red-400'
   };
 
   return (
-    <Card className='hover:shadow-md transition-shadow border-none bg-gray-50/50'>
+    <Card className='hover:shadow-md transition-shadow border border-border/60 bg-gray-50/70 dark:bg-zinc-900 dark:border-zinc-800'>
       <CardContent className='p-4'>
         <div className='text-center'>
           <p className={`text-2xl font-black ${colorClasses[color]}`}>{value}</p>
-          <p className='text-[10px] text-gray-500 uppercase font-black tracking-tighter'>{label}</p>
+          <p className='text-[10px] text-gray-500 dark:text-zinc-400 uppercase font-black tracking-tighter'>{label}</p>
         </div>
       </CardContent>
     </Card>
   );
 };
+

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -23,21 +22,12 @@ import { useTimer } from '@/contexts/TimerContext';
 export default function NuevoServicioPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
+  const { allClients: clientes = [] } = useClients();
   const {
     anfitrionas,
-    loading: loadingAnfitrionas,
     refetch: refetchAnfitrionas
   } = useAnfitrionasDisponibles();
-  const { habitaciones, loading: loadingHabitaciones } = useHabitaciones();
-
-  // Log temporal para debug
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Habitaciones cargadas:', habitaciones);
-      console.log('Clientes cargados:', clientes?.length, 'Loading:', loadingClientes);
-    }
-  }, [habitaciones, clientes, loadingClientes]);
+  const { habitaciones } = useHabitaciones();
   const { startTimer } = useTimer();
 
   // Form data
@@ -353,7 +343,6 @@ export default function NuevoServicioPage() {
             habitaciones={habitaciones}
             value={formData.habitacion_id ? formData.habitacion_id.toString() : ''}
             onChange={value => {
-              console.log('[new/page] habitacion onChange', value);
               setFormData(prev => ({
                 ...prev,
                 habitacion_id: value
@@ -372,7 +361,6 @@ export default function NuevoServicioPage() {
             anfitrionas={anfitrionas}
             value={formData.usuarios}
             onChange={value => {
-              console.log('[new/page] anfitrionas onChange', value);
               setFormData(prev => ({
                 ...prev,
                 usuarios: value
@@ -389,7 +377,6 @@ export default function NuevoServicioPage() {
             clientes={clientes}
             value={formData.clientes}
             onChange={value => {
-              console.log('[new/page] clientes onChange', value);
               setFormData(prev => ({
                 ...prev,
                 clientes: value
@@ -672,3 +659,6 @@ export default function NuevoServicioPage() {
     </>
   );
 }
+
+
+

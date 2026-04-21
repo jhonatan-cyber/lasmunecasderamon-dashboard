@@ -45,39 +45,19 @@ export default function PayrollTable({
   const { modalState, showConfirm, closeModal } = useConfirmModal();
   const { userPermissions } = useUserPermissions();
   const { user } = useCurrentUser();
-  
-  // Calcular canPay directamente desde userPermissions
   const canPay = useMemo(() => {
-    // Primero verificar si es administrador por su rol (no por permisos)
     const isAdmin = user?.role?.toLowerCase() === 'administrador';
-    console.log('🔍 [PayrollTable] ¿Es administrador por rol?', {
-      userRole: user?.role,
-      isAdmin
-    });
-    
     if (isAdmin) {
-      console.log('✅ [PayrollTable] Acceso concedido (Administrador por rol)');
       return true;
     }
-    
-    // Si no es administrador, verificar permisos específicos
-    const result = userPermissions.some(p => 
-      p.module === 'pagos_trabajadores' && (p.action === 'pagar' || p.action === 'listar_pagos')
+    return userPermissions.some(
+      p =>
+        p.module === 'pagos_trabajadores' &&
+        (p.action === 'pagar' || p.action === 'listar_pagos')
     );
-    
-    const payrollPerms = userPermissions.filter(p => p.module === 'pagos_trabajadores');
-    console.log('🔍 [PayrollTable] Calculando canPay (no admin):', {
-      result,
-      totalPermissions: userPermissions.length,
-      payrollModulePermissions: payrollPerms.map(p => `${p.module}.${p.action} (id: ${p.id}, name: ${p.name})`),
-      timestamp: new Date().toISOString()
-    });
-    
-    return result;
   }, [userPermissions, user?.role]);
 
   // Logging adicional para depuración
-  console.log('🔍 [PayrollTable] Valor final de canPay:', canPay);
 
   const handlePay = async (row: PayrollRow) => {
     const confirmed = await showConfirm({
@@ -240,3 +220,6 @@ export default function PayrollTable({
     </div>
   );
 }
+
+
+
