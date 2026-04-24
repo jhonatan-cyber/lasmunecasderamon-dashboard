@@ -17,6 +17,15 @@ type AllocationRow<T> = T & {
   nextAmount?: number;
 };
 
+type VentaRefundDetailRow = {
+  id_detalle_venta: string;
+  producto_id: string | null;
+  cantidad: number;
+  precio: number;
+  sub_total: number;
+  comision: number;
+};
+
 export class SaleRepository {
   private static readonly TABLE = 'ventas';
   private static readonly ID_COL = 'id_venta';
@@ -99,6 +108,86 @@ export class SaleRepository {
       : 1;
   }
 
+  private static async registerVentaRefund(
+    trx: TransactionQuery,
+    params: {
+      ventaId: string;
+      clienteId?: string | null;
+      refundTotal: number;
+      refundSubTotal: number;
+      refundComision: number;
+      detailRows: VentaRefundDetailRow[];
+    }
+  ): Promise<void> {
+    const refundTotal = Math.max(0, Math.round(Number(params.refundTotal || 0)));
+    if (refundTotal <= 0) return;
+
+    const refundSubTotal = Math.max(0, Math.round(Number(params.refundSubTotal || 0)));
+    const refundComision = Math.max(0, Math.round(Number(params.refundComision || 0)));
+    const now = getNowInBusinessTimezone();
+    const devolucionVentaId = generateUUID();
+
+    await trx(
+      `INSERT INTO devoluciones_ventas
+       (id_devolucion_venta, cliente_id, venta_id, total, fecha_crea, estado)
+       VALUES (?, ?, ?, ?, ?, 1)`,
+      [devolucionVentaId, params.clienteId || null, params.ventaId, refundTotal, now]
+    );
+
+    if (!params.detailRows.length || refundSubTotal <= 0) return;
+
+    const refundedSubtotals = this.allocateProportionally(
+      params.detailRows,
+      row => row.sub_total,
+      refundSubTotal
+    );
+    const refundedComisiones = this.allocateProportionally(
+      params.detailRows,
+      row => row.comision,
+      refundComision
+    );
+    const refundComisionByDetailId = new Map(
+      refundedComisiones.map(row => [row.id_detalle_venta, Number(row.nextAmount || 0)])
+    );
+
+    for (const row of refundedSubtotals) {
+      const refundedLineSubTotal = Number(row.nextAmount || 0);
+      const refundedLineComision = refundComisionByDetailId.get(row.id_detalle_venta) || 0;
+
+      if (refundedLineSubTotal <= 0 && refundedLineComision <= 0) continue;
+
+      const originalQuantity = Math.max(0, Math.round(Number(row.cantidad || 0)));
+      const canPreserveOriginalQuantity =
+        originalQuantity > 0 &&
+        refundedLineSubTotal > 0 &&
+        refundedLineSubTotal % originalQuantity === 0;
+
+      const quantity = canPreserveOriginalQuantity
+        ? originalQuantity
+        : refundedLineSubTotal > 0
+          ? 1
+          : Math.max(originalQuantity, 1);
+      const price = canPreserveOriginalQuantity
+        ? Math.round(refundedLineSubTotal / originalQuantity)
+        : refundedLineSubTotal;
+
+      await trx(
+        `INSERT INTO detalle_devoluciones_ventas
+         (id_detalle_devolucion, devolucion_venta_id, producto_id, cantidad, precio, comision, fecha_crea, estado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+        [
+          generateUUID(),
+          devolucionVentaId,
+          row.producto_id || null,
+          quantity,
+          price,
+          refundedLineComision,
+          now
+        ]
+      );
+    }
+  }
+
   static async approveAnulacion(
     ventaId: string,
     approvedBy: string,
@@ -119,6 +208,7 @@ export class SaleRepository {
 
     const venta = ventaRows[0];
     const currentTotal = Math.max(0, Math.round(Number(venta.total || 0)));
+    const currentSubTotal = Math.max(0, Math.round(Number(venta.sub_total || 0)));
     const approvedAmount = Math.max(0, Math.round(Number(requestedAmount || 0)));
 
     if (approvedAmount <= 0 || approvedAmount >= currentTotal) {
@@ -254,9 +344,21 @@ export class SaleRepository {
       );
 
       const detailRows = await trx<any[]>(
-        'SELECT id_detalle_venta, sub_total, comision FROM detalle_ventas WHERE venta_id = ? ORDER BY id_detalle_venta ASC',
+        `SELECT id_detalle_venta, producto_id, cantidad, precio, sub_total, comision
+         FROM detalle_ventas
+         WHERE venta_id = ?
+         ORDER BY id_detalle_venta ASC`,
         [ventaId]
       );
+
+      await this.registerVentaRefund(trx, {
+        ventaId,
+        clienteId,
+        refundTotal: approvedAmount,
+        refundSubTotal: Math.max(0, currentSubTotal - newSubTotal),
+        refundComision: Math.max(0, currentComision - newComision),
+        detailRows
+      });
 
       const updatedDetailSubtotals = this.allocateProportionally(
         detailRows,
@@ -631,7 +733,10 @@ export class SaleRepository {
 
   static async updateStatus(id: string, estado: number, userId?: string): Promise<SaleType | null> {
     const prev = await query<any[]>(
-      'SELECT estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, propina, total_comision, pagos_mixtos FROM ventas WHERE id_venta = ?',
+      `SELECT estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, sub_total,
+              propina, total_comision, pagos_mixtos
+       FROM ventas
+       WHERE id_venta = ?`,
       [id]
     );
     if (prev.length === 0) throw new NotFoundError('Venta', id);
@@ -642,6 +747,7 @@ export class SaleRepository {
     const pedidoId = prev[0].pedido_id;
     const metodoPago = String(prev[0].metodo_pago || '');
     const total = Number(prev[0].total || 0);
+    const subTotal = Number(prev[0].sub_total || 0);
     const propina = Number(prev[0].propina || 0);
     const totalComision = Number(prev[0].total_comision || 0);
     const pagosMixtos = this.parseMixedPayments(prev[0].pagos_mixtos);
@@ -667,6 +773,14 @@ export class SaleRepository {
       if (estado === 1 && estadoAnterior !== 1)
         await addVentaLog(id, 'FINALIZADO', 'Venta finalizada manualmente.', userId);
       else if (estado === 0 && estadoAnterior !== 0) {
+        const detailRows = await trx<VentaRefundDetailRow[]>(
+          `SELECT id_detalle_venta, producto_id, cantidad, precio, sub_total, comision
+           FROM detalle_ventas
+           WHERE venta_id = ?
+           ORDER BY id_detalle_venta ASC`,
+          [id]
+        );
+
         const prepagoRows = clienteId
           ? await trx<any[]>(
               `SELECT COALESCE(SUM(monto), 0) as total_prepago
@@ -732,6 +846,15 @@ export class SaleRepository {
             devolucion: total
           });
         }
+
+        await this.registerVentaRefund(trx, {
+          ventaId: id,
+          clienteId,
+          refundTotal: total,
+          refundSubTotal: subTotal,
+          refundComision: totalComision,
+          detailRows
+        });
 
         await addVentaLog(id, 'ANULADO', 'Venta anulada manualmente.', userId);
         await trx('UPDATE comisiones SET estado = 0 WHERE venta_id = ?', [id]);

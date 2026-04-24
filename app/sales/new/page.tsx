@@ -46,7 +46,8 @@ export default function NewSale() {
     totals,
     handleSubmit,
     requiresRoom,
-    isChampagneProduct
+    isChampagneProduct,
+    commissionTotal
   } = useNewSaleForm();
 
   // Estados locales para datos externos y modales
@@ -181,6 +182,8 @@ export default function NewSale() {
           subtotal={totals.subtotal}
           propina={totals.propina}
           total={totals.total}
+          metodoPago={metodoPago}
+          commissionTotal={commissionTotal}
           loading={loading}
           disabled={loading || !productos.length || !metodoPago || hasOpenCaja === false}
           onSubmit={handleHandleSubmit}
