@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Database, Key, Settings as SettingsIcon } from 'lucide-react';
+import { Building2, Database, Key, Settings as SettingsIcon, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { ClientsSkeleton } from '@/components/shared/Skeletons';
 import type { Permission } from '@/components/permissions/PermissionTable';
@@ -11,6 +11,7 @@ import { SettingsCompanyTab } from '@/components/settings/SettingsCompanyTab';
 import { SettingsBillingTab } from '@/components/settings/SettingsBillingTab';
 import { SettingsPermissionsTab } from '@/components/settings/SettingsPermissionsTab';
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
+import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import type {
   BackupItem,
   BillingConfig,
@@ -480,6 +481,10 @@ export default function Settings() {
             <Database className='h-4 w-4' />
             Mantenimiento
           </TabsTrigger>
+          <TabsTrigger value='logs' className='flex items-center gap-2 rounded-full'>
+            <ShieldAlert className='h-4 w-4' />
+            Logs
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='empresa' className='space-y-6'>
@@ -541,6 +546,10 @@ export default function Settings() {
             onRestoreBackup={restoreBackup}
             onOpenCleanModal={() => setIsCleanModalOpen(true)}
           />
+        </TabsContent>
+
+        <TabsContent value='logs' className='space-y-6'>
+          <SettingsLogsTab />
         </TabsContent>
       </Tabs>
 

@@ -45,12 +45,17 @@ export class AuditRepository {
    * Obtiene los últimos logs de auditoría.
    */
   static async getLatest(limit: number = 100): Promise<any[]> {
-    return await query(`
+    return await query(
+      `
       SELECT a.*, u.nick as usuario_nick, u.nombre as usuario_nombre
       FROM audit_logs a
-      LEFT JOIN usuarios u ON a.user_id = u.id_usuario
+      LEFT JOIN usuarios u
+        ON CONVERT(a.user_id USING utf8mb4) COLLATE utf8mb4_unicode_ci =
+           CONVERT(u.id_usuario USING utf8mb4) COLLATE utf8mb4_unicode_ci
       ORDER BY a.created_at DESC
       LIMIT ?
-    `, [limit]);
+    `,
+      [limit]
+    );
   }
 }
