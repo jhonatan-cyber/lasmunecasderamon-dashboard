@@ -194,6 +194,13 @@ export const useNewSaleForm = () => {
     return { subtotal, propina, total: subtotal + propina };
   }, [productos, enableTip]);
 
+  const commissionTotal = useMemo(() => {
+    return productos.reduce(
+      (acc, p) => acc + Number(p?.comision || 0) * Number(p?.cantidad || 0),
+      0
+    );
+  }, [productos]);
+
   const handleSubmit = async (clientes: any[], anfitrionas: any[]) => {
     if (!metodoPago || productos.length === 0) {
       toast.info('Completa todos los campos requeridos');
@@ -339,6 +346,7 @@ export const useNewSaleForm = () => {
     totals,
     handleSubmit,
     requiresRoom,
-    isChampagneProduct
+    isChampagneProduct,
+    commissionTotal
   };
 };

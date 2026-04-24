@@ -349,14 +349,14 @@ export class AuthRepository {
       params.push(filters.usuario_id);
     }
     if (filters.fecha_inicio) {
-      sql += ' AND DATE(l.fecha_login) >= ?';
+      sql += ' AND DATE(l.last_login) >= ?';
       params.push(filters.fecha_inicio);
     }
     if (filters.fecha_fin) {
-      sql += ' AND DATE(l.fecha_login) <= ?';
+      sql += ' AND DATE(l.last_login) <= ?';
       params.push(filters.fecha_fin);
     }
-    sql += ' ORDER BY l.fecha_login DESC';
+    sql += ' ORDER BY l.last_login DESC';
     return await query(sql, params);
   }
 
