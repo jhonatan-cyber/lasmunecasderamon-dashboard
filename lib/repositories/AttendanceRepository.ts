@@ -53,7 +53,8 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     let stats = {
       presentes: presentesHoy,
       ausentes: totalUsuarios - presentesHoy,
-      porcentaje: totalUsuarios > 0 ? Math.round((presentesHoy / totalUsuarios) * 100) : 0,
+      porcentajeAsistencia:
+        totalUsuarios > 0 ? Math.round((presentesHoy / totalUsuarios) * 100) : 0,
       fechaApertura: fechaHoy,
       fechaCierre: fechaHoy
     };
@@ -67,7 +68,8 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
         stats = {
           presentes: perCaja.length,
           ausentes: totalUsuarios - perCaja.length,
-          porcentaje: totalUsuarios > 0 ? Math.round((perCaja.length / totalUsuarios) * 100) : 0,
+          porcentajeAsistencia:
+            totalUsuarios > 0 ? Math.round((perCaja.length / totalUsuarios) * 100) : 0,
           fechaApertura: caja.fecha_apertura,
           fechaCierre: caja.fecha_cierre || fechaHoy
         };
@@ -267,5 +269,55 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     `,
       [userId, dates]
     );
+  }
+
+  static async registerManual(
+    usuarioId: string,
+    fecha: string,
+    hora: string,
+    estado: string,
+    currentUser?: any
+  ) {
+    // Verificar si ya existe asistencia para ese usuario en esa fecha
+    const existing = await query<any[]>(
+      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+      [usuarioId, fecha]
+    );
+
+    if (existing.length > 0) {
+      return {
+        success: false,
+        message: 'Ya existe una asistencia registrada para este usuario en esa fecha'
+      };
+    }
+
+    // Obtener datos del usuario para sueldo y aporte
+    const user = await query<any[]>('SELECT sueldo, aporte FROM usuarios WHERE id_usuario = ?', [
+      usuarioId
+    ]);
+
+    if (user.length === 0) {
+      return {
+        success: false,
+        message: 'Usuario no encontrado'
+      };
+    }
+
+    const id = generateUUID();
+    // Solo presente y tardanza cuentan como asistencia (estado=1), ausente no (estado=0)
+    const estadoNumerico = estado === 'presente' || estado === 'tardanza' ? 1 : 0;
+
+    await BaseRepository.insert(query, 'asistencias', {
+      id_asistencia: id,
+      usuario_id: usuarioId,
+      fecha: fecha,
+      hora: hora,
+      estado: estadoNumerico
+    });
+
+    return {
+      success: true,
+      message: 'Asistencia registrada manualmente'
+    };
   }
 }

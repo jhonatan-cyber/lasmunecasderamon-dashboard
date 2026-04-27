@@ -79,7 +79,7 @@ export default function OrderDetailModal({
   const [metodoPago, setMetodoPago] = useState('');
   const [propina, setPropina] = useState(0);
   const [habitacionId, setHabitacionId] = useState('');
-  const [tiempoHabitacion, setTiempoHabitacion] = useState(30); // Tiempo en minutos, por defecto 30
+  const [tiempoHabitacion, setTiempoHabitacion] = useState(30);
   const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
   const [agregarPropina, setAgregarPropina] = useState(false);
@@ -88,7 +88,7 @@ export default function OrderDetailModal({
 
   useEffect(() => {
     if (!open) return;
-    // Cargar TODAS las habitaciones (disponibles y ocupadas) para poder mostrar la pre-seleccionada
+
     fetch('/api/rooms')
       .then(res => res.json())
       .then(data => {
@@ -96,12 +96,9 @@ export default function OrderDetailModal({
       });
   }, [open]);
 
-  // Escuchar evento para cerrar el modal cuando se procese el pedido
   useEffect(() => {
     const handleCloseOrderModal = (event: CustomEvent) => {
       const { orderId: processedOrderId } = event.detail;
-
-      // Si el modal está abierto y es el pedido que se procesó, cerrarlo
       if (open && orderId === processedOrderId) {
         onClose();
       }
@@ -126,7 +123,6 @@ export default function OrderDetailModal({
       setAgregarPropina(false);
       setConfirmVentaModalOpen(false);
     } else {
-      // Cuando se abre el modal, verificar si el pedido ya tiene propina
       if (detail && detail.length > 0) {
         const propinaOriginal = detail[0]?.propina || 0;
 
@@ -135,33 +131,25 @@ export default function OrderDetailModal({
           setPropinaDisplayValue(formatNumberCL(propinaOriginal));
           setAgregarPropina(true);
         }
-
-        // Pre-seleccionar habitación si viene en algún detalle del pedido
-        // Buscar en todos los detalles, no solo en el primero
         const detalleConHabitacion = detail.find(d => d.habitacion_id);
         if (detalleConHabitacion && detalleConHabitacion.habitacion_id) {
           const habitacionId = String(detalleConHabitacion.habitacion_id);
           setHabitacionId(habitacionId);
         } else {
-          // Si no hay habitación guardada, buscar dinámicamente si alguna anfitriona está en venta activa
           buscarHabitacionActiva();
         }
       }
     }
   }, [open, detail]);
 
-  // Función para buscar si alguna anfitriona del pedido está en una venta activa con habitación
   const buscarHabitacionActiva = async () => {
     if (!detail || detail.length === 0) {
       return;
     }
 
     try {
-
-      // Obtener IDs de todas las anfitrionas del pedido
       const anfitrionasIds: number[] = [];
 
-      // Obtener anfitrionas del primer detalle (anfitrionas generales del pedido)
       const anfitrionaIdsStr = detail[0]?.anfitrionaIds;
 
       if (anfitrionaIdsStr) {
@@ -172,7 +160,6 @@ export default function OrderDetailModal({
         anfitrionasIds.push(...ids);
       }
 
-      // También obtener anfitrionas asignadas específicamente a productos
       detail.forEach(d => {
         if (d.hostess_id) {
           anfitrionasIds.push(d.hostess_id);
@@ -186,14 +173,12 @@ export default function OrderDetailModal({
         }
       });
 
-      // Eliminar duplicados
       const anfitrionasUnicas = [...new Set(anfitrionasIds)];
 
       if (anfitrionasUnicas.length === 0) {
         return;
       }
 
-      // Llamar al endpoint para verificar si alguna anfitriona está en venta activa
       const response = await fetch('/api/orders/check-active-room', {
         method: 'POST',
         headers: {
@@ -218,11 +203,9 @@ export default function OrderDetailModal({
     if (agregarPropina && detail && detail.length > 0) {
       const propinaOriginal = detail[0]?.propina || 0;
       if (propinaOriginal > 0) {
-        // Si ya hay propina original, usar esa
         setPropina(propinaOriginal);
         setPropinaDisplayValue(formatNumberCL(propinaOriginal));
       } else {
-        // Si no hay propina original, calcular el 10%
         const totalPedido = detail[0]?.total || 0;
         const propinaCalculada = Math.round(totalPedido * 0.1);
         setPropina(propinaCalculada);
@@ -231,7 +214,6 @@ export default function OrderDetailModal({
     } else {
       const propinaOriginal = detail[0]?.propina || 0;
       if (propinaOriginal === 0) {
-        // Solo limpiar si no hay propina original
         setPropina(0);
         setPropinaDisplayValue('');
       }
@@ -827,12 +809,42 @@ export default function OrderDetailModal({
                                 <SelectValue placeholder='Seleccionar tiempo' />
                               </SelectTrigger>
                               <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
-                                <SelectItem value='5' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>5 minutos</SelectItem>
-                                <SelectItem value='10' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>10 minutos</SelectItem>
-                                <SelectItem value='15' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>15 minutos</SelectItem>
-                                <SelectItem value='20' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>20 minutos</SelectItem>
-                                <SelectItem value='25' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>25 minutos</SelectItem>
-                                <SelectItem value='30' className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>30 minutos</SelectItem>
+                                <SelectItem
+                                  value='5'
+                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                                >
+                                  5 minutos
+                                </SelectItem>
+                                <SelectItem
+                                  value='10'
+                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                                >
+                                  10 minutos
+                                </SelectItem>
+                                <SelectItem
+                                  value='15'
+                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                                >
+                                  15 minutos
+                                </SelectItem>
+                                <SelectItem
+                                  value='20'
+                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                                >
+                                  20 minutos
+                                </SelectItem>
+                                <SelectItem
+                                  value='25'
+                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                                >
+                                  25 minutos
+                                </SelectItem>
+                                <SelectItem
+                                  value='30'
+                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                                >
+                                  30 minutos
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -840,9 +852,7 @@ export default function OrderDetailModal({
                       </>
                     )}
                     <div>
-                      <Label className={ORDER_FIELD_LABEL_CLASS}>
-                        Propina
-                      </Label>
+                      <Label className={ORDER_FIELD_LABEL_CLASS}>Propina</Label>
                       <div className='flex items-center space-x-2'>
                         <div className='relative flex-1'>
                           <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
@@ -883,9 +893,7 @@ export default function OrderDetailModal({
                       )}
                     </div>
                     <div>
-                      <Label className={ORDER_FIELD_LABEL_CLASS}>
-                        Total Comisión
-                      </Label>
+                      <Label className={ORDER_FIELD_LABEL_CLASS}>Total Comisión</Label>
                       <div className='relative'>
                         <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
                         <Input
@@ -899,29 +907,44 @@ export default function OrderDetailModal({
                 </div>
 
                 {/* Tabla de productos */}
-                <div className='rounded-lg border border-border/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40'>
+                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-2xl border-none shadow-md overflow-hidden'>
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className='text-left'>Bebida</TableHead>
-                        <TableHead className='text-center'>Cantidad</TableHead>
-                        <TableHead className='text-center'>Precio</TableHead>
-                        <TableHead className='text-center'>Comisión</TableHead>
-                        <TableHead className='text-right'>Sub Total</TableHead>
+                    <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                      <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-left'>
+                          Bebida
+                        </TableHead>
+                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                          Cantidad
+                        </TableHead>
+                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                          Precio
+                        </TableHead>
+                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                          Comisión
+                        </TableHead>
+                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>
+                          Sub Total
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {detail.map((item: any, idx: number) => (
-                        <TableRow key={idx}>
-                          <TableCell className='font-medium'>{item.producto}</TableCell>
-                          <TableCell className='text-center'>{item.cantidad}</TableCell>
-                          <TableCell className='text-center'>
+                        <TableRow
+                          key={idx}
+                          className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === detail.length - 1 ? 'last:rounded-b-xl' : ''}`}
+                        >
+                          <TableCell className='py-3 px-4 text-left font-medium'>
+                            {item.producto_nombre}
+                          </TableCell>
+                          <TableCell className='py-3 px-4 text-center'>{item.cantidad}</TableCell>
+                          <TableCell className='py-3 px-4 text-center'>
                             {formatCurrencyCLP(item.precio)}
                           </TableCell>
-                          <TableCell className='text-center'>
+                          <TableCell className='py-3 px-4 text-center'>
                             {formatCurrencyCLP(item.comision)}
                           </TableCell>
-                          <TableCell className='text-right font-medium'>
+                          <TableCell className='py-3 px-4 text-right font-medium'>
                             {formatCurrencyCLP(item.subtotal)}
                           </TableCell>
                         </TableRow>
@@ -1007,7 +1030,9 @@ export default function OrderDetailModal({
           </>
         ) : (
           <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
-            <div className='text-sm text-gray-500 dark:text-zinc-400 sm:text-base'>No hay detalles disponibles</div>
+            <div className='text-sm text-gray-500 dark:text-zinc-400 sm:text-base'>
+              No hay detalles disponibles
+            </div>
           </div>
         )}
       </DialogContent>
@@ -1016,8 +1041,12 @@ export default function OrderDetailModal({
       <Dialog open={confirmVentaModalOpen} onOpenChange={setConfirmVentaModalOpen}>
         <DialogContent className='sm:max-w-md border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
-            <DialogTitle className='text-gray-900 dark:text-zinc-100'>Confirmar registro de venta</DialogTitle>
-            <DialogDescription className='text-gray-600 dark:text-zinc-400'>??Est??s seguro de que deseas registrar esta venta?</DialogDescription>
+            <DialogTitle className='text-gray-900 dark:text-zinc-100'>
+              Confirmar registro de venta
+            </DialogTitle>
+            <DialogDescription className='text-gray-600 dark:text-zinc-400'>
+              ??Est??s seguro de que deseas registrar esta venta?
+            </DialogDescription>
           </DialogHeader>
           <div className='px-6 py-4 text-gray-800 dark:text-zinc-200'>
             <div className='space-y-2 text-sm'>
@@ -1084,9 +1113,3 @@ export default function OrderDetailModal({
     </Dialog>
   );
 }
-
-
-
-
-
-

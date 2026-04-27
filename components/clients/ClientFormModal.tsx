@@ -7,13 +7,28 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CreditCard, User, FileSignature, Phone } from 'lucide-react';
 import { useClientForm } from '@/hooks/personal/useClientForm';
 import { type ClientFormValues } from '@/hooks/personal/useClientForm';
+import { useState, useEffect } from 'react';
+
+const formatRUT = (value: string): string => {
+  const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
+  if (!clean) return '';
+
+  if (clean.length <= 1) return clean;
+
+  const cuerpo = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+
+  const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return `${formattedCuerpo}-${dv}`;
+};
 
 interface ClientFormProps {
   clientData: ClientFormValues;
@@ -32,16 +47,37 @@ function ClientForm({
   onCancel,
   isEditMode = false,
   isLoading = false,
-  hideButtons = false,
+  hideButtons = false
 }: ClientFormProps) {
-  const { onFormSubmit, register, errors } = useClientForm({ clientData, open, onSubmit });
+  const { onFormSubmit, register, errors, setValue } = useClientForm({
+    clientData,
+    open,
+    onSubmit
+  });
+  const [rutFormatted, setRutFormatted] = useState(clientData.run || '');
+
+  useEffect(() => {
+    if (clientData.run) {
+      const formatted = formatRUT(clientData.run);
+      setRutFormatted(formatted);
+    } else {
+      setRutFormatted('');
+    }
+  }, [clientData.run]);
+
+  const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatRUT(value);
+    setRutFormatted(formatted);
+    setValue('run', formatted);
+  };
 
   return (
     <form id='client-form' onSubmit={onFormSubmit} className='space-y-4 sm:space-y-6'>
-      {/* RUN */}
+      {/* RUT */}
       <div>
         <Label htmlFor='client-run' className='mb-2 text-sm sm:text-base'>
-          RUN
+          RUT
         </Label>
         <span className='text-xs text-gray-500'> (Opcional)</span>
         <div className='relative'>
@@ -51,7 +87,9 @@ function ClientForm({
           <Input
             id='client-run'
             {...register('run')}
-            placeholder='RUN del cliente'
+            value={rutFormatted}
+            onChange={handleRutChange}
+            placeholder='12.345.678-5'
             disabled={isLoading}
             className='pl-10 sm:pl-12'
           />
@@ -73,14 +111,16 @@ function ClientForm({
             id='client-name'
             {...register('name', {
               required: 'El nombre es obligatorio',
-              minLength: { value: 2, message: 'Mínimo 2 caracteres' },
+              minLength: { value: 2, message: 'Mínimo 2 caracteres' }
             })}
             placeholder='Nombre del cliente'
             disabled={isLoading}
             className='pl-10 sm:pl-12'
           />
         </div>
-        {errors.name && <p className='text-red-600 text-xs mt-1'>{errors.name.message as string}</p>}
+        {errors.name && (
+          <p className='text-red-600 text-xs mt-1'>{errors.name.message as string}</p>
+        )}
       </div>
 
       {/* Apellido */}
@@ -97,14 +137,16 @@ function ClientForm({
             id='client-lastName'
             {...register('lastName', {
               required: 'El apellido es obligatorio',
-              minLength: { value: 2, message: 'Mínimo 2 caracteres' },
+              minLength: { value: 2, message: 'Mínimo 2 caracteres' }
             })}
             placeholder='Apellido del cliente'
             disabled={isLoading}
             className='pl-10 sm:pl-12'
           />
         </div>
-        {errors.lastName && <p className='text-red-600 text-xs mt-1'>{errors.lastName.message as string}</p>}
+        {errors.lastName && (
+          <p className='text-red-600 text-xs mt-1'>{errors.lastName.message as string}</p>
+        )}
       </div>
 
       {/* Teléfono */}
@@ -120,14 +162,16 @@ function ClientForm({
           <Input
             id='client-phone'
             {...register('phone', {
-              minLength: { value: 7, message: 'Mínimo 7 caracteres' },
+              minLength: { value: 7, message: 'Mínimo 7 caracteres' }
             })}
             placeholder='Teléfono del cliente'
             disabled={isLoading}
             className='pl-10 sm:pl-12'
           />
         </div>
-        {errors.phone && <p className='text-red-600 text-xs mt-1'>{errors.phone.message as string}</p>}
+        {errors.phone && (
+          <p className='text-red-600 text-xs mt-1'>{errors.phone.message as string}</p>
+        )}
       </div>
 
       {!hideButtons && (

@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 // Componentes Refactorizados
 import { OrdersHeader } from '@/components/orders/list/OrdersHeader';
 import { OrdersStats } from '@/components/orders/list/OrdersStats';
+import { AdminOrdersFilters } from '@/components/orders/list/OrdersFilters';
 import { OrderCard } from '@/components/orders/list/OrderCard';
 import { ServiceRequestCard } from '@/components/orders/list/ServiceRequestCard';
 
@@ -59,6 +60,8 @@ export default function OrdersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState('');
+  const [sortBy, setSortBy] = useState('total');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
@@ -125,7 +128,7 @@ export default function OrdersPage() {
 
   return (
     <PermissionGuard module='orders' action='view'>
-      <div className='p-6 max-w-[1600px] mx-auto space-y-6'>
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <OrdersHeader
           hasOpenCaja={hasOpenCaja}
           cajaLoading={cajaLoading}
@@ -134,27 +137,26 @@ export default function OrdersPage() {
 
         <OrdersStats activeTab={activeTab} orders={orders} servicios={servicios} />
 
-        <Card className='border border-border/60 bg-white/80 shadow-sm backdrop-blur dark:bg-zinc-900/80 dark:border-zinc-800'>
-          <CardContent className='p-4'>
-            <div className='relative'>
-              <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-zinc-500' />
-              <Input
-                placeholder={
-                  activeTab === 'productos'
-                    ? 'Buscar cliente, código, garzón...'
-                    : 'Buscar cliente, habitación...'
-                }
-                value={activeTab === 'productos' ? searchTerm : searchServiciosTerm}
-                onChange={e =>
-                  activeTab === 'productos'
-                    ? setSearchTerm(e.target.value)
-                    : setSearchServiciosTerm(e.target.value)
-                }
-                className='pl-12 h-12 rounded-full border-gray-200 focus:ring-2 focus:ring-black transition-all bg-white text-gray-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-zinc-300'
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <AdminOrdersFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          searchServiciosTerm={searchServiciosTerm}
+          setSearchServiciosTerm={setSearchServiciosTerm}
+          activeTab={activeTab}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          onClearFilters={() => {
+            setSearchTerm('');
+            setSearchServiciosTerm('');
+            setSortBy('total');
+            setSortOrder('desc');
+          }}
+          rowsPerPage={10}
+          setRowsPerPage={() => {}}
+          setPage={() => {}}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
           <TabsList className='grid w-full max-w-md mx-auto grid-cols-2 rounded-full bg-gray-100 p-1 mb-8 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
@@ -178,7 +180,9 @@ export default function OrdersPage() {
           >
             {filteredOrders.length === 0 ? (
               <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
-                <p className='font-medium text-gray-400 dark:text-zinc-500'>No se encontraron ??rdenes de productos</p>
+                <p className='font-medium text-gray-400 dark:text-zinc-500'>
+                  No se encontraron ??rdenes de productos
+                </p>
               </div>
             ) : (
               <div className='grid grid-cols-1 xl:grid-cols-2 gap-4'>
@@ -245,7 +249,9 @@ export default function OrdersPage() {
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
-            <DialogTitle className='text-gray-900 dark:text-zinc-100'>??Confirmar eliminaci??n?</DialogTitle>
+            <DialogTitle className='text-gray-900 dark:text-zinc-100'>
+              ??Confirmar eliminaci??n?
+            </DialogTitle>
             <DialogDescription className='text-gray-600 dark:text-zinc-400'>
               Eliminarás el pedido {orderToDelete?.codigo}. Esta acción no se puede deshacer.
             </DialogDescription>
@@ -274,7 +280,9 @@ export default function OrdersPage() {
       <Dialog open={deleteServicioModalOpen} onOpenChange={setDeleteServicioModalOpen}>
         <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
-            <DialogTitle className='text-gray-900 dark:text-zinc-100'>??Confirmar eliminaci??n?</DialogTitle>
+            <DialogTitle className='text-gray-900 dark:text-zinc-100'>
+              ??Confirmar eliminaci??n?
+            </DialogTitle>
             <DialogDescription className='text-gray-600 dark:text-zinc-400'>
               Eliminarás la solicitud de servicio #{servicioToDelete?.id_solicitud}.
             </DialogDescription>
@@ -301,5 +309,3 @@ export default function OrdersPage() {
     </PermissionGuard>
   );
 }
-
-

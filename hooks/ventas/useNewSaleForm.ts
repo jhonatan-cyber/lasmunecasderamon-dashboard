@@ -78,7 +78,7 @@ export const useNewSaleForm = () => {
 
   const isHighValueProduct = (producto: any) => {
     const precio = Number(producto.precio ?? producto.price ?? 0);
-    return precio > 30000;
+    return precio >= 30000;
   };
 
   const hasHighValueProducts = useMemo(() => productos.some(isHighValueProduct), [productos]);
@@ -274,30 +274,47 @@ export const useNewSaleForm = () => {
       if (res && (res.success || res.data)) {
         const data = res.data || res;
         if (selectedHabitacion) {
-          await fetch(`/api/rooms/${selectedHabitacion}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'occupy' })
-          });
           const duration = requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60;
-          const anfNombres = todasAnf
-            .map(
-              id => anfitrionas.find(a => String(a.id || a.id_usuario) === id)?.nick || 'Anfitriona'
-            )
-            .join(', ');
-          const cNombre =
-            clientes.find(c => String(c.id || c.id_cliente) === String(selectedCliente))?.nombre ||
-            'General';
-          startTimer(
-            data.id || data.id_venta,
-            selectedHabitacion as any,
-            selectedRoomInfo?.name || 'Habitación',
-            duration,
-            data.codigo || 'V-' + Date.now(),
-            cNombre,
-            anfNombres,
-            'venta'
-          );
+
+          // Validar solo datos de la habitación seleccionada
+          const roomPrice = selectedRoomInfo?.precio ?? selectedRoomInfo?.price ?? 0;
+          const roomTime = selectedRoomInfo?.tiempo ?? selectedRoomInfo?.time ?? 0;
+          const roomCommission = selectedRoomInfo?.comision ?? selectedRoomInfo?.commission ?? 0;
+
+          // Solo ocupar la habitación si la habitación tiene precio > 0, tiempo > 0 y comisión > 0
+          const shouldOccupyRoom = roomPrice > 0 && roomTime > 0 && roomCommission > 0;
+
+          // Iniciar timer si hay tiempo válido (independientemente de si se ocupa la habitación)
+          if (duration > 0) {
+            const anfNombres = todasAnf
+              .map(
+                id =>
+                  anfitrionas.find(a => String(a.id || a.id_usuario) === id)?.nick || 'Anfitriona'
+              )
+              .join(', ');
+            const cNombre =
+              clientes.find(c => String(c.id || c.id_cliente) === String(selectedCliente))
+                ?.nombre || 'General';
+            startTimer(
+              data.id || data.id_venta,
+              selectedHabitacion as any,
+              selectedRoomInfo?.name || 'Habitación',
+              duration,
+              data.codigo || 'V-' + Date.now(),
+              cNombre,
+              anfNombres,
+              'venta'
+            );
+          }
+
+          // Ocupar la habitación solo si la habitación tiene sus propios datos válidos
+          if (shouldOccupyRoom) {
+            await fetch(`/api/rooms/${selectedHabitacion}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'occupy' })
+            });
+          }
         }
         window.dispatchEvent(new CustomEvent('ventaRegistrada'));
         toast.success('Venta generada exitosamente');

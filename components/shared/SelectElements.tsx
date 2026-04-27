@@ -44,7 +44,7 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
       {label && (
         <Label
           htmlFor='list'
-          className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+          className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'
         >
           {label}
         </Label>
@@ -53,13 +53,13 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
         value={String(effectiveValue)}
         onValueChange={(value: string) => effectiveOnChange(Number(value))}
       >
-        <SelectTrigger className='w-[180px] rounded-full text-center text-sm bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'>
+        <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10 font-bold'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
           {options.map((option, index) => {
             const optionValue = typeof option === 'object' ? option.value : option;
-            const optionLabel = typeof option === 'object' ? option.label : `${option} elementos`;
+            const optionLabel = typeof option === 'object' ? option.label : `${option}`;
             return (
               <SelectItem key={String(optionValue)} value={String(optionValue)}>
                 {optionLabel}
