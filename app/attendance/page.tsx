@@ -23,11 +23,11 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { RefreshCw, UserPlus } from 'lucide-react';
+import { RefreshCw, UserPlus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AttendancePage() {
-  const { data, loading, error } = useAsistencias();
+  const { data, loading, error, fetchAsistencias } = useAsistencias();
   const { stats: attendanceStats, loading: statsLoading, error: statsError } = useAttendanceStats();
   const { users, isLoading: usersLoading } = useUsers();
 
@@ -41,6 +41,7 @@ export default function AttendancePage() {
   const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
+  const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
 
   // Filtrar y paginar datos
   const filteredData = useMemo(() => {
@@ -201,6 +202,14 @@ export default function AttendancePage() {
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>
             Asistencias
           </h1>
+          <Button
+            onClick={() => setAsistenciaFormOpen(true)}
+            size='sm'
+            className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+          >
+            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+            Registrar Manual
+          </Button>
         </div>
 
         {error ? (
@@ -403,6 +412,13 @@ export default function AttendancePage() {
           </p>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de registro manual de asistencia */}
+      <AsistenciaForm
+        isOpen={asistenciaFormOpen}
+        onOpenChange={setAsistenciaFormOpen}
+        onSuccess={fetchAsistencias}
+      />
     </PermissionGuard>
   );
 }

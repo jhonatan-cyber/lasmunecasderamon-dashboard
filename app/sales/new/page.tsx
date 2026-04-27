@@ -119,7 +119,7 @@ export default function NewSale() {
     <>
       <NewSaleHeader />
 
-      <div className='mx-4 mb-10 space-y-4 rounded-xl bg-white p-4 shadow-md sm:mx-6 sm:space-y-6 sm:p-6 lg:mx-8 lg:p-8 dark:bg-neutral-950 dark:text-neutral-100 dark:shadow-black/30'>
+      <div className='mx-4 mb-10 space-y-4 sm:mx-6 sm:space-y-6 lg:mx-8 dark:text-neutral-100'>
         <CajaStatusCheck onStatusChange={setHasOpenCaja} />
 
         <NewSaleSearch

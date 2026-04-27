@@ -77,21 +77,31 @@ export default function PropinasDetalleModal({
             <h3 className='text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600'>
               Detalle de las Propinas
             </h3>
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border border-gray-100 dark:border-gray-800 shadow-md overflow-hidden'>
+            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
               <Table className='min-w-full'>
-                <TableHeader className='bg-gray-100/50 dark:bg-slate-900/50'>
-                  <TableRow className='hover:bg-transparent border-b border-gray-100 dark:border-gray-800'>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-left'>FECHA HORA</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-left'>CODIGO VENTA</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-right'>MONTO</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-left'>FECHA PAGO</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-bold text-center'>ESTADO</TableHead>
+                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                  <TableRow className='hover:bg-transparent'>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
+                      FECHA HORA
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
+                      CODIGO VENTA
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
+                      MONTO
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
+                      FECHA PAGO
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
+                      ESTADO
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800 last:border-0'>
+                      <TableRow key={i}>
                         <TableCell className='py-4 px-5'>
                           <Skeleton className='h-6 w-32' />
                         </TableCell>
@@ -137,28 +147,32 @@ export default function PropinasDetalleModal({
                     detalles.map((detalle, index) => (
                       <TableRow
                         key={index}
-                        className='border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-800/30'
+                        className='transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
                       >
-                        <TableCell className='py-3 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
-                          <div className='font-medium'>{formatSoloFecha(detalle.fecha_crea)}</div>
-                          <div className='text-xs text-gray-500'>{formatSoloHora(detalle.fecha_crea)}</div>
+                        <TableCell className='py-4 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
+                          <div>{formatSoloFecha(detalle.fecha_crea)}</div>
+                          <div className='text-xs text-gray-500'>
+                            {formatSoloHora(detalle.fecha_crea)}
+                          </div>
                         </TableCell>
-                        <TableCell className='py-3 px-5 text-left text-sm font-mono text-gray-600 dark:text-gray-400'>
+                        <TableCell className='py-4 px-5 text-left text-sm font-mono text-gray-600 dark:text-gray-400'>
                           {detalle.codigo_venta}
                         </TableCell>
-                        <TableCell className='py-3 px-5 text-right text-sm font-bold text-green-600'>
+                        <TableCell className='py-4 px-5 text-right text-sm text-green-600'>
                           {formatCurrencyNoDecimals(detalle.monto)}
                         </TableCell>
-                        <TableCell className='py-3 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
+                        <TableCell className='py-4 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
                           {detalle.fecha_pago ? (
-                            <div className='font-medium'>{formatSoloFecha(detalle.fecha_pago)}</div>
+                            <div>{formatSoloFecha(detalle.fecha_pago)}</div>
                           ) : (
-                            <span className='text-xs text-amber-600 dark:text-amber-400 italic font-medium'>Pendiente</span>
+                            <span className='text-xs text-amber-600 dark:text-amber-400 italic'>
+                              Pendiente
+                            </span>
                           )}
                         </TableCell>
-                        <TableCell className='py-3 px-5 text-center'>
+                        <TableCell className='py-4 px-5 text-center'>
                           <Badge
-                            className={`${detalle.estado === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'} rounded-full px-3 py-1 text-xs font-bold border-none shadow-none`}
+                            className={`${detalle.estado === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'} rounded-full px-3 py-1 text-xs font-normal border-none shadow-none`}
                           >
                             {detalle.estado === 1 ? 'Por pagar' : 'Pagado'}
                           </Badge>

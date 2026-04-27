@@ -14,7 +14,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
   const updateRoomStatus = async (roomId: string, status: number) => {
     try {
       // Siempre liberamos/ocupamos la habitación sin condiciones
-      await fetch(`/api/rooms?id=${roomId}`, {
+      await fetch(`/api/rooms/${roomId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: status === 2 ? 'occupy' : 'activate' })
@@ -52,9 +52,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       const currentTimers = activeTimers.peek();
       const duplicates = currentTimers.filter(t => t.roomId.peek() === roomId);
       if (duplicates.length > 0) {
-        console.warn(
-          `[useTimerActions] Detectados ${duplicates.length} timer(s) duplicado(s) para habitación ${roomName}. Limpiando antes de iniciar nuevo.`
-        );
         activeTimers.value = currentTimers.filter(t => t.roomId.peek() !== roomId);
       }
 
@@ -108,7 +105,13 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       if (tTipo === 'servicio') {
         updates.push(updateServiceStatus(timer.servicioId, 1));
       } else if (tTipo === 'venta') {
-        updates.push(fetch(`/api/ventas/${timer.servicioId}/stop`, { method: 'PATCH' }));
+        updates.push(
+          fetch(`/api/ventas/${timer.servicioId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'stop' })
+          })
+        );
       } else if (tTipo === 'cuenta') {
         updates.push(fetch(`/api/cuentas/${timer.servicioId}/stop`, { method: 'PATCH' }));
       }

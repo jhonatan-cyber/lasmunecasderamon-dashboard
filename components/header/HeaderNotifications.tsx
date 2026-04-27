@@ -289,12 +289,16 @@ export function HeaderNotifications() {
                 }}
               >
                 <div className='flex justify-between w-full'>
-                  <span className='font-semibold text-sm'>{order.garzon}</span>
+                  <span className='font-semibold text-sm'>
+                    {order.mesero_nombre || order.garzon}
+                  </span>
                   <span className='text-xs text-gray-500'>
                     {formatShortTimeEs(order.fecha_crea)}
                   </span>
                 </div>
-                <div className='text-xs text-gray-700'>Cliente: {order.cliente}</div>
+                <div className='text-xs text-gray-700'>
+                  Cliente: {order.cliente_nombre || order.cliente}
+                </div>
                 {order.nicks && (
                   <div className='text-xs text-gray-600'>Anfitrionas: {order.nicks}</div>
                 )}

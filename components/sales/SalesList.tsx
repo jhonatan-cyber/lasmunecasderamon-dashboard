@@ -197,12 +197,12 @@ export function SalesList({
         <ShoppingCart className='w-10 h-10 text-gray-300 dark:text-slate-600' />
       </div>
       <h3 className='text-xl font-black text-gray-800 dark:text-slate-100 mb-2'>
-        {hasFilters ? 'Sin resultados' : 'Sin ventas a&uacute;n'}
+        {hasFilters ? 'Sin resultados' : 'Sin ventas aún'}
       </h3>
       <p className='text-sm text-gray-400 dark:text-slate-500 text-center max-w-sm leading-relaxed'>
         {hasFilters
-          ? 'No encontramos ventas con estos filtros. Prob&aacute; con otros criterios.'
-          : 'Cuando registres tu primera venta, va a aparecer ac&aacute;.'}
+          ? 'No encontramos ventas con estos filtros. Probá con otros criterios.'
+          : 'Cuando registres tu primera venta, va a aparecer acá.'}
       </p>
     </div>
   );

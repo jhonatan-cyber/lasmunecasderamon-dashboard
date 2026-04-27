@@ -1,16 +1,11 @@
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import CustomerSelect from '@/components/shared/selects/CustomerSelect';
 import RoomSelect from '@/components/shared/selects/RoomSelect';
 import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
+import TimeSelect from '@/components/shared/selects/TimeSelect';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { Coins } from 'lucide-react';
 
 interface NewSaleConfigurationProps {
   clientes: any[];
@@ -65,25 +60,23 @@ export const NewSaleConfiguration = ({
             />
           </div>
           <div className={fieldWrapperClass}>
-            <Label className={fieldLabelClass}>Tiempo (min)</Label>
-            <Select value={manualTime} onValueChange={setManualTime}>
-              <SelectTrigger className='h-11 rounded-full border-gray-200 transition-all focus:ring-2 focus:ring-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:ring-white'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[15, 30, 45, 60, 90, 120].map(t => (
-                  <SelectItem key={t} value={t.toString()}>
-                    {t} min
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TimeSelect
+              value={manualTime}
+              onChange={setManualTime}
+              label='Tiempo'
+              placeholder='Seleccione tiempo'
+            />
           </div>
         </>
       )}
 
       <div className={fieldWrapperClass}>
-        <PaymentMethodSelect value={metodoPago} onChange={setMetodoPago} />
+        <PaymentMethodSelect
+          value={metodoPago}
+          onChange={setMetodoPago}
+          clientes={clientes}
+          selectedClienteId={selectedCliente}
+        />
       </div>
       <div className={fieldWrapperClass}>
         <Label className={fieldLabelClass}>Propina Sugerida (10%)</Label>
@@ -100,7 +93,8 @@ export const NewSaleConfiguration = ({
           className='flex h-11 items-center justify-between gap-3 rounded-full border border-gray-200 bg-gray-50/80 px-3 text-left transition-colors hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/80 dark:hover:bg-neutral-800'
           aria-pressed={enableTip}
         >
-          <div className='min-w-0'>
+          <div className='flex items-center gap-2 min-w-0'>
+            <Coins className='w-4 h-4 text-gray-400 shrink-0' />
             <span className='block text-sm font-bold text-gray-800 dark:text-neutral-100'>
               {formatCurrencyNoDecimals(propina)}
             </span>

@@ -83,6 +83,7 @@ export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps
     onFormSubmit,
     errors: form.formState.errors,
     register: form.register,
+    setValue,
     isLoading: false // Podríamos manejarlo aquí o pasarlo por props
   };
 };
