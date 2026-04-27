@@ -6,26 +6,21 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Search, Filter } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { ArrowLeft } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import PedidosStatsCards from './PedidosStatsCards';
+import { OrdersFilters } from './OrdersFilters';
 
 interface Order {
   id_pedido: number;
-  cliente: string;
+  cliente_nombre: string;
   codigo: string;
-  garzon: string;
-  nicks: string;
+  mesero_nombre: string;
+  mesero_nick?: string;
+  nicks: string | null;
   subtotal: number;
   total: number;
   estado: number;
@@ -75,7 +70,6 @@ export default function GarzonPedidosPage() {
 
   // Escuchar actualizaciones en tiempo real mediante SSE
   useOrdersSSE(data => {
-
     if (data.type === 'order-processed') {
       // Actualizar el estado del pedido procesado a "Aprobado" (estado = 0)
       setOrders(prevOrders =>
@@ -100,7 +94,7 @@ export default function GarzonPedidosPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         order =>
-          order.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.nicks?.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -205,7 +199,7 @@ export default function GarzonPedidosPage() {
   }
 
   return (
-    <div className='p-6 space-y-6'>
+    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div>
@@ -224,117 +218,35 @@ export default function GarzonPedidosPage() {
         </Button>
       </div>
 
-      {/* Total a Cobrar centrado */}
-      <div className='text-center'>
-        <p className='text-sm text-gray-500'>TOTAL GANADO</p>
-        <p className='text-2xl font-bold text-gray-900'>
-          {loading ? (
-            <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto'></div>
-          ) : (
-            formatCurrencyCLP(totalAmount)
-          )}
-        </p>
-      </div>
-
       {/* Estadísticas */}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-        <Card>
-          <CardContent className='p-4'>
-            <div className='text-center'>
-              <p className='text-2xl font-bold text-blue-600'>{totalOrders}</p>
-              <p className='text-sm text-gray-600'>Total Pedidos</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='p-4'>
-            <div className='text-center'>
-              <p className='text-2xl font-bold text-yellow-600'>{pendingOrders}</p>
-              <p className='text-sm text-gray-600'>Pendientes</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='p-4'>
-            <div className='text-center'>
-              <p className='text-2xl font-bold text-green-600'>{approvedOrders}</p>
-              <p className='text-sm text-gray-600'>Aprobados</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='p-4'>
-            <div className='text-center'>
-              <p className='text-2xl font-bold text-red-600'>{rejectedOrders}</p>
-              <p className='text-sm text-gray-600'>Rechazados</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <PedidosStatsCards
+        totalOrders={totalOrders}
+        totalAmount={totalAmount}
+        pendingOrders={pendingOrders}
+        approvedOrders={approvedOrders}
+        rejectedOrders={rejectedOrders}
+      />
 
       {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Filter className='h-5 w-5' />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>Buscar</label>
-              <div className='relative'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-                <Input
-                  placeholder='Buscar por cliente, código, nicks...'
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className='pl-10'
-                />
-              </div>
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>Estado</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Todos los estados' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>Todos</SelectItem>
-                  <SelectItem value='1'>Pendiente</SelectItem>
-                  <SelectItem value='0'>Aprobado</SelectItem>
-                  <SelectItem value='2'>Rechazado</SelectItem>
-                  <SelectItem value='3'>Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>Ordenar por</label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='total'>Total</SelectItem>
-                  <SelectItem value='subtotal'>Subtotal</SelectItem>
-                  <SelectItem value='cliente'>Cliente</SelectItem>
-                  <SelectItem value='codigo'>Código</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            >
-              {sortOrder === 'asc' ? '↑' : '↓'} Orden
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <OrdersFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        onClearFilters={() => {
+          setSearchTerm('');
+          setStatusFilter('all');
+          setSortBy('total');
+          setSortOrder('desc');
+        }}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+        setPage={setCurrentPage}
+      />
 
       {/* Tabla */}
       <Card>
@@ -395,11 +307,11 @@ export default function GarzonPedidosPage() {
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div className='text-sm font-medium text-gray-900'>
-                          {order.cliente || 'N/A'}
+                          {order.cliente_nombre || 'N/A'}
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>{order.garzon || 'N/A'}</div>
+                        <div className='text-sm text-gray-900'>{order.mesero_nombre || 'N/A'}</div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div className='text-sm text-gray-900'>{order.nicks || 'N/A'}</div>
@@ -450,4 +362,3 @@ export default function GarzonPedidosPage() {
     </div>
   );
 }
-

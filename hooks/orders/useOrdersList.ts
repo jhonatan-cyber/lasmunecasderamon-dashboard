@@ -5,10 +5,11 @@ import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 export interface Order {
   id: string;
   id_pedido: string;
-  cliente: string;
+  cliente_nombre: string;
   codigo: string;
-  garzon: string;
-  nicks: string;
+  mesero_nombre: string;
+  mesero_nick?: string;
+  nicks: string | null;
   subtotal: number;
   total: number;
   estado: number;
@@ -124,10 +125,10 @@ export const useOrdersList = () => {
     const term = searchTerm.toLowerCase();
     return orders.filter(
       o =>
-        o.cliente.toLowerCase().includes(term) ||
+        o.cliente_nombre.toLowerCase().includes(term) ||
         o.codigo.toLowerCase().includes(term) ||
-        o.garzon.toLowerCase().includes(term) ||
-        o.nicks.toLowerCase().includes(term)
+        o.mesero_nombre.toLowerCase().includes(term) ||
+        (o.nicks && o.nicks.toLowerCase().includes(term))
     );
   }, [orders, searchTerm]);
 

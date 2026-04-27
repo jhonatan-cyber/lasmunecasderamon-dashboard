@@ -118,16 +118,17 @@ export class TipRepository {
 
   static async getDetails(usuario_id: string, startDate?: string, endDate?: string) {
     let sql = `
-      SELECT 
+      SELECT
         p.id_propina AS propina_id,
         dp.id_detalle_propina,
-        COALESCE(v.fecha_crea, p.fecha_crea) as fecha_crea, 
-        v.total, 
-        dp.monto, 
-        COALESCE(p.estado, 1) as estado, 
-        v.metodo_pago, 
+        COALESCE(v.fecha_crea, p.fecha_crea) as fecha_crea,
+        v.total,
+        dp.monto,
+        COALESCE(p.estado, 1) as estado,
+        v.metodo_pago,
         v.codigo AS codigo_venta,
-        v.id_venta AS venta_id
+        v.id_venta AS venta_id,
+        dp.fecha_mod AS fecha_pago
       FROM propinas p
       LEFT JOIN ventas v ON v.id_venta = p.venta_id
       INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina

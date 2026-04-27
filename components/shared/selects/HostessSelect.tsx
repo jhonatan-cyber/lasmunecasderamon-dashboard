@@ -3,6 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Users } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import {
   ORDER_FIELD_LABEL_CLASS,
@@ -105,19 +106,17 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
         <button
           id={uniqueId}
           type='button'
-          className={ORDER_MULTISELECT_TRIGGER_CLASS}
+          className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2`}
           onClick={() => !disabledState && setOpen(v => !v)}
           disabled={disabledState}
         >
+          <Users className='w-4 h-4 text-gray-400 shrink-0' />
           {value.length === 0 ? (
-            <span className='text-gray-400'>{placeholder}</span>
+            <span className='text-gray-400 truncate'>{placeholder}</span>
           ) : (
             <span className='flex flex-wrap gap-1'>
               {selectedHostesses.map((a, index) => (
-                <span
-                  key={`${getHostessId(a)}-${index}`}
-                  className={ORDER_SELECTED_TAG_CLASS}
-                >
+                <span key={`${getHostessId(a)}-${index}`} className={ORDER_SELECTED_TAG_CLASS}>
                   {getHostessName(a)}
                 </span>
               ))}

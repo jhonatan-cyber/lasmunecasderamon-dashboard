@@ -120,7 +120,9 @@ export default function NewOrder() {
     <>
       <div className='flex items-center justify-between mt-10 p-8'>
         <div>
-          <h2 className='text-2xl font-bold text-gray-900 dark:text-zinc-100'>Datos Ticket Pedido</h2>
+          <h2 className='text-2xl font-bold text-gray-900 dark:text-zinc-100'>
+            Datos Ticket Pedido
+          </h2>
           <div className='uppercase text-xs tracking-widest text-gray-400 dark:text-zinc-500 font-semibold mb-1'>
             Las muñecas de Ramón
           </div>
@@ -136,7 +138,7 @@ export default function NewOrder() {
           Atrás
         </Button>
       </div>
-      <div className='p-8 bg-white dark:bg-zinc-950 ml-8 mr-8 space-y-6 shadow-md dark:shadow-black/20 rounded-xl border border-transparent dark:border-zinc-800'>
+      <div className='p-8 ml-8 mr-8 space-y-6'>
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
           <TabsList className='mb-6 flex w-full justify-start gap-2 rounded-full bg-gray-100 p-1 dark:bg-gray-800'>
             <TabsTrigger value='productos' className='flex-1 rounded-full'>
