@@ -5,11 +5,13 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
+import FilterSelect from '@/components/shared/selects/FilterSelect';
 import { formatDateTimeLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import AsistenciaForm from '@/components/attendance/AsistenciaForm';
 
 interface Asistencia {
   id_asistencia: number;
@@ -34,6 +36,7 @@ export default function CajeroAsistenciasPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
 
   // Fetch asistencias
   const fetchAsistencias = async () => {
@@ -170,14 +173,26 @@ export default function CajeroAsistenciasPage() {
             Asistencias de {user?.name} {user?.lastName}
           </p>
         </div>
-        <Button
-          variant='outline'
-          onClick={() => router.back()}
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-        >
-          <ArrowLeft className='w-4 h-4 mr-2' />
-          Atrás
-        </Button>
+        <div className='flex gap-2'>
+          <Button
+            variant='outline'
+            onClick={() => setAsistenciaFormOpen(true)}
+            size='sm'
+            className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+          >
+            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+            Registrar Manual
+          </Button>
+          <Button
+            variant='outline'
+            onClick={() => router.back()}
+            size='sm'
+            className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+          >
+            <ArrowLeft className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+            Atrás
+          </Button>
+        </div>
       </div>
 
       {/* Total a cobrar centrado */}
@@ -187,8 +202,8 @@ export default function CajeroAsistenciasPage() {
       </div>
 
       {/* Filtros */}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-        <div>
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-4 w-full'>
+        <div className='w-full'>
           <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
           <input
             type='text'
@@ -198,57 +213,56 @@ export default function CajeroAsistenciasPage() {
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Estado</label>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='all'>Todos</option>
-            <option value='pendiente'>Por cobrar</option>
-            <option value='pagado'>Pagado</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Ordenar por</label>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='fecha'>Fecha</option>
-            <option value='sueldo'>Sueldo</option>
-            <option value='aporte'>Aporte</option>
-            <option value='total'>Total</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Orden</label>
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='desc'>Descendente</option>
-            <option value='asc'>Ascendente</option>
-          </select>
-        </div>
+        <FilterSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          label='Estado'
+          placeholder='Todos'
+          options={[
+            { value: 'all', label: 'Todos' },
+            { value: 'pendiente', label: 'Por cobrar' },
+            { value: 'pagado', label: 'Pagado' }
+          ]}
+        />
+        <FilterSelect
+          value={sortBy}
+          onChange={setSortBy}
+          label='Ordenar por'
+          placeholder='Fecha'
+          options={[
+            { value: 'fecha', label: 'Fecha' },
+            { value: 'sueldo', label: 'Sueldo' },
+            { value: 'aporte', label: 'Aporte' },
+            { value: 'total', label: 'Total' }
+          ]}
+        />
+        <FilterSelect
+          value={sortOrder}
+          onChange={value => setSortOrder(value as 'asc' | 'desc')}
+          label='Orden'
+          placeholder='Descendente'
+          options={[
+            { value: 'desc', label: 'Descendente' },
+            { value: 'asc', label: 'Ascendente' }
+          ]}
+        />
       </div>
 
       {/* Selector de filas por página */}
       <div className='flex justify-between items-center'>
-        <SelectElements
-          value={rowsPerPage}
+        <FilterSelect
+          value={rowsPerPage.toString()}
           onChange={value => {
-            setRowsPerPage(value);
+            setRowsPerPage(parseInt(value));
             setCurrentPage(1);
           }}
+          label='Elementos por página'
+          placeholder='10'
           options={[
-            { value: 5, label: '5 por página' },
-            { value: 10, label: '10 por página' },
-            { value: 20, label: '20 por página' },
-            { value: 50, label: '50 por página' }
+            { value: '5', label: '5 Datos' },
+            { value: '10', label: '10 Datos' },
+            { value: '20', label: '20 Datos' },
+            { value: '50', label: '50 Datos' }
           ]}
         />
       </div>
@@ -327,6 +341,13 @@ export default function CajeroAsistenciasPage() {
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
         </div>
       )}
+
+      {/* Modal de registro manual de asistencia */}
+      <AsistenciaForm
+        isOpen={asistenciaFormOpen}
+        onOpenChange={setAsistenciaFormOpen}
+        onSuccess={fetchAsistencias}
+      />
     </div>
   );
 }

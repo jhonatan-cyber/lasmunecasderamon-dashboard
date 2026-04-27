@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useOvertime } from '@/hooks/personal/useOvertime';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOvertimeTable } from '@/hooks/personal/useOvertimeTable';
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { toast } from 'sonner';
@@ -57,7 +57,11 @@ export default function OvertimePage() {
     setShowFormDialog(true);
   }, [hasOpenCaja]);
 
-  const handleOvertimeSubmit = async (formData: { usuario_id: string; hora: number; monto: number }) => {
+  const handleOvertimeSubmit = async (formData: {
+    usuario_id: string;
+    hora: number;
+    monto: number;
+  }) => {
     try {
       await createOvertime(formData);
       toast.success('Hora extra registrada exitosamente');
@@ -75,12 +79,13 @@ export default function OvertimePage() {
 
   return (
     <PermissionGuard module='overtime' action='view'>
-      <div className='p-6 lg:p-10 space-y-8 max-w-[1600px] mx-auto'>
-
+      <div className='p-6 space-y-6'>
         {/* HEADER SECTION */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div className='flex flex-col'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>Horas Extras</h1>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>
+              Horas Extras
+            </h1>
             <p className='text-sm sm:text-base text-gray-500'>
               Supervisión de registros, pagos y balances históricos del personal.
             </p>
@@ -155,7 +160,6 @@ export default function OvertimePage() {
             userName={selectedUser.name}
           />
         )}
-
       </div>
     </PermissionGuard>
   );

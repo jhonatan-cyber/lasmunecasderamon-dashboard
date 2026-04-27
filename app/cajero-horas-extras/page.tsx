@@ -116,14 +116,16 @@ export default function CajeroHorasExtrasPage() {
   }
 
   return (
-    <div className='p-6 lg:p-10 space-y-8 max-w-[1600px] mx-auto overflow-hidden'>
+    <div className='p-6 space-y-6'>
       {/* Header Premium */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
         <div className='flex flex-col'>
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Mis Horas Extras</h1>
           <div className='flex items-center gap-2 text-gray-600 font-medium'>
             <Landmark className='h-4 w-4 text-purple-500' />
-            <span>Resumen personal de {user.name} {user.lastName}</span>
+            <span>
+              Resumen personal de {user.name} {user.lastName}
+            </span>
           </div>
         </div>
 
@@ -161,7 +163,12 @@ export default function CajeroHorasExtrasPage() {
       />
 
       {/* Tabla Section */}
-      <OvertimeTable loading={loading} rows={paginatedOvertime} pageSize={pageSize} isAdmin={false} />
+      <OvertimeTable
+        loading={loading}
+        rows={paginatedOvertime}
+        pageSize={pageSize}
+        isAdmin={false}
+      />
 
       {/* Paginador Section */}
       {totalPages > 1 && (

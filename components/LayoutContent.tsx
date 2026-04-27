@@ -31,7 +31,7 @@ function MainLayout({ children, user }: { children: React.ReactNode; user: Layou
       >
         <Header showSidebarControls={isAdminOrCajero} />
         <main className='flex-1 overflow-x-auto overflow-y-auto bg-background pb-4 sm:pb-6'>
-          <div className='min-h-full'>{children}</div>
+          <div className='min-h-full w-full'>{children}</div>
         </main>
       </div>
       {isAdminOrCajero && <TimerDisplay />}

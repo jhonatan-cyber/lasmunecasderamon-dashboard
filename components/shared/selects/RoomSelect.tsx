@@ -3,6 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Home } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
   ORDER_FIELD_LABEL_CLASS,
@@ -139,12 +140,16 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
     if (isSelectedInFiltered) return filteredHabitaciones;
 
-    const selectedHabitacion = (Array.isArray(habitaciones) ? habitaciones : []).find(habitacion => {
-      const id = getHabitacionId(habitacion);
-      return id && id.toString() === value;
-    });
+    const selectedHabitacion = (Array.isArray(habitaciones) ? habitaciones : []).find(
+      habitacion => {
+        const id = getHabitacionId(habitacion);
+        return id && id.toString() === value;
+      }
+    );
 
-    return selectedHabitacion ? [selectedHabitacion, ...filteredHabitaciones] : filteredHabitaciones;
+    return selectedHabitacion
+      ? [selectedHabitacion, ...filteredHabitaciones]
+      : filteredHabitaciones;
   })();
 
   const selectedHabitacion = (Array.isArray(habitaciones) ? habitaciones : []).find(habitacion => {
@@ -175,23 +180,19 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
         <button
           id={uniqueId}
           type='button'
-          className={`${ORDER_MULTISELECT_TRIGGER_CLASS} pr-10`}
+          className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
           onClick={() => !disabledState && setOpen(!open)}
           disabled={disabledState}
         >
+          <Home className='w-4 h-4 text-gray-400 shrink-0' />
           {selectedLabel ? (
-            <span className='truncate text-sm text-white'>{selectedLabel}</span>
+            <span className='truncate text-sm text-gray-900 dark:text-white'>{selectedLabel}</span>
           ) : (
-            <span className='text-gray-400 text-sm'>{placeholder}</span>
+            <span className='text-gray-400 text-sm truncate'>{placeholder}</span>
           )}
-          <span className='ml-auto pl-2 text-gray-400 text-xs'>?</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align='start'
-        className={ORDER_FIELD_POPOVER_CLASS}
-        sideOffset={5}
-      >
+      <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>
         <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
           <label htmlFor={`${uniqueId}-search`} className='sr-only'>
             Buscar habitación
@@ -242,9 +243,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                   key={stringId}
                   type='button'
                   className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                    isItemDisabled
-                      ? 'cursor-not-allowed opacity-50'
-                      : 'hover:bg-gray-100'
+                    isItemDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100'
                   } ${isSelected ? 'bg-gray-100' : ''}`}
                   onClick={() => !isItemDisabled && handleValueChange(stringId)}
                   disabled={isItemDisabled}

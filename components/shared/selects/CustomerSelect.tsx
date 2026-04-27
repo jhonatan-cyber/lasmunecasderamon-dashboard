@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { User } from 'lucide-react';
 import {
   ORDER_FIELD_LABEL_CLASS,
   ORDER_FIELD_POPOVER_CLASS,
@@ -55,11 +56,10 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
   const getCustomerDisplayName = (cliente: Customer) => {
     const nombre = cliente?.nombre || cliente?.name || '';
     const apellido = cliente?.apellido || cliente?.lastName || '';
-    const run = cliente?.run || '';
     const saldo = cliente?.saldo ?? 0;
     const displayName = `${nombre} ${apellido}`.trim();
-    const balanceText = saldo > 0 ? ` - Saldo: $${saldo.toLocaleString('es-CL')}` : '';
-    return run ? `${displayName} (${run})${balanceText}` : `${displayName}${balanceText}`;
+    const balanceText = saldo > 0 ? ` - Prepago: $${saldo.toLocaleString('es-CL')}` : '';
+    return `${displayName}${balanceText}`;
   };
 
   const normalizedClientes = useMemo(() => {
@@ -140,16 +140,18 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
             <button
               id={uniqueId}
               type='button'
-              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} pr-10`}
+              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
               onClick={() => !disabled && setOpen(!open)}
               disabled={disabled}
             >
+              <User className='w-4 h-4 text-gray-400 shrink-0' />
               {selectedLabel ? (
-                <span className='truncate text-sm text-white'>{selectedLabel}</span>
+                <span className='truncate text-sm text-gray-900 dark:text-white'>
+                  {selectedLabel}
+                </span>
               ) : (
-                <span className='text-sm text-gray-400'>{placeholder}</span>
+                <span className='text-sm text-gray-400 truncate'>{placeholder}</span>
               )}
-              <span className='ml-auto pl-2 text-xs text-gray-400'>?</span>
             </button>
           </PopoverTrigger>
           <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>

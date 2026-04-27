@@ -24,13 +24,29 @@ export const OrderCard = ({
   const getStatusBadge = (estado: number) => {
     switch (estado) {
       case 0:
-        return <Badge className='bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'>Completado</Badge>;
+        return (
+          <Badge className='bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'>
+            Completado
+          </Badge>
+        );
       case 1:
-        return <Badge className='bg-amber-100 text-amber-900 font-medium dark:bg-amber-950/60 dark:text-amber-300'>Pendiente</Badge>;
+        return (
+          <Badge className='bg-amber-100 text-amber-900 font-medium dark:bg-amber-950/60 dark:text-amber-300'>
+            Pendiente
+          </Badge>
+        );
       case 2:
-        return <Badge className='bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300'>Cancelado</Badge>;
+        return (
+          <Badge className='bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300'>
+            Cancelado
+          </Badge>
+        );
       default:
-        return <Badge variant='outline' className='dark:border-zinc-700 dark:text-zinc-300'>Desconocido</Badge>;
+        return (
+          <Badge variant='outline' className='dark:border-zinc-700 dark:text-zinc-300'>
+            Desconocido
+          </Badge>
+        );
     }
   };
 
@@ -66,18 +82,28 @@ export const OrderCard = ({
 
           <div className='grid grid-cols-2 md:grid-cols-3 gap-6 text-[12px] text-gray-500 dark:text-zinc-400'>
             <div className='flex flex-col'>
-              <span className='font-black text-gray-400 dark:text-zinc-500 uppercase text-[9px]'>Cliente</span>
-              <span className='font-medium text-gray-700 dark:text-zinc-200'>{order.cliente}</span>
+              <span className='font-black text-gray-400 dark:text-zinc-500 uppercase text-[9px]'>
+                Cliente
+              </span>
+              <span className='font-medium text-gray-700 dark:text-zinc-200'>
+                {order.cliente_nombre}
+              </span>
             </div>
             <div className='flex flex-col'>
-              <span className='font-black text-gray-400 dark:text-zinc-500 uppercase text-[9px]'>Garzón</span>
-              <span className='font-medium text-gray-700 dark:text-zinc-200'>{order.garzon}</span>
+              <span className='font-black text-gray-400 dark:text-zinc-500 uppercase text-[9px]'>
+                Garzón
+              </span>
+              <span className='font-medium text-gray-700 dark:text-zinc-200'>
+                {order.mesero_nombre}
+              </span>
             </div>
             <div className='flex flex-col'>
               <span className='font-black text-gray-400 dark:text-zinc-500 uppercase text-[9px] text-green-600'>
                 Total
               </span>
-              <span className='font-bold text-green-700 dark:text-green-400'>${formatNumberCL(order.total)}</span>
+              <span className='font-bold text-green-700 dark:text-green-400'>
+                ${formatNumberCL(order.total)}
+              </span>
             </div>
           </div>
 
@@ -123,4 +149,3 @@ export const OrderCard = ({
     </div>
   );
 };
-
