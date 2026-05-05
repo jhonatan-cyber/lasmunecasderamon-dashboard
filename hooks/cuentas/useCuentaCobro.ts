@@ -93,14 +93,6 @@ export function useCuentaCobro() {
       return;
     }
 
-    // Validación de champaña si aplica
-    const hasChampagne = cuenta.detalles?.some((d: any) => isChampagneProduct(d));
-    if (hasChampagne && !habitacionId) {
-      setShowError(true);
-      toast.error('Selecciona una habitación para productos de champaña');
-      return;
-    }
-
     setIsCobrando(true);
 
     try {
@@ -115,7 +107,6 @@ export function useCuentaCobro() {
           montoFinal,
           total_cobrado: montoFinal,
           propinaFinal,
-          habitacion_id: habitacionId,
           propina: propinaFinal
         })
       });
@@ -153,15 +144,17 @@ export function useCuentaCobro() {
           total: montoFinal,
           total_comision: Number(cuenta?.total_comision ?? 0),
           codigo: cuenta?.codigo,
-          detalles: cuenta.detalles?.map((d: any) => ({
-            producto_id: String(d.producto_id ?? d.id_producto),
-            precio: Number(d.precio ?? 0),
-            cantidad: Number(d.cantidad ?? 1),
-            sub_total: Number(d.sub_total ?? d.subtotal ?? 0),
-            comision: Number(d.comision ?? 0),
-            hostess_id: d.hostess_id != null ? String(d.hostess_id) : null
-          })) || [],
-          usuarios: cuenta?.usuarios?.map((u: any) => String(u.usuario_id ?? u.id_usuario ?? u)) || []
+          detalles:
+            cuenta.detalles?.map((d: any) => ({
+              producto_id: String(d.producto_id ?? d.id_producto),
+              precio: Number(d.precio ?? 0),
+              cantidad: Number(d.cantidad ?? 1),
+              sub_total: Number(d.sub_total ?? d.subtotal ?? 0),
+              comision: Number(d.comision ?? 0),
+              hostess_id: d.hostess_id != null ? String(d.hostess_id) : null
+            })) || [],
+          usuarios:
+            cuenta?.usuarios?.map((u: any) => String(u.usuario_id ?? u.id_usuario ?? u)) || []
         })
       });
 

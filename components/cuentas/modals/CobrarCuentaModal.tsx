@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CreditCard, DollarSign, Building2, Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -14,11 +14,12 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import SearchInput from '@/components/shared/SearchInput';
+
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useCuentaCobro, useCuentaDetail } from '@/hooks/cuentas';
 import { summarizeCuentaDetalles } from '@/lib/utils/cuentas';
 import { ProductCartTable } from '../tables/ProductCartTable';
+import { CreditCard, DollarSign, Loader2 } from 'lucide-react';
 
 function formatFecha(fechaStr?: string) {
   if (!fechaStr) return '-';
@@ -259,46 +260,6 @@ export default function CobrarCuentaModal({
                       </div>
                     )}
                   </div>
-
-                  {hasChampagne && (
-                    <div>
-                      <Label className='block text-xs font-medium text-gray-500 mb-1'>
-                        Habitación
-                      </Label>
-                      <div className='relative'>
-                        <Building2 className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4' />
-                        <Select
-                          value={habitacionValue}
-                          onValueChange={(v: string) => setHabitacionId(v || null)}
-                        >
-                          <SelectTrigger className='w-full pl-8 border border-gray-300 focus:ring-0 focus:border-black bg-transparent py-1'>
-                            <SelectValue placeholder='Seleccione una opción' />
-                          </SelectTrigger>
-                          <SelectContent style={{ maxHeight: 220, overflowY: 'auto' }}>
-                            <div className='px-2 py-1'>
-                              <SearchInput
-                                value={searchRoomValue}
-                                onChange={v => setSearchRoom(v || '')}
-                                placeholder='Buscar habitación...'
-                                className='w-full mb-2'
-                              />
-                            </div>
-                            {habitacionesFiltradas.length > 0 ? (
-                              habitacionesFiltradas.map(room => (
-                                <SelectItem key={room.id} value={String(room.id)}>
-                                  {room.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <div className='text-xs text-gray-400 px-2 py-2'>
-                                No hay habitaciones activas
-                              </div>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
 
                   <div>
                     <Label className='block text-xs font-medium text-gray-500 mb-1'>
