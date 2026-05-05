@@ -52,6 +52,8 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatShortDmyDateEs } from '@/lib/utils/calendarUtils';
 import { useCuentaTableLogic } from '@/hooks/cuentas/useCuentaTableLogic';
 import { useCountdown, useTimer } from '@/contexts/TimerContext';
+import { useConfirmModal } from '@/hooks/shared';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 const formatMontoInput = (value: string) => {
   const digits = value.replace(/\D/g, '');
@@ -110,6 +112,7 @@ export default function CuentaTable({
 }: CuentaTableProps) {
   const { hasPermission } = useUserPermissions();
   const { getTimerByServicioId, stopTimerByServicioId } = useTimer();
+  const { modalState, showConfirm, closeModal } = useConfirmModal();
   const {
     selectedCuentaId,
     detailModalOpen,
@@ -168,9 +171,20 @@ export default function CuentaTable({
       return;
     }
 
-    if (!window.confirm(`¿Finalizar el temporizador de la cuenta ${cuenta.codigo}?`)) {
-      return;
-    }
+    const anfitrionas =
+      cuenta.usuarios
+        ?.map((u: any) => u.usuario_nombre)
+        .filter(Boolean)
+        .join(', ') || 'Sin anfitrionas';
+    const cliente = cuenta.cliente_nombre || `Cliente ${cuenta.cliente_id}`;
+    const confirmed = await showConfirm({
+      title: 'Finalizar temporizador',
+      message: `¿Finalizar el temporizador de la cuenta ${cuenta.codigo}?\n\nEl tiempo dejará de correr y la cuenta quedará lista para cobrar.\n\nCliente: ${cliente}\nAnfitriona(s): ${anfitrionas}`,
+      confirmText: 'Sí, finalizar',
+      type: 'question'
+    });
+
+    if (!confirmed) return;
 
     try {
       await stopTimerByServicioId(cuentaId);
@@ -360,7 +374,7 @@ export default function CuentaTable({
                       variant='outline'
                       size='sm'
                       onClick={() => handleVerDetalles(cuenta)}
-                      className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white text-xs'
+                      className='flex-1 rounded-full bg-blue-50 border-blue-200 hover:bg-blue-700 hover:text-white text-xs'
                     >
                       <Eye className='w-3 h-3 mr-1' />
                       Ver Detalles
@@ -374,7 +388,7 @@ export default function CuentaTable({
                           variant='outline'
                           size='sm'
                           onClick={() => handleFinalizarTemporizador(cuenta)}
-                          className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-amber-600 hover:text-white text-xs'
+                          className='flex-1 rounded-full bg-amber-50 border-amber-200 hover:bg-amber-700 hover:text-white text-xs'
                         >
                           <Clock className='w-3 h-3 mr-1' />
                           Finalizar Timer
@@ -386,7 +400,7 @@ export default function CuentaTable({
                           variant='outline'
                           size='sm'
                           onClick={() => handleAgregarProductos(cuenta)}
-                          className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-green-600 hover:text-white text-xs'
+                          className='flex-1 rounded-full bg-green-50 border-green-200 hover:bg-green-700 hover:text-white text-xs'
                         >
                           <ShoppingCart className='w-3 h-3 mr-1' />
                           Agregar
@@ -398,7 +412,7 @@ export default function CuentaTable({
                           variant='outline'
                           size='sm'
                           onClick={() => handleCobrarCuenta(cuenta)}
-                          className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white text-xs'
+                          className='flex-1 rounded-full bg-red-50 border-red-200 hover:bg-red-700 hover:text-white text-xs'
                         >
                           <CreditCard className='w-3 h-3 mr-1' />
                           Cobrar
@@ -409,7 +423,7 @@ export default function CuentaTable({
                         variant='outline'
                         size='sm'
                         onClick={() => handleSolicitarAnulacion(cuenta)}
-                        className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-orange-600 hover:text-white text-xs'
+                        className='flex-1 rounded-full bg-orange-50 border-orange-200 hover:bg-orange-700 hover:text-white text-xs'
                       >
                         <Ban className='w-3 h-3 mr-1' />
                         Anular
@@ -422,7 +436,7 @@ export default function CuentaTable({
                       variant='outline'
                       size='sm'
                       onClick={() => handleCobrarCuenta(cuenta)}
-                      className='flex-1 rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white text-xs'
+                      className='flex-1 rounded-full bg-red-50 border-red-200 hover:bg-red-700 hover:text-white text-xs'
                     >
                       <CreditCard className='w-3 h-3 mr-1' />
                       Cobrar saldo
@@ -515,7 +529,7 @@ export default function CuentaTable({
                           <DropdownMenuContent align='end' className='w-44'>
                             {canViewDetails && (
                               <DropdownMenuItem
-                                className='cursor-pointer hover:text-blue-700 hover:bg-blue-50'
+                                className='cursor-pointer text-blue-700 hover:text-white hover:bg-blue-700'
                                 onClick={() => handleVerDetalles(cuenta)}
                               >
                                 <Eye className='h-4 w-4' />
@@ -526,7 +540,7 @@ export default function CuentaTable({
                               <>
                                 {canAddProducts && (
                                   <DropdownMenuItem
-                                    className='cursor-pointer hover:text-green-700 hover:bg-green-50'
+                                    className='cursor-pointer text-green-700 hover:text-white hover:bg-green-700'
                                     onClick={() => handleAgregarProductos(cuenta)}
                                   >
                                     <ShoppingCart className='h-4 w-4' />
@@ -535,7 +549,7 @@ export default function CuentaTable({
                                 )}
                                 {getTimerByServicioId(String(cuenta.id_cuenta))?.isActive && (
                                   <DropdownMenuItem
-                                    className='cursor-pointer hover:text-amber-700 hover:bg-amber-50'
+                                    className='cursor-pointer text-amber-700 hover:text-white hover:bg-amber-700'
                                     onClick={() => handleFinalizarTemporizador(cuenta)}
                                   >
                                     <Clock className='h-4 w-4' />
@@ -544,7 +558,7 @@ export default function CuentaTable({
                                 )}
                                 {canCobrar && (
                                   <DropdownMenuItem
-                                    className='cursor-pointer hover:text-red-700 hover:bg-red-50'
+                                    className='cursor-pointer text-red-700 hover:text-white hover:bg-red-700'
                                     onClick={() => handleCobrarCuenta(cuenta)}
                                   >
                                     <CreditCard className='h-4 w-4' />
@@ -552,7 +566,7 @@ export default function CuentaTable({
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
-                                  className='cursor-pointer hover:text-orange-700 hover:bg-orange-50'
+                                  className='cursor-pointer text-orange-700 hover:text-white hover:bg-orange-700'
                                   onClick={() => handleSolicitarAnulacion(cuenta)}
                                 >
                                   <Ban className='h-4 w-4' />
@@ -562,7 +576,7 @@ export default function CuentaTable({
                             )}
                             {cuenta.estado === 4 && canCobrar && (
                               <DropdownMenuItem
-                                className='cursor-pointer hover:text-red-700 hover:bg-red-50'
+                                className='cursor-pointer text-red-700 hover:text-white hover:bg-red-700'
                                 onClick={() => handleCobrarCuenta(cuenta)}
                               >
                                 <CreditCard className='h-4 w-4' />
@@ -610,6 +624,16 @@ export default function CuentaTable({
         cuenta={cuentaSeleccionada}
         onCuentaCobrada={handleCuentaCobrada}
         onOrderStatusChange={onOrderStatusChange}
+      />
+
+      <ConfirmModal
+        open={modalState.open}
+        onOpenChange={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        confirmText={modalState.confirmText}
+        type={modalState.type as 'question' | 'warning' | 'info' | 'success'}
+        onConfirm={modalState.onConfirm || (() => {})}
       />
 
       <Dialog
