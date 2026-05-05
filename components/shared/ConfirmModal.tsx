@@ -3,13 +3,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  AlertTriangle,
-  HelpCircle,
-  Info,
-  CheckCircle,
-  Loader2
-} from 'lucide-react';
+import { AlertTriangle, HelpCircle, Info, CheckCircle, Loader2 } from 'lucide-react';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -95,9 +89,7 @@ export function ConfirmModal({
         {/* Header */}
         <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
           <DialogTitle className='flex items-center gap-2'>
-            <span className={`p-1.5 rounded-lg ${variantConfig.iconBg}`}>
-              {variantConfig.icon}
-            </span>
+            <span className={`p-1.5 rounded-lg ${variantConfig.iconBg}`}>{variantConfig.icon}</span>
             <span className='text-gray-900 dark:text-neutral-100 text-base font-semibold'>
               {title}
             </span>
@@ -108,7 +100,12 @@ export function ConfirmModal({
         <div className='flex-1 px-6 py-6'>
           <div className='bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-slate-700'>
             <p className='text-sm text-gray-700 dark:text-gray-300 text-center leading-relaxed'>
-              {message}
+              {message.split('\n').map((line, i) => (
+                <span key={i}>
+                  {line}
+                  {i < message.split('\n').length - 1 && <br />}
+                </span>
+              ))}
             </p>
           </div>
         </div>

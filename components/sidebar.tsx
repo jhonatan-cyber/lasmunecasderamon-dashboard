@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 type SidebarItem = {
   name: string;
@@ -399,22 +400,34 @@ function SidebarSectionBlock({
         {items.map(item => {
           const isActive = pathname === item.href;
 
+          const linkContent = (
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                isActive
+                  ? cn('nav-item-active', isCollapsed && 'nav-collapsed')
+                  : 'text-gray-700 dark:text-neutral-300'
+              )}
+            >
+              <item.icon className='h-5 w-5 flex-shrink-0 nav-icon' />
+              {!isCollapsed && <span className='truncate'>{item.name}</span>}
+            </Link>
+          );
+
           return (
             <li key={item.name}>
-              <Link
-                href={item.href}
-                onClick={onNavigate}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
-                  isActive
-                    ? cn('nav-item-active', isCollapsed && 'nav-collapsed')
-                    : 'text-gray-700 dark:text-neutral-300'
-                )}
-                title={isCollapsed ? item.name : undefined}
-              >
-                <item.icon className='h-5 w-5 flex-shrink-0 nav-icon' />
-                {!isCollapsed && <span className='truncate'>{item.name}</span>}
-              </Link>
+              {isCollapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                  <TooltipContent side='right'>
+                    <p>{item.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                linkContent
+              )}
             </li>
           );
         })}
@@ -496,17 +509,19 @@ export function Sidebar() {
   );
 
   return (
-    <>
-      <div className='hidden lg:block'>{content}</div>
-      {isSidebarOpen && (
-        <div className='lg:hidden fixed inset-0 z-50'>
-          <div
-            className='fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 sidebar-overlay'
-            onClick={closeSidebar}
-          />
-          <div className='fixed inset-y-0 left-0 z-50 sidebar-enter'>{content}</div>
-        </div>
-      )}
-    </>
+    <TooltipProvider delayDuration={0}>
+      <>
+        <div className='hidden lg:block'>{content}</div>
+        {isSidebarOpen && (
+          <div className='lg:hidden fixed inset-0 z-50'>
+            <div
+              className='fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 sidebar-overlay'
+              onClick={closeSidebar}
+            />
+            <div className='fixed inset-y-0 left-0 z-50 sidebar-enter'>{content}</div>
+          </div>
+        )}
+      </>
+    </TooltipProvider>
   );
 }
