@@ -2,6 +2,7 @@
 
 import { Save, Settings as SettingsIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { BillingConfig, SetBillingConfig } from './settings-types';
 
 interface SettingsBillingTabProps {
@@ -62,15 +63,19 @@ export function SettingsBillingTab({
               </div>
               <div>
                 <label className='block text-sm font-medium mb-1'>Moneda</label>
-                <select
+                <Select
                   value={billingConfig.moneda}
-                  onChange={e => setBillingConfig(prev => ({ ...prev, moneda: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                  onValueChange={value => setBillingConfig(prev => ({ ...prev, moneda: value }))}
                 >
-                  <option value='CLP'>CLP - Peso Chileno</option>
-                  <option value='USD'>USD - Dólar</option>
-                  <option value='EUR'>EUR - Euro</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder='Seleccionar moneda' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='CLP'>CLP - Peso Chileno</SelectItem>
+                    <SelectItem value='USD'>USD - D?lar</SelectItem>
+                    <SelectItem value='EUR'>EUR - Euro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className='space-y-4'>

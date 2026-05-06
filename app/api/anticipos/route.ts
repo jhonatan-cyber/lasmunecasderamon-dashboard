@@ -54,7 +54,8 @@ export const POST = withAppAuth(
         usuario_id,
         Number(monto),
         motivo,
-        device_date
+        device_date,
+        user.id
       );
       return NextResponse.json(
         { success: true, message: 'Anticipo otorgado correctamente', ...result },

@@ -11,10 +11,11 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import { Gratificacion } from '@/types/gratificacion';
-import { User, DollarSign, Eye, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { DollarSign, Eye, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
@@ -110,7 +111,19 @@ export default function GratificacionesTable({
               <CardContent className='space-y-3'>
                 <div className='flex justify-between items-start'>
                   <div className='flex items-center gap-2'>
-                    <User className='h-4 w-4 text-gray-400' />
+                    <Avatar className='h-8 w-8'>
+                      {gratificacion.usuario_foto && gratificacion.usuario_foto !== '' ? (
+                        <AvatarImage
+                          src={`/img/users/${gratificacion.usuario_foto}`}
+                          alt={gratificacion.usuario || 'Usuario'}
+                          className='w-full h-full object-cover rounded-full'
+                        />
+                      ) : (
+                        <AvatarFallback className='bg-blue-100 text-blue-700 font-bold text-xs'>
+                          {gratificacion.usuario?.substring(0, 2).toUpperCase() || 'NA'}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
                     <span className='font-medium text-sm sm:text-base'>
                       {gratificacion.usuario}
                     </span>
@@ -238,7 +251,22 @@ export default function GratificacionesTable({
                     className='hover:bg-zinc-50/50 dark:hover:bg-neutral-800/30 transition-colors'
                   >
                     <TableCell className='text-center font-medium text-sm'>
-                      {gratificacion.usuario}
+                      <div className='flex items-center justify-center gap-2'>
+                        <Avatar className='h-8 w-8'>
+                          {gratificacion.usuario_foto && gratificacion.usuario_foto !== '' ? (
+                            <AvatarImage
+                              src={`/img/users/${gratificacion.usuario_foto}`}
+                              alt={gratificacion.usuario || 'Usuario'}
+                              className='w-full h-full object-cover rounded-full'
+                            />
+                          ) : (
+                            <AvatarFallback className='bg-blue-100 text-blue-700 font-bold text-xs'>
+                              {gratificacion.usuario?.substring(0, 2).toUpperCase() || 'NA'}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <span className='text-left'>{gratificacion.usuario}</span>
+                      </div>
                     </TableCell>
                     <TableCell className='text-center text-sm text-zinc-600 dark:text-zinc-400'>
                       {formatDateTime(gratificacion.fecha_crea)}

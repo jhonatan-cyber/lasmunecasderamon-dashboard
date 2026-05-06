@@ -109,55 +109,23 @@ export default function SaleProductModal({
 
   // Función para obtener anfitrionas disponibles para champañas
   const getAvailableHostessesForChampagne = (currentProductId: string) => {
-    const allAssignedHostesses = getAllAssignedHostesses();
     const currentSelection = champagneHostessSelections[currentProductId] || [];
 
     return availableHostesses.filter(h => {
-      const hostessId = String(h.id || h.id_usuario);
       const estado = h.estado || h.status;
-
-      if (estado !== 1 && estado !== 2) {
-        return false;
-      }
-
-      // Incluir si está en la selección actual del producto
-      if (currentSelection.includes(hostessId)) {
-        return true;
-      }
-
-      // Excluir si está asignada a cualquier otro producto
-      if (allAssignedHostesses.includes(hostessId)) {
-        return false;
-      }
-
-      return true;
+      // Siempre mostrar todas las anfitrionas logueadas (estado 1 o 2)
+      return estado === 1 || estado === 2;
     });
   };
 
   // Función para obtener anfitrionas disponibles para bebidas
   const getAvailableHostessesForOtherProducts = (currentProductId: string) => {
-    const allAssignedHostesses = getAllAssignedHostesses();
     const currentSelection = otherProductHostessSelections[currentProductId] || [];
 
     return availableHostesses.filter(h => {
-      const hostessId = String(h.id || h.id_usuario);
       const estado = h.estado || h.status;
-
-      if (estado !== 1 && estado !== 2) {
-        return false;
-      }
-
-      // Incluir si está en la selección actual del producto
-      if (currentSelection.includes(hostessId)) {
-        return true;
-      }
-
-      // Excluir si está asignada a cualquier otro producto
-      if (allAssignedHostesses.includes(hostessId)) {
-        return false;
-      }
-
-      return true;
+      // Siempre mostrar todas las anfitrionas logueadas (estado 1 o 2)
+      return estado === 1 || estado === 2;
     });
   };
 

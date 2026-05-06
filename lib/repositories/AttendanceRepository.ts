@@ -13,6 +13,7 @@ export class AttendanceRepository {
     const sql = `
      SELECT
         U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+        U.foto AS usuario_foto,
         R.nombre AS rol,
 COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
          COALESCE(ASIS.total_asistencias, 0) * COALESCE(U.sueldo, 0) AS sueldo_total,

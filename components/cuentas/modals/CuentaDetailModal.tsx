@@ -80,20 +80,51 @@ export default function CuentaDetailModal({
 
   const productosTabla = useMemo(
     () =>
-      detalleResumen.groupedDetalles.map((detalle, index) => ({
-        id_producto: detalle.id_producto ?? detalle.producto_id ?? detalle.agrupacionKey ?? index,
-        nombre:
-          detalle.producto ||
-          detalle.nombre ||
-          `Producto ID: ${detalle.id_producto ?? detalle.producto_id ?? '-'}`,
-        precio: detalle.precio || 0,
-        cantidad: detalle.cantidad || 0,
-        sub_total: detalle.sub_total || 0,
-        categoria_nombre: detalle.categoria || detalle.categoria_nombre || '',
-        comision: detalle.comision || 0
-      })),
+      detalleResumen.groupedDetalles.map((detalle, index) => {
+        // Extract hostess IDs - they may be comma-separated if aggregated
+        const hostessIds = detalle.hostess_id
+          ? String(detalle.hostess_id).split(',').map((id: string) => id.trim())
+          : [];
+        return {
+          id_producto: detalle.id_producto ?? detalle.producto_id ?? detalle.agrupacionKey ?? index,
+          nombre:
+            detalle.producto ||
+            detalle.nombre ||
+            `Producto ID: ${detalle.id_producto ?? detalle.producto_id ?? '-'}`,
+          precio: detalle.precio || 0,
+          cantidad: detalle.cantidad || 0,
+          sub_total: detalle.sub_total || 0,
+          categoria_nombre: detalle.categoria || detalle.categoria_nombre || '',
+          comision: detalle.comision || 0,
+          selectedHostesses: hostessIds
+        };
+      }),
     [detalleResumen.groupedDetalles]
   );
+
+  // Calcular repartición de comisiones por anfitriona
+  const comisionPorAnfitriona = useMemo(() => {
+    if (!cuenta?.usuarios?.length || detalleResumen.totalComision <= 0) return [];
+
+    return cuenta.usuarios.map((usuario: any) => {
+      const usuarioId = String(usuario.usuario_id || usuario.id_usuario || usuario.id || '');
+      const comisionTotal = detalleResumen.groupedDetalles.reduce((sum, item) => {
+        const hostessIds = item.hostess_id
+          ? String(item.hostess_id).split(',').map((id: string) => id.trim()).filter(Boolean)
+          : [];
+        if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
+          const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
+          return sum + comisionPorAnfitriona;
+        }
+        return sum;
+      }, 0);
+      return {
+        id: usuarioId,
+        nombre: usuario.usuario_nombre || usuario.nick || usuario.nombre || 'Anfitriona',
+        comision: comisionTotal
+      };
+    });
+  }, [cuenta?.usuarios, detalleResumen]);
 
   useEffect(() => {
     if (open && !cuentaId) {
@@ -382,8 +413,34 @@ export default function CuentaDetailModal({
                     productos={productosTabla}
                     readOnly
                     commissionMode='raw'
+                    forceShowHostesses={true}
+                    anfitrionas={cuenta?.usuarios || []}
                     emptyMessage='No hay productos registrados en esta cuenta'
                   />
+
+                  {/* Repartición de comisiones por anfitriona */}
+                  {comisionPorAnfitriona.length > 0 && (
+                    <div className='bg-slate-50 dark:bg-slate-800 rounded-lg p-4'>
+                      <h4 className='text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3'>
+                        Repartición de Comisiones
+                      </h4>
+                      <div className='space-y-2'>
+                        {comisionPorAnfitriona.map(item => (
+                          <div
+                            key={item.id}
+                            className='flex justify-between items-center text-sm'
+                          >
+                            <span className='font-medium text-gray-700 dark:text-gray-300'>
+                              {item.nombre}
+                            </span>
+                            <span className='font-semibold text-green-600 dark:text-green-400'>
+                              {formatCurrencyNoDecimals(item.comision)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className='mt-4 flex justify-end'>
                     <div className='text-sm font-semibold text-gray-800 text-right'>

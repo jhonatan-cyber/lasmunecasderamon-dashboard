@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
+import FilterSelect from '@/components/shared/selects/FilterSelect';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -21,6 +22,24 @@ interface Tip {
   propina_fecha_crea: string;
   codigo_venta: string;
 }
+
+const TIP_STATUS_OPTIONS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'por_cobrar', label: 'Por cobrar' },
+  { value: 'cobrado', label: 'Cobrado' }
+];
+
+const TIP_SORT_BY_OPTIONS = [
+  { value: 'fecha_crea', label: 'Fecha creaci?n' },
+  { value: 'propina_fecha_crea', label: 'Fecha pago' },
+  { value: 'monto', label: 'Monto' },
+  { value: 'codigo_venta', label: 'C?digo' }
+];
+
+const SORT_ORDER_OPTIONS = [
+  { value: 'desc', label: 'Descendente' },
+  { value: 'asc', label: 'Ascendente' }
+];
 
 export default function GarzonPropinasPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -193,48 +212,30 @@ export default function GarzonPropinasPage() {
           <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
           <input
             type='text'
-            placeholder='Buscar por código o monto...'
+            placeholder='Buscar por c?digo o monto...'
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Estado</label>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='all'>Todos</option>
-            <option value='por_cobrar'>Por cobrar</option>
-            <option value='cobrado'>Cobrado</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Ordenar por</label>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='fecha_crea'>Fecha creación</option>
-            <option value='propina_fecha_crea'>Fecha pago</option>
-            <option value='monto'>Monto</option>
-            <option value='codigo_venta'>Código</option>
-          </select>
-        </div>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Orden</label>
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className='w-full px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value='desc'>Descendente</option>
-            <option value='asc'>Ascendente</option>
-          </select>
-        </div>
+        <FilterSelect
+          label='Estado'
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={TIP_STATUS_OPTIONS}
+        />
+        <FilterSelect
+          label='Ordenar por'
+          value={sortBy}
+          onChange={setSortBy}
+          options={TIP_SORT_BY_OPTIONS}
+        />
+        <FilterSelect
+          label='Orden'
+          value={sortOrder}
+          onChange={value => setSortOrder(value as 'asc' | 'desc')}
+          options={SORT_ORDER_OPTIONS}
+        />
       </div>
 
       {/* Selector de filas por página */}

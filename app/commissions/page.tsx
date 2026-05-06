@@ -10,6 +10,9 @@ import useCommissionStats from '@/hooks/personal/useCommissionStats';
 import { Commission } from '@/types/commission';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { Clock, CheckCircle } from 'lucide-react';
+
+type TabType = 'pending' | 'paid';
 
 export default function CommissionsPage() {
   const { filteredCommissions, isLoading, searchTerm, setSearchTerm } = useCommissions();
@@ -22,12 +25,19 @@ export default function CommissionsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedCommission, setSelectedCommission] = useState<Commission | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('pending');
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setSortBy('employeeName');
     setSortOrder('asc');
     setRowsPerPage(5);
+    setPage(1);
+  };
+
+  // Reset page when tab changes
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
     setPage(1);
   };
 
@@ -67,12 +77,25 @@ export default function CommissionsPage() {
     });
   }, [filteredCommissions, sortBy, sortOrder]);
 
+  // Ordenar comisiones filtradas por tab
+  const tabFilteredCommissions = useMemo(() => {
+    return sortedCommissions.filter(c => {
+      if (activeTab === 'pending') return c.status === 'por_pagar';
+      if (activeTab === 'paid') return c.status === 'pagado';
+      return true;
+    });
+  }, [sortedCommissions, activeTab]);
+
   // Paginación
-  const totalPages = Math.ceil(sortedCommissions.length / rowsPerPage);
-  const paginatedCommissions = sortedCommissions.slice(
+  const totalPages = Math.ceil(tabFilteredCommissions.length / rowsPerPage);
+  const paginatedCommissions = tabFilteredCommissions.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
+
+  // Filtrar por tab activo
+  const pendingCount = filteredCommissions.filter(c => c.status === 'por_pagar').length;
+  const paidCount = filteredCommissions.filter(c => c.status === 'pagado').length;
 
   return (
     <PermissionGuard module='commissions' action='view'>
@@ -100,18 +123,56 @@ export default function CommissionsPage() {
         />
 
         {/* Filtros y búsqueda */}
-        <CommissionsFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          onClearFilters={handleClearFilters}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-        />
+        <div className='space-y-4'>
+          <CommissionsFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+            onClearFilters={handleClearFilters}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
+            setPage={setPage}
+          />
+
+          {/* Tabs - centrados debajo de los filtros */}
+          <div className='flex justify-center gap-3 border-b pb-1'>
+            <button
+              onClick={() => handleTabChange('pending')}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'pending'
+                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
+            >
+              <Clock className='h-4 w-4' />
+              Pendientes de Pago
+              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {pendingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => handleTabChange('paid')}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'paid'
+                  ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
+            >
+              <CheckCircle className='h-4 w-4' />
+              Pagadas
+              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+              }`}>
+                {paidCount}
+              </span>
+            </button>
+          </div>
+        </div>
 
         {/* Lista de comisiones */}
         <div className='overflow-x-auto'>

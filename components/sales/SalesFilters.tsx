@@ -70,10 +70,10 @@ export function SalesFilters({
               Estados
             </Label>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+              <SelectTrigger>
                 <SelectValue placeholder='Estado' />
               </SelectTrigger>
-              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+              <SelectContent>
                 <SelectItem value='all'>Todos</SelectItem>
                 <SelectItem value='1'>Completado</SelectItem>
                 <SelectItem value='2'>En Proceso</SelectItem>
@@ -89,10 +89,10 @@ export function SalesFilters({
               Método
             </Label>
             <Select value={filterMetodoPago} onValueChange={setFilterMetodoPago}>
-              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+              <SelectTrigger>
                 <SelectValue placeholder='Método' />
               </SelectTrigger>
-              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+              <SelectContent>
                 <SelectItem value='all'>Todos</SelectItem>
                 <SelectItem value='efectivo'>Efectivo</SelectItem>
                 <SelectItem value='tarjeta'>Tarjeta</SelectItem>
@@ -109,10 +109,10 @@ export function SalesFilters({
             </Label>
             <div className='flex gap-1'>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className='w-full text-xs rounded-l-2xl rounded-r-none bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'>
+                <SelectTrigger className='rounded-r-none'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectContent>
                   <SelectItem value='fecha_crea'>Fecha</SelectItem>
                   <SelectItem value='total'>Monto</SelectItem>
                   <SelectItem value='cliente_nombre'>Cliente</SelectItem>
@@ -146,10 +146,10 @@ export function SalesFilters({
                 setPage(1);
               }}
             >
-              <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10 font-bold'>
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+              <SelectContent>
                 <SelectItem value='5'>5</SelectItem>
                 <SelectItem value='10'>10</SelectItem>
                 <SelectItem value='20'>20</SelectItem>

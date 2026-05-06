@@ -1,4 +1,4 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { RetiroCajaSchema, type RetiroCajaType } from '@/lib/business/schemas/withdrawal';
 import { BaseRepository } from './BaseRepository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -24,11 +24,11 @@ export class WithdrawalRepository {
     }));
   }
 
-  static async create(data: RetiroCajaType): Promise<string> {
+  static async create(data: RetiroCajaType, trx: TransactionQuery | typeof query = query): Promise<string> {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    
-    await BaseRepository.insert(query, 'retiros_caja', {
+
+    await BaseRepository.insert(trx, 'retiros_caja', {
       id_retiro: id,
       caja_id: data.caja_id,
       monto: data.monto,

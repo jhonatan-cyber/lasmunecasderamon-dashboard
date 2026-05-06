@@ -29,9 +29,11 @@ export class GratificacionRepository {
     const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
     if (tableCheck.length === 0) return [];
 
-    let sql = `
-      SELECT G.*, DATE_FORMAT(G.fecha_crea, "%Y-%m-%d %H:%i:%s") as fecha_crea_fmt, 
-             U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario
+let sql = `
+      SELECT G.*,
+             DATE_FORMAT(G.fecha_crea, "%Y-%m-%d %H:%i:%s") as fecha_crea_fmt,
+             DATE_FORMAT(G.fecha_mod, "%Y-%m-%d %H:%i:%s") as fecha_mod_fmt,
+             U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.foto AS usuario_foto
       FROM gratificaciones G
       INNER JOIN usuarios U ON U.id_usuario = G.usuario_id
     `;
@@ -42,14 +44,19 @@ export class GratificacionRepository {
     }
     sql += ' ORDER BY G.fecha_crea DESC';
 
-    const rows = await query<any[]>(sql, params);
+const rows = await query<any[]>(sql, params);
     return rows.map(row => ({
       id: String(row.id),
+      // Compatibilidad hacia el frontend: la DB real no tiene fecha_hora.
       fecha_hora: row.fecha_crea_fmt,
+      usuario_id: String(row.usuario_id),
       id_usuario: String(row.id_usuario),
       usuario: String(row.usuario),
+      usuario_foto: row.usuario_foto || null,
       monto: Number(row.monto),
       descripcion: String(row.descripcion || ''),
+      fecha_crea: row.fecha_crea_fmt,
+      fecha_mod: row.fecha_mod_fmt || null,
       estado: Number(row.estado),
       estado_texto: this.getEstadoTexto(Number(row.estado))
     }));
@@ -129,8 +136,7 @@ export class GratificacionRepository {
       monto,
       descripcion: descripcion || '',
       estado: 2,
-      fecha_crea: now,
-      fecha_hora: now
+      fecha_crea: now
     });
 
     const adminWhatsApp =

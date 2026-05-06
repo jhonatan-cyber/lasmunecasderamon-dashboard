@@ -2,7 +2,7 @@ import { query, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 const PAYROLL_SQL = `
-SELECT U.id_usuario, R.nombre AS rol, CONCAT(U.nombre, ' ', U.apellido) AS usuario,
+SELECT U.id_usuario, R.nombre AS rol, CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.foto AS usuario_foto,
        IFNULL(ASIS.asistencias * U.sueldo, 0) AS sueldos, IFNULL(ASIS.asistencias * U.aporte, 0) AS aportes,
        IFNULL(VEN.total_venta, 0) AS ventas, IFNULL(SERV.total_servicios, 0) AS servicios,
        IFNULL(ANT.total_anticipos, 0) AS anticipos, IFNULL(PROP.total_propinas, 0) AS propinas,
@@ -19,14 +19,14 @@ LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_propinas FROM detalle_propinas
 LEFT JOIN (SELECT usuario_id, SUM(total) AS total_monto_horas FROM horas_extras WHERE estado = 1 GROUP BY usuario_id) AS HR ON HR.usuario_id = U.id_usuario
 LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_gratificaciones FROM gratificaciones WHERE estado = 1 GROUP BY usuario_id) AS GRAT ON GRAT.usuario_id = U.id_usuario
 LEFT JOIN (SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS SEM ON SEM.usuario_id = U.id_usuario
-GROUP BY U.id_usuario HAVING total > 0`;
+GROUP BY U.id_usuario, R.nombre, U.nombre, U.apellido, U.foto HAVING total > 0`;
 
 export class PayrollRepository {
   static async getSummary() {
     return await query(PAYROLL_SQL, []);
   }
 
-  static async pay(userId: string) {
+static async pay(userId: string, entregadoPor?: string) {
     const now = getNowInBusinessTimezone();
     await withTransaction(async trx => {
       await trx(
@@ -63,10 +63,17 @@ export class PayrollRepository {
         'UPDATE propinas SET estado = 0, fecha_mod = ? WHERE estado = 1 AND id_propina IN (SELECT DISTINCT dp.propina_id FROM detalle_propinas dp WHERE dp.propina_id IN (SELECT DISTINCT propina_id FROM detalle_propinas WHERE usuario_id = ?) AND NOT EXISTS (SELECT 1 FROM detalle_propinas dp2 WHERE dp2.propina_id = dp.propina_id AND dp2.estado = 1))',
         [now, userId]
       );
-      await trx(
-        'UPDATE anticipos SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
-        [now, userId]
-      );
+      if (entregadoPor) {
+        await trx(
+          'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1',
+          [now, now, Number(entregadoPor), userId]
+        );
+      } else {
+        await trx(
+          'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+          [now, now, userId]
+        );
+      }
       await trx(
         'UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]

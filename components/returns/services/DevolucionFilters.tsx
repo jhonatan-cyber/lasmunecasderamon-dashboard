@@ -55,10 +55,7 @@ export const DevolucionFilters = ({
               value={filters.paymentFilter}
               onValueChange={(value: string) => updateFilter('paymentFilter', value)}
             >
-              <SelectTrigger
-                id='payment'
-                className='w-full sm:w-[180px] rounded-full text-sm sm:text-base'
-              >
+              <SelectTrigger id='payment' className='sm:w-[180px]'>
                 <SelectValue placeholder='Seleccionar método' />
               </SelectTrigger>
               <SelectContent>
@@ -79,10 +76,7 @@ export const DevolucionFilters = ({
               value={String(filters.rowsPerPage)}
               onValueChange={(v: string) => updateFilter('rowsPerPage', Number(v))}
             >
-              <SelectTrigger
-                id='rowsPerPage'
-                className='w-full sm:w-[180px] rounded-full text-sm sm:text-base'
-              >
+              <SelectTrigger id='rowsPerPage' className='sm:w-[180px]'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogClose
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import {
@@ -49,6 +50,8 @@ export default function GratificacionesDetailModal({
       return dateStr;
     }
   };
+
+  const fechaModLabel = gratificacion.estado === 0 ? 'Fecha de pago' : '\u00daltima modificaci\u00f3n';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -164,7 +167,7 @@ export default function GratificacionesDetailModal({
                     <div className='flex items-start gap-2'>
                       <History className='h-3 w-3 text-zinc-400 mt-0.5' />
                       <div>
-                        <p className='text-[10px] text-zinc-500 uppercase'>Última modificación</p>
+                        <p className='text-[10px] text-zinc-500 uppercase'>{fechaModLabel}</p>
                         <p className='text-xs font-medium'>
                           {formatDateTime(gratificacion.fecha_mod)}
                         </p>
@@ -194,13 +197,13 @@ export default function GratificacionesDetailModal({
         <DialogFooter className='flex-shrink-0 border-t px-6 py-4 bg-zinc-50 dark:bg-neutral-900'>
           <div className='flex justify-center w-full'>
             <DialogClose asChild>
-              <button
+              <Button
                 type='button'
-                className='px-8 py-2 border border-zinc-300 rounded-full text-zinc-700 hover:bg-white transition-all duration-200 text-sm sm:text-base font-medium hover:shadow-sm'
+                className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
                 onClick={onClose}
               >
                 Cerrar Detalle
-              </button>
+              </Button>
             </DialogClose>
           </div>
         </DialogFooter>

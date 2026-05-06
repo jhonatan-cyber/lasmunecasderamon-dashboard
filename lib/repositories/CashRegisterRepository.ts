@@ -6,6 +6,52 @@ import { logger } from '@/lib/utils/logger';
 import { ConflictError, NotFoundError, BusinessError } from '@/lib/errors/errors';
 
 export class CashRegisterRepository {
+  private static async getPrepagoMetrics(
+    fechaApertura?: string | Date | null,
+    fechaCierre?: string | Date | null
+  ): Promise<{
+    prepago_cargado: number;
+    prepago_consumido: number;
+    prepago_pendiente_clientes: number;
+  }> {
+    if (!fechaApertura) {
+      const [saldoRow] = await query<any[]>(
+        'SELECT COALESCE(SUM(saldo), 0) as saldo_pendiente FROM clientes'
+      );
+
+      return {
+        prepago_cargado: 0,
+        prepago_consumido: 0,
+        prepago_pendiente_clientes: Number(saldoRow?.saldo_pendiente || 0)
+      };
+    }
+
+    const fechaInicio = fechaApertura instanceof Date ? fechaApertura.toISOString() : fechaApertura;
+    const fechaFin =
+      fechaCierre instanceof Date
+        ? fechaCierre.toISOString()
+        : fechaCierre || getNowInBusinessTimezone();
+
+    const [movimientosRow] = await query<any[]>(
+      `SELECT
+         COALESCE(SUM(CASE WHEN tipo = 'CARGA' THEN monto ELSE 0 END), 0) as prepago_cargado,
+         COALESCE(SUM(CASE WHEN tipo = 'CONSUMO' THEN monto ELSE 0 END), 0) as prepago_consumido
+       FROM clientes_prepago_movimientos
+       WHERE fecha_crea >= ? AND fecha_crea <= ?`,
+      [fechaInicio, fechaFin]
+    );
+
+    const [saldoRow] = await query<any[]>(
+      'SELECT COALESCE(SUM(saldo), 0) as saldo_pendiente FROM clientes'
+    );
+
+    return {
+      prepago_cargado: Number(movimientosRow?.prepago_cargado || 0),
+      prepago_consumido: Number(movimientosRow?.prepago_consumido || 0),
+      prepago_pendiente_clientes: Number(saldoRow?.saldo_pendiente || 0)
+    };
+  }
+
   private static mapCajaFromDB(row: any): CajaType {
     return CajaSchema.parse({
       id_caja: row.id_caja,
@@ -23,13 +69,19 @@ export class CashRegisterRepository {
       transferencia: row.transferencia ?? 0,
       devoluciones: row.devolucion ?? 0,
       prepago: row.prepago ?? 0,
+      prepago_cargado: row.prepago_cargado ?? 0,
+      prepago_consumido: row.prepago_consumido ?? 0,
+      prepago_pendiente_clientes: row.prepago_pendiente_clientes ?? 0,
       propina: row.propina ?? 0,
       cuenta: row.cuenta ?? 0,
       anticipo: row.anticipo ?? 0,
       iva: row.iva ?? 0,
       comision: row.comision ?? 0,
       usuario_apertura: row.usuario_apertura,
-      cajero_nombre: row.cajero_nombre
+      cajero_nombre: row.cajero_nombre,
+      cajero_foto: row.cajero_foto,
+      cajero_cierre_nombre: row.cajero_cierre_nombre,
+      cajero_cierre_foto: row.cajero_cierre_foto
     });
   }
 
@@ -138,8 +190,10 @@ export class CashRegisterRepository {
       Number(cajaRow.monto_apertura || 0) -
       Number(cajaRow.devolucion || 0);
 
+    const prepagoMetrics = await this.getPrepagoMetrics(cajaRow.fecha_apertura, cajaRow.fecha_cierre);
+
     return {
-      ...this.mapCajaFromDB(cajaRow),
+      ...this.mapCajaFromDB({ ...cajaRow, ...prepagoMetrics }),
       balance_total: balanceTotal,
       cantidad_ventas: stats.ventas.cantidad,
       promedio_venta: stats.ventas.promedio,
@@ -165,14 +219,22 @@ export class CashRegisterRepository {
   static async getById(id: string): Promise<CajaType | null> {
     const res = await query<any[]>(
       `
-      SELECT c.*, CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre
+      SELECT c.*, 
+             CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
+             u1.foto as cajero_foto,
+             CONCAT(u2.nombre, ' ', u2.apellido) as cajero_cierre_nombre,
+             u2.foto as cajero_cierre_foto
       FROM cajas c
       LEFT JOIN usuarios u1 ON c.usuario_id_apertura = u1.id_usuario
+      LEFT JOIN usuarios u2 ON c.usuario_id_cierre = u2.id_usuario
       WHERE c.id_caja = ?
     `,
       [id]
     );
-    return res.length > 0 ? this.mapCajaFromDB(res[0]) : null;
+    if (res.length === 0) return null;
+
+    const prepagoMetrics = await this.getPrepagoMetrics(res[0].fecha_apertura, res[0].fecha_cierre);
+    return this.mapCajaFromDB({ ...res[0], ...prepagoMetrics });
   }
 
   static async open(usuario_id: string, monto_apertura: number): Promise<CajaType | null> {

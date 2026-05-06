@@ -98,7 +98,12 @@ export function useServicios() {
   // Optimistic Mutation for PATCH (status changes)
   const patchMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
-      const response = await fetch(`/api/servicios/${id}`, {
+      const normalizedId = String(id ?? '').trim();
+      if (!normalizedId) {
+        throw new Error('ID de servicio inválido');
+      }
+
+      const response = await fetch(`/api/servicios/${normalizedId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)

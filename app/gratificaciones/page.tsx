@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   GratificacionesTable,
@@ -26,6 +26,8 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Gratificacion } from '@/types/gratificacion';
 
+type TabType = 'pending' | 'paid';
+
 export default function GratificacionesPage() {
   const {
     gratificaciones,
@@ -47,6 +49,7 @@ export default function GratificacionesPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [activeTab, setActiveTab] = useState<TabType>('pending');
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,21 +64,19 @@ export default function GratificacionesPage() {
   const filteredData = useMemo(() => {
     let result = [...gratificaciones];
 
+    // Filter by tab
+    if (activeTab === 'pending') {
+      result = result.filter(g => g.estado === 1);
+    } else if (activeTab === 'paid') {
+      result = result.filter(g => g.estado === 0);
+    }
+
     // Filter by search term
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
       result = result.filter(
         g => g.usuario.toLowerCase().includes(lowerSearch) || String(g.id).includes(lowerSearch)
       );
-    }
-
-    // Filter by status
-    if (statusFilter !== 'all') {
-      result = result.filter(g => {
-        if (statusFilter === 'pagado') return g.estado === 0;
-        if (statusFilter === 'por_pagar') return g.estado === 1;
-        return true;
-      });
     }
 
     // Sort
@@ -109,7 +110,11 @@ export default function GratificacionesPage() {
     });
 
     return result;
-  }, [gratificaciones, searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [gratificaciones, searchTerm, sortBy, sortOrder, activeTab]);
+
+  // Counts for tabs
+  const pendingCount = gratificaciones.filter(g => g.estado === 1).length;
+  const paidCount = gratificaciones.filter(g => g.estado === 0).length;
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
   const paginatedData = filteredData.slice(
@@ -234,6 +239,42 @@ export default function GratificacionesPage() {
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL POR PAGAR</p>
         <p className='text-2xl font-bold text-gray-900 dark:text-gray-100'>{formatCurrency(totalPorPagar)}</p>
+      </div>
+
+      {/* Tabs */}
+      <div className='flex justify-center gap-3 border-b pb-1'>
+        <button
+          onClick={() => { setActiveTab('pending'); setCurrentPage(1); }}
+          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+            activeTab === 'pending'
+              ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+              : 'text-gray-500 hover:bg-gray-100 rounded-full'
+          }`}
+        >
+          <Clock className='h-4 w-4' />
+          Por Pagar
+          <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+            activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+          }`}>
+            {pendingCount}
+          </span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('paid'); setCurrentPage(1); }}
+          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+            activeTab === 'paid'
+              ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+              : 'text-gray-500 hover:bg-gray-100 rounded-full'
+          }`}
+        >
+          <CheckCircle className='h-4 w-4' />
+          Pagadas
+          <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+            activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+          }`}>
+            {paidCount}
+          </span>
+        </button>
       </div>
 
       {/* Filtros */}

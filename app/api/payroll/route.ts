@@ -15,6 +15,6 @@ export const POST = withAppApiWrapper(async (request: Request) => {
       { status: 400 }
     );
 
-  await PayrollRepository.pay(usuario_id);
+  await PayrollRepository.pay(usuario_id, usuario_id);
   return NextResponse.json({ success: true, message: 'Pago procesado correctamente' });
 });

@@ -9,6 +9,8 @@ export type CuentaDetalleLike = {
   precio?: number;
   sub_total?: number;
   comision?: number;
+  hostess_id?: string | number;
+  hostess_nick?: string;
 };
 
 export type CuentaDetalleAgrupado = CuentaDetalleLike & {
@@ -35,6 +37,15 @@ export function groupCuentaDetalles(detalles: CuentaDetalleLike[] = []) {
       existing.cantidad += detalle.cantidad || 0;
       existing.sub_total += detalle.sub_total || 0;
       existing.comision += detalle.comision || 0;
+      // Aggregate hostess IDs
+      if (detalle.hostess_id && existing.hostess_id !== detalle.hostess_id) {
+        existing.hostess_id = `${existing.hostess_id},${detalle.hostess_id}`;
+      }
+      if (detalle.hostess_nick && existing.hostess_nick !== detalle.hostess_nick) {
+        existing.hostess_nick = existing.hostess_nick
+          ? `${existing.hostess_nick}, ${detalle.hostess_nick}`
+          : detalle.hostess_nick;
+      }
       return;
     }
 
