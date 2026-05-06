@@ -28,6 +28,9 @@ export const CajaSchema = z.object({
   servicios: z.number().optional().default(0),
   devoluciones: z.number().optional().default(0),
   prepago: z.number().optional().default(0),
+  prepago_cargado: z.number().optional().default(0),
+  prepago_consumido: z.number().optional().default(0),
+  prepago_pendiente_clientes: z.number().optional().default(0),
   propina: z.number().optional().default(0),
   cuenta: z.number().optional().default(0),
   anticipo: z.number().optional().default(0),
@@ -36,6 +39,9 @@ export const CajaSchema = z.object({
   comision: z.number().optional().default(0),
   usuario_apertura: z.string().optional(),
   cajero_nombre: z.string().optional(),
+  cajero_foto: z.string().optional(),
+  cajero_cierre_nombre: z.string().nullable().optional(),
+  cajero_cierre_foto: z.string().nullable().optional(),
 });
 
 export type CajaType = z.infer<typeof CajaSchema>;

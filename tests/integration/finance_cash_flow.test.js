@@ -46,8 +46,8 @@ async function runFinanceCashFlowTest() {
     const gratId = crypto.randomUUID();
     const montoGrat = 15000;
     await connection.execute(
-      'INSERT INTO gratificaciones (id, usuario_id, monto, descripcion, estado, fecha_hora, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [gratId, userId, montoGrat, 'Gratificación integración', 1, now, now]
+      'INSERT INTO gratificaciones (id, usuario_id, monto, descripcion, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
+      [gratId, userId, montoGrat, 'Gratificación integración', 1, now]
     );
 
     console.log('\n[4] Verificando Saldo de Caja');

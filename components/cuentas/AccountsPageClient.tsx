@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { useCuentas } from '@/hooks/caja/useCuentas';
 import useOrders from '@/hooks/servicios/useOrders';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
@@ -11,6 +11,8 @@ import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ReportSkeleton } from '@/components/shared/Skeletons';
 
+type TabType = 'pending' | 'paid';
+
 export function AccountsPageClient() {
   const { cuentas, isLoading, getCuentas } = useCuentas();
   const { refetch: refetchOrders } = useOrders();
@@ -18,6 +20,7 @@ export function AccountsPageClient() {
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<TabType>('pending');
 
   useEffect(() => {
     const handleCuentasUpdated = () => {
@@ -31,11 +34,35 @@ export function AccountsPageClient() {
   if (isLoading || cajaLoading) return <ReportSkeleton />;
 
   const cuentasData = cuentas || [];
-  const filteredCuentas = cuentasData.filter(
-    cuenta =>
-      cuenta.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cuenta.codigo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
+  // Counts for tabs
+  const pendingCount = cuentasData.filter(c => c.estado === 1).length;
+  const paidCount = cuentasData.filter(c => c.estado === 0).length;
+
+  // Filter by tab and search
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- useMemo follows hook rules, early return is intentional
+  const filteredCuentas = useMemo(() => {
+    let result = cuentasData;
+
+    // Filter by tab
+    if (activeTab === 'pending') {
+      result = result.filter(c => c.estado === 1);
+    } else if (activeTab === 'paid') {
+      result = result.filter(c => c.estado === 0);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      result = result.filter(
+        cuenta =>
+          cuenta.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          cuenta.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return result;
+  }, [cuentasData, searchTerm, activeTab]);
+
   const totalPages = Math.ceil(filteredCuentas.length / rowsPerPage) || 1;
   const paginatedCuentas = filteredCuentas.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
@@ -69,6 +96,42 @@ export function AccountsPageClient() {
           loading={isLoading}
           onRefresh={() => getCuentas()}
         />
+
+        {/* Tabs */}
+        <div className='flex justify-center gap-3 border-b pb-1'>
+          <button
+            onClick={() => { setActiveTab('pending'); setPage(1); }}
+            className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+              activeTab === 'pending'
+                ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+                : 'text-gray-500 hover:bg-gray-100 rounded-full'
+            }`}
+          >
+            <Clock className='h-4 w-4' />
+            Abiertas
+            <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+            }`}>
+              {pendingCount}
+            </span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('paid'); setPage(1); }}
+            className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+              activeTab === 'paid'
+                ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+                : 'text-gray-500 hover:bg-gray-100 rounded-full'
+            }`}
+          >
+            <CheckCircle className='h-4 w-4' />
+            Cerradas
+            <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+            }`}>
+              {paidCount}
+            </span>
+          </button>
+        </div>
 
         <div className='overflow-x-auto'>
           <CuentaTable

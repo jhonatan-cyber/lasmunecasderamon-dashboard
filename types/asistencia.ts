@@ -3,6 +3,7 @@ export interface AsistenciaResumen {
   id_usuario: string;
   nick: string;
   nombre_completo: string;
+  usuario_foto: string;
   total_asistencias: number;
   sueldo_total: number;
   aporte_total: number;

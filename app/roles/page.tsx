@@ -30,10 +30,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { RoleForm } from '@/components/roles/RoleForm';
 import { DeleteRoleConfirmModal } from '@/components/roles/DeleteRoleConfirmModal';
+import FilterSelect from '@/components/shared/selects/FilterSelect';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 // Las interfaces Role y Permission se importan desde los hooks
+
+const ROLE_STATUS_OPTIONS = [
+  { value: 'all', label: 'Todos' },
+  { value: '1', label: 'Activo' },
+  { value: '0', label: 'Inactivo' }
+];
 
 export default function RolesPage() {
   const {
@@ -406,17 +413,16 @@ export default function RolesPage() {
                       </div>
                     </div>
                     <div className='flex items-center gap-2'>
-                      <select
-                        value={filterStatus}
-                        onChange={e =>
-                          setFilterStatus(e.target.value === 'all' ? 'all' : Number(e.target.value))
-                        }
-                        className='px-2 py-1 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
-                      >
-                        <option value='all'>Todos</option>
-                        <option value={1}>Activo</option>
-                        <option value={0}>Inactivo</option>
-                      </select>
+                      <div className='min-w-[180px]'>
+                        <FilterSelect
+                          label='Estado'
+                          value={String(filterStatus)}
+                          onChange={value =>
+                            setFilterStatus(value === 'all' ? 'all' : Number(value))
+                          }
+                          options={ROLE_STATUS_OPTIONS}
+                        />
+                      </div>
                       <button
                         onClick={initializePermissions}
                         className='inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'

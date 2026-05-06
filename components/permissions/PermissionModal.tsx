@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 interface Permission {
@@ -131,27 +132,28 @@ export function PermissionModal({
             </div>
           </div>
 
-          {/* Acción */}
+          {/* Acci?n */}
           <div>
             <Label htmlFor='permission-action' className='mb-2 text-sm sm:text-base'>
-              Acción
+              Acci?n
             </Label>
             <span className='text-xs text-red-500'> *</span>
             <div className='relative'>
-              <select
-                id='permission-action'
+              <Select
                 value={formData.action}
-                onChange={e => setFormData(prev => ({ ...prev, action: e.target.value }))}
+                onValueChange={value => setFormData(prev => ({ ...prev, action: value }))}
                 disabled={isLoading}
-                className='w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent bg-white dark:bg-neutral-800 text-black dark:text-neutral-100'
-                required
               >
-                <option value=''>Seleccionar acción</option>
-                <option value='create'>create</option>
-                <option value='read'>read</option>
-                <option value='update'>update</option>
-                <option value='delete'>delete</option>
-              </select>
+                <SelectTrigger id='permission-action'>
+                  <SelectValue placeholder='Seleccionar acci?n' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='create'>create</SelectItem>
+                  <SelectItem value='read'>read</SelectItem>
+                  <SelectItem value='update'>update</SelectItem>
+                  <SelectItem value='delete'>delete</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

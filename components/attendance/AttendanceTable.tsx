@@ -13,11 +13,15 @@ import { AsistenciaResumen } from '@/types/asistencia';
 import { Button } from '@/components/ui/button';
 import AttendanceDetailModal from './AttendanceDetailModal';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
+import { useUserImage } from '@/contexts/UserImageContext';
 
 interface AttendanceData {
   id_usuario: number;
   nick: string;
   nombre_completo: string;
+  usuario_foto: string;
   total_asistencias: number;
   sueldo_total: number;
   aporte_total: number;
@@ -32,6 +36,7 @@ interface AttendanceTableProps {
 export default function AttendanceTable({ data }: AttendanceTableProps) {
   const { loading, error } = useAsistencias();
   const { hasPermission } = useUserPermissions();
+  const { imageVersion } = useUserImage();
   const [selectedUser, setSelectedUser] = useState<{
     id: number;
     name: string;
@@ -99,7 +104,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
         <Table className='min-w-full text-base text-center'>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
             <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Empleado</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nick</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Asistencias</TableHead>
@@ -116,7 +121,27 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
             {data.map((item, idx) => (
               <TableRow key={item.id_usuario} className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === data.length - 1 ? 'last:rounded-b-xl' : ''}`}>
                 <TableCell className='font-medium text-start text-sm'>
-                  {item.nombre_completo}
+                  <div className='flex items-center gap-3'>
+                    <Avatar className='h-8 w-8'>
+                      {item.usuario_foto && item.usuario_foto !== '' ? (
+                        <Image
+                          src={`/img/users/${item.usuario_foto}?v=${imageVersion}`}
+                          alt={item.nombre_completo}
+                          width={32}
+                          height={32}
+                          className='w-full h-full object-cover rounded-full'
+                        />
+                      ) : (
+                        <AvatarImage src='/img/users/default.png' alt={item.nombre_completo} />
+                      )}
+                      <AvatarFallback className='bg-purple-100 text-purple-700 font-bold text-xs'>
+                        {item.nombre_completo?.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className='font-bold text-sm text-gray-900 dark:text-white'>
+                      {item.nombre_completo}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className='text-sm text-center'>{item.nick}</TableCell>
                 <TableCell className='text-sm text-center'>

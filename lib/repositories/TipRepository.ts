@@ -86,6 +86,7 @@ export class TipRepository {
     return await query(
       `
       SELECT U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+             U.foto AS usuario_foto,
              MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea, 
              SUM(DP.monto) AS total_propinas,
              SUM(CASE WHEN DP.estado = 1 THEN DP.monto ELSE 0 END) AS propinas_pendientes,

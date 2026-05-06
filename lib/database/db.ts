@@ -52,13 +52,43 @@ export type TransactionQuery = <R>(sql: string, params?: any[]) => Promise<R>;
  * const rows = await query('SELECT * FROM users') // returns any[] - access properties directly
  */
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
-  const safeParams = (params || []).map(p => (p === undefined ? null : p));
+  const safeParams = (params || []).map(p => {
+    if (p === undefined) return null;
+    if (typeof p === 'string' && /^\d+$/.test(p)) {
+      return parseInt(p, 10);
+    }
+    return p;
+  });
 
   try {
-    const [rows] =
-      safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
+    // Check if SQL contains LIMIT or OFFSET clauses - these cause issues with prepared statements in MySQL 8.4.7
+    const hasLimitOrOffset = /LIMIT\s+\?|OFFSET\s+\?/i.test(sql);
+    
+    if (hasLimitOrOffset && safeParams.length > 0) {
+      // For queries with LIMIT/OFFSET, use manual parameter replacement
+      let finalSql = sql;
+      let paramIndex = 0;
+      
+      finalSql = sql.replace(/\?/g, () => {
+        if (paramIndex < safeParams.length) {
+          const param = safeParams[paramIndex++];
+          if (typeof param === 'string') {
+            return `'${param.replace(/'/g, "''")}'`;
+          }
+          return param;
+        }
+        return '?';
+      });
 
-    return (rows || []) as T;
+      const [rows] = await pool.query(finalSql);
+      return (rows || []) as T;
+    } else {
+      // For other queries, use prepared statements normally
+      const [rows] =
+        safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
+
+      return (rows || []) as T;
+    }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Database query failed:', { sql, safeParams, error });

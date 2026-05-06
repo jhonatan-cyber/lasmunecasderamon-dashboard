@@ -14,6 +14,7 @@ import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Paginate from '@/components/shared/Paginate';
 import type { PayrollRow } from '@/hooks/personal/usePayroll';
 import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
@@ -141,7 +142,22 @@ export default function PayrollTable({
                     className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
                     <TableCell className='font-medium text-start text-sm py-4 px-5'>
-                      {r.usuario}
+                      <div className='flex items-center gap-3'>
+                        <Avatar className='h-8 w-8'>
+                          {r.usuario_foto && r.usuario_foto !== '' ? (
+                            <AvatarImage
+                              src={`/img/users/${r.usuario_foto}`}
+                              alt={r.usuario || 'Usuario'}
+                              className='w-full h-full object-cover rounded-full'
+                            />
+                          ) : (
+                            <AvatarFallback className='bg-purple-100 text-purple-700 font-bold text-xs'>
+                              {r.usuario?.substring(0, 2).toUpperCase() || 'NA'}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <span className='font-medium'>{r.usuario}</span>
+                      </div>
                     </TableCell>
                     <TableCell className='text-center py-4 px-5'>
                       <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-1 text-xs font-medium'>

@@ -554,7 +554,7 @@ export class SaleRepository {
 
     const sql = `
       SELECT v.*,
-        c.nombre as cliente_nombre,
+        CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre,
         u.nick as staff_nick,
         u.nombre as cajero_nombre,
         h.nombre as habitacion_numero,
@@ -609,7 +609,7 @@ export class SaleRepository {
     // 1. Fetch main venta data
     const res = await query<any[]>(
       `
-      SELECT v.*, c.nombre as cliente_nombre, h.nombre as habitacion_numero,
+      SELECT v.*, CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_numero,
              u.nick as cajero_nick, u.nombre as cajero_nombre,
              CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle

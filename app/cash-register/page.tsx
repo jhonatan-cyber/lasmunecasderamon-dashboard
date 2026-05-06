@@ -21,7 +21,7 @@ import { AlertTriangle, RotateCcw, Wallet, Plus, Info } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CashRegister() {
-  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero } =
+  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero, mutationError } =
     useCashRegister();
   const { user } = useCurrentUser();
   const { hasPermission } = useUserPermissions();
@@ -89,10 +89,6 @@ export default function CashRegister() {
   const handleRetirarDinero = async (data: CajaRetiro) => {
     try {
       const success = await retirarDinero(data);
-      if (success) {
-        getCajas();
-        getResumen();
-      }
       return success;
     } catch (error) {
       console.error('Error al retirar dinero:', error);
@@ -291,6 +287,7 @@ export default function CashRegister() {
           onOpenChange={setShowRetiroDialog}
           onRetirar={handleRetirarDinero}
           loading={loading}
+          mutationError={mutationError}
         />
 
         {showDetails && selectedCaja && (

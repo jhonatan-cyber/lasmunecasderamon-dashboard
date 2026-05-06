@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { ArrowLeft, DollarSign, Coins, ShoppingCart, Split } from 'lucide-react';
+import { ArrowLeft, DollarSign, Coins, ShoppingCart, Split, Receipt } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatCurrencyCLP, parseNumberInput } from '@/lib/utils/formatters';
@@ -54,6 +54,21 @@ export default function NuevoServicioPage() {
   const [total, setTotal] = useState(0);
   const [pagosMixtos, setPagosMixtos] = useState<any[]>([]);
 
+  const calcularMontoPagoMixto = (metodo: string, montoBase: number) => {
+    if (metodo === 'tarjeta') {
+      return Math.floor(montoBase * 1.2);
+    }
+
+    return montoBase;
+  };
+
+  const crearPagoMixto = (metodo: string, montoBase: number) => ({
+    metodo,
+    baseMonto: montoBase,
+    monto: calcularMontoPagoMixto(metodo, montoBase),
+    display: montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
+  });
+
   // Dynamic limits calculation
   const selectedRoom = useMemo(() => {
     return habitaciones.find(
@@ -81,6 +96,44 @@ export default function NuevoServicioPage() {
     // Rule: (Girls + Clients) <= 4
     return 4 - formData.usuarios.length;
   }, [hasComision, formData.usuarios.length]);
+
+  const desgloseTarjeta = useMemo(() => {
+    const redondearMiles = (monto: number) => Math.round(monto / 1000) * 1000;
+    const venta = redondearMiles(total * 0.51);
+    const propina = redondearMiles(Math.max(0, total * 0.49));
+
+    return { venta, propina };
+  }, [total]);
+
+  const precioHabitacionBoleta = useMemo(() => {
+    const cantidadAnfitrionas = formData.usuarios.length || 1;
+    const cantidadClientes = formData.clientes.length || 1;
+    let multiplicadorHabitacion = cantidadAnfitrionas;
+
+    if (
+      cantidadClientes > cantidadAnfitrionas &&
+      selectedRoom &&
+      (selectedRoom.comision_anfitriona ?? 0) === 0
+    ) {
+      multiplicadorHabitacion = cantidadClientes;
+    }
+
+    if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
+      multiplicadorHabitacion = 1;
+    }
+
+    return precioHabitacion * multiplicadorHabitacion;
+  }, [formData.usuarios.length, formData.clientes.length, precioHabitacion, selectedRoom]);
+
+  const disabledPaymentMethods = useMemo(() => {
+    const saldo = Number(selectedClientData?.saldo || 0);
+
+    if (saldo > 0) {
+      return ['prepago', 'mixto'] as const;
+    }
+
+    return ['prepago'] as const;
+  }, [selectedClientData]);
 
   // Format number with thousand separators
   const formatNumberWithSeparators = (value: number): string => {
@@ -123,14 +176,20 @@ export default function NuevoServicioPage() {
       nuevoIVA = Math.floor(nuevoSubTotal * 0.2);
     }
 
-    const nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
-    let totalFinal = nuevoTotal;
+    const totalBase = nuevoSubTotal + precioHabitacionTotal;
+    let totalFinal = totalBase;
 
     if (formData.metodo_pago === 'tarjeta') {
+      const nuevoTotal = totalBase + nuevoIVA;
       const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
       const excedente = totalRedondeado - nuevoTotal;
       totalFinal = totalRedondeado;
       nuevoIVA = nuevoIVA + excedente;
+    } else if (formData.metodo_pago === 'mixto') {
+      nuevoIVA = pagosMixtos
+        .filter(pago => pago.metodo === 'tarjeta')
+        .reduce((sum, pago) => sum + Math.max(0, Number(pago.monto || 0) - Number(pago.baseMonto || 0)), 0);
+      totalFinal = totalBase + nuevoIVA;
     }
 
     setSubTotal(nuevoSubTotal);
@@ -139,10 +198,10 @@ export default function NuevoServicioPage() {
   }, [
     formData.precio_servicio,
     precioHabitacion,
-    formData.iva,
     formData.usuarios.length,
     formData.clientes.length,
     formData.metodo_pago,
+    pagosMixtos,
     selectedRoom
   ]);
 
@@ -162,45 +221,28 @@ export default function NuevoServicioPage() {
     }
   }, [formData.habitacion_id, selectedRoom]);
 
-  // Calculate IVA (20%) when payment method is "tarjeta"
   useEffect(() => {
-    if (formData.metodo_pago === 'tarjeta') {
-      const ivaCalculado = Math.floor(formData.precio_servicio * 0.2);
-      setFormData(prev => ({ ...prev, iva: ivaCalculado }));
-    } else {
-      setFormData(prev => ({ ...prev, iva: 0 }));
-    }
-  }, [formData.metodo_pago, formData.precio_servicio]);
+    if (selectedClientData) return;
 
-  // Pre-pago y Pago Mixto logic from remote
+    if (formData.metodo_pago === 'prepago') {
+      setFormData(prev => ({ ...prev, metodo_pago: '' }));
+    }
+
+    setPagosMixtos(prev => prev.filter(pago => pago.metodo !== 'prepago'));
+  }, [selectedClientData, formData.metodo_pago]);
+
   useEffect(() => {
-    if (!selectedClientData || total <= 0) return;
+    if (!selectedClientData) return;
 
     const saldo = Number(selectedClientData.saldo || 0);
+    if (saldo > 0) {
+      if (formData.metodo_pago === 'prepago' || formData.metodo_pago === 'mixto') {
+        setFormData(prev => ({ ...prev, metodo_pago: '' }));
+      }
 
-    if (saldo >= total) {
-      setFormData(prev => ({
-        ...prev,
-        metodo_pago: 'prepago'
-      }));
       setPagosMixtos([]);
       return;
     }
-
-    if (saldo > 0 && saldo < total && formData.metodo_pago !== 'mixto') {
-      setFormData(prev => ({ ...prev, metodo_pago: 'mixto' }));
-      setPagosMixtos([
-        {
-          metodo: 'prepago',
-          monto: saldo,
-          display: formatNumberWithSeparators(saldo)
-        }
-      ]);
-    }
-  }, [selectedClientData, total, formData.metodo_pago]);
-
-  useEffect(() => {
-    if (selectedClientData) return;
 
     if (formData.metodo_pago === 'prepago') {
       setFormData(prev => ({ ...prev, metodo_pago: '' }));
@@ -253,6 +295,91 @@ export default function NuevoServicioPage() {
     setShowConfirmModal(true);
   };
 
+  const handleGenerarBoletaHabitacion = () => {
+    const habitacionNombre = selectedRoom?.nombre || selectedRoom?.name || 'Habitacion';
+    const clienteNombre = selectedClientData?.nombre || selectedClientData?.name || 'Particular';
+    const monto = precioHabitacionBoleta;
+    const anfitrionasAtendiendo = formData.usuarios
+      .map(userId => {
+        const anfitriona = anfitrionas.find(
+          a => String(a.id_usuario ?? a.id ?? '') === String(userId)
+        );
+        return anfitriona ? anfitriona.nick || anfitriona.nombre : null;
+      })
+      .filter(Boolean)
+      .join(', ');
+
+    if (monto <= 0) {
+      toast.error('No hay monto de habitacion para generar la boleta');
+      return;
+    }
+
+    const boletaWindow = window.open('', '_blank', 'width=420,height=640');
+    if (!boletaWindow) {
+      toast.error('No se pudo abrir la ventana para la boleta');
+      return;
+    }
+
+    const fecha = new Date().toLocaleString('es-CL');
+    const logoUrl = `${window.location.origin}/img/system/logo2.png`;
+    boletaWindow.document.write(`
+      <html>
+        <head>
+          <title>Boleta Habitacion</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; background: #f8fafc; }
+            .card { max-width: 420px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 24px; padding: 28px; background: #ffffff; box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08); }
+            .header { text-align: center; padding-bottom: 18px; border-bottom: 1px solid #e5e7eb; }
+            .logo { width: 88px; height: auto; margin: 0 auto 12px; display: block; }
+            .brand { font-size: 22px; font-weight: 800; margin: 0; }
+            .subtitle { margin: 6px 0 0; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em; }
+            .section { margin-top: 20px; }
+            .section-title { font-size: 11px; font-weight: 800; color: #9a3412; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 10px; }
+            .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin: 10px 0; }
+            .label { color: #6b7280; font-size: 13px; }
+            .value { font-weight: 700; text-align: right; }
+            .service-box { margin-top: 18px; border: 1px solid #fed7aa; background: linear-gradient(135deg, #fff7ed, #ffffff); border-radius: 18px; padding: 16px; }
+            .total { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #fdba74; margin-top: 14px; padding-top: 14px; font-size: 21px; font-weight: 800; color: #c2410c; }
+            .footer { margin-top: 22px; text-align: center; color: #64748b; font-size: 12px; line-height: 1.6; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="header">
+              <img src="${logoUrl}" alt="Las Muñecas de Ramón" class="logo" />
+              <p class="brand">Las Muñecas de Ramón</p>
+              <p class="subtitle">Boleta habitación</p>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Detalle de atención</div>
+              <div class="row"><span class="label">Cliente</span><span class="value">${clienteNombre}</span></div>
+              <div class="row"><span class="label">Habitación</span><span class="value">${habitacionNombre}</span></div>
+              <div class="row"><span class="label">Método de pago</span><span class="value">${formData.metodo_pago}</span></div>
+              <div class="row"><span class="label">Fecha</span><span class="value">${fecha}</span></div>
+              <div class="row"><span class="label">Atendido por</span><span class="value">${anfitrionasAtendiendo || 'Sin anfitriona asignada'}</span></div>
+            </div>
+
+            <div class="service-box">
+              <div class="section-title">Concepto</div>
+              <div class="row"><span class="label">Servicio</span><span class="value">Uso de habitación privada</span></div>
+              <div class="total"><span>Total habitación</span><span>${formatCurrencyCLP(monto)}</span></div>
+            </div>
+
+            <div class="footer">
+              Gracias por su visita.<br />
+              Documento generado desde el módulo de servicios privados.
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    boletaWindow.document.close();
+    boletaWindow.focus();
+    boletaWindow.print();
+  };
+
   // Función para enviar el servicio después de confirmar
   const confirmAndSubmit = async () => {
     if (!servicioDataToSubmit) return;
@@ -284,13 +411,13 @@ export default function NuevoServicioPage() {
             .join(', ');
 
           startTimer(
-            String(data.data.id_servicio),
+            String(data.id || data.id_servicio),
             String(servicioDataToSubmit.habitacion_id),
             selectedRoom.nombre || selectedRoom.name || selectedRoom.numero || 'N/A',
             servicioDataToSubmit.tiempo,
             servicioDataToSubmit.codigo,
             clientes.find(
-              c => String(c.id_cliente ?? c.id ?? '') === String(servicioDataToSubmit.client_id)
+              c => String(c.id_cliente ?? c.id ?? '') === String(servicioDataToSubmit.cliente_id)
             )?.nombre || '',
             anfitrionasSeleccionadas // Pasar las anfitrionas
           );
@@ -443,18 +570,7 @@ export default function NuevoServicioPage() {
                   return;
                 }
 
-                const saldo = Number(selectedClientData?.saldo || 0);
-                setPagosMixtos(
-                  saldo > 0
-                    ? [
-                        {
-                          metodo: 'prepago',
-                          monto: saldo,
-                          display: formatNumberWithSeparators(saldo)
-                        }
-                      ]
-                    : []
-                );
+                setPagosMixtos([]);
               }}
               label='MÉTODO DE PAGO'
               placeholder='Seleccionar método de pago'
@@ -462,7 +578,9 @@ export default function NuevoServicioPage() {
               className='w-full'
               showPrepago={!!selectedClientData}
               showMixto={true}
-              disabledMethods={Number(selectedClientData?.saldo || 0) <= 0 ? ['prepago'] : []}
+              disabledMethods={[...disabledPaymentMethods]}
+              clientes={clientes}
+              selectedClienteId={formData.clientes[0] || ''}
             />
           </div>
 
@@ -492,6 +610,26 @@ export default function NuevoServicioPage() {
                 disabled={formData.metodo_pago !== 'tarjeta'}
               />
             </div>
+            {formData.metodo_pago === 'tarjeta' && total > 0 && (
+              <div className='mt-4 mx-auto max-w-lg rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-5 text-center shadow-md shadow-amber-100/70 dark:border-amber-500/20 dark:bg-slate-950 dark:from-amber-500/10 dark:via-slate-900 dark:to-fuchsia-500/10 dark:shadow-black/30'>
+                <div className='mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'>
+                  <Receipt className='h-5 w-5' />
+                </div>
+                <p className='text-[10px] font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300'>
+                  Nota importante
+                </p>
+                <p className='mt-2 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-100'>
+                  Genera venta por{' '}
+                  <span className='font-black text-emerald-600 dark:text-emerald-300'>
+                    {formatCurrencyCLP(desgloseTarjeta.venta)}
+                  </span>{' '}
+                  y propina por{' '}
+                  <span className='font-black text-fuchsia-600 dark:text-fuchsia-300'>
+                    {formatCurrencyCLP(desgloseTarjeta.propina)}
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -519,14 +657,16 @@ export default function NuevoServicioPage() {
                       value={pago.display}
                       placeholder='0'
                       onChange={e => {
-                        const monto = parseNumberInput(e.target.value);
+                        const montoBase = parseNumberInput(e.target.value);
                         setPagosMixtos(prev =>
                           prev.map((item, itemIndex) =>
                             itemIndex === index
                               ? {
                                   ...item,
-                                  monto,
-                                  display: monto > 0 ? formatNumberWithSeparators(monto) : ''
+                                  baseMonto: montoBase,
+                                  monto: calcularMontoPagoMixto(item.metodo, montoBase),
+                                  display:
+                                    montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
                                 }
                               : item
                           )
@@ -535,6 +675,13 @@ export default function NuevoServicioPage() {
                       className='w-full rounded-full border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-black focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-400'
                     />
                   </div>
+                  {pago.metodo === 'tarjeta' && Number(pago.baseMonto || 0) > 0 && (
+                    <p className='text-[10px] font-bold text-purple-600'>
+                      Cargo tarjeta: {formatCurrencyCLP(pago.monto)} = base{' '}
+                      {formatCurrencyCLP(pago.baseMonto)} + IVA{' '}
+                      {formatCurrencyCLP(Math.max(0, pago.monto - pago.baseMonto))}
+                    </p>
+                  )}
                   <Button
                     type='button'
                     variant='outline'
@@ -565,7 +712,7 @@ export default function NuevoServicioPage() {
                     size='sm'
                     disabled={sinSaldo}
                     onClick={() =>
-                      setPagosMixtos(prev => [...prev, { metodo, monto: 0, display: '' }])
+                      setPagosMixtos(prev => [...prev, crearPagoMixto(metodo, 0)])
                     }
                     className='rounded-full uppercase text-[10px] font-black h-8 px-4 border-slate-300 shadow-sm'
                   >
@@ -600,6 +747,21 @@ export default function NuevoServicioPage() {
           </div>
         )}
 
+
+        {(formData.metodo_pago === 'efectivo' || formData.metodo_pago === 'transferencia') &&
+          precioHabitacionBoleta > 0 && (
+            <div className='mt-4 flex justify-center'>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={handleGenerarBoletaHabitacion}
+                className='rounded-full border-blue-200 bg-blue-50 px-5 text-blue-700 shadow-sm transition-colors hover:bg-blue-600 hover:text-white dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500 dark:hover:text-white'
+              >
+                <Receipt className='mr-2 h-4 w-4' />
+                Generar boleta por {formatCurrencyCLP(precioHabitacionBoleta)}
+              </Button>
+            </div>
+          )}
         {/* Total y botón centrados */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>

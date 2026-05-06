@@ -7,6 +7,7 @@ export interface PayrollRow {
   id_usuario: number;
   rol: string;
   usuario: string;
+  usuario_foto?: string;
   sueldos: number;
   aportes: number;
   ventas: number;

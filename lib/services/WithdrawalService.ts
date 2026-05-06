@@ -14,9 +14,14 @@ export class WithdrawalService {
     const validated = RetiroCajaSchema.parse(data);
 
     return await withTransaction(async trx => {
-      let cajaId = validated.caja_id;
+      let cajaId = validated.caja_id || validated.id_caja;
+
+      // Si no tenemos caja_id, obtener la actual sin lock para evitar deadlocks
       if (!cajaId) {
-        cajaId = await CashRegisterRepository.getCurrentCajaId(trx);
+        const rows = await trx<any[]>(
+          'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+        );
+        cajaId = rows[0]?.id_caja || null;
       }
 
       if (!cajaId)
@@ -25,8 +30,9 @@ export class WithdrawalService {
           'NO_CAJA_ABIERTA'
         );
 
+      // Bloquear solo la caja para update (no shared locks antes)
       const cajaRows = await trx<any[]>(
-        'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1 FOR UPDATE',
+        'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? FOR UPDATE',
         [cajaId]
       );
 
@@ -45,14 +51,20 @@ export class WithdrawalService {
         );
       }
 
-      const idRetiro = await WithdrawalRepository.create({
-        ...validated,
-        caja_id: cajaId
-      });
+      // Crear el retiro (sin lock adicional en retiros_caja)
+      const idRetiro = await WithdrawalRepository.create(
+        {
+          ...validated,
+          caja_id: cajaId
+        },
+        trx
+      );
 
-      await CashRegisterRepository.updateBalances(trx, cajaId, {
-        efectivo: -validated.monto
-      });
+      // Actualizar saldo: usar UPDATE directo con delta para minimizar tiempo de lock
+      await trx(
+        'UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ?',
+        [validated.monto, cajaId]
+      );
 
       return { id_retiro: idRetiro, caja_id: cajaId };
     });

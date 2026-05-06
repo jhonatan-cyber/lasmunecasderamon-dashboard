@@ -25,10 +25,11 @@ export class AnticipoService {
     usuario_id: string,
     monto: number,
     motivo?: string,
-    device_date?: string
+    device_date?: string,
+    adminId?: string | number
   ) {
     if (monto <= 0) throw new ValidationError('El monto debe ser positivo', { monto });
-    return await AnticipoRepository.grant(usuario_id, monto, motivo, device_date);
+    return await AnticipoRepository.grant(usuario_id, monto, motivo, device_date, adminId);
   }
 
   static async processAnticipoFromCommand(
