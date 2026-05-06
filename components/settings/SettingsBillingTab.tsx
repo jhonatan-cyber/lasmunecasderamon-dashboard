@@ -65,7 +65,7 @@ export function SettingsBillingTab({
                 <label className='block text-sm font-medium mb-1'>Moneda</label>
                 <Select
                   value={billingConfig.moneda}
-                  onValueChange={value => setBillingConfig(prev => ({ ...prev, moneda: value }))}
+                  onValueChange={(value: string) => setBillingConfig(prev => ({ ...prev, moneda: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder='Seleccionar moneda' />
