@@ -18,13 +18,16 @@ async function migrate() {
   try {
     console.log('🔄 Ejecutando migración de anticipos...\n');
 
-    const [columns] = await connection.query(`
+    const [columns] = (await connection.query(
+      `
       SELECT COLUMN_NAME
       FROM INFORMATION_SCHEMA.COLUMNS
       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'anticipos'
-    `, [config.database]);
+    `,
+      [config.database]
+    )) as [any[], any];
 
-    const existingCols = columns.map((c: any) => c.COLUMN_NAME);
+    const existingCols = (columns as any[]).map((c: any) => c.COLUMN_NAME);
 
     const migrations = [
       {
