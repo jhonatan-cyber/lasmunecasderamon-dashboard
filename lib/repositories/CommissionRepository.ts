@@ -85,6 +85,7 @@ export class CommissionRepository {
         dc.usuario_id AS employeeId,
         u.nick AS nick,
         CONCAT(u.nombre, ' ', u.apellido) AS employeeName,
+        u.foto AS empleado_foto,
         SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN dc.comision ELSE 0 END) AS venta,
         SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0' THEN dc.comision ELSE 0 END) AS servicio,
         SUM(dc.comision) AS total,
@@ -99,7 +100,7 @@ export class CommissionRepository {
       INNER JOIN comisiones c ON c.id_comision = dc.comision_id
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
       ${where}
-      GROUP BY dc.usuario_id, u.nick, u.nombre, u.apellido
+      GROUP BY dc.usuario_id, u.nick, u.nombre, u.apellido, u.foto
       ORDER BY SUM(dc.comision) DESC
     `;
     return await query<any[]>(sql, sqlParams);

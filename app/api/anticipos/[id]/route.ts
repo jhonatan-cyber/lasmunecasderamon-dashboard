@@ -6,14 +6,14 @@ import { ValidationError } from '@/lib/errors/errors';
 export const PUT = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    const { estado } = await request.json();
+    const { estado, entregado_por } = await request.json();
 
     if (Number(estado) === 1) {
       await AnticipoRepository.processSolicitud(id, 'approve');
     } else if (Number(estado) === 3) {
       await AnticipoRepository.processSolicitud(id, 'reject');
     } else if (Number(estado) === 0) {
-      await AnticipoRepository.deliverAnticipo(id);
+      await AnticipoRepository.deliverAnticipo(id, user.id.toString());
     } else {
       await AnticipoRepository.updateStatus(id, Number(estado ?? 0));
     }

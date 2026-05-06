@@ -82,13 +82,10 @@ export function ProductFilters({
                   setFilterStatus(value === 'all' ? null : Number(value))
                 }
               >
-                <SelectTrigger
-                  id='status'
-                  className='w-full text-sm rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'
-                >
+                <SelectTrigger id='status'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectContent>
                   <SelectItem value='all'>Todos los estados</SelectItem>
                   <SelectItem value='1'>Activos</SelectItem>
                   <SelectItem value='0'>Inactivos</SelectItem>

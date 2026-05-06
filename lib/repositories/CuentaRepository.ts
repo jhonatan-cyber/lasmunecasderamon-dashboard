@@ -739,8 +739,9 @@ export class CuentaRepository {
       }
     }
 
-    // Si se envian habitacion_id y tiempo nuevos (productos con comision < 160k)
-    if (body.habitacion_id && (body.tiempo ?? 0) > 0) {
+    // Si se envian habitacion_id y tiempo (productos con comision >= 30k)
+    // Permite tiempo = 0 para cambio de habitación sin timer
+    if (body.habitacion_id && (body.tiempo ?? 0) >= 0) {
       const room = await query<any[]>(
         'SELECT nombre, precio, tiempo as room_tiempo, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
         [body.habitacion_id]
@@ -822,18 +823,21 @@ export class CuentaRepository {
         sendNotificationToAll('room_available', { roomId: previousRoomId });
       }
 
-      sendNotificationToAll('timer_started', {
-        servicioId: id,
-        roomId: body.habitacion_id,
-        roomName: r?.nombre || '',
-        duration: nuevoTiempo,
-        startTime: bizNow,
-        codigo: c[0]?.codigo || '',
-        clienteNombre: client[0]?.nombre || 'Cliente',
-        tipoTransaccion: 'cuenta',
-        status: 1
-      });
-      sendNotificationToAll('timers_updated', { timestamp: bizNow });
+      // Solo enviar notificación de timer si tiempo > 0
+      if ((body.tiempo ?? 0) > 0) {
+        sendNotificationToAll('timer_started', {
+          servicioId: id,
+          roomId: body.habitacion_id,
+          roomName: r?.nombre || '',
+          duration: nuevoTiempo,
+          startTime: bizNow,
+          codigo: c[0]?.codigo || '',
+          clienteNombre: client[0]?.nombre || 'Cliente',
+          tipoTransaccion: 'cuenta',
+          status: 1
+        });
+        sendNotificationToAll('timers_updated', { timestamp: bizNow });
+      }
     }
 
     return await this.getById(id);

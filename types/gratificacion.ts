@@ -4,6 +4,7 @@ export interface Gratificacion {
   usuario_id: string | number;
   id_usuario?: string | number;
   usuario: string;
+  usuario_foto?: string | null;
   monto: number;
   descripcion: string;
   fecha_crea: string;

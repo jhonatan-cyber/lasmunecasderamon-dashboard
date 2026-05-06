@@ -6,6 +6,11 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import {
+  SELECT_CONTENT_CLASS,
+  SELECT_LABEL_CLASS,
+  SELECT_TRIGGER_CLASS
+} from '@/components/shared/selectStyles';
 import React from 'react';
 
 interface SelectElementsProps {
@@ -44,7 +49,7 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
       {label && (
         <Label
           htmlFor='list'
-          className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'
+          className={`${SELECT_LABEL_CLASS} ml-1`}
         >
           {label}
         </Label>
@@ -53,10 +58,10 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
         value={String(effectiveValue)}
         onValueChange={(value: string) => effectiveOnChange(Number(value))}
       >
-        <SelectTrigger className='w-full text-xs rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10 font-bold'>
+        <SelectTrigger className={`${SELECT_TRIGGER_CLASS} h-10 text-xs font-semibold`}>
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+        <SelectContent className={SELECT_CONTENT_CLASS}>
           {options.map((option, index) => {
             const optionValue = typeof option === 'object' ? option.value : option;
             const optionLabel = typeof option === 'object' ? option.label : `${option}`;

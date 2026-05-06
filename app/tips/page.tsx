@@ -11,6 +11,9 @@ import TipsFilters from '@/components/propinas/TipsFilters';
 import TipsStatsCards from '@/components/propinas/TipsStatsCards';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { Clock, CheckCircle } from 'lucide-react';
+
+type TabType = 'pending' | 'paid';
 
 export default function TipsPage() {
   const { data: tips, loading, error, fetchTipsResumen } = useTipsResumen();
@@ -21,6 +24,7 @@ export default function TipsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [tipsCajaActiva, setTipsCajaActiva] = useState<PropinaResumen[]>([]);
 
   const toNumber = (value: unknown) => {
@@ -120,9 +124,22 @@ export default function TipsPage() {
     }).format(n);
   };
 
+  // Contar por tab
+  const pendingCount = filteredTips.filter((t: any) => toNumber(t.propinas_pendientes) > 0).length;
+  const paidCount = filteredTips.filter((t: any) => toNumber(t.propinas_cobradas) > 0).length;
+
+  // Filtrar por tab activo
+  const tabFilteredTips = useMemo(() => {
+    return filteredTips.filter((tip: any) => {
+      if (activeTab === 'pending') return toNumber(tip.propinas_pendientes) > 0;
+      if (activeTab === 'paid') return toNumber(tip.propinas_cobradas) > 0;
+      return true;
+    });
+  }, [filteredTips, activeTab]);
+
   // Paginación
-  const paginatedTips = filteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-  const totalPages = Math.ceil(filteredTips.length / rowsPerPage) || 1;
+  const tabPaginatedTips = tabFilteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages = Math.ceil(tabFilteredTips.length / rowsPerPage) || 1;
 
   const handleVerDetalle = (usuario: PropinaResumen) => {
     setSelectedUsuario(usuario);
@@ -188,11 +205,47 @@ export default function TipsPage() {
             onClearFilters={handleClearFilters}
           />
 
+          {/* Tabs - centrados debajo de los filtros */}
+          <div className='flex justify-center gap-3 border-b pb-1'>
+            <button
+              onClick={() => { setActiveTab('pending'); setPage(1); }}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'pending'
+                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
+            >
+              <Clock className='h-4 w-4' />
+              Por Pagar
+              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {pendingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('paid'); setPage(1); }}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'paid'
+                  ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
+            >
+              <CheckCircle className='h-4 w-4' />
+              Pagadas
+              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+              }`}>
+                {paidCount}
+              </span>
+            </button>
+          </div>
+
           {/* Lista de tips */}
           <div className='overflow-x-auto'>
             <TipsTable
               loading={loading}
-              rows={paginatedTips}
+              rows={tabPaginatedTips}
               rowsPerPage={rowsPerPage}
               onVerDetalle={handleVerDetalle}
             />

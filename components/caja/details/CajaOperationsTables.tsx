@@ -229,7 +229,7 @@ export function CajaOperationsTables({
                       </TableCell>
                       <TableCell className="text-right text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                         <div className="flex flex-col items-end gap-1">
-                          <span>{formatCurrencyNoDecimals(servicio.monto || 0)}</span>
+                          <span>{formatCurrencyNoDecimals(servicio.precio_servicio || 0)}</span>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
                             {servicio.anfitrionas_nombres ? `para anfitrionas (${servicio.anfitrionas_nombres.split(',').length})` : 'total'}
                           </span>

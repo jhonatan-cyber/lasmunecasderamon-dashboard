@@ -21,7 +21,9 @@ export interface Caja {
 
 export interface CajaWithUser extends Caja {
   cajero_nombre?: string;
+  cajero_foto?: string;
   cajero_cierre_nombre?: string;
+  cajero_cierre_foto?: string;
 }
 
 export interface CajaCreate {
@@ -54,7 +56,8 @@ export interface CajaCierre {
 }
 
 export interface CajaRetiro {
-  id_caja: string | number;
+  caja_id: string | number;
+  id_caja?: string | number;
   monto: number;
   motivo: string;
   usuario_id: string | number;
