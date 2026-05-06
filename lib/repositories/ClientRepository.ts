@@ -30,7 +30,7 @@ export class ClientRepository {
       efectivo: pagosCaja.efectivo || 0,
       tarjeta: pagosCaja.tarjeta || 0,
       transferencia: pagosCaja.transferencia || 0,
-      prepago: monto
+      prepago: 0
     };
   }
 

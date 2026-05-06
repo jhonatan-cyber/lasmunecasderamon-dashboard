@@ -57,11 +57,18 @@ export class AnticipoRepository {
         U.foto,
         A.fecha_crea,
         A.fecha_mod,
+        A.fecha_aprobacion,
+        A.fecha_cobro,
         A.monto,
         A.motivo,
-        A.estado
+        A.estado,
+        A.entregado_por,
+        A.fecha_entrega,
+        COALESCE(E.nombre, '') AS entregado_por_nombre,
+        COALESCE(E.apellido, '') AS entregado_por_apellido
       FROM ${this.TABLE} A
       LEFT JOIN usuarios U ON U.id_usuario = A.usuario_id
+      LEFT JOIN usuarios E ON E.id_usuario = A.entregado_por
       ${where}
       ORDER BY A.fecha_crea DESC
       LIMIT ? OFFSET ?
@@ -113,7 +120,8 @@ export class AnticipoRepository {
     usuario_id: string,
     monto: number,
     motivo: string = 'Anticipo otorgado desde administración',
-    device_date?: string
+    device_date?: string,
+    adminId?: string | number
   ) {
     const { montoMaximo } = await getAnticipoBalances(usuario_id);
     if (monto > montoMaximo)
@@ -125,6 +133,7 @@ export class AnticipoRepository {
     return await withTransaction(async trx => {
       const id = generateUUID();
       const now = getNowInBusinessTimezone(device_date);
+      const adminIdNum = adminId ? Number(adminId) : undefined;
 
       await BaseRepository.insert(trx, this.TABLE, {
         [this.ID_COL]: id,
@@ -132,8 +141,11 @@ export class AnticipoRepository {
         monto,
         motivo,
         // El alta directa desde administracion ya descuenta caja y equivale a un anticipo entregado.
-        estado: 0,
-        fecha_crea: now
+        estado: 1,
+        fecha_crea: now,
+        fecha_aprobacion: now,
+        entregado_por: adminIdNum,
+        fecha_entrega: now
       });
 
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
@@ -297,7 +309,8 @@ export class AnticipoRepository {
 
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
         estado,
-        fecha_mod: now
+        fecha_mod: now,
+        ...(action === 'approve' ? { fecha_aprobacion: now } : {})
       });
 
       const { empleado: msgEmp, administrador: msgAdmin } = buildAnticipoProcessedMessages({
@@ -344,7 +357,7 @@ export class AnticipoRepository {
     });
   }
 
-  static async deliverAnticipo(id: string) {
+  static async deliverAnticipo(id: string, entregado_por: string) {
     const now = getNowInBusinessTimezone();
 
     return await withTransaction(async trx => {
@@ -387,8 +400,9 @@ export class AnticipoRepository {
       });
 
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
-        estado: 0,
-        fecha_mod: now
+        fecha_mod: now,
+        entregado_por: Number(entregado_por),
+        fecha_entrega: now
       });
 
       sendNotificationToAll('anticipo_delivered', {

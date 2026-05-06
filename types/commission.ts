@@ -23,6 +23,10 @@ export interface Commission {
   date?: Date;
   description?: string;
   clientName?: string;
+  
+  // Campos de usuario/foto
+  empleado_foto?: string;
+  image_version?: string;
 }
 
 export interface CommissionFilters {

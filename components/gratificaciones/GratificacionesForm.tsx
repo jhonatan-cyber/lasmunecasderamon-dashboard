@@ -2,12 +2,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Controller } from 'react-hook-form';
-import { User as UserIcon, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Gratificacion } from '@/types/gratificacion';
 import { useGratificacionForm } from '@/hooks/personal/useGratificacionForm';
+import UserSelect from '@/components/shared/selects/UserSelect';
 
 interface GratificacionesFormProps {
   isEditMode: boolean;
@@ -20,42 +20,28 @@ interface GratificacionesFormProps {
 }
 
 export function GratificacionesForm({ isEditMode, gratificacion, open, isLoading, onSubmit, onCancel, hideButtons = false }: GratificacionesFormProps) {
-  const {
-    register, control, errors, watchedMonto, watchedUserId,
-    searchEmployee, setSearchEmployee, filteredEmployees, eligibleEmployees, onFormSubmit,
-  } = useGratificacionForm({ gratificacion, open, onSubmit });
+  const { register, control, errors, watchedMonto, watchedUserId, eligibleEmployees, onFormSubmit } = useGratificacionForm({ gratificacion, open, onSubmit });
 
   return (
     <form id='gratificaciones-form' onSubmit={onFormSubmit} className='space-y-4 sm:space-y-6'>
       {!isEditMode && (
         <div>
-          <Label className='mb-2 text-sm font-semibold'>Empleado <span className='text-red-500'>*</span></Label>
-          <Controller name='usuario_id' control={control} rules={{ required: true }}
+          <Controller
+            name='usuario_id'
+            control={control}
+            rules={{ required: true }}
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
-                <SelectTrigger className='w-full rounded-full h-11'>
-                  <div className='flex items-center gap-2'>
-                    <UserIcon className='h-4 w-4 text-zinc-500' />
-                    <SelectValue placeholder='Selecciona un empleado' />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className='rounded-2xl'>
-                  <div className='p-2 pb-0'>
-                    <Input placeholder='Buscar empleado...' value={searchEmployee} onChange={e => setSearchEmployee(e.target.value)} className='mb-2 rounded-full' />
-                  </div>
-                  {filteredEmployees.length === 0 && (
-                    <div className='px-4 py-2 text-zinc-400 text-sm'>{eligibleEmployees.length === 0 ? 'No hay empleados disponibles' : 'Sin resultados'}</div>
-                  )}
-                  {filteredEmployees.map((employee: any) => {
-                    const id = employee.id ?? employee.id_usuario;
-                    return (
-                      <SelectItem key={id} value={String(id)}>
-                        {employee.name} {employee.lastName} {employee.nick ? `(${employee.nick})` : ''}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <UserSelect
+                users={eligibleEmployees}
+                value={field.value}
+                onChange={field.onChange}
+                label='Empleado'
+                placeholder='Selecciona un empleado'
+                searchPlaceholder='Buscar empleado...'
+                disabled={isLoading}
+                onlyActive={true}
+                required={true}
+              />
             )}
           />
           {errors.usuario_id && <p className='text-red-600 text-xs mt-1'>Seleccionar un empleado es obligatorio</p>}
@@ -66,12 +52,24 @@ export function GratificacionesForm({ isEditMode, gratificacion, open, isLoading
         <Label htmlFor='monto' className='mb-2 text-sm font-semibold'>Monto <span className='text-red-500'>*</span></Label>
         <div className='relative'>
           <span className='absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500'>$</span>
-          <Controller name='monto' control={control}
+          <Controller
+            name='monto'
+            control={control}
             rules={{ required: 'El monto es obligatorio', validate: val => parseFloat(String(val).replace(/\./g, '')) > 0 || 'El monto debe ser mayor a 0' }}
             render={({ field }) => (
-              <Input id='monto' type='text' inputMode='numeric' value={field.value}
-                onChange={e => { const v = e.target.value.replace(/\D/g, ''); field.onChange(v.replace(/\B(?=(\d{3})+(?!\d))/g, '.')); }}
-                placeholder='0' disabled={isLoading} className='pl-8 rounded-full h-11 text-sm sm:text-base' />
+              <Input
+                id='monto'
+                type='text'
+                inputMode='numeric'
+                value={field.value}
+                onChange={e => {
+                  const v = e.target.value.replace(/\D/g, '');
+                  field.onChange(v.replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+                }}
+                placeholder='0'
+                disabled={isLoading}
+                className='pl-8 rounded-full h-11 text-sm sm:text-base'
+              />
             )}
           />
         </div>

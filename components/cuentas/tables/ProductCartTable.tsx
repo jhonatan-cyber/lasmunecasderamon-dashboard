@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, Trash2 } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -39,6 +40,8 @@ interface ProductCartTableProps {
   readOnly?: boolean;
   emptyMessage?: string;
   commissionMode?: 'line' | 'raw';
+  anfitrionas?: any[];
+  forceShowHostesses?: boolean;
 }
 
 function ProductCartTableComponent({
@@ -47,10 +50,13 @@ function ProductCartTableComponent({
   onRemove,
   readOnly = false,
   emptyMessage = 'No hay productos agregados',
-  commissionMode = 'line'
+  commissionMode = 'line',
+  anfitrionas = [],
+  forceShowHostesses = false
 }: ProductCartTableProps) {
   const showActions = !readOnly;
-  const columnCount = showActions ? 6 : 5;
+  const showHostessesColumn = showActions || forceShowHostesses;
+  const columnCount = showActions ? 7 : (showHostessesColumn ? 6 : 5);
   const getCommissionValue = (producto: ProductoCarrito) => {
     const commission = producto.comision || 0;
     return commissionMode === 'raw' ? commission : commission * (producto.cantidad || 0);
@@ -60,6 +66,9 @@ function ProductCartTableComponent({
     <TableHeader className={CUENTA_TABLE_HEADER_CLASS}>
       <TableRow className={CUENTA_TABLE_HEADER_ROW_CLASS}>
         <TableHead className={CUENTA_TABLE_HEAD_CLASS}>Producto</TableHead>
+        {showHostessesColumn && (
+          <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Anfitrionas</TableHead>
+        )}
         <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Cantidad</TableHead>
         <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Precio</TableHead>
         <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Comisión</TableHead>
@@ -112,6 +121,35 @@ function ProductCartTableComponent({
                     ) : null}
                   </div>
                 </TableCell>
+                {showHostessesColumn && (
+                  <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                    <div className='flex flex-wrap gap-1 justify-center'>
+                      {producto.selectedHostesses && producto.selectedHostesses.length > 0 ? (
+                        producto.selectedHostesses.map((hostessId, idx) => {
+                          const hostess = anfitrionas.find(
+                            h =>
+                              String(h.id || h.id_usuario || h.usuario_id) === String(hostessId)
+                          );
+                          return (
+                            <Badge
+                              key={`${hostessId}-${idx}`}
+                              variant='secondary'
+                              className='text-xs'
+                            >
+                              {hostess?.nick ||
+                                hostess?.nombre ||
+                                hostess?.name ||
+                                hostess?.usuario_nombre ||
+                                `#${hostessId}`}
+                            </Badge>
+                          );
+                        })
+                      ) : (
+                        <span className='text-xs text-gray-400'>-</span>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                   {showActions ? (
                     <div className='flex items-center justify-center gap-2'>

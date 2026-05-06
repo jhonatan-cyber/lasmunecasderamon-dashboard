@@ -113,18 +113,32 @@ export default function CobrarCuentaModal({
 
   const productosTabla = useMemo(
     () =>
-      detalleResumen.groupedDetalles.map((item, index) => ({
-        id_producto: item.id_producto ?? item.producto_id ?? item.agrupacionKey ?? index,
-        nombre:
-          item.producto ||
-          item.nombre ||
-          `Producto ID: ${item.id_producto ?? item.producto_id ?? '-'}`,
-        precio: item.precio || 0,
-        cantidad: item.cantidad || 0,
-        sub_total: item.sub_total || 0,
-        categoria_nombre: item.categoria || item.categoria_nombre || '',
-        comision: item.comision || 0
-      })),
+      detalleResumen.groupedDetalles.map((item, index) => {
+        // Extract hostess IDs - they may be comma-separated if aggregated
+        const hostessIds = item.hostess_id
+          ? String(item.hostess_id).split(',').map((id: string) => id.trim())
+          : [];
+        return {
+          id_producto: item.id_producto ?? item.producto_id ?? item.agrupacionKey ?? index,
+          nombre:
+            item.producto ||
+            item.nombre ||
+            `Producto ID: ${item.id_producto ?? item.producto_id ?? '-'}`,
+          precio: item.precio || 0,
+          cantidad: item.cantidad || 0,
+          sub_total: item.sub_total || 0,
+          categoria_nombre: item.categoria || item.categoria_nombre || '',
+          comision: item.comision || 0,
+          selectedHostesses: hostessIds
+        };
+      }),
+    [detalleResumen.groupedDetalles]
+  );
+
+  // Calcular total de comisiones desde los productos
+  const totalComisionProductos = useMemo(
+    () =>
+      detalleResumen.groupedDetalles.reduce((sum, item) => sum + (item.comision || 0), 0),
     [detalleResumen.groupedDetalles]
   );
 
@@ -297,11 +311,50 @@ export default function CobrarCuentaModal({
                       <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4' />
                       <Input
                         className='w-full pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 font-semibold text-black'
-                        value={formatCurrencyNoDecimals(cuentaActual?.total_comision || 0)}
+                        value={formatCurrencyNoDecimals(totalComisionProductos)}
                         disabled
                       />
                     </div>
                   </div>
+
+                  {/* Repartición de comisiones por anfitriona */}
+                  {anfitrionasArray.length > 0 && totalComisionProductos > 0 && (
+                    <div className='mt-4 pt-4 border-t'>
+                      <Label className='block text-xs font-medium text-gray-500 mb-2'>
+                        Repartición de Comisiones
+                      </Label>
+                      <div className='space-y-2'>
+                        {cuentaActual?.usuarios?.map((usuario: any) => {
+                          const usuarioId = String(usuario.usuario_id || usuario.id_usuario || usuario.id || '');
+                          const comisionesAnfitriona = detalleResumen.groupedDetalles.reduce(
+                            (sum, item) => {
+                              const hostessIds = item.hostess_id
+                                ? String(item.hostess_id).split(',').map((id: string) => id.trim()).filter(Boolean)
+                                : [];
+                              if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
+                                // Dividir la comisión entre todas las anfitrionas del producto
+                                const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
+                                return sum + comisionPorAnfitriona;
+                              }
+                              return sum;
+                            },
+                            0
+                          );
+                          return (
+                            <div
+                              key={usuarioId}
+                              className='flex justify-between items-center text-sm'
+                            >
+                              <span className='font-medium'>{usuario.usuario_nombre}</span>
+                              <span className='font-semibold text-green-600'>
+                                {formatCurrencyNoDecimals(comisionesAnfitriona)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -314,7 +367,13 @@ export default function CobrarCuentaModal({
                   </span>
                 </div>
 
-                <ProductCartTable productos={productosTabla} readOnly commissionMode='raw' />
+                <ProductCartTable
+                  productos={productosTabla}
+                  readOnly
+                  commissionMode='raw'
+                  forceShowHostesses={true}
+                  anfitrionas={cuentaActual?.usuarios || []}
+                />
 
                 <div className='mt-4 flex justify-end'>
                   <div className='text-sm font-semibold text-gray-800'>

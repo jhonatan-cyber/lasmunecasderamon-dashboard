@@ -172,9 +172,9 @@ export default function PropinasDetalleModal({
                         </TableCell>
                         <TableCell className='py-4 px-5 text-center'>
                           <Badge
-                            className={`${detalle.estado === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'} rounded-full px-3 py-1 text-xs font-normal border-none shadow-none`}
+                            className={`${detalle.fecha_pago ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'} rounded-full px-3 py-1 text-xs font-semibold border-none shadow-none`}
                           >
-                            {detalle.estado === 1 ? 'Por pagar' : 'Pagado'}
+                            {detalle.fecha_pago ? 'Pagado' : 'Por pagar'}
                           </Badge>
                         </TableCell>
                       </TableRow>

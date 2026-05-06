@@ -94,13 +94,10 @@ export function RoomFilters({
                   setFilterStatus(value === 'all' ? null : Number(value))
                 }
               >
-                <SelectTrigger
-                  id='status'
-                  className='w-full text-sm rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'
-                >
+                <SelectTrigger id='status'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectContent>
                   <SelectItem value='all'>Todos los estados</SelectItem>
                   <SelectItem value='1'>Disponible</SelectItem>
                   <SelectItem value='2'>Ocupada</SelectItem>
@@ -116,10 +113,10 @@ export function RoomFilters({
               </Label>
               <div className='flex gap-1'>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className='w-full text-sm rounded-full rounded-r-none border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 h-10'>
+                  <SelectTrigger className='rounded-r-none'>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                  <SelectContent>
                     <SelectItem value='nombre'>Nombre</SelectItem>
                     <SelectItem value='precio'>Precio</SelectItem>
                     <SelectItem value='tiempo'>Tiempo</SelectItem>

@@ -77,13 +77,10 @@ export default function CuentaFilters({
                 value={rowsPerPage.toString()}
                 onValueChange={(v: string) => handleRowsPerPageChange(Number(v))}
               >
-                <SelectTrigger
-                  id='rowsPerPage'
-                  className='w-full text-sm rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10'
-                >
+                <SelectTrigger id='rowsPerPage'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className='rounded-xl border-gray-200 dark:border-gray-800'>
+                <SelectContent>
                   <SelectItem value='5'>5</SelectItem>
                   <SelectItem value='10'>10</SelectItem>
                   <SelectItem value='20'>20</SelectItem>

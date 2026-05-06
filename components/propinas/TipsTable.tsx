@@ -20,6 +20,11 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
   const { hasPermission } = useUserPermissions();
   const canViewDetail = hasPermission('tips', 'view_details');
 
+  const toNumber = (value: unknown) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   if (!loading && rows.length === 0) {
     return (
       <div className='text-center py-8'>
@@ -56,7 +61,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                 Última propina
               </TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                Promedio
+                Estado
               </TableHead>
               {canViewDetail && (
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
@@ -70,9 +75,12 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
               ? Array.from({ length: rowsPerPage }).map((_, i) => (
                   <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
                     <TableCell className='py-4 px-5'>
-                      <div className='flex flex-col gap-1 items-start'>
-                        <Skeleton className='h-4 w-36 rounded' />
-                        <Skeleton className='h-3 w-20 rounded' />
+                      <div className='flex items-center gap-3'>
+                        <Skeleton className='h-10 w-10 rounded-full' />
+                        <div className='flex flex-col gap-1'>
+                          <Skeleton className='h-4 w-36 rounded' />
+                          <Skeleton className='h-3 w-20 rounded' />
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className='py-4 px-5'>
@@ -97,10 +105,27 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                     className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
                     <TableCell className='font-medium text-start text-sm py-4 px-5'>
-                      <div className='font-medium text-gray-900 dark:text-gray-100'>
-                        {propina.nombre_completo}
+                      <div className='flex items-center gap-3'>
+                        <div className='h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center'>
+                          {propina.usuario_foto && propina.usuario_foto !== '' ? (
+                            <img
+                              src={`/img/users/${propina.usuario_foto}`}
+                              alt={propina.nombre_completo || 'Usuario'}
+                              className='w-full h-full object-cover'
+                            />
+                          ) : (
+                            <span className='text-purple-700 font-bold text-xs'>
+                              {(propina.nombre_completo || 'U').substring(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className='font-medium text-gray-900 dark:text-gray-100'>
+                            {propina.nombre_completo}
+                          </div>
+                          <div className='text-xs text-gray-500'>@{propina.nick}</div>
+                        </div>
                       </div>
-                      <div className='text-xs text-gray-500'>@{propina.nick}</div>
                     </TableCell>
                     <TableCell className='text-center text-sm py-4 px-5 font-semibold'>
                       {formatCurrencyNoDecimals(propina.total_propinas)}
@@ -109,9 +134,19 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                       {formatFechaLarga(propina.fecha_crea)}
                     </TableCell>
                     <TableCell className='text-center py-4 px-5'>
-                      <Badge className='bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full px-2 py-1 text-xs font-medium'>
-                        {formatCurrencyNoDecimals(propina.total_propinas)}
-                      </Badge>
+                      {toNumber(propina.propinas_pendientes) > 0 ? (
+                        <Badge className='bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full px-3 py-1 text-xs font-semibold'>
+                          Pendiente
+                        </Badge>
+                      ) : toNumber(propina.propinas_cobradas) > 0 ? (
+                        <Badge className='bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-full px-3 py-1 text-xs font-semibold'>
+                          Pagado
+                        </Badge>
+                      ) : (
+                        <Badge className='bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-full px-3 py-1 text-xs font-semibold'>
+                          Sin estado
+                        </Badge>
+                      )}
                     </TableCell>
                     {canViewDetail && (
                       <TableCell className='text-center py-4 px-5'>

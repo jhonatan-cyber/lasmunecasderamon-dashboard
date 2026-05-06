@@ -25,6 +25,8 @@ interface ProductoInput {
   category?: string;
   comision?: number;
   commission?: number;
+  selectedHostesses?: (string | number)[];
+  isChampagne?: boolean;
 }
 
 export function useProductCart() {
@@ -41,7 +43,9 @@ export function useProductCart() {
         precio: producto.precio || producto.price || 0,
         comision: producto.commission ?? producto.comision ?? 0,
         categoria_nombre:
-          producto.categoria_nombre || producto.categoria || producto.category || 'Sin categoría'
+          producto.categoria_nombre || producto.categoria || producto.category || 'Sin categoría',
+        selectedHostesses: producto.selectedHostesses || [],
+        isChampagne: producto.isChampagne || false
       };
 
       const cantidad = cantidadExtra || cantidades[productoNormalizado.id_producto] || 1;
@@ -55,7 +59,9 @@ export function useProductCart() {
               ? {
                   ...p,
                   cantidad: p.cantidad + cantidad,
-                  sub_total: (p.cantidad + cantidad) * p.precio
+                  sub_total: (p.cantidad + cantidad) * p.precio,
+                  selectedHostesses: producto.selectedHostesses || p.selectedHostesses,
+                  isChampagne: producto.isChampagne ?? p.isChampagne
                 }
               : p
           );
@@ -67,7 +73,9 @@ export function useProductCart() {
             cantidad: cantidad,
             sub_total: productoNormalizado.precio * cantidad,
             categoria_nombre: productoNormalizado.categoria_nombre,
-            comision: productoNormalizado.comision
+            comision: productoNormalizado.comision,
+            selectedHostesses: producto.selectedHostesses || [],
+            isChampagne: producto.isChampagne || false
           };
           return [...prev, nuevoProducto];
         }

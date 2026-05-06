@@ -32,6 +32,7 @@ interface RetiroDineroDialogProps {
     onOpenChange: (open: boolean) => void;
     onRetirar: (data: CajaRetiro) => Promise<boolean>;
     loading: boolean;
+    mutationError?: string | null;
 }
 
 export function RetiroDineroDialog({
@@ -39,7 +40,8 @@ export function RetiroDineroDialog({
     open,
     onOpenChange,
     onRetirar,
-    loading
+    loading,
+    mutationError
 }: RetiroDineroDialogProps) {
     const { user } = useCurrentUser();
     const [monto, setMonto] = useState('');
@@ -100,12 +102,14 @@ export function RetiroDineroDialog({
         }
 
         const success = await onRetirar({
-            id_caja: caja.id_caja,
+            caja_id: caja.id_caja,
             monto: montoNum,
             motivo: motivo.trim(),
             usuario_id: user.id
         });
 
+        // Solo limpiamos y cerramos si fue exitoso
+        // Si hay error del servidor, mutationError se muestra automáticamente
         if (success) {
             setMonto('');
             setMotivo('');
@@ -156,7 +160,7 @@ export function RetiroDineroDialog({
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmit} className='space-y-6'>
+                        <form id='retiro-form' onSubmit={handleSubmit} className='space-y-6'>
                             {/* Monto a retirar */}
                             <div className="space-y-2">
                                 <Label htmlFor='monto' className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 ml-1'>
@@ -195,10 +199,10 @@ export function RetiroDineroDialog({
                                 )}
                             </div>
 
-                            {/* Error general */}
-                            {errors.general && (
+                            {/* Error general o del servidor */}
+                            {(errors.general || mutationError) && (
                                 <div className='text-xs text-red-600 text-center font-bold bg-red-50 dark:bg-red-900/10 p-3 rounded-2xl border border-red-100 dark:border-red-900/30'>
-                                    {errors.general}
+                                    {errors.general || mutationError}
                                 </div>
                             )}
                         </form>
@@ -218,7 +222,7 @@ export function RetiroDineroDialog({
                     </Button>
                     <Button
                         type='submit'
-                        onClick={handleSubmit}
+                        form='retiro-form'
                         disabled={loading}
                         className='rounded-full px-8 h-10 bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-all duration-200 font-bold text-xs uppercase tracking-widest'
                     >

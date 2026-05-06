@@ -4,6 +4,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Table,
   TableBody,
@@ -17,6 +18,7 @@ import { Commission } from '@/types/commission';
 import { DollarSign, User, Tag, ShoppingCart, Server, Coins, Eye } from 'lucide-react';
 import Paginate from '@/components/shared/Paginate';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import Image from 'next/image';
 
 interface CommissionsListProps {
   loading: boolean;
@@ -93,7 +95,21 @@ export function CommissionsList({
               {/* Header con empleado y estado */}
               <div className='flex justify-between items-start'>
                 <div className='flex items-center gap-2'>
-                  <User className='h-4 w-4 text-blue-500' />
+                  <Avatar className='h-8 w-8'>
+                    {commission.empleado_foto && commission.empleado_foto !== '' ? (
+                      <Image
+                        src={`/img/users/${commission.empleado_foto}?v=${commission.image_version || ''}`}
+                        alt={commission.employeeName || 'Usuario'}
+                        width={32}
+                        height={32}
+                        className='w-full h-full object-cover rounded-full'
+                      />
+                    ) : (
+                      <AvatarFallback className='bg-blue-100 text-blue-700 font-bold text-xs'>
+                        {commission.nick?.substring(0, 2).toUpperCase() || 'NA'}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
                   <span className='font-bold text-sm'>{commission.nick}</span>
                 </div>
                 <Badge className={`${getStatusColor(commission.status)} text-xs rounded-full px-2 py-1`}>
@@ -203,8 +219,27 @@ export function CommissionsList({
                     className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === paginatedCommissions.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
                     <TableCell className='font-medium text-start text-sm py-4 px-5'>
-                      <div className='font-bold text-blue-600'>{commission.nick}</div>
-                      <div className='text-xs text-gray-400'>{commission.employeeName}</div>
+                      <div className='flex items-center gap-3'>
+                        <Avatar className='h-8 w-8'>
+                          {commission.empleado_foto && commission.empleado_foto !== '' ? (
+                            <Image
+src={`/img/users/${commission.empleado_foto}`}
+                              alt={commission.employeeName || 'Usuario'}
+                              width={32}
+                              height={32}
+                              className='w-full h-full object-cover rounded-full'
+                            />
+                          ) : (
+                            <AvatarFallback className='bg-blue-100 text-blue-700 font-bold text-xs'>
+                              {commission.nick?.substring(0, 2).toUpperCase() || 'NA'}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div>
+                          <div className='font-bold text-blue-600'>{commission.nick}</div>
+                          <div className='text-xs text-gray-400'>{commission.employeeName}</div>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className='text-center text-sm py-4 px-5 font-semibold'>
                       {formatCurrencyNoDecimals(commission.venta)}

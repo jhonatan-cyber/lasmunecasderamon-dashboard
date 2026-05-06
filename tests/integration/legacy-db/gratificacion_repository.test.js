@@ -89,7 +89,6 @@ class GratificacionRepository {
       monto: data.monto,
       descripcion: data.descripcion || '',
       estado: 1,
-      fecha_hora: new Date(),
       fecha_crea: new Date()
     });
     return id;

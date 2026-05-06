@@ -20,6 +20,7 @@ interface UseCashRegisterReturn {
   cajaInfo: any | null;
   loading: boolean;
   error: string | null;
+  mutationError: string | null;
   getCajas: (estado?: number) => Promise<void>;
   getCajaById: (id: number) => Promise<void>;
   getResumen: () => Promise<void>;
@@ -263,8 +264,8 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         }
 
         toast.success('Retiro realizado exitosamente');
-        await getCajas();
-        await getResumen();
+        void getCajas();
+        void getResumen();
         return true;
       } catch (error) {
         handleError(error, 'Error al retirar dinero');
@@ -319,6 +320,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     cajaInfo,
     loading,
     error,
+    mutationError,
     getCajas,
     getCajaById,
     getResumen,

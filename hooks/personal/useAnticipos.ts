@@ -9,6 +9,9 @@ export interface Anticipo {
   usuario_id: number | string;
   fecha_crea: string;
   fecha_mod: string;
+  fecha_aprobacion?: string;
+  fecha_entrega?: string;
+  fecha_cobro?: string;
   monto: number;
   estado: number;
   nick: string;
@@ -18,6 +21,9 @@ export interface Anticipo {
   apellido?: string; // Fallback
   foto?: string;
   estado_texto?: string;
+  entregado_por?: number | string;
+  entregado_por_nombre?: string;
+  entregado_por_apellido?: string;
 }
 
 export default function useAnticipos() {

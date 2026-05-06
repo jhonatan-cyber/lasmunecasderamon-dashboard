@@ -11,11 +11,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { Overtime } from '@/types/overtime';
 import { User, Clock, DollarSign, Calendar, Eye, CheckCircle2, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface OvertimeTableProps {
   loading: boolean;
@@ -81,7 +83,21 @@ export default function OvertimeTable({
                   <div className='space-y-1'>
                     {isAdmin && (
                       <div className='flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white'>
-                        <User className='h-4 w-4 text-purple-500' />
+                        <Avatar className='h-6 w-6'>
+                          {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
+                            <Image
+                              src={`/img/users/${overtime.usuario_foto}`}
+                              alt={overtime.usuario || 'Usuario'}
+                              width={24}
+                              height={24}
+                              className='w-full h-full object-cover rounded-full'
+                            />
+                          ) : (
+                            <AvatarFallback className='bg-purple-100 text-purple-700 font-bold text-[8px]'>
+                              {overtime.usuario?.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
                         {overtime.usuario}
                       </div>
                     )}
@@ -191,9 +207,21 @@ export default function OvertimeTable({
                       {isAdmin && (
                         <TableCell className='py-4 px-6'>
                           <div className='flex items-center gap-3'>
-                            <div className='h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs'>
-                              {overtime.usuario?.substring(0, 2).toUpperCase()}
-                            </div>
+                            <Avatar className='h-8 w-8'>
+                              {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
+                                <Image
+                                  src={`/img/users/${overtime.usuario_foto}`}
+                                  alt={overtime.usuario || 'Usuario'}
+                                  width={32}
+                                  height={32}
+                                  className='w-full h-full object-cover rounded-full'
+                                />
+                              ) : (
+                                <AvatarFallback className='bg-purple-100 text-purple-700 font-bold text-xs'>
+                                  {overtime.usuario?.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
                             <span className='font-bold text-sm text-gray-900 dark:text-white'>
                               {overtime.usuario}
                             </span>
