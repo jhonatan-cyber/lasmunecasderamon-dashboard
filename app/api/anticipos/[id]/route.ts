@@ -4,9 +4,10 @@ import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const PUT = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
-    const id = (await params).id;
+  async (request: Request, context: { params: Promise<{ id: string }>; user: any }) => {
+    const { id } = await context.params;
     const { estado, entregado_por } = await request.json();
+    const { user } = context;
 
     if (Number(estado) === 1) {
       await AnticipoRepository.processSolicitud(id, 'approve');

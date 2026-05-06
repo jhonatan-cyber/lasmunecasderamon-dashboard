@@ -141,7 +141,7 @@ export function PermissionModal({
             <div className='relative'>
               <Select
                 value={formData.action}
-                onValueChange={value => setFormData(prev => ({ ...prev, action: value }))}
+                onValueChange={(value: string) => setFormData(prev => ({ ...prev, action: value }))}
                 disabled={isLoading}
               >
                 <SelectTrigger id='permission-action'>
