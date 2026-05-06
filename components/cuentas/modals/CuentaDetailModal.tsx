@@ -425,7 +425,7 @@ export default function CuentaDetailModal({
                         Repartición de Comisiones
                       </h4>
                       <div className='space-y-2'>
-                        {comisionPorAnfitriona.map(item => (
+                        {comisionPorAnfitriona.map((item: { id: string; nombre: string; comision: number }) => (
                           <div
                             key={item.id}
                             className='flex justify-between items-center text-sm'
