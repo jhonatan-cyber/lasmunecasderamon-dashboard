@@ -1,37 +1,58 @@
-import { NextResponse } from 'next/server';
 import { sseManager } from '@/lib/api/sseService';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   const encoder = new TextEncoder();
-  let controllerReference: ReadableStreamDefaultController | null = null;
+  let writerClosed = false;
+  let writer: {
+    write(chunk: string): void;
+    close(): void;
+    onClose(callback: () => void): void;
+  } | null = null;
+  let handleClose: (() => void) | null = null;
+
+  const cleanup = () => {
+    if (writerClosed) return;
+    writerClosed = true;
+    if (writer) {
+      sseManager.unregisterClient(writer);
+    }
+    if (handleClose) {
+      handleClose();
+      handleClose = null;
+    }
+    writer = null;
+  };
 
   const stream = new ReadableStream({
     start(controller) {
-      controllerReference = controller;
-      const writer = {
+      writer = {
         write(chunk: string) {
           try {
             controller.enqueue(encoder.encode(chunk));
-          } catch (e) {}
+          } catch {
+            cleanup();
+          }
         },
         close() {
           try {
             controller.close();
-          } catch (e) {}
+          } catch {
+            // Ignore close-after-close errors during cleanup.
+          } finally {
+            cleanup();
+          }
         },
         onClose(callback: () => void) {
-          // No direct onClose in ReadableStream start, handled via cancel
+          handleClose = callback;
         }
       };
       sseManager.registerClient(writer);
+      request.signal.addEventListener('abort', cleanup, { once: true });
     },
     cancel() {
-      // Here we should ideally have a way to unregister,
-      // but since we don't have the writer reference easily here
-      // without more complexity, I'll keep it simple for now
-      // and let the heartbeat/broadcast handle dead clients.
+      cleanup();
     }
   });
 

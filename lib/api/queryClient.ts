@@ -226,7 +226,11 @@ export const queryKeys = {
   // Dashboard / Stats
   dashboard: {
     all: ['dashboard'] as const,
-    summary: () => [...queryKeys.dashboard.all, 'summary'] as const
+    summary: () => [...queryKeys.dashboard.all, 'summary'] as const,
+    alerts: () => [...queryKeys.dashboard.all, 'alerts'] as const,
+    pendingItems: () => [...queryKeys.dashboard.all, 'pending-items'] as const,
+    insights: () => [...queryKeys.dashboard.all, 'insights'] as const,
+    recentActivity: () => [...queryKeys.dashboard.all, 'recent-activity'] as const
   },
 
   // Devoluciones

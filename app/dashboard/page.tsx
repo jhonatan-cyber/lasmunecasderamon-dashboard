@@ -8,10 +8,6 @@ import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
 
-const LoggedUsersCards = dynamic(() => import('@/components/dashboard/LoggedUsersCards'), {
-  loading: () => <StatsCardSkeleton />
-});
-
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
   loading: () => (
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
@@ -20,6 +16,42 @@ const DashboardStatsCards = dynamic(() => import('@/components/dashboard/Dashboa
       ))}
     </div>
   )
+});
+
+const OperationalAlerts = dynamic(() => import('@/components/dashboard/OperationalAlerts'), {
+  loading: () => <ChartSkeleton />
+});
+
+const DashboardKPIOverview = dynamic(() => import('@/components/dashboard/DashboardKPIOverview'), {
+  loading: () => <ChartSkeleton />
+});
+
+const QuickActions = dynamic(() => import('@/components/dashboard/QuickActions'), {
+  loading: () => <ChartSkeleton />
+});
+
+const ActionablePending = dynamic(() => import('@/components/dashboard/ActionablePending'), {
+  loading: () => <ChartSkeleton />
+});
+
+const LocalStatusOverview = dynamic(() => import('@/components/dashboard/LocalStatusOverview'), {
+  loading: () => <ChartSkeleton />
+});
+
+const RecentActivityFeed = dynamic(() => import('@/components/dashboard/RecentActivityFeed'), {
+  loading: () => <ChartSkeleton />
+});
+
+const TopPerformers = dynamic(() => import('@/components/dashboard/TopPerformers'), {
+  loading: () => <ChartSkeleton />
+});
+
+const FinancialSummary = dynamic(() => import('@/components/dashboard/FinancialSummary'), {
+  loading: () => <ChartSkeleton />
+});
+
+const ForecastInsights = dynamic(() => import('@/components/dashboard/ForecastInsights'), {
+  loading: () => <ChartSkeleton />
 });
 
 const SalesChart = dynamic(
@@ -106,6 +138,7 @@ export default function Dashboard() {
   }, [user?.qr_token, user?.role]);
 
   const isCajero = user?.role?.toLowerCase() === 'cajero';
+  const isAdministrador = user?.role?.toLowerCase() === 'administrador';
   const shouldShowSkeleton =
     loading || user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon';
 
@@ -120,6 +153,49 @@ export default function Dashboard() {
         <DashboardSkeleton />
       ) : (
         <>
+          <OperationalAlerts />
+
+          {isAdministrador ? (
+            <>
+              <div className='grid gap-6 xl:grid-cols-[1.2fr_0.8fr]'>
+                <DashboardKPIOverview />
+                <QuickActions />
+              </div>
+
+              <ActionablePending />
+
+              <LocalStatusOverview />
+
+              <div className='grid gap-6 xl:grid-cols-[1.05fr_0.95fr]'>
+                <RecentActivityFeed />
+                <FinancialSummary />
+              </div>
+
+              <TopPerformers />
+
+              <ForecastInsights />
+            </>
+          ) : (
+            <>
+              <div className='grid gap-6 xl:grid-cols-[0.9fr_1.1fr]'>
+                <QuickActions />
+                <DashboardKPIOverview />
+              </div>
+
+              <div className='grid gap-6 xl:grid-cols-[0.95fr_1.05fr]'>
+                <FinancialSummary />
+                <ActionablePending />
+              </div>
+
+              <div className='grid gap-6 xl:grid-cols-[1fr_1fr]'>
+                <LocalStatusOverview />
+                <RecentActivityFeed />
+              </div>
+
+              <ForecastInsights />
+            </>
+          )}
+
           {user?.qr_token && (
             <Card className='max-w-md border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden'>
               <CardHeader className='text-center pb-2'>
@@ -164,8 +240,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           )}
-
-          <LoggedUsersCards />
 
           {/* Cards de estadísticas del dashboard */}
           <DashboardStatsCards />
