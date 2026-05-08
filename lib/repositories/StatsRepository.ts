@@ -9,8 +9,520 @@ import {
 } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError } from '@/lib/errors/errors';
+import { TimerRepository } from './TimerRepository';
+import { ServiceRequestRepository } from './ServiceRequestRepository';
+import { RoomRepository } from './RoomRepository';
+import { OrderRepository } from './OrderRepository';
 
 export class StatsRepository {
+  private static buildTrend(current: number, previous: number) {
+    const safeCurrent = Number(current || 0);
+    const safePrevious = Number(previous || 0);
+    const delta = safeCurrent - safePrevious;
+    const percentChange =
+      safePrevious === 0 ? (safeCurrent > 0 ? 100 : 0) : Math.round((delta / safePrevious) * 100);
+
+    return {
+      current: safeCurrent,
+      previous: safePrevious,
+      delta,
+      percentChange,
+      direction: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
+    };
+  }
+
+  static async getDashboardAlerts() {
+    const [cashRegisterRows, pendingOrdersRows, rooms, pendingServiceRequests, timers] =
+      await Promise.all([
+        query<any[]>(
+          `
+          SELECT COUNT(*) as total
+          FROM cajas
+          WHERE estado = 1
+        `
+        ),
+        query<any[]>(
+          `
+          SELECT COUNT(*) as total
+          FROM pedidos
+          WHERE estado = 1
+        `
+        ),
+        RoomRepository.getAll(),
+        ServiceRequestRepository.getPendingCount(),
+        TimerRepository.getActive()
+      ]);
+
+    const openCashRegisters = Number(cashRegisterRows[0]?.total || 0);
+    const pendingOrders = Number(pendingOrdersRows[0]?.total || 0);
+    const occupiedRooms = rooms.filter(room => Number(room.status) === 2).length;
+    const freeRooms = rooms.filter(room => Number(room.status) === 1).length;
+    const totalRooms = rooms.length;
+    const expiringServices = timers.filter(timer => {
+      const remaining = Number(timer.remainingTime || 0);
+      return remaining > 0 && remaining <= 15 * 60;
+    }).length;
+
+    const alerts = [
+      {
+        id: 'cash-register',
+        title: openCashRegisters > 0 ? 'Caja abierta' : 'Sin caja abierta',
+        description:
+          openCashRegisters > 0
+            ? 'Hay una caja operando en este momento.'
+            : 'No hay caja activa en este momento.',
+        value: openCashRegisters,
+        severity: openCashRegisters > 0 ? 'warning' : 'success',
+        href: '/cash-register',
+        ctaLabel: openCashRegisters > 0 ? 'Revisar caja' : 'Abrir caja'
+      },
+      {
+        id: 'orders',
+        title: 'Pedidos pendientes',
+        description: 'Pedidos esperando atención o procesamiento.',
+        value: pendingOrders,
+        severity: pendingOrders > 0 ? 'critical' : 'success',
+        href: '/orders',
+        ctaLabel: 'Ver pedidos'
+      },
+      {
+        id: 'service-requests',
+        title: 'Solicitudes pendientes',
+        description: 'Solicitudes de servicio listas para revisión.',
+        value: pendingServiceRequests,
+        severity: pendingServiceRequests > 0 ? 'warning' : 'success',
+        href: '/orders',
+        ctaLabel: 'Revisar solicitudes'
+      },
+      {
+        id: 'timers',
+        title: 'Servicios por vencer',
+        description: 'Temporizadores con menos de 15 minutos restantes.',
+        value: expiringServices,
+        severity: expiringServices > 0 ? 'warning' : 'success',
+        href: '/private-rooms',
+        ctaLabel: 'Ver servicios'
+      }
+    ];
+
+    return {
+      alerts,
+      summary: {
+        openCashRegisters,
+        pendingOrders,
+        pendingServiceRequests,
+        expiringServices,
+        occupiedRooms,
+        freeRooms,
+        totalRooms,
+        criticalCount: alerts.filter(alert => alert.severity === 'critical' && alert.value > 0)
+          .length,
+        warningCount: alerts.filter(alert => alert.severity === 'warning' && alert.value > 0).length
+      }
+    };
+  }
+
+  static async getDashboardPendingItems() {
+    const [orders, serviceRequests] = await Promise.all([
+      OrderRepository.getAll(20),
+      ServiceRequestRepository.getAll('pendiente')
+    ]);
+
+    const pendingOrders = orders
+      .filter(order => Number(order.estado) === 1)
+      .slice(0, 5)
+      .map(order => ({
+        id: String(order.id),
+        code: order.codigo || String(order.id),
+        title: order.cliente_nombre || 'Sin cliente registrado',
+        subtitle: order.mesero_nick || order.mesero_nombre || 'Sin garzón asignado',
+        amount: Number(order.total || 0),
+        createdAt: order.fecha_crea,
+        href: '/orders',
+        kind: 'order' as const
+      }));
+
+    const pendingServiceRequests = serviceRequests.slice(0, 5).map(request => ({
+      id: String(request.id_solicitud),
+      code: request.codigo || String(request.id_solicitud),
+      title: request.habitacion_nombre || 'Sin habitación',
+      subtitle: request.cliente_nombre || 'Sin cliente registrado',
+      amount: Number(request.total || 0),
+      createdAt: request.fecha_solicitud,
+      href: '/orders',
+      kind: 'service_request' as const
+    }));
+
+    return {
+      orders: pendingOrders,
+      serviceRequests: pendingServiceRequests,
+      summary: {
+        totalPendingOrders: pendingOrders.length,
+        totalPendingServiceRequests: pendingServiceRequests.length,
+        totalVisibleItems: pendingOrders.length + pendingServiceRequests.length
+      }
+    };
+  }
+
+  static async getDashboardInsights() {
+    const now = getNowInBusinessTimezone();
+    const yesterday = getNowInBusinessTimezone(Date.now() - 24 * 60 * 60 * 1000);
+    const hoursElapsed = Number(now.slice(11, 13) || 0);
+    const minutesElapsed = Number(now.slice(14, 16) || 0);
+    const elapsedMinutesToday = Math.max(1, hoursElapsed * 60 + minutesElapsed);
+    const cajaStats = await this.getCajaGeneralStats();
+
+    const [alerts, loggedUsers, timers, comparisonsRows, rankingRows, withdrawalsRows] =
+      await Promise.all([
+        this.getDashboardAlerts(),
+        this.getLoggedUsers(),
+        TimerRepository.getActive(),
+        query<any[]>(
+          `
+          SELECT
+            COALESCE((
+              SELECT SUM(v.total)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND v.fecha_crea >= DATE(?)
+                AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            ), 0) AS sales_today,
+            COALESCE((
+              SELECT SUM(v.total)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND v.fecha_crea >= DATE(?)
+                AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            ), 0) AS sales_yesterday,
+            COALESCE((
+              SELECT SUM(s.total)
+              FROM servicios s
+              WHERE s.estado IN (1, 2)
+                AND s.fecha_crea >= DATE(?)
+                AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            ), 0) AS services_today,
+            COALESCE((
+              SELECT SUM(s.total)
+              FROM servicios s
+              WHERE s.estado IN (1, 2)
+                AND s.fecha_crea >= DATE(?)
+                AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            ), 0) AS services_yesterday,
+            COALESCE((
+              SELECT COUNT(*)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)
+            ), 0) AS sales_count_week,
+            COALESCE((
+              SELECT COUNT(*)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)
+            ), 0) AS sales_count_previous_week,
+            COALESCE((
+              SELECT SUM(v.total)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)
+            ), 0) AS sales_total_week,
+            COALESCE((
+              SELECT SUM(v.total)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)
+            ), 0) AS sales_total_previous_week,
+            COALESCE((
+              SELECT SUM(v.total)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND v.fecha_crea >= DATE(?)
+                AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+                AND TIME(v.fecha_crea) <= TIME(?)
+            ), 0) AS sales_same_time_today,
+            COALESCE((
+              SELECT SUM(v.total)
+              FROM ventas v
+              WHERE v.estado IN (1, 2)
+                AND v.fecha_crea >= DATE(?)
+                AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+                AND TIME(v.fecha_crea) <= TIME(?)
+            ), 0) AS sales_same_time_yesterday
+        `,
+          [
+            now,
+            now,
+            yesterday,
+            yesterday,
+            now,
+            now,
+            yesterday,
+            yesterday,
+            now,
+            now,
+            now,
+            now,
+            now,
+            now,
+            now,
+            yesterday,
+            yesterday,
+            now
+          ]
+        ),
+        query<any[]>(
+          `
+          SELECT *
+          FROM (
+            SELECT
+              'product' AS ranking_type,
+              p.nombre AS item_name,
+              SUM(dv.cantidad) AS primary_value,
+              SUM(dv.subtotal) AS secondary_value
+            FROM detalle_ventas dv
+            INNER JOIN ventas v ON v.id_venta = dv.venta_id
+            INNER JOIN productos p ON p.id_producto = dv.producto_id
+            WHERE v.estado IN (1, 2)
+              AND v.fecha_crea >= DATE(?)
+              AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            GROUP BY p.id_producto, p.nombre
+
+            UNION ALL
+
+            SELECT
+              'room' AS ranking_type,
+              room_activity.item_name,
+              room_activity.operations_count AS primary_value,
+              room_activity.total_generated AS secondary_value
+            FROM (
+              SELECT
+                h.nombre AS item_name,
+                COUNT(*) AS operations_count,
+                SUM(activity.total) AS total_generated
+              FROM (
+                SELECT habitacion_id, total
+                FROM servicios
+                WHERE estado IN (1, 2)
+                  AND fecha_crea >= DATE(?)
+                  AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+
+                UNION ALL
+
+                SELECT habitacion_id, total
+                FROM ventas
+                WHERE estado IN (1, 2)
+                  AND fecha_crea >= DATE(?)
+                  AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              ) activity
+              INNER JOIN habitaciones h ON h.id_habitacion = activity.habitacion_id
+              GROUP BY h.id_habitacion, h.nombre
+            ) room_activity
+
+            UNION ALL
+
+            SELECT
+              'staff' AS ranking_type,
+              staff_activity.item_name,
+              staff_activity.operations_count AS primary_value,
+              staff_activity.total_generated AS secondary_value
+            FROM (
+              SELECT
+                CONCAT(u.nombre, ' ', u.apellido) AS item_name,
+                COUNT(*) AS operations_count,
+                SUM(staff_source.total) AS total_generated
+              FROM (
+                SELECT ds.usuario_id, s.total
+                FROM detalle_servicios ds
+                INNER JOIN servicios s ON s.id_servicio = ds.servicio_id
+                WHERE s.estado IN (1, 2)
+                  AND s.fecha_crea >= DATE(?)
+                  AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+
+                UNION ALL
+
+                SELECT vu.usuario_id, v.total
+                FROM ventas_usuarios vu
+                INNER JOIN ventas v ON v.id_venta = vu.venta_id
+                WHERE v.estado IN (1, 2)
+                  AND v.fecha_crea >= DATE(?)
+                  AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              ) staff_source
+              INNER JOIN usuarios u ON u.id_usuario = staff_source.usuario_id
+              GROUP BY u.id_usuario, u.nombre, u.apellido
+            ) staff_activity
+          ) rankings
+          WHERE secondary_value > 0 OR primary_value > 0
+          ORDER BY ranking_type ASC, secondary_value DESC, primary_value DESC
+        `,
+          [now, now, now, now, now, now, now, now, now, now]
+        ),
+        cajaStats.caja_id
+          ? query<any[]>(
+              `
+              SELECT COALESCE(SUM(monto), 0) AS total
+              FROM retiros_caja
+              WHERE caja_id = ?
+            `,
+              [cajaStats.caja_id]
+            )
+          : Promise.resolve([{ total: 0 }])
+      ]);
+
+    const comparisonBase = comparisonsRows[0] || {};
+    const totalLoggedUsers =
+      loggedUsers.anfitrionas.logueadas +
+      loggedUsers.garzones.logueadas +
+      loggedUsers.cajeros.logueadas;
+    const totalTeamMembers =
+      loggedUsers.anfitrionas.total + loggedUsers.garzones.total + loggedUsers.cajeros.total;
+    const servicesActive = timers.filter(timer => timer.tipoTransaccion !== 'pedido').length;
+    const movementToday =
+      Number(comparisonBase.sales_today || 0) + Number(comparisonBase.services_today || 0);
+    const movementYesterday =
+      Number(comparisonBase.sales_yesterday || 0) + Number(comparisonBase.services_yesterday || 0);
+    const totalWithdrawals = Number(withdrawalsRows[0]?.total || 0);
+    const occupancyRate =
+      alerts.summary.totalRooms > 0
+        ? Math.round((alerts.summary.occupiedRooms / alerts.summary.totalRooms) * 100)
+        : 0;
+    const teamCoverageRate =
+      totalTeamMembers > 0 ? Math.round((totalLoggedUsers / totalTeamMembers) * 100) : 0;
+    const projectedRevenue = Math.round((movementToday / elapsedMinutesToday) * 24 * 60);
+    const yesterdaySalesSameTime = Number(comparisonBase.sales_same_time_yesterday || 0);
+    const todaySalesSameTime = Number(comparisonBase.sales_same_time_today || 0);
+    const anomalies: Array<{
+      id: string;
+      tone: 'success' | 'warning' | 'critical';
+      title: string;
+      description: string;
+    }> = [];
+
+    if (yesterdaySalesSameTime > 0 && todaySalesSameTime <= yesterdaySalesSameTime * 0.75) {
+      anomalies.push({
+        id: 'sales-drop',
+        tone: 'critical',
+        title: 'Ventas por debajo del ritmo esperado',
+        description: 'El acumulado de hoy va por debajo de lo registrado a esta misma hora ayer.'
+      });
+    } else if (yesterdaySalesSameTime > 0 && todaySalesSameTime >= yesterdaySalesSameTime * 1.25) {
+      anomalies.push({
+        id: 'sales-boost',
+        tone: 'success',
+        title: 'Ventas aceleradas',
+        description: 'El día avanza por encima del ritmo de ventas observado ayer a esta hora.'
+      });
+    }
+
+    if (alerts.summary.pendingOrders >= 5) {
+      anomalies.push({
+        id: 'order-backlog',
+        tone: 'warning',
+        title: 'Acumulación en pedidos',
+        description: 'Hay una carga operativa alta en pedidos pendientes que conviene destrabar.'
+      });
+    }
+
+    if (alerts.summary.expiringServices >= 3) {
+      anomalies.push({
+        id: 'service-pressure',
+        tone: 'warning',
+        title: 'Servicios próximos a vencer',
+        description: 'Varios servicios están cerca de expirar y requieren atención del equipo.'
+      });
+    }
+
+    return {
+      comparisons: {
+        salesToday: this.buildTrend(comparisonBase.sales_today, comparisonBase.sales_yesterday),
+        servicesToday: this.buildTrend(
+          comparisonBase.services_today,
+          comparisonBase.services_yesterday
+        ),
+        movementToday: this.buildTrend(movementToday, movementYesterday),
+        salesWeek: this.buildTrend(
+          comparisonBase.sales_total_week,
+          comparisonBase.sales_total_previous_week
+        ),
+        operationsWeek: this.buildTrend(
+          comparisonBase.sales_count_week,
+          comparisonBase.sales_count_previous_week
+        )
+      },
+      localStatus: {
+        rooms: {
+          occupied: alerts.summary.occupiedRooms,
+          free: alerts.summary.freeRooms,
+          total: alerts.summary.totalRooms,
+          occupancyRate
+        },
+        services: {
+          active: servicesActive,
+          expiringSoon: alerts.summary.expiringServices
+        },
+        orders: {
+          open: alerts.summary.pendingOrders,
+          serviceRequests: alerts.summary.pendingServiceRequests
+        },
+        team: {
+          active: totalLoggedUsers,
+          total: totalTeamMembers,
+          coverageRate: teamCoverageRate
+        },
+        cash: {
+          openRegisters: alerts.summary.openCashRegisters
+        }
+      },
+      rankings: {
+        products: rankingRows
+          .filter(row => row.ranking_type === 'product')
+          .slice(0, 5)
+          .map(row => ({
+            name: row.item_name,
+            quantity: Number(row.primary_value || 0),
+            amount: Number(row.secondary_value || 0)
+          })),
+        rooms: rankingRows
+          .filter(row => row.ranking_type === 'room')
+          .slice(0, 5)
+          .map(row => ({
+            name: row.item_name,
+            quantity: Number(row.primary_value || 0),
+            amount: Number(row.secondary_value || 0)
+          })),
+        staff: rankingRows
+          .filter(row => row.ranking_type === 'staff')
+          .slice(0, 5)
+          .map(row => ({
+            name: row.item_name,
+            quantity: Number(row.primary_value || 0),
+            amount: Number(row.secondary_value || 0)
+          }))
+      },
+      financialSummary: {
+        openingAmount: Number(cajaStats.monto_apertura || 0),
+        sales: Number(cajaStats.total_ventas || 0),
+        services: Number(cajaStats.total_servicios || 0),
+        tips: Number(cajaStats.total_propina || 0),
+        advances: Number(cajaStats.total_anticipo || 0),
+        returns: Number(cajaStats.total_devolucion || 0),
+        withdrawals: totalWithdrawals,
+        netRevenue:
+          Number(cajaStats.total_ventas || 0) +
+          Number(cajaStats.total_servicios || 0) +
+          Number(cajaStats.total_propina || 0) -
+          Number(cajaStats.total_devolucion || 0) -
+          totalWithdrawals
+      },
+      forecast: {
+        projectedRevenue,
+        currentRevenue: movementToday,
+        yesterdayRevenue: movementYesterday,
+        elapsedMinutesToday,
+        anomalies
+      }
+    };
+  }
+
   static async getRecentActivity(limit: number = 8) {
     const rows = (await query<any[]>(
       `
