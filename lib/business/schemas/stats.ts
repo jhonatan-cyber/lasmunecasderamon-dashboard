@@ -10,6 +10,8 @@ export const StatsGeneralSchema = z.object({
   total_efectivo: z.number().default(0),
   total_tarjeta: z.number().default(0),
   total_transferencia: z.number().default(0),
+  total_anticipo: z.number().default(0),
+  total_devolucion: z.number().default(0),
   total_propina: z.number().default(0),
   total_comision: z.number().default(0),
   total_iva: z.number().default(0),
@@ -19,7 +21,7 @@ export const StatsGeneralSchema = z.object({
   tiempo_abierta_horas: z.number().optional(),
   tiempo_abierta_minutos: z.number().optional(),
   fecha_apertura_raw: z.string().nullable().optional(),
-  usuario_id_apertura: z.string().nullable().optional(),
+  usuario_id_apertura: z.string().nullable().optional()
 });
 
 export type StatsGeneralType = z.infer<typeof StatsGeneralSchema>;
