@@ -21,6 +21,7 @@ const defaultConfig: any = {
 
 declare global {
   var __lasMunecasDbPool: mysql.Pool | undefined;
+  var __lasMunecasDbPoolListenersAttached: boolean | undefined;
 }
 
 const pool = globalThis.__lasMunecasDbPool ?? mysql.createPool(defaultConfig);
@@ -29,17 +30,21 @@ if (!globalThis.__lasMunecasDbPool) {
   globalThis.__lasMunecasDbPool = pool;
 }
 
-pool.on('connection', async (connection: any) => {
-  try {
-    const promiseConnection = connection.promise();
-    await promiseConnection.query(`SET time_zone = '${getSQLTimezoneOffset()}'`);
-    await promiseConnection.query(
-      "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
-    );
-  } catch (err) {
-    console.error('Error initializing connection:', err);
-  }
-});
+if (!globalThis.__lasMunecasDbPoolListenersAttached) {
+  pool.on('connection', async (connection: any) => {
+    try {
+      const promiseConnection = connection.promise();
+      await promiseConnection.query(`SET time_zone = '${getSQLTimezoneOffset()}'`);
+      await promiseConnection.query(
+        "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
+      );
+    } catch (err) {
+      console.error('Error initializing connection:', err);
+    }
+  });
+
+  globalThis.__lasMunecasDbPoolListenersAttached = true;
+}
 
 export type TransactionQuery = <R>(sql: string, params?: any[]) => Promise<R>;
 
@@ -63,12 +68,12 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
   try {
     // Check if SQL contains LIMIT or OFFSET clauses - these cause issues with prepared statements in MySQL 8.4.7
     const hasLimitOrOffset = /LIMIT\s+\?|OFFSET\s+\?/i.test(sql);
-    
+
     if (hasLimitOrOffset && safeParams.length > 0) {
       // For queries with LIMIT/OFFSET, use manual parameter replacement
       let finalSql = sql;
       let paramIndex = 0;
-      
+
       finalSql = sql.replace(/\?/g, () => {
         if (paramIndex < safeParams.length) {
           const param = safeParams[paramIndex++];

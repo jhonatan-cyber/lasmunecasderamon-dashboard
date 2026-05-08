@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -125,6 +125,7 @@ export function SalesChart() {
   const [error, setError] = useState<string | null>(null);
   const [currentYearOffset, setCurrentYearOffset] = useState(0);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const activeIndexRef = useRef<number | null>(null);
 
   const fetchSalesData = useCallback(async (offset: number) => {
     try {
@@ -168,6 +169,26 @@ export function SalesChart() {
       mesCorto: item.mes.substring(0, 3)
     }));
   }, [salesData]);
+
+  const handleChartMouseMove = useCallback(
+    (state?: { activeTooltipIndex?: number | string | null }) => {
+      const nextIndex =
+        typeof state?.activeTooltipIndex === 'number' ? state.activeTooltipIndex : null;
+
+      if (activeIndexRef.current === nextIndex) return;
+
+      activeIndexRef.current = nextIndex;
+      setActiveIndex(nextIndex);
+    },
+    []
+  );
+
+  const handleChartMouseLeave = useCallback(() => {
+    if (activeIndexRef.current === null) return;
+
+    activeIndexRef.current = null;
+    setActiveIndex(null);
+  }, []);
 
   if (loading) {
     return (
@@ -300,12 +321,8 @@ export function SalesChart() {
             <BarChart
               data={chartData}
               margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
-              onMouseMove={state => {
-                if (state?.activeTooltipIndex !== undefined) {
-                  setActiveIndex(state.activeTooltipIndex as number);
-                }
-              }}
-              onMouseLeave={() => setActiveIndex(null)}
+              onMouseMove={handleChartMouseMove}
+              onMouseLeave={handleChartMouseLeave}
             >
               <defs>
                 {MONTH_GRADIENTS.map((grad, index) => (

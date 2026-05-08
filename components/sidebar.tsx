@@ -48,13 +48,15 @@ type SidebarItem = {
 type SidebarSection = {
   key: string;
   title: string;
+  description: string;
   items: SidebarItem[];
 };
 
 const SIDEBAR_SECTIONS: SidebarSection[] = [
   {
-    key: 'principal',
-    title: 'Principal',
+    key: 'overview',
+    title: 'Vista General',
+    description: 'Seguimiento y decisiones del día.',
     items: [
       {
         name: 'Dashboard',
@@ -66,14 +68,82 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         fallbackAction: 'view'
       },
       {
-        name: 'Usuarios',
-        href: '/users',
-        icon: Users,
-        module: 'usuarios',
-        action: 'listar_usuarios',
-        fallbackModule: 'users',
+        name: 'Reportes',
+        href: '/reports',
+        icon: FileText,
+        module: 'reportes',
+        action: 'listar_reportes',
+        fallbackModule: 'reports',
+        fallbackAction: 'view'
+      }
+    ]
+  },
+  {
+    key: 'operation',
+    title: 'Operación',
+    description: 'Ventas, pedidos y atención en piso.',
+    items: [
+      {
+        name: 'Pedidos',
+        href: '/orders',
+        icon: ShoppingCart,
+        module: 'pedidos',
+        action: 'listar_pedidos',
+        fallbackModule: 'orders',
         fallbackAction: 'view'
       },
+      {
+        name: 'Ventas',
+        href: '/sales',
+        icon: TrendingUp,
+        module: 'ventas',
+        action: 'listar_ventas',
+        fallbackModule: 'sales',
+        fallbackAction: 'view'
+      },
+      {
+        name: 'Cajas',
+        href: '/cash-register',
+        icon: CreditCard,
+        module: 'caja',
+        action: 'listar_caja',
+        fallbackModule: 'cash_register',
+        fallbackAction: 'view'
+      },
+      {
+        name: 'Cuentas',
+        href: '/accounts',
+        icon: Calculator,
+        module: 'cuentas',
+        action: 'listar_cuentas',
+        fallbackModule: 'accounts',
+        fallbackAction: 'view'
+      },
+      {
+        name: 'Crear Privado',
+        href: '/rooms',
+        icon: Bed,
+        module: 'rooms',
+        action: 'crear',
+        fallbackModule: 'rooms',
+        fallbackAction: 'create'
+      },
+      {
+        name: 'Vender Privado',
+        href: '/private-rooms',
+        icon: Lock,
+        module: 'private_rooms',
+        action: 'listar_privados',
+        fallbackModule: 'private_rooms',
+        fallbackAction: 'view'
+      }
+    ]
+  },
+  {
+    key: 'commercial',
+    title: 'Catálogo y Clientes',
+    description: 'Base comercial y configuración del menú.',
+    items: [
       {
         name: 'Clientes',
         href: '/clients',
@@ -100,91 +170,14 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         action: 'listar_categorias',
         fallbackModule: 'categories',
         fallbackAction: 'view'
-      },
-      {
-        name: 'Pedidos',
-        href: '/orders',
-        icon: ShoppingCart,
-        module: 'pedidos',
-        action: 'listar_pedidos',
-        fallbackModule: 'orders',
-        fallbackAction: 'view'
-      },
-      {
-        name: 'Reportes',
-        href: '/reports',
-        icon: FileText,
-        module: 'reportes',
-        action: 'listar_reportes',
-        fallbackModule: 'reports',
-        fallbackAction: 'view'
-      },
-      {
-        name: 'Ventas',
-        href: '/sales',
-        icon: TrendingUp,
-        module: 'ventas',
-        action: 'listar_ventas',
-        fallbackModule: 'sales',
-        fallbackAction: 'view'
       }
     ]
   },
   {
-    key: 'rrhh',
-    title: 'Recursos Humanos',
-    items: [
-      {
-        name: 'Roles',
-        href: '/roles',
-        icon: Shield,
-        module: 'roles',
-        action: 'listar_roles',
-        fallbackModule: 'roles',
-        fallbackAction: 'view'
-      },
-      {
-        name: 'Asistencias',
-        href: '/attendance',
-        icon: Clock,
-        module: 'asistencias',
-        action: 'listar_asistencias',
-        fallbackModule: 'attendance',
-        fallbackAction: 'view'
-      },
-      {
-        name: 'Horas Extras',
-        href: '/overtime',
-        icon: Clock,
-        module: 'horas_extras',
-        action: 'listar_horas_extras',
-        fallbackModule: 'overtime',
-        fallbackAction: 'view'
-      }
-    ]
-  },
-  {
-    key: 'finanzas',
+    key: 'finance',
     title: 'Finanzas',
+    description: 'Control de pagos, incentivos y cierres.',
     items: [
-      {
-        name: 'Cajas',
-        href: '/cash-register',
-        icon: CreditCard,
-        module: 'caja',
-        action: 'listar_caja',
-        fallbackModule: 'cash_register',
-        fallbackAction: 'view'
-      },
-      {
-        name: 'Cuentas',
-        href: '/accounts',
-        icon: Calculator,
-        module: 'cuentas',
-        action: 'listar_cuentas',
-        fallbackModule: 'accounts',
-        fallbackAction: 'view'
-      },
       {
         name: 'Propinas',
         href: '/tips',
@@ -251,32 +244,52 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     ]
   },
   {
-    key: 'servicios',
-    title: 'Servicios',
+    key: 'team',
+    title: 'Equipo',
+    description: 'Personas, permisos y jornada laboral.',
     items: [
       {
-        name: 'Crear Privado',
-        href: '/rooms',
-        icon: Bed,
-        module: 'rooms',
-        action: 'crear',
-        fallbackModule: 'rooms',
-        fallbackAction: 'create'
+        name: 'Usuarios',
+        href: '/users',
+        icon: Users,
+        module: 'usuarios',
+        action: 'listar_usuarios',
+        fallbackModule: 'users',
+        fallbackAction: 'view'
       },
       {
-        name: 'Vender Privado',
-        href: '/private-rooms',
-        icon: Lock,
-        module: 'private_rooms',
-        action: 'listar_privados',
-        fallbackModule: 'private_rooms',
+        name: 'Roles',
+        href: '/roles',
+        icon: Shield,
+        module: 'roles',
+        action: 'listar_roles',
+        fallbackModule: 'roles',
+        fallbackAction: 'view'
+      },
+      {
+        name: 'Asistencias',
+        href: '/attendance',
+        icon: Clock,
+        module: 'asistencias',
+        action: 'listar_asistencias',
+        fallbackModule: 'attendance',
+        fallbackAction: 'view'
+      },
+      {
+        name: 'Horas Extras',
+        href: '/overtime',
+        icon: Clock,
+        module: 'horas_extras',
+        action: 'listar_horas_extras',
+        fallbackModule: 'overtime',
         fallbackAction: 'view'
       }
     ]
   },
   {
-    key: 'configuracion',
+    key: 'settings',
     title: 'Configuración',
+    description: 'Ajustes generales de la plataforma.',
     items: [
       {
         name: 'Configuración',
@@ -317,27 +330,44 @@ function SidebarHeader({ isCollapsed, onClose, loading = false }: SidebarHeaderP
   return (
     <div
       className={cn(
-        'flex h-16 items-center border-b border-gray-200 dark:border-neutral-800 transition-all duration-300',
-        isCollapsed ? 'px-2 justify-center' : 'px-6'
+        'border-b border-gray-200/80 dark:border-neutral-800 transition-all duration-300',
+        isCollapsed ? 'px-2 py-4' : 'px-5 py-4'
       )}
     >
       <div
         className={cn(
-          'flex items-center gap-2 transition-all duration-300',
-          isCollapsed ? 'justify-center' : 'flex-1 justify-center'
+          'flex items-center',
+          isCollapsed ? 'justify-center' : 'justify-between gap-3'
         )}
       >
-        <img
-          src='/img/system/logo1.png'
-          alt='Las MuÃ±ecas de RamÃ³n'
-          style={{ height: isCollapsed ? '2rem' : loading ? '2.5rem' : '2.75rem', width: 'auto' }}
-          className={cn(!loading && 'transition-all duration-300')}
-        />
-        {!isCollapsed && (
-          <span className='text-sm font-bold text-gray-900 dark:text-neutral-100 transition-opacity duration-300'>
-            Panel Administrativo
-          </span>
-        )}
+        <div
+          className={cn(
+            'flex items-center transition-all duration-300',
+            isCollapsed ? 'justify-center' : 'gap-3'
+          )}
+        >
+          <div className='flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-slate-50 shadow-sm ring-1 ring-black/5 dark:from-neutral-800 dark:to-neutral-900 dark:ring-white/10'>
+            <img
+              src='/img/system/logo1.png'
+              alt='Las Muñecas de Ramón'
+              style={{
+                height: isCollapsed ? '1.8rem' : loading ? '2rem' : '2.15rem',
+                width: 'auto'
+              }}
+              className={cn(!loading && 'transition-all duration-300')}
+            />
+          </div>
+          {!isCollapsed && (
+            <div className='flex-1 min-w-0 transition-opacity duration-300'>
+              <p className='text-[11px] font-semibold uppercase tracking-[0.28em] text-gray-400 dark:text-neutral-500'>
+                Las Muñecas
+              </p>
+              <p className='truncate text-sm font-semibold text-gray-900 dark:text-neutral-100'>
+                Panel Administrativo
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {onClose && (
@@ -372,6 +402,7 @@ function SidebarSkeleton({ isCollapsed }: { isCollapsed: boolean }) {
 
 type SidebarSectionBlockProps = {
   title: string;
+  description: string;
   items: SidebarItem[];
   pathname: string;
   isCollapsed: boolean;
@@ -380,6 +411,7 @@ type SidebarSectionBlockProps = {
 
 function SidebarSectionBlock({
   title,
+  description,
   items,
   pathname,
   isCollapsed,
@@ -390,13 +422,16 @@ function SidebarSectionBlock({
   }
 
   return (
-    <div>
+    <div className='space-y-2'>
       {!isCollapsed && (
-        <h3 className='px-3 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-3'>
-          {title}
-        </h3>
+        <div className='px-3'>
+          <h3 className='text-[11px] font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-[0.24em]'>
+            {title}
+          </h3>
+          <p className='mt-1 text-xs text-gray-400 dark:text-neutral-500'>{description}</p>
+        </div>
       )}
-      <ul className='space-y-1'>
+      <ul className='space-y-1.5'>
         {items.map(item => {
           const isActive = pathname === item.href;
 
@@ -405,7 +440,7 @@ function SidebarSectionBlock({
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg group nav-item',
+                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl group nav-item',
                 isActive
                   ? cn('nav-item-active', isCollapsed && 'nav-collapsed')
                   : 'text-gray-700 dark:text-neutral-300'
@@ -493,11 +528,12 @@ export function Sidebar() {
   const content = (
     <SidebarShell isCollapsed={isCollapsed}>
       <SidebarHeader isCollapsed={isCollapsed} onClose={closeSidebar} />
-      <nav className='flex-1 px-4 py-6 space-y-8 overflow-y-auto'>
+      <nav className='flex-1 px-4 py-5 space-y-7 overflow-y-auto'>
         {visibleSections.map(section => (
           <SidebarSectionBlock
             key={section.key}
             title={section.title}
+            description={section.description}
             items={section.items}
             pathname={pathname}
             isCollapsed={isCollapsed}

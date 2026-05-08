@@ -1,4 +1,3 @@
-
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 interface SSEWriter {
@@ -20,16 +19,25 @@ class SSEManager {
   public registerClient(writer: SSEWriter) {
     this.clients.add(writer);
     this.startHeartbeat();
-    writer.write(`data: ${JSON.stringify({ type: 'connected', timestamp: getNowInBusinessTimezone() })}\n\n`);
+    writer.write(
+      `data: ${JSON.stringify({ type: 'connected', timestamp: getNowInBusinessTimezone() })}\n\n`
+    );
     writer.onClose(() => this.removeClient(writer));
+  }
+
+  public unregisterClient(writer: SSEWriter) {
+    this.removeClient(writer);
   }
 
   public broadcast(type: string, data: any = {}) {
     const message = { type, data, timestamp: getNowInBusinessTimezone() };
     const payload = `data: ${JSON.stringify(message)}\n\n`;
     this.clients.forEach(client => {
-      try { client.write(payload); }
-      catch (err) { this.removeClient(client); }
+      try {
+        client.write(payload);
+      } catch (err) {
+        this.removeClient(client);
+      }
     });
   }
 
