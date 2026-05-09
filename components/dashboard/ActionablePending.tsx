@@ -5,7 +5,7 @@ import { ArrowRight, BellRing, ClipboardList, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useDashboardPendingItems } from '@/hooks/stats/useDashboardPendingItems';
+import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -89,9 +89,11 @@ function PendingSection({
 }
 
 export default function ActionablePending() {
-  const { data, isLoading, error } = useDashboardPendingItems();
+  const { data: composite, isLoading, error } = useDashboardComposite();
   const { user } = useCurrentUser();
   const { hasPermission } = useUserPermissions();
+
+  const data = composite?.pendingItems;
 
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
   const canViewOrders = isAdmin || hasPermission('orders', 'view');

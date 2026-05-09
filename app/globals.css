@@ -32,8 +32,11 @@
   @apply rounded-full hover:bg-black hover:text-white hover:scale-105 hover:scale-105 transition-all duration-200;
 }
 
+html,
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 html {

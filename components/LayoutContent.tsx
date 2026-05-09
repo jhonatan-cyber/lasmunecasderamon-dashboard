@@ -11,12 +11,21 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useSessionCheck } from '@/hooks/auth/useSessionCheck';
 import React from 'react';
 import { cn } from '@/lib/utils/utils';
+import { useEffect } from 'react';
 
 interface LayoutUser {
   role?: string;
 }
 
 function MainLayout({ children, user }: { children: React.ReactNode; user: LayoutUser | null }) {
+  useEffect(() => {
+    // Prevent double scroll by hiding body overflow when in the app layout
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
