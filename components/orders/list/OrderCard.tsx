@@ -59,7 +59,9 @@ export const OrderCard = ({
           ? 'hover:shadow-md hover:border-gray-200 dark:hover:border-zinc-700 cursor-pointer'
           : 'cursor-not-allowed opacity-60 grayscale'
       }`}
-      onClick={canProcess ? () => onOrderClick(order.id_pedido, order.codigo) : undefined}
+      onClick={
+        canProcess ? () => onOrderClick(order.id_pedido || order.id, order.codigo) : undefined
+      }
     >
       <div className='flex items-center justify-between'>
         <div className='flex-1'>

@@ -17,9 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useLoggedUsersStats } from '@/hooks/stats/useLoggedUsersStats';
-import { useDashboardBusinessStats } from '@/hooks/stats/useDashboardBusinessStats';
-import { type DashboardTrend, useDashboardInsights } from '@/hooks/stats/useDashboardInsights';
+import { type DashboardTrend, useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { cn } from '@/lib/utils/utils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
@@ -155,19 +153,13 @@ function KPIGroup({
 }
 
 export default function DashboardKPIOverview() {
-  const {
-    data: businessStats,
-    isLoading: businessLoading,
-    error: businessError
-  } = useDashboardBusinessStats();
-  const { data: loggedUsers, isLoading: usersLoading, error: usersError } = useLoggedUsersStats();
-  const {
-    data: insights,
-    isLoading: insightsLoading,
-    error: insightsError
-  } = useDashboardInsights();
+  const { data: composite, isLoading: loading, error: compositeError } = useDashboardComposite();
 
-  if (businessLoading || usersLoading || insightsLoading) {
+  const businessStats = composite?.cajaStats;
+  const loggedUsers = composite?.loggedUsers;
+  const insights = composite?.insights;
+
+  if (loading) {
     return (
       <div className='grid gap-6 xl:grid-cols-3'>
         {Array.from({ length: 3 }).map((_, index) => (
@@ -194,7 +186,7 @@ export default function DashboardKPIOverview() {
     );
   }
 
-  if (businessError || usersError || insightsError || !businessStats || !loggedUsers || !insights) {
+  if (compositeError || !businessStats || !loggedUsers || !insights) {
     return (
       <Card className='border-rose-200 bg-rose-50/60 dark:border-rose-900/60 dark:bg-rose-950/30'>
         <CardContent className='p-5 text-sm text-rose-700 dark:text-rose-200'>

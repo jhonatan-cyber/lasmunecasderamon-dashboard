@@ -23,10 +23,21 @@ export class TipRepository {
     );
 
     if (distribucionUsuarios.length === 0) {
-      throw new BusinessError(
-        'No hay usuarios disponibles para distribuir la propina',
-        'NO_USERS_FOR_TIP'
-      );
+      // No hay usuarios disponibles - registrar la propina sin distribución pero no fallar
+      const now = getNowInBusinessTimezone();
+      const id = generateUUID();
+
+      await withTransaction(async trx => {
+        await BaseRepository.insert(trx, 'propinas', {
+          id_propina: id,
+          venta_id,
+          propina: monto,
+          estado: 1,
+          fecha_crea: now
+        });
+      });
+
+      return { id, mensaje: 'Propina registrada sin distribución (sin usuarios activos)' };
     }
 
     const montoPorUsuario = monto / distribucionUsuarios.length;

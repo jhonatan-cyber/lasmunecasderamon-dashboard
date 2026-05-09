@@ -216,7 +216,7 @@ export class OrderRepository {
     return await query<any[]>(
       `
       SELECT 
-        P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina,
+        P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision,
         COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
         P.cliente_id,
         CONCAT(U.nombre, ' ', U.apellido) AS garzon,
@@ -229,12 +229,13 @@ export class OrderRepository {
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
          WHERE PU.pedido_id = P.id_pedido) AS anfitrionaIds,
         DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
-        PROD.nombre AS producto_nombre, DP.hostess_id, DP.habitacion_id
+        DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
       INNER JOIN detalle_pedidos DP ON DP.pedido_id = P.id_pedido
       INNER JOIN productos PROD ON PROD.id_producto = DP.producto_id
+      LEFT JOIN categorias C ON C.id_categoria = PROD.categoria_id
       WHERE P.id_pedido = ?
     `,
       [id]

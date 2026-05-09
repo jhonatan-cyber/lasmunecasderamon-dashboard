@@ -1,7 +1,8 @@
-import { DollarSign, TrendingUp, Activity, CreditCard, ArrowUpDown } from "lucide-react";
-import { StatsCard, StatCard } from "@/components/shared/StatsCard";
-import { useCashRegister } from "@/hooks/caja/useCashRegister";
-import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
+import { DollarSign, TrendingUp, Activity, CreditCard, ArrowUpDown } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCashRegister } from '@/hooks/caja/useCashRegister';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface CashRegisterStatsCardProps {
   isCajero?: boolean;
@@ -10,65 +11,140 @@ interface CashRegisterStatsCardProps {
 export function CashRegisterStatsCard({ isCajero = false }: CashRegisterStatsCardProps) {
   const { resumen: stats, loading: isLoading, error } = useCashRegister();
 
-  const statsCards: StatCard[] = [
+  const statsCards = [
     {
-      title: "Total Ventas",
+      title: 'Total Ventas',
       value: formatCurrencyNoDecimals(stats?.total_ventas || 0),
       subtitle: `${stats?.cantidad_ventas || 0} ventas realizadas`,
       icon: TrendingUp,
-      formatAsCurrency: false, // No usar el formateo automático
+      formatAsCurrency: false // No usar el formateo automático
     },
     {
-      title: "Total Servicios",
+      title: 'Total Servicios',
       value: formatCurrencyNoDecimals(stats?.total_servicios || 0),
       subtitle: `${stats?.cantidad_servicios || 0} servicios realizados`,
       icon: Activity,
-      formatAsCurrency: false, // No usar el formateo automático
+      formatAsCurrency: false // No usar el formateo automático
     },
     {
-      title: "Total Efectivo",
+      title: 'Total Efectivo',
       value: formatCurrencyNoDecimals(stats?.total_efectivo || 0),
-      subtitle: isCajero ? "Efectivo en tu caja" : "Ingresos en efectivo",
+      subtitle: isCajero ? 'Efectivo en tu caja' : 'Ingresos en efectivo',
       icon: DollarSign,
-      formatAsCurrency: false, // No usar el formateo automático
+      formatAsCurrency: false // No usar el formateo automático
     },
     {
-      title: "Total Tarjeta",
+      title: 'Total Tarjeta',
       value: formatCurrencyNoDecimals(stats?.total_tarjeta || 0),
-      subtitle: isCajero ? "Pagos con tarjeta en tu caja" : "Pagos con tarjeta",
+      subtitle: isCajero ? 'Pagos con tarjeta en tu caja' : 'Pagos con tarjeta',
       icon: CreditCard,
-      formatAsCurrency: false, // No usar el formateo automático
+      formatAsCurrency: false // No usar el formateo automático
     },
     {
-      title: "Total Transferencias",
+      title: 'Total Transferencias',
       value: formatCurrencyNoDecimals(stats?.total_transferencia || 0),
-      subtitle: isCajero ? "Transferencias en tu caja" : "Transferencias bancarias",
+      subtitle: isCajero ? 'Transferencias en tu caja' : 'Transferencias bancarias',
       icon: ArrowUpDown,
-      formatAsCurrency: false, // No usar el formateo automático
-    },
+      formatAsCurrency: false // No usar el formateo automático
+    }
   ];
 
-  return (
-    <div className="space-y-6 w-full">
-      {/* Primera fila: Total Ventas y Total Servicios */}
-      <div className="w-full">
-        <StatsCard
-          stats={statsCards.slice(0, 2)} // Solo los primeros 2 cards
-          columns={2}
-          error={error}
-          isLoading={isLoading}
-        />
+  const themeConfig = [
+    {
+      bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+      borderColor: 'border-emerald-500/20',
+      iconBg: 'bg-emerald-500/20',
+      textColor: 'text-emerald-700 dark:text-emerald-400',
+      textMuted: 'text-emerald-700/60 dark:text-emerald-400/60'
+    },
+    {
+      bgColor: 'bg-blue-500/10 dark:bg-blue-500/20',
+      borderColor: 'border-blue-500/20',
+      iconBg: 'bg-blue-500/20',
+      textColor: 'text-blue-700 dark:text-blue-400',
+      textMuted: 'text-blue-700/60 dark:text-blue-400/60'
+    },
+    {
+      bgColor: 'bg-amber-500/10 dark:bg-amber-500/20',
+      borderColor: 'border-amber-500/20',
+      iconBg: 'bg-amber-500/20',
+      textColor: 'text-amber-700 dark:text-amber-400',
+      textMuted: 'text-amber-700/60 dark:text-amber-400/60'
+    },
+    {
+      bgColor: 'bg-purple-500/10 dark:bg-purple-500/20',
+      borderColor: 'border-purple-500/20',
+      iconBg: 'bg-purple-500/20',
+      textColor: 'text-purple-700 dark:text-purple-400',
+      textMuted: 'text-purple-700/60 dark:text-purple-400/60'
+    },
+    {
+      bgColor: 'bg-rose-500/10 dark:bg-rose-500/20',
+      borderColor: 'border-rose-500/20',
+      iconBg: 'bg-rose-500/20',
+      textColor: 'text-rose-700 dark:text-rose-400',
+      textMuted: 'text-rose-700/60 dark:text-rose-400/60'
+    }
+  ];
+
+  if (error) {
+    return (
+      <div className='text-red-500 p-4 bg-red-50 border border-red-200 rounded-lg text-sm sm:text-base'>
+        Error al cargar las estadísticas: {error}
       </div>
-      
-      {/* Segunda fila: Total Efectivo, Total Tarjeta, Total Transferencias */}
-      <div className="w-full">
-        <StatsCard
-          stats={statsCards.slice(2, 5)} // Los últimos 3 cards
-          columns={3}
-          error={error}
-          isLoading={isLoading}
-        />
+    );
+  }
+
+  const renderCard = (stat: any, index: number) => {
+    const theme = themeConfig[index % themeConfig.length];
+    return (
+      <Card
+        key={index}
+        className={`shadow-sm backdrop-blur-sm rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300 border ${theme.bgColor} ${theme.borderColor}`}
+      >
+        <CardContent className='p-5'>
+          <div className='flex items-center justify-between mb-4'>
+            <div className={`p-2.5 rounded-2xl ${theme.iconBg}`}>
+              <stat.icon className={`h-4 w-4 ${theme.textColor}`} />
+            </div>
+            <span
+              className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full text-center ${theme.textColor} ${theme.iconBg}`}
+            >
+              {stat.title}
+            </span>
+          </div>
+          <div className='space-y-0.5 text-center sm:text-left'>
+            <p className={`text-[10px] font-bold uppercase tracking-widest ${theme.textMuted}`}>
+              {stat.title}
+            </p>
+            {isLoading ? (
+              <Skeleton className='h-6 sm:h-8 w-20 sm:w-24 mt-1 mb-2' />
+            ) : (
+              <h3 className={`text-xl sm:text-2xl font-black ${theme.textColor} truncate`}>
+                {stat.value}
+              </h3>
+            )}
+            <div className='flex items-center justify-center sm:justify-start gap-1.5 pt-1'>
+              <span
+                className={`text-[10px] font-medium uppercase tracking-tighter italic ${theme.textMuted} truncate`}
+              >
+                {stat.subtitle}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className='space-y-4 w-full'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 w-full'>
+        {statsCards.slice(0, 2).map((stat, i) => renderCard(stat, i))}
+      </div>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full'>
+        {statsCards.slice(2, 5).map((stat, i) => renderCard(stat, i + 2))}
       </div>
     </div>
   );
-} 
+}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailMo
 
 export default function OrdersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { hasPermission } = useUserPermissions();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
 
@@ -62,6 +63,20 @@ export default function OrdersPage() {
   const [selectedOrderCode, setSelectedOrderCode] = useState('');
   const [sortBy, setSortBy] = useState('total');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    const idParam = searchParams.get('id');
+    if (idParam && orders.length > 0) {
+      const foundOrder = orders.find(o => o.id_pedido === idParam || o.id === idParam);
+      if (foundOrder) {
+        setSelectedOrderId(foundOrder.id_pedido || foundOrder.id);
+        setSelectedOrderCode(foundOrder.codigo);
+        setModalOpen(true);
+        // Remove param from URL to prevent reopening on reload
+        router.replace('/orders', { scroll: false });
+      }
+    }
+  }, [searchParams, orders, router]);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
