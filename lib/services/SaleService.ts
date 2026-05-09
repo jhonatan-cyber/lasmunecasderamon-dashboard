@@ -298,8 +298,12 @@ export class SaleService {
             monto: validated.propina,
             usuario_ids: destinatariosPropina
           });
-        } catch (tipError) {
-          logger.error('[SaleService] Error al registrar propina:', tipError);
+          logger.info(
+            `[SaleService] Propina de ${validated.propina} registrada para venta ${ventaId}`
+          );
+        } catch (tipError: any) {
+          logger.error('[SaleService] Error al registrar propina:', tipError?.message || tipError);
+          // La falla de propina no debe impedir la venta
         }
       }
 

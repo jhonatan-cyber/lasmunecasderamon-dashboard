@@ -1,142 +1,123 @@
 'use client';
 
 import Link from 'next/link';
-import { Medal, Music2, Sofa, Sparkles } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Medal, Music2, Sofa, Sparkles, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useDashboardInsights } from '@/hooks/stats/useDashboardInsights';
+import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
+import { cn } from '@/lib/utils/utils';
 
 const rankingConfig = [
   {
     key: 'products',
-    title: 'Productos top',
-    description: 'Qué está empujando la venta del día.',
+    title: 'Productos Top',
+    description: 'Ventas del día',
     icon: Sparkles,
-    href: '/products'
+    href: '/products',
+    color: 'emerald'
   },
   {
     key: 'rooms',
-    title: 'Habitaciones top',
-    description: 'Dónde se concentra hoy la actividad.',
+    title: 'Salas Top',
+    description: 'Actividad por espacio',
     icon: Sofa,
-    href: '/rooms'
+    href: '/rooms',
+    color: 'indigo'
   },
   {
     key: 'staff',
-    title: 'Equipo destacado',
-    description: 'Quién está participando más en operación.',
+    title: 'Staff Destacado',
+    description: 'Participación operativa',
     icon: Music2,
-    href: '/users'
+    href: '/users',
+    color: 'amber'
   }
 ] as const;
 
 export default function TopPerformers() {
-  const { data, isLoading, error } = useDashboardInsights();
+  const { data: composite, isLoading, error } = useDashboardComposite();
+  const data = composite?.insights;
 
   if (isLoading) {
     return (
-      <div className='grid gap-6 xl:grid-cols-3'>
+      <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
         {Array.from({ length: 3 }).map((_, index) => (
-          <Card key={index} className='border-slate-200/80 dark:border-slate-800'>
-            <CardHeader className='space-y-3'>
-              <Skeleton className='h-6 w-36' />
-              <Skeleton className='h-4 w-48' />
-            </CardHeader>
-            <CardContent className='space-y-3'>
-              {Array.from({ length: 4 }).map((__, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  className='rounded-2xl border border-slate-200/80 p-4 dark:border-slate-800'
-                >
-                  <Skeleton className='mb-2 h-4 w-32' />
-                  <Skeleton className='h-3 w-full' />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          <div
+            key={index}
+            className='h-48 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 animate-pulse'
+          />
         ))}
       </div>
     );
   }
 
-  if (error || !data) {
-    return null;
-  }
+  if (error || !data) return null;
 
   return (
-    <section className='space-y-4'>
-      <div>
-        <h2 className='text-xl font-semibold text-slate-900 dark:text-slate-100'>
-          Rankings Y Top Performers
-        </h2>
-        <p className='mt-1 text-sm text-slate-600 dark:text-slate-400'>
-          Resumen rápido de los mejores movimientos del día para detectar foco comercial y
-          operativo.
-        </p>
-      </div>
+    <div className='grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
+      {rankingConfig.map(section => {
+        const Icon = section.icon;
+        const items = data.rankings[section.key];
+        const colorClass =
+          section.color === 'emerald'
+            ? 'text-emerald-500 bg-emerald-500/10'
+            : section.color === 'indigo'
+              ? 'text-indigo-500 bg-indigo-500/10'
+              : 'text-amber-500 bg-amber-500/10';
 
-      <div className='grid gap-6 xl:grid-cols-3'>
-        {rankingConfig.map(section => {
-          const Icon = section.icon;
-          const items = data.rankings[section.key];
+        return (
+          <div key={section.key} className='flex flex-col gap-4'>
+            <div className='flex items-center gap-3 px-1'>
+              <div className={cn('p-2 rounded-xl', colorClass)}>
+                <Icon className='h-4 w-4' />
+              </div>
+              <div className='flex flex-col'>
+                <span className='text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white'>
+                  {section.title}
+                </span>
+                <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
+                  {section.description}
+                </span>
+              </div>
+            </div>
 
-          return (
-            <Card key={section.key} className='border-slate-200/80 dark:border-slate-800'>
-              <CardHeader className='border-b border-slate-200/70 pb-4 dark:border-slate-800'>
-                <div className='flex items-start gap-3'>
-                  <div className='flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'>
-                    <Icon className='h-5 w-5' />
-                  </div>
-                  <div>
-                    <CardTitle className='text-lg'>{section.title}</CardTitle>
-                    <p className='mt-1 text-sm text-slate-600 dark:text-slate-400'>
-                      {section.description}
-                    </p>
-                  </div>
+            <div className='space-y-2'>
+              {items.length === 0 ? (
+                <div className='rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-4 text-center'>
+                  <p className='text-[10px] font-black uppercase tracking-widest text-slate-400'>
+                    Sin datos hoy
+                  </p>
                 </div>
-              </CardHeader>
-
-              <CardContent className='space-y-3 p-4'>
-                {items.length === 0 ? (
-                  <div className='rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-400'>
-                    Todavía no hay datos suficientes para este ranking hoy.
-                  </div>
-                ) : (
-                  items.map((item, index) => (
-                    <Link
-                      key={`${section.key}-${item.name}`}
-                      href={section.href}
-                      className='flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950/30'
-                    >
-                      <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'>
-                          {index === 0 ? (
-                            <Medal className='h-4 w-4' />
-                          ) : (
-                            <span className='text-sm font-bold'>#{index + 1}</span>
-                          )}
-                        </div>
-                        <div>
-                          <p className='text-sm font-semibold text-slate-900 dark:text-slate-100'>
-                            {item.name}
-                          </p>
-                          <p className='text-sm text-slate-600 dark:text-slate-400'>
-                            {formatNumberCL(item.quantity)} movimientos
-                          </p>
-                        </div>
+              ) : (
+                items.map((item, index) => (
+                  <Link
+                    key={`${section.key}-${item.name}`}
+                    href={section.href}
+                    className='group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/20 p-3 transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none'
+                  >
+                    <div className='flex items-center gap-3 min-w-0'>
+                      <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-black group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-all'>
+                        {index === 0 ? <Medal className='h-3.5 w-3.5' /> : `#${index + 1}`}
                       </div>
-                      <p className='text-sm font-semibold text-slate-900 dark:text-slate-100'>
-                        {formatCurrencyCLP(item.amount)}
-                      </p>
-                    </Link>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </section>
+                      <div className='flex flex-col truncate'>
+                        <span className='text-xs font-bold text-slate-900 dark:text-slate-200 truncate'>
+                          {item.name}
+                        </span>
+                        <span className='text-[10px] font-medium text-slate-500'>
+                          {item.quantity} op.
+                        </span>
+                      </div>
+                    </div>
+                    <span className='text-xs font-black text-slate-900 dark:text-white whitespace-nowrap'>
+                      {formatCurrencyCLP(item.amount)}
+                    </span>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

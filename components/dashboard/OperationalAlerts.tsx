@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useDashboardAlerts } from '@/hooks/stats/useDashboardAlerts';
+import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { cn } from '@/lib/utils/utils';
 
 const severityStyles = {
@@ -46,7 +46,78 @@ const alertIcons = {
 } as const;
 
 export default function OperationalAlerts() {
-  const { data, isLoading, error, refetch } = useDashboardAlerts();
+  const { data: composite, isLoading, error, refetch } = useDashboardComposite();
+
+  // Build alerts and summary from composite data
+  const insights = composite?.insights;
+  const timers = composite?.timers || [];
+  const pendingServiceRequestsCount = composite?.pendingServiceRequestsCount || 0;
+
+  const rooms = insights?.localStatus?.rooms;
+  const services = insights?.localStatus?.services;
+  const orders = insights?.localStatus?.orders;
+  const cash = insights?.localStatus?.cash;
+
+  const openCashRegisters = cash?.openRegisters ?? 0;
+  const pendingOrders = orders?.open ?? 0;
+  const expiringServices = services?.expiringSoon ?? 0;
+  const occupiedRooms = rooms?.occupied ?? 0;
+  const freeRooms = rooms?.free ?? 0;
+  const totalRooms = rooms?.total ?? 0;
+
+  const alerts = [
+    {
+      id: 'cash-register',
+      title: openCashRegisters > 0 ? 'Caja abierta' : 'Sin caja abierta',
+      description:
+        openCashRegisters > 0
+          ? 'Hay una caja operando en este momento.'
+          : 'No hay caja activa en este momento.',
+      value: openCashRegisters,
+      severity: openCashRegisters > 0 ? 'warning' : 'success',
+      href: '/cash-register',
+      ctaLabel: openCashRegisters > 0 ? 'Revisar caja' : 'Abrir caja'
+    },
+    {
+      id: 'orders',
+      title: 'Pedidos pendientes',
+      description: 'Pedidos esperando atención o procesamiento.',
+      value: pendingOrders,
+      severity: pendingOrders > 0 ? 'critical' : 'success',
+      href: '/orders',
+      ctaLabel: 'Ver pedidos'
+    },
+    {
+      id: 'service-requests',
+      title: 'Solicitudes pendientes',
+      description: 'Solicitudes de servicio listas para revisión.',
+      value: pendingServiceRequestsCount,
+      severity: pendingServiceRequestsCount > 0 ? 'warning' : 'success',
+      href: '/orders',
+      ctaLabel: 'Revisar solicitudes'
+    },
+    {
+      id: 'timers',
+      title: 'Servicios por vencer',
+      description: 'Temporizadores con menos de 15 minutos restantes.',
+      value: expiringServices,
+      severity: expiringServices > 0 ? 'warning' : 'success',
+      href: '/private-rooms',
+      ctaLabel: 'Ver servicios'
+    }
+  ];
+
+  const summary = {
+    openCashRegisters,
+    pendingOrders,
+    pendingServiceRequests: pendingServiceRequestsCount,
+    expiringServices,
+    occupiedRooms,
+    freeRooms,
+    totalRooms,
+    criticalCount: alerts.filter(a => a.severity === 'critical' && a.value > 0).length,
+    warningCount: alerts.filter(a => a.severity === 'warning' && a.value > 0).length
+  };
 
   if (isLoading) {
     return (
@@ -71,7 +142,7 @@ export default function OperationalAlerts() {
     );
   }
 
-  if (error || !data) {
+  if (error || !composite || !insights) {
     return (
       <Card className='border-rose-200 bg-rose-50/60 dark:border-rose-900/60 dark:bg-rose-950/30'>
         <CardContent className='flex flex-col gap-3 p-5 text-sm text-rose-700 dark:text-rose-200 md:flex-row md:items-center md:justify-between'>
@@ -92,7 +163,7 @@ export default function OperationalAlerts() {
     );
   }
 
-  const hasOperationalPressure = data.summary.criticalCount > 0 || data.summary.warningCount > 0;
+  const hasOperationalPressure = summary.criticalCount > 0 || summary.warningCount > 0;
 
   return (
     <Card className='overflow-hidden border-slate-200/80 dark:border-slate-800'>
@@ -110,10 +181,10 @@ export default function OperationalAlerts() {
 
           <div className='flex flex-wrap gap-2'>
             <Badge className='rounded-full bg-slate-900 px-3 py-1 text-white dark:bg-slate-100 dark:text-slate-900'>
-              {data.summary.occupiedRooms} habitaciones ocupadas
+              {summary.occupiedRooms} habitaciones ocupadas
             </Badge>
             <Badge className='rounded-full bg-slate-100 px-3 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-200'>
-              {data.summary.freeRooms} libres de {data.summary.totalRooms}
+              {summary.freeRooms} libres de {summary.totalRooms}
             </Badge>
             <Badge
               className={cn(
@@ -124,7 +195,7 @@ export default function OperationalAlerts() {
               )}
             >
               {hasOperationalPressure
-                ? `${data.summary.criticalCount + data.summary.warningCount} focos activos`
+                ? `${summary.criticalCount + summary.warningCount} focos activos`
                 : 'Operación estable'}
             </Badge>
           </div>
@@ -132,12 +203,13 @@ export default function OperationalAlerts() {
       </CardHeader>
 
       <CardContent className='grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4'>
-        {data.alerts.map(alert => {
+        {alerts.map(alert => {
           const Icon =
             alert.id in alertIcons
               ? alertIcons[alert.id as keyof typeof alertIcons]
               : AlertTriangle;
-          const severity = severityStyles[alert.severity];
+          const severity =
+            severityStyles[alert.severity as keyof typeof severityStyles] || severityStyles.warning;
 
           return (
             <Link
@@ -187,7 +259,7 @@ export default function OperationalAlerts() {
           );
         })}
 
-        {data.summary.occupiedRooms === 0 && (
+        {summary.occupiedRooms === 0 && (
           <div className='rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/40'>
             <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-slate-800'>
               <DoorClosed className='h-5 w-5 text-slate-500' />
@@ -196,8 +268,8 @@ export default function OperationalAlerts() {
               Habitaciones libres
             </p>
             <p className='mt-2 text-sm text-slate-600 dark:text-slate-400'>
-              En este momento hay {data.summary.freeRooms} habitaciones disponibles de un total de{' '}
-              {data.summary.totalRooms}. Buen momento para preparar nuevas atenciones.
+              En este momento hay {summary.freeRooms} habitaciones disponibles de un total de{' '}
+              {summary.totalRooms}. Buen momento para preparar nuevas atenciones.
             </p>
           </div>
         )}

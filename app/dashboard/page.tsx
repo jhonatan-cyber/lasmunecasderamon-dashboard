@@ -4,65 +4,24 @@ import { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { DashboardSkeleton, StatsCardSkeleton, ChartSkeleton } from '@/components/shared/Skeletons';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardSkeleton, ChartSkeleton } from '@/components/shared/Skeletons';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
+import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck } from 'lucide-react';
+import { cn } from '@/lib/utils/utils';
 
+// New simplified components
+import CriticalMetrics from '@/components/dashboard/CriticalMetrics';
+import LocalAndPending from '@/components/dashboard/LocalAndPending';
+import RecentActivityCompact from '@/components/dashboard/RecentActivityCompact';
+import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
+import MiniSalesChart from '@/components/dashboard/MiniSalesChart';
+import TopPerformers from '@/components/dashboard/TopPerformers';
+import ForecastInsights from '@/components/dashboard/ForecastInsights';
+
+// Keep existing components
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
-  loading: () => (
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-      {[...Array(4)].map((_, i) => (
-        <StatsCardSkeleton key={i} />
-      ))}
-    </div>
-  )
-});
-
-const OperationalAlerts = dynamic(() => import('@/components/dashboard/OperationalAlerts'), {
   loading: () => <ChartSkeleton />
 });
-
-const DashboardKPIOverview = dynamic(() => import('@/components/dashboard/DashboardKPIOverview'), {
-  loading: () => <ChartSkeleton />
-});
-
-const QuickActions = dynamic(() => import('@/components/dashboard/QuickActions'), {
-  loading: () => <ChartSkeleton />
-});
-
-const ActionablePending = dynamic(() => import('@/components/dashboard/ActionablePending'), {
-  loading: () => <ChartSkeleton />
-});
-
-const LocalStatusOverview = dynamic(() => import('@/components/dashboard/LocalStatusOverview'), {
-  loading: () => <ChartSkeleton />
-});
-
-const RecentActivityFeed = dynamic(() => import('@/components/dashboard/RecentActivityFeed'), {
-  loading: () => <ChartSkeleton />
-});
-
-const TopPerformers = dynamic(() => import('@/components/dashboard/TopPerformers'), {
-  loading: () => <ChartSkeleton />
-});
-
-const FinancialSummary = dynamic(() => import('@/components/dashboard/FinancialSummary'), {
-  loading: () => <ChartSkeleton />
-});
-
-const ForecastInsights = dynamic(() => import('@/components/dashboard/ForecastInsights'), {
-  loading: () => <ChartSkeleton />
-});
-
-const SalesChart = dynamic(
-  () => import('@/components/sales-chart').then(mod => ({ default: mod.SalesChart })),
-  { loading: () => <ChartSkeleton /> }
-);
-
-const WeeklySalesChart = dynamic(
-  () => import('@/components/weekly-sales-chart').then(mod => ({ default: mod.WeeklySalesChart })),
-  { loading: () => <ChartSkeleton /> }
-);
 
 export default function Dashboard() {
   const { user, loading, refetch } = useCurrentUser();
@@ -97,9 +56,7 @@ export default function Dashboard() {
       }
     };
 
-    const interval = setInterval(checkToken, 60000); // Polling cada 60 segundos
-
-    // También verificar cuando el usuario vuelve a la pestaña
+    const interval = setInterval(checkToken, 60000);
     window.addEventListener('focus', checkToken);
 
     return () => {
@@ -121,7 +78,6 @@ export default function Dashboard() {
     };
     fetchCodigo();
 
-    // Escuchar cambios en tiempo real via SSE (sin polling)
     const es = new EventSource('/api/notifications/sse');
     es.onmessage = event => {
       try {
@@ -138,126 +94,182 @@ export default function Dashboard() {
   }, [user?.qr_token, user?.role]);
 
   const isCajero = user?.role?.toLowerCase() === 'cajero';
-  const isAdministrador = user?.role?.toLowerCase() === 'administrador';
   const shouldShowSkeleton =
     loading || user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon';
 
   return (
-    <div className='p-6 space-y-6'>
-      <div>
-        <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Dashboard</h1>
-        <p className='text-gray-600 dark:text-gray-400'>Bienvenido al panel de administración</p>
+    <div className='p-4 md:p-8 space-y-10 bg-slate-50/50 dark:bg-transparent min-h-screen pb-20'>
+      {/* Header Section */}
+      <div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-3xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
+            Dashboard
+          </h1>
+          <div className='flex items-center gap-2'>
+            <div className='h-1.5 w-16 bg-emerald-500 rounded-full' />
+            <p className='text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest'>
+              Business Intelligence & Control
+            </p>
+          </div>
+        </div>
       </div>
 
       {shouldShowSkeleton ? (
         <DashboardSkeleton />
       ) : (
-        <>
-          <OperationalAlerts />
+        <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
+          {/* 1. SALES CHART - FULL WIDTH */}
+          <section className='space-y-6'>
+            <div className='flex items-center gap-2 px-2'>
+              <BarChart3 className='h-4 w-4 text-emerald-500' />
+              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                Tendencias de Venta Diaria
+              </h2>
+            </div>
+            <MiniSalesChart />
+          </section>
 
-          {isAdministrador ? (
-            <>
-              <div className='grid gap-6 xl:grid-cols-[1.2fr_0.8fr]'>
-                <DashboardKPIOverview />
-                <QuickActions />
-              </div>
+          {/* 2. CRITICAL METRICS - FULL WIDTH */}
+          <section className='space-y-6'>
+            <div className='flex items-center gap-2 px-2'>
+              <TrendingUp className='h-4 w-4 text-emerald-500' />
+              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                Métricas Críticas de Operación
+              </h2>
+            </div>
+            <CriticalMetrics />
+          </section>
 
-              <ActionablePending />
+          {/* 3. RANKINGS & PROJECTIONS - 50/50 ROW */}
+          <section className='space-y-6'>
+            <div className='flex items-center gap-2 px-2'>
+              <Medal className='h-4 w-4 text-amber-400' />
+              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                Performance y Forecast
+              </h2>
+            </div>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-10'>
+              <CollapsibleSection title='Top Performers' icon={Medal} defaultOpen={true}>
+                <TopPerformers />
+              </CollapsibleSection>
 
-              <LocalStatusOverview />
+              <CollapsibleSection title='Proyección Forecast' icon={TrendingUp} defaultOpen={true}>
+                <ForecastInsights />
+              </CollapsibleSection>
+            </div>
+          </section>
 
-              <div className='grid gap-6 xl:grid-cols-[1.05fr_0.95fr]'>
-                <RecentActivityFeed />
-                <FinancialSummary />
-              </div>
-
-              <TopPerformers />
-
-              <ForecastInsights />
-            </>
-          ) : (
-            <>
-              <div className='grid gap-6 xl:grid-cols-[0.9fr_1.1fr]'>
-                <QuickActions />
-                <DashboardKPIOverview />
-              </div>
-
-              <div className='grid gap-6 xl:grid-cols-[0.95fr_1.05fr]'>
-                <FinancialSummary />
-                <ActionablePending />
-              </div>
-
-              <div className='grid gap-6 xl:grid-cols-[1fr_1fr]'>
-                <LocalStatusOverview />
-                <RecentActivityFeed />
-              </div>
-
-              <ForecastInsights />
-            </>
-          )}
-
-          {user?.qr_token && (
-            <Card className='max-w-md border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden'>
-              <CardHeader className='text-center pb-2'>
-                <CardTitle className='text-lg'>Mi Registro de Asistencia</CardTitle>
-                <CardDescription>
-                  Escanea este código con tu celular para marcar entrada
-                </CardDescription>
-              </CardHeader>
-              <CardContent className='flex flex-col items-center'>
-                <div className='bg-white p-3 rounded-xl shadow-sm border border-indigo-100'>
-                  <LazyQRCode
-                    value={user.qr_token}
-                    size={160}
-                    level='H'
-                    includeMargin={true}
-                    fgColor='#4F46E5'
-                    imageSettings={
-                      user.foto
-                        ? {
-                            src: `/img/users/${user.foto}`,
-                            height: 35,
-                            width: 35,
-                            excavate: true
-                          }
-                        : undefined
-                    }
-                  />
-                </div>
-                <p className='text-[10px] mt-2 text-indigo-400 font-mono select-all uppercase'>
-                  ID: {user.qr_token}
-                </p>
-                {codigoAsistencia && (
-                  <div className='mt-3 flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2'>
-                    <span className='text-xs font-semibold text-indigo-400 uppercase tracking-widest'>
-                      Código:
+          {/* 4. OPERATIONS & ACTIVITY - 50/50 ROW (NEW!) */}
+          <section className='space-y-6'>
+            <div className='flex items-center gap-2 px-2'>
+              <Activity className='h-4 w-4 text-indigo-500' />
+              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                Operación en Tiempo Real
+              </h2>
+            </div>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-10 items-start'>
+              <div className='flex flex-col gap-4'>
+                <div className='flex items-center gap-3 px-1'>
+                  <div className='p-2 rounded-xl bg-emerald-500/10 text-emerald-500'>
+                    <Activity className='h-4 w-4' />
+                  </div>
+                  <div className='flex flex-col'>
+                    <span className='text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white'>
+                      Estado Operativo
                     </span>
-                    <span className='text-2xl font-black font-mono tracking-widest text-indigo-700'>
-                      {codigoAsistencia}
+                    <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
+                      Monitoreo Local
                     </span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Cards de estadísticas del dashboard */}
-          <DashboardStatsCards />
-
-          {/* Solo mostrar charts si NO es cajero */}
-          {!isCajero && (
-            <div className='grid gap-6 md:grid-cols-1 lg:grid-cols-2'>
-              <div>
-                <SalesChart />
+                </div>
+                <div className='rounded-3xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/40 p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[300px]'>
+                  <LocalAndPending />
+                </div>
               </div>
-              <div>
-                <WeeklySalesChart />
+
+              <div className='flex flex-col gap-4'>
+                <div className='flex items-center gap-3 px-1'>
+                  <div className='p-2 rounded-xl bg-slate-500/10 text-slate-500'>
+                    <Clock className='h-4 w-4' />
+                  </div>
+                  <div className='flex flex-col'>
+                    <span className='text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white'>
+                      Flujo de Actividad
+                    </span>
+                    <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
+                      Logs de Turno
+                    </span>
+                  </div>
+                </div>
+                <div className='rounded-3xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/40 p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[300px]'>
+                  <RecentActivityCompact />
+                </div>
               </div>
             </div>
-          )}
+          </section>
 
-          <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'></div>
-        </>
+          {/* 5. FINAL SECTION: ASISTENCIA & SPECIAL STATS */}
+          <section className='grid grid-cols-1 lg:grid-cols-3 gap-10 items-start'>
+            {isCajero && (
+              <div className='lg:col-span-2'>
+                <div className='flex items-center gap-2 px-2 mb-6'>
+                  <BarChart3 className='h-4 w-4 text-emerald-500' />
+                  <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                    Reportes del Cajero
+                  </h2>
+                </div>
+                <DashboardStatsCards />
+              </div>
+            )}
+
+            {user?.qr_token && (
+              <div className={cn('space-y-6', !isCajero && 'lg:col-start-2')}>
+                <div className='flex items-center gap-2 px-2'>
+                  <ShieldCheck className='h-4 w-4 text-indigo-500' />
+                  <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                    Asistencia Biométrica
+                  </h2>
+                </div>
+                <div className='relative overflow-hidden rounded-[2.5rem] bg-indigo-600 p-10 text-white shadow-2xl shadow-indigo-200 dark:shadow-none group'>
+                  <div className='absolute -right-10 -top-10 h-60 w-60 rounded-full bg-white/10 blur-3xl transition-all group-hover:scale-125' />
+                  <div className='relative space-y-8 flex flex-col items-center'>
+                    <div className='text-center space-y-2'>
+                      <h3 className='text-3xl font-black tracking-tight'>Control</h3>
+                      <p className='text-[10px] font-black text-indigo-100 uppercase tracking-widest opacity-70'>
+                        Escanear para marcar
+                      </p>
+                    </div>
+                    <div className='bg-white p-6 rounded-[2rem] shadow-2xl scale-110'>
+                      <LazyQRCode
+                        value={user.qr_token}
+                        size={160}
+                        level='H'
+                        fgColor='#4F46E5'
+                        imageSettings={
+                          user.foto
+                            ? {
+                                src: `/img/users/${user.foto}`,
+                                height: 40,
+                                width: 40,
+                                excavate: true
+                              }
+                            : undefined
+                        }
+                      />
+                    </div>
+                    {codigoAsistencia && (
+                      <div className='w-full bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 text-center'>
+                        <span className='text-4xl font-black font-mono tracking-[0.3em] ml-[0.3em]'>
+                          {codigoAsistencia}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       )}
     </div>
   );

@@ -427,44 +427,9 @@ export default function OrderDetailModal({
       const resultado = await createVenta(ventaData);
       if (resultado && resultado.success) {
         if (propina > 0) {
-          if (!resultado.data?.id_venta) {
-            return;
-          }
-
-          try {
-            const resPropina = await fetch('/api/tips', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                venta_id: resultado.data.id_venta,
-                monto: propina
-              })
-            });
-
-            const dataPropina = await resPropina.json();
-
-            if (dataPropina.success) {
-              toast.success(
-                `Propina de ${formatCurrencyCLP(propina)} registrada y distribuida entre ${
-                  dataPropina.data.usuarios_distribucion
-                } usuarios`
-              );
-            } else {
-              if (dataPropina.message?.includes('No hay usuarios logueados')) {
-                toast.warning(
-                  `Venta registrada con propina de ${formatCurrencyCLP(propina)}, pero no se distribuyó porque no hay cajeros/garzones logueados`
-                );
-              } else {
-                toast.error('Error al registrar la propina: ' + dataPropina.message);
-              }
-            }
-          } catch (error) {
-            toast.warning(
-              `Venta registrada con propina de ${formatCurrencyCLP(propina)}, pero hubo un error al distribuirla`
-            );
-          }
+          toast.success(
+            `Venta registrada con propina de ${formatCurrencyCLP(propina)} distribuida entre los cajeros y garzones`
+          );
         }
 
         await actualizarEstadoPedido(0);
