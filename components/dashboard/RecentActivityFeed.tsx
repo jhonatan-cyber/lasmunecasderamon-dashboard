@@ -3,7 +3,7 @@
 import { Activity, DollarSign, LogIn, ShoppingCart, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useRecentActivity } from '@/hooks/stats/useRecentActivity';
+import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 const activityStyles = {
@@ -31,7 +31,8 @@ function formatRelativeTime(dateString: string) {
 }
 
 export default function RecentActivityFeed() {
-  const { data, isLoading, error } = useRecentActivity();
+  const { data: composite, isLoading, error } = useDashboardComposite();
+  const data = composite?.recentActivity;
 
   if (isLoading) {
     return (

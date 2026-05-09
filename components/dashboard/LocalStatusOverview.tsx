@@ -5,7 +5,7 @@ import { ArrowRight, DoorOpen, Receipt, TimerReset, Users, Wallet } from 'lucide
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useDashboardInsights } from '@/hooks/stats/useDashboardInsights';
+import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 
 const itemsConfig = [
   {
@@ -41,7 +41,8 @@ const itemsConfig = [
 ] as const;
 
 export default function LocalStatusOverview() {
-  const { data, isLoading, error } = useDashboardInsights();
+  const { data: composite, isLoading, error } = useDashboardComposite();
+  const data = composite?.insights;
 
   if (isLoading) {
     return (

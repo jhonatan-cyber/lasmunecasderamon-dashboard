@@ -26,43 +26,52 @@ export class PayrollRepository {
     return await query(PAYROLL_SQL, []);
   }
 
-static async pay(userId: string, entregadoPor?: string) {
+  static async pay(userId: string, entregadoPor?: string) {
     const now = getNowInBusinessTimezone();
     await withTransaction(async trx => {
+      // Actualizar asistencias
       await trx(
-        'UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
+        'UPDATE asistencia SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
+
+      // Actualizar detalle de comisiones (por usuario)
       await trx(
         'UPDATE detalle_comisiones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
+
+      // Actualizar tabla principal de comisiones (solo si todos los detalles ya fueron pagados)
       await trx(
         `UPDATE comisiones c
          SET c.estado = 2, c.fecha_mod = ?
          WHERE c.estado = 1
-           AND c.id_comision IN (
-             SELECT DISTINCT dc.comision_id
-             FROM detalle_comisiones dc
-             WHERE dc.comision_id IN (
-               SELECT DISTINCT comision_id FROM detalle_comisiones WHERE usuario_id = ?
-             )
-             AND NOT EXISTS (
-               SELECT 1
-               FROM detalle_comisiones dc2
-               WHERE dc2.comision_id = dc.comision_id AND dc2.estado = 1
-             )
+           AND NOT EXISTS (
+             SELECT 1 FROM detalle_comisiones dc 
+             WHERE dc.comision_id = c.id_comision AND dc.estado = 1
            )`,
-        [now, userId]
+        [now]
       );
+
+      // Actualizar detalle de propinas (por usuario)
       await trx(
         'UPDATE detalle_propinas SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
+
+      // Actualizar tabla principal de propinas (solo si todos los detalles ya fueron pagados)
       await trx(
-        'UPDATE propinas SET estado = 0, fecha_mod = ? WHERE estado = 1 AND id_propina IN (SELECT DISTINCT dp.propina_id FROM detalle_propinas dp WHERE dp.propina_id IN (SELECT DISTINCT propina_id FROM detalle_propinas WHERE usuario_id = ?) AND NOT EXISTS (SELECT 1 FROM detalle_propinas dp2 WHERE dp2.propina_id = dp.propina_id AND dp2.estado = 1))',
-        [now, userId]
+        `UPDATE propinas p
+         SET p.estado = 0, p.fecha_mod = ?
+         WHERE p.estado = 1
+           AND NOT EXISTS (
+             SELECT 1 FROM detalle_propinas dp 
+             WHERE dp.propina_id = p.id_propina AND dp.estado = 1
+           )`,
+        [now]
       );
+
+      // Actualizar anticipos
       if (entregadoPor) {
         await trx(
           'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1',
@@ -74,10 +83,14 @@ static async pay(userId: string, entregadoPor?: string) {
           [now, now, userId]
         );
       }
+
+      // Actualizar horas extras
       await trx(
         'UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
+
+      // Actualizar gratificaciones - ESTE ES EL QUE FALTABA
       await trx(
         'UPDATE gratificaciones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]

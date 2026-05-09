@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/shared/Skeletons';
-import { useDashboardInsights } from '@/hooks/stats/useDashboardInsights';
+import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 const metrics = [
@@ -24,7 +24,8 @@ const metrics = [
 ] as const;
 
 export default function FinancialSummary() {
-  const { data, isLoading, error } = useDashboardInsights();
+  const { data: composite, isLoading, error } = useDashboardComposite();
+  const data = composite?.insights;
 
   if (isLoading) {
     return (

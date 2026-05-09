@@ -71,6 +71,31 @@ export class ServiceRequestRepository {
     return res[0]?.count || 0;
   }
 
+  static async getPendingServiceRequests(limit: number = 5) {
+    const rows = await query<any[]>(
+      `SELECT ss.*, CONCAT(u_sol.nombre, ' ', u_sol.apellido) as solicitado_por_nombre, u_sol.nick as solicitado_por_nick, 
+             CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_nombre
+      FROM solicitudes_servicios ss
+      LEFT JOIN usuarios u_sol ON ss.solicitado_por = u_sol.id_usuario
+      LEFT JOIN clientes c ON ss.cliente_id = c.id_cliente
+      LEFT JOIN habitaciones h ON ss.habitacion_id = h.id_habitacion
+      WHERE ss.estado = 0
+      ORDER BY ss.fecha_solicitud DESC
+      LIMIT ?`,
+      [limit]
+    );
+    return rows.map(s => ({
+      id: String(s.id_solicitud),
+      code: s.codigo || s.id_solicitud,
+      title: s.habitacion_nombre || 'Sin habitación',
+      subtitle: s.cliente_nombre || 'Sin cliente registrado',
+      amount: Number(s.total || 0),
+      createdAt: s.fecha_solicitud,
+      href: '/orders',
+      kind: 'service_request' as const
+    }));
+  }
+
   static async delete(id: string) {
     await query('DELETE FROM solicitudes_servicios WHERE id_solicitud = ?', [id]);
   }
