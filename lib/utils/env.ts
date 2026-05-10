@@ -35,7 +35,7 @@ function detectPatterns(str: string): string[] {
 
   // Check for sequential characters (abcd, 1234)
   if (
-    /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i.test(
+    /(?:abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz|0123|1234|2345|3456|4567|5678|6789)/i.test(
       str
     )
   ) {
@@ -56,8 +56,8 @@ function detectPatterns(str: string): string[] {
     patterns.push('keyboard');
   }
 
-  // Check for base64-like patterns (lots of random chars)
-  if (/^[A-Za-z0-9+/]{50,}={0,2}$/.test(str) && str.length > 64) {
+  // Check for base64-like patterns only when it contains actual base64 delimiters
+  if (/^[A-Za-z0-9+/]{50,}={0,2}$/.test(str) && str.length > 64 && /[+/=]/.test(str)) {
     patterns.push('base64');
   }
 
