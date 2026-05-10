@@ -42,7 +42,7 @@ function detectPatterns(str: string): string[] {
 
   // Check for sequential characters (abcd, 1234)
   if (
-    /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i.test(
+    /(?:abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz|0123|1234|2345|3456|4567|5678|6789)/i.test(
       str
     )
   ) {
@@ -63,8 +63,8 @@ function detectPatterns(str: string): string[] {
     patterns.push('keyboard');
   }
 
-  // Check for base64-like patterns (lots of random chars)
-  if (/^[A-Za-z0-9+/]{50,}={0,2}$/.test(str) && str.length > 64) {
+  // Check for base64-like patterns only when it contains actual base64 delimiters
+  if (/^[A-Za-z0-9+/]{50,}={0,2}$/.test(str) && str.length > 64 && /[+/=]/.test(str)) {
     patterns.push('base64');
   }
 
@@ -169,6 +169,13 @@ describe('validateJwtSecret', () => {
       // Use special characters to avoid base64 pattern
       const randomSecret = 'kL9mN2pQ4rS6tU8vW0xY2zA4bC6dE8fG0hJ2kM4nP6qR8sT0!uV2wX4yZ6aB8cD0eF2gH4';
       const result = validateJwtSecret(randomSecret);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should accept long hex-like secrets', () => {
+      const hexSecret =
+        '8621c05bbced440a09fee8f81408641b8bc99feadc865e4891eb38f07c0df9f0e2456b070c10897089ca8058692464a81936785f6864342c2a5279adb0c7ce4a';
+      const result = validateJwtSecret(hexSecret);
       expect(result.valid).toBe(true);
     });
 
