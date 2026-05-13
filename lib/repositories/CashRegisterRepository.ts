@@ -190,7 +190,10 @@ export class CashRegisterRepository {
       Number(cajaRow.monto_apertura || 0) -
       Number(cajaRow.devolucion || 0);
 
-    const prepagoMetrics = await this.getPrepagoMetrics(cajaRow.fecha_apertura, cajaRow.fecha_cierre);
+    const prepagoMetrics = await this.getPrepagoMetrics(
+      cajaRow.fecha_apertura,
+      cajaRow.fecha_cierre
+    );
 
     return {
       ...this.mapCajaFromDB({ ...cajaRow, ...prepagoMetrics }),
@@ -256,6 +259,8 @@ export class CashRegisterRepository {
       fecha_apertura: now,
       usuario_id_apertura: usuario_id,
       monto_apertura,
+      efectivo: 0,
+      tarjeta: 0,
       estado: 1
     });
     return await this.getById(id);
