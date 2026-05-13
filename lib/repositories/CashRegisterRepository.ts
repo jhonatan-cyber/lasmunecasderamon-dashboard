@@ -261,6 +261,8 @@ export class CashRegisterRepository {
       monto_apertura,
       efectivo: 0,
       tarjeta: 0,
+      transferencia: 0,
+      monto_cierre: 0,
       estado: 1
     });
     return await this.getById(id);
