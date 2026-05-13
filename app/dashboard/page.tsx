@@ -17,6 +17,7 @@ import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import MiniSalesChart from '@/components/dashboard/MiniSalesChart';
 import TopPerformers from '@/components/dashboard/TopPerformers';
 import ForecastInsights from '@/components/dashboard/ForecastInsights';
+import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
 
 // Keep existing components
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
@@ -118,6 +119,17 @@ export default function Dashboard() {
         <DashboardSkeleton />
       ) : (
         <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
+          {/* 0. PERSONAL EN LOCAL (LOGIN) */}
+          <section className='space-y-6'>
+            <div className='flex items-center gap-2 px-2'>
+              <ShieldCheck className='h-4 w-4 text-emerald-500' />
+              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
+                Personal en Local (Login Activo)
+              </h2>
+            </div>
+            <LoggedUsersCards />
+          </section>
+
           {/* 1. SALES CHART - FULL WIDTH */}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>
