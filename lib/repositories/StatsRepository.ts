@@ -753,6 +753,8 @@ export class StatsRepository {
       INNER JOIN usuarios u ON l.usuario_id = u.id_usuario
       INNER JOIN roles r ON u.rol_id = r.id_rol
       WHERE l.estado = 1
+        AND l.en_local = 1
+        AND u.estado = 1
     `)) as any[];
 
     const totalUsers = (await query(`
