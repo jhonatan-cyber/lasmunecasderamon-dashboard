@@ -9,18 +9,33 @@ type TipRegisterInput = z.input<typeof TipRegisterSchema>;
 
 export class TipRepository {
   static async register(body: TipRegisterInput) {
-    const { venta_id, monto } = TipRegisterSchema.parse(body);
+    const { venta_id, monto, usuario_ids } = TipRegisterSchema.parse(body);
 
-    const distribucionUsuarios = await query<any[]>(
-      `SELECT DISTINCT u.id_usuario
-       FROM logins l
-       INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
-       INNER JOIN roles r ON r.id_rol = u.rol_id
-       WHERE l.estado = 1
-         AND l.en_local = 1
-         AND u.estado = 1
-         AND LOWER(r.nombre) IN ('cajero', 'garzon')`
+    const usuarioIdsNormalizados = Array.from(
+      new Set((usuario_ids || []).map(id => String(id)).filter(Boolean))
     );
+
+    const distribucionUsuarios =
+      usuarioIdsNormalizados.length > 0
+        ? await query<any[]>(
+            `SELECT DISTINCT u.id_usuario
+             FROM usuarios u
+             INNER JOIN roles r ON r.id_rol = u.rol_id
+             WHERE u.estado = 1
+               AND LOWER(r.nombre) IN ('cajero', 'garzon')
+               AND u.id_usuario IN (${usuarioIdsNormalizados.map(() => '?').join(', ')})`,
+            usuarioIdsNormalizados
+          )
+        : await query<any[]>(
+            `SELECT DISTINCT u.id_usuario
+             FROM logins l
+             INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
+             INNER JOIN roles r ON r.id_rol = u.rol_id
+             WHERE l.estado = 1
+               AND l.en_local = 1
+               AND u.estado = 1
+               AND LOWER(r.nombre) IN ('cajero', 'garzon')`
+          );
 
     if (distribucionUsuarios.length === 0) {
       // No hay usuarios disponibles - registrar la propina sin distribución pero no fallar
@@ -40,7 +55,9 @@ export class TipRepository {
       return { id, mensaje: 'Propina registrada sin distribución (sin usuarios activos)' };
     }
 
-    const montoPorUsuario = monto / distribucionUsuarios.length;
+    const usuariosCount = distribucionUsuarios.length;
+    const montoBase = Math.floor(monto / usuariosCount);
+    const resto = Math.round(monto - montoBase * usuariosCount);
     const now = getNowInBusinessTimezone();
     const id = generateUUID();
 
@@ -53,12 +70,15 @@ export class TipRepository {
         fecha_crea: now
       });
 
-      for (const u of distribucionUsuarios) {
+      for (let i = 0; i < distribucionUsuarios.length; i++) {
+        const u = distribucionUsuarios[i];
+        const montoPorUsuario = montoBase + (i < resto ? 1 : 0);
         await BaseRepository.insert(trx, 'detalle_propinas', {
           id_detalle_propina: generateUUID(),
           propina_id: id,
           usuario_id: u.id_usuario,
           monto: montoPorUsuario,
+          fecha_mod: null,
           estado: 1,
           fecha_crea: now
         });
@@ -67,9 +87,9 @@ export class TipRepository {
 
     return {
       id,
-      montoPorUsuario,
-      count: distribucionUsuarios.length,
-      usuarios_distribucion: distribucionUsuarios.length
+      montoPorUsuario: montoBase,
+      count: usuariosCount,
+      usuarios_distribucion: usuariosCount
     };
   }
 
@@ -116,13 +136,15 @@ export class TipRepository {
     return await query(
       `
       SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora, 
-             COALESCE(V.fecha_crea, P.fecha_crea) AS fecha_crea, 
+             P.fecha_crea AS fecha_crea,
+             V.fecha_crea AS fecha_venta,
+             DP.fecha_mod AS propina_fecha_crea,
              V.codigo AS codigo_venta, DP.monto, V.id_venta AS venta_id,
              DP.estado, CASE WHEN DP.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
       FROM propinas P 
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       LEFT JOIN ventas V ON V.id_venta = P.venta_id
-      WHERE DP.usuario_id = ? ORDER BY COALESCE(V.fecha_crea, P.fecha_crea) DESC
+      WHERE DP.usuario_id = ? ORDER BY P.fecha_crea DESC
     `,
       [userId]
     );
@@ -133,7 +155,8 @@ export class TipRepository {
       SELECT
         p.id_propina AS propina_id,
         dp.id_detalle_propina,
-        COALESCE(v.fecha_crea, p.fecha_crea) as fecha_crea,
+        p.fecha_crea as fecha_crea,
+        v.fecha_crea as fecha_venta,
         v.total,
         dp.monto,
         COALESCE(p.estado, 1) as estado,
@@ -149,11 +172,11 @@ export class TipRepository {
     const params: any[] = [usuario_id];
 
     if (startDate && endDate) {
-      sql += ' AND DATE(COALESCE(v.fecha_crea, p.fecha_crea)) BETWEEN ? AND ?';
+      sql += ' AND DATE(p.fecha_crea) BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
-    sql += ' ORDER BY COALESCE(v.fecha_crea, p.fecha_crea) DESC';
+    sql += ' ORDER BY p.fecha_crea DESC';
     return await query(sql, params);
   }
 
