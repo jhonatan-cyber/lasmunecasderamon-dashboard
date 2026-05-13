@@ -788,6 +788,8 @@ export class StatsRepository {
 
   static async getSalesByMonth(offset: number = 0) {
     const now = getNowInBusinessTimezone();
+    const currentYear = parseInt(now.substring(0, 4), 10);
+    const targetYear = currentYear - offset;
     const rows = await query<any[]>(
       `
       SELECT 
@@ -819,14 +821,14 @@ export class StatsRepository {
     const minMes = [...data].sort((a, b) => a.total - b.total)[0];
 
     return {
-      year: parseInt(now.substring(0, 4)),
+      year: targetYear,
       data: data.sort((a, b) => a.mes.localeCompare(b.mes)),
       summary: {
         totalVentas,
         totalCantidad,
         mesMaxVentas: maxMes?.mes || 'N/A',
         mesMinVentas: minMes?.mes || 'N/A',
-        promedioMensual: totalVentas / data.length
+        promedioMensual: data.length > 0 ? totalVentas / data.length : 0
       }
     };
   }
