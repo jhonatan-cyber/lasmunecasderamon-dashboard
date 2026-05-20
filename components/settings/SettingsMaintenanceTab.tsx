@@ -141,6 +141,9 @@ export function SettingsMaintenanceTab({
                 <li>roles</li>
                 <li>permissions</li>
                 <li>configuraciones</li>
+                <li>habitaciones</li>
+                <li>productos</li>
+                <li>categorias</li>
               </ul>
             </div>
             <button

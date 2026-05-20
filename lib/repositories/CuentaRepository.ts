@@ -536,8 +536,8 @@ export class CuentaRepository {
       if ((body.usuarios ?? []).length) {
         for (const uId of body.usuarios ?? []) {
           await trx(
-            `INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id) VALUES (?, ?, ?)`,
-            [generateUUID(), id, uId]
+            `INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id, fecha_crea) VALUES (?, ?, ?, ?)`,
+            [generateUUID(), id, uId, now]
           );
         }
       }
@@ -662,8 +662,8 @@ export class CuentaRepository {
         await trx('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [id]);
         for (const uId of body.usuarios ?? []) {
           await trx(
-            'INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id) VALUES (?, ?, ?)',
-            [generateUUID(), id, uId]
+            'INSERT INTO cuentas_usuarios (id_cuenta_usuario, cuenta_id, usuario_id, fecha_crea) VALUES (?, ?, ?, ?)',
+            [generateUUID(), id, uId, bizNow]
           );
         }
       }

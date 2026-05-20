@@ -75,7 +75,7 @@ export class PayrollRepository {
       if (entregadoPor) {
         await trx(
           'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1',
-          [now, now, Number(entregadoPor), userId]
+          [now, now, String(entregadoPor), userId]
         );
       } else {
         await trx(
