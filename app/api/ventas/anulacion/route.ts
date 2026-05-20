@@ -4,6 +4,7 @@ import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import { ValidationError } from '@/lib/errors/errors';
+import logger from '@/lib/utils/logger';
 
 export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
@@ -54,18 +55,30 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
 
   console.log('[Anulacion] baseUrl configurada:', baseUrl);
 
-  await enviarMensajeSolicitudAnulacion({
-    numeroAdmin: adminWhatsApp,
-    tipo: 'venta',
-    codigo: ventaInfo[0]?.codigo || body.ventaId,
-    clienteNombre: ventaInfo[0]?.cliente_nombre || 'Sin cliente registrado',
-    total: Number(ventaInfo[0]?.total || 0),
-    motivo: body.motivo,
-    montoSolicitado,
-    solicitadoPor: user.nick || user.name || 'Usuario',
-    token,
-    baseUrl
-  });
+  try {
+    await enviarMensajeSolicitudAnulacion({
+      numeroAdmin: adminWhatsApp,
+      tipo: 'venta',
+      codigo: ventaInfo[0]?.codigo || body.ventaId,
+      clienteNombre: ventaInfo[0]?.cliente_nombre || 'Sin cliente registrado',
+      total: Number(ventaInfo[0]?.total || 0),
+      motivo: body.motivo,
+      montoSolicitado,
+      solicitadoPor: user.nick || user.name || 'Usuario',
+      token,
+      baseUrl
+    });
+  } catch (err) {
+    logger.error('[AnulacionVenta] Error enviando WhatsApp:', { err });
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador',
+        token
+      },
+      { status: 202 }
+    );
+  }
 
   return NextResponse.json({ success: true, token });
 });
