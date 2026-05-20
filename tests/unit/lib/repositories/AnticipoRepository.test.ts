@@ -74,7 +74,7 @@ describe('AnticipoRepository.grant', () => {
   });
 
   it('guarda anticipo directo como entregado para no descontar caja dos veces', async () => {
-    await AnticipoRepository.grant('user-1', 100, 'Directo admin');
+    await AnticipoRepository.grant('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -83,7 +83,8 @@ describe('AnticipoRepository.grant', () => {
         id_anticipo: 'ant-1',
         usuario_id: 'user-1',
         monto: 100,
-        estado: 0
+        estado: 1,
+        entregado_por: 'admin-uuid-1'
       })
     );
 

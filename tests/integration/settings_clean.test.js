@@ -9,7 +9,8 @@ require('dotenv').config();
  * PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza de Base de Datos
  *
  * Esta prueba verifica el endpoint /api/settings/database-clean
- * que vacía todas las tablas excepto: usuarios, roles, permissions, role_permissions
+ * que vacía todas las tablas excepto: usuarios, roles, permissions, configuraciones,
+ * role_permissions y _migrations
  *
  * IMPORTANTE: hace backup antes de limpiar y restaura después
  */

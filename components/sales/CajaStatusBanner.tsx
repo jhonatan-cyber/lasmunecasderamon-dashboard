@@ -14,9 +14,9 @@ export function CajaStatusBanner() {
 
   if (error) {
     return (
-      <Alert className='mb-4 border-yellow-200 bg-yellow-50'>
-        <AlertTriangle className='h-3 w-3 sm:h-4 sm:w-4 text-yellow-600' />
-        <AlertDescription className='text-yellow-800'>
+      <Alert className='mb-4 border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/40'>
+        <AlertTriangle className='h-3 w-3 sm:h-4 sm:w-4 text-yellow-600 dark:text-yellow-300' />
+        <AlertDescription className='text-yellow-800 dark:text-yellow-100'>
           <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4'>
             <span className='text-sm sm:text-base'>
               <strong>Error al verificar caja.</strong> {error}
@@ -25,7 +25,7 @@ export function CajaStatusBanner() {
               variant='outline'
               size='sm'
               onClick={() => window.location.reload()}
-              className='w-full sm:w-auto border-yellow-300 text-yellow-700 hover:bg-yellow-100 text-sm sm:text-base'
+              className='w-full sm:w-auto border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-200 dark:hover:bg-yellow-900/50 text-sm sm:text-base'
             >
               Reintentar
             </Button>
@@ -37,9 +37,9 @@ export function CajaStatusBanner() {
 
   if (!hasOpenCaja) {
     return (
-      <Alert className='mb-4 border-red-200 bg-red-50'>
-        <AlertTriangle className='h-3 w-3 sm:h-4 sm:w-4 text-red-600' />
-        <AlertDescription className='text-red-800'>
+      <Alert className='mb-4 border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40'>
+        <AlertTriangle className='h-3 w-3 sm:h-4 sm:w-4 text-red-600 dark:text-red-300' />
+        <AlertDescription className='text-red-800 dark:text-red-100'>
           <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4'>
             <span className='text-sm sm:text-base'>
               <strong>No hay caja abierta.</strong> No se pueden realizar ventas sin una caja
@@ -49,7 +49,7 @@ export function CajaStatusBanner() {
               variant='outline'
               size='sm'
               onClick={() => router.push('/cash-register')}
-              className='w-full sm:w-auto border-red-300 text-red-700 hover:bg-red-100 text-sm sm:text-base'
+              className='w-full sm:w-auto border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/50 text-sm sm:text-base'
             >
               Abrir Caja
             </Button>

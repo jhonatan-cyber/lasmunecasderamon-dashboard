@@ -114,7 +114,7 @@ export function CashRegisterDetailedStats() {
 
   if (error) {
     return (
-      <div className='text-red-500 p-4 bg-red-50 border border-red-200 rounded-lg text-sm sm:text-base'>
+      <div className='text-red-600 dark:text-red-300 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg text-sm sm:text-base'>
         Error al cargar las estadísticas: {error}
       </div>
     );

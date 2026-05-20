@@ -68,7 +68,7 @@ export class AnticipoRepository {
         COALESCE(E.apellido, '') AS entregado_por_apellido
       FROM ${this.TABLE} A
       LEFT JOIN usuarios U ON U.id_usuario = A.usuario_id
-      LEFT JOIN usuarios E ON E.id_usuario = A.entregado_por
+      LEFT JOIN usuarios E ON BINARY E.id_usuario = BINARY CAST(A.entregado_por AS CHAR(36))
       ${where}
       ORDER BY A.fecha_crea DESC
       LIMIT ? OFFSET ?
@@ -133,7 +133,7 @@ export class AnticipoRepository {
     return await withTransaction(async trx => {
       const id = generateUUID();
       const now = getNowInBusinessTimezone(device_date);
-      const adminIdNum = adminId ? Number(adminId) : undefined;
+      const deliveredById = adminId ? String(adminId) : undefined;
 
       await BaseRepository.insert(trx, this.TABLE, {
         [this.ID_COL]: id,
@@ -144,7 +144,7 @@ export class AnticipoRepository {
         estado: 1,
         fecha_crea: now,
         fecha_aprobacion: now,
-        entregado_por: adminIdNum,
+        entregado_por: deliveredById,
         fecha_entrega: now
       });
 
@@ -401,7 +401,7 @@ export class AnticipoRepository {
 
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
         fecha_mod: now,
-        entregado_por: Number(entregado_por),
+        entregado_por: String(entregado_por),
         fecha_entrega: now
       });
 
