@@ -3,6 +3,7 @@ import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
+import logger from '@/lib/utils/logger';
 
 export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
@@ -33,19 +34,31 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
     process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
   const baseUrl = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '';
 
-  await enviarMensajeSolicitudAnulacion({
-    numeroAdmin: adminWhatsApp,
-    tipo: 'servicio',
-    codigo: servicioInfo[0]?.codigo || body.servicioId,
-    clienteNombre: servicioInfo[0]?.cliente_nombre || 'Sin cliente registrado',
-    total: Number(servicioInfo[0]?.total || 0),
-    motivo: body.motivo || 'Solicitud de anulacion de servicio',
-    solicitadoPor: user.nick || user.name || 'Usuario',
-    habitacion: servicioInfo[0]?.habitacion_nombre || null,
-    tiempo: Number(servicioInfo[0]?.tiempo || 0),
-    token,
-    baseUrl
-  });
+  try {
+    await enviarMensajeSolicitudAnulacion({
+      numeroAdmin: adminWhatsApp,
+      tipo: 'servicio',
+      codigo: servicioInfo[0]?.codigo || body.servicioId,
+      clienteNombre: servicioInfo[0]?.cliente_nombre || 'Sin cliente registrado',
+      total: Number(servicioInfo[0]?.total || 0),
+      motivo: body.motivo || 'Solicitud de anulacion de servicio',
+      solicitadoPor: user.nick || user.name || 'Usuario',
+      habitacion: servicioInfo[0]?.habitacion_nombre || null,
+      tiempo: Number(servicioInfo[0]?.tiempo || 0),
+      token,
+      baseUrl
+    });
+  } catch (err) {
+    logger.error('[AnulacionServicio] Error enviando WhatsApp:', { err });
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador',
+        token
+      },
+      { status: 202 }
+    );
+  }
 
   return NextResponse.json({ success: true, token });
 });

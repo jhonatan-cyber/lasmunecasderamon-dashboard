@@ -7,6 +7,7 @@ import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
+import logger from '@/lib/utils/logger';
 
 type PendingSolicitud = {
   tipo: 'venta' | 'servicio' | 'cuenta';
@@ -281,5 +282,9 @@ export async function processPendingSolicitud(
   });
 
   await notifySolicitudResolution(solicitud, accion, estadoTexto);
-  await sendWhatsApp(adminWhatsApp, mensajeRespuesta);
+  try {
+    await sendWhatsApp(adminWhatsApp, mensajeRespuesta);
+  } catch (err) {
+    logger.error('[WhatsappPendingActions] Error enviando respuesta por WhatsApp:', { err });
+  }
 }
