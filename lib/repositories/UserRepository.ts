@@ -214,7 +214,11 @@ export class UserRepository {
       SELECT u.*, r.nombre as rol_nombre, r.id_rol
       FROM usuarios u
       INNER JOIN roles r ON u.rol_id = r.id_rol
-      WHERE LOWER(r.nombre) = 'anfitriona' AND u.estado = 1 AND u.estado_servicio = 0
+      INNER JOIN logins l ON l.usuario_id = u.id_usuario AND l.estado = 1
+      WHERE LOWER(r.nombre) = 'anfitriona'
+        AND u.estado = 1
+        AND u.estado_servicio = 0
+        AND l.en_local = 1
     `);
     return data.map(row => this.mapUserFromDB(row));
   }

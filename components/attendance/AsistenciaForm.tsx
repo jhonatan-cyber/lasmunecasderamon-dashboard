@@ -16,7 +16,6 @@ import { getTodayDateKey, getCurrentTimeKey } from '@/lib/utils/calendarUtils';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import UserSelect from '@/components/shared/selects/UserSelect';
-import AttendanceStatusSelect from '@/components/shared/selects/AttendanceStatusSelect';
 import { ORDER_FIELD_INPUT_CLASS } from '@/components/orders/orderFieldStyles';
 
 interface AsistenciaFormProps {
@@ -74,14 +73,22 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          estado: 'presente'
+        })
       });
 
       const result = await res.json();
 
       if (result.success) {
         toast.success(result.message || 'Asistencia registrada exitosamente');
-        form.reset();
+        form.reset({
+          usuario_id: '',
+          fecha: getTodayDateKey(),
+          hora: getCurrentTimeKey().slice(0, 5),
+          estado: 'presente'
+        });
         onSuccess?.();
         if (onOpenChange) {
           onOpenChange(false);
@@ -97,7 +104,12 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
   };
 
   const handleCancel = () => {
-    form.reset();
+    form.reset({
+      usuario_id: '',
+      fecha: getTodayDateKey(),
+      hora: getCurrentTimeKey().slice(0, 5),
+      estado: 'presente'
+    });
     onOpenChange?.(false);
   };
 
@@ -178,24 +190,6 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                   )}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name='estado'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <AttendanceStatusSelect
-                        value={field.value}
-                        onChange={field.onChange}
-                        label='Estado'
-                        placeholder='Selecciona un estado'
-                        required={true}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
