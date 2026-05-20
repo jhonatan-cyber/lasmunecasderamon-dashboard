@@ -6,6 +6,7 @@ import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNot
 import { NotFoundError, BusinessError } from '@/lib/errors/errors';
 import { BaseRepository } from './BaseRepository';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 type GratificacionAction = 'approve' | 'reject';
 
@@ -29,7 +30,7 @@ export class GratificacionRepository {
     const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
     if (tableCheck.length === 0) return [];
 
-let sql = `
+    let sql = `
       SELECT G.*,
              DATE_FORMAT(G.fecha_crea, "%Y-%m-%d %H:%i:%s") as fecha_crea_fmt,
              DATE_FORMAT(G.fecha_mod, "%Y-%m-%d %H:%i:%s") as fecha_mod_fmt,
@@ -44,7 +45,7 @@ let sql = `
     }
     sql += ' ORDER BY G.fecha_crea DESC';
 
-const rows = await query<any[]>(sql, params);
+    const rows = await query<any[]>(sql, params);
     return rows.map(row => ({
       id: String(row.id),
       // Compatibilidad hacia el frontend: la DB real no tiene fecha_hora.
@@ -163,7 +164,11 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
 *Para rechazar:* responde "RECHAZAR GRATIFICACION ${id}"`
 }`;
 
-    await enviarWhatsApp(adminWhatsApp, message);
+    try {
+      await enviarWhatsApp(adminWhatsApp, message);
+    } catch (err) {
+      logger.error('[GratificacionRepository] Error enviando WhatsApp al admin:', { err });
+    }
 
     sendNotificationToAll('new_gratificacion_request', {
       id,
