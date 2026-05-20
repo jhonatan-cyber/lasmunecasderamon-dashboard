@@ -1,7 +1,49 @@
-﻿/* eslint-disable no-console */
+/* eslint-disable no-console */
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
+
+function uuid() {
+  return crypto.randomUUID();
+}
+
+async function ensureClient(connection, now) {
+  const [clients] = await connection.execute('SELECT id_cliente FROM clientes LIMIT 1');
+  if (clients.length > 0) {
+    return { id: clients[0].id_cliente, created: false };
+  }
+
+  const clientId = uuid();
+  await connection.execute(
+    `INSERT INTO clientes (
+      id_cliente, run, nombre, apellido, telefono, fecha_crea, estado, saldo
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [clientId, 'INT-TEST', 'Cliente', 'Integracion', null, now, 1, 0]
+  );
+
+  return { id: clientId, created: true };
+}
+
+async function ensureOpenCaja(connection, userId, now) {
+  const [cajas] = await connection.execute(
+    'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+  );
+  if (cajas.length > 0) {
+    return { id: cajas[0].id_caja, created: false };
+  }
+
+  const cajaId = uuid();
+  await connection.execute(
+    `INSERT INTO cajas (
+      id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+      efectivo, tarjeta, transferencia, prepago,
+      monto_cierre, venta, servicio, devolucion, iva, comision, propina, anticipo, estado
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [cajaId, now, userId, 10000, 0, 0, 0, 0, 10000, 0, 0, 0, 0, 0, 0, 0, 1]
+  );
+
+  return { id: cajaId, created: true };
+}
 
 async function runIntegrationTest() {
   const connection = await mysql.createConnection({
@@ -11,57 +53,76 @@ async function runIntegrationTest() {
     database: process.env.DB_NAME
   });
 
+  const created = {
+    clientId: null,
+    cajaId: null,
+    pedidoId: null,
+    ventaId: null,
+    detalleId: null,
+    relacionId: null
+  };
+
   try {
-    // 1. Obtener datos necesarios
     const [users] = await connection.execute(
       'SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 2'
     );
-    const [clients] = await connection.execute('SELECT id_cliente FROM clientes LIMIT 1');
     const [products] = await connection.execute(
-      'SELECT id_producto, precio FROM productos LIMIT 1'
-    );
-    const [cajas] = await connection.execute(
-      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+      'SELECT id_producto, precio, comision FROM productos WHERE estado = 1 LIMIT 1'
     );
 
-    if (users.length < 1 || clients.length < 1 || products.length < 1 || cajas.length < 1) {
-      throw new Error('Faltan datos base en la DB (usuarios, clientes, productos o caja abierta)');
+    if (users.length < 1 || products.length < 1) {
+      throw new Error('Faltan datos base en la DB (usuarios o productos activos)');
     }
 
     const userId = users[0].id_usuario;
     const anfitrionaId = users[1]?.id_usuario || userId;
-    const clientId = clients[0].id_cliente;
     const product = products[0];
-    const cajaId = cajas[0].id_caja;
-
-    const ventaId = crypto.randomUUID();
-    const pedidoId = crypto.randomUUID();
-    const codigo = 'INT-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const now = new Date();
 
+    const client = await ensureClient(connection, now);
+    const caja = await ensureOpenCaja(connection, userId, now);
+
+    created.clientId = client.created ? client.id : null;
+    created.cajaId = caja.created ? caja.id : null;
+
+    const clientId = client.id;
+    const cajaId = caja.id;
+    const subtotal = Number(product.precio);
+    const comision = Number(product.comision || 0);
+    const propina = 1000;
+    const total = subtotal + propina;
+
+    created.pedidoId = uuid();
+    created.ventaId = uuid();
+    created.detalleId = uuid();
+    created.relacionId = uuid();
+
+    const codigo = 'INT-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
     await connection.execute(
-      'INSERT INTO pedidos (id_pedido, codigo, cliente_id, mesero_id, total, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [pedidoId, codigo, clientId, userId, product.precio, 0, now] // estado 0 = procesado/finalizado
+      `INSERT INTO pedidos (
+        id_pedido, codigo, cliente_id, mesero_id,
+        subtotal, total, propina, total_comision, estado, fecha_crea
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [created.pedidoId, codigo, clientId, userId, subtotal, total, propina, comision, 0, now]
     );
-    // Insertar venta
+
     await connection.execute(
-      `
-            INSERT INTO ventas (
-                id_venta, codigo, cliente_id, pedido_id, metodo_pago,
-                sub_total, total, propina, total_comision,
-                caja_id, created_by, estado, fecha_crea
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+      `INSERT INTO ventas (
+        id_venta, codigo, cliente_id, pedido_id, metodo_pago,
+        sub_total, total, propina, total_comision,
+        caja_id, created_by, estado, fecha_crea
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        ventaId,
+        created.ventaId,
         codigo,
         clientId,
-        pedidoId,
+        created.pedidoId,
         'efectivo',
-        product.precio,
-        product.precio + 1000,
-        1000,
-        500,
+        subtotal,
+        total,
+        propina,
+        comision,
         cajaId,
         userId,
         1,
@@ -69,72 +130,74 @@ async function runIntegrationTest() {
       ]
     );
 
-    // Detalle de venta
-    const detalleId = crypto.randomUUID();
     await connection.execute(
-      `
-            INSERT INTO detalle_ventas (
-                id_detalle_venta, venta_id, producto_id, precio,
-                cantidad, sub_total, comision, hostess_id, fecha_crea
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+      `INSERT INTO detalle_ventas (
+        id_detalle_venta, venta_id, producto_id, precio,
+        cantidad, sub_total, comision, hostess_id, fecha_crea
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        detalleId,
-        ventaId,
+        created.detalleId,
+        created.ventaId,
         product.id_producto,
-        product.precio,
+        subtotal,
         1,
-        product.precio,
-        500,
+        subtotal,
+        comision,
         anfitrionaId,
         now
       ]
     );
 
-    // Relación venta-usuario (anfitriona)
     await connection.execute(
       'INSERT INTO ventas_usuarios (id_usuario_venta, venta_id, usuario_id, fecha_crea) VALUES (?, ?, ?, ?)',
-      [crypto.randomUUID(), ventaId, anfitrionaId, now]
+      [created.relacionId, created.ventaId, anfitrionaId, now]
     );
 
     const [ventaRows] = await connection.execute('SELECT * FROM ventas WHERE id_venta = ?', [
-      ventaId
+      created.ventaId
     ]);
-    if (ventaRows.length === 1) {
-      console.log('✅ Venta persistida correctamente');
-    } else {
+    if (ventaRows.length !== 1) {
       throw new Error('La venta no se guardó');
     }
+    console.log('✅ Venta persistida correctamente');
 
     const [detalleRows] = await connection.execute(
       'SELECT * FROM detalle_ventas WHERE venta_id = ?',
-      [ventaId]
+      [created.ventaId]
     );
-    if (detalleRows.length === 1) {
-      console.log('✅ Detalle de venta persistido correctamente');
-    } else {
+    if (detalleRows.length !== 1) {
       throw new Error('El detalle de venta no se guardó');
     }
+    console.log('✅ Detalle de venta persistido correctamente');
 
     const [relRows] = await connection.execute('SELECT * FROM ventas_usuarios WHERE venta_id = ?', [
-      ventaId
+      created.ventaId
     ]);
-    if (relRows.length === 1) {
-      console.log('✅ Relación con anfitriona persistida correctamente');
+    if (relRows.length !== 1) {
+      throw new Error('La relación con anfitriona no se guardó');
     }
+    console.log('✅ Relación con anfitriona persistida correctamente');
 
-    console.log(`\n[5] Limpiando datos de prueba`);
-    await connection.execute('DELETE FROM detalle_ventas WHERE venta_id = ?', [ventaId]);
-    await connection.execute('DELETE FROM ventas_usuarios WHERE venta_id = ?', [ventaId]);
-    await connection.execute('DELETE FROM ventas WHERE id_venta = ?', [ventaId]);
-    await connection.execute('DELETE FROM pedidos WHERE id_pedido = ?', [pedidoId]);
-
-    console.log('✅ Limpieza completada');
     console.log('\n--- PRUEBA DE INTEGRACIÓN EXITOSA ---');
   } catch (error) {
-    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
-    process.exit(1);
+    console.error('\n❌ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
+    process.exitCode = 1;
   } finally {
+    if (created.ventaId) {
+      await connection.execute('DELETE FROM detalle_ventas WHERE venta_id = ?', [created.ventaId]);
+      await connection.execute('DELETE FROM ventas_usuarios WHERE venta_id = ?', [created.ventaId]);
+      await connection.execute('DELETE FROM ventas WHERE id_venta = ?', [created.ventaId]);
+    }
+    if (created.pedidoId) {
+      await connection.execute('DELETE FROM pedidos WHERE id_pedido = ?', [created.pedidoId]);
+    }
+    if (created.cajaId) {
+      await connection.execute('DELETE FROM cajas WHERE id_caja = ?', [created.cajaId]);
+    }
+    if (created.clientId) {
+      await connection.execute('DELETE FROM clientes WHERE id_cliente = ?', [created.clientId]);
+    }
+
     await connection.end();
   }
 }
