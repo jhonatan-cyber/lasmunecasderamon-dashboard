@@ -12,6 +12,7 @@ import { SettingsBillingTab } from '@/components/settings/SettingsBillingTab';
 import { SettingsPermissionsTab } from '@/components/settings/SettingsPermissionsTab';
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
+import { CleanDatabaseConfirmModal } from '@/components/settings/CleanDatabaseConfirmModal';
 import type {
   BackupItem,
   BillingConfig,
@@ -22,14 +23,6 @@ import type {
 
 const PermissionModal = dynamic(
   () => import('@/components/permissions/PermissionModal').then(mod => mod.PermissionModal),
-  { ssr: false }
-);
-
-const CleanDatabaseConfirmModal = dynamic(
-  () =>
-    import('@/components/settings/CleanDatabaseConfirmModal').then(
-      mod => mod.CleanDatabaseConfirmModal
-    ),
   { ssr: false }
 );
 
@@ -329,22 +322,6 @@ export default function Settings() {
       }
       return null;
     };
-
-    if (
-      !confirm(
-        '¿Estás seguro de que quieres VACIAR la base de datos?\n\nSe eliminará TODO excepto:\n- Usuarios\n- Roles\n- Permisos\n- Configuraciones\n\nEsta acción no se puede deshacer.'
-      )
-    ) {
-      return;
-    }
-
-    if (
-      !confirm(
-        '¿REALMENTE quieres continuar?\n\nSe perderán TODOS los datos de ventas, pedidos, productos, clientes, etc.\n\nSe creará un backup automático antes de vaciar.'
-      )
-    ) {
-      return;
-    }
 
     try {
       setIsCleaning(true);

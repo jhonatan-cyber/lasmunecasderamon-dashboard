@@ -6,9 +6,13 @@ import { logger } from '@/lib/utils/logger';
 const PROTECTED_TABLES = [
   'usuarios',
   'roles',
-  'role_permissions',
   'permissions',
-  'configuraciones'
+  'configuraciones',
+  'habitaciones',
+  'productos',
+  'categorias',
+  // Seguridad: sin esta tabla quedan roles y permisos desconectados.
+  'role_permissions'
 ];
 
 export const POST = withAppAuth(
@@ -28,6 +32,7 @@ export const POST = withAppAuth(
     for (const table of tables) {
       const tableName = table.TABLE_NAME;
 
+      // `_migrations` se preserva para no perder el estado interno de migraciones.
       if (PROTECTED_TABLES.includes(tableName) || tableName === '_migrations') {
         skippedTables.push(tableName);
         continue;

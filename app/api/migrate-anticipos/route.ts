@@ -15,13 +15,26 @@ export const POST = withAppApiWrapper(async () => {
   });
 
   try {
-    const [columns] = await connection.query(`
+    const [columns] = await connection.query(
+      `
       SELECT COLUMN_NAME
       FROM INFORMATION_SCHEMA.COLUMNS
       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'anticipos'
-    `, [process.env.DB_NAME]);
+    `,
+      [process.env.DB_NAME]
+    );
+
+    const [entregadoPorColumnRows] = await connection.query(
+      `
+        SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'anticipos' AND COLUMN_NAME = 'entregado_por'
+      `,
+      [process.env.DB_NAME]
+    );
 
     const existingCols = (columns as any[]).map((c: any) => c.COLUMN_NAME);
+    const entregadoPorColumn = (entregadoPorColumnRows as any[])[0];
     const results: string[] = [];
 
     const migrations = [
@@ -35,7 +48,7 @@ export const POST = withAppApiWrapper(async () => {
       },
       {
         name: 'entregado_por',
-        sql: 'ALTER TABLE anticipos ADD COLUMN entregado_por INT NULL DEFAULT NULL, ADD INDEX idx_entregado_por (entregado_por)'
+        sql: 'ALTER TABLE anticipos ADD COLUMN entregado_por VARCHAR(36) NULL DEFAULT NULL, ADD INDEX idx_entregado_por (entregado_por)'
       }
     ];
 
@@ -48,12 +61,16 @@ export const POST = withAppApiWrapper(async () => {
       }
     }
 
+    if (entregadoPorColumn && (entregadoPorColumn.DATA_TYPE || '').toLowerCase() !== 'varchar') {
+      await connection.query(
+        'ALTER TABLE anticipos MODIFY entregado_por VARCHAR(36) NULL DEFAULT NULL'
+      );
+      results.push('entregado_por: tipo corregido a VARCHAR(36)');
+    }
+
     return NextResponse.json({ success: true, results });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   } finally {
     await connection.end();
   }
