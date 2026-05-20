@@ -21,28 +21,27 @@ if (!accountSid || !authToken || !whatsappNumber) {
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 export async function enviarWhatsApp(numero: string, mensaje: string): Promise<boolean> {
-  try {
-    if (!client || !whatsappNumber) {
-      return true;
-    }
-    let numeroFormateado = numero;
-    if (!numero.startsWith('+')) {
-      numeroFormateado = `+${numero}`;
-    }
+  if (!client || !whatsappNumber) {
+    logger.error('❌ Twilio no configurado. No se puede enviar WhatsApp.');
+    throw new Error(
+      'Twilio no está configurado. Verifica TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN y TWILIO_WHATSAPP_NUMBER'
+    );
+  }
+  const numeroFormateado = `+${numero.replace(/^\+/, '')}`;
 
-    await client.messages.create({
+  try {
+    const result = await client.messages.create({
       body: mensaje,
       from: `whatsapp:${whatsappNumber}`,
       to: `whatsapp:${numeroFormateado}`
     });
 
+    logger.info(`✅ WhatsApp enviado a ${numeroFormateado}. SID: ${result.sid}`);
     return true;
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error('Detalles del error:', error.message);
-    }
-
-    return false;
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`❌ Error enviando WhatsApp a ${numeroFormateado}: ${message}`);
+    throw error;
   }
 }
 
@@ -96,9 +95,11 @@ ${datos.motivo || 'No especificado'}
 
 *Solicitado por:* ${datos.solicitadoPor}
 
-${actionUrl
+${
+  actionUrl
     ? `*Revisar solicitud:* ${actionUrl}`
-    : 'Responde "SI" para aprobar o "NO" para rechazar.'}
+    : 'Responde "SI" para aprobar o "NO" para rechazar.'
+}
 
 Si hay varias solicitudes pendientes, responde "1 SI" o "1 NO" sobre la mas reciente.`;
 
@@ -136,17 +137,18 @@ ${datos.motivo}
 
 👤 *Solicitado por:* ${datos.solicitadoPor}
 
-${datos.token && datos.baseUrl
-      ? `
+${
+  datos.token && datos.baseUrl
+    ? `
 ✅ *Para confirmar o rechazar:* ${datos.baseUrl}/confirmar-anulacion?token=${datos.token}
 
 _Haz clic en el link para revisar y confirmar o rechazar esta solicitud_`
-      : `
+    : `
 ✅ *Para confirmar:* Responde "SI" o "CONFIRMAR"
 ❌ *Para rechazar:* Responde "NO" o "RECHAZAR"
 
 _El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`
-    }`;
+}`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
 }
@@ -194,17 +196,18 @@ ${datos.motivo}
 
 👤 *Solicitado por:* ${datos.solicitadoPor}
 
-${datos.token && datos.baseUrl
-      ? `
+${
+  datos.token && datos.baseUrl
+    ? `
 ✅ *Para confirmar o rechazar:* ${datos.baseUrl}/confirmar-anulacion-servicio?token=${datos.token}
 
 _Haz clic en el link para revisar y confirmar o rechazar esta solicitud_`
-      : `
+    : `
 ✅ *Para confirmar:* Responde "SI" o "CONFIRMAR"
 ❌ *Para rechazar:* Responde "NO" o "RECHAZAR"
 
 _El administrador puede aprobar o rechazar esta solicitud respondiendo al mensaje_`
-    }`;
+}`;
 
   return await enviarWhatsApp(datos.numeroAdmin, mensaje);
 }
@@ -241,7 +244,7 @@ export async function enviarMensajeAnticipo(datos: {
   const confirmUrl = `${datos.baseUrl}/confirmar-anticipo?token=${datos.token}`;
   const bizNow = getNowInBusinessTimezone();
   const fechaActual = formatDateLabel(new Date(bizNow.replace(' ', 'T')), 'es-ES');
-  
+
   const mensaje = `💰 *SOLICITUD DE ANTICIPO*
 
 📋 *Detalles de la solicitud:*
@@ -272,7 +275,7 @@ export async function enviarRespuestaAnticipo(datos: {
 }): Promise<boolean> {
   const emoji = datos.estado === 'aprobada' ? '✅' : '❌';
   const titulo = datos.estado === 'aprobada' ? 'APROBADO' : 'RECHAZADO';
-  
+
   let mensaje = `${emoji} *ANTICIPO ${titulo}*
 
 Hola, tu solicitud de anticipo #${datos.solicitudId} por ${formatCurrencyCLP(datos.monto)} ha sido *${datos.estado}*.`;
@@ -285,4 +288,3 @@ Hola, tu solicitud de anticipo #${datos.solicitudId} por ${formatCurrencyCLP(dat
 
   return await enviarWhatsApp(datos.numeroUsuario, mensaje);
 }
-

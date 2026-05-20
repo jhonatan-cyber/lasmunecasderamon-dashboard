@@ -253,7 +253,11 @@ export class AnticipoRepository {
       token: id
     });
 
-    await enviarWhatsApp(adminWhatsApp, msg);
+    try {
+      await enviarWhatsApp(adminWhatsApp, msg);
+    } catch (err) {
+      logger.error('[AnticipoRepository] Error enviando WhatsApp al admin:', { err });
+    }
     sendNotificationToAll('new_anticipo_request', {
       id,
       usuario_id,
