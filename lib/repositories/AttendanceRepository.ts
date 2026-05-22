@@ -321,4 +321,62 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       message: 'Asistencia registrada manualmente'
     };
   }
+
+  static async selfRegister(currentUser: { id: string }, ip?: string) {
+    const nowStr = getNowInBusinessTimezone();
+    const hour = parseInt(nowStr.substring(11, 13), 10);
+    const fechaHoy = nowStr.substring(0, 10);
+    const ipLimpia = ip?.split(',')[0].trim() || null;
+
+    const existing = await query<any[]>(
+      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+      [currentUser.id, fechaHoy]
+    );
+    const alreadyRegistered = existing.length > 0;
+
+    if (alreadyRegistered) {
+      await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
+        en_local: 1,
+        ...(ipLimpia && { ip_address: ipLimpia })
+      });
+      return {
+        success: true,
+        alreadyRegistered: true,
+        message: 'Ya tienes asistencia registrada hoy. Ubicación actualizada en el local.'
+      };
+    }
+
+    if (hour >= 23) {
+      await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
+        en_local: 1,
+        ...(ipLimpia && { ip_address: ipLimpia })
+      });
+      return {
+        success: true,
+        tipo: 'login',
+        message: 'Login registrado en el local (después de las 23:00).'
+      };
+    }
+
+    const timeStr = nowStr.substring(11, 19);
+    const id = generateUUID();
+    await BaseRepository.insert(query, 'asistencias', {
+      id_asistencia: id,
+      usuario_id: currentUser.id,
+      fecha: fechaHoy,
+      hora: timeStr,
+      estado: 1
+    });
+
+    await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
+      en_local: 1,
+      ...(ipLimpia && { ip_address: ipLimpia })
+    });
+
+    return {
+      success: true,
+      tipo: 'asistencia',
+      message: 'Asistencia registrada correctamente.'
+    };
+  }
 }
