@@ -171,10 +171,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <Image
             src={
               !product.foto || product.foto === 'default.png' || product.foto === ''
-                ? '/img/products/default.png'
+                ? '/api/images/products/default.png'
                 : product.foto.startsWith('http')
                   ? product.foto
-                  : `/img/products/${product.foto}`
+                  : `/api/images/products/${product.foto}`
             }
             alt={product.name}
             fill
