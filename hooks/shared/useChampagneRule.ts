@@ -25,7 +25,7 @@ interface UseChampagneRuleReturn {
  * Regla de anfitrionas:
  *   >= 240.000 → 5 anfitrionas
  *   >= 200.000 → 4 anfitrionas
- *   >= 160.000 → 3 anfitrionas
+ *   >= 140.000 → 3 anfitrionas
  *   >= 120.000 → 2 anfitrionas
  *   <  120.000 → 1 anfitriona
  */
@@ -55,7 +55,7 @@ export function useChampagneRule(
   if (hasChampagneProducts) {
     if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
     else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
-    else if (maxChampagnePrice >= 160000) maxAnfitrionas = 3;
+    else if (maxChampagnePrice >= 140000) maxAnfitrionas = 3;
     else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
     else maxAnfitrionas = 1;
   }

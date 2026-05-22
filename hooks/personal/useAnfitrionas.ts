@@ -13,14 +13,53 @@ interface Anfitriona {
   status?: number;
 }
 
-export function useAnfitrionas(disponiblesOnly: boolean = false) {
-  // Determinar endpoint según disponibilidad - memoizado para evitar cambios
-  const endpoint = useMemo(
-    () => (disponiblesOnly ? '/api/anfitrionas/disponibles' : '/api/users?anfitrionas=1'),
-    [disponiblesOnly]
-  );
+type UseAnfitrionasConfig =
+  | boolean
+  | {
+      disponiblesOnly?: boolean;
+      loggedIn?: boolean;
+      enLocal?: boolean;
+      status?: 'active' | 'inactive' | 'all';
+    };
 
-  // Usar hook genérico para fetch
+export function useAnfitrionas(config: UseAnfitrionasConfig = false) {
+  const normalizedConfig =
+    typeof config === 'boolean'
+      ? { disponiblesOnly: config, loggedIn: false, enLocal: false, status: undefined }
+      : {
+          disponiblesOnly: config.disponiblesOnly ?? false,
+          loggedIn: config.loggedIn ?? false,
+          enLocal: config.enLocal ?? false,
+          status: config.status
+        };
+
+  const endpoint = useMemo(() => {
+    if (normalizedConfig.disponiblesOnly) {
+      return '/api/anfitrionas/disponibles';
+    }
+
+    const searchParams = new URLSearchParams({ anfitrionas: '1' });
+
+    if (normalizedConfig.status) {
+      searchParams.set('status', normalizedConfig.status);
+    }
+
+    if (normalizedConfig.loggedIn) {
+      searchParams.set('loggedIn', '1');
+    }
+
+    if (normalizedConfig.enLocal) {
+      searchParams.set('enLocal', '1');
+    }
+
+    return `/api/users?${searchParams.toString()}`;
+  }, [
+    normalizedConfig.disponiblesOnly,
+    normalizedConfig.enLocal,
+    normalizedConfig.loggedIn,
+    normalizedConfig.status
+  ]);
+
   const {
     data: anfitrionas,
     isLoading: loading,

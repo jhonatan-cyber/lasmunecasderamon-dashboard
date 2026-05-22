@@ -127,7 +127,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
         </Badge>
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center'>
-        <div className='w-12 h-12 rounded-xl overflow-hidden border border-gray-100 mx-auto bg-gray-50 flex items-center justify-center shrink-0 shadow-sm group-hover:shadow transition-all relative'>
+        <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-sm transition-all group-hover:shadow'>
           <Image
             src={
               !product.foto || product.foto === 'default.png' || product.foto === ''
@@ -137,9 +137,10 @@ const SortableRow: React.FC<SortableRowProps> = ({
                   : `/api/images/products/${product.foto}`
             }
             alt={product.name}
-            fill
+            width={48}
+            height={48}
             sizes='48px'
-            className='w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110'
+            className='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
           />
         </div>
       </TableCell>

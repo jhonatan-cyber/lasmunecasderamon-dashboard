@@ -137,7 +137,7 @@ export default function NewSale() {
               let max = 1;
               if (price >= 240000) max = 5;
               else if (price >= 200000) max = 4;
-              else if (price >= 160000) max = 3;
+              else if (price >= 140000) max = 3;
               else if (price >= 120000) max = 2;
               if (ids.length <= max) {
                 setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }));

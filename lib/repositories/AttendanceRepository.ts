@@ -125,18 +125,17 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
 
     const nowStr = getNowInBusinessTimezone();
     const hour = parseInt(nowStr.substring(11, 13), 10);
-
-    if (hour >= 23) return { success: false, message: 'Horario cerrado (despues de las 23:00)' };
-
     const fechaHoy = nowStr.substring(0, 10);
+    const ipLimpia = ip?.split(',')[0].trim() || null;
+
     const existing = await query<any[]>(
       'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
       [targetUser.id_usuario, fechaHoy]
     );
     const alreadyRegistered = existing.length > 0;
 
+    // Si ya tiene asistencia hoy, solo actualizar en_local
     if (alreadyRegistered) {
-      const ipLimpia = ip?.split(',')[0].trim() || null;
       await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
         en_local: 1,
         ...(ipLimpia && { ip_address: ipLimpia })
@@ -148,6 +147,20 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
+    // Fuera del horario de asistencia (21:00–22:59): solo en_local = 1, sin registrar asistencia
+    if (hour < 21 || hour >= 23) {
+      await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
+        en_local: 1,
+        ...(ipLimpia && { ip_address: ipLimpia })
+      });
+      return {
+        success: true,
+        tipo: 'login',
+        message: 'Ubicación registrada en el local.'
+      };
+    }
+
+    // Hora válida para asistencia: entre 21:00 y 22:59
     const timeStr = nowStr.substring(11, 19);
     const id = generateUUID();
     await BaseRepository.insert(query, 'asistencias', {
@@ -158,7 +171,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       estado: 1
     });
 
-    const ipLimpia = ip?.split(',')[0].trim() || null;
     await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
       en_local: 1,
       ...(ipLimpia && { ip_address: ipLimpia })
@@ -346,7 +358,8 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
-    if (hour >= 23) {
+    // Fuera del horario de asistencia (21:00–22:59): solo login
+    if (hour < 21 || hour >= 23) {
       await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
         en_local: 1,
         ...(ipLimpia && { ip_address: ipLimpia })
@@ -354,10 +367,11 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       return {
         success: true,
         tipo: 'login',
-        message: 'Login registrado en el local (después de las 23:00).'
+        message: 'Login registrado en el local.'
       };
     }
 
+    // Hora válida para asistencia: entre 21:00 y 22:59
     const timeStr = nowStr.substring(11, 19);
     const id = generateUUID();
     await BaseRepository.insert(query, 'asistencias', {
