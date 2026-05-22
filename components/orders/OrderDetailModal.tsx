@@ -85,6 +85,8 @@ export default function OrderDetailModal({
   const [agregarPropina, setAgregarPropina] = useState(false);
 
   const [confirmVentaModalOpen, setConfirmVentaModalOpen] = useState(false);
+  const getRoomId = (room: any) => String(room?.id_habitacion ?? room?.id ?? '');
+  const getRoomName = (room: any) => room?.nombre || room?.name || `Habitación ${getRoomId(room)}`;
 
   useEffect(() => {
     if (!open) return;
@@ -401,7 +403,7 @@ export default function OrderDetailModal({
       }
 
       const selectedRoom = habitacionId
-        ? rooms.find(room => room.id === parseInt(habitacionId))
+        ? rooms.find(room => getRoomId(room) === String(habitacionId))
         : null;
 
       const ventaData = {
@@ -443,7 +445,7 @@ export default function OrderDetailModal({
         window.dispatchEvent(new CustomEvent('refreshNotifications'));
 
         if (habitacionId) {
-          const selectedRoom = rooms.find(room => room.id === parseInt(habitacionId));
+          const selectedRoom = rooms.find(room => getRoomId(room) === String(habitacionId));
           if (selectedRoom) {
             try {
               const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
@@ -459,8 +461,8 @@ export default function OrderDetailModal({
               if (roomUpdateResponse.ok) {
                 startTimer(
                   resultado.data?.id || resultado.data?.id_venta || orderId || 0,
-                  selectedRoom.id,
-                  selectedRoom.name,
+                  selectedRoom.id ?? selectedRoom.id_habitacion,
+                  getRoomName(selectedRoom),
                   tiempoHabitacion,
                   resultado.data?.codigo || `VENTA_${orderId}`,
                   detail[0]?.cliente || 'cliente sin registrar',
@@ -620,10 +622,10 @@ export default function OrderDetailModal({
   // Filtrar habitaciones activas, pero incluir la habitación pre-seleccionada aunque esté ocupada
   const habitacionesActivas = rooms.filter(room => {
     // Incluir habitaciones disponibles (status = 1)
-    if (room.status === 1) return true;
+    if ((room.status ?? room.estado) === 1) return true;
 
     // También incluir la habitación pre-seleccionada aunque esté ocupada
-    if (habitacionId && room.id_habitacion === parseInt(habitacionId)) {
+    if (habitacionId && getRoomId(room) === String(habitacionId)) {
       return true;
     }
 
@@ -641,13 +643,21 @@ export default function OrderDetailModal({
   });
 
   const shouldShowRoomSelector = hasChampagne || hasExpensiveDrinks;
+  const hasRoomSelectedInOrder = detail.some((item: any) => Boolean(item?.habitacion_id));
 
   const isClienteRegistrado = () => {
-    const cliente = detail[0]?.cliente;
+    const clienteId = detail[0]?.cliente_id;
+    const cliente = String(detail[0]?.cliente || '');
+
+    if (clienteId !== null && clienteId !== undefined && String(clienteId).trim() !== '') {
+      return true;
+    }
+
     return (
       cliente &&
       cliente.toLowerCase() !== 'cliente no registrado' &&
       cliente.toLowerCase() !== 'sin cliente' &&
+      cliente.toLowerCase() !== 'sin cliente registrado' &&
       cliente.trim() !== '' &&
       cliente !== '-'
     );
@@ -760,6 +770,12 @@ export default function OrderDetailModal({
                           filterByStatus={1}
                           includeRoomIds={habitacionId ? [habitacionId] : []}
                           showTime={true}
+                          disabled={hasRoomSelectedInOrder}
+                          disabledReason={
+                            hasRoomSelectedInOrder
+                              ? 'Este pedido ya viene con una habitación seleccionada y no se puede cambiar.'
+                              : undefined
+                          }
                         />
                         {habitacionId && (
                           <div>

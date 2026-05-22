@@ -31,6 +31,9 @@ import { ProductsSkeleton } from '@/components/shared/Skeletons';
 
 const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
+const PRODUCT_VIEW_STORAGE_KEY = 'products:view-mode';
+const PRODUCT_TABLE_PAGE_SIZE_STORAGE_KEY = 'products:table-page-size';
+const PRODUCT_CARD_PAGE_SIZE_STORAGE_KEY = 'products:card-page-size';
 const ProductCategoryPage = () => {
   const params = useParams();
   const rawId = params?.id;
@@ -94,6 +97,45 @@ const ProductCategoryPage = () => {
   React.useEffect(() => {
     setLocalProductsCards(filteredProducts);
   }, [filteredProducts]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const savedViewMode = window.localStorage.getItem(PRODUCT_VIEW_STORAGE_KEY);
+    const savedTablePageSize = window.localStorage.getItem(PRODUCT_TABLE_PAGE_SIZE_STORAGE_KEY);
+    const savedCardPageSize = window.localStorage.getItem(PRODUCT_CARD_PAGE_SIZE_STORAGE_KEY);
+
+    if (savedViewMode === 'table') {
+      setShowTableView(true);
+    } else if (savedViewMode === 'cards') {
+      setShowTableView(false);
+    }
+
+    const parsedTablePageSize = Number(savedTablePageSize);
+    if (tablePageSizes.includes(parsedTablePageSize)) {
+      setPageSize(parsedTablePageSize);
+    }
+
+    const parsedCardPageSize = Number(savedCardPageSize);
+    if (cardPageSizes.includes(parsedCardPageSize)) {
+      setPageSizeCards(parsedCardPageSize);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PRODUCT_VIEW_STORAGE_KEY, showTableView ? 'table' : 'cards');
+  }, [showTableView]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PRODUCT_TABLE_PAGE_SIZE_STORAGE_KEY, String(pageSize));
+  }, [pageSize]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PRODUCT_CARD_PAGE_SIZE_STORAGE_KEY, String(pageSizeCards));
+  }, [pageSizeCards]);
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const totalPagesCards = Math.ceil(localProductsCards.length / pageSizeCards);

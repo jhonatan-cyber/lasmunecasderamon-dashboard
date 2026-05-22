@@ -494,7 +494,8 @@ export class SaleRepository {
         habitacion_numero: row.habitacion_numero || row.habitacion_nombre,
         habitacion_nombre: row.habitacion_nombre,
         item_count: Number(row.item_count || 0),
-        anfitrionas_nicks: row.anfitrionas_nicks || null
+        anfitrionas_nicks: row.anfitrionas_nicks || null,
+        pagos_mixtos: row.pagos_mixtos ? this.parseMixedPayments(row.pagos_mixtos) : []
       });
     } catch (err) {
       logger.warn('[SaleRepository] Skipping invalid sale row:', { id: row.id_venta, err });

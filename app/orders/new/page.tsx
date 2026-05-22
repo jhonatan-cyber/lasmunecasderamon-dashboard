@@ -17,7 +17,11 @@ export default function NewOrder() {
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]); // productos agregados
   const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
-  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas(false); // false = todas las anfitrionas
+  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas({
+    status: 'active',
+    loggedIn: true,
+    enLocal: true
+  });
   const [searchCliente, setSearchCliente] = useState('');
   const [searchAnfitriona, setSearchAnfitriona] = useState('');
   const [categorias, setCategorias] = useState<any[]>([]);

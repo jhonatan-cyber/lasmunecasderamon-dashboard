@@ -226,6 +226,7 @@ export class ServiceRepository {
       waiter_name: creatorName,
       waiter_foto: row.creator_foto || null,
       cliente_nombre: row.cliente_nombre || null,
+      pagos_mixtos: row.pagos_mixtos ? this.parseMixedPayments(row.pagos_mixtos) : [],
       habitacion_comision: habitacionComision > 0 ? habitacionComision : null,
       total_comision: totalComision,
       comision_individual: comisionIndividual

@@ -7,6 +7,7 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import ThemeSwitcher from '@/components/shared/ThemeSwitcher';
 import { HeaderUserMenu } from './header/HeaderUserMenu';
+import { AttendanceCodeModal } from '@/components/attendance/AttendanceCodeModal';
 
 const CodigoVerificacionHeader = dynamic(
   () =>
@@ -65,6 +66,7 @@ export function Header({ showSidebarControls = true }: { showSidebarControls?: b
         {!isAnfitriona && (isAdmin || isCajero) && (
           <CodigoVerificacionHeader userRole={user?.role} />
         )}
+        {user && <AttendanceCodeModal />}
         <ThemeSwitcher />
         {shouldShowNotifications ? <HeaderNotifications /> : null}
         <div className='h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1 sm:mx-2'></div>

@@ -12,7 +12,7 @@
 
 import { UserPermissions } from '@/lib/middleware/auth';
 
-const TTL_MS = 5 * 60 * 1000; // 5 minutos
+const TTL_MS = 1 * 60 * 1000; // 1 minuto
 
 interface CacheEntry {
   permissions: UserPermissions;

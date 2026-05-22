@@ -45,7 +45,7 @@ export class OrderRepository {
 
   static async getAll(limit: number = 200): Promise<OrderType[]> {
     const results = await query<any[]>(
-      `SELECT P.id_pedido, COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, P.codigo, CONCAT(U.nombre, ' ', U.apellido) AS garzon, U.nick as garzon_nick, (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') FROM pedidos_usuarios PU INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id WHERE PU.pedido_id = P.id_pedido) AS nicks, P.subtotal, P.total, P.estado, P.fecha_crea FROM pedidos P LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id WHERE P.estado IN (1, 2) ORDER BY P.fecha_crea DESC LIMIT ?`,
+      `SELECT P.id_pedido, COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, P.codigo, CONCAT(U.nombre, ' ', U.apellido) AS garzon, U.nick as garzon_nick, (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') FROM pedidos_usuarios PU INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id WHERE PU.pedido_id = P.id_pedido) AS nicks, P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea FROM pedidos P LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id WHERE P.estado IN (1, 2) ORDER BY P.fecha_crea DESC LIMIT ?`,
       [limit]
     );
     return results.map(row => this.mapOrderFromDB(row));
@@ -64,7 +64,7 @@ export class OrderRepository {
          FROM pedidos_usuarios PU 
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
-        P.subtotal, P.total, P.estado, P.fecha_crea
+        P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
@@ -160,28 +160,12 @@ export class OrderRepository {
       }
     });
 
-    const roomIds = Array.from(new Set(detalles.map((d: any) => d.roomId).filter((r: any) => r)));
-    for (const rid of roomIds as string[]) {
-      const room = await BaseRepository.findOne<any>(query, 'habitaciones', 'id_habitacion', rid);
-      if (room) {
-        const isFreeRoom =
-          !Number(room.precio) && !Number(room.comision_anfitriona) && !Number(room.tiempo);
-        if (!isFreeRoom) {
-          await BaseRepository.update(query, 'habitaciones', 'id_habitacion', rid, { estado: 2 });
-          sendNotificationToAll('room_occupied', {
-            roomId: rid,
-            timestamp: getNowInBusinessTimezone()
-          });
-        }
-      }
-    }
-
     const notificationData = await buildOrderNotificationData({
       pedidoId,
       codigo,
       clienteId: clienteId || '',
       meseroId,
-      total
+      total: total + propina
     });
     sendNotificationToAll('new_order', notificationData);
 
@@ -220,10 +204,10 @@ export class OrderRepository {
         COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
         P.cliente_id,
         CONCAT(U.nombre, ' ', U.apellido) AS garzon,
-        (SELECT GROUP_CONCAT(CONCAT(U2.nombre, ' ', U2.apellido) SEPARATOR ', ') 
-         FROM pedidos_usuarios PU 
-         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
-         WHERE PU.pedido_id = P.id_pedido) AS anfitriona,
+        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') 
+           FROM pedidos_usuarios PU 
+           INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
+          WHERE PU.pedido_id = P.id_pedido) AS anfitriona,
         (SELECT GROUP_CONCAT(U2.id_usuario SEPARATOR ',') 
          FROM pedidos_usuarios PU 
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
@@ -256,7 +240,7 @@ export class OrderRepository {
          FROM pedidos_usuarios PU 
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
-        P.subtotal, P.total, P.estado, P.fecha_crea
+        P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
