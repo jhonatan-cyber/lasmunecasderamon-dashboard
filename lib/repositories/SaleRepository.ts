@@ -610,7 +610,7 @@ export class SaleRepository {
     const res = await query<any[]>(
       `
       SELECT v.*, CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_numero,
-             u.nick as cajero_nick, u.nombre as cajero_nombre,
+             u.nick as cajero_nick, u.nombre as cajero_nombre, u.apellido as cajero_apellido,
              CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
       FROM ventas v
@@ -695,6 +695,7 @@ export class SaleRepository {
       ...venta,
       cajero_nick: res[0].cajero_nick,
       cajero_nombre: res[0].cajero_nombre,
+      cajero_apellido: res[0].cajero_apellido,
       garzon_nombre: res[0].garzon_nombre,
       habitacion_nombre: res[0].habitacion_nombre,
       total_comision: totalComision,
