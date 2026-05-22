@@ -59,7 +59,7 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
       if (initialValues.foto && initialValues.foto !== 'default.png') {
         const url = initialValues.foto.startsWith('http')
           ? initialValues.foto
-          : `/img/products/${initialValues.foto}`;
+          : `/api/images/products/${initialValues.foto}`;
         setImagePreview(url);
       } else {
         setImagePreview('');
