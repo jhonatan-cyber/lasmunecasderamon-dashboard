@@ -27,7 +27,8 @@ import {
   RotateCcw,
   Calendar as CalendarIcon,
   X,
-  Trophy
+  Trophy,
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -486,6 +487,8 @@ export function Sidebar() {
     setMounted(true);
   }, []);
 
+  const [searchTerm, setSearchTerm] = React.useState('');
+
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
   const needsPermissions = Boolean(user) && !isAdmin;
   const permissionsReady = !needsPermissions || permissions.length > 0;
@@ -512,13 +515,19 @@ export function Sidebar() {
     [hasPermission, isAdmin, permissions.length]
   );
 
+  const normalizedSearch = searchTerm.toLowerCase().trim();
+
   const visibleSections = React.useMemo(
     () =>
       SIDEBAR_SECTIONS.map(section => ({
         ...section,
-        items: section.items.filter(hasModulePermission)
+        items: section.items.filter(
+          item =>
+            hasModulePermission(item) &&
+            (!normalizedSearch || item.name.toLowerCase().includes(normalizedSearch))
+        )
       })).filter(section => section.items.length > 0),
-    [hasModulePermission]
+    [hasModulePermission, normalizedSearch]
   );
 
   if (!mounted || userLoading || (needsPermissions && permissionsLoading && !permissionsReady)) {
@@ -529,6 +538,28 @@ export function Sidebar() {
     <SidebarShell isCollapsed={isCollapsed}>
       <SidebarHeader isCollapsed={isCollapsed} onClose={closeSidebar} />
       <nav className='flex-1 px-4 py-5 space-y-7 overflow-y-auto'>
+        {!isCollapsed && (
+          <div className='px-3 mb-5'>
+            <div className='relative'>
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500 pointer-events-none' />
+              <input
+                type='text'
+                placeholder='Buscar opciones...'
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className='w-full pl-9 pr-8 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all'
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className='absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors'
+                >
+                  <X className='h-3.5 w-3.5' />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {visibleSections.map(section => (
           <SidebarSectionBlock
             key={section.key}
