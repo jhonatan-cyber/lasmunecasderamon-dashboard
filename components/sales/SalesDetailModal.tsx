@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import {
   Clock,
   DollarSign,
   Receipt,
-  Hash,
+  Hash
 } from 'lucide-react';
 
 interface SalesDetailModalProps {
@@ -37,19 +37,16 @@ export function SalesDetailModal({
   onOpenChange,
   selectedVenta,
   anfitrionaColors,
-  metodoPagoLabels,
+  metodoPagoLabels
 }: SalesDetailModalProps) {
   if (!selectedVenta) return null;
 
   const hostesses =
-    selectedVenta.usuarios
-      ?.map((u) => u.nick || u.usuario_nombre)
-      .filter(Boolean) || [];
+    selectedVenta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) || [];
 
   const statusColor = statusColors[selectedVenta.estado] || 'bg-gray-100 text-gray-800';
   const statusLabel = statusLabels[selectedVenta.estado] || 'Desconocido';
-  const metodoPagoLabel =
-    metodoPagoLabels[selectedVenta.metodo_pago] || selectedVenta.metodo_pago;
+  const metodoPagoLabel = metodoPagoLabels[selectedVenta.metodo_pago] || selectedVenta.metodo_pago;
 
   const formatFecha = (fecha: string) => {
     try {
@@ -60,7 +57,7 @@ export function SalesDetailModal({
         month: 'short',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
       });
     } catch {
       return '-';
@@ -87,7 +84,9 @@ export function SalesDetailModal({
                 </div>
               </div>
             </div>
-            <Badge className={`rounded-full px-3 py-1 border-none font-bold uppercase tracking-tighter text-[10px] ${statusColor}`}>
+            <Badge
+              className={`rounded-full px-3 py-1 border-none font-bold uppercase tracking-tighter text-[10px] ${statusColor}`}
+            >
               {statusLabel}
             </Badge>
           </div>
@@ -103,8 +102,12 @@ export function SalesDetailModal({
                   <DollarSign className='h-5 w-5 text-emerald-600' />
                 </div>
                 <div>
-                  <p className='text-[10px] uppercase font-black text-emerald-400 tracking-wider'>Total</p>
-                  <p className='text-lg font-black text-emerald-600'>${formatCurrency(selectedVenta.total)}</p>
+                  <p className='text-[10px] uppercase font-black text-emerald-400 tracking-wider'>
+                    Total
+                  </p>
+                  <p className='text-lg font-black text-emerald-600'>
+                    ${formatCurrency(selectedVenta.total)}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -115,8 +118,12 @@ export function SalesDetailModal({
                   <CreditCard className='h-5 w-5 text-blue-600' />
                 </div>
                 <div>
-                  <p className='text-[10px] uppercase font-black text-blue-400 tracking-wider'>Pago</p>
-                  <p className='text-sm font-black text-gray-900 dark:text-white capitalize'>{metodoPagoLabel}</p>
+                  <p className='text-[10px] uppercase font-black text-blue-400 tracking-wider'>
+                    Pago
+                  </p>
+                  <p className='text-sm font-black text-gray-900 dark:text-white capitalize'>
+                    {metodoPagoLabel}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -127,8 +134,12 @@ export function SalesDetailModal({
                   <DollarSign className='h-5 w-5 text-amber-600' />
                 </div>
                 <div>
-                  <p className='text-[10px] uppercase font-black text-amber-400 tracking-wider'>Propina</p>
-                  <p className='text-sm font-black text-gray-900 dark:text-white'>${formatCurrency(selectedVenta.propina)}</p>
+                  <p className='text-[10px] uppercase font-black text-amber-400 tracking-wider'>
+                    Propina
+                  </p>
+                  <p className='text-sm font-black text-gray-900 dark:text-white'>
+                    ${formatCurrency(selectedVenta.propina)}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -157,7 +168,9 @@ export function SalesDetailModal({
                   Habitación
                 </span>
                 <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {selectedVenta.habitacion_numero || selectedVenta.habitacion_nombre || 'Sin habitación'}
+                  {selectedVenta.habitacion_numero ||
+                    selectedVenta.habitacion_nombre ||
+                    'Sin habitación'}
                   {selectedVenta.tiempo ? ` · ${selectedVenta.tiempo} min` : ''}
                 </span>
               </div>
@@ -171,23 +184,39 @@ export function SalesDetailModal({
                   Cliente
                 </span>
                 <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {selectedVenta.cliente_nombre?.toLowerCase() === 'sin cliente' || !selectedVenta.cliente_nombre
+                  {selectedVenta.cliente_nombre?.toLowerCase() === 'sin cliente' ||
+                  !selectedVenta.cliente_nombre
                     ? 'Cliente sin registrar'
                     : selectedVenta.cliente_nombre}
                 </span>
               </div>
             </div>
 
-            {/* Garzón */}
-            {(selectedVenta.garzon_nombre || selectedVenta.garzon_nick) && (
+            {/* Vendido por / Cajero */}
+            <div className='flex items-center gap-3'>
+              <User className='w-4 h-4 text-green-500 flex-shrink-0' />
+              <div>
+                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                  Vendido por
+                </span>
+                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                  {selectedVenta.cajero_nombre || selectedVenta.cajero_nick || '—'}
+                  {selectedVenta.cajero_nick ? ` (@${selectedVenta.cajero_nick})` : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* Pedido por / Garzón (si viene de un pedido) */}
+            {selectedVenta.pedido_id && (
               <div className='flex items-center gap-3'>
-                <User className='w-4 h-4 text-green-500 flex-shrink-0' />
+                <Receipt className='w-4 h-4 text-amber-500 flex-shrink-0' />
                 <div>
                   <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                    Garzón / Mesero
+                    Pedido por
                   </span>
                   <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                    {selectedVenta.garzon_nombre || selectedVenta.garzon_nick}
+                    {selectedVenta.garzon_nombre || selectedVenta.garzon_nick || '—'}
+                    {selectedVenta.garzon_nick ? ` (@${selectedVenta.garzon_nick})` : ''}
                   </span>
                 </div>
               </div>
@@ -242,7 +271,8 @@ export function SalesDetailModal({
                           {det.producto_nombre || 'Producto'}
                         </span>
                         <span className='text-[10px] text-gray-400 font-medium'>
-                          ${formatCurrency(det.precio)} c/u · Comisión: ${formatCurrency(det.comision)}
+                          ${formatCurrency(det.precio)} c/u · Comisión: $
+                          {formatCurrency(det.comision)}
                         </span>
                       </div>
                       <div className='flex items-center gap-4'>
@@ -260,21 +290,27 @@ export function SalesDetailModal({
                 {/* Totales */}
                 <div className='px-5 py-3.5 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800'>
                   <div className='flex items-center justify-between text-sm'>
-                    <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>Subtotal</span>
+                    <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>
+                      Subtotal
+                    </span>
                     <span className='font-bold text-gray-700 dark:text-gray-300'>
                       ${formatCurrency(selectedVenta.sub_total)}
                     </span>
                   </div>
                   {selectedVenta.propina > 0 && (
                     <div className='flex items-center justify-between text-sm mt-1'>
-                      <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>Propina</span>
+                      <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>
+                        Propina
+                      </span>
                       <span className='font-bold text-amber-600'>
                         ${formatCurrency(selectedVenta.propina)}
                       </span>
                     </div>
                   )}
                   <div className='flex items-center justify-between text-sm mt-2 pt-2 border-t border-gray-200 dark:border-gray-700'>
-                    <span className='font-black text-gray-900 dark:text-white uppercase tracking-wide text-xs'>Total</span>
+                    <span className='font-black text-gray-900 dark:text-white uppercase tracking-wide text-xs'>
+                      Total
+                    </span>
                     <span className='font-black text-emerald-600 text-lg'>
                       ${formatCurrency(selectedVenta.total)}
                     </span>
