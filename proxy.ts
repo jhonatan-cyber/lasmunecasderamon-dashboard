@@ -82,7 +82,7 @@ const PUBLIC_PATHS = [
   '/api/swagger',
   '/api-docs',
   '/api/docs',
-  '/api/permissions/setup',
+  '/api/permissions/setup-cajero',
   '/api/permissions/setup-roles',
   '/api/permissions/debug',
   '/api/permissions/test-cajero',

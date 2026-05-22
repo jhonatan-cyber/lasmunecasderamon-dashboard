@@ -184,12 +184,11 @@ export default function SaleProductModal({
                             const id = String(p.id_producto || p.id);
                             const isChampagne = isChampagneProduct(p);
                             const hasComm = hasCommission(p);
-                            const quantityLimit = cantidades[id] || 1;
                             const champagneHostessLimit = (() => {
                               const precio = Number(p.precio || p.price || 0);
                               if (precio >= 240000) return 5;
                               if (precio >= 200000) return 4;
-                              if (precio >= 160000) return 3;
+                              if (precio >= 140000) return 3;
                               if (precio >= 120000) return 2;
                               return 1;
                             })();
@@ -259,10 +258,7 @@ export default function SaleProductModal({
                                                 [id]: searchValue
                                               }));
                                             }}
-                                            maxSelection={Math.min(
-                                              champagneHostessLimit,
-                                              quantityLimit
-                                            )}
+                                            maxSelection={champagneHostessLimit}
                                           />
                                         </div>
 
@@ -276,7 +272,7 @@ export default function SaleProductModal({
                                             );
                                             const currentCount =
                                               champagneHostessSelections[id]?.length || 0;
-                                            return `${currentCount} de ${Math.min(champagneHostessLimit, quantityLimit)} seleccionadas`;
+                                            return `${currentCount} de ${champagneHostessLimit} seleccionadas`;
                                           })()}
                                         </div>
                                       </div>

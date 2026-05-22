@@ -28,7 +28,8 @@ export const SaleSchema = z.object({
   habitacion_numero: z.string().nullable().optional(),
   habitacion_nombre: z.string().nullable().optional(),
   item_count: z.number().optional().default(0),
-  anfitrionas_nicks: z.string().nullable().optional()
+  anfitrionas_nicks: z.string().nullable().optional(),
+  pagos_mixtos: z.any().optional()
 });
 
 export const SaleCreateSchema = z.object({

@@ -131,12 +131,11 @@ export const NewSaleSearch = ({
                     const id = String(producto.id_producto || producto.id);
                     const isChampagne = isChampagneProduct(producto);
                     const hasComm = (producto.comision || producto.commission || 0) > 0;
-                    const quantityLimit = 1;
                     const champagneHostessLimit = (() => {
                       const precio = Number(producto.precio || producto.price || 0);
                       if (precio >= 240000) return 5;
                       if (precio >= 200000) return 4;
-                      if (precio >= 160000) return 3;
+                      if (precio >= 140000) return 3;
                       if (precio >= 120000) return 2;
                       return 1;
                     })();
@@ -166,11 +165,11 @@ export const NewSaleSearch = ({
                                   onSearchChange={val =>
                                     setHostessSearchValues((prev: any) => ({ ...prev, [id]: val }))
                                   }
-                                  maxSelection={Math.min(champagneHostessLimit, quantityLimit)}
+                                  maxSelection={champagneHostessLimit}
                                 />
                                 <div className='text-xs text-gray-500'>
                                   {(champagneHostessSelections[id] || []).length} de{' '}
-                                  {Math.min(champagneHostessLimit, quantityLimit)} seleccionadas
+                                  {champagneHostessLimit} seleccionadas
                                 </div>
                               </div>
                             ) : (
