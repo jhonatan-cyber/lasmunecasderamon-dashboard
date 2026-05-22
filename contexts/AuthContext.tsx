@@ -165,7 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserLoading(true);
       }
       try {
-        // Agregar timestamp para evitar cachÃ© del navegador
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         const timestamp = new Date().getTime();
         const response = await fetch(`/api/auth/me?t=${timestamp}`, {
           method: 'GET',
@@ -175,8 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             Pragma: 'no-cache'
           },
           credentials: 'include',
-          cache: 'no-store' // Forzar no usar cachÃ©
+          cache: 'no-store',
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.user) {
@@ -218,7 +222,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isFetchingPermissionsRef.current = true;
       setPermissionsLoading(true);
       try {
-        // Agregar timestamp para evitar cachÃ© del navegador
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         const timestamp = new Date().getTime();
         const response = await fetch(`/api/users/${user.id}/permissions?t=${timestamp}`, {
           method: 'GET',
@@ -228,8 +234,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             Pragma: 'no-cache'
           },
           credentials: 'include',
-          cache: 'no-store' // Forzar no usar cachÃ©
+          cache: 'no-store',
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
