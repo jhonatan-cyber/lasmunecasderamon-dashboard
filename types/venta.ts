@@ -43,6 +43,7 @@ export interface VentaWithDetails extends Venta {
   habitacion_nombre?: string;
   usuarios_nombres?: string[];
   cajero_nombre?: string | null;
+  cajero_apellido?: string | null;
   cajero_nick?: string | null;
   garzon_nombre?: string | null;
   garzon_nick?: string | null;
