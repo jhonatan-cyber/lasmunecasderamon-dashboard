@@ -340,6 +340,12 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
   const prepagoCargado = Number(caja?.prepago_cargado || 0);
   const prepagoConsumido = Number(caja?.prepago_consumido || 0);
   const prepagoPendienteClientes = Number(caja?.prepago_pendiente_clientes || 0);
+  const distribucionDinero = [
+    { concepto: 'Efectivo', monto: efectivoCaja },
+    { concepto: 'Tarjeta', monto: tarjetaCaja },
+    { concepto: 'Transferencia', monto: transferenciaCaja },
+    { concepto: 'Total medios de pago', monto: totalMetodosPago }
+  ];
   const totalEgresos =
     Number(caja?.devoluciones || 0) +
     Number(caja?.anticipo || 0) +
@@ -561,6 +567,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </div>
           
+          ${activeTab !== 'resumen' ? generateDistribucionDineroHTML() : ''}
           ${getTableHTML()}
           
           <div class="footer">
@@ -569,6 +576,119 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         </body>
       </html>
     `;
+  };
+
+  const generateDistribucionDineroHTML = () => {
+    const rows = distribucionDinero
+      .map(
+        row => `
+      <tr>
+        <td>${row.concepto}</td>
+        <td class="text-right font-bold">${formatCurrencyNoDecimals(row.monto)}</td>
+      </tr>
+    `
+      )
+      .join('');
+
+    return `
+      <table>
+        <thead>
+          <tr>
+            <th>DistribuciÃ³n del dinero</th>
+            <th class="text-right">Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    `;
+  };
+
+  const formatMetodoPagoDetalle = (metodoPago?: string | null, pagosMixtos?: any) => {
+    if (metodoPago !== 'mixto') return metodoPago || 'efectivo';
+
+    let pagos: any[] = [];
+    if (Array.isArray(pagosMixtos)) {
+      pagos = pagosMixtos;
+    } else if (typeof pagosMixtos === 'string') {
+      try {
+        pagos = JSON.parse(pagosMixtos || '[]');
+      } catch {
+        pagos = [];
+      }
+    }
+
+    const detalle = pagos
+      .map((pago: any) => {
+        const metodo = String(pago?.metodo || '').trim();
+        const monto = Number(pago?.monto || 0);
+        if (!metodo || monto <= 0) return null;
+        return `${metodo}: ${formatCurrencyNoDecimals(monto)}`;
+      })
+      .filter(Boolean)
+      .join(' + ');
+
+    return detalle ? `Mixto (${detalle})` : 'Mixto';
+  };
+
+  const drawResumenDistribucionCards = (doc: any, startY: number) => {
+    const cards = [
+      {
+        title: 'EFECTIVO',
+        value: formatCurrencyNoDecimals(efectivoCaja),
+        bg: [30, 41, 59],
+        border: [51, 65, 85],
+        label: [226, 232, 240],
+        valueColor: [255, 255, 255]
+      },
+      {
+        title: 'TARJETA',
+        value: formatCurrencyNoDecimals(tarjetaCaja),
+        bg: [30, 41, 59],
+        border: [51, 65, 85],
+        label: [226, 232, 240],
+        valueColor: [255, 255, 255]
+      },
+      {
+        title: 'TRANSFERENCIA',
+        value: formatCurrencyNoDecimals(transferenciaCaja),
+        bg: [30, 41, 59],
+        border: [51, 65, 85],
+        label: [226, 232, 240],
+        valueColor: [255, 255, 255]
+      },
+      {
+        title: 'TOTAL MEDIOS DE PAGO',
+        value: formatCurrencyNoDecimals(totalMetodosPago),
+        bg: [36, 28, 68],
+        border: [124, 58, 237],
+        label: [167, 139, 250],
+        valueColor: [255, 255, 255]
+      }
+    ];
+
+    const cardWidth = 43;
+    const cardHeight = 18;
+    const gap = 3;
+    const startX = 14;
+
+    cards.forEach((card, index) => {
+      const x = startX + index * (cardWidth + gap);
+      doc.setFillColor(card.bg[0], card.bg[1], card.bg[2]);
+      doc.setDrawColor(card.border[0], card.border[1], card.border[2]);
+      doc.roundedRect(x, startY, cardWidth, cardHeight, 3, 3, 'FD');
+
+      doc.setFontSize(7);
+      doc.setTextColor(card.label[0], card.label[1], card.label[2]);
+      doc.text(card.title, x + 3, startY + 5.5);
+
+      doc.setFontSize(12);
+      doc.setTextColor(card.valueColor[0], card.valueColor[1], card.valueColor[2]);
+      doc.text(card.value, x + 3, startY + 12.8);
+    });
+
+    return startY + cardHeight;
   };
 
   // Generar HTML para tabla de ventas
@@ -583,7 +703,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         <td class="text-right">${formatCurrencyNoDecimals(venta.sub_total)}</td>
         <td class="text-right">${formatCurrencyNoDecimals(venta.propina)}</td>
         <td class="text-center">${formatSoloHora(venta.fecha_crea)}</td>
-        <td class="text-center">${venta.metodo_pago || 'efectivo'}</td>
+        <td class="text-center">${formatMetodoPagoDetalle(venta.metodo_pago, venta.pagos_mixtos)}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(venta.total)}</td>
       </tr>
     `
@@ -652,7 +772,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         <td class="text-right">${formatCurrencyNoDecimals(servicio.precio_habitacion)}</td>
         <td class="text-right">${formatCurrencyNoDecimals(servicio.iva)}</td>
         <td class="text-center">${formatFechaLarga(servicio.fecha_crea)}</td>
-        <td class="text-center">${servicio.metodo_pago || 'efectivo'}</td>
+        <td class="text-center">${formatMetodoPagoDetalle(servicio.metodo_pago, servicio.pagos_mixtos)}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(servicio.total)}</td>
       </tr>
     `
@@ -790,6 +910,22 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             <td class="text-right">${formatCurrencyNoDecimals(ingresosReales)}</td>
           </tr>
           <tr>
+            <td>Efectivo</td>
+            <td class="text-right">${formatCurrencyNoDecimals(efectivoCaja)}</td>
+          </tr>
+          <tr>
+            <td>Tarjeta</td>
+            <td class="text-right">${formatCurrencyNoDecimals(tarjetaCaja)}</td>
+          </tr>
+          <tr>
+            <td>Transferencia</td>
+            <td class="text-right">${formatCurrencyNoDecimals(transferenciaCaja)}</td>
+          </tr>
+          <tr>
+            <td>Total medios de pago</td>
+            <td class="text-right">${formatCurrencyNoDecimals(totalMetodosPago)}</td>
+          </tr>
+          <tr>
             <td>Devoluciones</td>
             <td class="text-right" style="color: red;">-${formatCurrencyNoDecimals(caja.devoluciones || 0)}</td>
           </tr>
@@ -890,6 +1026,15 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
 
       // Espacio antes de la tabla
       const startY = activeTab === 'resumen' ? 110 : 62;
+      let mainTableStartY = startY;
+
+      if (activeTab === 'resumen') {
+        doc.setFontSize(11);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Distribucion del dinero', 14, startY);
+        const cardsBottomY = drawResumenDistribucionCards(doc, startY + 4);
+        mainTableStartY = cardsBottomY + 10;
+      }
 
       const tableData = getPDFData();
       const { headers, body } = tableData;
@@ -897,7 +1042,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       autoTable(doc, {
         head: [headers],
         body: body,
-        startY: startY,
+        startY: mainTableStartY,
         styles: {
           fontSize: 8,
           cellPadding: 3,
@@ -946,6 +1091,33 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         doc.text(`Total Servicios: $${totalServicios.toLocaleString('es-CL')}`, 14, finalY + 12);
       }
 
+      if (activeTab !== 'resumen') {
+        const lastTable = (doc as any).lastAutoTable;
+        const distributionStartY = Math.min((lastTable?.finalY || startY) + 18, 250);
+
+        doc.setFontSize(11);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Distribución del dinero', 14, distributionStartY);
+
+        autoTable(doc, {
+          head: [['Concepto', 'Monto']],
+          body: distribucionDinero.map(row => [row.concepto, row.monto]),
+          startY: distributionStartY + 4,
+          styles: {
+            fontSize: 9,
+            cellPadding: 3
+          },
+          headStyles: {
+            fillColor: [41, 41, 41],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          columnStyles: {
+            1: { halign: 'right' }
+          },
+          margin: { left: 14, right: 14 }
+        });
+      }
       // Numeración de páginas
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
@@ -978,7 +1150,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             'SubTotal',
             'Propina',
             'Hora',
-            'Método',
+            'Pago / Distribucion',
             'Total'
           ],
           body: filteredVentas.map((v, i) => [
@@ -989,7 +1161,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             v.sub_total || 0,
             v.propina || 0,
             formatSoloHora(v.fecha_crea),
-            v.metodo_pago || 'efectivo',
+            formatMetodoPagoDetalle(v.metodo_pago, v.pagos_mixtos),
             v.total || 0
           ])
         };
@@ -1003,7 +1175,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             'Total Habitación',
             'IVA',
             'Fecha',
-            'Pago',
+            'Pago / Distribuci�n',
             'Total'
           ],
           body: filteredServicios.map((s, i) => [
@@ -1014,7 +1186,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             s.total_habitacion || 0,
             s.iva || 0,
             formatFechaLarga(s.fecha_crea),
-            s.metodo_pago || 'efectivo',
+            formatMetodoPagoDetalle(s.metodo_pago, s.pagos_mixtos),
             s.total || 0
           ])
         };
@@ -1040,10 +1212,14 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             ['6', 'Prepago Cargado', prepagoCargado],
             ['7', 'Prepago Consumido', prepagoConsumido],
             ['8', 'Ingreso Real a Caja', ingresosReales],
-            ['9', 'Devoluciones', -(caja.devoluciones || 0)],
-            ['10', 'Anticipos', -(caja.anticipo || 0)],
-            ['11', 'Retiros', -retiros.reduce((sum, r) => sum + r.monto, 0)],
-            ['12', 'Balance Final', balanceActual]
+            ['9', 'Efectivo', efectivoCaja],
+            ['10', 'Tarjeta', tarjetaCaja],
+            ['11', 'Transferencia', transferenciaCaja],
+            ['12', 'Total medios de pago', totalMetodosPago],
+            ['13', 'Devoluciones', -(caja.devoluciones || 0)],
+            ['14', 'Anticipos', -(caja.anticipo || 0)],
+            ['15', 'Retiros', -retiros.reduce((sum, r) => sum + r.monto, 0)],
+            ['16', 'Balance Final', balanceActual]
           ]
         };
     }

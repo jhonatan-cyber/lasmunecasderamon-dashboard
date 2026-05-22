@@ -7,7 +7,7 @@ import { ValidationError, NotFoundError, BusinessError, ConflictError } from '@/
 import type { UserPermissions } from '@/lib/middleware/auth';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
-const SHIFT_START = 20 * 60;
+const SHIFT_START = 21 * 60;
 const SHIFT_END = 23 * 60;
 
 export class AuthRepository {
@@ -254,10 +254,11 @@ export class AuthRepository {
     });
     await registrarLogin(user.id_usuario);
 
-    const marksAsis =
-      (isCajeroRole && needsCode) || (needsCode && (creds.qr_token || creds.codigo));
+    const usedQrOrCodigo = !!(creds.qr_token || creds.codigo);
+    const marksAsis = (isCajeroRole && needsCode) || (needsCode && usedQrOrCodigo);
     let asistenciaRegistrada = false;
     if (marksAsis && !hasAsis) {
+      // Dentro del horario 21:00–22:59 con QR o código: registrar asistencia
       await query(
         'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
         [generateUUID(), user.id_usuario, dateString, timeString]
@@ -270,6 +271,11 @@ export class AuthRepository {
         await regenerateAttendanceCode();
       }
       asistenciaRegistrada = true;
+    } else if (usedQrOrCodigo && !marksAsis) {
+      // Fuera del horario de asistencia pero se usó QR o código: solo en_local = 1
+      await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
+        user.id_usuario
+      ]);
     }
 
     return {

@@ -724,7 +724,8 @@ export class StatsRepository {
       monto_apertura: parseFloat(cajaRow?.monto_apertura || '0'),
       efectivo_en_caja:
         parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
-      total_efectivo: parseFloat(cajaRow?.efectivo || '0'),
+      total_efectivo:
+        parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
       total_tarjeta: parseFloat(cajaRow?.tarjeta || '0'),
       total_transferencia: parseFloat(cajaRow?.transferencia || '0'),
       total_anticipo: parseFloat(cajaRow?.anticipo || '0'),
@@ -1177,7 +1178,8 @@ export class StatsRepository {
       monto_apertura: parseFloat(cajaRow?.monto_apertura || '0'),
       efectivo_en_caja:
         parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
-      total_efectivo: parseFloat(cajaRow?.efectivo || '0'),
+      total_efectivo:
+        parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
       total_tarjeta: parseFloat(cajaRow?.tarjeta || '0'),
       total_transferencia: parseFloat(cajaRow?.transferencia || '0'),
       total_anticipo: parseFloat(cajaRow?.anticipo || '0'),

@@ -198,14 +198,22 @@ export class CashRegisterRepository {
     return {
       ...this.mapCajaFromDB({ ...cajaRow, ...prepagoMetrics }),
       balance_total: balanceTotal,
+      total_ventas: Number(cajaRow.venta || 0),
       cantidad_ventas: stats.ventas.cantidad,
       promedio_venta: stats.ventas.promedio,
+      total_servicios: Number(cajaRow.servicio || 0),
       cantidad_servicios: stats.servicios.cantidad,
       promedio_servicio: stats.servicios.promedio,
       // Alias para compatibilidad con la app
+      total_tarjeta: Number(cajaRow.tarjeta || 0),
+      total_transferencia: Number(cajaRow.transferencia || 0),
       total_anticipo: cajaRow.anticipo || 0,
+      total_devoluciones: Number(cajaRow.devolucion || 0),
+      total_iva: Number(cajaRow.iva || 0),
+      total_propina: Number(cajaRow.propina || 0),
+      total_comisiones: Number(cajaRow.comision || 0),
       efectivo_en_caja: Number(cajaRow.efectivo || 0) + Number(cajaRow.monto_apertura || 0),
-      total_efectivo: Number(cajaRow.efectivo || 0)
+      total_efectivo: Number(cajaRow.efectivo || 0) + Number(cajaRow.monto_apertura || 0)
     };
   }
 

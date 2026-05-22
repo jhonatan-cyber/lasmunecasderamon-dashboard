@@ -36,7 +36,8 @@ function FeatureScopedProviders({ children }: { children: ReactNode }) {
     pathname?.startsWith('/sales') ||
     pathname?.startsWith('/returns/services') ||
     pathname?.startsWith('/private-rooms') ||
-    pathname?.startsWith('/accounts/new');
+    pathname?.startsWith('/accounts/new') ||
+    pathname?.startsWith('/anfitriona-servicios');
 
   let content = <>{children}</>;
 
