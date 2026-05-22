@@ -47,7 +47,7 @@ const publicRoutes = [
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userLoading, hasPermission } = useAuth();
+  const { user, userLoading, hasPermission, permissionsLoading, permissionsLoaded } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
   const routerRef = useRef(router);
@@ -85,10 +85,15 @@ export function RouteGuard({ children }: RouteGuardProps) {
         return;
       }
 
-      // Es admin - autorizar directamente
       if (user.role?.toLowerCase() === 'administrador') {
         setAuthorized(true);
         setChecking(false);
+        return;
+      }
+
+      // Esperar a que los permisos terminen de cargar para no redirigir
+      // a access-denied antes de tiempo
+      if (permissionsLoading) {
         return;
       }
 
@@ -128,7 +133,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [user, userLoading, hasPermission]);
+  }, [user, userLoading, hasPermission, permissionsLoading, permissionsLoaded]);
 
   // Siempre mostrar loader mientras carga
   if (checking || userLoading) {
