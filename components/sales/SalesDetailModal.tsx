@@ -200,7 +200,11 @@ export function SalesDetailModal({
                   Vendido por
                 </span>
                 <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {selectedVenta.cajero_nombre || selectedVenta.cajero_nick || '—'}
+                  {[selectedVenta.cajero_nombre, selectedVenta.cajero_apellido]
+                    .filter(Boolean)
+                    .join(' ') ||
+                    selectedVenta.cajero_nick ||
+                    '—'}
                   {selectedVenta.cajero_nick ? ` (@${selectedVenta.cajero_nick})` : ''}
                 </span>
               </div>
