@@ -6,7 +6,8 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { DashboardSkeleton, ChartSkeleton } from '@/components/shared/Skeletons';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
-import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck } from 'lucide-react';
+import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils/utils';
 
 // New simplified components
@@ -93,6 +94,25 @@ export default function Dashboard() {
       es.close();
     };
   }, [user?.qr_token, user?.role]);
+
+  const [marcandoEntrada, setMarcandoEntrada] = useState(false);
+
+  const handleMarcarEntrada = async () => {
+    setMarcandoEntrada(true);
+    try {
+      const res = await fetch('/api/attendance/marcar', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message || 'Error al marcar entrada');
+      }
+    } catch {
+      toast.error('Error de conexión al marcar entrada');
+    } finally {
+      setMarcandoEntrada(false);
+    }
+  };
 
   const isCajero = user?.role?.toLowerCase() === 'cajero';
   const shouldShowSkeleton =
@@ -276,6 +296,14 @@ export default function Dashboard() {
                         </span>
                       </div>
                     )}
+                    <button
+                      onClick={handleMarcarEntrada}
+                      disabled={marcandoEntrada}
+                      className='w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm'
+                    >
+                      <LogIn className='h-4 w-4' />
+                      {marcandoEntrada ? 'Registrando...' : 'Marcar Entrada'}
+                    </button>
                   </div>
                 </div>
               </div>

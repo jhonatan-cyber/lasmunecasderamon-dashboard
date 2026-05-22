@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
+import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
+import { toast } from 'sonner';
 
 import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
 
@@ -43,6 +44,25 @@ export default function GarzonDashboard() {
       window.removeEventListener('focus', checkToken);
     };
   }, [user?.id, user?.qr_token, refetchUser]);
+
+  const [marcandoEntrada, setMarcandoEntrada] = useState(false);
+
+  const handleMarcarEntrada = async () => {
+    setMarcandoEntrada(true);
+    try {
+      const res = await fetch('/api/attendance/marcar', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message || 'Error al marcar entrada');
+      }
+    } catch {
+      toast.error('Error de conexión al marcar entrada');
+    } finally {
+      setMarcandoEntrada(false);
+    }
+  };
 
   if (userLoading || (loadingSummary && !dashboardData)) {
     return (
@@ -165,10 +185,10 @@ export default function GarzonDashboard() {
           <CardHeader className='text-center pb-2'>
             <CardTitle className='text-lg'>Mi Registro de Asistencia</CardTitle>
             <CardDescription>
-              Escanea este código con tu celular para marcar entrada
+              Escanea el código o presiona el botón para marcar entrada
             </CardDescription>
           </CardHeader>
-          <CardContent className='flex flex-col items-center'>
+          <CardContent className='flex flex-col items-center gap-4'>
             <div className='bg-white p-3 rounded-xl shadow-sm border border-orange-100'>
               <LazyQRCode
                 value={user.qr_token}
@@ -188,9 +208,18 @@ export default function GarzonDashboard() {
                 }
               />
             </div>
-            <p className='text-[10px] mt-2 text-orange-400 font-mono select-all uppercase'>
+            <p className='text-[10px] text-orange-400 font-mono select-all uppercase'>
               ID: {user.qr_token}
             </p>
+            <Button
+              onClick={handleMarcarEntrada}
+              disabled={marcandoEntrada}
+              className='w-full gap-2'
+              variant='default'
+            >
+              <LogIn className='h-4 w-4' />
+              {marcandoEntrada ? 'Registrando...' : 'Marcar Entrada'}
+            </Button>
           </CardContent>
         </Card>
       )}
