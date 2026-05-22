@@ -108,6 +108,33 @@ export const PUT = withAppAuth(async (request: Request) => {
   return NextResponse.json({ success: true, message: 'Producto actualizado correctamente', data });
 });
 
+export const PATCH = withAppAuth(async (request: Request) => {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const action = searchParams.get('action');
+
+  if (!id || !action) {
+    return NextResponse.json(
+      { success: false, message: 'ID y acciÃ³n son requeridos' },
+      { status: 400 }
+    );
+  }
+
+  const status = action === 'activate' ? 1 : action === 'deactivate' ? 0 : null;
+
+  if (status === null) {
+    return NextResponse.json({ success: false, message: 'AcciÃ³n no vÃ¡lida' }, { status: 400 });
+  }
+
+  const data = await ProductRepository.update(id, { status });
+
+  return NextResponse.json({
+    success: true,
+    message: `Producto ${status === 1 ? 'activado' : 'desactivado'} correctamente`,
+    data
+  });
+});
+
 export const DELETE = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
