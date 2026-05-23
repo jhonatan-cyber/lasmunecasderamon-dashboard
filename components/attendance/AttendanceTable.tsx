@@ -3,7 +3,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import useAsistencias from '@/hooks/personal/useAsistencias';
@@ -99,7 +106,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
 
   // Vista de tabla
   const TableView = () => (
-    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='hidden sm:block bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
         <Table className='min-w-full text-base text-center'>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -107,19 +114,28 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Empleado</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nick</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Asistencias</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                Asistencias
+              </TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldo</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Aporte AFP</TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                Aporte AFP
+              </TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Descuento</TableHead>
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total</TableHead>
               {canViewDetail && (
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Detalles</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Detalles
+                </TableHead>
               )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item, idx) => (
-              <TableRow key={item.id_usuario} className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === data.length - 1 ? 'last:rounded-b-xl' : ''}`}>
+              <TableRow
+                key={item.id_usuario}
+                className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === data.length - 1 ? 'last:rounded-b-xl' : ''}`}
+              >
                 <TableCell className='font-medium text-start text-sm'>
                   <div className='flex items-center gap-3'>
                     <Avatar className='h-8 w-8'>
@@ -186,8 +202,100 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
     </div>
   );
 
+  const MobileCardView = () => (
+    <div className='sm:hidden space-y-3'>
+      {data.map(item => (
+        <div
+          key={item.id_usuario}
+          className='bg-white dark:bg-slate-900/40 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm'
+        >
+          <div className='flex items-start justify-between gap-2'>
+            <div className='flex items-center gap-3 min-w-0'>
+              <Avatar className='h-10 w-10'>
+                {item.usuario_foto && item.usuario_foto !== '' ? (
+                  <Image
+                    src={`/img/users/${item.usuario_foto}?v=${imageVersion}`}
+                    alt={item.nombre_completo}
+                    width={40}
+                    height={40}
+                    className='w-full h-full object-cover rounded-full'
+                  />
+                ) : (
+                  <AvatarImage src='/img/users/default.png' alt={item.nombre_completo} />
+                )}
+                <AvatarFallback className='bg-purple-100 text-purple-700 font-bold text-xs'>
+                  {item.nombre_completo?.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className='min-w-0'>
+                <p className='font-bold text-sm text-gray-900 dark:text-white truncate'>
+                  {item.nombre_completo}
+                </p>
+                <p className='text-xs text-gray-500 truncate'>@{item.nick}</p>
+              </div>
+            </div>
+            {canViewDetail && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => handleViewDetail(item)}
+                className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+              >
+                <Eye className='w-4 h-4' />
+              </Button>
+            )}
+          </div>
+
+          <div className='grid grid-cols-2 gap-2 mt-3 text-xs'>
+            <div>
+              <span className='text-gray-500'>Rol</span>
+              <div>
+                <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-1 text-xs font-medium mt-1'>
+                  {item.rol || 'Sin rol'}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <span className='text-gray-500'>Asistencias</span>
+              <div>
+                <Badge variant='success' className='bg-green-400 text-xs mt-1'>
+                  {item.total_asistencias} Días
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <span className='text-gray-500'>Sueldo</span>
+              <p className='font-semibold text-gray-900 dark:text-white'>
+                {formatCurrencyNoDecimals(item.sueldo_total)}
+              </p>
+            </div>
+            <div>
+              <span className='text-gray-500'>Aporte AFP</span>
+              <p className='font-semibold text-gray-900 dark:text-white'>
+                {formatCurrencyNoDecimals(item.aporte_total)}
+              </p>
+            </div>
+            <div>
+              <span className='text-gray-500'>Descuento</span>
+              <p className='font-semibold text-gray-900 dark:text-white'>
+                {formatCurrencyNoDecimals(item.descuento_total)}
+              </p>
+            </div>
+            <div>
+              <span className='text-gray-500'>Total</span>
+              <p className='font-bold text-gray-900 dark:text-white'>
+                {formatCurrencyNoDecimals(item.total_final)}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <>
+      <MobileCardView />
       <TableView />
 
       {/* Modal de detalle */}
@@ -203,4 +311,3 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
     </>
   );
 }
-

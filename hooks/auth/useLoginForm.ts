@@ -25,6 +25,35 @@ export const useLoginForm = () => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
+  const getRedirectTarget = useCallback(() => {
+    if (typeof window === 'undefined') return '/dashboard';
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    if (!redirect || !redirect.startsWith('/')) return '/dashboard';
+    if (redirect === '/login' || redirect.startsWith('/login?')) return '/dashboard';
+    return redirect;
+  }, []);
+
+  const redirectAfterLogin = useCallback(async () => {
+    const target = getRedirectTarget();
+
+    try {
+      await fetch('/api/auth/check', {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store'
+      });
+    } catch {
+      // Ignorar: igualmente forzamos redirecciÃ³n.
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.assign(target);
+    } else {
+      router.replace(target);
+    }
+  }, [getRedirectTarget, router]);
+
   const getBaseUrl = () => {
     if (typeof window !== 'undefined') {
       const protocol = window.location.protocol;
@@ -120,18 +149,24 @@ export const useLoginForm = () => {
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (rateLimitRemaining > 0) return;
+    const emailValue = loginData.email.trim();
+    const passwordValue = loginData.password.trim();
+    if (!emailValue || !passwordValue) {
+      toast.error('Complete usuario y contrasena');
+      return;
+    }
     setLoading(true);
     try {
-      let emailToSend = loginData.email.trim();
+      let emailToSend = emailValue;
       if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+        emailToSend = `${emailToSend}@lasmuÃ±ecasderamon.com`;
       }
 
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...loginData, email: emailToSend })
+        body: JSON.stringify({ ...loginData, email: emailToSend, password: passwordValue })
       });
 
       const data = await res.json();
@@ -139,12 +174,12 @@ export const useLoginForm = () => {
       if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
         const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
         setRateLimitRemaining(retryAfter);
-        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
+        toast.error(`Demasiados intentos. EsperÃ¡ ${retryAfter}s para volver a intentar.`);
         setLoading(false);
         return;
       }
 
-if (data.requiereCodigo === true) {
+      if (data.requiereCodigo === true) {
         setUserTmp(data.user);
         if (data.user?.role) {
           localStorage.setItem('userRole', data.user.role);
@@ -156,18 +191,18 @@ if (data.requiereCodigo === true) {
       }
 
       if (!data.success) {
-        toast.error(data.message || 'Error de autenticación');
+        toast.error(data.message || 'Error de autenticaciÃ³n');
         setLoading(false);
         return;
       }
 
-      toast.success('¡Bienvenido al sistema!');
+      toast.success('Â¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('auth_role_hint', data.user.role);
       }
       setLoading(false);
-      window.location.replace('/dashboard');
+      await redirectAfterLogin();
     } catch (err) {
       toast.error('Error de red o servidor');
       setLoading(false);
@@ -178,14 +213,14 @@ if (data.requiereCodigo === true) {
     e.preventDefault();
     if (rateLimitRemaining > 0) return;
     if (codigo.length !== 4) {
-      toast.error('El código debe tener 4 dígitos');
+      toast.error('El cÃ³digo debe tener 4 dÃ­gitos');
       return;
     }
     setLoading(true);
     try {
       let emailToSend = loginData.email.trim();
       if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+        emailToSend = `${emailToSend}@lasmuÃ±ecasderamon.com`;
       }
 
       const res = await fetch('/api/auth/login', {
@@ -202,22 +237,22 @@ if (data.requiereCodigo === true) {
       if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
         const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
         setRateLimitRemaining(retryAfter);
-        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
+        toast.error(`Demasiados intentos. EsperÃ¡ ${retryAfter}s para volver a intentar.`);
         setLoading(false);
         return;
       }
       if (!data.success) {
-        toast.error(data.message || 'Código incorrecto');
+        toast.error(data.message || 'CÃ³digo incorrecto');
         setLoading(false);
         return;
       }
-      toast.success('¡Bienvenido al sistema!');
+      toast.success('Â¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('auth_role_hint', data.user.role);
       }
       setLoading(false);
-      window.location.replace('/dashboard');
+      await redirectAfterLogin();
     } catch (err) {
       toast.error('Error de red o servidor');
       setLoading(false);
@@ -235,7 +270,7 @@ if (data.requiereCodigo === true) {
 
       let emailOriginal = registerData.email.trim();
       if (!emailOriginal.includes('@')) {
-        emailOriginal = `${emailOriginal}@lasmuñecasderamon.com`;
+        emailOriginal = `${emailOriginal}@lasmuÃ±ecasderamon.com`;
       }
 
       const res = await fetch('/api/auth/register-first-user', {
@@ -290,7 +325,7 @@ if (data.requiereCodigo === true) {
         return;
       }
       if (e.currentTarget.value.trim() === '') {
-        toast.error('Por favor complete el campo de contraseña');
+        toast.error('Por favor complete el campo de contraseÃ±a');
         return;
       }
       if (submitButtonRef.current && !loading) {

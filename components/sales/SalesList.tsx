@@ -240,6 +240,11 @@ export function SalesList({
 
     const ubicacion = venta.habitacion_nombre || (venta as any).habitacion_numero;
     const PagoIcon = metodoPagoIcons[venta?.metodo_pago] || Banknote;
+    const canRequestAnulacion =
+      canAnular &&
+      Number(venta?.estado) !== 0 &&
+      Number(venta?.estado) !== 3 &&
+      !Boolean(venta?.has_anulacion_solicitada);
 
     return (
       <div
@@ -364,7 +369,7 @@ export function SalesList({
                   Detalles
                 </Button>
               )}
-              {Number(venta?.estado) !== 0 && canAnular && (
+              {canRequestAnulacion && (
                 <Button
                   variant='ghost'
                   size='sm'

@@ -38,6 +38,7 @@ export interface VentaUsuario {
 export interface VentaWithDetails extends Venta {
   detalles: VentaDetalle[];
   usuarios: VentaUsuario[];
+  has_anulacion_solicitada?: boolean;
   cliente_nombre?: string;
   habitacion_numero?: string;
   habitacion_nombre?: string;
