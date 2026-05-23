@@ -48,7 +48,7 @@ export function UserFilters({
 
   return (
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
-      <CardContent className='p-6'>
+      <CardContent className='p-3 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {/* Búsqueda */}
           <div className='w-full lg:flex-1'>
@@ -69,7 +69,7 @@ export function UserFilters({
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {/* Filtro de estado */}
-            <div className='w-full sm:w-auto min-w-[140px]'>
+            <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 sm:min-w-[140px] order-1'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -89,7 +89,7 @@ export function UserFilters({
             </div>
 
             {/* Filtro de rol */}
-            <div className='w-full sm:w-auto min-w-[160px]'>
+            <div className='w-[70%] sm:w-auto min-w-0 sm:min-w-[160px] order-3 sm:order-none'>
               <Label
                 htmlFor='role'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -111,7 +111,7 @@ export function UserFilters({
             </div>
 
             {/* Elementos por página */}
-            <div className='w-full sm:w-auto'>
+            <div className='w-[calc(50%-0.5rem)] sm:w-auto order-2 sm:order-none'>
               <SelectElements
                 value={pageSize}
                 onChange={handlePageSizeChange}
@@ -121,15 +121,15 @@ export function UserFilters({
             </div>
 
             {/* Botón limpiar filtros */}
-            <div className='w-full sm:w-auto'>
+            <div className='w-[20%] sm:w-auto order-4 sm:order-none'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    <div>
+                    <div className='w-full sm:w-auto'>
                       <Button
                         onClick={onClearFilters}
                         size='icon'
-                        className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
+                        className='w-full sm:w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
                       >
                         <Trash2 className='w-4 h-4' />
                       </Button>

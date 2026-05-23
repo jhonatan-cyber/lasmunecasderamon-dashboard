@@ -12,12 +12,12 @@ function addCspHeaders(request: NextRequest): {
 } {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDev = process.env.NODE_ENV === 'development';
-
-  // React dev mode requires 'unsafe-eval' for call stack reconstruction.
-  // Never included in production.
-  const scriptSrc = isDev
-    ? `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
-    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+  if (isDev) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-nonce', nonce);
+    return { nonce, cspHeader: '', headers: requestHeaders };
+  }
+  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic'`;
 
   const cspHeader = `
     default-src 'self';
@@ -271,7 +271,7 @@ export default async function proxy(request: NextRequest) {
       res.headers.set('Access-Control-Allow-Credentials', 'true');
       res.headers.set('Vary', 'Origin');
     }
-    if (includeCsp) {
+    if (includeCsp && cspHeader) {
       res.headers.set('Content-Security-Policy', cspHeader);
     }
     return res;
@@ -291,7 +291,9 @@ export default async function proxy(request: NextRequest) {
         headers: cspRequestHeaders
       }
     });
-    response.headers.set('Content-Security-Policy', cspHeader);
+    if (cspHeader) {
+      response.headers.set('Content-Security-Policy', cspHeader);
+    }
     return response;
   }
 

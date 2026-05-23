@@ -559,6 +559,11 @@ export class SaleRepository {
         u.nick as staff_nick,
         u.nombre as cajero_nombre,
         h.nombre as habitacion_numero,
+        EXISTS(
+          SELECT 1
+          FROM solicitudes_anulacion_ventas sav
+          WHERE sav.venta_id = v.id_venta
+        ) as has_anulacion_solicitada,
         (SELECT COUNT(*) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
         (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
          FROM ventas_usuarios vu
@@ -578,8 +583,15 @@ export class SaleRepository {
 
     return {
       data: data
-        .map(row => this.mapSaleFromDB(row))
-        .filter((item): item is SaleType => item !== null),
+        .map(row => {
+          const sale = this.mapSaleFromDB(row);
+          if (!sale) return null;
+          return {
+            ...sale,
+            has_anulacion_solicitada: Boolean(Number(row.has_anulacion_solicitada || 0))
+          };
+        })
+        .filter((item): item is SaleType & { has_anulacion_solicitada: boolean } => item !== null),
       total: count[0]?.count || 0
     };
   }

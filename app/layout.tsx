@@ -4,7 +4,6 @@ import { Toaster } from 'sonner';
 import LayoutContent from '@/components/LayoutContent';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { siteConfig } from '@/lib/api/site';
 
 import './globals.css';
@@ -85,7 +84,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               closeButton={true}
               duration={4000}
             />
-            <ServiceWorkerRegistration />
           </ThemeProvider>
         </ErrorBoundary>
       </body>
