@@ -27,8 +27,19 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   const totalVenta = Number(ventaInfo[0]?.total || 0);
   const montoSolicitado = Number(body.monto || 0);
 
+  const existingRequest = await query<any[]>(
+    `SELECT id
+     FROM solicitudes_anulacion_ventas
+     WHERE venta_id = ?
+     LIMIT 1`,
+    [body.ventaId]
+  );
+
   if (!body.motivo || !String(body.motivo).trim())
     throw new ValidationError('Debes ingresar el motivo de la anulacion');
+
+  if (existingRequest.length > 0)
+    throw new ValidationError('Esta venta ya tiene una solicitud de anulacion registrada');
 
   if (!Number.isFinite(montoSolicitado) || montoSolicitado <= 0)
     throw new ValidationError('Debes ingresar un monto mayor a 0', { monto: montoSolicitado });

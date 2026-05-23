@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,6 @@ export default function OvertimeFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end w-full'>
-          {/* Búsqueda */}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               {isAdmin ? 'Filtrar por Usuario' : 'Filtrar por Detalle'}
@@ -56,90 +55,89 @@ export default function OvertimeFilters({
             />
           </div>
 
-          {/* Estado */}
-          <div className='w-full sm:w-auto min-w-[140px]'>
-            <FilterSelect
-              value={statusFilter}
-              onChange={setStatusFilter}
-              label='Estado'
-              placeholder='Todos'
-              options={[
-                { value: 'all', label: 'Todos' },
-                { value: 'por_cobrar', label: 'Por pagar' },
-                { value: 'cobrado', label: 'Pagado' }
-              ]}
-            />
-          </div>
+          <div className='grid grid-cols-5 gap-2 sm:flex sm:flex-nowrap sm:gap-4 w-full lg:w-auto items-end'>
+            <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[140px] order-1 sm:order-none'>
+              <FilterSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                label='Estado'
+                placeholder='Todos'
+                options={[
+                  { value: 'all', label: 'Todos' },
+                  { value: 'por_cobrar', label: 'Por pagar' },
+                  { value: 'cobrado', label: 'Pagado' }
+                ]}
+              />
+            </div>
 
-          {/* Ordenar */}
-          <div className='w-full sm:w-auto min-w-[180px]'>
-            <FilterSelect
-              value={sortBy}
-              onChange={setSortBy}
-              label='Ordenar por'
-              placeholder='Creación'
-              options={[
-                { value: 'fecha_crea', label: 'Creación' },
-                { value: 'fecha_mod', label: 'Pago' },
-                { value: 'total', label: 'Monto' },
-                { value: 'hora', label: 'Horas' }
-              ]}
-            />
-          </div>
+            <div className='col-span-1 sm:col-auto flex items-end justify-center order-2 sm:order-none'>
+              <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+                &nbsp;
+              </Label>
+              <Button
+                variant='outline'
+                size='icon'
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+              >
+                {sortOrder === 'asc' ? (
+                  <SortAsc className='h-4 w-4' />
+                ) : (
+                  <SortDesc className='h-4 w-4' />
+                )}
+              </Button>
+            </div>
 
-          {/* Botón de ordenamiento */}
-          <div className='flex items-end'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
-              &nbsp;
-            </Label>
-            <Button
-              variant='outline'
-              size='icon'
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-            >
-              {sortOrder === 'asc' ? (
-                <SortAsc className='h-4 w-4' />
-              ) : (
-                <SortDesc className='h-4 w-4' />
-              )}
-            </Button>
-          </div>
+            <div className='col-span-1 sm:col-auto flex justify-center sm:justify-start order-3 sm:order-none'>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={onClearFilters}
+                      variant='outline'
+                      size='icon'
+                      className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
+                    >
+                      <Trash2 className='w-4 h-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                    <p>Limpiar filtros</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
-          {/* Mostrar (PageSize) */}
-          <div className='w-full sm:w-auto min-w-[100px]'>
-            <FilterSelect
-              value={pageSize.toString()}
-              onChange={v => setPageSize(parseInt(v))}
-              label='Mostrar'
-              placeholder='10'
-              options={[
-                { value: '5', label: '5 Datos' },
-                { value: '10', label: '10 Datos' },
-                { value: '20', label: '20 Datos' },
-                { value: '50', label: '50 Datos' }
-              ]}
-            />
-          </div>
+            <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[180px] order-4 sm:order-none'>
+              <FilterSelect
+                value={sortBy}
+                onChange={setSortBy}
+                label='Ordenar por'
+                placeholder='Creación'
+                options={[
+                  { value: 'fecha_crea', label: 'Creación' },
+                  { value: 'fecha_mod', label: 'Pago' },
+                  { value: 'total', label: 'Monto' },
+                  { value: 'hora', label: 'Horas' }
+                ]}
+              />
+            </div>
 
-          {/* Botón Limpiar con ícono trash */}
-          <TooltipProvider>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={onClearFilters}
-                  variant='outline'
-                  size='icon'
-                  className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
-                >
-                  <Trash2 className='w-4 h-4' />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
-                <p>Limpiar filtros</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <div className='col-span-2 sm:col-auto min-w-0 sm:min-w-[100px] order-5 sm:order-none'>
+              <FilterSelect
+                value={pageSize.toString()}
+                onChange={v => setPageSize(parseInt(v))}
+                label='Mostrar'
+                placeholder='10'
+                options={[
+                  { value: '5', label: '5 Datos' },
+                  { value: '10', label: '10 Datos' },
+                  { value: '20', label: '20 Datos' },
+                  { value: '50', label: '50 Datos' }
+                ]}
+              />
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

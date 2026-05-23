@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function Users() {
         }
 
         if (shouldGenerateEmail) {
-          formData.set('correo', `${values.nick}@lasmuñecasderamon.com`);
+          formData.set('correo', `${values.nick}@lasmuÃ±ecasderamon.com`);
         }
         formData.set('password', values.run);
 
@@ -147,25 +147,34 @@ export default function Users() {
     setIsFormOpen(true);
   }, []);
 
-  const handleActivateUser = useCallback(async (userId: string | number) => {
-    const r = await activateUser(String(userId));
-    if (r.success) toast.success('Activado');
-    else toast.error(r.message || 'Error');
-  }, [activateUser]);
+  const handleActivateUser = useCallback(
+    async (userId: string | number) => {
+      const r = await activateUser(String(userId));
+      if (r.success) toast.success('Activado');
+      else toast.error(r.message || 'Error');
+    },
+    [activateUser]
+  );
 
-  const handleDeactivateUser = useCallback(async (userId: string | number) => {
-    const r = await deactivateUser(String(userId));
-    if (r.success) toast.success('Desactivado');
-    else toast.error(r.message || 'Error');
-  }, [deactivateUser]);
+  const handleDeactivateUser = useCallback(
+    async (userId: string | number) => {
+      const r = await deactivateUser(String(userId));
+      if (r.success) toast.success('Desactivado');
+      else toast.error(r.message || 'Error');
+    },
+    [deactivateUser]
+  );
 
-  const handleDeleteUser = useCallback((userId: string | number) => {
-    const user = users?.find(u => u.id === userId);
-    if (user) {
-      setUserToDelete(user);
-      setDeleteModalOpen(true);
-    }
-  }, [users]);
+  const handleDeleteUser = useCallback(
+    (userId: string | number) => {
+      const user = users?.find(u => u.id === userId);
+      if (user) {
+        setUserToDelete(user);
+        setDeleteModalOpen(true);
+      }
+    },
+    [users]
+  );
 
   const handleConfirmDelete = useCallback(async () => {
     if (!userToDelete) return;
@@ -192,19 +201,27 @@ export default function Users() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-6 mt-6'>
-      <div className='flex flex-col sm:flex-row justify-between items-center gap-6'>
+    <div className='w-full max-w-none px-1 sm:px-3 lg:px-4 space-y-6 mt-4 pb-24 sm:pb-8'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6'>
         <div>
           <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
           <p className='text-gray-600'>Control de plataforma.</p>
         </div>
-        <div className='flex gap-2 items-center'>
+        <div className='flex flex-col w-full sm:w-auto items-stretch sm:items-end gap-2'>
           <PermissionGuard module='users' action='view' fallback={null}>
-            <ExportButtons users={users || []} />
+            <div className='w-full sm:w-auto flex justify-center sm:justify-end'>
+              <ExportButtons users={users || []} />
+            </div>
           </PermissionGuard>
           <PermissionGuard module='users' action='create' fallback={null}>
-            <Button onClick={() => { setSelectedUser(null); setIsEditing(false); setIsFormOpen(true); }}
-              className='bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'>
+            <Button
+              onClick={() => {
+                setSelectedUser(null);
+                setIsEditing(false);
+                setIsFormOpen(true);
+              }}
+              className='w-full sm:w-auto bg-black text-white rounded-full px-6 py-2 whitespace-nowrap inline-flex items-center justify-center hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+            >
               <Plus className='w-4 h-4 mr-1' /> Nuevo Usuario
             </Button>
           </PermissionGuard>
@@ -216,18 +233,40 @@ export default function Users() {
           <UsersSkeleton />
         ) : (
           <>
-            <UserFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus} filterRole={filterRole} setFilterRole={setFilterRole}
-              onClearFilters={handleClearFilters} pageSize={pageSize} setPageSize={setPageSize} setPage={setPage} />
+            <UserFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              filterRole={filterRole}
+              setFilterRole={setFilterRole}
+              onClearFilters={handleClearFilters}
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              setPage={setPage}
+            />
 
-            <div className='mt-6 overflow-x-auto'>
-              <UserTable users={users} onViewDetails={handleViewDetails} onEdit={handleEditUser}
-                onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} onDelete={handleDeleteUser}
-                formatCurrency={formatCurrency} formatDate={formatDate} getRoleBadgeColor={getRoleBadgeColor}
-                currentPage={page} pageSize={pageSize} />
+            <div className='mt-6 lg:overflow-x-auto'>
+              <UserTable
+                users={users}
+                onViewDetails={handleViewDetails}
+                onEdit={handleEditUser}
+                onActivate={handleActivateUser}
+                onDeactivate={handleDeactivateUser}
+                onDelete={handleDeleteUser}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+                getRoleBadgeColor={getRoleBadgeColor}
+                currentPage={page}
+                pageSize={pageSize}
+              />
             </div>
 
-            {totalPages > 1 && <div className='flex justify-center mt-6'><Paginate page={page} totalPages={totalPages} setPage={setPage} /></div>}
+            {totalPages > 1 && (
+              <div className='flex justify-center mt-6'>
+                <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+              </div>
+            )}
           </>
         )}
 

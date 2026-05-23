@@ -3,6 +3,15 @@ import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
   allowedDevOrigins: [
+    'localhost',
+    'localhost:3000',
+    'http://localhost:3000',
+    '127.0.0.1',
+    '127.0.0.1:3000',
+    'http://127.0.0.1:3000',
+    '192.168.0.12',
+    '192.168.0.12:3000',
+    'http://192.168.0.12:3000',
     'dev.xn--lasmuecasderamon-bub.com',
     'dev.lasmuñecasderamon.com'
   ],
@@ -48,6 +57,18 @@ const nextConfig = {
       {
         source: '/api/:path*',
         headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*'
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-Requested-With'
+          },
           {
             key: 'Cache-Control',
             value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0'

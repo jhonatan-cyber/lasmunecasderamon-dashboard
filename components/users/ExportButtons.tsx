@@ -182,13 +182,13 @@ export function ExportButtons({ users }: ExportButtonsProps) {
   };
 
   return (
-    <div className='flex gap-2'>
+    <div className='flex w-full sm:w-auto gap-2 flex-nowrap whitespace-nowrap'>
       <Button
         variant='outline'
         size='sm'
         onClick={exportToPDF}
         disabled={isExporting}
-        className='gap-2 rounded-full hover:text-red-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
+        className='flex-1 sm:flex-none gap-2 rounded-full whitespace-nowrap hover:text-red-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
       >
         <FilePdf className='h-3 w-3 sm:h-4 sm:w-4 text-red-500' />
         {isExporting ? 'Exportando...' : 'PDF'}
@@ -198,7 +198,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         size='sm'
         onClick={exportToExcel}
         disabled={isExporting}
-        className='gap-2 rounded-full hover:text-green-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
+        className='flex-1 sm:flex-none gap-2 rounded-full whitespace-nowrap hover:text-green-600 hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
       >
         <FileXls className='h-3 w-3 sm:h-4 sm:w-4 text-green-500' />
         {isExporting ? 'Exportando...' : 'Excel'}

@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import { useState, useEffect } from 'react';
 import {
   Shield,
@@ -28,7 +28,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  
+
   // Verificar permiso para asignar permisos
   const canAssignPermissions = hasPermission('roles', 'asignar_permisos');
 
@@ -127,17 +127,6 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
     });
   };
 
-  const expandAllModules = () => {
-    const allModules = Object.keys(permissionsByModule).sort((a, b) =>
-      getModuleDisplayName(a).localeCompare(getModuleDisplayName(b))
-    );
-    setExpandedModules(new Set(allModules));
-  };
-
-  const collapseAllModules = () => {
-    setExpandedModules(new Set());
-  };
-
   const getModuleDisplayName = (module: string): string => {
     const moduleNames: { [key: string]: string } = {
       accounts: 'Cuentas',
@@ -197,46 +186,8 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
   return (
     <div className='h-full bg-white dark:bg-neutral-900 flex flex-col'>
-      {/* Header fijo */}
-      <div className='flex-shrink-0 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800 p-4'>
-        <div className='flex items-center justify-between mb-4'>
-          <div>
-            <h3 className='text-lg font-semibold text-zinc-900 dark:text-neutral-100'>
-              Permisos del Rol
-            </h3>
-            <p className='text-sm text-zinc-600 dark:text-neutral-400'>{selectedRole.name}</p>
-          </div>
-          {canAssignPermissions && (
-            <Button
-              onClick={handleSavePermissions}
-              disabled={isSaving}
-              className='bg-black text-white hover:bg-zinc-900 rounded-full'
-            >
-              {isSaving ? (
-                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-              ) : (
-                <Save className='h-4 w-4 mr-2' />
-              )}
-              Guardar
-            </Button>
-          )}
-        </div>
-
-        {/* Controles de expansión */}
-        <div className='flex gap-2'>
-          <Button variant='outline' size='sm' onClick={expandAllModules} className='text-xs rounded-full'>
-            <ChevronDown className='h-3 w-3 mr-1' />
-            Expandir Todo
-          </Button>
-          <Button variant='outline' size='sm' onClick={collapseAllModules} className='text-xs rounded-full'>
-            <ChevronRight className='h-3 w-3 mr-1' />
-            Colapsar Todo
-          </Button>
-        </div>
-      </div>
-
       {/* Contenido scrolleable */}
-      <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+      <div className='flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4'>
         {Object.entries(permissionsByModule)
           .sort(([a], [b]) => getModuleDisplayName(a).localeCompare(getModuleDisplayName(b)))
           .map(([module, permissions]) => {
@@ -252,23 +203,23 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
               >
                 {/* Header del módulo */}
                 <div
-                  className='flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
+                  className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
                   onClick={() => toggleModuleExpansion(module)}
                 >
-                  <div className='flex items-center gap-2'>
+                  <div className='flex items-center gap-2 min-w-0'>
                     {isExpanded ? (
                       <ChevronDown className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
                     ) : (
                       <ChevronRight className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
                     )}
-                    <h4 className='font-medium text-zinc-800 dark:text-neutral-200 capitalize'>
+                    <h4 className='font-medium text-zinc-800 dark:text-neutral-200 capitalize break-words'>
                       {getModuleDisplayName(module)}
                     </h4>
                     <Badge variant='outline' className='text-xs'>
                       {moduleSelectedCount}/{permissions.length}
                     </Badge>
                   </div>
-                  <div className='flex gap-2'>
+                  <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
                     <Button
                       variant='outline'
                       size='sm'
@@ -276,7 +227,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                         e.stopPropagation();
                         handleSelectAllModule(module);
                       }}
-                      className='text-xs rounded-full'
+                      className='w-full sm:w-auto text-xs rounded-full'
                       disabled={!canAssignPermissions}
                     >
                       <CheckCircle className='h-3 w-3 mr-1' />
@@ -289,7 +240,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                         e.stopPropagation();
                         handleDeselectAllModule(module);
                       }}
-                      className='text-xs rounded-full'
+                      className='w-full sm:w-auto text-xs rounded-full'
                       disabled={!canAssignPermissions}
                     >
                       <XCircle className='h-3 w-3 mr-1' />
@@ -304,7 +255,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                     {permissions.map(permission => (
                       <div
                         key={permission.id || `permission-${Math.random()}`}
-                        className='flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-neutral-700 transition-colors'
+                        className='flex items-start sm:items-center justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-neutral-700 transition-colors'
                       >
                         <div className='flex-1'>
                           <div className='flex items-center gap-2'>
@@ -315,7 +266,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                               className='rounded border-zinc-300 dark:border-neutral-600 text-black focus:ring-black'
                               disabled={!canAssignPermissions}
                             />
-                            <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100'>
+                            <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100 break-words'>
                               {permission.name}
                             </span>
                             {selectedPermissions.includes(permission.id.toString()) && (
@@ -324,7 +275,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                               </Badge>
                             )}
                           </div>
-                          <p className='text-xs text-zinc-600 dark:text-neutral-400 ml-6 mt-1'>
+                          <p className='text-xs text-zinc-600 dark:text-neutral-400 ml-6 mt-1 break-words'>
                             {permission.description}
                           </p>
                         </div>
@@ -338,12 +289,28 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       </div>
 
       {/* Footer fijo */}
-      <div className='flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-4'>
-        <div className='flex items-center justify-between text-sm'>
-          <span className='text-zinc-600 dark:text-neutral-400'>Permisos seleccionados:</span>
-          <Badge variant='outline'>
-            {selectedPermissions.length} de {Object.values(permissionsByModule).flat().length}
-          </Badge>
+      <div className='flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-3 sm:p-4'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm'>
+          <div className='flex items-center justify-between sm:justify-start gap-2'>
+            <span className='text-zinc-600 dark:text-neutral-400'>Permisos seleccionados:</span>
+            <Badge variant='outline'>
+              {selectedPermissions.length} de {Object.values(permissionsByModule).flat().length}
+            </Badge>
+          </div>
+          {canAssignPermissions && (
+            <Button
+              onClick={handleSavePermissions}
+              disabled={isSaving}
+              className='w-full sm:w-auto bg-black text-white hover:bg-zinc-900 rounded-full'
+            >
+              {isSaving ? (
+                <Loader2 className='h-4 w-4 animate-spin mr-2' />
+              ) : (
+                <Save className='h-4 w-4 mr-2' />
+              )}
+              Guardar
+            </Button>
+          )}
         </div>
       </div>
     </div>

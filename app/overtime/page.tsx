@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useOvertime } from '@/hooks/personal/useOvertime';
@@ -79,14 +79,12 @@ export default function OvertimePage() {
 
   return (
     <PermissionGuard module='overtime' action='view'>
-      <div className='p-6 space-y-6'>
+      <div className='w-full max-w-none px-1 sm:px-6 lg:px-10 py-4 sm:py-6 space-y-6'>
         {/* HEADER SECTION */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div className='flex flex-col'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>
-              Horas Extras
-            </h1>
-            <p className='text-sm sm:text-base text-gray-500'>
+            <h1 className='text-3xl font-bold tracking-tight'>Horas Extras</h1>
+            <p className='text-gray-600 dark:text-neutral-300 mt-1'>
               Supervisión de registros, pagos y balances históricos del personal.
             </p>
           </div>
@@ -95,7 +93,7 @@ export default function OvertimePage() {
             disabled={cajaLoading || !hasOpenCaja}
             variant='outline'
             type='button'
-            className='flex items-center gap-2 rounded-full bg-black text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 w-full sm:w-auto border-2'
+            className='w-full sm:w-auto justify-center flex items-center gap-2 rounded-full bg-black text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all duration-200 text-sm sm:text-base px-6 py-2 border-2'
           >
             <Plus className='w-4 h-4 ' />
             Nueva Hora Extra
@@ -106,11 +104,11 @@ export default function OvertimePage() {
         <CajaAviso loading={!!cajaLoading} hasOpenCaja={hasOpenCaja === true} />
 
         {/* DATA SECTION */}
-        <div className='px-4 sm:px-8'>
+        <div>
           <OvertimeStatsCards overtime={data} />
         </div>
 
-        <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
+        <div className='mt-4 sm:mt-6'>
           <OvertimeFilters
             searchTerm={table.searchTerm}
             setSearchTerm={table.setSearchTerm}
