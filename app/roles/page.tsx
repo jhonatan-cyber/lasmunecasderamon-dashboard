@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 'use client';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
@@ -66,88 +66,29 @@ export default function RolesPage() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [roleToAction, setRoleToAction] = useState<Role | null>(null);
   const [modalAction, setModalAction] = useState<'delete' | 'deactivate'>('delete');
+  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
 
   // Cargar los roles al montar el componente
   useEffect(() => {
     fetchRoles();
   }, []); // Removed fetchRoles from dependencies
 
-  // Función para configurar la tabla de roles si no existen
   const setupRolesTable = async () => {
     try {
       const response = await fetch('/api/roles/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-
       const result = await response.json();
 
       if (result.success) {
         showSuccessToast('Tabla de roles configurada correctamente');
-        await fetchRoles(); // Recargar roles después de configurar
+        await fetchRoles();
       } else {
         showErrorToast(result.message || 'Error al configurar roles');
       }
-    } catch (error) {
+    } catch (_error) {
       showErrorToast('Error al configurar la tabla de roles');
-    }
-  };
-
-  // Función para inicializar todos los permisos del sistema
-  const initializePermissions = async () => {
-    try {
-      const r1 = await fetch('/api/permissions/setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const res1 = await r1.json();
-      if (!res1.success) {
-        showErrorToast(res1.message || 'Error al crear permisos');
-        return;
-      }
-
-      const r2 = await fetch('/api/permissions/setup-roles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const res2 = await r2.json();
-      if (res2.success) {
-        showSuccessToast(
-          `Permisos inicializados: ${res1.data.permissionsCount} permisos, roles configurados`
-        );
-      } else {
-        showErrorToast(res2.message || 'Error al asignar permisos a roles');
-      }
-    } catch (error) {
-      showErrorToast('Error al inicializar permisos');
-    }
-  };
-
-  // Función para asignar todos los permisos al administrador
-  const assignAllPermissionsToAdmin = async () => {
-    try {
-      const response = await fetch('/api/roles/admin-permissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        showSuccessToast(
-          `Todos los permisos asignados al administrador (${result.data.assignedPermissions} permisos)`
-        );
-        // Si hay un rol seleccionado y es el administrador, recargar sus permisos
-        if (selectedRole && selectedRole.name === 'Administrador') {
-          // Recargar permisos del rol seleccionado
-          const event = new Event('roleSelected');
-          window.dispatchEvent(event);
-        }
-      } else {
-        showErrorToast(result.message || 'Error al asignar permisos al administrador');
-      }
-    } catch (error) {
-      showErrorToast('Error al asignar permisos al administrador');
     }
   };
 
@@ -179,7 +120,7 @@ export default function RolesPage() {
   const handleSubmitRole = async (data: { name: string; description: string }) => {
     if (isSubmitting) return;
 
-    console.log('🔵 [ROLES PAGE] handleSubmitRole llamado con datos:', data);
+    console.log('ðŸ”µ [ROLES PAGE] handleSubmitRole llamado con datos:', data);
 
     try {
       setIsSubmitting(true);
@@ -338,20 +279,37 @@ export default function RolesPage() {
             roleName={roleToAction?.name || ''}
             action={modalAction}
           />
-          <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+          <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
+            <DialogContent className='w-[95vw] max-w-[95vw] sm:hidden h-[90vh] flex flex-col p-0 overflow-hidden'>
+              <DialogHeader className='flex-shrink-0 px-4 pt-4 pb-3 border-b'>
+                <DialogTitle className='text-base font-semibold'>
+                  {selectedRole ? `Permisos del Rol: ${selectedRole.name}` : 'Permisos del Rol'}
+                </DialogTitle>
+                <DialogDescription className='sr-only'>
+                  Gestión de permisos del rol seleccionado
+                </DialogDescription>
+              </DialogHeader>
+              <div className='flex-1 min-h-0 overflow-hidden p-2'>
+                <div className='h-full min-h-0 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg'>
+                  <PermissionsPanel selectedRole={selectedRole} />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <div className='w-full max-w-none flex flex-col gap-4 sm:gap-6 px-1 sm:p-6 lg:p-10 mt-3 sm:mt-6 lg:mt-10'>
             {/* Header */}
             <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
               <div>
-                <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-neutral-100'>
+                <h2 className='text-3xl font-bold text-black dark:text-neutral-100'>
                   Gestión de Roles
                 </h2>
-                <p className='text-sm sm:text-base text-zinc-600 dark:text-neutral-300 mt-1'>
+                <p className='text-gray-600 dark:text-neutral-300 mt-1'>
                   Administra roles y permisos del sistema
                 </p>
               </div>
               <PermissionGuard module='roles' action='create' fallback={null}>
                 <button
-                  className='whitespace-nowrap inline-flex items-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+                  className='whitespace-nowrap inline-flex items-center justify-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
                   onClick={() => {
                     setIsAddRoleModalOpen(true);
                     setIsEditMode(false);
@@ -361,7 +319,7 @@ export default function RolesPage() {
                 >
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className='flex items-center'>
+                      <span className='flex items-center justify-center w-full'>
                         <Plus className='h-4 w-4 mr-2' />
                         Nuevo Rol
                       </span>
@@ -373,7 +331,7 @@ export default function RolesPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
+            <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
               <StatsCard
                 icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
                 bgColor='bg-black'
@@ -412,8 +370,8 @@ export default function RolesPage() {
                         />
                       </div>
                     </div>
-                    <div className='flex items-center gap-2'>
-                      <div className='min-w-[180px]'>
+                    <div className='flex items-center gap-2 w-full'>
+                      <div className='w-full min-w-0'>
                         <FilterSelect
                           label='Estado'
                           value={String(filterStatus)}
@@ -423,20 +381,6 @@ export default function RolesPage() {
                           options={ROLE_STATUS_OPTIONS}
                         />
                       </div>
-                      <button
-                        onClick={initializePermissions}
-                        className='inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
-                        title='Crear todos los permisos y asignarlos a cada rol'
-                      >
-                        Inicializar Permisos
-                      </button>
-                      <button
-                        onClick={assignAllPermissionsToAdmin}
-                        className='inline-flex items-center px-2 py-1 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm'
-                        title='Asignar todos los permisos al administrador'
-                      >
-                        Admin Permisos
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -470,7 +414,13 @@ export default function RolesPage() {
                         key={role.id || `role-${Math.random()}`}
                         role={role}
                         selected={selectedRole?.id === role.id}
-                        onSelect={() => setSelectedRole(role)}
+                        onSelect={() => {
+                          setSelectedRole(role);
+                        }}
+                        onViewPermissions={() => {
+                          setSelectedRole(role);
+                          setIsPermissionsModalOpen(true);
+                        }}
                         onEdit={() => handleEditRole(role)}
                         onDeactivate={() => handleDeactivateRole(role)}
                         onActivate={() => handleActivateRole(role.id)}
@@ -482,7 +432,7 @@ export default function RolesPage() {
               </div>
 
               {/* Columna derecha - Permissions Panel (50%) */}
-              <div>
+              <div className='hidden lg:block'>
                 <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
                   <PermissionsPanel selectedRole={selectedRole} />
                 </div>

@@ -199,13 +199,18 @@ export default function AttendancePage() {
     <PermissionGuard module='attendance' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white'>
-            Asistencias
-          </h1>
+          <div>
+            <h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white'>
+              Asistencias
+            </h1>
+            <p className='text-gray-600 dark:text-neutral-300 mt-1'>
+              Administra la asistencia del personal
+            </p>
+          </div>
           <Button
             onClick={() => setAsistenciaFormOpen(true)}
             size='sm'
-            className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+            className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
           >
             <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
             Registrar Manual

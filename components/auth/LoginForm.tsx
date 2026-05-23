@@ -1,6 +1,7 @@
 'use client';
 
-import { Mail, Lock, Eye, Sun, Moon, Monitor } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +55,24 @@ export const LoginForm = ({
   setThemeMode,
   onSetStep
 }: LoginFormProps) => {
+  const [themeChanging, setThemeChanging] = useState<string | null>(null);
+  const passwordTapRef = useRef(0);
+  const themeTapRef = useRef(0);
+
+  const runSingleTap = (ref: { current: number }, action: () => void) => {
+    const now = Date.now();
+    if (now - ref.current < 250) return;
+    ref.current = now;
+    action();
+  };
+
+  const handleThemeChange = (mode: string) => {
+    console.log('[Login][Theme] Cambio solicitado:', mode, 'at', new Date().toISOString());
+    setThemeChanging(mode);
+    setThemeMode(mode);
+    setTimeout(() => setThemeChanging(null), 300);
+  };
+
   const themeOptions = [
     { value: 'light', label: 'Light', icon: Sun },
     { value: 'dark', label: 'Dark', icon: Moon },
@@ -62,7 +81,13 @@ export const LoginForm = ({
 
   if (step === 'login') {
     return (
-      <form className='space-y-5' onSubmit={handleLogin}>
+      <form
+        className='space-y-5'
+        noValidate
+        onSubmit={e => {
+          e.preventDefault();
+        }}
+      >
         <div>
           <Label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
             Usuario
@@ -100,7 +125,7 @@ export const LoginForm = ({
               ref={passwordInputRef}
               type={showPassword ? 'text' : 'password'}
               placeholder='Contraseña'
-              className='pl-12 pr-12 bg-white dark:bg-gray-800'
+              className='pl-12 pr-14 bg-white dark:bg-gray-800'
               value={loginData.password}
               onChange={e => setLoginData({ ...loginData, password: e.target.value })}
               onKeyDown={handlePasswordKeyDown}
@@ -108,10 +133,23 @@ export const LoginForm = ({
             />
             <button
               type='button'
-              onClick={() => setShowPassword(!showPassword)}
-              className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 transition-colors'
+              onPointerDown={e => {
+                e.preventDefault();
+                runSingleTap(passwordTapRef, () => setShowPassword(!showPassword));
+              }}
+              onMouseDown={e => {
+                e.preventDefault();
+                runSingleTap(passwordTapRef, () => setShowPassword(!showPassword));
+              }}
+              onClick={e => {
+                e.preventDefault();
+                runSingleTap(passwordTapRef, () => setShowPassword(!showPassword));
+              }}
+              aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              className='absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-md p-2 text-gray-400 transition-colors hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:text-gray-500 dark:focus:ring-gray-600 touch-manipulation cursor-pointer pointer-events-auto'
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <Eye className='w-5 h-5' />
+              {showPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
             </button>
           </div>
           <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
@@ -121,9 +159,21 @@ export const LoginForm = ({
 
         <Button
           ref={submitButtonRef}
-          type='submit'
+          type='button'
           variant='outline'
           disabled={loading}
+          onPointerDown={e => {
+            e.preventDefault();
+            void handleLogin();
+          }}
+          onMouseDown={e => {
+            e.preventDefault();
+            void handleLogin();
+          }}
+          onClick={e => {
+            e.preventDefault();
+            void handleLogin();
+          }}
           className='rounded-full px-6 bg-black dark:bg-white text-white dark:text-black border-black dark:border-white  dark:hover:bg-gray-200 hover:scale-110 transition-all w-full'
         >
           {loading ? 'Validando...' : 'Iniciar sesión'}
@@ -152,14 +202,28 @@ export const LoginForm = ({
                   key={opt.value}
                   type='button'
                   variant='ghost'
-                  onClick={() => setThemeMode(opt.value)}
+                  onPointerDown={e => {
+                    e.preventDefault();
+                    runSingleTap(themeTapRef, () => handleThemeChange(opt.value));
+                  }}
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    runSingleTap(themeTapRef, () => handleThemeChange(opt.value));
+                  }}
+                  onClick={e => {
+                    e.preventDefault();
+                    runSingleTap(themeTapRef, () => handleThemeChange(opt.value));
+                  }}
                   aria-pressed={isActive}
                   title={opt.label}
                   className={`rounded-full text-xl transition-colors ${
                     isActive
                       ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  } min-h-10 min-w-10 touch-manipulation cursor-pointer pointer-events-auto ${
+                    themeChanging === opt.value ? 'opacity-80 animate-pulse' : ''
                   }`}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <Icon className='h-4 w-4' />
                 </Button>

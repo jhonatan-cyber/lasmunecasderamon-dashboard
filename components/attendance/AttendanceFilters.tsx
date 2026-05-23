@@ -65,9 +65,9 @@ export default function AttendanceFilters({
             />
           </div>
 
-          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
+          <div className='grid grid-cols-5 gap-2 sm:flex sm:flex-nowrap sm:gap-4 w-full lg:w-auto items-end'>
             {/* Filtro de rol */}
-            <div className='w-full sm:w-auto min-w-[160px]'>
+            <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[160px] order-1 sm:order-none'>
               <FilterSelect
                 value={filterRole}
                 onChange={setFilterRole}
@@ -84,7 +84,7 @@ export default function AttendanceFilters({
             </div>
 
             {/* Ordenar */}
-            <div className='w-full sm:w-auto min-w-[180px]'>
+            <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[180px] order-4 sm:order-none'>
               <FilterSelect
                 value={sortBy}
                 onChange={setSortBy}
@@ -103,7 +103,7 @@ export default function AttendanceFilters({
             </div>
 
             {/* Botón de ordenamiento */}
-            <div className='flex items-end'>
+            <div className='col-span-1 sm:col-auto flex items-end justify-center order-2 sm:order-none'>
               <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
                 &nbsp;
               </Label>
@@ -122,7 +122,7 @@ export default function AttendanceFilters({
             </div>
 
             {/* Elementos por página */}
-            <div className='w-full sm:w-auto min-w-[140px]'>
+            <div className='col-span-2 sm:col-auto min-w-0 sm:min-w-[140px] order-5 sm:order-none'>
               <FilterSelect
                 value={pageSize.toString()}
                 onChange={value => handlePageSizeChange(parseInt(value))}
@@ -138,7 +138,7 @@ export default function AttendanceFilters({
             </div>
 
             {/* Botón limpiar filtros */}
-            <div className='w-full sm:w-auto'>
+            <div className='col-span-1 sm:col-auto flex justify-center sm:justify-start order-3 sm:order-none'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
