@@ -13,6 +13,7 @@ export interface TimerData {
   isActive: boolean;
   isPaused: boolean;
   isTemporary?: boolean;
+  datosTemporales?: any;
   tipoTransaccion?: 'servicio' | 'venta' | 'cuenta';
   anfitrionas?: string;
   onExpire?: (instance: TimerInstance) => void;
@@ -31,6 +32,7 @@ export class TimerInstance {
   readonly startTime = signal(new Date());
   readonly tipoTransaccion = signal<'servicio' | 'venta' | 'cuenta'>('servicio');
   readonly anfitrionas = signal('');
+  readonly datosTemporales = signal<any>(undefined);
   readonly onExpire: ((instance: TimerInstance) => void) | undefined;
   readonly remainingSeconds = signal(0);
   readonly isActive = signal(false);
@@ -52,6 +54,7 @@ export class TimerInstance {
       this.startTime.value = data.startTime;
       this.tipoTransaccion.value = data.tipoTransaccion || 'servicio';
       this.anfitrionas.value = data.anfitrionas || '';
+      this.datosTemporales.value = data.datosTemporales;
 
       this.remainingSeconds.value = initialSeconds;
       this.isActive.value = data.isActive && initialSeconds > 0;
@@ -117,6 +120,7 @@ export class TimerInstance {
       if (data.startTime !== undefined) this.startTime.value = data.startTime;
       if (data.tipoTransaccion !== undefined) this.tipoTransaccion.value = data.tipoTransaccion;
       if (data.anfitrionas !== undefined) this.anfitrionas.value = data.anfitrionas;
+      if (data.datosTemporales !== undefined) this.datosTemporales.value = data.datosTemporales;
       if (data.isActive !== undefined) this.isActive.value = data.isActive;
       if (data.isPaused !== undefined) this.isPaused.value = data.isPaused;
     });
@@ -136,6 +140,7 @@ export class TimerInstance {
       isPaused: this.isPaused.peek(),
       remainingTime: this.remainingSeconds.peek(),
       isTemporary: this.isTemporary,
+      datosTemporales: this.datosTemporales.peek(),
       tipoTransaccion: this.tipoTransaccion.peek(),
       anfitrionas: this.anfitrionas.peek()
     };

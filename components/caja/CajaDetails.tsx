@@ -333,24 +333,26 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
   const totalIngresos = totalVentas + Number(caja?.servicios || 0);
   const ingresosReales =
     Number(caja?.efectivo || 0) + Number(caja?.tarjeta || 0) + Number(caja?.transferencia || 0);
-  const totalMetodosPago = ingresosReales;
   const efectivoCaja = Number(caja?.efectivo || 0);
+  const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
   const tarjetaCaja = Number(caja?.tarjeta || 0);
   const transferenciaCaja = Number(caja?.transferencia || 0);
   const prepagoCargado = Number(caja?.prepago_cargado || 0);
   const prepagoConsumido = Number(caja?.prepago_consumido || 0);
   const prepagoPendienteClientes = Number(caja?.prepago_pendiente_clientes || 0);
-  const distribucionDinero = [
-    { concepto: 'Efectivo', monto: efectivoCaja },
-    { concepto: 'Tarjeta', monto: tarjetaCaja },
-    { concepto: 'Transferencia', monto: transferenciaCaja },
-    { concepto: 'Total medios de pago', monto: totalMetodosPago }
-  ];
   const totalEgresos =
     Number(caja?.devoluciones || 0) +
     Number(caja?.anticipo || 0) +
     retiros.reduce((sum, r) => sum + Number(r.monto || 0), 0);
-  const balanceActual = Number(caja?.monto_apertura || 0) + ingresosReales - totalEgresos;
+  const efectivoNeto = efectivoTotal - totalEgresos;
+  const totalMetodosPago = efectivoTotal + tarjetaCaja + transferenciaCaja;
+  const totalReal = efectivoNeto + tarjetaCaja + transferenciaCaja;
+  const distribucionDinero = [
+    { concepto: 'Efectivo neto', monto: efectivoNeto },
+    { concepto: 'Tarjeta', monto: tarjetaCaja },
+    { concepto: 'Transferencia', monto: transferenciaCaja },
+    { concepto: 'Subtotal antes de egresos', monto: totalMetodosPago }
+  ];
 
   // Datos para gráfico de barras
   const chartData = [
@@ -594,7 +596,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       <table>
         <thead>
           <tr>
-            <th>DistribuciÃ³n del dinero</th>
+            <th>Distribución del dinero</th>
             <th class="text-right">Monto</th>
           </tr>
         </thead>
@@ -635,8 +637,8 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
   const drawResumenDistribucionCards = (doc: any, startY: number) => {
     const cards = [
       {
-        title: 'EFECTIVO',
-        value: formatCurrencyNoDecimals(efectivoCaja),
+        title: 'EFECTIVO NETO',
+        value: formatCurrencyNoDecimals(efectivoNeto),
         bg: [30, 41, 59],
         border: [51, 65, 85],
         label: [226, 232, 240],
@@ -910,8 +912,8 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             <td class="text-right">${formatCurrencyNoDecimals(ingresosReales)}</td>
           </tr>
           <tr>
-            <td>Efectivo</td>
-            <td class="text-right">${formatCurrencyNoDecimals(efectivoCaja)}</td>
+            <td>Efectivo neto</td>
+            <td class="text-right">${formatCurrencyNoDecimals(efectivoNeto)}</td>
           </tr>
           <tr>
             <td>Tarjeta</td>
@@ -922,7 +924,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             <td class="text-right">${formatCurrencyNoDecimals(transferenciaCaja)}</td>
           </tr>
           <tr>
-            <td>Total medios de pago</td>
+            <td>Subtotal antes de egresos</td>
             <td class="text-right">${formatCurrencyNoDecimals(totalMetodosPago)}</td>
           </tr>
           <tr>
@@ -940,8 +942,8 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         </tbody>
         <tfoot>
           <tr class="summary-row" style="background-color: #e8f5e8; font-size: 14px;">
-            <td>Balance Final</td>
-            <td class="text-right">${formatCurrencyNoDecimals(balanceActual)}</td>
+            <td>Total real</td>
+            <td class="text-right">${formatCurrencyNoDecimals(totalReal)}</td>
           </tr>
         </tfoot>
       </table>
@@ -1212,14 +1214,14 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             ['6', 'Prepago Cargado', prepagoCargado],
             ['7', 'Prepago Consumido', prepagoConsumido],
             ['8', 'Ingreso Real a Caja', ingresosReales],
-            ['9', 'Efectivo', efectivoCaja],
+            ['9', 'Efectivo neto', efectivoNeto],
             ['10', 'Tarjeta', tarjetaCaja],
             ['11', 'Transferencia', transferenciaCaja],
-            ['12', 'Total medios de pago', totalMetodosPago],
+            ['12', 'Subtotal antes de egresos', totalMetodosPago],
             ['13', 'Devoluciones', -(caja.devoluciones || 0)],
             ['14', 'Anticipos', -(caja.anticipo || 0)],
             ['15', 'Retiros', -retiros.reduce((sum, r) => sum + r.monto, 0)],
-            ['16', 'Balance Final', balanceActual]
+            ['16', 'Total real', totalReal]
           ]
         };
     }
@@ -1268,84 +1270,9 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
           {/* Quick Stats - Sticky Header */}
           <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
             <div className='space-y-4'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
                 {isLoadingSummary ? (
                   <>
-                    <SummaryCardSkeleton />
-                    <SummaryCardSkeleton />
-                    <SummaryCardSkeleton />
-                    <SummaryCardSkeleton />
-                  </>
-                ) : (
-                  <>
-                    <div className='bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center'>
-                          <TrendingUp className='w-5 h-5 text-emerald-600 dark:text-emerald-400' />
-                        </div>
-                        <div>
-                          <p className='text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase'>
-                            Ingresos
-                          </p>
-                          <p className='text-lg font-black text-gray-900 dark:text-white'>
-                            {formatCurrencyNoDecimals(totalIngresos)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className='bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl border border-rose-100 dark:border-rose-800'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-rose-500/10 rounded-lg flex items-center justify-center'>
-                          <TrendingDown className='w-5 h-5 text-rose-600 dark:text-rose-400' />
-                        </div>
-                        <div>
-                          <p className='text-xs font-bold text-rose-600 dark:text-rose-400 uppercase'>
-                            Egresos
-                          </p>
-                          <p className='text-lg font-black text-gray-900 dark:text-white'>
-                            {formatCurrencyNoDecimals(totalEgresos)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className='bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center'>
-                          <Wallet className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                        </div>
-                        <div>
-                          <p className='text-xs font-bold text-blue-600 dark:text-blue-400 uppercase'>
-                            Balance
-                          </p>
-                          <p className='text-lg font-black text-gray-900 dark:text-white'>
-                            {formatCurrencyNoDecimals(balanceActual)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className='bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-100 dark:border-amber-800'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center'>
-                          <CreditCard className='w-5 h-5 text-amber-600 dark:text-amber-400' />
-                        </div>
-                        <div>
-                          <p className='text-xs font-bold text-amber-600 dark:text-amber-400 uppercase'>
-                            Propinas
-                          </p>
-                          <p className='text-lg font-black text-gray-900 dark:text-white'>
-                            {formatCurrencyNoDecimals(totalPropinas)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'>
-                {isLoadingSummary ? (
-                  <>
-                    <SummaryCardSkeleton />
                     <SummaryCardSkeleton />
                     <SummaryCardSkeleton />
                     <SummaryCardSkeleton />
@@ -1362,7 +1289,10 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                             Efectivo
                           </p>
                           <p className='text-lg font-black text-gray-900 dark:text-white'>
-                            {formatCurrencyNoDecimals(efectivoCaja)}
+                            {formatCurrencyNoDecimals(efectivoNeto)}
+                          </p>
+                          <p className='text-[11px] text-slate-500 dark:text-slate-400'>
+                            Apertura + efectivo - egresos
                           </p>
                         </div>
                       </div>
@@ -1397,6 +1327,19 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                         </div>
                       </div>
                     </div>
+                  </>
+                )}
+              </div>
+
+              <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+                {isLoadingSummary ? (
+                  <>
+                    <SummaryCardSkeleton />
+                    <SummaryCardSkeleton />
+                    <SummaryCardSkeleton />
+                  </>
+                ) : (
+                  <>
                     <div className='bg-violet-50 dark:bg-violet-900/20 p-3 rounded-xl border border-violet-100 dark:border-violet-800'>
                       <div className='flex items-center gap-3'>
                         <div className='w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center'>
@@ -1404,10 +1347,46 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                         </div>
                         <div>
                           <p className='text-xs font-bold text-violet-600 dark:text-violet-400 uppercase'>
-                            Total medios de pago
+                            Subtotal
                           </p>
                           <p className='text-lg font-black text-violet-700 dark:text-violet-300'>
                             {formatCurrencyNoDecimals(totalMetodosPago)}
+                          </p>
+                          <p className='text-[11px] text-violet-600/80 dark:text-violet-300/80'>
+                            Antes de egresos
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className='bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl border border-rose-100 dark:border-rose-800'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-10 h-10 bg-rose-500/10 rounded-lg flex items-center justify-center'>
+                          <TrendingDown className='w-5 h-5 text-rose-600 dark:text-rose-400' />
+                        </div>
+                        <div>
+                          <p className='text-xs font-bold text-rose-600 dark:text-rose-400 uppercase'>
+                            Egresos
+                          </p>
+                          <p className='text-lg font-black text-gray-900 dark:text-white'>
+                            {formatCurrencyNoDecimals(totalEgresos)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className='bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center'>
+                          <Wallet className='w-5 h-5 text-emerald-600 dark:text-emerald-400' />
+                        </div>
+                        <div>
+                          <p className='text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase'>
+                            Total real
+                          </p>
+                          <p className='text-lg font-black text-gray-900 dark:text-white'>
+                            {formatCurrencyNoDecimals(totalReal)}
+                          </p>
+                          <p className='text-[11px] text-emerald-600/80 dark:text-emerald-300/80'>
+                            Subtotal - egresos
                           </p>
                         </div>
                       </div>
@@ -1703,10 +1682,10 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                       <>
                         <div className='flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700/50'>
                           <span className='text-sm text-gray-600 dark:text-gray-400'>
-                            Monto Apertura
+                            Efectivo Neto
                           </span>
                           <span className='font-bold text-gray-900 dark:text-white'>
-                            {formatCurrencyNoDecimals(caja.monto_apertura)}
+                            {formatCurrencyNoDecimals(efectivoNeto)}
                           </span>
                         </div>
                         <div className='flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700/50'>
@@ -1790,10 +1769,10 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                         </div>
                         <div className='flex justify-between items-center py-3 bg-emerald-50 dark:bg-emerald-900/20 -mx-4 px-4 mt-2'>
                           <span className='font-bold text-emerald-800 dark:text-emerald-200'>
-                            Balance Final
+                            Total Real
                           </span>
                           <span className='text-xl font-black text-emerald-700 dark:text-emerald-300'>
-                            {formatCurrencyNoDecimals(balanceActual)}
+                            {formatCurrencyNoDecimals(totalReal)}
                           </span>
                         </div>
                         <div className='rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'>

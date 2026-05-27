@@ -537,29 +537,29 @@ export function Sidebar() {
   const content = (
     <SidebarShell isCollapsed={isCollapsed}>
       <SidebarHeader isCollapsed={isCollapsed} onClose={closeSidebar} />
-      <nav className='flex-1 px-4 py-5 space-y-7 overflow-y-auto'>
-        {!isCollapsed && (
-          <div className='px-3 mb-5'>
-            <div className='relative'>
-              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500 pointer-events-none' />
-              <input
-                type='text'
-                placeholder='Buscar opciones...'
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className='w-full pl-9 pr-8 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all'
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className='absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors'
-                >
-                  <X className='h-3.5 w-3.5' />
-                </button>
-              )}
-            </div>
+      {!isCollapsed && (
+        <div className='sticky top-0 z-10 border-b border-gray-200/80 bg-white px-7 py-4 dark:border-neutral-800 dark:bg-neutral-900'>
+          <div className='relative'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500 pointer-events-none' />
+            <input
+              type='text'
+              placeholder='Buscar opciones...'
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className='w-full pl-9 pr-8 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all'
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className='absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors'
+              >
+                <X className='h-3.5 w-3.5' />
+              </button>
+            )}
           </div>
-        )}
+        </div>
+      )}
+      <nav className='flex-1 overflow-y-auto px-4 py-5 space-y-7'>
         {visibleSections.map(section => (
           <SidebarSectionBlock
             key={section.key}

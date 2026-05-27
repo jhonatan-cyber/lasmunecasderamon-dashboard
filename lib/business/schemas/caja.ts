@@ -34,6 +34,7 @@ export const CajaSchema = z.object({
   propina: z.number().optional().default(0),
   cuenta: z.number().optional().default(0),
   anticipo: z.number().optional().default(0),
+  retiro_total: z.number().optional().default(0),
   egreso: z.number().optional().default(0),
   iva: z.number().optional().default(0),
   comision: z.number().optional().default(0),

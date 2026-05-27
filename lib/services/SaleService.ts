@@ -76,7 +76,21 @@ export class SaleService {
         });
       }
 
-      const estado = validated.habitacion_id && validated.tiempo > 0 ? 2 : 1;
+      // Verificar si la habitación es de libre ingreso (sin precio o sin comisión)
+      let esLibreIngreso = false;
+      if (validated.habitacion_id) {
+        const roomRows = await trx<any[]>(
+          'SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+          [validated.habitacion_id]
+        );
+        if (roomRows.length > 0) {
+          const roomPrice = Number(roomRows[0].precio || 0);
+          const roomCommission = Number(roomRows[0].comision_anfitriona || 0);
+          esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
+        }
+      }
+
+      const estado = validated.habitacion_id && validated.tiempo > 0 && !esLibreIngreso ? 2 : 1;
 
       await SaleRepository.rawInsert(trx, {
         id_venta: ventaId,

@@ -12,13 +12,19 @@ export class RoomRepository {
     const tieneVentasActivas = row.ventas_activas > 0;
     const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
 
+    // Habitaciones de libre ingreso (sin precio o sin comisión) siempre se muestran como libres
+    const precio = Number(row.precio || 0);
+    const comision = Number(row.comision_anfitriona || 0);
+    const esLibreIngreso = precio <= 0 || comision <= 0;
+    const statusFinal = esLibreIngreso ? 1 : estadoHabitacion;
+
     return RoomSchema.parse({
       id: row.id_habitacion,
       name: row.nombre,
       price: row.precio,
       time: row.tiempo,
       comision_anfitriona: row.comision_anfitriona ?? null,
-      status: estadoHabitacion,
+      status: statusFinal,
       display_order: row.display_order,
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod

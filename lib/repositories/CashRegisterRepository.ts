@@ -75,6 +75,7 @@ export class CashRegisterRepository {
       propina: row.propina ?? 0,
       cuenta: row.cuenta ?? 0,
       anticipo: row.anticipo ?? 0,
+      retiro_total: Number(row.retiro_total ?? 0),
       iva: row.iva ?? 0,
       comision: row.comision ?? 0,
       usuario_apertura: row.usuario_apertura,
@@ -219,7 +220,13 @@ export class CashRegisterRepository {
 
   static async getAll(): Promise<CajaType[]> {
     const results = await query<any[]>(`
-      SELECT c.*, CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre
+      SELECT c.*,
+             CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
+             COALESCE((
+               SELECT SUM(r.monto)
+               FROM retiros_caja r
+               WHERE r.caja_id = c.id_caja
+             ), 0) as retiro_total
       FROM cajas c
       LEFT JOIN usuarios u1 ON c.usuario_id_apertura = u1.id_usuario
       WHERE c.estado IN (0, 1) ORDER BY c.fecha_apertura DESC
@@ -234,7 +241,12 @@ export class CashRegisterRepository {
              CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
              u1.foto as cajero_foto,
              CONCAT(u2.nombre, ' ', u2.apellido) as cajero_cierre_nombre,
-             u2.foto as cajero_cierre_foto
+             u2.foto as cajero_cierre_foto,
+             COALESCE((
+               SELECT SUM(r.monto)
+               FROM retiros_caja r
+               WHERE r.caja_id = c.id_caja
+             ), 0) as retiro_total
       FROM cajas c
       LEFT JOIN usuarios u1 ON c.usuario_id_apertura = u1.id_usuario
       LEFT JOIN usuarios u2 ON c.usuario_id_cierre = u2.id_usuario

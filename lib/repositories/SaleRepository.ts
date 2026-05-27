@@ -625,6 +625,10 @@ export class SaleRepository {
       SELECT v.*, CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_numero,
              u.nick as cajero_nick, u.nombre as cajero_nombre, u.apellido as cajero_apellido,
              CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
+             (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
+              FROM ventas_usuarios vu
+              JOIN usuarios u2 ON u2.id_usuario = vu.usuario_id
+              WHERE vu.venta_id = v.id_venta) as anfitrionas_nicks,
              GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
       FROM ventas v
       LEFT JOIN clientes c ON c.id_cliente = v.cliente_id

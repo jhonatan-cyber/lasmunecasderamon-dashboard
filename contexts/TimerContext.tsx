@@ -153,7 +153,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (timer.isTemporary) {
         activeTimers.value = activeTimers.peek().filter(x => x.id !== timer.id);
-        setTimeout(() => resumeTimerByServicioId(timer.servicioId), 200);
+        // Reanudar el timer PRINCIPAL localmente (isPaused=false) SIN llamar al API
+        // El callback onExpire del temporal ya manejó la limpieza en servidor (PATCH a estado=0
+        // que dispara resumeRoomLogic). Llamar PATCH estado:2 aparte RACEARÍA con eso.
+        // Solo necesitamos que el timer local del principal deje de estar pausado.
+        const mainTimer = activeTimers.peek().find(
+          t => t.servicioId === timer.servicioId && !t.isTemporary
+        );
+        if (mainTimer) {
+          mainTimer.isPaused.value = false;
+        }
       } else {
         console.log('[TimerContext] Llamando stopTimer para:', timer.id, timer.servicioId);
         stopTimer(timer.id, false, timer);
@@ -229,6 +238,19 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <TimerContext.Provider value={value}>
       {children}
+      {timerExpiredNotification && (
+        <TimerExpiredModal
+          open={showTimerExpiredModal}
+          onOpenChange={setShowTimerExpiredModal}
+          roomName={timerExpiredNotification.roomName}
+          servicioCode={timerExpiredNotification.servicioCode}
+          clienteNombre={timerExpiredNotification.clienteNombre}
+          tiempoTotal={timerExpiredNotification.tiempoTotal}
+          isTemporary={timerExpiredNotification.isTemporary}
+          tipoTransaccion={timerExpiredNotification.tipoTransaccion}
+          anfitrionas={timerExpiredNotification.anfitrionas}
+        />
+      )}
     </TimerContext.Provider>
   );
 };
@@ -238,7 +260,7 @@ export const useCountdown = (timer: Timer | undefined | null) => {
 
   if (!timer) return 0;
 
-  const activeInstance = activeTimers.value.find(t => t.servicioId === timer.servicioId);
+  const activeInstance = activeTimers.value.find(t => t.id === timer.id);
 
   if (activeInstance) {
     return activeInstance.remainingSeconds.value;

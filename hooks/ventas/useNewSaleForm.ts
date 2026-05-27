@@ -279,9 +279,9 @@ export const useNewSaleForm = () => {
           // Validar solo datos de la habitación seleccionada
           const roomPrice = selectedRoomInfo?.precio ?? selectedRoomInfo?.price ?? 0;
           const roomTime = selectedRoomInfo?.tiempo ?? selectedRoomInfo?.time ?? 0;
-          const roomCommission = selectedRoomInfo?.comision ?? selectedRoomInfo?.commission ?? 0;
+          const roomCommission = selectedRoomInfo?.comision_anfitriona ?? 0;
 
-          // Solo ocupar la habitación si la habitación tiene precio > 0, tiempo > 0 y comisión > 0
+          // Solo ocupar la habitación si NO es libre ingreso (precio > 0, tiempo > 0 y comisión > 0)
           const shouldOccupyRoom = roomPrice > 0 && roomTime > 0 && roomCommission > 0;
 
           // Iniciar timer si hay tiempo válido (independientemente de si se ocupa la habitación)

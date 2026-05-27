@@ -28,6 +28,8 @@ export interface ServicioWithDetails extends Servicio {
   creator_name?: string;
   fecha_mod?: string;
   id?: string | number;
+  es_temporal?: boolean | number;
+  servicio_original_id?: string | null;
 }
 
 // Tipos para estadísticas

@@ -422,7 +422,7 @@ export default function OrderDetailModal({
           hostess_id: item.hostess_id || null
         })),
         usuarios: usuariosIds,
-        habitacion_id: shouldShowRoomSelector && habitacionId ? parseInt(habitacionId) : undefined,
+        habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
         tiempo: shouldShowRoomSelector && habitacionId ? tiempoHabitacion : 0
       };
 

@@ -192,7 +192,7 @@ export default function ServiciosPage() {
                 key={String(servicio.id_servicio ?? servicio.id ?? 'servicio-')}
                 servicio={servicio}
                 onStopTimer={handleStopTimer}
-                onUpdate={() => getServicios(true)}
+                onUpdate={() => getServicios(includeAll)}
                 showAllServices={showAllServices}
                 onShowDetail={handleShowServiceDetail}
               />

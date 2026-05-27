@@ -14,7 +14,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
       type
     });
 
-  await NotificationRepository.create({
+  const notificationId = await NotificationRepository.create({
     usuario_id: user.id.toString(),
     tipo: 'asistencia',
     titulo: `Solicitud de ${type}`,
@@ -24,6 +24,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   });
 
   sendNotificationToAll('assistance_request', {
+    id: notificationId,
     servicioId,
     roomName,
     type,
