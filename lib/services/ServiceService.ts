@@ -94,6 +94,20 @@ export class ServiceService {
         });
       }
 
+      // Verificar si la habitación es de libre ingreso (sin precio o sin comisión)
+      let esLibreIngreso = false;
+      if (v.habitacion_id) {
+        const roomRows = await trx<any[]>(
+          'SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+          [v.habitacion_id]
+        );
+        if (roomRows.length > 0) {
+          const roomPrice = Number(roomRows[0].precio || 0);
+          const roomCommission = Number(roomRows[0].comision_anfitriona || 0);
+          esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
+        }
+      }
+
       await ServiceRepository.rawInsert(trx, {
         id_servicio: servicioId,
         codigo,
@@ -107,13 +121,14 @@ export class ServiceService {
         tiempo: v.tiempo,
         metodo_pago: v.metodo_pago,
         caja_id: cajaId,
-        created_by: createdBy,
-        estado: 2,
+        created_by: createdBy,            estado: (esLibreIngreso && (!v.tiempo || v.tiempo <= 0)) ? 1 : 2,
+        es_temporal: v.es_temporal ? 1 : 0,
+        servicio_original_id: v.servicio_original_id || null,
         fecha_crea: now,
         pagos_mixtos: v.pagos_mixtos ? JSON.stringify(v.pagos_mixtos) : null
       });
 
-      if (v.habitacion_id) {
+      if (v.habitacion_id && !esLibreIngreso) {
         await trx('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [v.habitacion_id]);
       }
 

@@ -49,12 +49,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       tipoTransaccion: 'servicio' | 'venta' | 'cuenta' = 'servicio',
       waiterName?: string
     ) => {
-      const currentTimers = activeTimers.peek();
-      const duplicates = currentTimers.filter(t => t.roomId.peek() === roomId);
-      if (duplicates.length > 0) {
-        activeTimers.value = currentTimers.filter(t => t.roomId.peek() !== roomId);
-      }
-
       if (!servicioId || !roomId || !duration || duration <= 0) return;
 
       const currentOffset = serverOffsetSignal.peek();
@@ -77,7 +71,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         duration * 60
       );
 
-      activeTimers.value = [...currentTimers, newT];
+      activeTimers.value = [...activeTimers.peek(), newT];
       updateRoomStatus(roomId, 2);
       toast.success(`Temporizador iniciado para ${roomName}`);
     },
@@ -166,6 +160,20 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       const current = activeTimers.peek();
       if (current.some(t => t.servicioId === servicioId && t.isTemporary)) return;
 
+      const normalizedServicioId = String(servicioId);
+      const normalizedRoomId = String(roomId);
+      const main = current.find(
+        t => String(t.servicioId) === normalizedServicioId && !t.isTemporary
+      );
+      const mainRemainingTimeAtPause = main?.remainingSeconds.peek() ?? duration * 60;
+      const mergedDatosTemporales = {
+        ...datosTemporales,
+        tiempo_principal_congelado: mainRemainingTimeAtPause,
+        habitacion_principal: main?.roomName.peek() || roomName,
+        codigo_principal: main?.servicioCode.peek() || servicioCode,
+        estado_principal: 'PAUSADO'
+      };
+
       const temporaryTimer = new TimerInstance(
         {
           id: `temp_timer_${servicioId}_${Date.now()}`,
@@ -179,15 +187,32 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
           servicioCode: `${servicioCode}-TEMP`,
           clienteNombre,
           isTemporary: true,
+          datosTemporales: mergedDatosTemporales,
           tipoTransaccion: 'servicio',
-          anfitrionas: anfitrionas || ''
+          anfitrionas: anfitrionas || '',
+          onExpire: () => onComplete()
         },
         duration * 60
       );
 
-      // Pausamos el principal
-      const main = current.find(t => t.servicioId === servicioId && !t.isTemporary);
-      if (main) main.isPaused.value = true;
+      // Pausamos TODO timer principal de la misma habitación para garantizar
+      // que no haya dos servicios corriendo en paralelo en una habitación.
+      const roomMainTimers = current.filter(
+        t => String(t.roomId.peek()) === normalizedRoomId && !t.isTemporary
+      );
+      roomMainTimers.forEach(t => {
+        t.isPaused.value = true;
+        updateServiceStatus(String(t.servicioId), 3);
+      });
+
+      if (roomMainTimers.length === 0 && main) {
+        main.isPaused.value = true;
+        updateServiceStatus(String(main.servicioId), 3);
+      }
+
+      // Garantía de negocio: el servicio principal SIEMPRE debe quedar pausado en backend,
+      // incluso si no fue encontrado en el estado local por desincronización temporal.
+      updateServiceStatus(normalizedServicioId, 3);
 
       activeTimers.value = [...current, temporaryTimer];
       toast.info(`Timer temporal: ${duration} mins`);

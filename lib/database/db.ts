@@ -16,7 +16,10 @@ const defaultConfig: any = {
   queueLimit: 0,
   timezone: dbTzOffset,
   dateStrings: true,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  connectTimeout: 30000
 };
 
 declare global {

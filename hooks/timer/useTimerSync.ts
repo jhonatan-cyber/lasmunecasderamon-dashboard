@@ -30,10 +30,10 @@ export function useTimerSync({
   useEffect(() => {
     if (isInitialized) {
       const timers = activeTimers.value.map(t => t.toPlainObject());
-      // Limpiar duplicados antes de guardar
+      // Limpiar duplicados por servicioId (cada timer es único)
       const unique = timers.filter(
         (t, i, self) =>
-          i === self.findIndex(x => x.roomId === t.roomId && x.servicioCode === t.servicioCode)
+          i === self.findIndex(x => x.servicioId === t.servicioId)
       );
       saveTimersToStorage(unique);
     }
@@ -70,7 +70,7 @@ export function useTimerSync({
             serverOffsetSignal.value = newOffset;
           }
 
-          const finalTimers = data
+          const mappedTimers = data
             .map((dbT: any) => {
               const currentOffset = serverOffsetSignal.peek();
               const now = new Date(Date.now() + currentOffset);
@@ -85,13 +85,21 @@ export function useTimerSync({
 
               return {
                 id: `${dbT.servicioId}-${dbT.roomId}-${Date.now()}`,
-                servicioId: dbT.servicioId,
+                servicioId: String(dbT.servicioId),
                 roomId: dbT.roomId,
                 roomName: dbT.roomName,
                 duration: dbT.duration,
                 remainingTime: remaining,
                 isActive: remaining > 0,
                 isPaused: dbT.isPaused === true,
+                isTemporary: dbT?.isTemporary === true,
+                datosTemporales: dbT?.isTemporary
+                  ? {
+                      servicio_original_id: dbT?.servicioOriginalId
+                        ? String(dbT.servicioOriginalId)
+                        : null
+                    }
+                  : undefined,
                 startTime: start,
                 servicioCode: dbT.codigo,
                 clienteNombre: dbT.clienteNombre,
@@ -100,6 +108,25 @@ export function useTimerSync({
               };
             })
             .filter((t: any) => t.isActive);
+
+          const remainingByServiceId = new Map(
+            mappedTimers.map((t: any) => [String(t.servicioId), Number(t.remainingTime || 0)])
+          );
+
+          const finalTimers = mappedTimers.map((t: any) => {
+            if (!t.isTemporary) return t;
+            const originalId = t?.datosTemporales?.servicio_original_id
+              ? String(t.datosTemporales.servicio_original_id)
+              : '';
+            const frozen = originalId ? remainingByServiceId.get(originalId) : undefined;
+            return {
+              ...t,
+              datosTemporales: {
+                ...(t.datosTemporales || {}),
+                ...(typeof frozen === 'number' ? { tiempo_principal_congelado: frozen } : {})
+              }
+            };
+          });
 
           activeTimers.value = finalTimers.map(t => new TimerInstance(t, t.remainingTime));
         } else {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ServiceService } from '@/lib/services/ServiceService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -19,6 +20,11 @@ export const POST = withAppAuth(async (request: Request, { user }) => {
   };
 
   const result = await ServiceService.createService(payload, user.id.toString());
+  sendNotificationToAll('service_changed', {
+    action: 'create-temporary',
+    id: result.id,
+    timestamp: new Date().toISOString()
+  });
 
   return NextResponse.json({
     success: true,

@@ -12,6 +12,7 @@ export interface Caja {
   iva: number;
   propina: number;
   anticipo: number;
+  retiro_total?: number;
   comision: number;
   monto_cierre: number | null;
   usuario_id_cierre: string | number | null;
