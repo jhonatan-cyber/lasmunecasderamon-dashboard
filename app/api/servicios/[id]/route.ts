@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -20,6 +21,11 @@ export const PUT = withAppAuth(
     const id = (await params).id;
     const body = await request.json();
     await ServiceRepository.updateService(id, body);
+    sendNotificationToAll('service_changed', {
+      action: 'update',
+      id,
+      timestamp: new Date().toISOString()
+    });
     return NextResponse.json({ success: true, message: 'Servicio actualizado exitosamente' });
   }
 );
@@ -27,9 +33,32 @@ export const PUT = withAppAuth(
 export const PATCH = withAppAuth(
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    const { estado } = await request.json();
-    await ServiceRepository.updateStatus(id, estado, user.id.toString());
-    return NextResponse.json({ success: true, message: 'Estado actualizado' });
+    const body = await request.json();
+    const hasEstado = typeof body?.estado === 'number';
+    const onlyEstadoPayload =
+      hasEstado &&
+      Object.keys(body || {}).every(key =>
+        ['estado', 'device_date', 'paused_at', 'fecha_mod'].includes(key)
+      );
+
+    if (onlyEstadoPayload) {
+      await ServiceRepository.updateStatus(id, body.estado, user.id.toString());
+      sendNotificationToAll('service_changed', {
+        action: 'status',
+        id,
+        estado: body.estado,
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json({ success: true, message: 'Estado actualizado' });
+    }
+
+    await ServiceRepository.updateService(id, body);
+    sendNotificationToAll('service_changed', {
+      action: 'update',
+      id,
+      timestamp: new Date().toISOString()
+    });
+    return NextResponse.json({ success: true, message: 'Servicio actualizado' });
   }
 );
 

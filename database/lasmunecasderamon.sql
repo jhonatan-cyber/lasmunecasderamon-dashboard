@@ -1746,7 +1746,9 @@ ALTER TABLE `detalle_propinas`
 -- Indices de la tabla `detalle_servicios`
 --
 ALTER TABLE `detalle_servicios`
-  ADD PRIMARY KEY (`id_detalle_servicio`);
+  ADD PRIMARY KEY (`id_detalle_servicio`),
+  ADD KEY `idx_detalle_servicios_servicio_id` (`servicio_id`),
+  ADD KEY `idx_detalle_servicios_usuario_id` (`usuario_id`);
 
 --
 -- Indices de la tabla `detalle_servicios_clientes`
@@ -1758,7 +1760,9 @@ ALTER TABLE `detalle_servicios_clientes`
 -- Indices de la tabla `detalle_ventas`
 --
 ALTER TABLE `detalle_ventas`
-  ADD PRIMARY KEY (`id_detalle_venta`);
+  ADD PRIMARY KEY (`id_detalle_venta`),
+  ADD KEY `idx_detalle_ventas_venta_id` (`venta_id`),
+  ADD KEY `idx_detalle_ventas_producto_id` (`producto_id`);
 
 --
 -- Indices de la tabla `devoluciones_servicios`
@@ -1880,7 +1884,8 @@ ALTER TABLE `role_permissions`
 --
 ALTER TABLE `servicios`
   ADD PRIMARY KEY (`id_servicio`),
-  ADD KEY `fk_servicios_created_by` (`created_by`);
+  ADD KEY `fk_servicios_created_by` (`created_by`),
+  ADD KEY `idx_servicios_estado_fecha` (`estado`, `fecha_crea`);
 
 --
 -- Indices de la tabla `servicio_logs`
@@ -1935,7 +1940,8 @@ ALTER TABLE `usuarios`
 --
 ALTER TABLE `ventas`
   ADD PRIMARY KEY (`id_venta`),
-  ADD KEY `fk_ventas_created_by` (`created_by`);
+  ADD KEY `fk_ventas_created_by` (`created_by`),
+  ADD KEY `idx_ventas_estado_fecha` (`estado`, `fecha_crea`);
 
 --
 -- Indices de la tabla `ventas_usuarios`

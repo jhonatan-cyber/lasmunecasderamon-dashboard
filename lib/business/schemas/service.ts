@@ -17,6 +17,7 @@ export const ServiceSchema = z.object({
   fecha_crea: z.string().or(z.date()).nullable().optional(),
   fecha_mod: z.string().or(z.date()).nullable().optional(),
   habitacion_nombre: z.string().optional(),
+  habitacion_numero: z.string().optional(),
   anfitrionas_nombres: z.string().optional(),
   anfitrionas_ids: z.string().optional(),
   total_usuarios: z.number().optional().default(0),
@@ -28,6 +29,8 @@ export const ServiceSchema = z.object({
   waiter_foto: z.string().nullable().optional(),
   cliente_nombre: z.string().nullable().optional(),
   pagos_mixtos: z.any().optional(),
+  es_temporal: z.union([z.number(), z.boolean()]).optional().default(0),
+  servicio_original_id: z.string().nullable().optional(),
   habitacion_comision: z.number().nullable().optional(),
   total_comision: z.number().optional().default(0),
   comision_individual: z.number().optional().default(0),
@@ -45,6 +48,8 @@ export const ServiceCreateSchema = z.object({
   metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']).optional().default('efectivo'),
   usuarios: z.array(z.string()).min(1, 'Al menos una anfitriona es requerida'),
   clientes: z.array(z.string()).optional().default([]),
+  es_temporal: z.union([z.number(), z.boolean()]).optional().default(0),
+  servicio_original_id: z.string().nullable().optional(),
   device_date: z.string().optional(),
   pagos_mixtos: z.any().optional()
 });

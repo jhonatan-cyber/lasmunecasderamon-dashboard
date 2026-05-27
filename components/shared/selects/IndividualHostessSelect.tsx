@@ -84,7 +84,7 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
           <Users className="w-4 h-4" />
         </span>
         <Select value={value || ""} onValueChange={onChange} disabled={disabled}>
-          <SelectTrigger className={ORDER_FIELD_TRIGGER_CLASS} disabled={disabled}>
+          <SelectTrigger className={`${ORDER_FIELD_TRIGGER_CLASS} pl-10 justify-center`} disabled={disabled}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className={`${ORDER_FIELD_POPOVER_CLASS} max-h-80`}>
@@ -117,6 +117,7 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
                       key={id}
                       value={id ? id.toString() : ""}
                       disabled={disabled}
+                      className="justify-center text-center"
                     >
                       {displayName || "Sin nombre"}
                     </SelectItem>

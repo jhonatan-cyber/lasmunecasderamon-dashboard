@@ -43,7 +43,7 @@ import EditServiceModal from './EditServiceModal';
 
 interface ServicioCardProps {
   servicio: ServicioWithDetails;
-  onStopTimer?: (servicioId: number) => void;
+  onStopTimer?: (servicioId: string | number) => void;
   onUpdate?: () => void;
   showAllServices?: boolean;
   onShowDetail?: (servicio: ServicioWithDetails) => void;
@@ -76,11 +76,22 @@ export default function ServicioCard({
   const rawId = servicio.id_servicio ?? servicio.id;
   const servicioIdStr = String(rawId || 'NO-ID');
 
-  const globalTimer = getTimerByServicioId(servicioIdStr);
-  const temporaryTimer = getTemporaryTimerByServicioId(servicioIdStr);
+  // Para servicios temporales, el timer está keyeado al ID del servicio original
+  const effectiveTimerId = servicio.es_temporal && servicio.servicio_original_id
+    ? String(servicio.servicio_original_id)
+    : servicioIdStr;
+
+  const globalTimer = getTimerByServicioId(effectiveTimerId);
+  const temporaryTimer = getTemporaryTimerByServicioId(effectiveTimerId);
 
   const displayTimer = temporaryTimer || globalTimer;
   const isTemporaryActive = !!temporaryTimer;
+
+  // Si es el servicio ORIGINAL y hay un temporal activo, NO lo renderizamos
+  // (el servicio temporal se renderiza como su propia card aparte)
+  if (!servicio.es_temporal && isTemporaryActive) {
+    return null;
+  }
 
   // Obtener el ID del servicio original cuando hay timer temporal
   const servicioIdOriginal =
@@ -125,14 +136,7 @@ export default function ServicioCard({
     [servicio?.id_servicio, actualizarAnfitrionas, onUpdate]
   );
 
-  const mainTimer = globalTimer
-    ? {
-        totalSeconds: globalTimer.remainingTime,
-        isPaused: globalTimer.isPaused,
-        isActive: globalTimer.isActive,
-        isRunning: globalTimer.isActive && !globalTimer.isPaused
-      }
-    : null;
+  const mainFrozenRemainingTime = temporaryTimer?.datosTemporales?.tiempo_principal_congelado;
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [stopping, setStopping] = useState(false);
@@ -165,7 +169,7 @@ export default function ServicioCard({
         totalDurationToSave = elapsedMinutes + editTiempo;
       }
 
-      const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
+      const response = await fetch(`/api/servicios/${servicioIdStr}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -235,9 +239,14 @@ export default function ServicioCard({
   };
 
   const confirmStopTimer = async () => {
+    if (!servicioIdStr || servicioIdStr === 'NO-ID') {
+      toast.error('No se pudo determinar el ID del servicio');
+      return;
+    }
+
     setStopping(true);
     try {
-      const response = await fetch(`/api/servicios/${servicio.id_servicio}`, {
+      const response = await fetch(`/api/servicios/${servicioIdStr}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -247,11 +256,9 @@ export default function ServicioCard({
 
       if (response.ok) {
         // Detener el timer en el contexto global (esto también libera la habitación y actualiza el servicio)
-        if (servicio.id_servicio) {
-          stopTimerByServicioId(String(servicio.id_servicio));
-        }
+        stopTimerByServicioId(servicioIdStr);
 
-        if (onStopTimer) onStopTimer(Number(servicio.id_servicio!));
+        if (onStopTimer) onStopTimer(rawId);
         toast.success('Servicio finalizado exitosamente');
         setShowConfirm(false);
       } else {
@@ -265,16 +272,16 @@ export default function ServicioCard({
   };
 
   const handlePauseMainTimer = useCallback(() => {
-    if (servicio.id_servicio) {
-      pauseTimerByServicioId(String(servicio.id_servicio));
+    if (servicioIdStr && servicioIdStr !== 'NO-ID') {
+      pauseTimerByServicioId(servicioIdStr);
     }
-  }, [servicio.id_servicio, pauseTimerByServicioId]);
+  }, [servicioIdStr, pauseTimerByServicioId]);
 
   const handleResumeMainTimer = useCallback(() => {
-    if (servicio.id_servicio) {
-      resumeTimerByServicioId(String(servicio.id_servicio));
+    if (servicioIdStr && servicioIdStr !== 'NO-ID') {
+      resumeTimerByServicioId(servicioIdStr);
     }
-  }, [servicio.id_servicio, resumeTimerByServicioId]);
+  }, [servicioIdStr, resumeTimerByServicioId]);
 
   // Hook de alto rendimiento para el conteo regresivo
   const remainingTime = useCountdown(displayTimer);
@@ -309,7 +316,13 @@ export default function ServicioCard({
                 {servicio.habitacion_numero}
               </span>
             </div>
-            {getEstadoBadge(servicio.estado ?? 1)}
+            {isTemporaryActive ? (
+              <Badge className='bg-blue-100 text-blue-800 text-xs border border-blue-300 animate-pulse'>
+                TEMPORAL
+              </Badge>
+            ) : (
+              getEstadoBadge(servicio.estado ?? 1)
+            )}
           </div>
           <div className='flex items-center gap-2'>
             <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>
@@ -375,11 +388,7 @@ export default function ServicioCard({
                         ? formatTime(remainingTime)
                         : '00:00'}
                   </span>
-                  {isTemporaryActive && (
-                    <span className='text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full'>
-                      TEMPORAL
-                    </span>
-                  )}
+    
                   {displayTimer?.isPaused && !isTemporaryActive && (
                     <span className='text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded-full'>
                       PAUSADO
@@ -391,26 +400,15 @@ export default function ServicioCard({
           </div>
         )}
 
-        {/* Información adicional cuando hay timer temporal */}
-        {isTemporaryActive && mainTimer && (
-          <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs'>
-            <div className='flex items-center justify-between mb-2'>
-              <span className='text-blue-700 dark:text-blue-300 font-medium'>Timer Principal:</span>
-              <div className='flex items-center gap-2'>
-                <span className='text-blue-600 dark:text-blue-400 font-mono'>
-                  {formatTime(mainRemainingTime)}
-                </span>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs ${
-                    mainTimer.isPaused
-                      ? 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'
-                      : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                  }`}
-                >
-                  {mainTimer.isPaused ? 'PAUSADO' : 'ACTIVO'}
-                </span>
-              </div>
-            </div>
+        {/* Información del tiempo congelado del servicio ORIGINAL (solo se muestra en el temporal) */}
+        {isTemporaryActive && servicio.es_temporal && (
+          <div className='flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2'>
+            <span className='text-xs text-blue-600 dark:text-blue-400'>
+              Tiempo congelado del principal
+            </span>
+            <span className='text-xs text-blue-500 dark:text-blue-300 font-mono'>
+              {formatTime(mainFrozenRemainingTime ?? mainRemainingTime)}
+            </span>
           </div>
         )}
 
@@ -547,13 +545,7 @@ export default function ServicioCard({
           </div>
         </div>
 
-        {/* Nota sobre valores temporales */}
-        {isTemporaryActive && (
-          <div className='text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border-t border-blue-200 dark:border-blue-800'>
-            <span className='font-medium'>* Valores temporales</span> - Precios se restaurarán,
-            anfitrionas se mantendrán cuando termine el timer temporal
-          </div>
-        )}
+
 
         {/* Actions */}
         <div className='flex gap-2 pt-2'>
@@ -646,6 +638,3 @@ export default function ServicioCard({
     </Card>
   );
 }
-
-
-

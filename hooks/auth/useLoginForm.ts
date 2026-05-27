@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -44,7 +44,7 @@ export const useLoginForm = () => {
         cache: 'no-store'
       });
     } catch {
-      // Ignorar: igualmente forzamos redirecciÃ³n.
+      // Ignorar: igualmente forzamos redirección.
     }
 
     if (typeof window !== 'undefined') {
@@ -159,7 +159,7 @@ export const useLoginForm = () => {
     try {
       let emailToSend = emailValue;
       if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}@lasmuÃ±ecasderamon.com`;
+        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
       }
 
       const res = await fetch('/api/auth/login', {
@@ -174,7 +174,7 @@ export const useLoginForm = () => {
       if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
         const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
         setRateLimitRemaining(retryAfter);
-        toast.error(`Demasiados intentos. EsperÃ¡ ${retryAfter}s para volver a intentar.`);
+        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
         setLoading(false);
         return;
       }
@@ -191,12 +191,12 @@ export const useLoginForm = () => {
       }
 
       if (!data.success) {
-        toast.error(data.message || 'Error de autenticaciÃ³n');
+        toast.error(data.message || 'Error de autenticación');
         setLoading(false);
         return;
       }
 
-      toast.success('Â¡Bienvenido al sistema!');
+      toast.success('¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('auth_role_hint', data.user.role);
@@ -213,14 +213,14 @@ export const useLoginForm = () => {
     e.preventDefault();
     if (rateLimitRemaining > 0) return;
     if (codigo.length !== 4) {
-      toast.error('El cÃ³digo debe tener 4 dÃ­gitos');
+      toast.error('El código debe tener 4 dígitos');
       return;
     }
     setLoading(true);
     try {
       let emailToSend = loginData.email.trim();
       if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}@lasmuÃ±ecasderamon.com`;
+        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
       }
 
       const res = await fetch('/api/auth/login', {
@@ -237,16 +237,16 @@ export const useLoginForm = () => {
       if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
         const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
         setRateLimitRemaining(retryAfter);
-        toast.error(`Demasiados intentos. EsperÃ¡ ${retryAfter}s para volver a intentar.`);
+        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
         setLoading(false);
         return;
       }
       if (!data.success) {
-        toast.error(data.message || 'CÃ³digo incorrecto');
+        toast.error(data.message || 'Código incorrecto');
         setLoading(false);
         return;
       }
-      toast.success('Â¡Bienvenido al sistema!');
+      toast.success('¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('auth_role_hint', data.user.role);
@@ -270,7 +270,7 @@ export const useLoginForm = () => {
 
       let emailOriginal = registerData.email.trim();
       if (!emailOriginal.includes('@')) {
-        emailOriginal = `${emailOriginal}@lasmuÃ±ecasderamon.com`;
+        emailOriginal = `${emailOriginal}@lasmuñecasderamon.com`;
       }
 
       const res = await fetch('/api/auth/register-first-user', {
@@ -325,7 +325,7 @@ export const useLoginForm = () => {
         return;
       }
       if (e.currentTarget.value.trim() === '') {
-        toast.error('Por favor complete el campo de contraseÃ±a');
+        toast.error('Por favor complete el campo de contraseña');
         return;
       }
       if (submitButtonRef.current && !loading) {

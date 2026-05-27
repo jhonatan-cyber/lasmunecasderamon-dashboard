@@ -1,7 +1,11 @@
-﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { useGenericFetch } from '../shared/useGenericFetch';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+
+// QueryKey compartido para invalidar desde cualquier mutación
+export const SERVICIOS_QUERY_KEY = ['servicios'] as const;
 
 export function useServicios() {
   const queryClient = useQueryClient();
@@ -11,6 +15,11 @@ export function useServicios() {
     return ep;
   }, [includeAll]);
 
+  const serviciosQueryKey = useMemo(
+    () => [...SERVICIOS_QUERY_KEY, includeAll ? 'all' : 'active'] as const,
+    [includeAll]
+  );
+
   const {
     data: servicios,
     isLoading: fetchLoading,
@@ -19,6 +28,8 @@ export function useServicios() {
     setData: setServicios
   } = useGenericFetch<ServicioWithDetails>(endpoint, {
     initialFetch: true,
+    queryKey: serviciosQueryKey,
+    staleTime: 5000, // 5 segundos — refresco rápido sin recargar
     transform: data => {
       if (data.success && data.data) {
         // La respuesta puede ser { data: [...] } o [...] directamente
@@ -31,16 +42,12 @@ export function useServicios() {
         if (!Array.isArray(rawData)) {
           return [];
         }
-        const filtered = rawData
+        return rawData
           .map((servicio: any) => ({
             ...servicio,
             // Asegurar que siempre tenga id_servicio (el API devuelve "id")
             id_servicio: servicio.id_servicio || servicio.id
-          }))
-          .filter((servicio: any) => {
-            return !servicio.es_temporal && !servicio.servicio_original_id;
-          });
-        return filtered;
+          }));
       }
       return [];
     }
@@ -52,9 +59,11 @@ export function useServicios() {
         setIncludeAll(includeAllParam);
         return;
       }
-      await refetch();
+      // Invalidar todo el grupo SERVICIOS_QUERY_KEY para que React Query refetchee
+      // incluso si el cache aún es "fresco" (staleTime no expirado)
+      await queryClient.invalidateQueries({ queryKey: SERVICIOS_QUERY_KEY });
     },
-    [includeAll, refetch]
+    [includeAll, queryClient]
   );
 
   const createMutation = useMutation({
@@ -68,7 +77,10 @@ export function useServicios() {
       if (!data.success) throw new Error(data.message);
       return data;
     },
-    onSuccess: () => getServicios(includeAll)
+    onSuccess: () => {
+      getServicios(includeAll);
+      window.dispatchEvent(new CustomEvent('servicesChanged'));
+    }
   });
 
   const updateMutation = useMutation({
@@ -82,7 +94,10 @@ export function useServicios() {
       if (!result.success) throw new Error(result.message);
       return result;
     },
-    onSuccess: () => getServicios(includeAll)
+    onSuccess: () => {
+      getServicios(includeAll);
+      window.dispatchEvent(new CustomEvent('servicesChanged'));
+    }
   });
 
   const deleteMutation = useMutation({
@@ -92,7 +107,10 @@ export function useServicios() {
       if (!data.success) throw new Error(data.message);
       return data;
     },
-    onSuccess: () => getServicios(includeAll)
+    onSuccess: () => {
+      getServicios(includeAll);
+      window.dispatchEvent(new CustomEvent('servicesChanged'));
+    }
   });
 
   // Optimistic Mutation for PATCH (status changes)
@@ -113,11 +131,11 @@ export function useServicios() {
       return result;
     },
     onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: [endpoint] });
-      const previousServicios = queryClient.getQueryData<ServicioWithDetails[]>([endpoint]);
+      await queryClient.cancelQueries({ queryKey: SERVICIOS_QUERY_KEY });
+      const previousServicios = queryClient.getQueryData<ServicioWithDetails[]>(serviciosQueryKey);
 
       if (previousServicios) {
-        queryClient.setQueryData([endpoint], (old: ServicioWithDetails[] | undefined) =>
+        queryClient.setQueryData(serviciosQueryKey, (old: ServicioWithDetails[] | undefined) =>
           old?.map((s: ServicioWithDetails) =>
             String(s.id_servicio) === String(id) ? { ...s, ...data } : s
           )
@@ -127,11 +145,11 @@ export function useServicios() {
     },
     onError: (err, variables, context) => {
       if (context?.previousServicios) {
-        queryClient.setQueryData([endpoint], context.previousServicios);
+        queryClient.setQueryData(serviciosQueryKey, context.previousServicios);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      queryClient.invalidateQueries({ queryKey: SERVICIOS_QUERY_KEY });
     }
   });
 
@@ -141,11 +159,26 @@ export function useServicios() {
     };
     window.addEventListener('updateServiceRequests', handleServiceUpdate);
     window.addEventListener('serviceStatusChanged', handleServiceUpdate);
+    window.addEventListener('servicesChanged', handleServiceUpdate);
     return () => {
       window.removeEventListener('updateServiceRequests', handleServiceUpdate);
       window.removeEventListener('serviceStatusChanged', handleServiceUpdate);
+      window.removeEventListener('servicesChanged', handleServiceUpdate);
     };
   }, [getServicios, includeAll]);
+
+  useSharedSSE('/api/notifications/sse', payload => {
+    const shouldRefresh =
+      payload?.type === 'service_changed' ||
+      payload?.type === 'timers_updated' ||
+      (payload?.type === 'updateSales' && payload?.data?.type === 'servicio') ||
+      (payload?.type === 'timer_ended_event' && payload?.data?.type === 'servicio');
+
+    if (!shouldRefresh) return;
+
+    getServicios(includeAll);
+    window.dispatchEvent(new CustomEvent('servicesChanged'));
+  });
 
   return {
     servicios,
@@ -179,15 +212,18 @@ export function useServicios() {
 
 // Hook para obtener TODOS los servicios (sin filtro por estado) para estadísticas
 export function useAllServicios() {
+  const queryClient = useQueryClient();
   const endpoint = '/api/servicios';
+  const allQueryKey = useMemo(() => [...SERVICIOS_QUERY_KEY, 'all'] as const, []);
 
   const {
     data: servicios,
     isLoading,
-    error,
-    refetch
+    error
   } = useGenericFetch<ServicioWithDetails>(endpoint, {
     initialFetch: true,
+    queryKey: allQueryKey,
+    staleTime: 5000,
     transform: data => {
       if (data.success && data.data) {
         let rawData = data.data;
@@ -206,8 +242,32 @@ export function useAllServicios() {
   });
 
   const getAllServicios = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+    await queryClient.invalidateQueries({ queryKey: SERVICIOS_QUERY_KEY });
+  }, [queryClient]);
+
+  useEffect(() => {
+    const handleServicesChanged = () => {
+      getAllServicios();
+    };
+
+    window.addEventListener('servicesChanged', handleServicesChanged);
+
+    return () => {
+      window.removeEventListener('servicesChanged', handleServicesChanged);
+    };
+  }, [getAllServicios]);
+
+  useSharedSSE('/api/notifications/sse', payload => {
+    const shouldRefresh =
+      payload?.type === 'service_changed' ||
+      payload?.type === 'timers_updated' ||
+      (payload?.type === 'updateSales' && payload?.data?.type === 'servicio') ||
+      (payload?.type === 'timer_ended_event' && payload?.data?.type === 'servicio');
+
+    if (!shouldRefresh) return;
+
+    getAllServicios();
+  });
 
   return {
     servicios: servicios || [],

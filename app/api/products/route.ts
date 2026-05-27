@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { ProductService } from '@/lib/services/ProductService';
@@ -115,7 +115,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
 
   if (!id || !action) {
     return NextResponse.json(
-      { success: false, message: 'ID y acciÃ³n son requeridos' },
+      { success: false, message: 'ID y acción son requeridos' },
       { status: 400 }
     );
   }
@@ -123,7 +123,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   const status = action === 'activate' ? 1 : action === 'deactivate' ? 0 : null;
 
   if (status === null) {
-    return NextResponse.json({ success: false, message: 'AcciÃ³n no vÃ¡lida' }, { status: 400 });
+    return NextResponse.json({ success: false, message: 'Acción no válida' }, { status: 400 });
   }
 
   const data = await ProductRepository.update(id, { status });

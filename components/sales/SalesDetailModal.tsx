@@ -41,8 +41,16 @@ export function SalesDetailModal({
 }: SalesDetailModalProps) {
   if (!selectedVenta) return null;
 
-  const hostesses =
-    selectedVenta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) || [];
+  const hostesses = Array.from(
+    new Set(
+      (selectedVenta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) ||
+        selectedVenta.anfitrionas_nicks
+          ?.split(',')
+          .map(nick => nick.trim())
+          .filter(Boolean) ||
+        []) as string[]
+    )
+  );
 
   const statusColor = statusColors[selectedVenta.estado] || 'bg-gray-100 text-gray-800';
   const statusLabel = statusLabels[selectedVenta.estado] || 'Desconocido';

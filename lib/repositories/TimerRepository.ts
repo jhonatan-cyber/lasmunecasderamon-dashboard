@@ -12,6 +12,7 @@ export class TimerRepository {
         SELECT s.id_servicio as id, s.codigo, s.id_servicio as servicioId, h.nombre as roomName, 
                s.tiempo as duration, s.fecha_crea as startTime, s.estado, s.paused_at as pausedAt, 
                s.habitacion_id as roomId, 'servicio' as tipoTransaccion,
+               s.es_temporal, s.servicio_original_id,
                h.comision_anfitriona as habitacion_comision,
                s.precio_servicio, s.precio_habitacion, s.iva, s.cliente_id,
                COALESCE(GROUP_CONCAT(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE CONCAT(u.nombre, ' ', u.apellido) END SEPARATOR ', '), 'Sin asignar') as anfitrionas,
@@ -24,7 +25,9 @@ export class TimerRepository {
         LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
-        WHERE s.estado IN (2, 3) AND s.tiempo > 0 AND (s.estado = 3 OR TIMESTAMPDIFF(SECOND, s.fecha_crea, ?) < (s.tiempo * 60))
+        WHERE s.tiempo > 0 
+          AND s.estado IN (1, 2, 3) 
+          AND (s.estado = 3 OR TIMESTAMPDIFF(SECOND, s.fecha_crea, ?) < (s.tiempo * 60))
         GROUP BY s.id_servicio
       `, [getNowInBusinessTimezone()]),
       query(`
@@ -41,7 +44,9 @@ export class TimerRepository {
         LEFT JOIN usuarios u ON u.id_usuario = vu.usuario_id
         LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
         LEFT JOIN usuarios creator ON creator.id_usuario = v.created_by
-        WHERE v.estado IN (2, 3) AND v.tiempo > 0 AND (v.estado = 3 OR TIMESTAMPDIFF(SECOND, v.fecha_crea, ?) < (v.tiempo * 60))
+        WHERE v.tiempo > 0 
+          AND v.estado IN (1, 2, 3) 
+          AND (v.estado = 3 OR TIMESTAMPDIFF(SECOND, v.fecha_crea, ?) < (v.tiempo * 60))
         GROUP BY v.id_venta
       `, [getNowInBusinessTimezone()]),
       query(`
@@ -63,17 +68,24 @@ export class TimerRepository {
     const formatItem = (item: any) => {
       const startTime = parseBusinessDate(item.startTime);
       const isPaused = item.estado === 3;
+      const pausedAt = item.pausedAt ? parseBusinessDate(item.pausedAt) : null;
       const duration = Number(item.duration || 0);
-      const elapsedSecs = Math.floor((now.getTime() - startTime.getTime()) / 1000);
-      const remainingTime = isPaused ? duration * 60 : Math.max(0, duration * 60 - elapsedSecs);
+      const elapsedReference = isPaused && pausedAt ? pausedAt : now;
+      const elapsedSecs = Math.max(
+        0,
+        Math.floor((elapsedReference.getTime() - startTime.getTime()) / 1000)
+      );
+      const remainingTime = Math.max(0, duration * 60 - elapsedSecs);
 
       return {
         ...item,
-        servicioId: String(item.id),
+        servicioId: String(item.servicioId ?? item.id),
         duration,
-        isActive: [2, 3, 4].includes(item.estado),
+        isActive: item.estado === 1 ? remainingTime > 0 : [2, 3, 4].includes(item.estado),
         isPaused,
-        remainingTime
+        remainingTime,
+        isTemporary: Number(item.es_temporal || 0) === 1,
+        servicioOriginalId: item.servicio_original_id ? String(item.servicio_original_id) : null
       };
     };
 

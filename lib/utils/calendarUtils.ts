@@ -1,4 +1,17 @@
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+const parseDatePreservingLocalDate = (value: string | Date) => {
+  if (value instanceof Date) return value;
+
+  if (typeof value === 'string') {
+    const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
+  }
+
+  return new Date(value);
+};
 
 export const toDateKey = (value?: string | Date | null) => {
   if (!value) return '';
@@ -68,7 +81,7 @@ export const formatMonthYearLabel = (date: Date, locale = 'es-ES') =>
 
 export const formatLongDateEs = (value: string | Date, locale = 'es-ES') => {
   if (!value) return '';
-  const date = new Date(value);
+  const date = parseDatePreservingLocalDate(value);
   if (isNaN(date.getTime())) return 'Fecha inválida';
   return date.toLocaleDateString(locale, {
     weekday: 'long',
@@ -96,7 +109,7 @@ export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
     }
   }
 
-  const date = new Date(value);
+  const date = parseDatePreservingLocalDate(value);
   if (isNaN(date.getTime())) return 'Hora inválida';
 
   return date.toLocaleTimeString(locale, {
@@ -107,7 +120,7 @@ export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
 
 export const formatShortDateEs = (value: string | Date, locale = 'es-ES') => {
   if (!value) return '';
-  const date = new Date(value);
+  const date = parseDatePreservingLocalDate(value);
   if (isNaN(date.getTime())) return 'Fecha inválida';
   return date.toLocaleDateString(locale, {
     weekday: 'short',
@@ -116,17 +129,17 @@ export const formatShortDateEs = (value: string | Date, locale = 'es-ES') => {
 };
 
 export const formatDateLabel = (value: string | Date, locale = 'es-ES') =>
-  new Date(value).toLocaleDateString(locale);
+  parseDatePreservingLocalDate(value).toLocaleDateString(locale);
 
 export const formatShortDmyDateEs = (value: string | Date, locale = 'es-ES') => {
-  const date = new Date(value);
+  const date = parseDatePreservingLocalDate(value);
   return `${date.getDate().toString().padStart(2, '0')} ${date.toLocaleDateString(locale, {
     month: 'short',
   })} ${date.getFullYear()}`;
 };
 
 export const formatDateTimeLabel = (value: string | Date, locale = 'es-ES') => {
-  const date = new Date(value);
+  const date = parseDatePreservingLocalDate(value);
   return {
     date: date.toLocaleDateString(locale, {
       day: 'numeric',
@@ -141,7 +154,7 @@ export const formatDateTimeLabel = (value: string | Date, locale = 'es-ES') => {
 };
 
 export const formatDateTimeDmyLabel = (value: string | Date, locale = 'es-ES') => {
-  const date = new Date(value);
+  const date = parseDatePreservingLocalDate(value);
   return {
     date: `${date.getDate()}-${date.toLocaleDateString(locale, { month: 'long' })}-${date.getFullYear()}`,
     time: date.toLocaleTimeString(locale, {
@@ -151,3 +164,4 @@ export const formatDateTimeDmyLabel = (value: string | Date, locale = 'es-ES') =
     }),
   };
 };
+
