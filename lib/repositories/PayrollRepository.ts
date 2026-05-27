@@ -31,7 +31,7 @@ export class PayrollRepository {
     await withTransaction(async trx => {
       // Actualizar asistencias
       await trx(
-        'UPDATE asistencia SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
+        'UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
