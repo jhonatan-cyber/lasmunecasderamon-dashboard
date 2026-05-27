@@ -39,7 +39,7 @@ export function useServiceLogic() {
   }, [getServicios]);
 
   const handleStopTimer = useCallback(
-    async (servicioId: number) => {
+    async (servicioId: string | number) => {
       try {
         // Usar patchServicio que ya implementa actualizaciones optimistas
         await patchServicio(servicioId, { estado: 1 }); // 1 = Terminado

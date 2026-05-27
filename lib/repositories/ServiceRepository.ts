@@ -215,6 +215,7 @@ export class ServiceRepository {
       fecha_crea: row.fecha_crea || null,
       fecha_mod: row.fecha_mod || null,
       habitacion_nombre: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
+      habitacion_numero: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
       anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas,
       anfitrionas_ids: row.anfitrionas_ids,
       total_usuarios: numAnfitrionas,
@@ -227,6 +228,8 @@ export class ServiceRepository {
       waiter_foto: row.creator_foto || null,
       cliente_nombre: row.cliente_nombre || null,
       pagos_mixtos: row.pagos_mixtos ? this.parseMixedPayments(row.pagos_mixtos) : [],
+      es_temporal: Number(row.es_temporal || 0),
+      servicio_original_id: row.servicio_original_id || null,
       habitacion_comision: habitacionComision > 0 ? habitacionComision : null,
       total_comision: totalComision,
       comision_individual: comisionIndividual
@@ -355,7 +358,12 @@ export class ServiceRepository {
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado, fecha_mod: now });
 
       if (estado === 1 || estado === 0) {
-        if (habitacionId) await RoomManager.resumeRoomLogic(trx, habitacionId, id);
+        // Solo manejar la habitación si el servicio venía de un estado activo/pausado,
+        // no si ya estaba finalizado (evita liberar la habitación doblemente)
+        const wasActive = estadoAnterior === 2 || estadoAnterior === 3;
+        if (habitacionId && wasActive) {
+          await RoomManager.resumeRoomLogic(trx, habitacionId, id);
+        }
 
         const anfsResult = await trx<any[]>(
           'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',

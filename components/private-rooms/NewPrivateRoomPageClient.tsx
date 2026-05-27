@@ -18,9 +18,11 @@ import { useClients } from '@/hooks/clientes/useClients';
 import { useAnfitrionasDisponibles } from '@/hooks/personal/useAnfitrionasDisponibles';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function NuevoServicioPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const { allClients: clientes = [] } = useClients();
   const {
@@ -422,6 +424,9 @@ export default function NuevoServicioPage() {
             anfitrionasSeleccionadas // Pasar las anfitrionas
           );
         }
+
+        // Invalidar cache de React Query para servicios
+        queryClient.invalidateQueries({ queryKey: ['/api/servicios'] });
 
         // Refrescar lista de anfitrionas disponibles
         refetchAnfitrionas();

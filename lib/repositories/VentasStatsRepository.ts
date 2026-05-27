@@ -25,11 +25,13 @@ export class VentasStatsRepository {
     const results = await query<any[]>(`
       SELECT 
         COALESCE(SUM(v.total), 0) as total_venta,
-        COALESCE(SUM(dv.precio * dv.cantidad), 0) as monto_productos,
-        COALESCE(SUM(v.propina), 0) as propinas
+        COALESCE(SUM(v.propina), 0) as propinas,
+        (
+          SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
+          FROM detalle_ventas dv
+          WHERE dv.venta_id = v.id_venta
+        ) as monto_productos
       FROM ventas v
-      INNER JOIN detalle_ventas dv ON v.id_venta = dv.venta_id
-      -- Optimization: Use LEFT JOIN to exclude sales with commissions
       LEFT JOIN comisiones c ON v.id_venta = c.venta_id
       WHERE v.caja_id = ?
         AND c.id_comision IS NULL -- No commissions (not a trago chica)
@@ -42,7 +44,7 @@ export class VentasStatsRepository {
         )
     `, [caja_id]);
 
-    const row = results[0] || { total_venta: 0, monto_productos: 0, propinas: 0 };
+    const row = results[0] || { total_venta: 0, propinas: 0, monto_productos: 0 };
     return {
       total_venta: Number(row.total_venta),
       monto_productos: Number(row.monto_productos),

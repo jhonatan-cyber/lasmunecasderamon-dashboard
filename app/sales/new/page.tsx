@@ -182,8 +182,6 @@ export default function NewSale() {
           subtotal={totals.subtotal}
           propina={totals.propina}
           total={totals.total}
-          metodoPago={metodoPago}
-          commissionTotal={commissionTotal}
           loading={loading}
           disabled={loading || !productos.length || !metodoPago || hasOpenCaja === false}
           onSubmit={handleHandleSubmit}

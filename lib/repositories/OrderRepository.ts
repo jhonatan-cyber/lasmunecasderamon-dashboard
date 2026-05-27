@@ -91,6 +91,12 @@ export class OrderRepository {
       device_date
     } = data;
 
+    const subtotalNormalizado = Number(subtotal || 0);
+    const propinaNormalizada = Number(propina || 0);
+    const totalFinal = Number(total || 0);
+    const totalBasePedido =
+      totalFinal > subtotalNormalizado + propinaNormalizada ? totalFinal - propinaNormalizada : subtotalNormalizado;
+
     const tieneProductosEspeciales = hasSpecialHostessProducts(detalles);
     let habitacionAutoSeleccionada: string | null = null;
     let tiempoAutoSeleccionado: number | null = null;
@@ -119,10 +125,10 @@ export class OrderRepository {
         codigo,
         mesero_id: meseroId,
         cliente_id: clienteId || null,
-        subtotal,
-        total,
+        subtotal: totalBasePedido,
+        total: totalBasePedido,
         total_comision: totalComision,
-        propina,
+        propina: propinaNormalizada,
         estado: 1,
         fecha_crea: fechaCrea
       });
@@ -145,8 +151,12 @@ export class OrderRepository {
 
         if (d.selectedHostesses && d.selectedHostesses.length > 0) {
           for (const hostessId of d.selectedHostesses) {
-            // detalle_pedidos_anfitrionas utiliza IDs incrementales (int), pero el sistema usa UUIDs.
-            // Para evitar errores de inserción, solo registramos en pedidos_usuarios que sí soporta UUIDs.
+            await BaseRepository.insert(trx, 'detalle_pedidos_anfitrionas', {
+              id_detalle_anfitriona: generateUUID(),
+              detalle_pedido_id: detallePedidoId,
+              anfitriona_id: String(hostessId),
+              fecha_crea: fechaCrea
+            });
           }
         }
       }
@@ -165,11 +175,15 @@ export class OrderRepository {
       codigo,
       clienteId: clienteId || '',
       meseroId,
-      total: total + propina
+      total: totalBasePedido + propinaNormalizada
     });
     sendNotificationToAll('new_order', notificationData);
 
-    const pushBody = buildOrderPushBody({ codigo, clienteNombre: notificationData.cliente, total });
+    const pushBody = buildOrderPushBody({
+      codigo,
+      clienteNombre: notificationData.cliente,
+      total: totalBasePedido + propinaNormalizada
+    });
     sendPushByRole('cajero', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
     sendPushByRole('administrador', '¡NUEVO PEDIDO!', pushBody, { type: 'order_created' });
 

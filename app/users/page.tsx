@@ -1,4 +1,4 @@
-﻿'use client';
+﻿﻿'use client';
 
 import { useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function Users() {
         }
 
         if (shouldGenerateEmail) {
-          formData.set('correo', `${values.nick}@lasmuÃ±ecasderamon.com`);
+          formData.set('correo', `${values.nick}@lasmuñecasderamon.com`);
         }
         formData.set('password', values.run);
 

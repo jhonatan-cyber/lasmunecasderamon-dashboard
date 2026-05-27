@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { ServiceService } from '@/lib/services/ServiceService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -19,5 +20,10 @@ export const GET = withAppApiWrapper(async (request: Request) => {
 export const POST = withAppAuth(async (request: Request, { user }) => {
   const body = await request.json();
   const result = await ServiceService.createService(body, user.id.toString());
+  sendNotificationToAll('service_changed', {
+    action: 'create',
+    id: result.id,
+    timestamp: new Date().toISOString()
+  });
   return NextResponse.json({ success: true, ...result });
 });

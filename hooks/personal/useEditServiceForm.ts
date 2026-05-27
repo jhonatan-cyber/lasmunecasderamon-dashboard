@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
@@ -34,6 +34,7 @@ export function useEditServiceForm({
   } = useTimer();
   const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas();
   const { habitaciones } = useHabitaciones();
+  const temporaryCreatedRef = useRef(false);
 
   const [formData, setFormData] = useState({
     precio_servicio: 0,
@@ -66,7 +67,7 @@ export function useEditServiceForm({
   }, [habitaciones]);
 
   const fetchAnfitrionasParaEdicion = useCallback(
-    async (servicioId: number) => {
+    async (servicioId: string | number) => {
       try {
         const disponiblesResponse = await fetch('/api/anfitrionas/disponibles');
         const disponiblesData = await disponiblesResponse.json();
@@ -77,9 +78,27 @@ export function useEditServiceForm({
         let anfitrionasDelServicioArr: any[] = [];
         let idsDelServicio: string[] = [];
 
-        if (servicioData.success && servicioData.data.usuarios) {
-          anfitrionasDelServicioArr = servicioData.data.usuarios;
-          idsDelServicio = anfitrionasDelServicioArr.map((user: any) => user.id_usuario.toString());
+        if (servicioData.success && servicioData.data) {
+          const usuariosFromApi = Array.isArray(servicioData.data.usuarios)
+            ? servicioData.data.usuarios
+            : [];
+
+          if (usuariosFromApi.length > 0) {
+            anfitrionasDelServicioArr = usuariosFromApi;
+            idsDelServicio = usuariosFromApi
+              .map((user: any) => String(user.id_usuario ?? user.id ?? '').trim())
+              .filter(Boolean);
+          } else {
+            const rawIds = servicioData.data.anfitrionas_ids;
+            if (Array.isArray(rawIds)) {
+              idsDelServicio = rawIds.map((id: any) => String(id).trim()).filter(Boolean);
+            } else if (typeof rawIds === 'string') {
+              idsDelServicio = rawIds
+                .split(',')
+                .map((id: string) => id.trim())
+                .filter(Boolean);
+            }
+          }
         }
 
         let todasLasAnfitrionas = [...(disponiblesData.data || [])];
@@ -124,6 +143,8 @@ export function useEditServiceForm({
 
   useEffect(() => {
     if (servicio && open) {
+      temporaryCreatedRef.current = false;
+      const servicioPrincipalId = String(servicio.id_servicio ?? servicio.id ?? '').trim();
       const totalAnfitrionas = servicio.total_usuarios || 1;
       setNumAnfitrionas(totalAnfitrionas);
       const precioSinComision = obtenerPrecioHabitacionSinComision();
@@ -132,7 +153,7 @@ export function useEditServiceForm({
         precio_servicio: 0,
         precio_habitacion: precioSinComision,
         metodo_pago: servicio.metodo_pago || 'efectivo',
-        tiempo: servicio.tiempo || 0,
+        tiempo: 0,
         usuarios: []
       });
 
@@ -141,34 +162,46 @@ export function useEditServiceForm({
         precioSinComision > 0 ? precioHabitacionFormatter.formatNumber(precioSinComision) : ''
       );
 
-      if (servicio.id_servicio) {
-        fetchAnfitrionasParaEdicion(Number(servicio.id_servicio)).then(usuarios => {
+      const servicioRawId = servicio.id_servicio ?? servicio.id;
+      if (servicioRawId) {
+        fetchAnfitrionasParaEdicion(String(servicioRawId)).then(usuarios => {
           setFormData(prev => ({ ...prev, usuarios }));
         });
       }
 
+      // Pausar inmediatamente el timer principal al abrir el modal
       if (onPauseMainTimer) {
-        setTimeout(() => {
-          onPauseMainTimer();
-          if (servicio?.id_servicio) pauseTimerByServicioId(String(servicio.id_servicio));
-        }, 0);
+        onPauseMainTimer();
+      }
+      if (servicioPrincipalId) {
+        pauseTimerByServicioId(servicioPrincipalId);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servicio?.id_servicio, open]);
+  }, [servicio?.id_servicio, servicio?.id, open]);
+
+  // Ref para saber si el modal estaba abierto antes del render actual
+  const prevOpenRef = useRef(open);
 
   useEffect(() => {
-    if (!open && onResumeMainTimer && servicio?.id_servicio) {
-      const servicioId = servicio.id_servicio;
-      const timeoutId = setTimeout(() => {
-        onResumeMainTimer();
-        const tempTimer = getTemporaryTimerByServicioId(String(servicioId));
-        if (!tempTimer) resumeTimerByServicioId(String(servicioId));
-      }, 0);
-      return () => clearTimeout(timeoutId);
+    const servicioPrincipalId = String(servicio?.id_servicio ?? servicio?.id ?? '').trim();
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    // Solo reanudar cuando se CIERRA el modal (open cambia de true a false),
+    // NO en el montaje inicial con open=false
+    if (wasOpen === true && !open && onResumeMainTimer && servicioPrincipalId) {
+      if (temporaryCreatedRef.current) {
+        temporaryCreatedRef.current = false;
+        return;
+      }
+
+      onResumeMainTimer();
+      const tempTimer = getTemporaryTimerByServicioId(servicioPrincipalId);
+      if (!tempTimer) resumeTimerByServicioId(servicioPrincipalId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, servicio?.id_servicio]);
+  }, [open]);
 
   const numAnfitrionasSeleccionadas = formData.usuarios.length || 1;
 
@@ -210,6 +243,11 @@ export function useEditServiceForm({
 
   const handleSave = useCallback(async () => {
     if (!servicio) return;
+    const servicioPrincipalId = String(servicio.id_servicio ?? servicio.id ?? '').trim();
+    if (!servicioPrincipalId) {
+      toast.error('No se pudo determinar el servicio principal');
+      return;
+    }
     if (formData.precio_servicio <= 0) {
       toast.error('El precio del servicio debe ser mayor a 0');
       return;
@@ -229,29 +267,35 @@ export function useEditServiceForm({
 
     setIsSaving(true);
     try {
-      if (formData.tiempo > 0 && servicio.habitacion_numero) {
+      if (formData.tiempo > 0 && servicio.habitacion_id) {
+        const habitacionLabel =
+          servicio.habitacion_numero ||
+          (servicio as any).habitacion_nombre ||
+          `Habitación ${servicio.habitacion_id}`;
+
         const servicioTemporalResponse = await fetch('/api/servicios/temporal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            servicio_original_id: servicio.id_servicio,
+            servicio_original_id: servicioPrincipalId,
             cliente_id: servicio.cliente_id || null,
             habitacion_id: servicio.habitacion_id,
-            precio_habitacion: formData.precio_habitacion,
-            precio_servicio: formData.precio_servicio,
+            precio_habitacion: precioHabitacionTotal,
+            precio_servicio: precioServicioTotal,
             iva,
             sub_total: subTotal,
             total,
             tiempo: formData.tiempo,
             metodo_pago: formData.metodo_pago,
             usuarios: formData.usuarios,
+            total_usuarios: formData.usuarios.length,
             clientes: servicio.cliente_id ? [servicio.cliente_id] : [],
             es_temporal: true
           })
         });
 
         const servicioTemporalResult = await servicioTemporalResponse.json();
-        if (!servicioTemporalResult.success) {
+        if (!servicioTemporalResponse.ok || !servicioTemporalResult.success) {
           toast.error(servicioTemporalResult.message || 'Error al crear servicio temporal');
           return;
         }
@@ -275,13 +319,13 @@ export function useEditServiceForm({
             .join(', '),
           total_usuarios: formData.usuarios.length,
           servicio_temporal_id: servicioTemporalResult.data.id_servicio,
-          servicio_original_id: servicio.id_servicio
+          servicio_original_id: servicioPrincipalId
         };
 
         startGlobalTemporaryTimer(
-          String(servicio.id_servicio!),
+          servicioPrincipalId,
           String(servicio.habitacion_id),
-          servicio.habitacion_numero || '?',
+          habitacionLabel,
           formData.tiempo,
           `${servicio.codigo}-TEMP`,
           servicio.cliente_nombre || 'Sin registrar',
@@ -305,9 +349,12 @@ export function useEditServiceForm({
           datosTemporales.anfitrionas_nombres
         );
 
+        temporaryCreatedRef.current = true;
         toast.success(`Nuevo servicio creado - Timer de ${formData.tiempo} minutos iniciado`);
         handleClose();
         if (onUpdate) onUpdate();
+      } else {
+        toast.error('No se pudo determinar la habitación del servicio principal');
       }
     } catch (error) {
       console.error('Error in handleSave:', error);
