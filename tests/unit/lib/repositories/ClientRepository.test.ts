@@ -75,7 +75,7 @@ describe('ClientRepository.addPrepago', () => {
         efectivo: 0,
         tarjeta: 100,
         transferencia: 0,
-        prepago: 100
+        prepago: 0
       }
     );
   });

@@ -36,8 +36,8 @@ describe('PermissionsCache.get / set', () => {
     vi.useFakeTimers();
     PermissionsCache.set('user-1', mockPerms);
 
-    // Avanzar 5 minutos + 1ms
-    vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+    // Avanzar 1 minuto + 1ms (TTL real es 1 minuto)
+    vi.advanceTimersByTime(60 * 1000 + 1);
 
     expect(PermissionsCache.get('user-1')).toBeNull();
   });
@@ -46,7 +46,7 @@ describe('PermissionsCache.get / set', () => {
     vi.useFakeTimers();
     PermissionsCache.set('user-1', mockPerms);
 
-    vi.advanceTimersByTime(4 * 60 * 1000); // 4 minutos
+    vi.advanceTimersByTime(30 * 1000); // 30 segundos
 
     expect(PermissionsCache.get('user-1')).toEqual(mockPerms);
   });
@@ -72,10 +72,8 @@ describe('PermissionsCache.purgeExpired', () => {
     vi.useFakeTimers();
 
     PermissionsCache.set('user-1', mockPerms);
-    vi.advanceTimersByTime(3 * 60 * 1000); // 3 min
+    vi.advanceTimersByTime(60 * 1000 + 1); // 1 min + 1ms → user-1 expiró
     PermissionsCache.set('user-2', mockPerms); // fresco
-
-    vi.advanceTimersByTime(3 * 60 * 1000); // 3 min más → user-1 expiró, user-2 no
 
     PermissionsCache.purgeExpired();
 

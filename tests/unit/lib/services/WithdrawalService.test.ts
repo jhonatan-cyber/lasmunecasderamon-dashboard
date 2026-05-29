@@ -66,8 +66,8 @@ describe('WithdrawalService.addRetiro', () => {
   it('lanza BusinessError si no hay caja abierta y no se puede obtener', async () => {
     const retiroSinCaja = { ...validRetiro, caja_id: undefined };
 
-    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      const trx = vi.fn();
+    vi.mocked(withTransaction).mockImplementation(async (fn: any) => {
+      const trx = vi.fn().mockResolvedValue([]); // devuelve [] para que rows[0]?.id_caja sea undefined
       vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue(null);
       return fn(trx);
     });
@@ -91,22 +91,21 @@ describe('WithdrawalService.addRetiro', () => {
     expect(result).toMatchObject({ id_retiro: 'ret-1', caja_id: 'caja-1' });
   });
 
-  it('actualiza el balance de la caja con monto negativo', async () => {
+  it('actualiza el balance de la caja con un UPDATE directo (monto negativo)', async () => {
     vi.mocked(WithdrawalRepository.create).mockResolvedValue('ret-1' as any);
 
     let capturedTrx: any;
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       capturedTrx = vi.fn().mockResolvedValue([{ monto_apertura: 100000, efectivo: 0 }]);
-      vi.mocked(CashRegisterRepository.updateBalances).mockResolvedValue(undefined);
       return fn(capturedTrx);
     });
 
     await WithdrawalService.addRetiro(validRetiro as any);
 
-    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
-      expect.anything(),
-      'caja-1',
-      { efectivo: -50000 }
+    // Ahora usa UPDATE directo en cajas en vez de CashRegisterRepository.updateBalances
+    expect(capturedTrx).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE cajas SET efectivo = efectivo - ?'),
+      expect.arrayContaining([50000, 'caja-1'])
     );
   });
 
@@ -121,6 +120,5 @@ describe('WithdrawalService.addRetiro', () => {
     ).rejects.toThrow(BusinessError);
 
     expect(WithdrawalRepository.create).not.toHaveBeenCalled();
-    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
   });
 });
