@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useEffect, useRef, useCallback, useState } from 'react';
+import logger from '@/lib/utils/logger';
 
 /**
  * Hook para manejar conexiones SSE de forma robusta y centralizada.
@@ -45,7 +46,7 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
       eventSourceRef.current.close();
     }
 
-    console.log(`[SSE] Conectando a ${url}...`);
+    logger.info(`[SSE] Conectando a ${url}...`);
     const es = new EventSource(url);
 
     es.onopen = () => {
@@ -54,20 +55,20 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
       }
     };
 
-    es.onmessage = (event) => {
+    es.onmessage = event => {
       if (!isMountedRef.current) return;
       try {
         const payload = JSON.parse(event.data);
         onMessageRef.current(payload);
       } catch (err) {
-        console.error('[SSE] Error al parsear mensaje:', err);
+        logger.captureException(err, { context: 'SSE:parseMessage' });
       }
     };
 
     es.onerror = () => {
       if (!isMountedRef.current) return;
       setIsConnected(false);
-      console.warn('[SSE] Error de conexión, reintentando en 5s...');
+      logger.warn('[SSE] Error de conexión, reintentando en 5s...');
       es.close();
       eventSourceRef.current = null;
       retryTimeoutRef.current = setTimeout(connect, 5000);
@@ -87,7 +88,7 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
         retryTimeoutRef.current = null;
       }
       if (eventSourceRef.current) {
-        console.log(`[SSE] Cerrando conexión con ${url}`);
+        logger.info(`[SSE] Cerrando conexión con ${url}`);
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
@@ -99,4 +100,3 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
     reconnect: connect
   };
 }
-

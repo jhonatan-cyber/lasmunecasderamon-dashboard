@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
+import logger from '@/lib/utils/logger';
 
 interface SolicitudAnulacion {
   venta_id: number;
@@ -50,7 +51,7 @@ function ConfirmarAnulacionContent() {
         const data = await response.json();
         setSolicitud(data.solicitud);
       } catch (err) {
-        console.error('Error cargando solicitud:', err);
+        logger.captureException(err, { context: 'ConfirmarAnulacion:cargarSolicitud' });
         setError(err instanceof Error ? err.message : 'Error al cargar la solicitud');
       } finally {
         setLoading(false);
@@ -184,7 +185,9 @@ function ConfirmarAnulacionContent() {
                   </span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium text-gray-700 dark:text-gray-300'>Monto solicitado:</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>
+                    Monto solicitado:
+                  </span>
                   <span className='font-bold text-amber-600 dark:text-amber-400'>
                     {formatCurrencyCLP(solicitud.monto || 0)}
                   </span>

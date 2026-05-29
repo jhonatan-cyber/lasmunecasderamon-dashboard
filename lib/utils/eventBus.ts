@@ -1,3 +1,5 @@
+import logger from '@/lib/utils/logger';
+
 /**
  * Event Bus Tipado para comunicacion entre componentes y comunicacion global.
  * Reemplaza el uso de `window.dispatchEvent` con payloads "any".
@@ -49,7 +51,7 @@ class EventBus {
       try {
         callback(payload as AppEvents[T]);
       } catch (error) {
-        console.error(`[EventBus] Error executing callback for event ${event}:`, error);
+        logger.captureException(error, { context: `eventBus:${event}` });
       }
     }
   }

@@ -2,6 +2,8 @@
 'use client';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
+import logger from '@/lib/utils/logger';
+
 import {
   Search,
   Plus,
@@ -120,7 +122,7 @@ export default function RolesPage() {
   const handleSubmitRole = async (data: { name: string; description: string }) => {
     if (isSubmitting) return;
 
-    console.log('ðŸ”µ [ROLES PAGE] handleSubmitRole llamado con datos:', data);
+    logger.info('ðŸ”µ [ROLES PAGE] handleSubmitRole llamado con datos:', data);
 
     try {
       setIsSubmitting(true);

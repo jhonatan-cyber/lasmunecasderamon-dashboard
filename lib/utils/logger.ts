@@ -2,13 +2,97 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 type AuditDetails = Record<string, unknown>;
 
+interface LogEntry {
+  timestamp: string;
+  level: string;
+  message: string;
+  meta?: Record<string, unknown>;
+}
+
+const formatPayload = (payload: unknown): Record<string, unknown> | undefined => {
+  if (!payload) return undefined;
+  if (payload instanceof Error) {
+    return {
+      message: payload.message,
+      name: payload.name,
+      stack: payload.stack,
+      ...Object.getOwnPropertyNames(payload).reduce<Record<string, unknown>>((acc, key) => {
+        if (key !== 'message' && key !== 'name' && key !== 'stack') {
+          acc[key] = (payload as unknown as Record<string, unknown>)[key];
+        }
+        return acc;
+      }, {})
+    };
+  }
+
+  if (typeof payload === 'object') {
+    return JSON.parse(JSON.stringify(payload, (_, value) => (value === undefined ? null : value)));
+  }
+
+  return { value: payload };
+};
+
+const makeLogEntry = (
+  level: string,
+  message: string,
+  meta?: Record<string, unknown>
+): LogEntry => ({
+  timestamp: new Date().toISOString(),
+  level,
+  message,
+  meta: formatPayload(meta)
+});
+
+// Guardamos referencias originales para evitar bucles infinitos
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  error: console.error,
+  info: console.info,
+  debug: console.debug
+};
+
 let loggerInstance: any = null;
+let consoleOverridden = false;
+
+const overrideConsole = (winstonLogger: any) => {
+  if (consoleOverridden) return;
+  consoleOverridden = true;
+
+  const safeStringify = (a: unknown): string => {
+    if (typeof a === 'object') {
+      try {
+        return JSON.stringify(a);
+      } catch {
+        return String(a);
+      }
+    }
+    return String(a);
+  };
+
+  console.log = (...args: unknown[]) => {
+    winstonLogger.info(args.map(safeStringify).join(' '));
+  };
+  console.warn = (...args: unknown[]) => {
+    winstonLogger.warn(args.map(safeStringify).join(' '));
+  };
+  console.error = (...args: unknown[]) => {
+    winstonLogger.error(args.map(safeStringify).join(' '));
+  };
+  console.info = (...args: unknown[]) => {
+    winstonLogger.info(args.map(safeStringify).join(' '));
+  };
+  console.debug = (...args: unknown[]) => {
+    winstonLogger.debug(args.map(safeStringify).join(' '));
+  };
+};
 
 const getLogger = () => {
   if (loggerInstance) return loggerInstance;
 
   if (typeof window === 'undefined') {
     const winston = require('winston');
+
     const path = require('path');
 
     const logFormat = winston.format.combine(
@@ -56,15 +140,39 @@ const getLogger = () => {
         })
       );
     }
+
+    // En producción, redirigimos console.log/warn/error a través de winston
+    // para capturar cualquier log que no use el logger directamente
+    if (process.env.NODE_ENV === 'production') {
+      overrideConsole(winstonLogger);
+    }
+
     loggerInstance = winstonLogger;
   } else {
+    // Browser fallback estructurado (consistente con el formato de la App)
     loggerInstance = {
-      // eslint-disable-next-line no-console
-      info: (msg: string, meta: any) => console.info(`[INFO] ${msg}`, meta),
-      warn: (msg: string, meta: any) => console.warn(`[WARN] ${msg}`, meta),
-      error: (msg: string, meta: any) => console.error(`[ERROR] ${msg}`, meta),
-      // eslint-disable-next-line no-console
-      debug: (msg: string, meta: any) => console.info(`[DEBUG] ${msg}`, meta),
+      info: (msg: string, meta?: unknown) => {
+        originalConsole.info(
+          JSON.stringify(makeLogEntry('info', msg, meta as Record<string, unknown>))
+        );
+      },
+      warn: (msg: string, meta?: unknown) => {
+        originalConsole.warn(
+          JSON.stringify(makeLogEntry('warn', msg, meta as Record<string, unknown>))
+        );
+      },
+      error: (msg: string, meta?: unknown) => {
+        originalConsole.error(
+          JSON.stringify(makeLogEntry('error', msg, meta as Record<string, unknown>))
+        );
+      },
+      debug: (msg: string, meta?: unknown) => {
+        if (process.env.NODE_ENV !== 'production') {
+          originalConsole.debug(
+            JSON.stringify(makeLogEntry('debug', msg, meta as Record<string, unknown>))
+          );
+        }
+      },
       add: () => {},
       remove: () => {}
     };
@@ -73,10 +181,19 @@ const getLogger = () => {
 };
 
 export const logger = {
-  info: (msg: string, meta?: any) => getLogger().info(msg, meta),
-  warn: (msg: string, meta?: any) => getLogger().warn(msg, meta),
-  error: (msg: string, meta?: any) => getLogger().error(msg, meta),
-  debug: (msg: string, meta?: any) => getLogger().debug(msg, meta)
+  info: (msg: string, meta?: unknown) => getLogger().info(msg, meta),
+  warn: (msg: string, meta?: unknown) => getLogger().warn(msg, meta),
+  error: (msg: string, meta?: unknown) => getLogger().error(msg, meta),
+  debug: (msg: string, meta?: unknown) => getLogger().debug(msg, meta),
+
+  /** Captura una excepción con stack trace y meta-datos, consistente con el logger de la App */
+  captureException: (error: unknown, meta?: Record<string, unknown>) => {
+    getLogger().error(error instanceof Error ? error.message : String(error), {
+      ...meta,
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
+  }
 };
 
 export const auditLogger = {

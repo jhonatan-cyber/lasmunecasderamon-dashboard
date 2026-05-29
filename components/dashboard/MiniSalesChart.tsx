@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import logger from '@/lib/utils/logger';
+
 import {
   BarChart3,
   ChevronLeft,
@@ -134,7 +136,7 @@ export default function MiniSalesChart() {
       const result = await response.json();
       if (result.success) setMonthData(result.data);
     } catch (e) {
-      console.error('Error al cargar datos mensuales', e);
+      logger.captureException(e, { context: 'MiniSalesChart:fetchMonthData' });
     }
   }, []);
 
@@ -145,7 +147,7 @@ export default function MiniSalesChart() {
       const result = await response.json();
       if (result.success) setWeekData(result.data);
     } catch (e) {
-      console.error('Error al cargar datos semanales', e);
+      logger.captureException(e, { context: 'MiniSalesChart:fetchWeekData' });
     }
   }, []);
 

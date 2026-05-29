@@ -15,6 +15,7 @@ import { DevolucionTable } from '@/components/returns/sales/DevolucionTable';
 import { DevolucionModal } from '@/components/returns/sales/DevolucionModal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
+import logger from '@/lib/utils/logger';
 
 interface SolicitudAnulacion {
   id: string;
@@ -59,7 +60,7 @@ export function DevolucionesVentasPageClient() {
           setSolicitudes(data.solicitudes);
         }
       } catch (err) {
-        console.error('Error fetching solicitudes:', err);
+        logger.captureException(err, { context: 'DevolucionesVentasPageClient:fetchSolicitudes' });
       } finally {
         setLoadingSolicitudes(false);
       }
@@ -88,7 +89,7 @@ export function DevolucionesVentasPageClient() {
         }
       }
     } catch (err) {
-      console.error('Error procesando solicitud:', err);
+      logger.captureException(err, { context: 'DevolucionesVentasPageClient:fetchDevoluciones' });
     }
   };
 

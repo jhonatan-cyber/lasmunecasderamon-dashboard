@@ -11,6 +11,7 @@ import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 interface Advance {
   id_anticipo: number;
@@ -41,11 +42,11 @@ export default function AnfitrionaAnticiposPage() {
       if (res.ok && data.success) {
         setAdvances(data.data || []);
       } else {
-        console.error('API error:', data.message);
+        logger.error('API error:', data.message);
         setAdvances([]);
       }
     } catch (error) {
-      console.error('Error fetching advances:', error);
+      logger.captureException(error, { context: 'AnfitrionaAnticipos:fetchAdvances' });
       setAdvances([]);
     } finally {
       setLoading(false);

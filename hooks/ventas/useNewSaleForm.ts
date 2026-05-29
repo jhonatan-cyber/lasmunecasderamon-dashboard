@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useSales } from '@/hooks/caja/useSales';
 import { useTimer } from '@/contexts/TimerContext';
 import { VentaCreate } from '@/types/venta';
+import logger from '@/lib/utils/logger';
 
 export const useNewSaleForm = () => {
   const router = useRouter();
@@ -98,7 +99,7 @@ export const useNewSaleForm = () => {
         setSelectedHabitacion(habitacionId);
       }
     } catch (error) {
-      console.error('Error fetching room info:', error);
+      logger.captureException(error, { context: 'useNewSaleForm:fetchRoomInfo' });
     }
   };
 
@@ -321,7 +322,7 @@ export const useNewSaleForm = () => {
         router.push('/sales');
       }
     } catch (error) {
-      console.error('Error al crear venta:', error);
+      logger.captureException(error, { context: 'useNewSaleForm:createSale' });
       toast.error('Error al generar la venta');
     } finally {
       setLoading(false);

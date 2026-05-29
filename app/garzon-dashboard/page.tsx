@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import logger from '@/lib/utils/logger';
+
 import {
   Calendar,
   DollarSign,
@@ -41,7 +43,7 @@ export default function GarzonDashboard() {
           refetchUser(true);
         }
       } catch (e) {
-        console.error('Error polling user status:', e);
+        logger.captureException(e, { context: 'GarzonDashboard:checkToken' });
       }
     };
 

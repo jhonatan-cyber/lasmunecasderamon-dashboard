@@ -148,6 +148,28 @@ export class AnticipoRepository {
         fecha_entrega: now
       });
 
+      // Historial: solicitud -> aprobado -> entregado (consistente con backfill)
+      await BaseRepository.insert(trx, 'anticipo_historial', {
+        anticipo_id: id,
+        accion: 'solicitud',
+        usuario_id,
+        fecha_crea: now
+      });
+
+      await BaseRepository.insert(trx, 'anticipo_historial', {
+        anticipo_id: id,
+        accion: 'aprobado',
+        usuario_id: deliveredById,
+        fecha_crea: now
+      });
+
+      await BaseRepository.insert(trx, 'anticipo_historial', {
+        anticipo_id: id,
+        accion: 'entregado',
+        usuario_id: deliveredById,
+        fecha_crea: now
+      });
+
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
       if (!idCaja)
         throw new BusinessError(
@@ -235,6 +257,13 @@ export class AnticipoRepository {
       fecha_crea: now
     });
 
+    await BaseRepository.insert(query, 'anticipo_historial', {
+      anticipo_id: id,
+      accion: 'solicitud',
+      usuario_id,
+      fecha_crea: now
+    });
+
     const adminWhatsApp =
       process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
     const baseUrl = process.env.PUBLIC_BASE_URL || '';
@@ -278,16 +307,24 @@ export class AnticipoRepository {
     return res.length > 0 ? res[0] : null;
   }
 
-  static async updateStatus(id: string, estado: number) {
+  static async updateStatus(id: string, estado: number, adminId?: string) {
     const now = getNowInBusinessTimezone();
     await BaseRepository.update(query, this.TABLE, this.ID_COL, id, {
       estado,
       fecha_mod: now
     });
+
+    await BaseRepository.insert(query, 'anticipo_historial', {
+      anticipo_id: id,
+      accion: mapEstadoToAccion(estado),
+      usuario_id: adminId,
+      fecha_crea: now
+    });
+
     return await BaseRepository.findOne<any>(query, this.TABLE, this.ID_COL, id);
   }
 
-  static async processSolicitud(id: string, action: 'approve' | 'reject') {
+  static async processSolicitud(id: string, action: 'approve' | 'reject', adminId?: string) {
     const estado = action === 'approve' ? 1 : 3;
     const now = getNowInBusinessTimezone();
 
@@ -315,6 +352,13 @@ export class AnticipoRepository {
         estado,
         fecha_mod: now,
         ...(action === 'approve' ? { fecha_aprobacion: now } : {})
+      });
+
+      await BaseRepository.insert(trx, 'anticipo_historial', {
+        anticipo_id: id,
+        accion: action === 'approve' ? 'aprobado' : 'rechazado',
+        usuario_id: adminId,
+        fecha_crea: now
       });
 
       const { empleado: msgEmp, administrador: msgAdmin } = buildAnticipoProcessedMessages({
@@ -409,6 +453,13 @@ export class AnticipoRepository {
         fecha_entrega: now
       });
 
+      await BaseRepository.insert(trx, 'anticipo_historial', {
+        anticipo_id: id,
+        accion: 'entregado',
+        usuario_id: String(entregado_por),
+        fecha_crea: now
+      });
+
       sendNotificationToAll('anticipo_delivered', {
         id,
         usuario_id: sol.usuario_id,
@@ -434,5 +485,20 @@ export class AnticipoRepository {
 
       return { ok: true, id };
     });
+  }
+}
+
+function mapEstadoToAccion(estado: number): string {
+  switch (estado) {
+    case 0:
+      return 'anulado';
+    case 1:
+      return 'aprobado';
+    case 2:
+      return 'pendiente';
+    case 3:
+      return 'rechazado';
+    default:
+      return 'actualizado';
   }
 }

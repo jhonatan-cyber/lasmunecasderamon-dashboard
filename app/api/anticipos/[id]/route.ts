@@ -10,13 +10,13 @@ export const PUT = withAppAuth(
     const { user } = context;
 
     if (Number(estado) === 1) {
-      await AnticipoRepository.processSolicitud(id, 'approve');
+      await AnticipoRepository.processSolicitud(id, 'approve', user.id.toString());
     } else if (Number(estado) === 3) {
-      await AnticipoRepository.processSolicitud(id, 'reject');
+      await AnticipoRepository.processSolicitud(id, 'reject', user.id.toString());
     } else if (Number(estado) === 0) {
       await AnticipoRepository.deliverAnticipo(id, user.id.toString());
     } else {
-      await AnticipoRepository.updateStatus(id, Number(estado ?? 0));
+      await AnticipoRepository.updateStatus(id, Number(estado ?? 0), user.id.toString());
     }
 
     return NextResponse.json({ success: true, message: 'Anticipo procesado correctamente' });

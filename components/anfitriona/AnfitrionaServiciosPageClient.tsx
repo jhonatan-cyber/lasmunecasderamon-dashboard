@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import EditServiceModal from '@/components/servicios/EditServiceModal';
+import logger from '@/lib/utils/logger';
 
 interface Service {
   id_servicio: number;
@@ -52,11 +53,11 @@ export default function AnfitrionaServiciosPage() {
       if (res.ok && data.success) {
         setServices(data.data || []);
       } else {
-        console.error('API error:', data.message);
+        logger.error('API error:', data.message);
         setServices([]);
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      logger.captureException(error, { context: 'AnfitrionaServiciosPageClient:fetchServices' });
       setServices([]);
     } finally {
       setLoading(false);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import logger from '@/lib/utils/logger';
 
 type EstadoBadge = {
   label: string;
@@ -31,7 +32,7 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
         const cuentaData = data?.success === true ? data.data : data;
         setCuenta(cuentaData ?? null);
       } catch (error) {
-        console.error('Error al cargar detalles de la cuenta:', error);
+        logger.captureException(error, { context: 'CuentaDetail:fetchCuentaDetails' });
         toast.error('Error al cargar datos de la cuenta');
         setCuenta(null);
       } finally {
@@ -46,13 +47,17 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
   // Mapping de estado a badge
   const getEstadoBadge = (estado: number | string): EstadoBadge => {
     const estadoStr = String(estado).toLowerCase();
-    return ({
-      0: { label: 'Cobrada', variant: 'success' },
-      1: { label: 'Activa', variant: 'default' },
-      2: { label: 'Solicitud anul.', variant: 'outline' },
-      3: { label: 'Anulada', variant: 'destructive' },
-      4: { label: 'Saldo pendiente', variant: 'secondary' }
-    } as Record<string, EstadoBadge>)[estadoStr] || { label: 'Desconocido', variant: 'outline' as const };
+    return (
+      (
+        {
+          0: { label: 'Cobrada', variant: 'success' },
+          1: { label: 'Activa', variant: 'default' },
+          2: { label: 'Solicitud anul.', variant: 'outline' },
+          3: { label: 'Anulada', variant: 'destructive' },
+          4: { label: 'Saldo pendiente', variant: 'secondary' }
+        } as Record<string, EstadoBadge>
+      )[estadoStr] || { label: 'Desconocido', variant: 'outline' as const }
+    );
   };
 
   const handleClose = () => {

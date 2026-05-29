@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import logger from '@/lib/utils/logger';
 
 interface LoginFormProps {
   step: 'login' | 'codigo';
@@ -67,7 +68,7 @@ export const LoginForm = ({
   };
 
   const handleThemeChange = (mode: string) => {
-    console.log('[Login][Theme] Cambio solicitado:', mode, 'at', new Date().toISOString());
+    logger.info('[Login][Theme] Cambio solicitado', { mode, timestamp: new Date().toISOString() });
     setThemeChanging(mode);
     setThemeMode(mode);
     setTimeout(() => setThemeChanging(null), 300);

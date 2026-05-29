@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { sseManager } from '@/lib/utils/SSEManager';
 import { appEventBus } from '@/lib/utils/eventBus';
+import logger from '@/lib/utils/logger';
 
 const SSE_NOTIFICATION_URL = '/api/notifications/sse';
 
@@ -39,7 +40,7 @@ export function useSharedSSE(
       sseManager.connect(url);
 
       // Suscribirse al bus de eventos para recibir mensajes
-      const unsub = appEventBus.on('sse-message', (payload) => {
+      const unsub = appEventBus.on('sse-message', payload => {
         if (isMountedRef.current) {
           onMessageRef.current(payload);
         }
@@ -50,17 +51,17 @@ export function useSharedSSE(
 
     // Para URLs distintas, abrir una conexión independiente (comportamiento anterior)
     const es = new EventSource(url);
-    es.onmessage = (event) => {
+    es.onmessage = event => {
       if (!isMountedRef.current) return;
       try {
         const payload = JSON.parse(event.data);
         onMessageRef.current(payload);
       } catch (err) {
-        console.error('[useSharedSSE] Error parseando mensaje:', err);
+        logger.captureException(err, { context: 'SharedSSE:parseMessage' });
       }
     };
     es.onerror = () => {
-      console.warn('[useSharedSSE] Error en conexión independiente:', url);
+      logger.warn('[useSharedSSE] Error en conexión independiente:', url);
     };
     return () => es.close();
   }, [url]);
@@ -69,6 +70,6 @@ export function useSharedSSE(
     isConnected: true,
     reconnect: () => {
       if (url === SSE_NOTIFICATION_URL) sseManager.connect(url);
-    },
+    }
   };
 }

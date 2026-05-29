@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
 import { Button } from '@/components/ui/button';
+import logger from '@/lib/utils/logger';
 
 export default function AnfitrionaDashboard() {
   const { user, loading: userLoading, refetch: refetchUser } = useCurrentUser();
@@ -32,7 +33,7 @@ export default function AnfitrionaDashboard() {
           refetchUser(true);
         }
       } catch (e) {
-        console.error('Error polling user status:', e);
+        logger.captureException(e, { context: 'AnfitrionaDashboard:checkToken' });
       }
     };
 

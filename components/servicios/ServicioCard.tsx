@@ -258,7 +258,7 @@ export default function ServicioCard({
         // Detener el timer en el contexto global (esto también libera la habitación y actualiza el servicio)
         stopTimerByServicioId(servicioIdStr);
 
-        if (onStopTimer) onStopTimer(rawId);
+        if (onStopTimer && rawId != null) onStopTimer(rawId);
         toast.success('Servicio finalizado exitosamente');
         setShowConfirm(false);
       } else {

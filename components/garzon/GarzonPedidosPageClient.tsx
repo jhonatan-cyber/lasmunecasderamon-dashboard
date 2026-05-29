@@ -13,6 +13,7 @@ import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import PedidosStatsCards from './PedidosStatsCards';
 import { OrdersFilters } from './OrdersFilters';
+import logger from '@/lib/utils/logger';
 
 interface Order {
   id_pedido: number;
@@ -53,10 +54,10 @@ export default function GarzonPedidosPage() {
       if (data.success) {
         setOrders(data.data || []);
       } else {
-        console.error('Error fetching orders:', data.message);
+        logger.error('Error fetching orders:', data.message);
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      logger.captureException(error, { context: 'GarzonPedidosPageClient:fetchOrders' });
     } finally {
       setLoading(false);
     }

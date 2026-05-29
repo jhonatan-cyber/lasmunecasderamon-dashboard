@@ -1,4 +1,5 @@
 import { appEventBus, AppEvents } from '@/lib/utils/eventBus';
+import logger from '@/lib/utils/logger';
 
 class SSEManager {
   private eventSource: EventSource | null = null;
@@ -16,13 +17,11 @@ class SSEManager {
     this.url = url;
     this.cleanup();
 
-    // eslint-disable-next-line no-console
-    console.info(`[SSEManager] Conectando a ${url}...`);
+    logger.info(`[SSEManager] Conectando a ${url}...`);
     this.eventSource = new EventSource(url);
 
     this.eventSource.onopen = () => {
-      // eslint-disable-next-line no-console
-      console.info(`[SSEManager] Conectado exitosamente.`);
+      logger.info(`[SSEManager] Conectado exitosamente.`);
       this.isConnected = true;
       appEventBus.emit('sse-reconnect');
     };
@@ -34,12 +33,12 @@ class SSEManager {
         // Emite un evento genérico sse-message para todos los payloads
         appEventBus.emit('sse-message', payload);
       } catch (err) {
-        console.error('[SSEManager] Error parseando mensaje SSE:', err);
+        logger.captureException(err, { context: 'SSEManager:parseMessage' });
       }
     };
 
     this.eventSource.onerror = () => {
-      console.warn('[SSEManager] Error de conexión, reintentando en 5s...');
+      logger.warn('[SSEManager] Error de conexión, reintentando en 5s...');
       this.isConnected = false;
       this.cleanup(false);
       this.reconnectTimeout = setTimeout(() => {

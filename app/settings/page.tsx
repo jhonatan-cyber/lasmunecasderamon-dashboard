@@ -13,6 +13,8 @@ import { SettingsPermissionsTab } from '@/components/settings/SettingsPermission
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import { CleanDatabaseConfirmModal } from '@/components/settings/CleanDatabaseConfirmModal';
+import logger from '@/lib/utils/logger';
+
 import type {
   BackupItem,
   BillingConfig,
@@ -158,7 +160,7 @@ export default function Settings() {
         }
       }
     } catch (error) {
-      console.error('Error fetching company config:', error);
+      logger.captureException(error, { context: 'Settings:fetchSettings' });
     } finally {
       setConfigLoading(false);
     }
@@ -174,7 +176,7 @@ export default function Settings() {
         setBackups(result.backups || []);
       }
     } catch (error) {
-      console.error('Error fetching backups:', error);
+      logger.captureException(error, { context: 'Settings:fetchBackups' });
     } finally {
       setBackupsLoading(false);
     }
@@ -200,7 +202,7 @@ export default function Settings() {
         throw new Error(result.error || 'Error al crear backup');
       }
     } catch (error) {
-      console.error('Error creating backup:', error);
+      logger.captureException(error, { context: 'Settings:updateGeneral' });
       toast.error('Error al crear el backup');
     } finally {
       setIsCreatingBackup(false);
@@ -235,7 +237,7 @@ export default function Settings() {
         throw new Error(result.error || 'Error al restaurar backup');
       }
     } catch (error) {
-      console.error('Error restoring backup:', error);
+      logger.captureException(error, { context: 'Settings:fetchNotifications' });
       toast.error('Error al restaurar el backup');
     } finally {
       setRestoringBackupId(null);
@@ -259,7 +261,7 @@ export default function Settings() {
 
       toast.success('Backup descargado correctamente');
     } catch (error) {
-      console.error('Error downloading backup:', error);
+      logger.captureException(error, { context: 'Settings:updateNotifications' });
       toast.error('Error al descargar el backup');
     }
   };
@@ -294,7 +296,7 @@ export default function Settings() {
 
       toast.success('Configuración guardada correctamente');
     } catch (error) {
-      console.error('Error saving config:', error);
+      logger.captureException(error, { context: 'Settings:updateSecurity' });
       toast.error('Error al guardar la configuración');
     } finally {
       setIsSavingConfig(false);
@@ -318,7 +320,7 @@ export default function Settings() {
           return result.backup;
         }
       } catch (error) {
-        console.error('Error creating automatic backup:', error);
+        logger.captureException(error, { context: 'Settings:updateAppearance' });
       }
       return null;
     };
@@ -339,7 +341,7 @@ export default function Settings() {
         throw new Error(result.error || 'Error desconocido');
       }
     } catch (error) {
-      console.error('Error cleaning database:', error);
+      logger.captureException(error, { context: 'Settings:fetchUsers' });
       toast.error('Error al limpiar la base de datos');
     } finally {
       setIsCleaning(false);
@@ -356,7 +358,7 @@ export default function Settings() {
       const data = result.success ? result.data : result;
       setPermissions(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching permissions:', error);
+      logger.captureException(error, { context: 'Settings:fetchPermissions' });
       toast.error('Error al cargar los permisos');
       setPermissions([]);
     } finally {
@@ -390,7 +392,7 @@ export default function Settings() {
         throw new Error(result.message || 'Error al eliminar permiso');
       }
     } catch (error) {
-      console.error('Error deleting permission:', error);
+      logger.captureException(error, { context: 'Settings:deleteUser' });
       toast.error('Error al eliminar el permiso');
     }
   };
@@ -429,7 +431,7 @@ export default function Settings() {
         throw new Error(result.message || 'Error al guardar permiso');
       }
     } catch (error) {
-      console.error('Error saving permission:', error);
+      logger.captureException(error, { context: 'Settings:fetchSettings' });
       toast.error('Error al guardar el permiso');
     } finally {
       setIsSavingPermission(false);
