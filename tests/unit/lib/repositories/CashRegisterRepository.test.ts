@@ -51,32 +51,35 @@ describe('CashRegisterRepository.open', () => {
   });
 
   it('abre caja cuando no existe ninguna abierta', async () => {
-    repositoryHarness.queryMock.mockResolvedValueOnce([]).mockResolvedValueOnce([
-      {
-        id_caja: 'caja-1',
-        fecha_apertura: '2026-04-11 12:00:00',
-        usuario_id_apertura: 'user-1',
-        monto_apertura: 100,
-        estado: 1,
-        fecha_cierre: null,
-        usuario_id_cierre: null,
-        monto_cierre: null,
-        venta: 0,
-        servicio: 0,
-        efectivo: 0,
-        tarjeta: 0,
-        transferencia: 0,
-        devolucion: 0,
-        prepago: 0,
-        propina: 0,
-        cuenta: 0,
-        anticipo: 0,
-        iva: 0,
-        comision: 0,
-        usuario_apertura: 'Usuario Uno',
-        cajero_nombre: 'Usuario Uno'
-      }
-    ]);
+    repositoryHarness.queryMock
+      .mockResolvedValueOnce([]) // check open
+      .mockResolvedValueOnce([
+        {
+          id_caja: 'caja-1',
+          fecha_apertura: '2026-04-11 12:00:00',
+          usuario_id_apertura: 'user-1',
+          monto_apertura: 100,
+          estado: 1,
+          fecha_cierre: null,
+          usuario_id_cierre: null,
+          monto_cierre: null,
+          venta: 0,
+          servicio: 0,
+          efectivo: 0,
+          tarjeta: 0,
+          transferencia: 0,
+          devolucion: 0,
+          prepago: 0,
+          propina: 0,
+          cuenta: 0,
+          anticipo: 0,
+          iva: 0,
+          comision: 0,
+          usuario_apertura: 'Usuario Uno',
+          cajero_nombre: 'Usuario Uno'
+        }
+      ]) // getById main query
+      .mockResolvedValue([]); // default fallback: empty results for any extra queries (getPrepagoMetrics)
 
     const result = await CashRegisterRepository.open('user-1', 100);
 

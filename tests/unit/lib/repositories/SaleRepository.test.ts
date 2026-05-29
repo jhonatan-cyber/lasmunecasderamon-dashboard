@@ -107,7 +107,7 @@ describe('SaleRepository.processAnulacion', () => {
 
     expect(repositoryHarness.queryMock).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE solicitudes_anulacion_ventas'),
-      expect.arrayContaining(['confirmada', 'admin-1'])
+      expect.arrayContaining(['confirmada', 'req-1'])
     );
   });
 });

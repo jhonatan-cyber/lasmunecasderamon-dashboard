@@ -37,7 +37,8 @@ describe('AnticipoService.grantAnticipo', () => {
       'user-1',
       50000,
       'Motivo test',
-      '2026-04-09'
+      '2026-04-09',
+      undefined
     );
   });
 
