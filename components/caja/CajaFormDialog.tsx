@@ -1,5 +1,6 @@
- 
 import { useState, useEffect } from 'react';
+import logger from '@/lib/utils/logger';
+
 import {
   Dialog,
   DialogContent,
@@ -65,7 +66,7 @@ export const CajaFormDialog = ({
   const handleInputChange = (inputValue: string) => {
     // Permitir solo números
     const cleanValue = inputValue.replace(/[^\d]/g, '');
-    
+
     if (cleanValue === '') {
       setDisplayValue('');
       setFormData(prev => ({
@@ -114,7 +115,7 @@ export const CajaFormDialog = ({
 
     // Asegurar que el usuario logueado esté disponible
     if (!currentUser?.id) {
-      console.error('No hay usuario logueado');
+      logger.error('No hay usuario logueado');
       return;
     }
 
@@ -131,7 +132,7 @@ export const CajaFormDialog = ({
       });
       setErrors({});
     } catch (error) {
-      console.error('Error al crear caja:', error);
+      logger.captureException(error, { context: 'CajaFormDialog:submitApertura' });
     }
   };
 
@@ -166,13 +167,16 @@ export const CajaFormDialog = ({
         </Button>
       </DialogTrigger>
       <DialogContent className='max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-900 rounded-[2rem] p-0 overflow-hidden'>
-        <DialogHeader className="px-8 pt-8 pb-4 border-b border-slate-100 dark:border-white/5">
+        <DialogHeader className='px-8 pt-8 pb-4 border-b border-slate-100 dark:border-white/5'>
           <DialogTitle className='text-xl font-black tracking-tight'>Apertura de Caja</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className='flex flex-col'>
-          <div className="px-8 py-6 space-y-6">
-            <div className="space-y-3">
-              <Label htmlFor='monto_apertura' className='text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1'>
+          <div className='px-8 py-6 space-y-6'>
+            <div className='space-y-3'>
+              <Label
+                htmlFor='monto_apertura'
+                className='text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1'
+              >
                 Monto Inicial en Efectivo
               </Label>
               <div className='relative group'>
@@ -191,7 +195,7 @@ export const CajaFormDialog = ({
               )}
             </div>
 
-            <div className="space-y-3">
+            <div className='space-y-3'>
               <Label className='text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1'>
                 Fecha y Hora de Registro
               </Label>
@@ -206,7 +210,7 @@ export const CajaFormDialog = ({
             </div>
           </div>
 
-          <div className="px-8 py-6 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-3">
+          <div className='px-8 py-6 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-3'>
             <Button
               type='button'
               variant='outline'
@@ -236,4 +240,3 @@ export const CajaFormDialog = ({
     </Dialog>
   );
 };
-

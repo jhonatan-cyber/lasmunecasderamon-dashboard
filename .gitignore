@@ -40,3 +40,7 @@ test-results/
 .cloudflared/
 .atl/
 cloudflared-windows-amd64.exe
+
+# Windows reserved device names (artifacts)
+nul
+database/nul

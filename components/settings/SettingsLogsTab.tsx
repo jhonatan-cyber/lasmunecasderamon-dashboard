@@ -7,6 +7,8 @@ import SelectElements from '@/components/shared/SelectElements';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import logger from '@/lib/utils/logger';
+
 import {
   Accordion,
   AccordionContent,
@@ -74,7 +76,7 @@ export function SettingsLogsTab() {
       setAuditLogs(Array.isArray(auditJson?.data) ? auditJson.data : []);
       setErrorLogs(Array.isArray(errorJson?.data) ? errorJson.data : []);
     } catch (error) {
-      console.error('Error fetching settings logs:', error);
+      logger.captureException(error, { context: 'SettingsLogsTab:fetchLogs' });
       setAuditLogs([]);
       setErrorLogs([]);
     } finally {

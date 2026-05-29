@@ -5,6 +5,7 @@ import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/time
 import crypto from 'crypto';
 import { ValidationError, NotFoundError, BusinessError, ConflictError } from '@/lib/errors/errors';
 import type { UserPermissions } from '@/lib/middleware/auth';
+import logger from '@/lib/utils/logger';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 21 * 60;
@@ -108,11 +109,7 @@ export class AuthRepository {
       // Si no hay permisos en la DB, usar los permisos por defecto del rol
       if (!perms || perms.length === 0) {
         const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
-        console.log(
-          '[Auth] No hay permisos en DB para rol:',
-          roleKey,
-          '- usando permisos por defecto'
-        );
+        logger.info('[Auth] No hay permisos en DB para rol', { roleKey });
         return defaultPermissions[roleKey] || defaultPermissions.administrador;
       }
 
@@ -156,7 +153,7 @@ export class AuthRepository {
 
       return userPerms;
     } catch (err) {
-      console.error('[Auth] Error getting user permissions:', err);
+      logger.captureException(err, { context: 'AuthRepository:fetchPermissions' });
       // En caso de error, usar permisos por defecto del rol
       const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
       return defaultPermissions[roleKey] || defaultPermissions.administrador;

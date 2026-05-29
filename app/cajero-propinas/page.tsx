@@ -11,6 +11,7 @@ import FilterSelect from '@/components/shared/selects/FilterSelect';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 interface Tip {
   id_detalle_propina: number;
@@ -62,10 +63,10 @@ export default function CajeroPropinasPage() {
       if (data.success) {
         setTips(data.data || []);
       } else {
-        console.error('Error fetching tips:', data.message);
+        logger.error('Error fetching tips:', data.message);
       }
     } catch (error) {
-      console.error('Error fetching tips:', error);
+      logger.captureException(error, { context: 'CajeroPropinas:fetchTips' });
     } finally {
       setLoading(false);
     }

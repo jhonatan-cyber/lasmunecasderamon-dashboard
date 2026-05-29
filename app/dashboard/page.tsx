@@ -19,6 +19,7 @@ import MiniSalesChart from '@/components/dashboard/MiniSalesChart';
 import TopPerformers from '@/components/dashboard/TopPerformers';
 import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
+import logger from '@/lib/utils/logger';
 
 // Keep existing components
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
@@ -54,7 +55,7 @@ export default function Dashboard() {
           refetch(true);
         }
       } catch (e) {
-        console.error('Error polling user status:', e);
+        logger.captureException(e, { context: 'Dashboard:checkToken' });
       }
     };
 

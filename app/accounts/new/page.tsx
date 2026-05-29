@@ -9,6 +9,7 @@ import { useTimer } from '@/contexts/TimerContext';
 import { useAccountForm } from '@/hooks/cuentas/useAccountForm';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import ProductModal from '@/components/products/ProductModal';
+import logger from '@/lib/utils/logger';
 
 import {
   ProductSearch,
@@ -80,7 +81,7 @@ export default function NewCuentaPage() {
           await loadCategoriasConProductos(data.data);
         }
       } catch (error) {
-        console.error('Error al cargar categorías:', error);
+        logger.captureException(error, { context: 'AccountsNew:fetchCategorias' });
         toast.error('Error al cargar categorías');
       }
     };

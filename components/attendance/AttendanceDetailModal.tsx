@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import logger from '@/lib/utils/logger';
+
 import {
   Table,
   TableBody,
@@ -83,7 +85,7 @@ export default function AttendanceDetailModal({
 
       setAsistencias(result.data || []);
     } catch (err) {
-      console.error('Error al obtener detalle de asistencias:', err);
+      logger.captureException(err, { context: 'AttendanceDetailModal:fetchDetail' });
       setError(err instanceof Error ? err.message : 'Error desconocido');
       setAsistencias([]);
     } finally {
@@ -126,7 +128,7 @@ export default function AttendanceDetailModal({
   // Calcular totales
   const totalSueldos = asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0);
   const totalAportes = asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0);
-  const totalDescuentos = asistencias.length > 0 ? (asistencias[0].descuento_total || 0) : 0;
+  const totalDescuentos = asistencias.length > 0 ? asistencias[0].descuento_total || 0 : 0;
   const totalFinal = totalSueldos - totalAportes - totalDescuentos;
 
   // Obtener información del descuento (tomar del primer registro ya que es la misma para todos)
@@ -137,14 +139,15 @@ export default function AttendanceDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700">
+        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
           <div className='flex items-center justify-between'>
-            <DialogTitle className='text-xl font-bold dark:text-white'>Detalle de Asistencias</DialogTitle>
+            <DialogTitle className='text-xl font-bold dark:text-white'>
+              Detalle de Asistencias
+            </DialogTitle>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
           <div className='space-y-4'>
             {/* Información del usuario con resumen */}
             <Card>
@@ -156,7 +159,9 @@ export default function AttendanceDetailModal({
                       Información del Usuario
                     </h4>
                     <div className='space-y-1'>
-                      <div className='text-lg font-semibold text-gray-900 dark:text-white'>{userName}</div>
+                      <div className='text-lg font-semibold text-gray-900 dark:text-white'>
+                        {userName}
+                      </div>
                       <div className='text-sm text-gray-600 dark:text-gray-400'>@{userNick}</div>
                     </div>
                   </div>
@@ -168,25 +173,33 @@ export default function AttendanceDetailModal({
                     </h4>
                     <div className='space-y-3'>
                       <div className='flex items-center justify-between'>
-                        <span className='text-sm text-gray-600 dark:text-gray-400'>Total sueldos:</span>
+                        <span className='text-sm text-gray-600 dark:text-gray-400'>
+                          Total sueldos:
+                        </span>
                         <span className='text-lg font-bold dark:text-white'>
                           {formatCurrencyNoDecimals(totalSueldos)}
                         </span>
                       </div>
                       <div className='flex items-center justify-between'>
-                        <span className='text-sm text-gray-600 dark:text-gray-400'>Total aportes:</span>
+                        <span className='text-sm text-gray-600 dark:text-gray-400'>
+                          Total aportes:
+                        </span>
                         <span className='text-lg font-bold dark:text-white'>
                           {formatCurrencyNoDecimals(totalAportes)}
                         </span>
                       </div>
                       <div className='flex items-center justify-between'>
-                        <span className='text-sm text-gray-600 dark:text-gray-400'>Descuento habitación:</span>
+                        <span className='text-sm text-gray-600 dark:text-gray-400'>
+                          Descuento habitación:
+                        </span>
                         <span className='text-lg font-bold dark:text-white'>
                           {formatCurrencyNoDecimals(totalDescuentos)}
                         </span>
                       </div>
                       <div className='flex items-center justify-between border-t pt-2 dark:border-gray-700'>
-                        <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>Total a pagar:</span>
+                        <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                          Total a pagar:
+                        </span>
                         <span className='text-lg font-bold text-green-600 dark:text-green-500'>
                           {formatCurrencyNoDecimals(totalFinal)}
                         </span>
@@ -201,7 +214,9 @@ export default function AttendanceDetailModal({
                     <div className='flex items-start gap-2'>
                       <Info className='w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0' />
                       <div className='text-sm text-blue-800 dark:text-blue-200'>
-                        <p className='font-medium mb-1'>Información del Descuento por Habitación:</p>
+                        <p className='font-medium mb-1'>
+                          Información del Descuento por Habitación:
+                        </p>
                         <ul className='space-y-1 text-xs'>
                           <li>
                             • <strong>Semanas con descuento:</strong> {semanasConDescuento}
@@ -217,7 +232,8 @@ export default function AttendanceDetailModal({
                           <li>
                             •{' '}
                             <em>
-                              El descuento se aplica una vez por semana, no por cada día de asistencia
+                              El descuento se aplica una vez por semana, no por cada día de
+                              asistencia
                             </em>
                           </li>
                         </ul>
@@ -232,7 +248,9 @@ export default function AttendanceDetailModal({
             {loading ? (
               <div className='text-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto'></div>
-                <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>Cargando asistencias...</p>
+                <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>
+                  Cargando asistencias...
+                </p>
               </div>
             ) : error ? (
               <Card>
@@ -397,7 +415,6 @@ export default function AttendanceDetailModal({
             >
               Cerrar
             </Button>
-
           </div>
         </div>
       </DialogContent>

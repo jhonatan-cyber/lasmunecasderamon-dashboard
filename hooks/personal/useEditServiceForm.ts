@@ -6,6 +6,7 @@ import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
 import { useServicePricing } from '@/hooks/shared/useServicePricing';
+import logger from '@/lib/utils/logger';
 
 interface UseEditServiceFormProps {
   open: boolean;
@@ -124,7 +125,7 @@ export function useEditServiceForm({
         setAnfitrionasDelServicio(idsDelServicio);
         return idsDelServicio;
       } catch (error) {
-        console.error('Error fetching anfitrionas for edition:', error);
+        logger.captureException(error, { context: 'EditServiceForm:fetchAnfitrionas' });
         setAnfitrionasDisponibles(anfitrionas);
         return [];
       }
@@ -341,7 +342,7 @@ export function useEditServiceForm({
               toast.success('Servicio temporal finalizado - Nuevo servicio completado');
               if (onUpdate) onUpdate();
             } catch (error) {
-              console.error('Error finalizando servicio temporal:', error);
+              logger.captureException(error, { context: 'EditServiceForm:finalizeTimer' });
               toast.error('Error al finalizar servicio temporal');
             }
           },
@@ -357,7 +358,7 @@ export function useEditServiceForm({
         toast.error('No se pudo determinar la habitación del servicio principal');
       }
     } catch (error) {
-      console.error('Error in handleSave:', error);
+      logger.captureException(error, { context: 'EditServiceForm:saveServicio' });
       toast.error('Error general al procesar la solicitud');
     } finally {
       setIsSaving(false);

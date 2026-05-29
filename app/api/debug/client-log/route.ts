@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import logger from '@/lib/utils/logger';
 
 export async function POST(request: Request) {
   try {
@@ -6,11 +7,11 @@ export async function POST(request: Request) {
     const message = String(body?.message || 'Evento cliente');
     const payload = body?.payload ?? null;
 
-    console.log('[CLIENT_LOG]', message, payload);
+    logger.info('[CLIENT_LOG]', { message, payload });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[CLIENT_LOG][ERROR]', error);
+    logger.captureException(error, { context: 'Route:clientLog' });
     return NextResponse.json({ success: false }, { status: 400 });
   }
 }

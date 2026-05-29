@@ -9,6 +9,7 @@ import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
 import OvertimeFilters from '@/components/overtime/OvertimeFilters';
 import OvertimeTable from '@/components/overtime/OvertimeTable';
 import Paginate from '@/components/shared/Paginate';
+import logger from '@/lib/utils/logger';
 
 export default function GarzonHorasExtrasPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -33,7 +34,7 @@ export default function GarzonHorasExtrasPage() {
         setOvertime(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching overtime:', error);
+      logger.captureException(error, { context: 'GarzonHorasExtras:fetchOvertime' });
     } finally {
       setLoading(false);
     }

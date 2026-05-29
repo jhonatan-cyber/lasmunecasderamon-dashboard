@@ -3,6 +3,7 @@ import { Timer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { calculateRemainingTime } from '@/lib/utils/timeUtils';
 
+import logger from '@/lib/utils/logger';
 import { activeTimers, serverOffsetSignal, TimerInstance } from '@/lib/store/timerStore';
 
 interface TimerActionsProps {
@@ -20,7 +21,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         body: JSON.stringify({ action: status === 2 ? 'occupy' : 'activate' })
       });
     } catch (e) {
-      console.error('Error actualizando habitación:', e);
+      logger.captureException(e, { context: 'useTimerActions:updateRoomStatus' });
       // No mostramos toast para no molestar al usuario en cada operación
     }
   };

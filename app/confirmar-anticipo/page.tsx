@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import logger from '@/lib/utils/logger';
+
 import {
   CheckCircle,
   XCircle,
@@ -54,7 +56,7 @@ function ConfirmarAnticipoContent() {
         const data = await response.json();
         setSolicitud(data.solicitud);
       } catch (err) {
-        console.error('🔍 Error cargando solicitud:', err);
+        logger.captureException(err, { context: 'ConfirmarAnticipo:cargarSolicitud' });
         setError(err instanceof Error ? err.message : 'Error al cargar la solicitud');
       } finally {
         setLoading(false);

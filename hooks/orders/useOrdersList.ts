@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
+import logger from '@/lib/utils/logger';
 
 export interface Order {
   id: string;
@@ -76,7 +77,7 @@ export const useOrdersList = () => {
       const data = await res.json();
       if (data.success) setOrders((data.data || []).map(normalizeOrder));
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      logger.captureException(error, { context: 'useOrdersList:fetchOrders' });
     } finally {
       setLoadingOrders(false);
     }
@@ -93,7 +94,7 @@ export const useOrdersList = () => {
         );
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      logger.captureException(error, { context: 'useOrdersList:fetchServicios' });
     } finally {
       setLoadingServicios(false);
     }
