@@ -1,9 +1,17 @@
- 
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo
+} from 'react';
 import { toast } from 'sonner';
 import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+import logger from '@/lib/utils/logger';
 
 interface AnulacionContextType {
   showNotification: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
@@ -101,7 +109,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
         try {
           refreshCallbackRef.current();
         } catch (error) {
-          console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
+          logger.captureException(error, { context: 'AnulacionContext:anulacionCallbackServicio' });
         }
       }
 
@@ -133,7 +141,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
         try {
           refreshCallbackRef.current();
         } catch (error) {
-          console.error('🔔 Contexto: Error ejecutando callback de actualización:', error);
+          logger.captureException(error, { context: 'AnulacionContext:anulacionCallbackVenta' });
         }
       }
 
@@ -215,12 +223,14 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
                 );
               }
             } catch (parseError) {
-              console.error('🔔 Contexto: Error parseando notificación pendiente:', parseError);
+              logger.captureException(parseError, {
+                context: 'AnulacionContext:parsePendingNotification'
+              });
             }
           });
         }
       } catch (error) {
-        console.error('🔔 Contexto: Error verificando notificaciones pendientes:', error);
+        logger.captureException(error, { context: 'AnulacionContext:checkPendingNotifications' });
       }
     };
 
@@ -266,27 +276,19 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   }, [openModal, showNotification]); // Removido refreshCallback de las dependencias
 
   // Memoizar el valor del contexto para evitar re-renders innecesarios
-  const contextValue = useMemo(() => ({
-    showNotification,
-    setRefreshCallback,
-    modalData,
-    isModalOpen,
-    openModal,
-    closeModal
-  }), [
-    showNotification,
-    setRefreshCallback,
-    modalData,
-    isModalOpen,
-    openModal,
-    closeModal
-  ]);
-
-  return (
-    <AnulacionContext.Provider value={contextValue}>
-      {children}
-    </AnulacionContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      showNotification,
+      setRefreshCallback,
+      modalData,
+      isModalOpen,
+      openModal,
+      closeModal
+    }),
+    [showNotification, setRefreshCallback, modalData, isModalOpen, openModal, closeModal]
   );
+
+  return <AnulacionContext.Provider value={contextValue}>{children}</AnulacionContext.Provider>;
 }
 
 export function useAnulacionContext() {
@@ -296,4 +298,3 @@ export function useAnulacionContext() {
   }
   return context;
 }
-

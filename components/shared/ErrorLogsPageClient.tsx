@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ErrorLogsSkeleton } from '@/components/shared/Skeletons';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
+import logger from '@/lib/utils/logger';
 
 export function ErrorLogsPageClient() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -16,7 +17,7 @@ export function ErrorLogsPageClient() {
       const data = await res.json();
       if (data.success) setLogs(data.data);
     } catch (error) {
-      console.error('Error fetching logs:', error);
+      logger.captureException(error, { context: 'ErrorLogsPageClient:fetchLogs' });
     } finally {
       setLoading(false);
     }

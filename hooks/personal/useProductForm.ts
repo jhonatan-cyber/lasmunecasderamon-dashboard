@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Product } from '@/types/product';
 
 import { generateRandomCode } from '@/lib/utils/codeUtils';
+import logger from '@/lib/utils/logger';
 
 export interface ProductFormValues {
   code: string;
@@ -165,7 +166,7 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     ) {
       data.append('category_id', String(finalCategoryId));
     } else {
-      console.warn('[useProductForm] Intento de submit sin category_id válido:', {
+      logger.warn('[useProductForm] Intento de submit sin category_id válido:', {
         initialCategoryId: initialValues?.category_id,
         propCategoryId: categoryId
       });

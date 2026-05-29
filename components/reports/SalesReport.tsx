@@ -7,6 +7,8 @@ import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import logger from '@/lib/utils/logger';
+
 import {
   Calendar,
   Download,
@@ -180,7 +182,7 @@ export function SalesReport() {
         setSalesData(data.data);
       }
     } catch (error) {
-      console.error('Error fetching sales data:', error);
+      logger.captureException(error, { context: 'SalesReport:unknown' });
     } finally {
       setLoading(false);
     }
@@ -239,7 +241,7 @@ export function SalesReport() {
   );
 
   const exportReport = () => {
-    console.log('Exportando reporte...');
+    logger.info('Exportando reporte...');
   };
 
   if (loading) {

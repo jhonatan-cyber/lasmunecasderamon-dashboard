@@ -3,16 +3,24 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logger from '@/lib/utils/logger';
+
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 
 interface Permission {
@@ -28,7 +36,12 @@ interface PermissionModalProps {
   onOpenChange: (open: boolean) => void;
   isEditMode: boolean;
   permissionData: Permission | null;
-  onSubmit: (data: { name: string; module: string; action: string; description: string }) => Promise<void>;
+  onSubmit: (data: {
+    name: string;
+    module: string;
+    action: string;
+    description: string;
+  }) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -64,7 +77,7 @@ export function PermissionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.module || !formData.action) {
       toast.error('Por favor completa todos los campos obligatorios');
       return;
@@ -74,7 +87,7 @@ export function PermissionModal({
       await onSubmit(formData);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving permission:', error);
+      logger.captureException(error, { context: 'PermissionModal:handleSubmit' });
     }
   };
 
@@ -95,7 +108,11 @@ export function PermissionModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form id='permission-form' onSubmit={handleSubmit} className='flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6'>
+        <form
+          id='permission-form'
+          onSubmit={handleSubmit}
+          className='flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6'
+        >
           {/* Nombre */}
           <div>
             <Label htmlFor='permission-name' className='mb-2 text-sm sm:text-base'>

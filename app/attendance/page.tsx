@@ -15,6 +15,8 @@ import { LazyQRCode } from '@/components/shared/LazyQRCode';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUsers } from '@/hooks/personal/useUsers';
 import { Badge } from '@/components/ui/badge';
+import logger from '@/lib/utils/logger';
+
 import {
   Dialog,
   DialogContent,
@@ -138,7 +140,7 @@ export default function AttendancePage() {
           setSelectedUserForQR(data.user);
         }
       } catch (e) {
-        console.error('Error polling QR status:', e);
+        logger.captureException(e, { context: 'Attendance:checkQR' });
       }
     };
 

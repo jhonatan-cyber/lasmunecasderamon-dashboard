@@ -11,6 +11,8 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileUserSelector } from '@/components/profile/ProfileUserSelector';
 import { ProfilePersonalInfoCard } from '@/components/profile/ProfilePersonalInfoCard';
 import { ProfileSecurityCard } from '@/components/profile/ProfileSecurityCard';
+import logger from '@/lib/utils/logger';
+
 import type {
   ProfileCurrentUser,
   ProfileRoleOption,
@@ -82,7 +84,7 @@ export default function ProfilePage() {
         setUsersList(data.data || []);
       }
     } catch (error) {
-      console.error('Error al cargar lista de usuarios:', error);
+      logger.captureException(error, { context: 'Profile:fetchProfile' });
       toast.error('Error al cargar lista de usuarios');
     } finally {
       setLoadingUsers(false);
@@ -110,7 +112,7 @@ export default function ProfilePage() {
         toast.error(`Error al cargar roles: ${data.message}`);
       }
     } catch (error) {
-      console.error('Error al cargar lista de roles:', error);
+      logger.captureException(error, { context: 'Profile:loadProfileData' });
       toast.error('Error al cargar lista de roles');
     } finally {
       setLoadingRoles(false);
@@ -132,11 +134,11 @@ export default function ProfilePage() {
         setOriginalData(normalizedUser);
         setSelectedUserId(userId);
       } else {
-        console.error('Error al cargar datos del usuario:', data.message);
+        logger.error('Error al cargar datos del usuario:', data.message);
         toast.error(`Error al cargar datos del usuario: ${data.message}`);
       }
     } catch (error) {
-      console.error('Error al cargar datos del usuario:', error);
+      logger.captureException(error, { context: 'Profile:updateProfile' });
       toast.error('Error al cargar datos del usuario');
     } finally {
       setLoadingUserData(false);
@@ -273,7 +275,7 @@ export default function ProfilePage() {
         throw new Error(data.message || 'Error al actualizar perfil');
       }
     } catch (error) {
-      console.error('Error al actualizar perfil:', error);
+      logger.captureException(error, { context: 'Profile:changePassword' });
       toast.error('Error al actualizar perfil');
       if (originalData) {
         setUserData({ ...originalData });
@@ -308,7 +310,7 @@ export default function ProfilePage() {
 
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('Error decodificando token:', error);
+      logger.captureException(error, { context: 'Profile:updatePreferences' });
       return null;
     }
   };
@@ -352,7 +354,7 @@ export default function ProfilePage() {
 
       return null;
     } catch (error) {
-      console.error('Error obteniendo fecha de login:', error);
+      logger.captureException(error, { context: 'Profile:fetchHistory' });
       return null;
     }
   };
@@ -408,7 +410,7 @@ export default function ProfilePage() {
         throw new Error(data.message || 'Error al actualizar contraseña');
       }
     } catch (error) {
-      console.error('Error al actualizar contraseña:', error);
+      logger.captureException(error, { context: 'Profile:updateAvatar' });
       toast.error('Error al actualizar la contraseña');
     }
   };
@@ -424,7 +426,7 @@ export default function ProfilePage() {
           setUserData(data.user);
         }
       } catch (error) {
-        console.error('Error polling user QR status:', error);
+        logger.captureException(error, { context: 'Profile:deleteAccount' });
       }
     }, 5000);
 

@@ -11,6 +11,7 @@ import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 interface Commission {
   id_comision: number;
@@ -43,11 +44,11 @@ export default function AnfitrionaComisionesPage() {
       if (res.ok && data.success) {
         setCommissions(data.data || []);
       } else {
-        console.error('API error:', data.message);
+        logger.error('API error:', data.message);
         setCommissions([]);
       }
     } catch (error) {
-      console.error('Error fetching commissions:', error);
+      logger.captureException(error, { context: 'AnfitrionaComisiones:fetchCommissions' });
       setCommissions([]);
     } finally {
       setLoading(false);

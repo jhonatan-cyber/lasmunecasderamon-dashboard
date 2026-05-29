@@ -64,7 +64,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
     process.env.PUBLIC_BASE_URL ||
     'https://dev.lasmuñecasderamon.com';
 
-  console.log('[Anulacion] baseUrl configurada:', baseUrl);
+  logger.info('[Anulacion] baseUrl configurada:', baseUrl);
 
   try {
     await enviarMensajeSolicitudAnulacion({

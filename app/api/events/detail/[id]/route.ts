@@ -76,11 +76,14 @@ async function getPropinaDetail(id: string) {
       v.metodo_pago,
       v.estado as estado_venta,
       v.habitacion_id,
-      h.numero as habitacion_nombre
+      h.nombre as habitacion_nombre,
+      cajero_u.nick as cajero_nick,
+      cajero_u.nombre as cajero_nombre
     FROM detalle_propinas dp
     INNER JOIN propinas p ON p.id_propina = dp.propina_id
     LEFT JOIN ventas v ON v.id_venta = p.venta_id
     LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
+    LEFT JOIN usuarios cajero_u ON cajero_u.id_usuario = v.created_by
     WHERE dp.id_detalle_propina = ?
   `,
     [id]
@@ -108,27 +111,12 @@ async function getPropinaDetail(id: string) {
       `
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_ventas dv
-      INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
+      INNER JOIN usuarios u ON u.id_usuario = dv.hostess_id
       WHERE dv.venta_id = ? LIMIT 1
     `,
       [dp.venta_id]
     );
     if (garzonData.length > 0) garzon = garzonData[0];
-  }
-
-  // Obtener Cajero
-  let cajero = null;
-  if (dp.venta_id) {
-    const cajeroData = await query<any[]>(
-      `
-      SELECT u.id_usuario, u.nick, u.nombre, u.apellido
-      FROM ventas v2
-      INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
-      WHERE v2.id_venta = ?
-    `,
-      [dp.venta_id]
-    );
-    if (cajeroData.length > 0) cajero = cajeroData[0];
   }
 
   // Obtener detalles del pedido/venta
@@ -164,10 +152,7 @@ async function getPropinaDetail(id: string) {
   let tiempo = null;
   if (dp.venta_id) {
     const tiempoData = await query<any[]>(
-      `
-      SELECT TIMESTAMPDIFF(MINUTE, v.hora_inicio, v.hora_fin) as minutos
-      FROM servicios v WHERE v.id_servicio = ?
-    `,
+      `SELECT tiempo as minutos FROM servicios WHERE id_servicio = ?`,
       [dp.venta_id]
     );
     if (tiempoData.length > 0 && tiempoData[0].minutos) {
@@ -185,11 +170,12 @@ async function getPropinaDetail(id: string) {
     habitacion_nombre: dp.habitacion_nombre,
     codigo: dp.codigo_venta,
     tiempo: tiempo,
-    // Garzón y cajero
+    // Garzón
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    cajero_nick: cajero?.nick,
-    cajero_nombre: cajero?.nombre,
+    // Cajero
+    cajero_nick: dp.cajero_nick,
+    cajero_nombre: dp.cajero_nombre,
     // Productos
     detalles: detalles,
     // Propinas detalle (para admins)
@@ -227,13 +213,15 @@ async function getComisionDetail(id: string) {
       s.fecha_crea as fecha_servicio,
       s.total as total_servicio,
       s.estado as estado_servicio,
-      s.hora_inicio,
-      s.hora_fin
+      s.tiempo,
+      cajero_u.nick as cajero_nick,
+      cajero_u.nombre as cajero_nombre
     FROM detalle_comisiones dc
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     LEFT JOIN ventas v ON v.id_venta = c.venta_id
     LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
     LEFT JOIN servicios s ON s.id_servicio = c.servicio_id
+    LEFT JOIN usuarios cajero_u ON cajero_u.id_usuario = v.created_by
     WHERE dc.id_detalle_comision = ?
   `,
     [id]
@@ -258,39 +246,25 @@ async function getComisionDetail(id: string) {
   const esVenta = !!dc.venta_id;
   const esServicio = !!dc.servicio_id;
 
-  // Obtener garzón y cajero
-  let garzon = null,
-    cajero = null;
+  // Obtener garzón
+  let garzon = null;
   if (esVenta) {
     const garzonData = await query(
       `
       SELECT u.id_usuario, u.nick, u.nombre, u.apellido
       FROM detalle_ventas dv
-      INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
+      INNER JOIN usuarios u ON u.id_usuario = dv.hostess_id
       WHERE dv.venta_id = ? LIMIT 1
     `,
       [dc.venta_id]
     );
     if (garzonData.length > 0) garzon = garzonData[0];
-
-    const cajeroData = await query(
-      `
-      SELECT u.id_usuario, u.nick, u.nombre, u.apellido
-      FROM ventas v2
-      INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
-      WHERE v2.id_venta = ?
-    `,
-      [dc.venta_id]
-    );
-    if (cajeroData.length > 0) cajero = cajeroData[0];
   }
 
   // Tiempo del servicio
   let tiempo = null;
-  if (esServicio && dc.hora_inicio && dc.hora_fin) {
-    tiempo = Math.round(
-      (new Date(dc.hora_fin).getTime() - new Date(dc.hora_inicio).getTime()) / 60000
-    );
+  if (esServicio && dc.tiempo) {
+    tiempo = dc.tiempo;
   }
 
   // Obtener detalles del pedido si es venta
@@ -318,11 +292,12 @@ async function getComisionDetail(id: string) {
     codigo: esVenta ? dc.codigo_venta : dc.codigo_servicio,
     tiempo: tiempo,
     subType: esVenta ? 'venta' : esServicio ? 'servicio' : null,
-    // Garzón y cajero
+    // Garzón
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    cajero_nick: cajero?.nick,
-    cajero_nombre: cajero?.nombre,
+    // Cajero
+    cajero_nick: dc.cajero_nick,
+    cajero_nombre: dc.cajero_nombre,
     // Productos
     detalles: detalles
   };
@@ -405,7 +380,7 @@ async function getAnticipoDetail(id: string) {
       a.estado,
       a.fecha_crea,
       a.fecha_mod,
-      a.observacion,
+      a.motivo,
       a.usuario_id,
       u.id_usuario,
       u.nick,
@@ -445,7 +420,7 @@ async function getAnticipoDetail(id: string) {
     // Datos
     monto: a.monto,
     estado: a.estado,
-    observacion: a.observacion,
+    observacion: a.motivo,
     // Fechas
     fecha: a.fecha_crea,
     // Historial
@@ -461,20 +436,21 @@ async function getServicioDetail(id: string) {
       s.id_servicio,
       s.codigo,
       s.fecha_crea,
-      s.hora_inicio,
-      s.hora_fin,
       s.total,
       s.metodo_pago,
       s.estado,
-      s.observaciones,
       s.habitacion_id,
       s.cliente_id,
-      h.numero as habitacion_nombre,
+      s.tiempo,
+      h.nombre as habitacion_nombre,
       c.nombre as cliente_nombre,
-      c.telefono as cliente_telefono
+      c.telefono as cliente_telefono,
+      cajero_u.nick as cajero_nick,
+      cajero_u.nombre as cajero_nombre
     FROM servicios s
     LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
     LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
+    LEFT JOIN usuarios cajero_u ON cajero_u.id_usuario = s.created_by
     WHERE s.id_servicio = ?
   `,
     [id]
@@ -486,33 +462,10 @@ async function getServicioDetail(id: string) {
 
   const s = servicio[0];
 
-  // Calcular tiempo
-  let tiempo = null;
-  if (s.hora_inicio && s.hora_fin) {
-    tiempo = Math.round(
-      (new Date(s.hora_fin).getTime() - new Date(s.hora_inicio).getTime()) / 60000
-    );
-  }
+  // Tiempo del servicio
+  let tiempo = s.tiempo || null;
 
-  // Obtener detalle de los productos
-  const productos = await query(
-    `
-    SELECT 
-      ds.cantidad,
-      ds.sub_total,
-      p.nombre as producto_nombre,
-      u.id_usuario as usuario_id,
-      u.nick as usuario_nick,
-      u.nombre as usuario_nombre
-    FROM detalle_servicios ds
-    INNER JOIN productos p ON p.id_producto = ds.producto_id
-    LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
-    WHERE ds.servicio_id = ?
-  `,
-    [id]
-  );
-
-  // Obtener comisiones
+  // Obtener comisiones/anfitrionas (misma query, datos reusados)
   const comisiones = await query(
     `
     SELECT 
@@ -528,18 +481,7 @@ async function getServicioDetail(id: string) {
   `,
     [id]
   );
-
-  // Obtener anfitrionas (usuarios con comisión en servicio)
-  const anfitrionas = await query(
-    `
-    SELECT u.id_usuario, u.nick, u.nombre, u.apellido, dc.monto as comision
-    FROM detalle_comisiones dc
-    INNER JOIN comisiones c ON c.id_comision = dc.comision_id
-    INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
-    WHERE c.servicio_id = ?
-  `,
-    [id]
-  );
+  const anfitrionas = comisiones;
 
   // Obtener garzón (quien hizo el servicio)
   let garzon = null;
@@ -554,19 +496,6 @@ async function getServicioDetail(id: string) {
   );
   if (garzonData.length > 0) garzon = garzonData[0];
 
-  // Obtener cajero
-  let cajero = null;
-  const cajeroData = await query(
-    `
-    SELECT u.id_usuario, u.nick, u.nombre, u.apellido
-    FROM servicios s2
-    INNER JOIN usuarios u ON u.id_usuario = s2.cajero_id
-    WHERE s2.id_servicio = ?
-  `,
-    [id]
-  );
-  if (cajeroData.length > 0) cajero = cajeroData[0];
-
   return {
     tipo: 'servicio',
     monto: s.total,
@@ -575,16 +504,17 @@ async function getServicioDetail(id: string) {
     tiempo: tiempo,
     habitacion_nombre: s.habitacion_nombre,
     cliente_nombre: s.cliente_nombre || 'Sin cliente',
-    // Garzón y cajero
+    // Garzón
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    cajero_nick: cajero?.nick,
-    cajero_nombre: cajero?.nombre,
-    // Productos
-    detalles: productos.map((p: any) => ({
-      cantidad: p.cantidad,
-      producto_nombre: p.producto_nombre,
-      subtotal: p.sub_total
+    // Cajero
+    cajero_nick: s.cajero_nick,
+    cajero_nombre: s.cajero_nombre,
+    // Productos (mapeados desde anfitrionas — servicios no tienen productos)
+    detalles: anfitrionas.map((a: any) => ({
+      cantidad: a.comision,
+      producto_nombre: a.nick || `${a.nombre} ${a.apellido}`.trim(),
+      subtotal: a.comision
     })),
     // Anfitrionas
     anfitrionas: anfitrionas,
@@ -611,15 +541,17 @@ async function getVentaDetail(id: string) {
       v.total_comision,
       v.metodo_pago,
       v.estado,
-      v.observaciones,
       v.habitacion_id,
       v.cliente_id,
-      h.numero as habitacion_nombre,
+      h.nombre as habitacion_nombre,
       c.nombre as cliente_nombre,
-      c.telefono as cliente_telefono
+      c.telefono as cliente_telefono,
+      cajero_u.nick as cajero_nick,
+      cajero_u.nombre as cajero_nombre
     FROM ventas v
     LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
     LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
+    LEFT JOIN usuarios cajero_u ON cajero_u.id_usuario = v.created_by
     WHERE v.id_venta = ?
   `,
     [id]
@@ -685,25 +617,12 @@ async function getVentaDetail(id: string) {
     `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido
     FROM detalle_ventas dv
-    INNER JOIN usuarios u ON u.id_usuario = dv.usuario_id
+    INNER JOIN usuarios u ON u.id_usuario = dv.hostess_id
     WHERE dv.venta_id = ? LIMIT 1
   `,
     [id]
   );
   if (garzonData.length > 0) garzon = garzonData[0];
-
-  // Obtener cajero
-  let cajero = null;
-  const cajeroData = await query(
-    `
-    SELECT u.id_usuario, u.nick, u.nombre, u.apellido
-    FROM ventas v2
-    INNER JOIN usuarios u ON u.id_usuario = v2.cajero_id
-    WHERE v2.id_venta = ?
-  `,
-    [id]
-  );
-  if (cajeroData.length > 0) cajero = cajeroData[0];
 
   // Obtener anfitrionas
   const anfitrionas = await query(
@@ -720,8 +639,7 @@ async function getVentaDetail(id: string) {
   // Obtener tiempo si hay servicio relacionado
   let tiempo = null;
   const tiempoData = await query(
-    `
-    SELECT TIMESTAMPDIFF(MINUTE, s.hora_inicio, s.hora_fin) as minutos
+    `SELECT s.tiempo as minutos
     FROM servicios s
     INNER JOIN ventas v2 ON v2.pedido_id = s.id_servicio
     WHERE v2.id_venta = ?
@@ -740,12 +658,12 @@ async function getVentaDetail(id: string) {
     tiempo: tiempo,
     habitacion_nombre: v.habitacion_nombre,
     cliente_nombre: v.cliente_nombre || 'Sin cliente',
-    observaciones: v.observaciones,
-    // Garzón y cajero
+    // Garzón
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    cajero_nick: cajero?.nick,
-    cajero_nombre: cajero?.nombre,
+    // Cajero
+    cajero_nick: v.cajero_nick,
+    cajero_nombre: v.cajero_nombre,
     // Productos
     detalles: productos.map((p: any) => ({
       cantidad: p.cantidad,
@@ -811,7 +729,6 @@ async function getHoraExtraDetail(id: string) {
       he.total,
       he.estado,
       he.fecha_crea,
-      he.observaciones,
       he.usuario_id,
       u.nick,
       u.nombre,
@@ -834,7 +751,6 @@ async function getHoraExtraDetail(id: string) {
     tipo: 'hora_extra',
     monto: he.total,
     hora: he.hora,
-    observaciones: he.observaciones,
     usuario_nick: he.nick,
     usuario_nombre: he.nombre,
     fecha: he.fecha_crea,

@@ -7,6 +7,8 @@ import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import logger from '@/lib/utils/logger';
+
 import {
   Calendar,
   Download,
@@ -221,7 +223,7 @@ export function CashRegisterReport() {
       const json: ReportResponse = await res.json();
       if (json.success) dispatch({ type: 'FETCH_SUCCESS', payload: json.data });
     } catch (e) {
-      console.error('Error fetching cash register data:', e);
+      logger.captureException(e, { context: 'CashRegisterReport:unknown' });
       dispatch({ type: 'FETCH_ERROR' });
     }
   };

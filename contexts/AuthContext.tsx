@@ -1,4 +1,4 @@
-﻿﻿'use client';
+﻿'use client';
 import {
   createContext,
   useContext,
@@ -11,6 +11,7 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+import logger from '@/lib/utils/logger';
 interface CurrentUser {
   id: number;
   name: string;
@@ -199,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           handleSessionExpired();
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        logger.captureException(error, { context: 'AuthContext:fetchUser' });
       } finally {
         setUserLoading(false);
         isFetchingUserRef.current = false;
@@ -252,7 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           handleSessionExpired();
         }
       } catch (error) {
-        console.error('âŒ [AuthContext] Error fetching permissions:', error);
+        logger.captureException(error, { context: 'AuthContext:fetchPermissions' });
       } finally {
         setPermissionsLoaded(true);
         setPermissionsLoading(false);

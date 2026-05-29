@@ -19,16 +19,14 @@ import { useAnfitrionasDisponibles } from '@/hooks/personal/useAnfitrionasDispon
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 import { useQueryClient } from '@tanstack/react-query';
+import logger from '@/lib/utils/logger';
 
 export default function NuevoServicioPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const { allClients: clientes = [] } = useClients();
-  const {
-    anfitrionas,
-    refetch: refetchAnfitrionas
-  } = useAnfitrionasDisponibles();
+  const { anfitrionas, refetch: refetchAnfitrionas } = useAnfitrionasDisponibles();
   const { habitaciones } = useHabitaciones();
   const { startTimer } = useTimer();
 
@@ -190,7 +188,10 @@ export default function NuevoServicioPage() {
     } else if (formData.metodo_pago === 'mixto') {
       nuevoIVA = pagosMixtos
         .filter(pago => pago.metodo === 'tarjeta')
-        .reduce((sum, pago) => sum + Math.max(0, Number(pago.monto || 0) - Number(pago.baseMonto || 0)), 0);
+        .reduce(
+          (sum, pago) => sum + Math.max(0, Number(pago.monto || 0) - Number(pago.baseMonto || 0)),
+          0
+        );
       totalFinal = totalBase + nuevoIVA;
     }
 
@@ -437,7 +438,7 @@ export default function NuevoServicioPage() {
         toast.error(data.message || 'Error al crear servicio');
       }
     } catch (error) {
-      console.error('Error al crear servicio:', error);
+      logger.captureException(error, { context: 'NewPrivateRoomPageClient:createRoom' });
       toast.error('Error al crear servicio');
     } finally {
       setLoading(false);
@@ -716,9 +717,7 @@ export default function NuevoServicioPage() {
                     variant='outline'
                     size='sm'
                     disabled={sinSaldo}
-                    onClick={() =>
-                      setPagosMixtos(prev => [...prev, crearPagoMixto(metodo, 0)])
-                    }
+                    onClick={() => setPagosMixtos(prev => [...prev, crearPagoMixto(metodo, 0)])}
                     className='rounded-full uppercase text-[10px] font-black h-8 px-4 border-slate-300 shadow-sm'
                   >
                     + {metodo}
@@ -751,7 +750,6 @@ export default function NuevoServicioPage() {
             </div>
           </div>
         )}
-
 
         {(formData.metodo_pago === 'efectivo' || formData.metodo_pago === 'transferencia') &&
           precioHabitacionBoleta > 0 && (
@@ -826,6 +824,3 @@ export default function NuevoServicioPage() {
     </>
   );
 }
-
-
-

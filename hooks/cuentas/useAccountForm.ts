@@ -4,6 +4,7 @@ import { useCuentas } from '@/hooks/caja/useCuentas';
 import { CreateCuentaRequest, CreateDetalleCuentaRequest } from '@/types/cuenta';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useChampagneRule } from '@/hooks/shared/useChampagneRule';
+import logger from '@/lib/utils/logger';
 
 export function useAccountForm() {
   const { createCuenta } = useCuentas();
@@ -35,7 +36,7 @@ export function useAccountForm() {
         const data = await res.json();
         setSearchResults(data.success ? data.data : []);
       } catch (error) {
-        console.error('Error en búsqueda:', error);
+        logger.captureException(error, { context: 'AccountForm:searchProducts' });
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -225,7 +226,7 @@ export function useAccountForm() {
       toast.success('Cuenta creada exitosamente');
       onSuccess();
     } catch (error) {
-      console.error('Error al crear cuenta:', error);
+      logger.captureException(error, { context: 'AccountForm:handleSubmit' });
       toast.error(error instanceof Error ? error.message : 'Error al crear la cuenta');
     } finally {
       setLoading(false);

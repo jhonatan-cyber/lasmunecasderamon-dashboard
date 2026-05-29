@@ -16,6 +16,7 @@ import RoomSelect from '@/components/shared/selects/RoomSelect';
 import TimeSelect from '@/components/shared/selects/TimeSelect';
 import { Badge } from '@/components/ui/badge';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
+import logger from '@/lib/utils/logger';
 
 interface AgregarProductosModalProps {
   open: boolean;
@@ -56,8 +57,12 @@ export default function AgregarProductosModal({
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loadingAgregar, setLoadingAgregar] = useState(false);
   const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
-  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{ [key: string]: string[] }>({});
-  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{ [key: string]: string[] }>({});
+  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
   const [habitaciones, setHabitaciones] = useState<any[]>([]);
   const [habitacionId, setHabitacionId] = useState<string>('');
   const [tiempo, setTiempo] = useState<string>('60');
@@ -106,7 +111,7 @@ export default function AgregarProductosModal({
         setHabitaciones(data.data);
       }
     } catch (error) {
-      console.error('Error al obtener habitaciones:', error);
+      logger.captureException(error, { context: 'AgregarProductosModal:fetchHabitaciones' });
     }
   }, []);
 
@@ -126,7 +131,7 @@ export default function AgregarProductosModal({
         setAnfitrionas(data.data);
       }
     } catch (error) {
-      console.error('Error al obtener anfitrionas:', error);
+      logger.captureException(error, { context: 'AgregarProductosModal:fetchAnfitrionas' });
     }
   }, []);
 
@@ -140,7 +145,7 @@ export default function AgregarProductosModal({
         }
       }
     } catch (error) {
-      console.error('Error al obtener categorías:', error);
+      logger.captureException(error, { context: 'AgregarProductosModal:fetchCategorias' });
       toast.error('Error al cargar categorías');
     }
   }, []);
@@ -172,7 +177,7 @@ export default function AgregarProductosModal({
         setProductosCategoria([]);
       }
     } catch (error) {
-      console.error('Error al obtener productos:', error);
+      logger.captureException(error, { context: 'AgregarProductosModal:addProduct' });
       setProductosCategoria([]);
     } finally {
       setLoadingProductos(false);
@@ -195,7 +200,9 @@ export default function AgregarProductosModal({
 
     // Validar selección de habitación y tiempo si productos >= 30000
     if (requiresRoomTimeSelection && (!habitacionId || !tiempo)) {
-      toast.error('Debes seleccionar habitación y tiempo para productos con precio mayor a $30.000');
+      toast.error(
+        'Debes seleccionar habitación y tiempo para productos con precio mayor a $30.000'
+      );
       return;
     }
 
@@ -233,9 +240,9 @@ export default function AgregarProductosModal({
 
       const existingHostessIds = Array.isArray(cuentaContext?.usuarios)
         ? cuentaContext.usuarios
-          .map((usuario: any) => usuario.usuario_id ?? usuario.id_usuario ?? usuario.id)
-          .filter(Boolean)
-          .map((id: string | number) => String(id))
+            .map((usuario: any) => usuario.usuario_id ?? usuario.id_usuario ?? usuario.id)
+            .filter(Boolean)
+            .map((id: string | number) => String(id))
         : [];
 
       const mergedHostessIds = Array.from(new Set([...existingHostessIds, ...hostessIds]));
@@ -253,7 +260,7 @@ export default function AgregarProductosModal({
         payload.usuarios = mergedHostessIds;
       }
 
-// Si productos >= 30000, usar la habitación y tiempo seleccionados en el modal
+      // Si productos >= 30000, usar la habitación y tiempo seleccionados en el modal
       // Solo activar timer si tiempo > 0
       if (requiresRoomTimeSelection && habitacionId) {
         payload.habitacion_id = habitacionId;
@@ -365,7 +372,9 @@ export default function AgregarProductosModal({
                 </div>
                 <div>
                   <span className='font-medium text-gray-500 dark:text-gray-400'>Cliente:</span>{' '}
-                  <span className='font-semibold'>{cuentaActual.cliente_nombre || 'Sin cliente'}</span>
+                  <span className='font-semibold'>
+                    {cuentaActual.cliente_nombre || 'Sin cliente'}
+                  </span>
                 </div>
                 <div>
                   <span className='font-medium text-gray-500 dark:text-gray-400'>Habitación:</span>{' '}
@@ -375,9 +384,7 @@ export default function AgregarProductosModal({
                 </div>
                 <div>
                   <span className='font-medium text-gray-500 dark:text-gray-400'>Fecha:</span>{' '}
-                  <span className='font-semibold'>
-                    {formatLongDateEs(cuentaActual.fecha_crea)}
-                  </span>
+                  <span className='font-semibold'>{formatLongDateEs(cuentaActual.fecha_crea)}</span>
                 </div>
               </div>
               {cuentaActual.usuarios && cuentaActual.usuarios.length > 0 && (

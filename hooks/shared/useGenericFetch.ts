@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { z } from 'zod';
+import logger from '@/lib/utils/logger';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -41,13 +42,13 @@ export function useGenericFetch<T>(
         try {
           z.array(options.schema).parse(rawData);
         } catch (err) {
-          console.error(`[Validation Error] ${endpoint}:`, err);
+          logger.captureException(err, { context: 'GenericFetch:fetchData' });
         }
       } else if (options?.schema) {
         try {
           options.schema.parse(rawData);
         } catch (err) {
-          console.error(`[Validation Error] ${endpoint}:`, err);
+          logger.captureException(err, { context: 'GenericFetch:processData' });
         }
       }
 

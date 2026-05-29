@@ -12,6 +12,7 @@ import Paginate from '@/components/shared/Paginate';
 import { RoleTableSkeleton } from '@/components/shared/Skeletons';
 import { formatDateTimeLabel, formatDateLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 interface Attendance {
   id_asistencia: number;
@@ -49,7 +50,7 @@ export default function AnfitrionaAsistenciasPage() {
       if (res.ok && data.success) {
         setAttendances(data.data || []);
       } else {
-        console.error('API error:', data.message);
+        logger.error('API error:', data.message);
         setAttendances([]);
       }
 
@@ -80,7 +81,7 @@ export default function AnfitrionaAsistenciasPage() {
         setWeeksWithDiscount(0);
       }
     } catch (error) {
-      console.error('Error fetching attendances:', error);
+      logger.captureException(error, { context: 'AnfitrionaAsistencias:fetchAsistencias' });
       setAttendances([]);
       setHousingDiscountTotal(0);
       setDiscountPerWeek(0);

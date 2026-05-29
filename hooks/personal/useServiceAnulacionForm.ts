@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
+import logger from '@/lib/utils/logger';
 
 interface UseServiceAnulacionFormProps {
   onOpenChange: (open: boolean) => void;
@@ -55,7 +56,7 @@ export function useServiceAnulacionForm({
         showErrorToast(result.error || 'Error al enviar la solicitud de anulación');
       }
     } catch (error) {
-      console.error('Error al solicitar anulación:', error);
+      logger.captureException(error, { context: 'ServiceAnulacionForm:submitAnulacion' });
       showErrorToast('Error de conexión al enviar la solicitud');
     } finally {
       setIsLoading(false);

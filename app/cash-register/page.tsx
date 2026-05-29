@@ -13,6 +13,7 @@ import { CajaFormDialog } from '@/components/caja/CajaFormDialog';
 import { CerrarCajaDialog } from '@/components/caja/CerrarCajaDialog';
 import { RetiroDineroDialog } from '@/components/caja/RetiroDineroDialog';
 import dynamic from 'next/dynamic';
+import logger from '@/lib/utils/logger';
 const CajaDetails = dynamic(() => import('@/components/caja/CajaDetails'), { ssr: false });
 import { CajaFilters } from '@/components/caja/CajaFilters';
 import { CashRegisterStatsCard, CashRegisterDetailedStats } from '@/components/cash-register';
@@ -21,8 +22,17 @@ import { AlertTriangle, RotateCcw, Wallet, Plus, Info } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 export default function CashRegister() {
-  const { cajas, loading, error, getCajas, getResumen, createCaja, cerrarCaja, retirarDinero, mutationError } =
-    useCashRegister();
+  const {
+    cajas,
+    loading,
+    error,
+    getCajas,
+    getResumen,
+    createCaja,
+    cerrarCaja,
+    retirarDinero,
+    mutationError
+  } = useCashRegister();
   const { user } = useCurrentUser();
   const { hasPermission } = useUserPermissions();
 
@@ -58,7 +68,7 @@ export default function CashRegister() {
     try {
       await createCaja(data);
     } catch (error) {
-      console.error('Error al crear caja:', error);
+      logger.captureException(error, { context: 'CashRegister:handleCerrarCaja' });
     }
   };
 
@@ -66,7 +76,7 @@ export default function CashRegister() {
     try {
       await cerrarCaja(data);
     } catch (error) {
-      console.error('Error al cerrar caja:', error);
+      logger.captureException(error, { context: 'CashRegister:handleCreateCaja' });
     }
   };
 
@@ -91,7 +101,7 @@ export default function CashRegister() {
       const success = await retirarDinero(data);
       return success;
     } catch (error) {
-      console.error('Error al retirar dinero:', error);
+      logger.captureException(error, { context: 'CashRegister:handleRetirarDinero' });
       return false;
     }
   };

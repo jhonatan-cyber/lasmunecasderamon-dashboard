@@ -12,6 +12,7 @@ import { NewSaleSearch } from '@/components/sales/new/NewSaleSearch';
 import { NewSaleConfiguration } from '@/components/sales/new/NewSaleConfiguration';
 import { NewSaleCart } from '@/components/sales/new/NewSaleCart';
 import { NewSaleSummary } from '@/components/sales/new/NewSaleSummary';
+import logger from '@/lib/utils/logger';
 
 export default function NewSale() {
   const {
@@ -88,7 +89,7 @@ export default function NewSale() {
           );
         }
       } catch (error) {
-        console.error('Error cargando datos maestros:', error);
+        logger.captureException(error, { context: 'SalesNew:createSale' });
       } finally {
         setLoadingCategorias(false);
       }

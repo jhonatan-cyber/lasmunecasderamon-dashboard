@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import logger from '@/lib/utils/logger';
 
 interface SearchResult {
   id_producto?: string;
@@ -26,9 +27,7 @@ export function useProductSearch(debounceMs: number = 300) {
 
       setSearchLoading(true);
       try {
-        const res = await fetch(
-          `/api/products?term=${encodeURIComponent(internalSearchTerm)}`
-        );
+        const res = await fetch(`/api/products?term=${encodeURIComponent(internalSearchTerm)}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
@@ -36,7 +35,7 @@ export function useProductSearch(debounceMs: number = 300) {
         setSearchResults(data.success ? data.data : []);
         setCurrentPage(1); // Reset a primera página
       } catch (error) {
-        console.error('Error en búsqueda:', error);
+        logger.captureException(error, { context: 'ProductSearch:searchProducts' });
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -49,10 +48,7 @@ export function useProductSearch(debounceMs: number = 300) {
 
   // Paginación
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedResults = searchResults.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const paginatedResults = searchResults.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(searchResults.length / itemsPerPage);
 
   const handleSearchChange = (value: string) => {

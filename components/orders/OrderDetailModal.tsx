@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import logger from '@/lib/utils/logger';
 import {
   Dialog,
   DialogContent,
@@ -197,7 +198,7 @@ export default function OrderDetailModal({
         setTiempoHabitacion(data.data.tiempo || 30);
       }
     } catch (error) {
-      console.error('[ORDER MODAL] ❌ Error buscando habitación activa:', error);
+      logger.captureException(error, { context: 'OrderDetailModal:fetchDetail' });
     }
   };
 
@@ -574,10 +575,7 @@ export default function OrderDetailModal({
           );
           window.dispatchEvent(new CustomEvent('refreshNotifications'));
         } catch (estadoError) {
-          console.error(
-            '[ORDER MODAL] Error al actualizar estado del pedido a procesado:',
-            estadoError
-          );
+          logger.captureException(estadoError, { context: 'OrderDetailModal:fetchDetail' });
         }
 
         onClose();

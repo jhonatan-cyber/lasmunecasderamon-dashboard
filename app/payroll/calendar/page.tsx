@@ -11,6 +11,7 @@ import { PayrollCalendarLegend } from '@/components/payroll/calendar/PayrollCale
 import { PayrollCalendarView } from '@/components/payroll/calendar/PayrollCalendarView';
 import { PayrollCalendarDataModal } from '@/components/payroll/calendar/PayrollCalendarDataModal';
 import { PayrollCalendarDetailModal } from '@/components/payroll/calendar/PayrollCalendarDetailModal';
+import logger from '@/lib/utils/logger';
 
 const months = [
   'Enero',
@@ -238,7 +239,7 @@ export default function PayrollCalendarPage() {
         setRealServiciosData(result.data);
       }
     } catch (error) {
-      console.error(`Error al obtener datos de ${type}:`, error);
+      logger.captureException(error, { context: 'PayrollCalendar:fetchCalendarData' });
       if (type === 'ventas') setRealVentasData([]);
       else setRealServiciosData([]);
     } finally {

@@ -1,4 +1,5 @@
-/* eslint-disable no-console */
+import logger from '@/lib/utils/logger';
+
 import {
   Dialog,
   DialogContent,
@@ -61,7 +62,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
   productosEnCarrito,
   habitaciones = [],
   roomSelections = {},
-  onRoomChange = () => { }
+  onRoomChange = () => {}
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
@@ -88,7 +89,9 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
             setAnfitrionasDisponibles(data.data);
           }
         } catch (error) {
-          console.error('Error al cargar anfitrionas disponibles:', error);
+          logger.captureException(error, {
+            context: 'CategoryProductsModal:fetchAnfitrionasDisponibles'
+          });
         } finally {
           setLoadingAnfitrionas(false);
         }
@@ -178,7 +181,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
     const hasRoomSelected =
       roomSelections[currentProductId] && roomSelections[currentProductId] !== '';
 
-    console.log(`[CategoryProductsModal] Producto ${currentProductId}:`, {
+    logger.info(`[CategoryProductsModal] Producto ${currentProductId}:`, {
       hasRoomSelected,
       totalAnfitrionas: availableHostesses.length,
       anfitrionasEstados: availableHostesses.map(h => ({
@@ -189,7 +192,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
     });
 
     if (!hasRoomSelected) {
-      console.log(
+      logger.info(
         `[CategoryProductsModal] Sin habitación - mostrando todas: ${availableHostesses.length}`
       );
       return availableHostesses;
@@ -214,7 +217,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
       return true;
     });
 
-    console.log(
+    logger.info(
       `[CategoryProductsModal] Con habitación - anfitrionas filtradas: ${filtered.length}`
     );
     return filtered;
@@ -460,7 +463,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                               }}
                                               placeholder={
                                                 getAvailableHostessesForOtherProducts(id).length ===
-                                                  0
+                                                0
                                                   ? 'No hay anfitrionas disponibles'
                                                   : 'Seleccionar anfitriona'
                                               }
@@ -570,4 +573,3 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
 };
 
 export default CategoryProductsModal;
-

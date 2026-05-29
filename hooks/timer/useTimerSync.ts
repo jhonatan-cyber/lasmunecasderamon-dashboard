@@ -4,6 +4,7 @@ import { parseDateSafe, calculateRemainingTime } from '@/lib/utils/timeUtils';
 import { useSSE } from '@/hooks/shared/useSSE';
 import { batch } from '@preact/signals-react';
 
+import logger from '@/lib/utils/logger';
 import { activeTimers, serverOffsetSignal, TimerInstance } from '@/lib/store/timerStore';
 
 interface TimerSyncProps {
@@ -32,8 +33,7 @@ export function useTimerSync({
       const timers = activeTimers.value.map(t => t.toPlainObject());
       // Limpiar duplicados por servicioId (cada timer es único)
       const unique = timers.filter(
-        (t, i, self) =>
-          i === self.findIndex(x => x.servicioId === t.servicioId)
+        (t, i, self) => i === self.findIndex(x => x.servicioId === t.servicioId)
       );
       saveTimersToStorage(unique);
     }
@@ -265,7 +265,7 @@ export function useTimerSync({
             .filter(t => t.isTemporary || dbIds.has(t.servicioId));
         }
       } catch (e) {
-        console.error('Poll failed', e);
+        logger.captureException(e, { context: 'useTimerSync:timerPoll' });
       }
     };
 
