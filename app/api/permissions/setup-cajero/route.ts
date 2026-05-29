@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query, generateUUID } from '@/lib/database/db';
+import logger from '@/lib/utils/logger';
 
 // Este endpoint es temporal para setup — no requiere auth
 // Agregar a PUBLIC_PATHS en proxy.ts si es necesario
@@ -124,7 +125,7 @@ export async function POST() {
       }
     });
   } catch (error: any) {
-    console.error('[setup-cajero] Error:', error);
+    logger.error('[setup-cajero] Error:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Error interno' },
       { status: 500 }

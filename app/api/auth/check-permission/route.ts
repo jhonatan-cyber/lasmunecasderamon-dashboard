@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/db';
+import logger from '@/lib/utils/logger';
 
 const actionMap: Record<string, string[]> = {
   view: [
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, hasPermission: perms.length > 0 });
   } catch (error) {
-    console.error('[check-permission] Error:', error);
+    logger.captureException(error, { context: 'Route:checkPermission' });
     return NextResponse.json({ success: false, hasPermission: false }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { useServicios, useAllServicios } from '@/hooks/servicios/useServicios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ServicioWithDetails } from '@/types/servicio';
+import logger from '@/lib/utils/logger';
 
 export function useServiceLogic() {
   const { servicios, loading, getServicios, removeServicioFromState, patchServicio, includeAll } =
@@ -49,7 +50,7 @@ export function useServiceLogic() {
 
         toast.success('Servicio finalizado exitosamente');
       } catch (error) {
-        console.error('[useServiceLogic] Error al finalizar:', error);
+        logger.captureException(error, { context: 'ServiceLogic:fetchServiceData' });
         toast.error('Error al finalizar el servicio');
       }
     },
@@ -68,7 +69,7 @@ export function useServiceLogic() {
       await getServicios(false); // false = obtener servicios activos
       setCurrentPage(prev => prev);
     } catch (error) {
-      console.error('[useServiceLogic] Error en handleServiceAutoFinished:', error);
+      logger.captureException(error, { context: 'ServiceLogic:handleServiceAutoFinished' });
       throw new Error('Error al actualizar servicios');
     }
   }, [getServicios, setCurrentPage]);

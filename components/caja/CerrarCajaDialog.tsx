@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import logger from '@/lib/utils/logger';
+
 import {
   Select,
   SelectContent,
@@ -107,7 +109,7 @@ export const CerrarCajaDialog = ({
       });
       setErrors({});
     } catch (error) {
-      console.error('Error al cerrar caja:', error);
+      logger.captureException(error, { context: 'CerrarCajaDialog:cerrarCaja' });
     }
   };
 

@@ -9,6 +9,8 @@ import Image from 'next/image';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import logger from '@/lib/utils/logger';
+
 import {
   Search,
   X,
@@ -222,7 +224,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       const data = await resp.json();
       if (data.success) setRetiros(data.data || []);
     } catch (error) {
-      console.error('Error cargando retiros:', error);
+      logger.captureException(error, { context: 'CajaDetails:fetchRetiros' });
     } finally {
       setRetirosLoading(false);
     }
@@ -245,7 +247,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       setVentasChampagne(dataChampagne || { total_venta: 0, propinas: 0 });
       setVentasBarras(dataBarras || { total_venta: 0, propinas: 0 });
     } catch (error) {
-      console.error('Error fetching financial summary:', error);
+      logger.captureException(error, { context: 'CajaDetails:fetchResumenFinanciero' });
     } finally {
       setLoadingTragosChicas(false);
       setLoadingChampagne(false);
@@ -258,7 +260,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     try {
       const resp = await fetch(`/api/ventas?caja_id=${caja.id_caja}`);
       const data = await resp.json().catch(() => ({ success: false }));
-      console.log('API Ventas response:', data);
+      logger.info('API Ventas response:', data);
 
       // Manejar diferentes estructuras de respuesta
       let ventasData = [];
@@ -277,12 +279,12 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       }
 
       setVentas(ventasData);
-      console.log('Ventas cargadas:', ventasData.length);
+      logger.info('Ventas cargadas:', ventasData.length);
       if (ventasData.length > 0) {
-        console.log('Estructura de venta:', ventasData[0]);
+        logger.info('Estructura de venta:', ventasData[0]);
       }
     } catch (error) {
-      console.error('Error cargando ventas:', error);
+      logger.captureException(error, { context: 'CajaDetails:fetchVentas' });
       setVentas([]);
     } finally {
       setLoadingVentas(false);
@@ -294,7 +296,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     try {
       const resp = await fetch(`/api/servicios?caja_id=${caja.id_caja}`);
       const data = await resp.json().catch(() => ({ success: false }));
-      console.log('API Servicios response:', data);
+      logger.info('API Servicios response:', data);
 
       // Manejar diferentes estructuras de respuesta
       let serviciosData = [];
@@ -313,9 +315,9 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       }
 
       setServicios(serviciosData);
-      console.log('Servicios cargados:', serviciosData.length);
+      logger.info('Servicios cargados:', serviciosData.length);
     } catch (error) {
-      console.error('Error cargando servicios:', error);
+      logger.captureException(error, { context: 'CajaDetails:fetchServicios' });
     } finally {
       setLoadingServicios(false);
     }
@@ -1136,7 +1138,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
 
       doc.save(`caja-${activeTab}-${formatFechaCorta(caja.fecha_apertura)}.pdf`);
     } catch (error) {
-      console.error('Error exporting to PDF:', error);
+      logger.captureException(error, { context: 'CajaDetails:exportToPDF' });
     }
   };
 

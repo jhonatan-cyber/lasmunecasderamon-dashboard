@@ -11,6 +11,8 @@ import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
+import logger from '@/lib/utils/logger';
+
 import {
   SalesHeader,
   SalesStatsCards,
@@ -161,7 +163,7 @@ export default function Sales() {
         }
       }
     } catch (error) {
-      console.error('Error al solicitar anulación:', error);
+      logger.captureException(error, { context: 'Sales:fetchSales' });
       showErrorToast('Error de conexión. Verifica tu conexión a internet.');
     }
   };
@@ -266,4 +268,3 @@ export default function Sales() {
     </PermissionGuard>
   );
 }
-

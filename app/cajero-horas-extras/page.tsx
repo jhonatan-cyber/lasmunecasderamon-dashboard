@@ -9,6 +9,7 @@ import OvertimeStatsCards from '@/components/overtime/OvertimeStatsCards';
 import OvertimeFilters from '@/components/overtime/OvertimeFilters';
 import OvertimeTable from '@/components/overtime/OvertimeTable';
 import Paginate from '@/components/shared/Paginate';
+import logger from '@/lib/utils/logger';
 
 export default function CajeroHorasExtrasPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -33,7 +34,7 @@ export default function CajeroHorasExtrasPage() {
         setOvertime(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching overtime:', error);
+      logger.captureException(error, { context: 'CajeroHorasExtras:fetchOvertime' });
     } finally {
       setLoading(false);
     }

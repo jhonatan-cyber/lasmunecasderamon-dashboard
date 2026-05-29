@@ -11,6 +11,7 @@ import FilterSelect from '@/components/shared/selects/FilterSelect';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 interface Advance {
   id_anticipo: number;
@@ -59,10 +60,10 @@ export default function CajeroAnticiposPage() {
       if (data.success) {
         setAdvances(data.data || []);
       } else {
-        console.error('Error fetching advances:', data.message);
+        logger.error('Error fetching advances:', data.message);
       }
     } catch (error) {
-      console.error('Error fetching advances:', error);
+      logger.captureException(error, { context: 'CajeroAnticipos:fetchAdvances' });
     } finally {
       setLoading(false);
     }

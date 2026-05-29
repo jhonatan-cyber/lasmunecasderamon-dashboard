@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import logger from '@/lib/utils/logger';
 
 export function useCuentaCobro() {
   const [rooms, setRooms] = useState<any[]>([]);
@@ -21,7 +22,7 @@ export function useCuentaCobro() {
           setRooms(data.data);
         }
       } catch (error) {
-        console.error('Error al cargar habitaciones:', error);
+        logger.captureException(error, { context: 'CuentaCobro:fetchRooms' });
         toast.error('Error al cargar habitaciones');
       }
     };
@@ -163,9 +164,9 @@ export function useCuentaCobro() {
         try {
           const errorData = await ventaRes.json();
           errorMessage = errorData?.message || errorData?.error || errorMessage;
-          console.error('[CobrarCuenta] Error del servidor:', errorData);
+          logger.error('[CobrarCuenta] Error del servidor:', errorData);
         } catch {
-          console.error('[CobrarCuenta] No se pudo parsear error:', ventaRes.status);
+          logger.error('[CobrarCuenta] No se pudo parsear error:', ventaRes.status);
         }
         throw new Error(errorMessage);
       }
@@ -174,7 +175,7 @@ export function useCuentaCobro() {
       resetStates();
       onSuccess();
     } catch (error) {
-      console.error('Error en el flujo de cobro:', error);
+      logger.captureException(error, { context: 'CuentaCobro:handleCobrarCuenta' });
       toast.error(error instanceof Error ? error.message : 'Error al cobrar la cuenta');
       setShowError(true);
     } finally {

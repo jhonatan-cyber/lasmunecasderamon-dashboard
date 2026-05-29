@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, DollarSign, LogIn, ShoppingCart, Sparkles } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
 
 interface RecentActivityItem {
   id: string;
@@ -61,7 +62,7 @@ export function RecentActivity() {
           setActivities(result.data || []);
         }
       } catch (error) {
-        console.error('Error cargando actividad reciente:', error);
+        logger.captureException(error, { context: 'RecentActivity:loadRecentActivity' });
         if (active) {
           setActivities([]);
         }

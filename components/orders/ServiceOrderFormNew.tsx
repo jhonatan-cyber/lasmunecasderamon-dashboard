@@ -9,6 +9,8 @@ import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useClients } from '@/hooks/clientes/useClients';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
+import logger from '@/lib/utils/logger';
+
 import {
   ORDER_FIELD_INPUT_WITH_ICON_CLASS,
   ORDER_FIELD_LABEL_CLASS,
@@ -136,7 +138,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           setAnfitrionasOcupadas([...new Set(ocupadas)]);
         }
       } catch (error) {
-        console.error('Error al obtener anfitrionas ocupadas:', error);
+        logger.captureException(error, { context: 'ServiceOrderFormNew:submitOrder' });
       }
     };
     fetchAnfitrionasOcupadas();
@@ -146,10 +148,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const anfitrionasDisponibles =
     anfitrionas?.filter(a => {
       const id = String(a.id_usuario || a.id || '');
-      return (
-        !anfitrionasOcupadas.includes(Number(id)) &&
-        !tempForm.anfitrionas_ids.includes(id)
-      );
+      return !anfitrionasOcupadas.includes(Number(id)) && !tempForm.anfitrionas_ids.includes(id);
     }) || [];
 
   const parseNumberFromDots = (value: string) => {
@@ -359,9 +358,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           <HostessSelect
             anfitrionas={anfitrionas}
             value={tempForm.anfitrionas_ids.map(id => id.toString())}
-            onChange={(values: string[]) =>
-              setTempForm({ ...tempForm, anfitrionas_ids: values })
-            }
+            onChange={(values: string[]) => setTempForm({ ...tempForm, anfitrionas_ids: values })}
             label='Anfitrionas'
             placeholder='Seleccionar anfitrionas'
             maxSelection={maxAnfitrionasSegunClientes}
@@ -374,9 +371,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           <CustomersSelect
             clientes={clientesDB || []}
             value={tempForm.clientes_ids.map(id => id.toString())}
-            onChange={(values: string[]) =>
-              setTempForm({ ...tempForm, clientes_ids: values })
-            }
+            onChange={(values: string[]) => setTempForm({ ...tempForm, clientes_ids: values })}
             label='Clientes'
             placeholder='Seleccionar clientes'
             maxSelection={maxClientesSegunAnfitrionas}
@@ -389,9 +384,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
         {/* Precio de servicio */}
         <div>
-          <Label className={ORDER_FIELD_LABEL_CLASS}>
-            Precio de servicio
-          </Label>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>Precio de servicio</Label>
           <div className='relative'>
             <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400'>
               $
@@ -415,9 +408,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
         {/* Método de pago */}
         <div>
-          <Label className={ORDER_FIELD_LABEL_CLASS}>
-            Método de pago*
-          </Label>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>Método de pago*</Label>
           <Select
             value={tempForm.metodo_pago}
             onValueChange={(value: string) => setTempForm({ ...tempForm, metodo_pago: value })}

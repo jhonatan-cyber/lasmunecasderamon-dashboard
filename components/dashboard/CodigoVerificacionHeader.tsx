@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import logger from '@/lib/utils/logger';
 
 interface CodigoVerificacionHeaderProps {
   userRole?: string;
@@ -21,7 +22,7 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
         setCodigo(data.codigo);
       }
     } catch (error) {
-      console.error('Error fetching verification code:', error);
+      logger.captureException(error, { context: 'CodigoVerificacionHeader:fetchCodigo' });
     }
   };
 

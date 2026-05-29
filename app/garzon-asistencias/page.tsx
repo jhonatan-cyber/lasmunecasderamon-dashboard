@@ -12,6 +12,7 @@ import FilterSelect from '@/components/shared/selects/FilterSelect';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import AsistenciaForm from '@/components/attendance/AsistenciaForm';
+import logger from '@/lib/utils/logger';
 
 interface Asistencia {
   id_asistencia: number;
@@ -48,10 +49,10 @@ export default function GarzonAsistenciasPage() {
       if (data.success) {
         setAsistencias(data.data || []);
       } else {
-        console.error('Error fetching asistencias:', data.message);
+        logger.error('Error fetching asistencias:', data.message);
       }
     } catch (error) {
-      console.error('Error fetching asistencias:', error);
+      logger.captureException(error, { context: 'GarzonAsistencias:fetchAsistencias' });
     } finally {
       setLoading(false);
     }

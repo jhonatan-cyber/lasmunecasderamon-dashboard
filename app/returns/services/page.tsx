@@ -18,6 +18,7 @@ import { DevolucionHeader } from '@/components/returns/services/DevolucionHeader
 import { DevolucionFilters } from '@/components/returns/services/DevolucionFilters';
 import { DevolucionTable } from '@/components/returns/services/DevolucionTable';
 import { AnulacionModal } from '@/components/returns/services/AnulacionModal';
+import logger from '@/lib/utils/logger';
 
 export default function DevolucionesServiciosPage() {
   const { servicios, loading, error, getServicios } = useServicios();
@@ -44,13 +45,13 @@ export default function DevolucionesServiciosPage() {
 
   // Configurar callback de actualización para el contexto de anulación
   const updateCallback = useCallback(() => {
-    console.log('🔄 Actualizando servicios después de anulación');
+    logger.info('🔄 Actualizando servicios después de anulación');
     getServicios();
   }, [getServicios]);
 
   // Configurar callback de actualización para cuando termine un timer
   const timerUpdateCallback = useCallback(() => {
-    console.log('🔄 Actualizando servicios después de timer terminado');
+    logger.info('🔄 Actualizando servicios después de timer terminado');
     // Actualizar solo los datos sin recargar la página
     // Los datos se actualizarán automáticamente cuando el timer termine
   }, []);

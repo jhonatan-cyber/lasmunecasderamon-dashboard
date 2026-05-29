@@ -1,4 +1,3 @@
-import { logger } from '@/lib/utils/logger';
 import { ZodError } from 'zod';
 import { ErrorLogRepository } from '@/lib/repositories/ErrorLogRepository';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
@@ -6,6 +5,7 @@ import { getAuth } from '@/lib/auth/auth-app';
 import { AuthenticatedUser, UserPermissions } from '@/lib/middleware/auth';
 import { ApiResponse } from './api-response';
 import { normalizeJsonResponseDates } from './date-response';
+import logger from '@/lib/utils/logger';
 
 type AppRouteHandler = (request: Request, context: { params: any }) => Promise<Response>;
 
@@ -51,7 +51,7 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
           stack_trace: stack
         });
       } catch (logError) {
-        console.error('Failed to log error to database:', logError);
+        logger.captureException(logError, { context: 'AppApiWrapper:logError' });
       }
 
       if (error instanceof ZodError) {
@@ -112,7 +112,7 @@ export function withAppAuth(
           details: { params }
         });
       } catch (auditError) {
-        console.error('Error recording audit log:', auditError);
+        logger.captureException(auditError, { context: 'AppApiWrapper:auditError' });
       }
     }
 

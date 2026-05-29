@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import logger from '@/lib/utils/logger';
+
 import {
   Dialog,
   DialogContent,
@@ -53,7 +55,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
         setUsers(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.captureException(error, { context: 'AsistenciaForm:fetchUsers' });
       toast.error('Error al cargar empleados');
     } finally {
       setLoading(false);

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
 import { buildExportFilename, formatDateLabel } from '@/lib/utils/calendarUtils';
+import logger from '@/lib/utils/logger';
 
 interface ExportButtonsProps {
   users: User[];
@@ -93,7 +94,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
 
       toast.success('Excel exportado correctamente');
     } catch (error) {
-      console.error('Error exportando Excel:', error);
+      logger.captureException(error, { context: 'ExportButtons:exportExcel' });
       toast.error('Error al exportar Excel');
     } finally {
       setIsExporting(false);
@@ -174,7 +175,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       doc.save(buildExportFilename('usuarios', 'pdf'));
       toast.success('PDF exportado correctamente');
     } catch (error) {
-      console.error('Error exportando PDF:', error);
+      logger.captureException(error, { context: 'ExportButtons:exportPDF' });
       toast.error('Error al exportar PDF');
     } finally {
       setIsExporting(false);

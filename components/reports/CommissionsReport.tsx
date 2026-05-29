@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import logger from '@/lib/utils/logger';
+
 import {
   TrendingUp,
   Users,
@@ -253,7 +255,7 @@ export function CommissionsReport() {
   }, [data]);
 
   const exportReport = () => {
-    console.log('Exportando reporte de comisiones...');
+    logger.info('Exportando reporte de comisiones...');
   };
 
   const fetchData = async () => {

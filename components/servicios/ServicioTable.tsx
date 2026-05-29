@@ -1,5 +1,6 @@
-/* eslint-disable */
-"use client";
+'use client';
+
+import logger from '@/lib/utils/logger';
 
 import {
   Table,
@@ -7,28 +8,21 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ServicioWithDetails } from "@/types/servicio";
-import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
-import {
-  Eye,
-  Pencil,
-  Trash,
-  MoreVertical,
-  Clock,
-  Users,
-} from "lucide-react";
+  TableRow
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ServicioWithDetails } from '@/types/servicio';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { Eye, Pencil, Trash, MoreVertical, Clock, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useState } from "react";
-import { formatShortDmyDateEs } from "@/lib/utils/calendarUtils";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { useState } from 'react';
+import { formatShortDmyDateEs } from '@/lib/utils/calendarUtils';
 
 interface ServicioTableProps {
   loading: boolean;
@@ -41,7 +35,7 @@ export default function ServicioTable({
   loading,
   rows,
   rowsPerPage,
-  onRefresh,
+  onRefresh
 }: ServicioTableProps) {
   const [selectedServicioId, setSelectedServicioId] = useState<string | number | null>(null);
 
@@ -49,15 +43,15 @@ export default function ServicioTable({
     const estadoNum = Number(estado);
     switch (estadoNum) {
       case 0:
-        return <Badge variant="destructive">Anulado</Badge>;
+        return <Badge variant='destructive'>Anulado</Badge>;
       case 1:
-        return <Badge variant="secondary">Finalizado</Badge>;
+        return <Badge variant='secondary'>Finalizado</Badge>;
       case 2:
-        return <Badge className="bg-green-100 text-green-800">En Proceso</Badge>;
+        return <Badge className='bg-green-100 text-green-800'>En Proceso</Badge>;
       case 3:
-        return <Badge className="bg-orange-100 text-orange-800">Pausado</Badge>;
+        return <Badge className='bg-orange-100 text-orange-800'>Pausado</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">Desconocido</Badge>;
+        return <Badge className='bg-gray-100 text-gray-800'>Desconocido</Badge>;
     }
   };
 
@@ -74,18 +68,18 @@ export default function ServicioTable({
   const handleVerDetalles = (servicioId: string | number) => {
     setSelectedServicioId(servicioId);
     // Aquí puedes abrir un modal de detalles
-    console.log("Ver detalles del servicio:", servicioId);
+    logger.info('Ver detalles del servicio:', servicioId);
   };
 
   const handleEditar = (servicioId: string | number) => {
-    console.log("Editar servicio:", servicioId);
+    logger.info('Editar servicio:', servicioId);
   };
 
   const handleEliminar = async (servicioId: string | number) => {
-    if (confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
+    if (confirm('¿Estás seguro de que quieres eliminar este servicio?')) {
       try {
         const response = await fetch(`/api/servicios/${servicioId}`, {
-          method: "DELETE",
+          method: 'DELETE'
         });
 
         if (response.ok) {
@@ -93,131 +87,120 @@ export default function ServicioTable({
             onRefresh();
           }
         } else {
-          console.error("Error al eliminar servicio");
+          logger.error('Error al eliminar servicio');
         }
       } catch (error) {
-        console.error("Error al eliminar servicio:", error);
+        logger.captureException(error, { context: 'ServicioTable:deleteServicio' });
       }
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Cargando servicios...</div>
+      <div className='flex justify-center items-center h-64'>
+        <div className='text-gray-500'>Cargando servicios...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      <div className="overflow-x-auto">
+    <div className='bg-white rounded-lg shadow-sm border'>
+      <div className='overflow-x-auto'>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
-                Código
-              </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
-                Cliente
-              </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>Código</TableHead>
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>Cliente</TableHead>
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                 Habitación
               </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                 Precio Servicio
               </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                 Precio Habitación
               </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
-                Total
-              </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
-                Tiempo
-              </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
-                Estado
-              </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
-                Fecha
-              </TableHead>
-              <TableHead className="py-3 px-4 text-center text-sm text-gray-400">
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>Total</TableHead>
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>Tiempo</TableHead>
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>Estado</TableHead>
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>Fecha</TableHead>
+              <TableHead className='py-3 px-4 text-center text-sm text-gray-400'>
                 Acciones
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((servicio) => (
-              <TableRow key={servicio.id_servicio} className="hover:bg-gray-50">
-                <TableCell className="py-3 px-4 text-center font-medium">
+            {rows.map(servicio => (
+              <TableRow key={servicio.id_servicio} className='hover:bg-gray-50'>
+                <TableCell className='py-3 px-4 text-center font-medium'>
                   {servicio.codigo}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
+                <TableCell className='py-3 px-4 text-center'>
                   {servicio.cliente_nombre || `Cliente ${servicio.cliente_id}`}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
-                  {servicio.habitacion_numero || "N/A"}
+                <TableCell className='py-3 px-4 text-center'>
+                  {servicio.habitacion_numero || 'N/A'}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
+                <TableCell className='py-3 px-4 text-center'>
                   {formatCurrencyNoDecimals(servicio.precio_servicio)}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
+                <TableCell className='py-3 px-4 text-center'>
                   {formatCurrencyNoDecimals(servicio.precio_habitacion)}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center font-semibold">
+                <TableCell className='py-3 px-4 text-center font-semibold'>
                   {formatCurrencyNoDecimals(servicio.total)}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <Clock className="text-gray-400" />
+                <TableCell className='py-3 px-4 text-center'>
+                  <div className='flex items-center justify-center gap-1'>
+                    <Clock className='text-gray-400' />
                     {formatTime(servicio.tiempo)}
                   </div>
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
+                <TableCell className='py-3 px-4 text-center'>
                   {getEstadoBadge(servicio.estado || 1)}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center text-sm text-gray-500">
-                  {formatDate(servicio.fecha_crea || "")}
+                <TableCell className='py-3 px-4 text-center text-sm text-gray-500'>
+                  {formatDate(servicio.fecha_crea || '')}
                 </TableCell>
-                <TableCell className="py-3 px-4 text-center">
-                  <div className="flex justify-center">
+                <TableCell className='py-3 px-4 text-center'>
+                  <div className='flex justify-center'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="bg-white hover:bg-gray-50 rounded-full"
+                          variant='ghost'
+                          size='sm'
+                          className='bg-white hover:bg-gray-50 rounded-full'
                         >
                           <MoreVertical />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuContent align='end' className='w-40'>
                         <DropdownMenuItem
-                          className="cursor-pointer hover:text-blue-700 hover:bg-blue-50"
+                          className='cursor-pointer hover:text-blue-700 hover:bg-blue-50'
                           onClick={() => handleVerDetalles(servicio.id_servicio!)}
                         >
                           <Eye />
                           Ver detalles
                         </DropdownMenuItem>
-                        {(servicio.estado === 2 || servicio.estado === 3) && Number(servicio.precio_servicio || 0) <= 0 && (
-                          <>
-                            <DropdownMenuItem
-                              className="cursor-pointer hover:text-green-700 hover:bg-green-50"
-                              onClick={() => handleEditar(servicio.id_servicio!)}
-                            >
-                              <Pencil />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="cursor-pointer hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleEliminar(servicio.id_servicio!)}
-                            >
-                              <Trash />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </>
-                        )}
+                        {(servicio.estado === 2 || servicio.estado === 3) &&
+                          Number(servicio.precio_servicio || 0) <= 0 && (
+                            <>
+                              <DropdownMenuItem
+                                className='cursor-pointer hover:text-green-700 hover:bg-green-50'
+                                onClick={() => handleEditar(servicio.id_servicio!)}
+                              >
+                                <Pencil />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className='cursor-pointer hover:text-red-700 hover:bg-red-50'
+                                onClick={() => handleEliminar(servicio.id_servicio!)}
+                              >
+                                <Trash />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </>
+                          )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -229,4 +212,4 @@ export default function ServicioTable({
       </div>
     </div>
   );
-} 
+}

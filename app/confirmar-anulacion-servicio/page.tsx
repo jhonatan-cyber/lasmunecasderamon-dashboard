@@ -11,6 +11,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
+import logger from '@/lib/utils/logger';
 
 interface SolicitudAnulacionServicio {
   servicio_id: number;
@@ -35,7 +36,6 @@ function ConfirmarAnulacionServicioContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-
     if (!token) {
       setError('Token de anulación no válido');
       setLoading(false);
@@ -55,7 +55,7 @@ function ConfirmarAnulacionServicioContent() {
         const data = await response.json();
         setSolicitud(data.solicitud);
       } catch (err) {
-        console.error('🔍 Error cargando solicitud:', err);
+        logger.captureException(err, { context: 'ConfirmarAnulacionServicio:cargarSolicitud' });
         setError(err instanceof Error ? err.message : 'Error al cargar la solicitud');
       } finally {
         setLoading(false);
@@ -120,7 +120,7 @@ function ConfirmarAnulacionServicioContent() {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      console.error(`🔍 Frontend: Error:`, errorMessage);
+      logger.captureException(err, { context: 'ConfirmarAnulacionServicio:confirmAnulacion' });
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {
@@ -306,4 +306,3 @@ export default function ConfirmarAnulacionServicioPage() {
     </Suspense>
   );
 }
-
