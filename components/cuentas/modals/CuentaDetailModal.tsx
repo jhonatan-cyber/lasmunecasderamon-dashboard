@@ -83,7 +83,9 @@ export default function CuentaDetailModal({
       detalleResumen.groupedDetalles.map((detalle, index) => {
         // Extract hostess IDs - they may be comma-separated if aggregated
         const hostessIds = detalle.hostess_id
-          ? String(detalle.hostess_id).split(',').map((id: string) => id.trim())
+          ? String(detalle.hostess_id)
+              .split(',')
+              .map((id: string) => id.trim())
           : [];
         return {
           id_producto: detalle.id_producto ?? detalle.producto_id ?? detalle.agrupacionKey ?? index,
@@ -103,28 +105,32 @@ export default function CuentaDetailModal({
   );
 
   // Calcular repartición de comisiones por anfitriona
-  const comisionPorAnfitriona = useMemo(() => {
-    if (!cuenta?.usuarios?.length || detalleResumen.totalComision <= 0) return [];
+  const usuariosCuenta = cuenta?.usuarios ?? [];
+  const comisionPorAnfitriona =
+    usuariosCuenta.length > 0 && detalleResumen.totalComision > 0
+      ? usuariosCuenta.map((usuario: any) => {
+          const usuarioId = String(usuario.usuario_id || usuario.id_usuario || usuario.id || '');
+          const comisionTotal = detalleResumen.groupedDetalles.reduce((sum, item) => {
+            const hostessIds = item.hostess_id
+              ? String(item.hostess_id)
+                  .split(',')
+                  .map((id: string) => id.trim())
+                  .filter(Boolean)
+              : [];
+            if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
+              const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
+              return sum + comisionPorAnfitriona;
+            }
+            return sum;
+          }, 0);
 
-    return cuenta.usuarios.map((usuario: any) => {
-      const usuarioId = String(usuario.usuario_id || usuario.id_usuario || usuario.id || '');
-      const comisionTotal = detalleResumen.groupedDetalles.reduce((sum, item) => {
-        const hostessIds = item.hostess_id
-          ? String(item.hostess_id).split(',').map((id: string) => id.trim()).filter(Boolean)
-          : [];
-        if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
-          const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
-          return sum + comisionPorAnfitriona;
-        }
-        return sum;
-      }, 0);
-      return {
-        id: usuarioId,
-        nombre: usuario.usuario_nombre || usuario.nick || usuario.nombre || 'Anfitriona',
-        comision: comisionTotal
-      };
-    });
-  }, [cuenta?.usuarios, detalleResumen]);
+          return {
+            id: usuarioId,
+            nombre: usuario.usuario_nombre || usuario.nick || usuario.nombre || 'Anfitriona',
+            comision: comisionTotal
+          };
+        })
+      : [];
 
   useEffect(() => {
     if (open && !cuentaId) {
@@ -425,19 +431,21 @@ export default function CuentaDetailModal({
                         Repartición de Comisiones
                       </h4>
                       <div className='space-y-2'>
-                        {comisionPorAnfitriona.map((item: { id: string; nombre: string; comision: number }) => (
-                          <div
-                            key={item.id}
-                            className='flex justify-between items-center text-sm'
-                          >
-                            <span className='font-medium text-gray-700 dark:text-gray-300'>
-                              {item.nombre}
-                            </span>
-                            <span className='font-semibold text-green-600 dark:text-green-400'>
-                              {formatCurrencyNoDecimals(item.comision)}
-                            </span>
-                          </div>
-                        ))}
+                        {comisionPorAnfitriona.map(
+                          (item: { id: string; nombre: string; comision: number }) => (
+                            <div
+                              key={item.id}
+                              className='flex justify-between items-center text-sm'
+                            >
+                              <span className='font-medium text-gray-700 dark:text-gray-300'>
+                                {item.nombre}
+                              </span>
+                              <span className='font-semibold text-green-600 dark:text-green-400'>
+                                {formatCurrencyNoDecimals(item.comision)}
+                              </span>
+                            </div>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
