@@ -1,5 +1,4 @@
-﻿/* eslint-disable */
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -72,8 +71,7 @@ export default function AgregarProductosModal({
   const [searchTerm, setSearchTerm] = useState('');
 
   const { cuenta: cuentaActual } = useCuentaDetail(cuentaIdStr, open);
-  const { categories: categorias, anfitrionas, rooms: habitaciones, refreshAll } =
-    useMasterData();
+  const { categories: categorias, anfitrionas, rooms: habitaciones, refreshAll } = useMasterData();
   const { startTimer, getTimerByServicioId } = useTimer();
 
   const {
@@ -134,7 +132,9 @@ export default function AgregarProductosModal({
     }
 
     if (requiresRoomTimeSelection && (!habitacionId || !tiempo)) {
-      toast.error('Debes seleccionar habitacion y tiempo para productos con precio mayor a $30.000');
+      toast.error(
+        'Debes seleccionar habitacion y tiempo para productos con precio mayor a $30.000'
+      );
       return;
     }
 
@@ -303,9 +303,7 @@ export default function AgregarProductosModal({
                   </span>
                 </div>
                 <div>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>
-                    Habitacion:
-                  </span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>Habitacion:</span>{' '}
                   <span className='font-semibold'>
                     {cuentaActual.habitacion_numero || 'Sin habitacion'}
                   </span>
@@ -317,9 +315,7 @@ export default function AgregarProductosModal({
               </div>
               {cuentaActual.usuarios && cuentaActual.usuarios.length > 0 && (
                 <div className='mt-2 text-sm'>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>
-                    Anfitrionas:
-                  </span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>Anfitrionas:</span>{' '}
                   <span className='font-semibold'>
                     {cuentaActual.usuarios
                       .map((u: any) => u.usuario_nombre || u.nick)
@@ -414,6 +410,3 @@ export default function AgregarProductosModal({
     </>
   );
 }
-
-
-
