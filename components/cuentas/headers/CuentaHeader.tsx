@@ -1,3 +1,5 @@
+'use client';
+
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle } from 'lucide-react';
@@ -10,7 +12,7 @@ interface CuentaHeaderProps {
   onRefresh?: () => void;
 }
 
-export function CuentaHeader({ }: CuentaHeaderProps = {}) {
+export function CuentaHeader({}: CuentaHeaderProps = {}) {
   const router = useRouter();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
 
@@ -39,10 +41,11 @@ export function CuentaHeader({ }: CuentaHeaderProps = {}) {
             disabled={cajaLoading || !hasOpenCaja}
             size='sm'
             variant='outline'
-            className={`w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 transition-all duration-200 text-sm sm:text-base border-2 ${hasOpenCaja
-              ? 'bg-black text-white hover:bg-white hover:text-black hover:scale-105 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+            className={`w-full sm:w-auto rounded-full px-4 sm:px-6 py-2 transition-all duration-200 text-sm sm:text-base border-2 ${
+              hasOpenCaja
+                ? 'bg-black text-white hover:bg-white hover:text-black hover:scale-105 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             {cajaLoading ? (
               <>

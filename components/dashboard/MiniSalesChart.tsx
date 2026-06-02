@@ -158,11 +158,7 @@ export default function MiniSalesChart() {
   };
 
   useEffect(() => {
-    // Solo mostramos el cargador de pantalla completa si no tenemos nada de datos aún
-    if (!monthData && !weekData) {
-      setLoading(true);
-    }
-
+    setLoading(true);
     Promise.all([fetchMonthData(yearOffset), fetchWeekData(weekOffset)]).finally(() =>
       setLoading(false)
     );

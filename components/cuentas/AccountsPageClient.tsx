@@ -31,7 +31,7 @@ export function AccountsPageClient() {
     return () => window.removeEventListener('cuentasUpdated', handleCuentasUpdated);
   }, [getCuentas]);
 
-  const cuentasData = cuentas || [];
+  const cuentasData = useMemo(() => cuentas || [], [cuentas]);
 
   // Filter by tab and search
   const filteredCuentas = useMemo(() => {

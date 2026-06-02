@@ -1,4 +1,3 @@
-/* eslint-disable */
 'use client';
 import { useMemo } from 'react';
 import {
@@ -53,8 +52,7 @@ export default function PayrollTable({
     }
     return userPermissions.some(
       p =>
-        p.module === 'pagos_trabajadores' &&
-        (p.action === 'pagar' || p.action === 'listar_pagos')
+        p.module === 'pagos_trabajadores' && (p.action === 'pagar' || p.action === 'listar_pagos')
     );
   }, [userPermissions, user?.role]);
 
@@ -99,17 +97,35 @@ export default function PayrollTable({
                 </TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldos</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Desc. AFP</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Com. Ventas</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Servicios</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Propinas</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Desc. Hab.</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Hs. Extras</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Desc. AFP
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Com. Ventas
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Servicios
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Propinas
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Desc. Hab.
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Hs. Extras
+                </TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Gratif.</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Anticipos</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total a Pagar</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Anticipos
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Total a Pagar
+                </TableHead>
                 {canPay && (
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acciones</TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                    Acciones
+                  </TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -220,7 +236,7 @@ export default function PayrollTable({
       )}
       <ConfirmModal
         open={modalState.open}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (!open) closeModal();
         }}
         title={modalState.title}
@@ -236,8 +252,3 @@ export default function PayrollTable({
     </div>
   );
 }
-
-
-
-
-
