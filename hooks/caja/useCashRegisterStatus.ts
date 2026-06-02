@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { useGenericFetch } from '@/hooks/shared';
 import { CashRegisterStatusSchema } from '@/lib/business/schemas';
 import { useCallback, useEffect } from 'react';
@@ -14,20 +15,18 @@ interface CashRegisterStatus {
 }
 
 export function useCashRegisterStatus() {
-  const { 
-    data, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useGenericFetch<CashRegisterStatus>('/api/cashregister/status', {
-    schema: CashRegisterStatusSchema,
-    transform: (res) => res.success ? res.data : { hasOpenCaja: false, cajaInfo: null }
-  });
+  const { data, isLoading, error, refetch } = useGenericFetch<CashRegisterStatus>(
+    '/api/cashregister/status',
+    {
+      schema: CashRegisterStatusSchema,
+      transform: res => (res.success ? res.data : { hasOpenCaja: false, cajaInfo: null })
+    }
+  );
 
   // Listener para eventos de apertura/cierre de caja
   useEffect(() => {
     const handleCajaChanged = () => refetch();
-    
+
     window.addEventListener('cajaOpened', handleCajaChanged);
     window.addEventListener('cajaClosed', handleCajaChanged);
     window.addEventListener('ventaRegistrada', handleCajaChanged);
@@ -43,7 +42,10 @@ export function useCashRegisterStatus() {
     };
   }, [refetch]);
 
-  const statusData = (Array.isArray(data) ? data[0] : data) as CashRegisterStatus || { hasOpenCaja: false, cajaInfo: null };
+  const statusData = ((Array.isArray(data) ? data[0] : data) as CashRegisterStatus) || {
+    hasOpenCaja: false,
+    cajaInfo: null
+  };
 
   return {
     hasOpenCaja: statusData.hasOpenCaja,
@@ -54,4 +56,3 @@ export function useCashRegisterStatus() {
     refresh: refetch
   };
 }
-

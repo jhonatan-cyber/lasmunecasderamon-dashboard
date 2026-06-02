@@ -85,7 +85,7 @@ export default function OvertimePage() {
           <div className='flex flex-col'>
             <h1 className='text-3xl font-bold tracking-tight'>Horas Extras</h1>
             <p className='text-gray-600 dark:text-neutral-300 mt-1'>
-              Supervisión de registros, pagos y balances históricos del personal.
+              SupervisiÃ³n de registros, pagos y balances histÃ³ricos del personal.
             </p>
           </div>
           <Button
@@ -162,4 +162,3 @@ export default function OvertimePage() {
     </PermissionGuard>
   );
 }
-
