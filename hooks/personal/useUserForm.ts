@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { User as UserType } from '@/types/user';
-import { useRoles } from '@/hooks/personal/useRoles';
-import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
+import { useRoles } from '@/hooks/personal';
+import { useNumberFormatter } from '@/hooks/shared';
 
 // Función para limpiar RUT (quitar puntos y guiones)
 const cleanRUT = (rut: string): string => {
@@ -253,3 +253,5 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
     handleFormSubmit: form.handleSubmit(handleFormSubmit)
   };
 }
+
+

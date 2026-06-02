@@ -1,4 +1,4 @@
-import {
+﻿import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -17,8 +17,8 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
-import IndividualHostessSelect from '@/components/shared/selects/IndividualHostessSelect';
+import { HostessMultiSelect } from '@/components/orders';
+import { IndividualHostessSelect } from '@/components/shared/selects';
 import Paginate from '@/components/shared/Paginate';
 import {
   CUENTA_TABLE_CARD_CLASS,
@@ -29,6 +29,12 @@ import {
   CUENTA_TABLE_HEADER_ROW_CLASS,
   CUENTA_TABLE_ROW_CLASS
 } from '@/components/cuentas/tables/cuentaTableStyles';
+import {
+  getActiveHostesses,
+  getChampagneHostessLimit,
+  hasCommission,
+  isChampagneProduct
+} from '@/components/orders';
 
 interface SaleProductModalProps {
   open: boolean;
@@ -40,7 +46,7 @@ interface SaleProductModalProps {
   handleAgregarProducto: (producto: any) => void;
   categoria: any;
   anfitrionas: any[]; // NUEVO: Lista de anfitrionas disponibles
-  champagneHostessSelections: { [key: string]: string[] }; // NUEVO: Selecciones de champañas
+  champagneHostessSelections: { [key: string]: string[] }; // NUEVO: Selecciones de champaÃ±as
   onChampagneHostessChange: (productId: string, hostessIds: string[]) => void; // NUEVO
   otherProductHostessSelections: { [key: string]: string[] }; // NUEVO: Selecciones de otros productos
   onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void; // NUEVO
@@ -67,69 +73,19 @@ export default function SaleProductModal({
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
   const itemsPerPage = 5;
 
-  // Resetear página cuando se abre el modal o cambian los productos
+  // Resetear pÃ¡gina cuando se abre el modal o cambian los productos
   useEffect(() => {
     setCurrentPage(1);
   }, [open, productos]);
 
-  // Función para verificar si un producto es champaña
-  const isChampagneProduct = (producto: any) => {
-    const categoria = (producto.categoria || producto.category_name || '').toLowerCase();
-    return (
-      categoria.includes('champaña') ||
-      categoria.includes('shampaña') ||
-      categoria.includes('champagne')
-    );
-  };
-
-  // Función para verificar si un producto tiene comisión
-  const hasCommission = (producto: any) => {
-    return (producto.comision || producto.commission || 0) > 0;
-  };
-
   // Obtener anfitrionas disponibles
-  const availableHostesses = anfitrionas || [];
+  const availableHostesses = getActiveHostesses(anfitrionas || []);
 
-  // Obtener todas las anfitrionas ya asignadas a cualquier producto (incluyendo las del carrito)
-  const getAllAssignedHostesses = () => {
-    // Anfitrionas del modal actual
-    const champagneAssigned = Object.values(champagneHostessSelections).flat();
-    const otherProductsAssigned = Object.values(otherProductHostessSelections).flat();
+  const getAvailableHostessesForChampagne = (_currentProductId: string) => availableHostesses;
 
-    // Anfitrionas de productos ya en el carrito
-    const carritoAssigned = productosEnCarrito.flatMap(producto => {
-      if (producto.selectedHostesses && Array.isArray(producto.selectedHostesses)) {
-        return producto.selectedHostesses;
-      }
-      return [];
-    });
+  const getAvailableHostessesForOtherProducts = (_currentProductId: string) => availableHostesses;
 
-    return [...champagneAssigned, ...otherProductsAssigned, ...carritoAssigned];
-  };
-
-  // Función para obtener anfitrionas disponibles para champañas
-  const getAvailableHostessesForChampagne = (currentProductId: string) => {
-    const currentSelection = champagneHostessSelections[currentProductId] || [];
-
-    return availableHostesses.filter(h => {
-      const estado = h.estado || h.status;
-      // Siempre mostrar todas las anfitrionas logueadas (estado 1 o 2)
-      return estado === 1 || estado === 2;
-    });
-  };
-
-  // Función para obtener anfitrionas disponibles para bebidas
-  const getAvailableHostessesForOtherProducts = (currentProductId: string) => {
-    const currentSelection = otherProductHostessSelections[currentProductId] || [];
-
-    return availableHostesses.filter(h => {
-      const estado = h.estado || h.status;
-      // Siempre mostrar todas las anfitrionas logueadas (estado 1 o 2)
-      return estado === 1 || estado === 2;
-    });
-  };
-
-  // Calcular productos para la página actual
+  // Calcular productos para la pagina actual
   const totalPages = Math.ceil((productos?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -152,7 +108,7 @@ export default function SaleProductModal({
             <div className='w-full'>
               {!Array.isArray(productos) || productos.length === 0 ? (
                 <div className='text-center text-gray-400 py-8 w-full'>
-                  No hay productos en esta categoría.
+                  No hay productos en esta categorÃ­a.
                 </div>
               ) : (
                 <>
@@ -166,7 +122,7 @@ export default function SaleProductModal({
                               Precio
                             </TableHead>
                             <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
-                              Comisión
+                              ComisiÃ³n
                             </TableHead>
                             <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
                               Cantidad
@@ -184,14 +140,7 @@ export default function SaleProductModal({
                             const id = String(p.id_producto || p.id);
                             const isChampagne = isChampagneProduct(p);
                             const hasComm = hasCommission(p);
-                            const champagneHostessLimit = (() => {
-                              const precio = Number(p.precio || p.price || 0);
-                              if (precio >= 240000) return 5;
-                              if (precio >= 200000) return 4;
-                              if (precio >= 140000) return 3;
-                              if (precio >= 120000) return 2;
-                              return 1;
-                            })();
+                            const champagneHostessLimit = getChampagneHostessLimit(p);
 
                             return (
                               <TableRow
@@ -368,7 +317,7 @@ export default function SaleProductModal({
                                       </div>
                                     )
                                   ) : (
-                                    <div className='text-xs text-gray-400'>Sin comisión</div>
+                                    <div className='text-xs text-gray-400'>Sin comisiÃ³n</div>
                                   )}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
@@ -437,3 +386,7 @@ export default function SaleProductModal({
     </Dialog>
   );
 }
+
+
+
+

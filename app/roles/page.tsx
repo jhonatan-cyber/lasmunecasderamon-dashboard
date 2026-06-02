@@ -21,7 +21,7 @@ import { StatsCard } from '@/components/roles/RoleStatsCard';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
-import { useRoles, Role } from '@/hooks/personal/useRoles';
+import { useRoles, Role } from '@/hooks/personal';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { RoleForm } from '@/components/roles/RoleForm';
 import { DeleteRoleConfirmModal } from '@/components/roles/DeleteRoleConfirmModal';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
@@ -446,3 +446,6 @@ export default function RolesPage() {
     </PermissionGuard>
   );
 }
+
+
+

@@ -1,9 +1,9 @@
-ï»¿'use client';
+'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useTipsResumen } from '@/hooks/personal/useTips';
+import { useTipsResumen } from '@/hooks/personal';
 import PropinasDetalleModal from '@/components/propinas/PropinasDetalleModal';
 import { PropinaResumen } from '@/types/propina';
 import TipsTable from '@/components/propinas/TipsTable';
@@ -47,7 +47,7 @@ export default function TipsPage() {
     }
   };
 
-  // Filtrar y ordenar datos por tÃ©rmino de bÃºsqueda
+  // Filtrar y ordenar datos por término de búsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
 
@@ -84,7 +84,7 @@ export default function TipsPage() {
     });
   }, [tipsCajaActiva, searchTerm]);
 
-  // Calcular estadÃ­sticas
+  // Calcular estadísticas
   const stats = useMemo(() => {
     if (!filteredTips) {
       return {
@@ -114,7 +114,7 @@ export default function TipsPage() {
     };
   }, [filteredTips, filteredTipsCajaActiva]);
 
-  // FunciÃ³n para formatear moneda
+  // Función para formatear moneda
   const formatCurrency = (n: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -137,7 +137,7 @@ export default function TipsPage() {
     });
   }, [filteredTips, activeTab]);
 
-  // PaginaciÃ³n
+  // Paginación
   const tabPaginatedTips = tabFilteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const totalPages = Math.ceil(tabFilteredTips.length / rowsPerPage) || 1;
 
@@ -176,7 +176,7 @@ export default function TipsPage() {
             </div>
           </div>
 
-          {/* EstadÃ­sticas */}
+          {/* Estadísticas */}
           <TipsStatsCards
             totalTips={stats.totalTips}
             totalUsuarios={stats.totalUsuarios}
@@ -266,3 +266,4 @@ export default function TipsPage() {
     </PermissionGuard>
   );
 }
+

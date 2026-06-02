@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import { useGenericFetch } from '@/hooks/shared';
 import {
   Table,
   TableBody,
@@ -84,14 +84,14 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
       <div className='space-y-8 max-h-[70vh] overflow-y-auto pr-2 px-1 pb-10'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b dark:border-gray-800'>
           <div className='space-y-3'>
-            <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>InformaciÃ³n Personal</h3>
+            <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>Información Personal</h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <div>
                 <p className='text-xs text-gray-500 mb-1'>RUN</p>
                 <p className='font-medium text-sm'>{client.run || 'No especificado'}</p>
               </div>
               <div>
-                <p className='text-xs text-gray-500 mb-1'>TelÃ©fono</p>
+                <p className='text-xs text-gray-500 mb-1'>Teléfono</p>
                 <p className='font-medium text-sm'>{client.phone || 'No especificado'}</p>
               </div>
               <div>
@@ -195,7 +195,7 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                       </TableCell>
                       <TableCell>
                         <div className='text-[10px] space-y-0.5 text-gray-500 dark:text-gray-400'>
-                          <p><span className='font-semibold text-gray-700 dark:text-gray-300'>ProcesÃ³:</span> {item.atendido_por}</p>
+                          <p><span className='font-semibold text-gray-700 dark:text-gray-300'>Procesó:</span> {item.atendido_por}</p>
                           {item.mesero && <p><span className='font-semibold text-gray-700 dark:text-gray-300'>Mesero:</span> {item.mesero}</p>}
                         </div>
                       </TableCell>
@@ -235,3 +235,4 @@ export function ClientDetailsModal({ isOpen, onOpenChange, client }: ClientDetai
     </Dialog>
   );
 }
+

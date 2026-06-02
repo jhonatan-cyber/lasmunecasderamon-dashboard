@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNewSaleForm } from '@/hooks/ventas/useNewSaleForm';
 import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
 import CategoryCardList from '@/components/shared/CategoryCardList';
@@ -12,7 +12,7 @@ import { NewSaleSearch } from '@/components/sales/new/NewSaleSearch';
 import { NewSaleConfiguration } from '@/components/sales/new/NewSaleConfiguration';
 import { NewSaleCart } from '@/components/sales/new/NewSaleCart';
 import { NewSaleSummary } from '@/components/sales/new/NewSaleSummary';
-import logger from '@/lib/utils/logger';
+import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 
 export default function NewSale() {
   const {
@@ -51,54 +51,18 @@ export default function NewSale() {
     commissionTotal
   } = useNewSaleForm();
 
-  // Estados locales para datos externos y modales
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
-  const [habitaciones, setHabitaciones] = useState<any[]>([]);
-  const [categoriasConProductos, setCategoriasConProductos] = useState<any[]>([]);
   const [hasOpenCaja, setHasOpenCaja] = useState<boolean | null>(null);
-  const [loadingCategorias, setLoadingCategorias] = useState(true);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [modalCategoria, setModalCategoria] = useState<any>(null);
   const [productosCategoria, setProductosCategoria] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
 
-  // Fetch de datos maestros
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [c, a, h, cat] = await Promise.all([
-          fetch('/api/clients').then(r => r.json()),
-          fetch('/api/users?anfitrionas=1&status=active&loggedIn=1&enLocal=1').then(r => r.json()),
-          fetch('/api/rooms').then(r => r.json()),
-          fetch('/api/categories').then(r => r.json())
-        ]);
-        setClientes(c.data || []);
-        if (a.success) setAnfitrionas(a.data);
-        if (h.success) setHabitaciones(h.data);
-        if (cat.success) {
-          setCategoriasConProductos(
-            cat.data.map((cat: any) => ({
-              ...cat,
-              productCount: cat.total_products || 0,
-              id_categoria: cat.id,
-              nombre: cat.name || cat.nombre,
-              estado: cat.status
-            }))
-          );
-        }
-      } catch (error) {
-        logger.captureException(error, { context: 'SalesNew:createSale' });
-      } finally {
-        setLoadingCategorias(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const { clients: clientes, anfitrionas, rooms: habitaciones, categories, isLoading: loadingCategorias, refreshAll } = useMasterData();
+  useRefreshOnFocus(refreshAll, { immediate: false });
 
-  const categoriasFiltradas = categoriasConProductos.filter(
-    cat => cat?.estado === 1 && (cat?.productCount || 0) > 0
+  const categoriasFiltradas = useMemo(
+    () => categories.filter(cat => cat?.estado === 1 && (cat?.productCount || 0) > 0),
+    [categories]
   );
 
   const handleOpenCategoria = async (cat: any) => {

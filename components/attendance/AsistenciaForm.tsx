@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,9 @@ import { useForm } from 'react-hook-form';
 import { getTodayDateKey, getCurrentTimeKey } from '@/lib/utils/calendarUtils';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import UserSelect from '@/components/shared/selects/UserSelect';
+import { UserSelect } from '@/components/shared/selects';
 import { ORDER_FIELD_INPUT_CLASS } from '@/components/orders/orderFieldStyles';
+import { useRefreshOnFocus } from '@/hooks/shared';
 
 interface AsistenciaFormProps {
   isOpen?: boolean;
@@ -40,12 +41,6 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
     }
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchUsers();
-    }
-  }, [isOpen]);
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -61,6 +56,8 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
       setLoading(false);
     }
   };
+
+  useRefreshOnFocus(fetchUsers, { enabled: Boolean(isOpen) });
 
   const handleSubmit = async (data: any) => {
     if (!data.usuario_id) {
@@ -99,7 +96,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
         toast.error(result.message || 'Error al registrar asistencia');
       }
     } catch (error) {
-      toast.error('Error de conexión');
+      toast.error('Error de conexiÃ³n');
     } finally {
       setSubmitting(false);
     }
@@ -225,3 +222,5 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
     </Dialog>
   );
 }
+
+

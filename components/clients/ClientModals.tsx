@@ -4,7 +4,7 @@ import { ClientFormModal } from './ClientFormModal';
 import { ClientDetailsModal } from './ClientDetailsModal';
 import { PrepagoModal } from './PrepagoModal';
 import { Client } from '@/types/client';
-import { type ClientFormValues } from '@/hooks/personal/useClientForm';
+import { type ClientFormValues } from '@/hooks/personal';
 
 interface ClientModalsProps {
   isFormModalOpen: boolean;
@@ -101,3 +101,4 @@ export function ClientModals({
     </>
   );
 }
+

@@ -21,7 +21,7 @@ import {
   formatSoloFecha,
   formatSoloHora
 } from '@/lib/utils/formatters';
-import { useTipsDetalle } from '@/hooks/personal/useTips';
+import { useTipsDetalle } from '@/hooks/personal';
 import { PropinaResumen } from '@/types/propina';
 
 interface PropinasDetalleModalProps {
@@ -203,3 +203,4 @@ export default function PropinasDetalleModal({
     </Dialog>
   );
 }
+

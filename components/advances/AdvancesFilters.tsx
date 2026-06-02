@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AdvancesFiltersProps {
@@ -43,7 +43,7 @@ export default function AdvancesFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end w-full'>
-          {/* Búsqueda */}
+          {/* BÃºsqueda */}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               {isAdmin ? 'Filtrar por Usuario' : 'Filtrar por Detalle'}
@@ -77,16 +77,16 @@ export default function AdvancesFilters({
               value={sortBy}
               onChange={setSortBy}
               label='Ordenar por'
-              placeholder='Creación'
+              placeholder='CreaciÃ³n'
               options={[
-                { value: 'fecha_crea', label: 'Creación' },
+                { value: 'fecha_crea', label: 'CreaciÃ³n' },
                 { value: 'monto', label: 'Monto' },
                 { value: 'usuario', label: 'Usuario' }
               ]}
             />
           </div>
 
-          {/* Botón de ordenamiento */}
+          {/* BotÃ³n de ordenamiento */}
           <div className='flex items-end'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               &nbsp;
@@ -121,7 +121,7 @@ export default function AdvancesFilters({
             />
           </div>
 
-          {/* Botón Limpiar con ícono trash */}
+          {/* BotÃ³n Limpiar con Ã­cono trash */}
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
@@ -144,3 +144,5 @@ export default function AdvancesFilters({
     </Card>
   );
 }
+
+

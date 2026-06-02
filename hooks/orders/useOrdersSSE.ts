@@ -1,4 +1,4 @@
-import { useSSE } from '@/hooks/shared/useSSE';
+import { useSSE } from '@/hooks/shared';
 
 interface OrderUpdateData {
   type: 'order-processed' | 'order-deleted' | 'order-created';
@@ -46,3 +46,4 @@ export function useOrdersSSE(onOrderUpdate: (data: OrderUpdateData) => void) {
 
   return null;
 }
+

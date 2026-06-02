@@ -25,13 +25,15 @@ import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { toast } from 'sonner';
 
 // Componentes Refactorizados
-import { OrdersHeader } from '@/components/orders/list/OrdersHeader';
-import { OrdersStats } from '@/components/orders/list/OrdersStats';
-import { AdminOrdersFilters } from '@/components/orders/list/OrdersFilters';
-import { OrderCard } from '@/components/orders/list/OrderCard';
-import { ServiceRequestCard } from '@/components/orders/list/ServiceRequestCard';
+import {
+  OrdersHeader,
+  OrdersStats,
+  AdminOrdersFilters,
+  OrderCard,
+  ServiceRequestCard
+} from '@/components/orders/list';
 
-const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
+const OrderDetailModal = dynamic(() => import('@/components/orders').then(mod => mod.OrderDetailModal), {
   loading: () => null,
   ssr: false
 });

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
+import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useState, useMemo, useCallback, memo } from 'react';
 
@@ -279,4 +279,5 @@ export function TimerDisplay() {
     </>
   );
 }
+
 

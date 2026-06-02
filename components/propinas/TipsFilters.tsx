@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TipsFiltersProps {
@@ -42,7 +42,7 @@ export default function TipsFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end w-full'>
-          {/* Búsqueda */}
+          {/* BÃºsqueda */}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Buscar
@@ -66,12 +66,12 @@ export default function TipsFilters({
                 { value: 'nombre_completo', label: 'Nombre' },
                 { value: 'nick', label: 'Nick' },
                 { value: 'total_propinas', label: 'Total propinas' },
-                { value: 'fecha_crea', label: 'Última propina' }
+                { value: 'fecha_crea', label: 'Ãšltima propina' }
               ]}
             />
           </div>
 
-          {/* Botón de ordenamiento */}
+          {/* BotÃ³n de ordenamiento */}
           <div className='flex items-end'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               &nbsp;
@@ -108,7 +108,7 @@ export default function TipsFilters({
             />
           </div>
 
-          {/* Botón Limpiar con ícono trash */}
+          {/* BotÃ³n Limpiar con Ã­cono trash */}
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
@@ -131,3 +131,5 @@ export default function TipsFilters({
     </Card>
   );
 }
+
+

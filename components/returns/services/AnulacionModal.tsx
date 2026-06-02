@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ServicioWithDetails } from '@/types/servicio';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useServiceAnulacionForm } from '@/hooks/personal/useServiceAnulacionForm';
+import { useServiceAnulacionForm } from '@/hooks/personal';
 
 interface AnulacionModalProps {
   open: boolean;
@@ -101,3 +101,4 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
     </Dialog>
   );
 }
+

@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -6,14 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import SaleProductModal from '@/components/sales/SaleProductModal';
-import ProductSearch from '@/components/cuentas/filters/ProductSearch';
+import { ProductSearch } from '@/components/cuentas';
 import { ProductCartTable } from '../tables/ProductCartTable';
 import { CartSummary } from '../stats/CartSummary';
-import { useProductCart } from '@/hooks/shared/useProductCart';
+import { useProductCart } from '@/hooks/shared';
+import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 import { useCuentaDetail } from '@/hooks/cuentas';
 import { useTimer } from '@/contexts/TimerContext';
-import RoomSelect from '@/components/shared/selects/RoomSelect';
-import TimeSelect from '@/components/shared/selects/TimeSelect';
+import { RoomSelect } from '@/components/shared/selects';
+import { TimeSelect } from '@/components/shared/selects';
 import { Badge } from '@/components/ui/badge';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import logger from '@/lib/utils/logger';
@@ -54,29 +55,27 @@ export default function AgregarProductosModal({
   onProductosAgregados
 }: AgregarProductosModalProps) {
   const cuentaIdStr = cuentaId ? String(cuentaId) : null;
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loadingAgregar, setLoadingAgregar] = useState(false);
-  const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
   const [champagneHostessSelections, setChampagneHostessSelections] = useState<{
     [key: string]: string[];
   }>({});
   const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{
     [key: string]: string[];
   }>({});
-  const [habitaciones, setHabitaciones] = useState<any[]>([]);
   const [habitacionId, setHabitacionId] = useState<string>('');
   const [tiempo, setTiempo] = useState<string>('60');
 
-  // Estados para el modal de productos
   const [modalCategoria, setModalCategoria] = useState<Categoria | null>(null);
   const [productosCategoria, setProductosCategoria] = useState<Producto[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
   const { cuenta: cuentaActual } = useCuentaDetail(cuentaIdStr, open);
+  const { categories: categorias, anfitrionas, rooms: habitaciones, refreshAll } =
+    useMasterData();
   const { startTimer, getTimerByServicioId } = useTimer();
 
-  // Hook del carrito
   const {
     productos: productosCarrito,
     cantidades,
@@ -89,80 +88,16 @@ export default function AgregarProductosModal({
   } = useProductCart();
 
   useEffect(() => {
-    if (open) {
-      fetchCategorias();
-      fetchAnfitrionas();
-      fetchHabitaciones();
-    }
-  }, [open]);
-
-  // Preseleccionar habitación de la cuenta cuando está disponible
-  useEffect(() => {
     if (cuentaActual?.habitacion_id) {
       setHabitacionId(String(cuentaActual.habitacion_id));
     }
   }, [cuentaActual?.habitacion_id]);
 
-  const fetchHabitaciones = useCallback(async () => {
-    try {
-      const response = await fetch('/api/rooms');
-      const data = await response.json();
-      if (data.success) {
-        setHabitaciones(data.data);
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'AgregarProductosModal:fetchHabitaciones' });
-    }
-  }, []);
+  useRefreshOnFocus(refreshAll, { enabled: open, immediate: false });
 
-  // Check if any product in cart requires room/time selection (>=30000)
   const requiresRoomTimeSelection = useMemo(() => {
-    return productosCarrito.some(p => {
-      const precio = Number(p.precio || 0);
-      return precio >= 30000;
-    });
+    return productosCarrito.some(p => Number(p.precio || 0) >= 30000);
   }, [productosCarrito]);
-
-  const fetchAnfitrionas = useCallback(async () => {
-    try {
-      const response = await fetch('/api/users?anfitrionas=1&status=active&loggedIn=1&enLocal=1');
-      const data = await response.json();
-      if (data.success) {
-        setAnfitrionas(data.data);
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'AgregarProductosModal:fetchAnfitrionas' });
-    }
-  }, []);
-
-  const fetchCategorias = useCallback(async () => {
-    try {
-      const response = await fetch('/api/categories');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          await loadCategoriasConProductos(data.data);
-        }
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'AgregarProductosModal:fetchCategorias' });
-      toast.error('Error al cargar categorías');
-    }
-  }, []);
-
-  const loadCategoriasConProductos = useCallback(async (categoriasData: any[]) => {
-    const categoriasConConteo = categoriasData.map(cat => {
-      const productCount = cat.total_products || 0;
-      return {
-        ...cat,
-        productCount,
-        id_categoria: cat.id,
-        nombre: cat.name || cat.nombre,
-        estado: cat.status
-      };
-    });
-    setCategorias(categoriasConConteo);
-  }, []);
 
   const handleOpenCategoria = useCallback(async (cat: Categoria) => {
     setModalCategoria(cat);
@@ -198,11 +133,8 @@ export default function AgregarProductosModal({
       return;
     }
 
-    // Validar selección de habitación y tiempo si productos >= 30000
     if (requiresRoomTimeSelection && (!habitacionId || !tiempo)) {
-      toast.error(
-        'Debes seleccionar habitación y tiempo para productos con precio mayor a $30.000'
-      );
+      toast.error('Debes seleccionar habitacion y tiempo para productos con precio mayor a $30.000');
       return;
     }
 
@@ -252,16 +184,12 @@ export default function AgregarProductosModal({
       const hasActiveTimer = cuentaIdStr ? Boolean(getTimerByServicioId(cuentaIdStr)) : false;
       const shouldStartTimer = hasTimedAccountContext && hasHostessProducts && !hasActiveTimer;
 
-      const payload: Record<string, unknown> = {
-        detalles
-      };
+      const payload: Record<string, unknown> = { detalles };
 
       if (mergedHostessIds.length > 0) {
         payload.usuarios = mergedHostessIds;
       }
 
-      // Si productos >= 30000, usar la habitación y tiempo seleccionados en el modal
-      // Solo activar timer si tiempo > 0
       if (requiresRoomTimeSelection && habitacionId) {
         payload.habitacion_id = habitacionId;
         payload.tiempo = Number(tiempo);
@@ -279,9 +207,8 @@ export default function AgregarProductosModal({
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
 
-        // Solo iniciar timer si tiempo > 0 y hay productos con anfitrionas
         const tiempoNum = Number(tiempo);
         const shouldStartNewTimer =
           requiresRoomTimeSelection &&
@@ -362,12 +289,11 @@ export default function AgregarProductosModal({
             </div>
           </DialogHeader>
 
-          {/* Info de la cuenta actual */}
           {cuentaActual && (
-            <div className='mx-6 mt-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border'>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+            <div className='mx-6 mt-4 rounded-lg border bg-slate-50 p-4 dark:bg-slate-800'>
+              <div className='grid grid-cols-2 gap-4 text-sm md:grid-cols-4'>
                 <div>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>Código:</span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>Codigo:</span>{' '}
                   <span className='font-semibold'>{cuentaActual.codigo}</span>
                 </div>
                 <div>
@@ -377,9 +303,11 @@ export default function AgregarProductosModal({
                   </span>
                 </div>
                 <div>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>Habitación:</span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>
+                    Habitacion:
+                  </span>{' '}
                   <span className='font-semibold'>
-                    {cuentaActual.habitacion_numero || 'Sin habitación'}
+                    {cuentaActual.habitacion_numero || 'Sin habitacion'}
                   </span>
                 </div>
                 <div>
@@ -389,7 +317,9 @@ export default function AgregarProductosModal({
               </div>
               {cuentaActual.usuarios && cuentaActual.usuarios.length > 0 && (
                 <div className='mt-2 text-sm'>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>Anfitrionas:</span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>
+                    Anfitrionas:
+                  </span>{' '}
                   <span className='font-semibold'>
                     {cuentaActual.usuarios
                       .map((u: any) => u.usuario_nombre || u.nick)
@@ -403,7 +333,6 @@ export default function AgregarProductosModal({
 
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-6'>
-              {/* Tabla de búsqueda - Contenedor independiente */}
               <div className='w-full'>
                 <ProductSearch
                   onAddProduct={agregarProducto}
@@ -415,7 +344,6 @@ export default function AgregarProductosModal({
                 />
               </div>
 
-              {/* Categorías */}
               <CategoryCardList
                 categorias={categorias}
                 onSelect={handleOpenCategoria}
@@ -423,15 +351,14 @@ export default function AgregarProductosModal({
                 filter={c => c.estado === 1 && (c.productCount || 0) > 0}
               />
 
-              {/* Selección de Habitación y Tiempo - solo si hay productos >= 30000 */}
               {requiresRoomTimeSelection && (
                 <div className='grid grid-cols-2 gap-4'>
                   <RoomSelect
                     habitaciones={habitaciones}
                     value={habitacionId}
                     onChange={setHabitacionId}
-                    label='Habitación'
-                    placeholder='Seleccionar habitación'
+                    label='Habitacion'
+                    placeholder='Seleccionar habitacion'
                     filterByStatus={1}
                   />
                   <TimeSelect
@@ -451,10 +378,8 @@ export default function AgregarProductosModal({
                 loading={loadingAgregar}
               />
 
-              {/* Detalles Producto */}
               <div className='text-center text-sm text-gray-600'>Detalles Producto</div>
 
-              {/* Tabla de productos */}
               <ProductCartTable
                 productos={productosCarrito}
                 onUpdateQuantity={actualizarCantidad}
@@ -466,7 +391,6 @@ export default function AgregarProductosModal({
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Productos */}
       <SaleProductModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -490,3 +414,6 @@ export default function AgregarProductosModal({
     </>
   );
 }
+
+
+

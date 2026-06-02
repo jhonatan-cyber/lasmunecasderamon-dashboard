@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, DollarSign, Calendar } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -95,7 +95,7 @@ export default function CajeroPropinasPage() {
       <div className='p-6 flex items-center justify-center min-h-screen'>
         <div className='text-center'>
           <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
-          <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
+          <p className='text-gray-600'>No tienes permisos para acceder a esta pÃ¡gina.</p>
         </div>
       </div>
     );
@@ -133,13 +133,13 @@ export default function CajeroPropinasPage() {
     }
   });
 
-  // Paginación
+  // PaginaciÃ³n
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedTips = sortedTips.slice(startIndex, endIndex);
   const totalPages = Math.ceil(sortedTips.length / rowsPerPage);
 
-  // Cálculos
+  // CÃ¡lculos
   const totalToCollect = tips
     .filter(tip => tip.estado === 1)
     .reduce((sum, tip) => sum + (tip.monto || 0), 0);
@@ -162,7 +162,7 @@ export default function CajeroPropinasPage() {
   };
 
   const renderFechaPago = (tip: Tip) => {
-    // Si está por cobrar, mostrar badge aunque venga una fecha
+    // Si estÃ¡ por cobrar, mostrar badge aunque venga una fecha
     if (tip.estado === 1) {
       return (
         <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
@@ -170,7 +170,7 @@ export default function CajeroPropinasPage() {
         </span>
       );
     }
-    // Si está cobrado y hay fecha, mostrarla; de lo contrario, guion
+    // Si estÃ¡ cobrado y hay fecha, mostrarla; de lo contrario, guion
     if (tip.propina_fecha_crea) {
       const pagoDate = formatDateTimeDmyLabel(tip.propina_fecha_crea);
       return (
@@ -180,7 +180,7 @@ export default function CajeroPropinasPage() {
         </div>
       );
     }
-    return '—';
+    return 'â€”';
   };
 
   return (
@@ -199,7 +199,7 @@ export default function CajeroPropinasPage() {
           className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
         >
           <ArrowLeft className='w-4 h-4 mr-2' />
-          Atrás
+          AtrÃ¡s
         </Button>
       </div>
 
@@ -241,7 +241,7 @@ export default function CajeroPropinasPage() {
         />
       </div>
 
-      {/* Selector de filas por página */}
+      {/* Selector de filas por pÃ¡gina */}
       <div className='flex justify-between items-center'>
         <SelectElements
           value={rowsPerPage}
@@ -250,10 +250,10 @@ export default function CajeroPropinasPage() {
             setCurrentPage(1);
           }}
           options={[
-            { value: 5, label: '5 por página' },
-            { value: 10, label: '10 por página' },
-            { value: 20, label: '20 por página' },
-            { value: 50, label: '50 por página' }
+            { value: 5, label: '5 por pÃ¡gina' },
+            { value: 10, label: '10 por pÃ¡gina' },
+            { value: 20, label: '20 por pÃ¡gina' },
+            { value: 50, label: '50 por pÃ¡gina' }
           ]}
         />
       </div>
@@ -296,7 +296,7 @@ export default function CajeroPropinasPage() {
                           </div>
                         </td>
                         <td className='py-3 px-4 text-gray-900'>
-                          {tip.codigo_venta || 'Sin código'}
+                          {tip.codigo_venta || 'Sin cÃ³digo'}
                         </td>
                         <td className='py-3 px-4 text-gray-900'>{formatCurrencyCLP(tip.monto)}</td>
                         <td className='py-3 px-4'>
@@ -317,7 +317,7 @@ export default function CajeroPropinasPage() {
         </CardContent>
       </Card>
 
-      {/* Paginación */}
+      {/* PaginaciÃ³n */}
       {totalPages > 1 && (
         <div className='flex justify-center'>
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
@@ -326,3 +326,5 @@ export default function CajeroPropinasPage() {
     </div>
   );
 }
+
+
