@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo } from 'react';
 import { Wallet, Loader2, User, CreditCard, DollarSign, Split, Trash2, Plus } from 'lucide-react';
@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
+import { PaymentMethodSelect } from '@/components/shared/selects';
 import { metodoPagoLabels } from '@/lib/business/salesUtils';
 import { formatCurrencyCLP, formatNumberInput, parseNumberInput } from '@/lib/utils/formatters';
 import { Client } from '@/types/client';
@@ -251,7 +251,7 @@ function PrepagoForm({
           />
         </div>
         <p className='text-[10px] text-gray-500 dark:text-gray-400'>
-          * El monto se sumará inmediatamente al saldo disponible del cliente.
+          * El monto se sumarÃ¡ inmediatamente al saldo disponible del cliente.
         </p>
       </div>
 
@@ -378,3 +378,5 @@ export function PrepagoModal({
 }
 
 export { PrepagoForm };
+
+

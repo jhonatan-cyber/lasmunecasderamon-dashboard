@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bed, DollarSign, Clock } from 'lucide-react';
 import { Room } from '@/types/room';
-import { useRoomForm, type RoomFormValues } from '@/hooks/personal/useRoomForm';
+import { useRoomForm, type RoomFormValues } from '@/hooks/personal';
 
 interface RoomFormProps {
   open: boolean;
@@ -72,3 +72,4 @@ export function RoomForm({ open, onSubmit, onCancel, initialValues, isLoading, h
     </form>
   );
 }
+

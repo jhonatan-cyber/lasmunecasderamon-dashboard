@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { RoomForm } from './RoomForm';
 import { Room } from '@/types/room';
-import { RoomFormValues } from '@/hooks/personal/useRoomForm';
+import { RoomFormValues } from '@/hooks/personal';
 
 interface RoomFormDialogProps {
   open: boolean;
@@ -86,3 +86,4 @@ export function RoomFormDialog({
     </Dialog>
   );
 }
+

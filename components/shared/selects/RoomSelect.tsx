@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Home } from 'lucide-react';
+import { Clock3, Home } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
   ORDER_FIELD_LABEL_CLASS,
@@ -42,6 +42,7 @@ interface RoomSelectProps {
   showTime?: boolean;
   filterByStatus?: number;
   includeRoomIds?: Array<string>;
+  requireCompleteConfig?: boolean;
 }
 
 const RoomSelect: React.FC<RoomSelectProps> = ({
@@ -58,7 +59,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   showPrice = false,
   showTime = false,
   filterByStatus,
-  includeRoomIds = []
+  includeRoomIds = [],
+  requireCompleteConfig = false
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,17 +82,19 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     return formatCurrencyCLP(price);
   };
 
+  const hasCompleteRoomConfig = (habitacion: Habitacion) => {
+    const price = Number(habitacion.precio ?? habitacion.price ?? 0);
+    const time = Number(habitacion.tiempo ?? habitacion.time ?? 0);
+
+    return price > 0 && time > 0;
+  };
+
   const getHabitacionDisplayName = (habitacion: Habitacion) => {
     const nombre = habitacion?.nombre || habitacion?.name || '';
     const numero = habitacion?.numero || '';
     const displayName = nombre || numero;
 
     let result = displayName;
-
-    if (showTime && (habitacion.tiempo || habitacion.time)) {
-      const tiempo = habitacion.tiempo || habitacion.time || 0;
-      result += ` (${formatTime(tiempo)})`;
-    }
 
     if (showPrice && (habitacion.precio || habitacion.price)) {
       const precio = habitacion.precio || habitacion.price || 0;
@@ -119,6 +123,10 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
       });
     }
 
+    if (requireCompleteConfig) {
+      filtered = filtered.filter(hasCompleteRoomConfig);
+    }
+
     if (!searchTerm) return filtered;
 
     return filtered.filter(habitacion => {
@@ -128,7 +136,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
       return nombre.includes(searchLower) || numero.includes(searchLower);
     });
-  }, [habitaciones, searchTerm, filterByStatus, includeRoomIds]);
+  }, [habitaciones, searchTerm, filterByStatus, includeRoomIds, requireCompleteConfig]);
 
   const displayHabitaciones = (() => {
     if (!value) return filteredHabitaciones;
@@ -251,6 +259,12 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                   <span className={isOcupada ? 'text-gray-400' : 'text-gray-700'}>
                     {displayName || 'Sin nombre'}
                   </span>
+                  {showTime && (habitacion.tiempo || habitacion.time) ? (
+                    <span className='flex items-center gap-1 text-xs font-medium text-gray-500'>
+                      <Clock3 className='h-3.5 w-3.5' />
+                      {formatTime(habitacion.tiempo || habitacion.time || 0)}
+                    </span>
+                  ) : null}
                   {isOcupada ? (
                     <span className='text-xs font-medium text-red-500'>OCUPADA</span>
                   ) : isSelected ? (

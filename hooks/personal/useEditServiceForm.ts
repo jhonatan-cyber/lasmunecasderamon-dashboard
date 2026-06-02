@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
-import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
+import { useAnfitrionas } from '@/hooks/personal';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
-import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
-import { useServicePricing } from '@/hooks/shared/useServicePricing';
+import { useNumberFormatter } from '@/hooks/shared';
+import { useServicePricing } from '@/hooks/shared';
 import logger from '@/lib/utils/logger';
 
 interface UseEditServiceFormProps {
@@ -398,3 +398,5 @@ export function useEditServiceForm({
     numAnfitrionasOriginal: numAnfitrionas
   };
 }
+
+

@@ -14,8 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
-import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
+import { useAnfitrionas } from '@/hooks/personal';
 import { useTimer } from '@/contexts/TimerContext';
+import { useRefreshOnFocus } from '@/hooks/shared';
+import { useAvailableRooms } from '@/hooks/habitaciones';
 
 interface ServiceRequestModalProps {
   open: boolean;
@@ -31,46 +33,35 @@ export function ServiceRequestModal({
   onProcessed
 }: ServiceRequestModalProps) {
   const { anfitrionas } = useAnfitrionas(false);
+  const { rooms: availableRooms, refetchRooms } = useAvailableRooms();
   const { startTimer } = useTimer();
 
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [isRoomAvailable, setIsRoomAvailable] = useState(true);
   const [selectedRoomId, setSelectedRoomId] = useState<number | ''>('');
 
-  // Cargar disponibilidad de habitaciones al abrir el modal
-  const loadRoomAvailability = useCallback(async (sol: any) => {
-    try {
-      const response = await fetch('/api/rooms?status=1');
-      const data = await response.json();
-      if (data.success) {
-        const rooms = data.data || [];
-        setAvailableRooms(rooms);
-        const currentRoomId = sol?.habitacion_id;
-        const currentIsAvailable = rooms.some(
-          (r: any) => (r.id_habitacion || r.id) === currentRoomId
-        );
-        setIsRoomAvailable(currentIsAvailable);
-        setSelectedRoomId(currentIsAvailable ? currentRoomId : '');
-      } else {
-        setAvailableRooms([]);
-        setIsRoomAvailable(true);
-        setSelectedRoomId(sol?.habitacion_id || '');
+  useRefreshOnFocus(
+    async () => {
+      if (open && solicitud) {
+        await refetchRooms();
+        setRejectReason('');
       }
-    } catch {
-      setAvailableRooms([]);
-      setIsRoomAvailable(true);
-      setSelectedRoomId(sol?.habitacion_id || '');
-    }
-  }, []);
+    },
+    { enabled: open && Boolean(solicitud) }
+  );
 
   useEffect(() => {
-    if (open && solicitud) {
-      setRejectReason('');
-      loadRoomAvailability(solicitud);
-    }
-  }, [open, solicitud, loadRoomAvailability]);
+    if (!solicitud) return;
+
+    const currentRoomId = solicitud?.habitacion_id;
+    const currentIsAvailable = availableRooms.some(
+      (r: any) => String(r.id_habitacion || r.id) === String(currentRoomId)
+    );
+
+    setIsRoomAvailable(currentIsAvailable);
+    setSelectedRoomId(currentIsAvailable ? currentRoomId : '');
+  }, [availableRooms, solicitud]);
 
   const getAnfitrionasNicks = (ids: any): string => {
     let finalIds = ids;
@@ -314,3 +305,4 @@ export function ServiceRequestModal({
     </Dialog>
   );
 }
+

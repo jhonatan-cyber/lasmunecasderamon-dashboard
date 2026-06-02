@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useEmployees } from '@/hooks/personal/useEmployees';
+import { useEmployees } from '@/hooks/personal';
 import { formatNumberCL } from '@/lib/utils/formatters';
 
 interface UseOvertimeFormProps {
@@ -44,3 +44,4 @@ export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
     handleSubmit,
   };
 }
+

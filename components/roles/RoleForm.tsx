@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useRoleForm, type RoleFormValues } from '@/hooks/personal/useRoleForm';
+import { useRoleForm, type RoleFormValues } from '@/hooks/personal';
 
 interface RoleFormProps {
   isEditMode: boolean;
@@ -44,3 +44,4 @@ export function RoleForm({ isEditMode, initialValues, open, isLoading, onSubmit,
     </form>
   );
 }
+

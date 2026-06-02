@@ -1,7 +1,7 @@
-﻿import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Timer, saveTimersToStorage, loadTimersFromStorage } from '@/contexts/TimerContext';
 import { parseDateSafe, calculateRemainingTime } from '@/lib/utils/timeUtils';
-import { useSSE } from '@/hooks/shared/useSSE';
+import { useSSE } from '@/hooks/shared';
 import { batch } from '@preact/signals-react';
 
 import logger from '@/lib/utils/logger';
@@ -11,11 +11,11 @@ interface TimerSyncProps {
   isInitialized: boolean;
   setIsInitialized: (val: boolean) => void;
   onTimerStopped?: (servicioId: string) => void;
-  setServerOffset: (offset: number) => void; // Aún lo pasamos para sync interno
+  setServerOffset: (offset: number) => void; // Aun lo pasamos para sync interno
 }
 
 /**
- * Hook que gestiona la sincronización de timers con la DB (via REST/SSE)
+ * Hook que gestiona la sincronizacion de timers con la DB (via REST/SSE)
  * y la persistencia en localStorage.
  */
 export function useTimerSync({
@@ -31,7 +31,7 @@ export function useTimerSync({
   useEffect(() => {
     if (isInitialized) {
       const timers = activeTimers.value.map(t => t.toPlainObject());
-      // Limpiar duplicados por servicioId (cada timer es único)
+      // Limpiar duplicados por servicioId (cada timer es unico)
       const unique = timers.filter(
         (t, i, self) => i === self.findIndex(x => x.servicioId === t.servicioId)
       );
@@ -40,7 +40,7 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTimers.value, isInitialized]);
 
-  // --- SINCRONIZACIÓN INICIAL ---
+  // --- SINCRONIZACION INICIAL ---
   useEffect(() => {
     if (initialSyncExecutedRef.current) return;
     initialSyncExecutedRef.current = true;
@@ -139,7 +139,7 @@ export function useTimerSync({
       }
     };
 
-    const isPublic = ['/', '/login', '/landing'].includes(window.location.pathname);
+    const isPublic = ['/', '/login'].includes(window.location.pathname);
     if (isPublic) {
       setIsInitialized(true);
       return;
@@ -150,9 +150,9 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- SINCRONIZACIÓN SSE (REAL TIME) ---
+  // --- SINCRONIZACION SSE (REAL TIME) ---
   const sseUrl =
-    typeof window !== 'undefined' && !['/', '/login', '/landing'].includes(window.location.pathname)
+    typeof window !== 'undefined' && !['/', '/login'].includes(window.location.pathname)
       ? '/api/notifications/sse'
       : null;
 
@@ -211,10 +211,10 @@ export function useTimerSync({
         const { servicioId, newStartTime } = payload.data;
         const target = activeTimers.peek().find(t => t.servicioId === servicioId);
         if (target) {
-          // Actualización atómica de la instancia
+          // Actualizacion atomica de la instancia
           target.isPaused.value = false;
-          // Si quisiéramos recalcular startTime, tendríamos que manejarlo en la instancia o el store
-          // pero al ser signals, el tick seguirá restando.
+          // Si quisieramos recalcular startTime, tendriamos que manejarlo en la instancia o el store
+          // pero al ser signals, el tick seguira restando.
         }
         break;
       }
@@ -231,7 +231,7 @@ export function useTimerSync({
           );
           const remaining = Math.max(0, dur * 60 - elapsed);
 
-          // ACTUALIZACIÓN QUIRÚRGICA: Solo los valores, sin tocar el array
+          // ACTUALIZACION QUIRURGICA: Solo los valores, sin tocar el array
           batch(() => {
             target.patch({
               duration: dur,
@@ -257,7 +257,7 @@ export function useTimerSync({
         const res = await fetch('/api/timers/active?source=poll');
         const data = await res.json();
         if (data.success) {
-          // Lógica de merge simplificada:
+          // Logica de merge simplificada:
           // 1. Agregar faltantes 2. Actualizar estados divergentes 3. Remover expirados
           const dbIds = new Set(data.data.map((t: any) => t.servicioId));
           activeTimers.value = activeTimers
@@ -274,3 +274,4 @@ export function useTimerSync({
     return () => clearInterval(interval);
   }, [isInitialized]);
 }
+

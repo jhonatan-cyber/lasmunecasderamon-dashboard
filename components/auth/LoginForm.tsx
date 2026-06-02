@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Mail, Lock, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -153,9 +153,6 @@ export const LoginForm = ({
               {showPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
             </button>
           </div>
-          <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
-            Si nunca cambiaste tu contraseña, ingresá tu RUT con formato chileno.
-          </p>
         </div>
 
         <Button
@@ -303,3 +300,4 @@ export const LoginForm = ({
     </form>
   );
 };
+

@@ -20,7 +20,7 @@ import {
 import Pagination from '@/components/gratificaciones/Pagination';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import SelectElements from '@/components/shared/SelectElements';
-import { useGratificaciones } from '@/hooks/personal/useGratificaciones';
+import { useGratificaciones } from '@/hooks/personal';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -393,3 +393,4 @@ export default function GratificacionesPage() {
     </div>
   );
 }
+

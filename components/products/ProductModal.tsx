@@ -21,7 +21,7 @@ import Paginate from "@/components/shared/Paginate";
 import { ProductGridCard } from "./ProductGridCard";
 import { ProductTableRow } from "./ProductTableRow";
 import { ProductSelectionTable } from "./ProductSelectionTable";
-import { useProductSelection } from "@/hooks/shared/useProductSelection";
+import { useProductSelection } from "@/hooks/shared";
 
 interface SaleProductModalProps {
   open: boolean;

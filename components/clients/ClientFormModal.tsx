@@ -12,8 +12,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CreditCard, User, FileSignature, Phone } from 'lucide-react';
-import { useClientForm } from '@/hooks/personal/useClientForm';
-import { type ClientFormValues } from '@/hooks/personal/useClientForm';
+import { useClientForm } from '@/hooks/personal';
+import { type ClientFormValues } from '@/hooks/personal';
 import { useState, useEffect } from 'react';
 
 const formatRUT = (value: string): string => {
@@ -278,3 +278,4 @@ export function ClientFormModal({
 }
 
 export { ClientForm };
+

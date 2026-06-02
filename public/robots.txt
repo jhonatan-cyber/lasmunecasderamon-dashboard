@@ -10,8 +10,3 @@ Disallow: /dashboard
 Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
-
-# Allow important pages
-Allow: /
-Allow: /terminos-y-condiciones
-Allow: /politica-de-privacidad

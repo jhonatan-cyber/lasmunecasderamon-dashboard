@@ -1,9 +1,9 @@
-import { Label } from '@/components/ui/label';
+﻿import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import CustomerSelect from '@/components/shared/selects/CustomerSelect';
-import RoomSelect from '@/components/shared/selects/RoomSelect';
-import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
-import TimeSelect from '@/components/shared/selects/TimeSelect';
+import { CustomerSelect } from '@/components/shared/selects';
+import { RoomSelect } from '@/components/shared/selects';
+import { PaymentMethodSelect } from '@/components/shared/selects';
+import { TimeSelect } from '@/components/shared/selects';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Coins } from 'lucide-react';
 
@@ -57,6 +57,7 @@ export const NewSaleConfiguration = ({
               habitaciones={habitaciones}
               value={selectedHabitacion}
               onChange={handleHabitacionChange}
+              requireCompleteConfig={true}
             />
           </div>
           <div className={fieldWrapperClass}>
@@ -115,3 +116,5 @@ export const NewSaleConfiguration = ({
     </div>
   );
 };
+
+

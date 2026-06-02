@@ -1,4 +1,4 @@
-import { useNumberFormatter } from '@/hooks/shared/useNumberFormatter';
+import { useNumberFormatter } from '@/hooks/shared';
 import { Client } from '@/types/client';
 
 interface UsePrepagoFormProps {
@@ -24,3 +24,4 @@ export function usePrepagoForm({ client, onSubmit }: UsePrepagoFormProps) {
 
   return { amount: formattedValue, setAmount, numericAmount, reset, handleSubmit: onSubmit };
 }
+

@@ -1,7 +1,7 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import logger from '@/lib/utils/logger';
 import {
   Dialog,
@@ -11,10 +11,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Coins, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -27,28 +24,21 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
-import RoomSelect from '@/components/shared/selects/RoomSelect';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { useSales } from '@/hooks/caja/useSales';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
 import { formatNumberCL } from '@/lib/utils/formatters';
+import { useRefreshOnFocus } from '@/hooks/shared';
+import { useAvailableRooms } from '@/hooks/habitaciones';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import {
-  ORDER_FIELD_INPUT_CLASS,
-  ORDER_FIELD_INPUT_WITH_ICON_CLASS,
-  ORDER_FIELD_LABEL_CLASS,
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_TRIGGER_CLASS
-} from '@/components/orders/orderFieldStyles';
+  OrderDetailInfoPanel,
+  getOrderRoomId,
+  getOrderRoomName,
+  OrderDetailTotalsSummary,
+  OrderDetailPaymentPanel
+} from '@/components/orders/detail';
+import { useOrderDetailModalState } from '@/hooks/orders/useOrderDetailModalState';
 
 interface OrderDetailModalProps {
   open: boolean;
@@ -73,31 +63,46 @@ export default function OrderDetailModal({
   onVentaRegistrada,
   onOrderStatusChange
 }: OrderDetailModalProps) {
-  const [rooms, setRooms] = useState<any[]>([]);
+  const { rooms, refetchRooms } = useAvailableRooms();
   const { createVenta } = useSales();
   const { startTimer, getTimerByRoomId, formatTime } = useTimer();
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [metodoPago, setMetodoPago] = useState('');
-  const [propina, setPropina] = useState(0);
-  const [habitacionId, setHabitacionId] = useState('');
-  const [tiempoHabitacion, setTiempoHabitacion] = useState(30);
-  const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
-  const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
-  const [agregarPropina, setAgregarPropina] = useState(false);
+  const {
+    state: {
+      isRegistering,
+      metodoPago,
+      propina,
+      habitacionId,
+      tiempoHabitacion,
+      propinaDisplayValue,
+      showMetodoPagoError,
+      agregarPropina,
+      confirmVentaModalOpen
+    },
+    setters: {
+      setIsRegistering,
+      setMetodoPago,
+      setPropina,
+      setHabitacionId,
+      setTiempoHabitacion,
+      setPropinaDisplayValue,
+      setShowMetodoPagoError,
+      setAgregarPropina,
+      setConfirmVentaModalOpen
+    },
+    derived: {
+      maxAnfitrionas,
+      champagneLimit,
+      otherCommissionQuantity,
+      hasChampagneProducts,
+      maxChampagnePrice,
+      anfitrionasFinal,
+      cantidadAnfitrionas,
+      recargoAnfitrionas,
+      habitacionesActivas
+    }
+  } = useOrderDetailModalState({ open, detail, rooms, onClose });
 
-  const [confirmVentaModalOpen, setConfirmVentaModalOpen] = useState(false);
-  const getRoomId = (room: any) => String(room?.id_habitacion ?? room?.id ?? '');
-  const getRoomName = (room: any) => room?.nombre || room?.name || `Habitación ${getRoomId(room)}`;
-
-  useEffect(() => {
-    if (!open) return;
-
-    fetch('/api/rooms')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setRooms(data.data);
-      });
-  }, [open]);
+  useRefreshOnFocus(refetchRooms, { enabled: open });
 
   useEffect(() => {
     const handleCloseOrderModal = (event: CustomEvent) => {
@@ -229,110 +234,12 @@ export default function OrderDetailModal({
     }
   }, [metodoPago, showMetodoPagoError]);
 
-  const isChampagneProduct = (producto: any) => {
-    const categoria = (producto?.categoria || '').toLowerCase();
-    return (
-      categoria.includes('champaña') ||
-      categoria.includes('shampaña') ||
-      categoria.includes('champagne')
-    );
-  };
-
-  const computeHostessLimit = (items: any[]) => {
-    const champagneProducts = items.filter(isChampagneProduct);
-    const otherCommissionProducts = items.filter(
-      p =>
-        !isChampagneProduct(p) &&
-        (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
-    );
-
-    const otherCommissionQuantity = otherCommissionProducts.reduce(
-      (sum, p) => sum + (Number(p.cantidad) || 1),
-      0
-    );
-
-    let champagneLimit = 0;
-    let maxChampagnePrice = 0;
-
-    if (champagneProducts.length > 0) {
-      maxChampagnePrice = Math.max(...champagneProducts.map(p => Number(p.precio || p.price || 0)));
-
-      if (maxChampagnePrice >= 240000) champagneLimit = 5;
-      else if (maxChampagnePrice >= 200000) champagneLimit = 4;
-      else if (maxChampagnePrice >= 140000) champagneLimit = 3;
-      else if (maxChampagnePrice >= 120000) champagneLimit = 2;
-      else champagneLimit = 1;
-    }
-
-    const maxAnfitrionas =
-      champagneProducts.length > 0
-        ? champagneLimit + otherCommissionQuantity
-        : otherCommissionQuantity;
-
-    return {
-      maxAnfitrionas,
-      champagneLimit,
-      otherCommissionQuantity,
-      hasChampagneProducts: champagneProducts.length > 0,
-      maxChampagnePrice
-    };
-  };
-
-  const hostessLimits = computeHostessLimit(detail);
-  const {
-    maxAnfitrionas,
-    champagneLimit,
-    otherCommissionQuantity,
-    hasChampagneProducts,
-    maxChampagnePrice
-  } = hostessLimits;
-
-  const anfitrionasDelPedido =
-    detail[0]?.anfitrionas_con_ids ||
-    detail[0]?.anfitrionas ||
-    detail[0]?.anfitriona ||
-    detail[0]?.usuarios ||
-    detail[0]?.hostesses ||
-    [];
-
-  const anfitrionasArray = Array.isArray(anfitrionasDelPedido)
-    ? anfitrionasDelPedido
-    : anfitrionasDelPedido
-      ? [anfitrionasDelPedido]
-      : [];
-
-  const anfitrionaString = detail[0]?.anfitriona;
-  const anfitrionasFinal =
-    anfitrionasArray.length > 0 ? anfitrionasArray : anfitrionaString ? [anfitrionaString] : [];
-
-  const cantidadAnfitrionas = anfitrionasFinal.length;
-
-  const recargoAnfitrionas = 0;
-
-  useEffect(() => {
-    if (cantidadAnfitrionas > maxAnfitrionas) {
-      if (hasChampagneProducts) {
-        const extraText =
-          otherCommissionQuantity > 0
-            ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
-            : '';
-        toast.error(
-          `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
-        );
-      } else {
-        toast.error(
-          `El pedido excede el límite de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} para productos con comisión`
-        );
-      }
-    }
-  }, [hasChampagneProducts, maxChampagnePrice, maxAnfitrionas, cantidadAnfitrionas, detail]);
-
   const handleRegistrarVenta = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     setShowMetodoPagoError(true);
 
     if (!metodoPago) {
-      toast.error('Selecciona un método de pago');
+      toast.error('Selecciona un mÃ©todo de pago');
       return;
     }
 
@@ -343,7 +250,7 @@ export default function OrderDetailModal({
 
     if (hasChampagneProducts && cantidadAnfitrionas === 0) {
       toast.error(
-        'Para productos de champaña es obligatorio tener al menos una anfitriona en el pedido'
+        'Para productos de champaÃ±a es obligatorio tener al menos una anfitriona en el pedido'
       );
       return;
     }
@@ -351,10 +258,10 @@ export default function OrderDetailModal({
     if (cantidadAnfitrionas > maxAnfitrionas) {
       const extraText =
         hasChampagneProducts && otherCommissionQuantity > 0
-          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisiÃ³n`
           : '';
       toast.error(
-        `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
+        `El pedido excede el lÃ­mite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaÃ±a: ${champagneLimit}${extraText})`
       );
       return;
     }
@@ -404,7 +311,7 @@ export default function OrderDetailModal({
       }
 
       const selectedRoom = habitacionId
-        ? rooms.find(room => getRoomId(room) === String(habitacionId))
+        ? rooms.find(room => getOrderRoomId(room) === String(habitacionId))
         : null;
 
       const ventaData = {
@@ -446,7 +353,7 @@ export default function OrderDetailModal({
         window.dispatchEvent(new CustomEvent('refreshNotifications'));
 
         if (habitacionId) {
-          const selectedRoom = rooms.find(room => getRoomId(room) === String(habitacionId));
+          const selectedRoom = rooms.find(room => getOrderRoomId(room) === String(habitacionId));
           if (selectedRoom) {
             try {
               const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
@@ -462,8 +369,8 @@ export default function OrderDetailModal({
               if (roomUpdateResponse.ok) {
                 startTimer(
                   resultado.data?.id || resultado.data?.id_venta || orderId || 0,
-                  selectedRoom.id ?? selectedRoom.id_habitacion,
-                  getRoomName(selectedRoom),
+                  String(selectedRoom.id ?? selectedRoom.id_habitacion ?? ''),
+                  getOrderRoomName(selectedRoom),
                   tiempoHabitacion,
                   resultado.data?.codigo || `VENTA_${orderId}`,
                   detail[0]?.cliente || 'cliente sin registrar',
@@ -472,10 +379,10 @@ export default function OrderDetailModal({
                   detail[0]?.garzon || undefined
                 );
               } else {
-                toast.error('Error al actualizar estado de habitación');
+                toast.error('Error al actualizar estado de habitaciÃ³n');
               }
             } catch (error) {
-              toast.error('Error al actualizar estado de habitación');
+              toast.error('Error al actualizar estado de habitaciÃ³n');
             }
           }
         }
@@ -566,7 +473,7 @@ export default function OrderDetailModal({
         toast.success('Cuenta registrada exitosamente');
 
         try {
-          // Marcar el pedido como procesado porque se convirtió en una cuenta
+          // Marcar el pedido como procesado porque se convirtiÃ³ en una cuenta
           await actualizarEstadoPedido(0);
           window.dispatchEvent(
             new CustomEvent('updatePendingOrders', {
@@ -617,22 +524,11 @@ export default function OrderDetailModal({
     return result;
   };
 
-  // Filtrar habitaciones activas, pero incluir la habitación pre-seleccionada aunque esté ocupada
-  const habitacionesActivas = rooms.filter(room => {
-    // Incluir habitaciones disponibles (status = 1)
-    if ((room.status ?? room.estado) === 1) return true;
-
-    // También incluir la habitación pre-seleccionada aunque esté ocupada
-    if (habitacionId && getRoomId(room) === String(habitacionId)) {
-      return true;
-    }
-
-    return false;
-  });
+  // Filtrar habitaciones activas, pero incluir la habitaciÃ³n pre-seleccionada aunque estÃ© ocupada
 
   const hasChampagne = detail.some((item: any) => {
     const cat = (item.categoria || '').toLowerCase();
-    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+    return cat.includes('champaÃ±a') || cat.includes('shampaÃ±a') || cat.includes('champagne');
   });
 
   const hasExpensiveDrinks = detail.some((item: any) => {
@@ -683,206 +579,34 @@ export default function OrderDetailModal({
               <div className='space-y-6'>
                 {/* Info general */}
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                  {/* Columna izquierda - Información del pedido */}
-                  <div className='space-y-3'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>
-                        Fecha y Hora:
-                      </span>
-                      <div className='text-xs sm:text-sm font-medium'>
-                        <div>{formatLongDateEs(detail[0]?.fecha_crea)}</div>
-                        <div>{formatShortTimeEs(detail[0]?.fecha_crea)}</div>
-                      </div>
-                    </div>
-                    <Separator />
-                    <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>Código:</span>
-                      <Badge variant='outline' className='text-xs'>
-                        {detail[0]?.codigo}
-                      </Badge>
-                    </div>
-                    <Separator />
-                    <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>
-                        Anfitriona(s):
-                      </span>
-                      <span className='text-xs sm:text-sm font-medium'>
-                        {detail[0]?.anfitriona || '-'}
-                      </span>
-                    </div>
-                    <Separator />
-                    <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>Cliente:</span>
-                      <span className='text-xs sm:text-sm font-medium'>{detail[0]?.cliente}</span>
-                    </div>
-                    <Separator />
-                    <div className='flex justify-between items-center'>
-                      <span className='text-xs sm:text-sm text-muted-foreground'>Garzón:</span>
-                      <span className='text-xs sm:text-sm font-medium'>{detail[0]?.garzon}</span>
-                    </div>
-
-                    {hasChampagneProducts && cantidadAnfitrionas === 0 && (
-                      <>
-                        <Separator />
-                        <div className='text-xs text-red-500'>
-                          ⚠️ Se requiere al menos una anfitriona para productos de champaña
-                        </div>
-                      </>
-                    )}
-                    {cantidadAnfitrionas > maxAnfitrionas && (
-                      <>
-                        <Separator />
-                        <div className='text-xs text-red-500'>
-                          ⚠️ Excede el límite combinado de {maxAnfitrionas} anfitriona(s)
-                        </div>
-                      </>
-                    )}
-                  </div>
-
+                  <OrderDetailInfoPanel
+                    createdAt={`${formatLongDateEs(detail[0]?.fecha_crea)} ${formatShortTimeEs(detail[0]?.fecha_crea)}`}
+                    code={detail[0]?.codigo}
+                    hostessName={detail[0]?.anfitriona}
+                    clientName={detail[0]?.cliente}
+                    garzonName={detail[0]?.garzon}
+                    hasChampagneProducts={hasChampagneProducts}
+                    cantidadAnfitrionas={cantidadAnfitrionas}
+                    maxAnfitrionas={maxAnfitrionas}
+                  />
                   {/* Columna derecha - Formulario de pago */}
-                  <div className='space-y-4'>
-                    <div>
-                      <PaymentMethodSelect
-                        value={metodoPago}
-                        onChange={setMetodoPago}
-                        label='Método de pago'
-                        placeholder='Seleccione un método de pago'
-                        required={true}
-                        className={showMetodoPagoError && !metodoPago ? 'border-red-300' : ''}
-                      />
-                      {showMetodoPagoError && !metodoPago && (
-                        <div className='text-xs text-red-500 mt-1'>
-                          ⚠️ El método de pago es obligatorio
-                        </div>
-                      )}
-                    </div>
-                    {shouldShowRoomSelector && (
-                      <>
-                        <RoomSelect
-                          habitaciones={habitacionesActivas}
-                          value={habitacionId}
-                          onChange={setHabitacionId}
-                          label='Habitación (opcional)'
-                          placeholder='Seleccione una habitación'
-                          searchPlaceholder='Buscar habitación...'
-                          filterByStatus={1}
-                          includeRoomIds={habitacionId ? [habitacionId] : []}
-                          showTime={true}
-                          disabled={hasRoomSelectedInOrder}
-                          disabledReason={
-                            hasRoomSelectedInOrder
-                              ? 'Este pedido ya viene con una habitación seleccionada y no se puede cambiar.'
-                              : undefined
-                          }
-                        />
-                        {habitacionId && (
-                          <div>
-                            <Label className={ORDER_FIELD_LABEL_CLASS}>
-                              Tiempo de uso (minutos)
-                            </Label>
-                            <Select
-                              value={tiempoHabitacion.toString()}
-                              onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
-                            >
-                              <SelectTrigger className={ORDER_FIELD_TRIGGER_CLASS}>
-                                <SelectValue placeholder='Seleccionar tiempo' />
-                              </SelectTrigger>
-                              <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
-                                <SelectItem
-                                  value='5'
-                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                                >
-                                  5 minutos
-                                </SelectItem>
-                                <SelectItem
-                                  value='10'
-                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                                >
-                                  10 minutos
-                                </SelectItem>
-                                <SelectItem
-                                  value='15'
-                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                                >
-                                  15 minutos
-                                </SelectItem>
-                                <SelectItem
-                                  value='20'
-                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                                >
-                                  20 minutos
-                                </SelectItem>
-                                <SelectItem
-                                  value='25'
-                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                                >
-                                  25 minutos
-                                </SelectItem>
-                                <SelectItem
-                                  value='30'
-                                  className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                                >
-                                  30 minutos
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <div>
-                      <Label className={ORDER_FIELD_LABEL_CLASS}>Propina</Label>
-                      <div className='flex items-center space-x-2'>
-                        <div className='relative flex-1'>
-                          <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
-                          <Input
-                            className={`${ORDER_FIELD_INPUT_CLASS} pl-8`}
-                            placeholder='Sin propina'
-                            type='text'
-                            value={propinaDisplayValue}
-                            readOnly
-                          />
-                        </div>
-                        <div className='flex items-center space-x-2'>
-                          <Checkbox
-                            id='agregar-propina'
-                            checked={agregarPropina}
-                            onCheckedChange={checked => setAgregarPropina(checked === true)}
-                            disabled={detail[0]?.propina > 0} // Deshabilitar si ya hay propina original
-                          />
-                          <label
-                            htmlFor='agregar-propina'
-                            className='cursor-pointer whitespace-nowrap text-xs text-gray-700 dark:text-zinc-300'
-                          >
-                            10%
-                          </label>
-                        </div>
-                      </div>
-                      {agregarPropina && (
-                        <div className='text-xs text-green-600 mt-1'>
-                          {detail[0]?.propina > 0
-                            ? `✓ Propina original: ${formatCurrencyCLP(propina)}`
-                            : `✓ Propina del 10%: ${formatCurrencyCLP(propina)}`}
-                        </div>
-                      )}
-                      {detail[0]?.propina > 0 && (
-                        <div className='text-xs text-blue-600 mt-1'>
-                          ℹ️ Este pedido ya incluye propina del cliente
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <Label className={ORDER_FIELD_LABEL_CLASS}>Total Comisión</Label>
-                      <div className='relative'>
-                        <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
-                        <Input
-                          className={`${ORDER_FIELD_INPUT_WITH_ICON_CLASS} font-semibold`}
-                          value={formatNumberCL(detail[0]?.total_comision || 0)}
-                          disabled
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <OrderDetailPaymentPanel
+                    metodoPago={metodoPago}
+                    setMetodoPago={setMetodoPago}
+                    showMetodoPagoError={showMetodoPagoError}
+                    shouldShowRoomSelector={shouldShowRoomSelector}
+                    habitacionesActivas={habitacionesActivas}
+                    habitacionId={habitacionId}
+                    setHabitacionId={setHabitacionId}
+                    hasRoomSelectedInOrder={hasRoomSelectedInOrder}
+                    tiempoHabitacion={tiempoHabitacion}
+                    setTiempoHabitacion={setTiempoHabitacion}
+                    propinaDisplayValue={propinaDisplayValue}
+                    agregarPropina={agregarPropina}
+                    setAgregarPropina={setAgregarPropina}
+                    propina={propina}
+                    orderTotalCommission={detail[0]?.total_comision || 0}
+                  />
                 </div>
 
                 {/* Tabla de productos */}
@@ -900,7 +624,7 @@ export default function OrderDetailModal({
                           Precio
                         </TableHead>
                         <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                          Comisión
+                          ComisiÃ³n
                         </TableHead>
                         <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>
                           Sub Total
@@ -933,36 +657,12 @@ export default function OrderDetailModal({
 
                   <Separator className='my-4' />
 
-                  {/* Resumen de totales */}
-                  <div className='space-y-2'>
-                    <div className='flex justify-between items-center text-sm'>
-                      <span className='text-muted-foreground'>SUBTOTAL:</span>
-                      <span className='font-semibold'>{formatCurrencyCLP(detail[0]?.total)}</span>
-                    </div>
-                    {propina > 0 && (
-                      <div className='flex justify-between items-center text-sm'>
-                        <span className='text-blue-600'>+ Propina:</span>
-                        <span className='text-blue-600 font-medium'>
-                          {formatCurrencyCLP(propina)}
-                        </span>
-                      </div>
-                    )}
-                    {recargoAnfitrionas > 0 && (
-                      <div className='flex justify-between items-center text-sm'>
-                        <span className='text-orange-600'>+ Recargo anfitrionas:</span>
-                        <span className='text-orange-600 font-medium'>
-                          {formatCurrencyCLP(recargoAnfitrionas)}
-                        </span>
-                      </div>
-                    )}
-                    <Separator />
-                    <div className='flex justify-between items-center text-base'>
-                      <span className='font-bold'>TOTAL:</span>
-                      <span className='font-bold text-lg'>
-                        {formatCurrencyCLP((detail[0]?.total || 0) + propina + recargoAnfitrionas)}
-                      </span>
-                    </div>
-                  </div>
+                  <OrderDetailTotalsSummary
+                    subtotal={detail[0]?.total || 0}
+                    propina={propina}
+                    recargoAnfitrionas={recargoAnfitrionas}
+                    total={(detail[0]?.total || 0) + propina + recargoAnfitrionas}
+                  />
                 </div>
               </div>
             </div>
@@ -1016,7 +716,7 @@ export default function OrderDetailModal({
         )}
       </DialogContent>
 
-      {/* Modal de confirmación de registro de venta */}
+      {/* Modal de confirmaciÃ³n de registro de venta */}
       <Dialog open={confirmVentaModalOpen} onOpenChange={setConfirmVentaModalOpen}>
         <DialogContent className='sm:max-w-md border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
@@ -1092,3 +792,5 @@ export default function OrderDetailModal({
     </Dialog>
   );
 }
+
+

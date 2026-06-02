@@ -1,9 +1,9 @@
-import { Label } from '@/components/ui/label';
+﻿import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Loader2, AlertCircle } from 'lucide-react';
-import { useAdvanceForm } from '@/hooks/personal/useAdvanceForm';
-import UserSelect from '@/components/shared/selects/UserSelect';
+import { useAdvanceForm } from '@/hooks/personal';
+import { UserSelect } from '@/components/shared/selects';
 
 interface AdvanceFormProps {
   open: boolean;
@@ -47,7 +47,7 @@ export function AdvanceForm({ open, onSubmit, onCancel, isLoading = false, error
 
   return (
     <form id='advance-form' onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
-      {/* Selección de Usuario */}
+      {/* SelecciÃ³n de Usuario */}
       <div>
         <Label className="text-sm sm:text-base">
           Empleado <span className='text-red-500'>*</span>
@@ -186,3 +186,5 @@ export function AdvanceForm({ open, onSubmit, onCancel, isLoading = false, error
     </form>
   );
 }
+
+

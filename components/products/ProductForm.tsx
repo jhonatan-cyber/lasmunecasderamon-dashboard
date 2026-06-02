@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/types/product';
 import { Barcode, Image, DollarSign, FileText, Package, Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
-import { useProductForm } from '@/hooks/personal/useProductForm';
+import { useProductForm } from '@/hooks/personal';
 import {
   Dialog,
   DialogContent,
@@ -344,3 +344,4 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
     </form>
   );
 }
+
