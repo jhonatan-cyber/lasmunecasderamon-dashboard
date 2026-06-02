@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import logger from '@/lib/utils/logger';

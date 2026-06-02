@@ -13,11 +13,7 @@ import { TimerRepository } from './TimerRepository';
 import { ServiceRequestRepository } from './ServiceRequestRepository';
 import { RoomRepository } from './RoomRepository';
 import { OrderRepository } from './OrderRepository';
-import {
-  buildDashboardInsights,
-  buildPendingDashboardItem,
-  buildCajaStatsResult
-} from './stats';
+import { buildDashboardInsights, buildPendingDashboardItem, buildCajaStatsResult } from './stats';
 
 export class StatsRepository {
   static async getDashboardAlerts() {
@@ -800,6 +796,7 @@ export class StatsRepository {
       timers,
       rooms,
       pendingServiceRequestsCount,
+      pendingOrdersResult,
       withdrawalsRows
     ] = await Promise.all([
       // caja stats: ventas, servicios, balance in ONE query
@@ -917,6 +914,9 @@ export class StatsRepository {
       // pending service requests count
       ServiceRequestRepository.getPendingCount(),
 
+      // pending orders count
+      query<any[]>(`SELECT COUNT(*) as total FROM pedidos WHERE estado = 1`),
+
       // withdrawals
       cajaId
         ? query<any[]>(
@@ -937,7 +937,7 @@ export class StatsRepository {
     }).length;
 
     const openCashRegisters = cajaId ? 1 : 0;
-    const pendingOrders = 0; // Will be filled from separate query if needed
+    const pendingOrders = Number(pendingOrdersResult[0]?.total || 0);
 
     const comparisonBase = comparisonsRows[0] || {};
     const totalLoggedUsers =
@@ -994,14 +994,11 @@ export class StatsRepository {
       yesterdaySalesSameTime,
       elapsedMinutesToday
     });
+
+    insights.localStatus.orders.open = pendingOrders;
+
     // Get recent activity
     const recentActivity = await this.getRecentActivity(8);
-
-    // Get pending orders count
-    const pendingOrdersResult = await query<any[]>(
-      `SELECT COUNT(*) as total FROM pedidos WHERE estado = 1`
-    );
-    insights.localStatus.orders.open = Number(pendingOrdersResult[0]?.total || 0);
 
     // Build cajaStats structure (same as getCajaGeneralStats)
     const cajaStatsResult = buildCajaStatsResult({
@@ -1021,7 +1018,7 @@ export class StatsRepository {
         orders: await this.getPendingOrders(5),
         serviceRequests: await ServiceRequestRepository.getPendingServiceRequests(5),
         summary: {
-          totalPendingOrders: Number(pendingOrdersResult[0]?.total || 0),
+          totalPendingOrders: pendingOrders,
           totalPendingServiceRequests: pendingServiceRequestsCount,
           totalVisibleItems: 5 + Math.min(pendingServiceRequestsCount, 5)
         }

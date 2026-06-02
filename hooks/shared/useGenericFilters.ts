@@ -1,4 +1,6 @@
-﻿/* eslint-disable react-hooks/preserve-manual-memoization */
+'use client';
+
+/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useState, useMemo, useEffect } from 'react';
 export function useGenericFilters<T>(
   data: T[],

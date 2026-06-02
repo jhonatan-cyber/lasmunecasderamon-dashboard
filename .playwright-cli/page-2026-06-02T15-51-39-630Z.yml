@@ -1,0 +1,134 @@
+- generic [active] [ref=e1]:
+    - generic [ref=e1128]:
+        - banner [ref=e1129]:
+            - button [ref=e1132] [cursor=pointer]:
+                - img
+            - generic [ref=e1133]:
+                - generic [ref=e1135]:
+                    - generic [ref=e1136]: 'Código:'
+                    - generic [ref=e1137]: '3600'
+                - button "Cambiar tema" [ref=e1138] [cursor=pointer]:
+                    - img
+                - button [ref=e1139] [cursor=pointer]:
+                    - img
+                - button "Jhonatan Ancasi Flores JA" [ref=e1142] [cursor=pointer]:
+                    - generic [ref=e1143]:
+                        - img "Jhonatan Ancasi Flores" [ref=e1144]
+                        - generic [ref=e1145]: JA
+        - main [ref=e1146]:
+            - generic [ref=e1148]:
+                - generic [ref=e1149]:
+                    - generic [ref=e1150]:
+                        - heading "Control de Cajas" [level=1] [ref=e1151]
+                        - paragraph [ref=e1152]: Administración centralizada de flujos de efectivo
+                    - generic [ref=e1154]:
+                        - img [ref=e1156]
+                        - generic [ref=e1158]: 1 caja abierta
+                - generic [ref=e1159]:
+                    - generic [ref=e1160]:
+                        - generic [ref=e1162]:
+                            - generic [ref=e1163]:
+                                - img [ref=e1165]
+                                - generic [ref=e1168]: Total Ventas
+                            - generic [ref=e1169]:
+                                - paragraph [ref=e1170]: Total Ventas
+                                - heading "$100.000" [level=3] [ref=e1171]
+                                - generic [ref=e1173]: 3 ventas realizadas
+                        - generic [ref=e1175]:
+                            - generic [ref=e1176]:
+                                - img [ref=e1178]
+                                - generic [ref=e1180]: Total Servicios
+                            - generic [ref=e1181]:
+                                - paragraph [ref=e1182]: Total Servicios
+                                - heading "$1.740.000" [level=3] [ref=e1183]
+                                - generic [ref=e1185]: 4 servicios realizados
+                    - generic [ref=e1186]:
+                        - generic [ref=e1188]:
+                            - generic [ref=e1189]:
+                                - img [ref=e1191]
+                                - generic [ref=e1193]: Total Efectivo
+                            - generic [ref=e1194]:
+                                - paragraph [ref=e1195]: Total Efectivo
+                                - heading "$737.000" [level=3] [ref=e1196]
+                                - generic [ref=e1198]: Ingresos en efectivo
+                        - generic [ref=e1200]:
+                            - generic [ref=e1201]:
+                                - img [ref=e1203]
+                                - generic [ref=e1205]: Total Tarjeta
+                            - generic [ref=e1206]:
+                                - paragraph [ref=e1207]: Total Tarjeta
+                                - heading "$1.033.000" [level=3] [ref=e1208]
+                                - generic [ref=e1210]: Pagos con tarjeta
+                        - generic [ref=e1212]:
+                            - generic [ref=e1213]:
+                                - img [ref=e1215]
+                                - generic [ref=e1218]: Total Transferencias
+                            - generic [ref=e1219]:
+                                - paragraph [ref=e1220]: Total Transferencias
+                                - heading "$80.000" [level=3] [ref=e1221]
+                                - generic [ref=e1223]: Transferencias bancarias
+                - generic [ref=e1224]:
+                    - tablist [ref=e1226]:
+                        - tab "Listado de Cajas" [selected] [ref=e1227] [cursor=pointer]
+                        - tab "Análisis Global" [ref=e1228] [cursor=pointer]
+                    - tabpanel "Listado de Cajas" [ref=e1229]:
+                        - generic [ref=e1232]:
+                            - generic [ref=e1233]:
+                                - generic [ref=e1234]: Buscar Cajero o ID
+                                - generic [ref=e1235]:
+                                    - img
+                                    - textbox "Buscar Cajero o ID" [ref=e1236]:
+                                        - /placeholder: Nombre del cajero o ID de caja...
+                            - generic [ref=e1237]:
+                                - generic [ref=e1238]:
+                                    - generic [ref=e1239]: Estado de Caja
+                                    - combobox "Estado de Caja" [ref=e1240] [cursor=pointer]:
+                                        - generic: Todos los estados
+                                        - img [ref=e1241]
+                                - button [ref=e1244] [cursor=pointer]:
+                                    - img
+                        - generic [ref=e1246]:
+                            - generic [ref=e1248]:
+                                - generic [ref=e1250]:
+                                    - img [ref=e1252]
+                                    - generic [ref=e1254]: Miércoles, miércoles, 27 de mayo de 2026
+                                - generic [ref=e1255]:
+                                    - img [ref=e1256]
+                                    - text: Abierta
+                            - generic [ref=e1259]:
+                                - generic [ref=e1261]:
+                                    - generic [ref=e1262]:
+                                        - img [ref=e1263]
+                                        - generic [ref=e1266]: Apertura
+                                    - generic [ref=e1267]: Jhonatan Ancasi Flores
+                                - generic [ref=e1268]:
+                                    - generic [ref=e1269]:
+                                        - generic [ref=e1270]: Monto inicial
+                                        - generic [ref=e1271]: $10.000
+                                    - generic [ref=e1272]:
+                                        - generic [ref=e1273]:
+                                            - generic [ref=e1274]: Efectivo
+                                            - generic [ref=e1275]: +$727.000
+                                        - generic [ref=e1276]:
+                                            - generic [ref=e1277]: Tarjeta
+                                            - generic [ref=e1278]: +$1.033.000
+                                        - generic [ref=e1279]:
+                                            - generic [ref=e1280]: Transferencia
+                                            - generic [ref=e1281]: +$80.000
+                                    - generic [ref=e1283]:
+                                        - generic [ref=e1284]: Balance Actual
+                                        - generic [ref=e1285]: $1.840.000
+                                - generic [ref=e1286]:
+                                    - button "Detalle de Caja" [ref=e1287] [cursor=pointer]:
+                                        - img
+                                        - text: Detalle de Caja
+                                    - generic [ref=e1288]:
+                                        - button "Retirar" [ref=e1289] [cursor=pointer]:
+                                            - img
+                                            - text: Retirar
+                                        - button "Cerrar" [ref=e1290] [cursor=pointer]:
+                                            - img
+                                            - text: Cerrar
+    - region "Notifications alt+T"
+    - alert [ref=e509]
+    - generic [ref=e510]: $0k
