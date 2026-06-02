@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,9 +22,9 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Loader2 } from 'lucide-react';
 
-// Función para obtener el día de la semana en español
+// FunciÃ³n para obtener el dÃ­a de la semana en espaÃ±ol
 const getDiaSemana = (fecha: string): string => {
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const dias = ['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'];
   const fechaObj = new Date(fecha);
   return dias[fechaObj.getDay()];
 };
@@ -66,7 +68,7 @@ export const CerrarCajaDialog = ({
   }, [caja, currentUser]);
 
   const validateForm = (): boolean => {
-    // No hay validaciones necesarias ya que todo se calcula automáticamente
+    // No hay validaciones necesarias ya que todo se calcula automÃ¡ticamente
     return true;
   };
 
@@ -83,7 +85,7 @@ export const CerrarCajaDialog = ({
     }
 
     try {
-      // Calcular monto de cierre automáticamente si no se pide al usuario
+      // Calcular monto de cierre automÃ¡ticamente si no se pide al usuario
       const devoluciones = (caja.devoluciones as number) || 0;
       const montoCierreCalculado =
         (caja.monto_apertura || 0) +
@@ -92,7 +94,7 @@ export const CerrarCajaDialog = ({
         (caja.transferencia || 0) -
         devoluciones;
 
-      // Asegurar que se envíe la fecha actual al momento del cierre y el monto_cierre requerido por la API
+      // Asegurar que se envÃ­e la fecha actual al momento del cierre y el monto_cierre requerido por la API
       const dataToSend = {
         ...formData,
         monto_cierre: Number(montoCierreCalculado) || 0,
@@ -228,4 +230,3 @@ export const CerrarCajaDialog = ({
     </Dialog>
   );
 };
-

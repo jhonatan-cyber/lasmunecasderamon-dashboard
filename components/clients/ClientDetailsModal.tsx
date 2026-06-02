@@ -1,16 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useGenericFetch } from '@/hooks/shared';
+import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
 import {
   Table,
   TableBody,
@@ -46,10 +41,14 @@ interface HistoryItem {
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'SERVICIO': return <Waves className="w-4 h-4 text-blue-500" />;
-    case 'CONSUMO': return <ShoppingBag className="w-4 h-4 text-orange-500" />;
-    case 'CARGA': return <ArrowUpCircle className="w-4 h-4 text-green-500" />;
-    default: return <CreditCard className="w-4 h-4 text-gray-500" />;
+    case 'SERVICIO':
+      return <Waves className='w-4 h-4 text-blue-500' />;
+    case 'CONSUMO':
+      return <ShoppingBag className='w-4 h-4 text-orange-500' />;
+    case 'CARGA':
+      return <ArrowUpCircle className='w-4 h-4 text-green-500' />;
+    default:
+      return <CreditCard className='w-4 h-4 text-gray-500' />;
   }
 };
 
@@ -62,12 +61,12 @@ function formatShortDate(dateString: string) {
   return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: es });
 }
 
-function ClientDetails({ client, onClose }: { client: Client; onClose: () => void; }) {
+function ClientDetails({ client, onClose }: { client: Client; onClose: () => void }) {
   const { data: history = [], isLoading } = useGenericFetch<HistoryItem>(
     client ? `/api/clients/history?cliente_id=${client.id}` : '',
     {
       initialFetch: !!client,
-      transform: (res) => (res.success ? res.data : [])
+      transform: res => (res.success ? res.data : [])
     }
   );
 
@@ -84,14 +83,16 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
       <div className='space-y-8 max-h-[70vh] overflow-y-auto pr-2 px-1 pb-10'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b dark:border-gray-800'>
           <div className='space-y-3'>
-            <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>Información Personal</h3>
+            <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>
+              InformaciÃ³n Personal
+            </h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <div>
                 <p className='text-xs text-gray-500 mb-1'>RUN</p>
                 <p className='font-medium text-sm'>{client.run || 'No especificado'}</p>
               </div>
               <div>
-                <p className='text-xs text-gray-500 mb-1'>Teléfono</p>
+                <p className='text-xs text-gray-500 mb-1'>TelÃ©fono</p>
                 <p className='font-medium text-sm'>{client.phone || 'No especificado'}</p>
               </div>
               <div>
@@ -104,8 +105,8 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                 <p className='text-xs text-gray-500 dark:text-gray-400 mb-1'>Estado</p>
                 <Badge
                   className={
-                    client.status === 1 
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                    client.status === 1
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                       : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                   }
                 >
@@ -128,8 +129,12 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
 
         <div className='space-y-4'>
           <div className='flex items-center justify-between'>
-            <h3 className='font-bold text-gray-800 dark:text-gray-100 text-lg'>Historial de Actividad y Prepago</h3>
-            {isLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-400 dark:text-gray-600" />}
+            <h3 className='font-bold text-gray-800 dark:text-gray-100 text-lg'>
+              Historial de Actividad y Prepago
+            </h3>
+            {isLoading && (
+              <Loader2 className='w-4 h-4 animate-spin text-gray-400 dark:text-gray-600' />
+            )}
           </div>
 
           {isLoading ? (
@@ -146,36 +151,66 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
               <Table>
                 <TableHeader className='bg-gray-50 dark:bg-gray-900/50'>
                   <TableRow>
-                    <TableHead className='w-[140px] text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>Fecha</TableHead>
-                    <TableHead className='w-[100px] text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>Tipo</TableHead>
-                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>Detalles</TableHead>
-                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>Personal</TableHead>
-                    <TableHead className='text-right text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>Monto</TableHead>
+                    <TableHead className='w-[140px] text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Fecha
+                    </TableHead>
+                    <TableHead className='w-[100px] text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Tipo
+                    </TableHead>
+                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Detalles
+                    </TableHead>
+                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Personal
+                    </TableHead>
+                    <TableHead className='text-right text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Monto
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {history.map((item) => (
-                    <TableRow key={item.id} className='hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors'>
-                      <TableCell className='text-xs font-mono text-gray-600 dark:text-gray-400'>{formatShortDate(item.fecha_crea)}</TableCell>
+                  {history.map(item => (
+                    <TableRow
+                      key={item.id}
+                      className='hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors'
+                    >
+                      <TableCell className='text-xs font-mono text-gray-600 dark:text-gray-400'>
+                        {formatShortDate(item.fecha_crea)}
+                      </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-2'>
                           {getCategoryIcon(item.category)}
-                          <span className='text-xs font-bold dark:text-gray-200'>{item.category}</span>
+                          <span className='text-xs font-bold dark:text-gray-200'>
+                            {item.category}
+                          </span>
                         </div>
-                        <p className='text-[10px] text-gray-400 dark:text-gray-500 capitalize'>{item.metodo_pago}</p>
+                        <p className='text-[10px] text-gray-400 dark:text-gray-500 capitalize'>
+                          {item.metodo_pago}
+                        </p>
                       </TableCell>
                       <TableCell>
                         <div className='text-xs space-y-1'>
-                          {item.category === 'CARGA' && <p className='text-green-600 font-medium italic'>Abono a saldo prepago</p>}
+                          {item.category === 'CARGA' && (
+                            <p className='text-green-600 font-medium italic'>
+                              Abono a saldo prepago
+                            </p>
+                          )}
                           {item.detalle?.habitacion && (
-                            <Badge variant='outline' className='text-[10px] bg-blue-50/50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'>
-                              Hab: {item.detalle.habitacion}{item.detalle.tiempo ? ` (${item.detalle.tiempo} min)` : ''}
+                            <Badge
+                              variant='outline'
+                              className='text-[10px] bg-blue-50/50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'
+                            >
+                              Hab: {item.detalle.habitacion}
+                              {item.detalle.tiempo ? ` (${item.detalle.tiempo} min)` : ''}
                             </Badge>
                           )}
                           {item.detalle?.productos && item.detalle.productos.length > 0 && (
                             <div className='flex flex-wrap gap-1 mt-1'>
                               {item.detalle.productos.map((p, idx) => (
-                                <span key={idx} className='bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800 px-1.5 py-0.5 rounded text-[10px]'>
+                                <span
+                                  key={idx}
+                                  className='bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800 px-1.5 py-0.5 rounded text-[10px]'
+                                >
                                   {p.nombre} x{p.cantidad}
                                 </span>
                               ))}
@@ -183,9 +218,15 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                           )}
                           {item.detalle?.anfitrionas && item.detalle.anfitrionas.length > 0 && (
                             <div className='flex flex-wrap gap-1 mt-1 items-center'>
-                              <span className='text-[10px] text-gray-400 dark:text-gray-500'>Anfitrionas:</span>
+                              <span className='text-[10px] text-gray-400 dark:text-gray-500'>
+                                Anfitrionas:
+                              </span>
                               {item.detalle.anfitrionas.map((nick, idx) => (
-                                <Badge key={idx} variant='secondary' className='px-1 py-0 h-4 text-[9px] bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800'>
+                                <Badge
+                                  key={idx}
+                                  variant='secondary'
+                                  className='px-1 py-0 h-4 text-[9px] bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800'
+                                >
                                   {nick}
                                 </Badge>
                               ))}
@@ -195,11 +236,25 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                       </TableCell>
                       <TableCell>
                         <div className='text-[10px] space-y-0.5 text-gray-500 dark:text-gray-400'>
-                          <p><span className='font-semibold text-gray-700 dark:text-gray-300'>Procesó:</span> {item.atendido_por}</p>
-                          {item.mesero && <p><span className='font-semibold text-gray-700 dark:text-gray-300'>Mesero:</span> {item.mesero}</p>}
+                          <p>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                              ProcesÃ³:
+                            </span>{' '}
+                            {item.atendido_por}
+                          </p>
+                          {item.mesero && (
+                            <p>
+                              <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                                Mesero:
+                              </span>{' '}
+                              {item.mesero}
+                            </p>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell className={`text-right font-bold font-mono text-sm ${item.category === 'CARGA' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                      <TableCell
+                        className={`text-right font-bold font-mono text-sm ${item.category === 'CARGA' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}
+                      >
                         {item.category === 'CARGA' ? '+' : '-'}${item.monto.toLocaleString('es-CL')}
                       </TableCell>
                     </TableRow>
@@ -235,4 +290,3 @@ export function ClientDetailsModal({ isOpen, onOpenChange, client }: ClientDetai
     </Dialog>
   );
 }
-
