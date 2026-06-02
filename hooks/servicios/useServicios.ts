@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { useGenericFetch } from '../shared/useGenericFetch';
-import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+import { useSharedSSE } from '@/hooks/shared';
 
 // QueryKey compartido para invalidar desde cualquier mutación
 export const SERVICIOS_QUERY_KEY = ['servicios'] as const;
@@ -276,3 +276,4 @@ export function useAllServicios() {
     getAllServicios
   };
 }
+

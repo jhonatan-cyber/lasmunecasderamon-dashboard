@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Client } from '@/types/client';
 import { toast } from 'sonner';
-import { usePrepagoForm } from '@/hooks/personal/usePrepagoForm';
+import { usePrepagoForm } from '@/hooks/personal';
 import { formatNumberInput } from '@/lib/utils/formatters';
 
 const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
@@ -283,3 +283,4 @@ export function useClientModals() {
     handlePrepagoSubmit
   };
 }
+

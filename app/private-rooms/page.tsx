@@ -14,13 +14,14 @@ import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useRefreshOnFocus } from '@/hooks/shared';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { StatsCardSkeleton } from '@/components/shared/Skeletons';
 import { ServicioWithDetails } from '@/types/servicio';
 
 export default function ServiciosPage() {
-  useHabitaciones();
+  const { getHabitaciones } = useHabitaciones();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { setRefreshCallback } = useTimer();
   const { hasPermission } = useUserPermissions();
@@ -84,6 +85,12 @@ export default function ServiciosPage() {
       handleServiceAutoFinishedRef.current();
     });
   }, [setRefreshCallback]);
+
+  const refreshServicesAndRooms = useCallback(async () => {
+    await Promise.all([getServicios(), getHabitaciones()]);
+  }, [getHabitaciones, getServicios]);
+
+  useRefreshOnFocus(refreshServicesAndRooms);
 
   const handleCreateServicioWithCheck = () => {
     if (!hasOpenCaja) {

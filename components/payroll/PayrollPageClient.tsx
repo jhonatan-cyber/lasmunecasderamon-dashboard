@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import PayrollTable from '@/components/payroll/PayrollTable';
 import PayrollFilters from '@/components/payroll/PayrollFilters';
 import PayrollRoleButtons from '@/components/payroll/PayrollRoleButtons';
-import usePayroll from '@/hooks/personal/usePayroll';
+import { usePayroll } from '@/hooks/personal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { ReportSkeleton } from '@/components/shared/Skeletons';
@@ -89,3 +89,4 @@ export function PayrollPageClient() {
     </PermissionGuard>
   );
 }
+

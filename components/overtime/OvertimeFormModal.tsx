@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   Dialog,
@@ -10,9 +10,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import UserSelect from '@/components/shared/selects/UserSelect';
+import { UserSelect } from '@/components/shared/selects';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useOvertimeForm } from '@/hooks/personal/useOvertimeForm';
+import { useOvertimeForm } from '@/hooks/personal';
 import { Timer, Banknote, Calculator, Loader2 } from 'lucide-react';
 
 interface OvertimeFormModalProps {
@@ -54,7 +54,7 @@ export default function OvertimeFormModal({
 
         <div className='p-6 sm:p-8 bg-white dark:bg-slate-900'>
           <form onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
-            {/* Selección de Empleado */}
+            {/* SelecciÃ³n de Empleado */}
             <div>
               <Label className='text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300'>
                 Empleado <span className='text-red-500'>*</span>
@@ -139,7 +139,7 @@ export default function OvertimeFormModal({
               </div>
             )}
 
-            {/* Botones de acción siguiendo la estructura de CategoryForm */}
+            {/* Botones de acciÃ³n siguiendo la estructura de CategoryForm */}
             <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full pt-4 border-t border-gray-100 dark:border-gray-800/50 mt-4'>
               <Button
                 type='button'
@@ -171,3 +171,6 @@ export default function OvertimeFormModal({
     </Dialog>
   );
 }
+
+
+

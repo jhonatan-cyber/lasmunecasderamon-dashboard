@@ -38,9 +38,6 @@ const routePermissions: Record<string, { module: string; action: string }> = {
 const publicRoutes = [
   '/',
   '/login',
-  '/landing',
-  '/politica-de-privacidad',
-  '/terminos-y-condiciones',
   '/access-denied'
 ];
 

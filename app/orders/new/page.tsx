@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import OrderForm from '@/components/orders/OrderForm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useClients } from '@/hooks/clientes/useClients';
-import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
+import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ServiceOrderForm from '@/components/orders/ServiceOrderFormNew';
+import { OrderForm, ServiceOrderFormNew as ServiceOrderForm } from '@/components/orders';
 
 export default function NewOrder() {
   const router = useRouter();
@@ -16,23 +14,10 @@ export default function NewOrder() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]); // productos agregados
-  const { allClients: clientes = [], isLoading: loadingClientes } = useClients();
-  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas({
-    status: 'active',
-    loggedIn: true,
-    enLocal: true
-  });
+  const { clients: clientes, anfitrionas, categories, refreshAll } = useMasterData();
   const [searchCliente, setSearchCliente] = useState('');
   const [searchAnfitriona, setSearchAnfitriona] = useState('');
-  const [categorias, setCategorias] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetch('/api/categories')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setCategorias(data.data);
-      });
-  }, []);
+  useRefreshOnFocus(refreshAll, { immediate: false });
 
   const clientesFiltrados = useMemo(() => {
     if (!searchCliente) return clientes;
@@ -54,8 +39,8 @@ export default function NewOrder() {
   }, [anfitrionas, searchAnfitriona]);
 
   const categoriasFiltradas = useMemo(() => {
-    return categorias.filter(cat => cat.status === 1 && (cat.total_products || 0) > 0);
-  }, [categorias]);
+    return categories.filter(cat => cat.status === 1 && (cat.total_products || 0) > 0);
+  }, [categories]);
 
   // Handler para eliminar producto
   const handleRemoveProducto = (idx: number) => {

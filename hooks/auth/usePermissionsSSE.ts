@@ -1,4 +1,4 @@
-import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+import { useSharedSSE } from '@/hooks/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -38,3 +38,4 @@ export function usePermissionsSSE() {
 
   return null;
 }
+

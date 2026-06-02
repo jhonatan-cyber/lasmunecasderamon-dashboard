@@ -44,10 +44,7 @@ function addCspHeaders(request: NextRequest): {
 
 const PUBLIC_PATHS = [
   '/',
-  '/landing',
   '/login',
-  '/terminos-y-condiciones',
-  '/politica-de-privacidad',
   '/confirmar-anulacion',
   '/confirmar-anulacion-servicio',
   '/confirmar-anulacion-cuenta',

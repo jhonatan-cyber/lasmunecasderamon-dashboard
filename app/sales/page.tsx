@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 import { SalesSkeleton } from '@/components/shared/Skeletons';
 import dynamic from 'next/dynamic';
+import { useRefreshOnFocus } from '@/hooks/shared';
 
 const SalesDetailModal = dynamic(
   () => import('@/components/sales/SalesDetailModal').then(mod => mod.SalesDetailModal),
@@ -72,6 +73,8 @@ export default function Sales() {
   useEffect(() => {
     handleRefresh();
   }, []);
+
+  useRefreshOnFocus(handleRefresh);
 
   // Escuchar evento de venta registrada para refrescar automáticamente
   useEffect(() => {

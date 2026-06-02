@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
-import CustomerSelect from '@/components/shared/selects/CustomerSelect';
-import HostessSelect from '@/components/shared/selects/HostessSelect';
-import RoomSelect from '@/components/shared/selects/RoomSelect';
+import { CustomerSelect } from '@/components/shared/selects';
+import { HostessSelect } from '@/components/shared/selects';
+import { RoomSelect } from '@/components/shared/selects';
 import { TimeSelector } from '@/components/ui/TimeSelector';
 import { Client } from '@/types/client';
 import { User } from '@/types/user';
@@ -58,7 +58,7 @@ export default function AccountFormData({
         )
       : habitaciones;
 
-  // Detectar si hay habitación seleccionada y NO tiene comisión
+  // Detectar si hay habitaciÃ³n seleccionada y NO tiene comisiÃ³n
   const habitacionSeleccionada = selectedHabitacion
     ? habitaciones.find(r => String(r.id ?? r.id_habitacion) === selectedHabitacion)
     : null;
@@ -66,7 +66,7 @@ export default function AccountFormData({
   const mostrarSelectorTiempo =
     habitacionSeleccionada && (habitacionSeleccionada.comision_anfitriona ?? 0) === 0;
 
-  // Auto-setear tiempo de la habitación al seleccionarla
+  // Auto-setear tiempo de la habitaciÃ³n al seleccionarla
   useEffect(() => {
     if (habitacionSeleccionada && onTimeChange) {
       const tiempo = habitacionSeleccionada.time ?? habitacionSeleccionada.tiempo ?? 0;
@@ -92,11 +92,11 @@ export default function AccountFormData({
           disabled={loading || !hasCommissionProducts}
           disabledReason={
             !hasCommissionProducts
-              ? 'Agregue productos con comisión para seleccionar anfitrionas.'
+              ? 'Agregue productos con comisiÃ³n para seleccionar anfitrionas.'
               : undefined
           }
           placeholder={
-            hasCommissionProducts ? 'Seleccione anfitriona(s)' : 'Agregue productos con comisión'
+            hasCommissionProducts ? 'Seleccione anfitriona(s)' : 'Agregue productos con comisiÃ³n'
           }
         />
 
@@ -110,25 +110,25 @@ export default function AccountFormData({
           disabledReason={
             !selectedCliente || selectedCliente === 'none'
               ? !hasCommissionProducts
-                ? 'Seleccione un cliente y agregue productos con comisión para seleccionar habitaciones.'
+                ? 'Seleccione un cliente y agregue productos con comisiÃ³n para seleccionar habitaciones.'
                 : 'Seleccione un cliente primero.'
               : !hasCommissionProducts
-                ? 'Agregue productos con comisión para seleccionar habitaciones.'
+                ? 'Agregue productos con comisiÃ³n para seleccionar habitaciones.'
                 : undefined
           }
-          placeholder='Seleccione una habitación'
-          label='Habitación'
+          placeholder='Seleccione una habitaciÃ³n'
+          label='HabitaciÃ³n'
           showPrice={true}
         />
       </div>
 
-      {/* Selector de tiempo al seleccionar habitación (excepto con comisión) */}
+      {/* Selector de tiempo al seleccionar habitaciÃ³n (excepto con comisiÃ³n) */}
       {mostrarSelectorTiempo && selectedTime !== undefined && onTimeChange && (
         <div className='max-w-xs'>
           <TimeSelector
             value={selectedTime}
             onChange={onTimeChange}
-            label='Tiempo habitación'
+            label='Tiempo habitaciÃ³n'
             step={5}
             min={5}
           />
@@ -137,3 +137,5 @@ export default function AccountFormData({
     </div>
   );
 }
+
+

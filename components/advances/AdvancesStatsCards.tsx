@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
-import { Anticipo } from "@/hooks/personal/useAnticipos";
+import { Anticipo } from '@/hooks/personal';
 import { formatCurrencyCLP } from "@/lib/utils/formatters";
 
 interface AdvancesStatsCardsProps {
@@ -110,3 +110,4 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
     </div>
   );
 }
+

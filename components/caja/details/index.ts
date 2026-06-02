@@ -1,0 +1,11 @@
+export { FinancialCard } from './FinancialCard';
+export { CajaInfoCards } from './CajaInfoCards';
+export { CajaFinanceSummary } from './CajaFinanceSummary';
+export { CajaOperationsTables } from './CajaOperationsTables';
+export { CajaPaymentSummary } from '../CajaPaymentSummary';
+export { CajaSummaryMetrics } from '../CajaSummaryMetrics';
+export { CajaChartsSection } from '../CajaChartsSection';
+export { CajaFinancialDetails } from '../CajaFinancialDetails';
+export { CajaVentasTable } from '../CajaVentasTable';
+export { CajaServiciosTable } from '../CajaServiciosTable';
+export { CajaRetirosList } from '../CajaRetirosList';

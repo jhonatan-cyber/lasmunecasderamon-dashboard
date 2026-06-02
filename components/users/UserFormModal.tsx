@@ -29,7 +29,7 @@ import { ImageUploadField } from './ImageUploadField';
 import { NumberInputField } from './NumberInputField';
 import { MaritalStatusSelect, AfpInputField, HousingDiscountField } from './fields';
 import { RoleSelect } from '@/components/users/RoleSelect';
-import { useUserForm, type UserFormValues } from '@/hooks/personal/useUserForm';
+import { useUserForm, type UserFormValues } from '@/hooks/personal';
 export type { UserFormValues };
 
 // Función para formatear RUT chileno
@@ -332,3 +332,4 @@ export function UserFormModal({
     </Dialog>
   );
 }
+

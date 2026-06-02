@@ -1,33 +1,36 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { ArrowLeft, DollarSign, Coins, ShoppingCart, Split, Receipt } from 'lucide-react';
+import { ArrowLeft, DollarSign, Coins, ShoppingCart, Split } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatCurrencyCLP, parseNumberInput } from '@/lib/utils/formatters';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
-import CustomersSelect from '@/components/shared/selects/CustomersSelect';
-import HostessSelect from '@/components/shared/selects/HostessSelect';
-import RoomSelect from '@/components/shared/selects/RoomSelect';
-import PaymentMethodSelect from '@/components/shared/selects/PaymentMethodSelect';
+import { CustomersSelect } from '@/components/shared/selects';
+import { HostessSelect } from '@/components/shared/selects';
+import { RoomSelect } from '@/components/shared/selects';
+import { PaymentMethodSelect } from '@/components/shared/selects';
+import { useRefreshOnFocus } from '@/hooks/shared';
 import { useClients } from '@/hooks/clientes/useClients';
-import { useAnfitrionasDisponibles } from '@/hooks/personal/useAnfitrionasDisponibles';
+import { useAnfitrionasDisponibles } from '@/hooks/personal';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 import { useQueryClient } from '@tanstack/react-query';
 import logger from '@/lib/utils/logger';
+import { usePrivateRoomSummary } from '@/hooks/private-rooms/usePrivateRoomSummary';
+import { PrivateRoomSummaryCard } from './PrivateRoomSummaryCard';
 
 export default function NuevoServicioPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { allClients: clientes = [] } = useClients();
+  const { allClients: clientes = [], fetchClients } = useClients();
   const { anfitrionas, refetch: refetchAnfitrionas } = useAnfitrionasDisponibles();
-  const { habitaciones } = useHabitaciones();
+  const { habitaciones, getHabitaciones } = useHabitaciones();
   const { startTimer } = useTimer();
 
   // Form data
@@ -70,84 +73,47 @@ export default function NuevoServicioPage() {
   });
 
   // Dynamic limits calculation
-  const selectedRoom = useMemo(() => {
-    return habitaciones.find(
-      h => String(h.id_habitacion || h.id) === String(formData.habitacion_id)
-    );
-  }, [formData.habitacion_id, habitaciones]);
-
-  const selectedClientData = useMemo(() => {
-    if (formData.clientes.length === 0) return null;
-    return clientes.find(c => String(c.id_cliente ?? c.id ?? '') === String(formData.clientes[0]));
-  }, [clientes, formData.clientes]);
-
-  const hasComision = useMemo(() => {
-    return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
-  }, [selectedRoom]);
-
-  const maxHostesses = useMemo(() => {
-    if (!hasComision) return 10; // Default limit if no special room
-    // Rule: Max 3 girls AND (Girls + Clients) <= 4
-    return Math.min(3, 4 - formData.clientes.length);
-  }, [hasComision, formData.clientes.length]);
-
-  const maxClients = useMemo(() => {
-    if (!hasComision) return 4;
-    // Rule: (Girls + Clients) <= 4
-    return 4 - formData.usuarios.length;
-  }, [hasComision, formData.usuarios.length]);
-
-  const desgloseTarjeta = useMemo(() => {
-    const redondearMiles = (monto: number) => Math.round(monto / 1000) * 1000;
-    const venta = redondearMiles(total * 0.51);
-    const propina = redondearMiles(Math.max(0, total * 0.49));
-
-    return { venta, propina };
-  }, [total]);
-
-  const precioHabitacionBoleta = useMemo(() => {
-    const cantidadAnfitrionas = formData.usuarios.length || 1;
-    const cantidadClientes = formData.clientes.length || 1;
-    let multiplicadorHabitacion = cantidadAnfitrionas;
-
-    if (
-      cantidadClientes > cantidadAnfitrionas &&
-      selectedRoom &&
-      (selectedRoom.comision_anfitriona ?? 0) === 0
-    ) {
-      multiplicadorHabitacion = cantidadClientes;
-    }
-
-    if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
-      multiplicadorHabitacion = 1;
-    }
-
-    return precioHabitacion * multiplicadorHabitacion;
-  }, [formData.usuarios.length, formData.clientes.length, precioHabitacion, selectedRoom]);
-
-  const disabledPaymentMethods = useMemo(() => {
-    const saldo = Number(selectedClientData?.saldo || 0);
-
-    if (saldo > 0) {
-      return ['prepago', 'mixto'] as const;
-    }
-
-    return ['prepago'] as const;
-  }, [selectedClientData]);
+  const {
+    selectedRoom,
+    selectedClientData,
+    selectedClientName,
+    selectedHostessNames,
+    hasComision,
+    isServicePriceLocked,
+    maxHostesses,
+    maxClients,
+    desgloseTarjeta,
+    precioHabitacionBoleta,
+    disabledPaymentMethods
+  } = usePrivateRoomSummary({
+    formData,
+    clientes,
+    anfitrionas,
+    habitaciones,
+    precioHabitacion,
+    total,
+    pagosMixtos
+  });
 
   // Format number with thousand separators
   const formatNumberWithSeparators = (value: number): string => {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
+  const refreshLookupData = useCallback(async () => {
+    await Promise.all([fetchClients(), refetchAnfitrionas(), getHabitaciones()]);
+  }, [fetchClients, refetchAnfitrionas, getHabitaciones]);
+
   // Generate random code function
   const generateCode = generateRandomCode;
 
+  useRefreshOnFocus(refreshLookupData);
+
   // Calculate totals when form data changes
   useEffect(() => {
-    // Lógica: Si el número de clientes es mayor al de anfitrionas y la habitación NO tiene comisión,
-    // el precio de la habitación y el servicio se multiplican por el número de clientes seleccionados.
-    // En otros casos, se multiplica por el número de anfitrionas.
+    // LÃ³gica: Si el nÃºmero de clientes es mayor al de anfitrionas y la habitaciÃ³n NO tiene comisiÃ³n,
+    // el precio de la habitaciÃ³n y el servicio se multiplican por el nÃºmero de clientes seleccionados.
+    // En otros casos, se multiplica por el nÃºmero de anfitrionas.
     const cantidadAnfitrionas = formData.usuarios.length || 1;
     const cantidadClientes = formData.clientes.length || 1;
     let multiplicadorServicio = cantidadAnfitrionas;
@@ -162,7 +128,7 @@ export default function NuevoServicioPage() {
       multiplicadorHabitacion = cantidadClientes;
     }
 
-    // Si la habitación tiene comisión mayor a cero, NO multiplicar el precio de la habitación
+    // Si la habitaciÃ³n tiene comisiÃ³n mayor a cero, NO multiplicar el precio de la habitaciÃ³n
     if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
       multiplicadorHabitacion = 1;
     }
@@ -214,9 +180,14 @@ export default function NuevoServicioPage() {
       if (selectedRoom) {
         const precio = selectedRoom.precio || selectedRoom.price || 0;
         const tiempo = selectedRoom.tiempo || selectedRoom.time || 0;
+        const roomCommission = Number(selectedRoom.comision_anfitriona ?? 0);
         setPrecioHabitacion(precio);
         setTiempoHabitacion(tiempo);
-        setFormData(prev => ({ ...prev, tiempo: tiempo }));
+        setFormData(prev => ({
+          ...prev,
+          tiempo,
+          precio_servicio: roomCommission > 0 ? 0 : prev.precio_servicio
+        }));
       }
     } else {
       setPrecioHabitacion(0);
@@ -260,7 +231,7 @@ export default function NuevoServicioPage() {
       return;
     }
     if (!formData.habitacion_id) {
-      toast.error('Selecciona una habitación');
+      toast.error('Selecciona una habitaciÃ³n');
       return;
     }
     if (formData.precio_servicio < 0) {
@@ -268,7 +239,7 @@ export default function NuevoServicioPage() {
       return;
     }
     if (!formData.metodo_pago) {
-      toast.error('Selecciona un método de pago');
+      toast.error('Selecciona un mÃ©todo de pago');
       return;
     }
 
@@ -350,29 +321,29 @@ export default function NuevoServicioPage() {
         <body>
           <div class="card">
             <div class="header">
-              <img src="${logoUrl}" alt="Las Muñecas de Ramón" class="logo" />
-              <p class="brand">Las Muñecas de Ramón</p>
-              <p class="subtitle">Boleta habitación</p>
+              <img src="${logoUrl}" alt="Las MuÃ±ecas de RamÃ³n" class="logo" />
+              <p class="brand">Las MuÃ±ecas de RamÃ³n</p>
+              <p class="subtitle">Boleta habitaciÃ³n</p>
             </div>
 
             <div class="section">
-              <div class="section-title">Detalle de atención</div>
+              <div class="section-title">Detalle de atenciÃ³n</div>
               <div class="row"><span class="label">Cliente</span><span class="value">${clienteNombre}</span></div>
-              <div class="row"><span class="label">Habitación</span><span class="value">${habitacionNombre}</span></div>
-              <div class="row"><span class="label">Método de pago</span><span class="value">${formData.metodo_pago}</span></div>
+              <div class="row"><span class="label">HabitaciÃ³n</span><span class="value">${habitacionNombre}</span></div>
+              <div class="row"><span class="label">MÃ©todo de pago</span><span class="value">${formData.metodo_pago}</span></div>
               <div class="row"><span class="label">Fecha</span><span class="value">${fecha}</span></div>
               <div class="row"><span class="label">Atendido por</span><span class="value">${anfitrionasAtendiendo || 'Sin anfitriona asignada'}</span></div>
             </div>
 
             <div class="service-box">
               <div class="section-title">Concepto</div>
-              <div class="row"><span class="label">Servicio</span><span class="value">Uso de habitación privada</span></div>
-              <div class="total"><span>Total habitación</span><span>${formatCurrencyCLP(monto)}</span></div>
+              <div class="row"><span class="label">Servicio</span><span class="value">Uso de habitaciÃ³n privada</span></div>
+              <div class="total"><span>Total habitaciÃ³n</span><span>${formatCurrencyCLP(monto)}</span></div>
             </div>
 
             <div class="footer">
               Gracias por su visita.<br />
-              Documento generado desde el módulo de servicios privados.
+              Documento generado desde el mÃ³dulo de servicios privados.
             </div>
           </div>
         </body>
@@ -383,7 +354,7 @@ export default function NuevoServicioPage() {
     boletaWindow.print();
   };
 
-  // Función para enviar el servicio después de confirmar
+  // FunciÃ³n para enviar el servicio despuÃ©s de confirmar
   const confirmAndSubmit = async () => {
     if (!servicioDataToSubmit) return;
 
@@ -429,8 +400,8 @@ export default function NuevoServicioPage() {
         // Invalidar cache de React Query para servicios
         queryClient.invalidateQueries({ queryKey: ['/api/servicios'] });
 
-        // Refrescar lista de anfitrionas disponibles
-        refetchAnfitrionas();
+        // Refrescar maestros para que el siguiente alta use datos actualizados
+        await refreshLookupData();
 
         toast.success(`Servicio creado exitosamente`);
         router.push('/private-rooms');
@@ -453,7 +424,7 @@ export default function NuevoServicioPage() {
             Datos Servicio
           </h2>
           <div className='uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1'>
-            Las muñecas de Ramón
+            Las muÃ±ecas de RamÃ³n
           </div>
         </div>
 
@@ -465,13 +436,13 @@ export default function NuevoServicioPage() {
           type='button'
         >
           <ArrowLeft className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-          Atrás
+          AtrÃ¡s
         </Button>
       </div>
 
       <div className='p-4 sm:p-6 lg:p-8 bg-white mx-4 sm:mx-6 lg:mx-8 space-y-4 sm:space-y-6 shadow-md rounded-xl'>
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
-          {/* Habitación */}
+          {/* HabitaciÃ³n */}
           <RoomSelect
             habitaciones={habitaciones}
             value={formData.habitacion_id ? formData.habitacion_id.toString() : ''}
@@ -481,12 +452,13 @@ export default function NuevoServicioPage() {
                 habitacion_id: value
               }));
             }}
-            label='HABITACIÓN'
-            placeholder='Seleccionar habitación'
+            label='HABITACIÃ“N'
+            placeholder='Seleccionar habitaciÃ³n'
             required={true}
             showPrice={true}
             showTime={true}
             filterByStatus={1} // Solo habitaciones disponibles
+            requireCompleteConfig={true}
             className='w-full'
           />
           {/* Anfitrionas */}
@@ -521,6 +493,37 @@ export default function NuevoServicioPage() {
             className='w-full'
           />
         </div>
+
+        {false && (
+          <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
+            <div className='rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-slate-900/50'>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-gray-400'>
+                HabitaciÃ³n seleccionada
+              </p>
+              <p className='mt-1 text-sm font-bold text-gray-900 dark:text-white'>
+                {selectedRoom.nombre || selectedRoom.name || selectedRoom.numero || 'HabitaciÃ³n'}
+              </p>
+            </div>
+
+            <div className='rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-slate-900/50'>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-gray-400'>
+                Tiempo de la habitaciÃ³n
+              </p>
+              <p className='mt-1 text-sm font-bold text-gray-900 dark:text-white'>
+                {tiempoHabitacion > 0 ? `${tiempoHabitacion} minutos` : 'Sin tiempo asignado'}
+              </p>
+            </div>
+
+            <div className='rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-slate-900/50'>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-gray-400'>
+                Precio de la habitaciÃ³n
+              </p>
+              <p className='mt-1 text-sm font-bold text-gray-900 dark:text-white'>
+                {formatCurrencyCLP(precioHabitacion)}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
           {/* Precio de servicio */}
@@ -557,11 +560,13 @@ export default function NuevoServicioPage() {
                 }}
                 className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-none focus:border-black'
                 placeholder='0'
+                disabled={isServicePriceLocked}
+                readOnly={isServicePriceLocked}
               />
             </div>
           </div>
 
-          {/* Método de pago */}
+          {/* MÃ©todo de pago */}
           <div>
             <PaymentMethodSelect
               value={formData.metodo_pago}
@@ -578,8 +583,8 @@ export default function NuevoServicioPage() {
 
                 setPagosMixtos([]);
               }}
-              label='MÉTODO DE PAGO'
-              placeholder='Seleccionar método de pago'
+              label='MÃ‰TODO DE PAGO'
+              placeholder='Seleccionar mÃ©todo de pago'
               required={true}
               className='w-full'
               showPrepago={!!selectedClientData}
@@ -616,35 +621,27 @@ export default function NuevoServicioPage() {
                 disabled={formData.metodo_pago !== 'tarjeta'}
               />
             </div>
-            {formData.metodo_pago === 'tarjeta' && total > 0 && (
-              <div className='mt-4 mx-auto max-w-lg rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-5 text-center shadow-md shadow-amber-100/70 dark:border-amber-500/20 dark:bg-slate-950 dark:from-amber-500/10 dark:via-slate-900 dark:to-fuchsia-500/10 dark:shadow-black/30'>
-                <div className='mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'>
-                  <Receipt className='h-5 w-5' />
-                </div>
-                <p className='text-[10px] font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300'>
-                  Nota importante
-                </p>
-                <p className='mt-2 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-100'>
-                  Genera venta por{' '}
-                  <span className='font-black text-emerald-600 dark:text-emerald-300'>
-                    {formatCurrencyCLP(desgloseTarjeta.venta)}
-                  </span>{' '}
-                  y propina por{' '}
-                  <span className='font-black text-fuchsia-600 dark:text-fuchsia-300'>
-                    {formatCurrencyCLP(desgloseTarjeta.propina)}
-                  </span>
-                </p>
-              </div>
-            )}
           </div>
         </div>
+
+        <PrivateRoomSummaryCard
+          room={selectedRoom}
+          clientName={selectedClientName}
+          hostessNames={selectedHostessNames}
+          tiempoHabitacion={tiempoHabitacion}
+          precioServicio={formData.precio_servicio}
+          metodoPago={formData.metodo_pago}
+          iva={formData.iva}
+          total={total}
+          desgloseTarjeta={desgloseTarjeta}
+        />
 
         {formData.metodo_pago === 'mixto' && (
           <div className='rounded-2xl border border-dotted border-slate-300 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60 transition-all duration-300'>
             <div className='mb-3 flex items-center gap-2'>
               <Split className='h-4 w-4 text-slate-700 dark:text-slate-200' />
               <p className='text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-200'>
-                Distribución de pagos
+                DistribuciÃ³n de pagos
               </p>
             </div>
 
@@ -668,12 +665,12 @@ export default function NuevoServicioPage() {
                           prev.map((item, itemIndex) =>
                             itemIndex === index
                               ? {
-                                  ...item,
-                                  baseMonto: montoBase,
-                                  monto: calcularMontoPagoMixto(item.metodo, montoBase),
-                                  display:
-                                    montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
-                                }
+                                ...item,
+                                baseMonto: montoBase,
+                                monto: calcularMontoPagoMixto(item.metodo, montoBase),
+                                display:
+                                  montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
+                              }
                               : item
                           )
                         );
@@ -751,21 +748,8 @@ export default function NuevoServicioPage() {
           </div>
         )}
 
-        {(formData.metodo_pago === 'efectivo' || formData.metodo_pago === 'transferencia') &&
-          precioHabitacionBoleta > 0 && (
-            <div className='mt-4 flex justify-center'>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={handleGenerarBoletaHabitacion}
-                className='rounded-full border-blue-200 bg-blue-50 px-5 text-blue-700 shadow-sm transition-colors hover:bg-blue-600 hover:text-white dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500 dark:hover:text-white'
-              >
-                <Receipt className='mr-2 h-4 w-4' />
-                Generar boleta por {formatCurrencyCLP(precioHabitacionBoleta)}
-              </Button>
-            </div>
-          )}
-        {/* Total y botón centrados */}
+        {false && precioHabitacionBoleta > 0 && null}
+        {/* Total y botÃ³n centrados */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
             TOTAL
@@ -778,7 +762,7 @@ export default function NuevoServicioPage() {
             size='sm'
             onClick={handleSubmit}
             disabled={loading}
-            className='gap-2 rounded-full bg-black text-white font-bold hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto h-[48px]'
+            className='gap-2 rounded-full bg-stone-900 text-white font-bold transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto h-[48px] hover:bg-stone-800 hover:shadow-lg hover:shadow-stone-900/20 hover:-translate-y-0.5 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white dark:hover:text-stone-900 dark:hover:shadow-stone-100/20'
           >
             <ShoppingCart className='w-4 h-4' />
             Generar Servicio
@@ -786,15 +770,15 @@ export default function NuevoServicioPage() {
         </div>
       </div>
 
-      {/* Modal de confirmación */}
+      {/* Modal de confirmaciÃ³n */}
       {showConfirmModal && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200'>
             <h3 className='text-lg sm:text-xl font-black text-gray-900 mb-2 uppercase tracking-tight'>
-              Confirmar creación de servicio
+              Confirmar creaciÃ³n de servicio
             </h3>
             <p className='text-sm sm:text-base text-gray-500 mb-6 font-medium'>
-              ¿Deseas crear el servicio y comenzar el tiempo?
+              Â¿Deseas crear el servicio y comenzar el tiempo?
             </p>
             <div className='flex gap-3 justify-center'>
               <Button
@@ -824,3 +808,7 @@ export default function NuevoServicioPage() {
     </>
   );
 }
+
+
+
+

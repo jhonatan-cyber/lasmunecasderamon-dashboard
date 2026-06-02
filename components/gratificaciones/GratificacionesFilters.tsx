@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
 import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface GratificacionesFiltersProps {
@@ -54,7 +54,7 @@ export default function GratificacionesFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
-          {/* Búsqueda */}
+          {/* BÃºsqueda */}
           <div className='w-full lg:flex-1'>
             <Label
               htmlFor='search'
@@ -125,7 +125,7 @@ export default function GratificacionesFilters({
               </Button>
             </div>
 
-            {/* Elementos por página */}
+            {/* Elementos por pÃ¡gina */}
             <div className='w-full sm:w-auto'>
               <SelectElements
                 value={rowsPerPage}
@@ -135,7 +135,7 @@ export default function GratificacionesFilters({
               />
             </div>
 
-            {/* Botón limpiar filtros */}
+            {/* BotÃ³n limpiar filtros */}
             <div className='w-full sm:w-auto'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
@@ -160,3 +160,5 @@ export default function GratificacionesFilters({
     </Card>
   );
 }
+
+

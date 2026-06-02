@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import {
   createContext,
   useContext,
@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+import { useSharedSSE } from '@/hooks/shared';
 import logger from '@/lib/utils/logger';
 interface CurrentUser {
   id: number;
@@ -47,7 +47,7 @@ interface AuthContextType {
   refreshPermissions: (forceRefresh?: boolean) => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-// Modulos equivalentes en ingles (como usa la app) vs español (como están en la BD)
+// Modulos equivalentes en ingles (como usa la app) vs espanol (como estan en la BD)
 const moduleMap: Record<string, string[]> = {
   users: ['usuarios', 'users'],
   clients: ['clientes', 'clients'],
@@ -119,21 +119,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionExpiredShownRef = useRef(false);
   const pendingPermissionsRefreshRef = useRef(false);
   const isMountedRef = useRef(true);
-  // Páginas públicas que no requieren autenticación.
-  // OJO: pathname nulo NO debe tratarse como público; si no, la sesión no arranca
+  // Paginas publicas que no requieren autenticacion.
+  // OJO: pathname nulo NO debe tratarse como publico; si no, la sesion no arranca
   // y el guard puede quedar clavado en 'Verificando permisos...'.
+  // Las paginas del sitio marketing (landing, terminos, privacidad) viven en
+  // el proyecto Astro (lasmunecasderamon-web) y no son parte de este dashboard.
   const isPublicPage =
     pathname === '/' ||
-    pathname === '/landing' ||
-    pathname === '/terminos-y-condiciones' ||
-    pathname === '/politica-de-privacidad' ||
     pathname === '/login' ||
     pathname === '/api-docs' ||
     pathname === '/confirmar-anulacion' ||
     pathname === '/confirmar-anulacion-servicio';
-  // Manejar sesión expirada
+  // Manejar sesion expirada
   const handleSessionExpired = useCallback(() => {
-    // Evitar mostrar múltiples notificaciones
+    // Evitar mostrar multiples notificaciones
     if (sessionExpiredShownRef.current) return;
     sessionExpiredShownRef.current = true;
     // Limpiar estado
@@ -142,16 +141,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPermissionsLoaded(false);
     userFetchedRef.current = false;
     permissionsFetchedRef.current = false;
-    // Guardar hint persistente del rol para navegación rápida
+    // Guardar hint persistente del rol para navegacion rapida
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_role_hint');
     }
-    // Mostrar notificación
-    toast.error('Sesión expirada', {
-      description: 'Debe ingresar con código de verificación',
+    // Mostrar notificacion
+    toast.error('Sesion expirada', {
+      description: 'Debe ingresar con codigo de verificacion',
       duration: 3000
     });
-    // Redirigir al login después de un breve delay
+    // Redirigir al login despues de un breve delay
     setTimeout(() => {
       router.push(`/login?redirect=${encodeURIComponent(pathname || '')}`);
       sessionExpiredShownRef.current = false;
@@ -186,17 +185,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const result = await response.json();
           if (result.success && result.user) {
             setUser(result.user);
-            // Guardar hint persistente del rol para navegación rápida
+            // Guardar hint persistente del rol para navegacion rapida
             if (typeof window !== 'undefined') {
               localStorage.setItem('auth_role_hint', result.user.role?.toLowerCase() || '');
             }
             userFetchedRef.current = true;
           } else if (!result.success) {
-            // Sesión inválida o expirada
+            // Sesion invalida o expirada
             handleSessionExpired();
           }
         } else if (response.status === 401) {
-          // No autenticado o sesión expirada
+          // No autenticado o sesion expirada
           handleSessionExpired();
         }
       } catch (error) {
@@ -242,14 +241,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
-            // Solo actualizar si está montado
+            // Solo actualizar si esta montado
             if (isMountedRef.current) {
               setUserPermissions([...result.data]);
             }
             permissionsFetchedRef.current = true;
           }
         } else if (response.status === 401) {
-          // Sesión expirada mientras se cargaban permisos
+          // Sesion expirada mientras se cargaban permisos
           handleSessionExpired();
         }
       } catch (error) {
@@ -288,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [userPermissions, user?.role]
   );
-  // Verificar si tiene algún permiso en un módulo
+  // Verificar si tiene algun permiso en un modulo
   const hasAnyPermission = useCallback(
     (module: string): boolean => {
       if (module === 'dashboard' || module === 'Dashboard') return true;
@@ -322,7 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fetchUser();
     }
   }, [isPublicPage, fetchUser]);
-  // Cargar permisos cuando el usuario esté disponible (solo una vez)
+  // Cargar permisos cuando el usuario este disponible (solo una vez)
   useEffect(() => {
     if (user && !permissionsFetchedRef.current && user.role?.toLowerCase() !== 'administrador') {
       fetchPermissions();
@@ -406,3 +405,4 @@ export function useAuth() {
   }
   return context;
 }
+

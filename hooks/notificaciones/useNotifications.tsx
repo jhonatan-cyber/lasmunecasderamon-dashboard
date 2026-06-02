@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
 import { playNotificationSound, announcePriority } from '@/lib/utils/audioUtils';
-import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
+import { useSharedSSE } from '@/hooks/shared';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { appEventBus } from '@/lib/utils/eventBus';
 
@@ -31,7 +31,7 @@ export function useNotifications() {
     queryKey: ['notifications', 'pending-count'],
     queryFn: async () => {
       // No pedir conteos si no hay usuario o es página pública
-      const isPublic = !pathname || pathname === '/' || pathname === '/landing' || pathname === '/login';
+      const isPublic = !pathname || pathname === '/' || pathname === '/login';
       if (!user || isPublic) return { pedidosCount: 0, solicitudesCount: 0 };
 
       const res = await fetch('/api/notifications/pending-count');
@@ -175,7 +175,7 @@ export function useNotifications() {
     [user, pathname]
   );
 
-  const sseUrl = (!pathname || pathname === '/' || pathname === '/landing' || pathname === '/login' || !user) 
+  const sseUrl = (!pathname || pathname === '/' || pathname === '/login' || !user)
     ? null 
     : '/api/notifications/sse';
 
@@ -283,4 +283,5 @@ export function useNotifications() {
     pendingServiceRequestsCount
   };
 }
+
 

@@ -1,13 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useAnfitrionas } from '@/hooks/personal/useAnfitrionas';
-import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
+import { useAnfitrionasDisponibles } from '@/hooks/personal';
+import { useAvailableRooms } from '@/hooks/habitaciones';
 import { useClients } from '@/hooks/clientes/useClients';
+import { useRefreshOnFocus } from '@/hooks/shared';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
 
@@ -25,9 +26,9 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
-import CustomersSelect from '@/components/shared/selects/CustomersSelect';
-import HostessSelect from '@/components/shared/selects/HostessSelect';
-import RoomSelect from '@/components/shared/selects/RoomSelect';
+import { CustomersSelect } from '@/components/shared/selects';
+import { HostessSelect } from '@/components/shared/selects';
+import { RoomSelect } from '@/components/shared/selects';
 
 interface ServiceOrderFormProps {
   clientes: any[];
@@ -41,9 +42,10 @@ interface ServiceOrderFormProps {
 export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const router = useRouter();
   const { user } = useCurrentUser();
-  const { anfitrionas } = useAnfitrionas();
-  const { habitaciones } = useHabitaciones();
-  const { allClients: clientesDB = [] } = useClients();
+  const { anfitrionas: anfitrionasDisponiblesBase, getAnfitrionasDisponibles } =
+    useAnfitrionasDisponibles();
+  const { rooms: habitaciones, refetchRooms } = useAvailableRooms();
+  const { allClients: clientesDB = [], fetchClients } = useClients();
 
   // Filtrar solo habitaciones disponibles (estado = 1)
   const habitacionesDisponibles = habitaciones?.filter(h => h.estado === 1 || h.status === 1) || [];
@@ -61,7 +63,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     comision_anfitriona: 0,
     habitacion_id: undefined as string | undefined,
     anfitrionas_ids: [] as string[],
-    clientes_ids: [] as string[], // Array para múltiples clientes
+    clientes_ids: [] as string[], // Array para mÃºltiples clientes
     metodo_pago: 'efectivo',
     tiempo: 0
   });
@@ -71,42 +73,42 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     precio_habitacion: ''
   });
 
-  // Estados para controlar qué campos están habilitados
+  // Estados para controlar quÃ© campos estÃ¡n habilitados
   const habitacionSeleccionada = Boolean(tempForm.habitacion_id);
   const tieneComision = tempForm.comision_anfitriona > 0;
 
-  // REGLA: Limitar selección de anfitrionas y clientes según el total de 4 personas
+  // REGLA: Limitar selecciÃ³n de anfitrionas y clientes segÃºn el total de 4 personas
   const maxAnfitrionasPermitidas = 3;
   const maxClientesPermitidos = 3;
   const maxTotalPersonas = 4;
 
-  // Calcular límites dinámicos
+  // Calcular lÃ­mites dinÃ¡micos
   const maxAnfitrionasSegunClientes =
     tempForm.comision_anfitriona > 0
-      ? 3 // Máximo 3 anfitrionas para habitaciones con comisión
-      : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); // Máximo 3 anfitrionas si hay comisión
+      ? 3 // MÃ¡ximo 3 anfitrionas para habitaciones con comisiÃ³n
+      : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); // MÃ¡ximo 3 anfitrionas si hay comisiÃ³n
 
   const maxClientesSegunAnfitrionas =
     tempForm.comision_anfitriona > 0
-      ? 1 // Máximo 1 cliente para habitaciones con comisión
+      ? 1 // MÃ¡ximo 1 cliente para habitaciones con comisiÃ³n
       : Math.max(0, maxTotalPersonas - tempForm.anfitrionas_ids.length);
 
-  // Calcular límites específicos para combinaciones
+  // Calcular lÃ­mites especÃ­ficos para combinaciones
   const maxAnfitrionasCon1Cliente =
     tempForm.comision_anfitriona > 0 && tempForm.clientes_ids.length === 1
-      ? 3 // Máximo 3 anfitrionas con 1 cliente
-      : Math.max(0, maxTotalPersonas - 1); // Máximo 3 anfitrionas con 1 cliente
+      ? 3 // MÃ¡ximo 3 anfitrionas con 1 cliente
+      : Math.max(0, maxTotalPersonas - 1); // MÃ¡ximo 3 anfitrionas con 1 cliente
 
   const maxClientesCon2Anfitrionas =
     tempForm.comision_anfitriona > 0 && tempForm.anfitrionas_ids.length === 2
-      ? 2 // Máximo 2 anfitrionas con 2 clientes
-      : Math.max(0, maxTotalPersonas - 2); // Máximo 2 anfitrionas con 2 clientes
+      ? 2 // MÃ¡ximo 2 anfitrionas con 2 clientes
+      : Math.max(0, maxTotalPersonas - 2); // MÃ¡ximo 2 anfitrionas con 2 clientes
 
-  // Determinar límite final según la combinación actual
+  // Determinar lÃ­mite final segÃºn la combinaciÃ³n actual
   const maxAnfitrionasFinal =
     tempForm.comision_anfitriona > 0
       ? tempForm.clientes_ids.length === 0
-        ? 3 // Máximo 3 anfitrionas sin clientes
+        ? 3 // MÃ¡ximo 3 anfitrionas sin clientes
         : tempForm.clientes_ids.length === 1
           ? maxAnfitrionasCon1Cliente
           : tempForm.clientes_ids.length === 2
@@ -117,7 +119,11 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const haAlcanzadoMaxAnfitrionas = tempForm.anfitrionas_ids.length >= maxAnfitrionasFinal;
   const haAlcanzadoMaxClientes = tempForm.clientes_ids.length >= maxClientesSegunAnfitrionas;
 
-  // Obtener anfitrionas que están en servicios activos
+  const refreshLookupData = useCallback(async () => {
+    await Promise.all([fetchClients(), getAnfitrionasDisponibles(), refetchRooms()]);
+  }, [fetchClients, getAnfitrionasDisponibles, refetchRooms]);
+
+  // Obtener anfitrionas que estÃ¡n en servicios activos
   useEffect(() => {
     const fetchAnfitrionasOcupadas = async () => {
       try {
@@ -144,9 +150,11 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     fetchAnfitrionasOcupadas();
   }, []);
 
+  useRefreshOnFocus(refreshLookupData);
+
   // Filtrar anfitrionas disponibles (no ocupadas y no seleccionadas)
   const anfitrionasDisponibles =
-    anfitrionas?.filter(a => {
+    anfitrionasDisponiblesBase?.filter(a => {
       const id = String(a.id_usuario || a.id || '');
       return !anfitrionasOcupadas.includes(Number(id)) && !tempForm.anfitrionas_ids.includes(id);
     }) || [];
@@ -187,7 +195,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
   const handleCreateOrder = async () => {
     if (!tempForm.habitacion_id) {
-      showErrorToast('Selecciona una habitación');
+      showErrorToast('Selecciona una habitaciÃ³n');
       return;
     }
 
@@ -220,7 +228,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
       if (data.success) {
         showSuccessToast(
-          'Solicitud de servicio enviada exitosamente. Esperando aprobación de cajera.'
+          'Solicitud de servicio enviada exitosamente. Esperando aprobaciÃ³n de cajera.'
         );
         window.dispatchEvent(new CustomEvent('updateServiceRequests'));
         window.dispatchEvent(new CustomEvent('refreshNotifications'));
@@ -256,26 +264,26 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     // Multiplicador por tiempo: si es 60 minutos, todo se duplica
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
 
-    // REGLA: Para habitaciones con comisión
+    // REGLA: Para habitaciones con comisiÃ³n
     if (tieneComision) {
-      // REGLA: Para habitaciones con comisión, NO multiplicar por número de clientes ni anfitrionas
-      // El precio es por habitación, no por persona
+      // REGLA: Para habitaciones con comisiÃ³n, NO multiplicar por nÃºmero de clientes ni anfitrionas
+      // El precio es por habitaciÃ³n, no por persona
       const precioHabitacionTotal = tempForm.precio_habitacion * multiplicador;
       const precioServicioTotal = tempForm.precio_servicio * multiplicador;
 
-      // IVA siempre es 0 para habitaciones con comisión (incluso con tarjeta)
+      // IVA siempre es 0 para habitaciones con comisiÃ³n (incluso con tarjeta)
       return precioServicioTotal + precioHabitacionTotal;
     }
 
-    // Si no hay anfitrionas, solo mostrar precio de habitación sin multiplicar
+    // Si no hay anfitrionas, solo mostrar precio de habitaciÃ³n sin multiplicar
     if (numAnfitrionas === 0) {
       return tempForm.precio_habitacion * multiplicador;
     }
 
-    // Precio de habitación se multiplica por número de anfitrionas y por multiplicador de tiempo
+    // Precio de habitaciÃ³n se multiplica por nÃºmero de anfitrionas y por multiplicador de tiempo
     const precioHabitacionTotal = tempForm.precio_habitacion * numAnfitrionas * multiplicador;
 
-    // Precio de servicio se multiplica por número de anfitrionas y por multiplicador de tiempo
+    // Precio de servicio se multiplica por nÃºmero de anfitrionas y por multiplicador de tiempo
     const precioServicioTotal = tempForm.precio_servicio * numAnfitrionas * multiplicador;
 
     // IVA se calcula sobre los precios ya multiplicados por tiempo
@@ -302,7 +310,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
     const tieneComision = tempForm.comision_anfitriona > 0;
 
-    // Para habitaciones con comisión, IVA siempre es 0 (incluso con tarjeta)
+    // Para habitaciones con comisiÃ³n, IVA siempre es 0 (incluso con tarjeta)
     if (tieneComision) {
       return 0;
     }
@@ -326,7 +334,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
       {/* Formulario compacto */}
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
-        {/* Habitación */}
+        {/* HabitaciÃ³n */}
         <div>
           <RoomSelect
             habitaciones={habitacionesDisponibles}
@@ -344,9 +352,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
                 tiempo: habitacion?.tiempo || habitacion?.time || 0
               });
             }}
-            label='Habitación'
-            placeholder='Seleccione una habitación'
-            searchPlaceholder='Buscar habitación...'
+            label='HabitaciÃ³n'
+            placeholder='Seleccione una habitaciÃ³n'
+            searchPlaceholder='Buscar habitaciÃ³n...'
             required
             showTime
             showPrice
@@ -356,7 +364,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         {/* Anfitrionas */}
         <div>
           <HostessSelect
-            anfitrionas={anfitrionas}
+            anfitrionas={anfitrionasDisponibles}
             value={tempForm.anfitrionas_ids.map(id => id.toString())}
             onChange={(values: string[]) => setTempForm({ ...tempForm, anfitrionas_ids: values })}
             label='Anfitrionas'
@@ -406,9 +414,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           </div>
         </div>
 
-        {/* Método de pago */}
+        {/* MÃ©todo de pago */}
         <div>
-          <Label className={ORDER_FIELD_LABEL_CLASS}>Método de pago*</Label>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>MÃ©todo de pago*</Label>
           <Select
             value={tempForm.metodo_pago}
             onValueChange={(value: string) => setTempForm({ ...tempForm, metodo_pago: value })}
@@ -474,7 +482,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         </div>
       </div>
 
-      {/* Botón */}
+      {/* BotÃ³n */}
       <div className='text-center'>
         <Button
           onClick={handleCreateOrder}
@@ -493,3 +501,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     </div>
   );
 }
+
+
+

@@ -8,14 +8,18 @@ import { Button } from '@/components/ui/button';
 import { useCashRegister } from '@/hooks/caja/useCashRegister';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { CajaCard } from '@/components/caja/CajaCard';
-import { CajaFormDialog } from '@/components/caja/CajaFormDialog';
-import { CerrarCajaDialog } from '@/components/caja/CerrarCajaDialog';
-import { RetiroDineroDialog } from '@/components/caja/RetiroDineroDialog';
 import dynamic from 'next/dynamic';
 import logger from '@/lib/utils/logger';
-const CajaDetails = dynamic(() => import('@/components/caja/CajaDetails'), { ssr: false });
-import { CajaFilters } from '@/components/caja/CajaFilters';
+import {
+  CajaCard,
+  CajaFormDialog,
+  CerrarCajaDialog,
+  RetiroDineroDialog,
+  CajaFilters
+} from '@/components/caja';
+const DynamicCajaDetails = dynamic(() => import('@/components/caja').then(mod => mod.CajaDetails), {
+  ssr: false
+});
 import { CashRegisterStatsCard, CashRegisterDetailedStats } from '@/components/cash-register';
 import { CajaWithUser, CajaCreate, CajaCierre, CajaRetiro } from '@/types/caja';
 import { AlertTriangle, RotateCcw, Wallet, Plus, Info } from 'lucide-react';
@@ -301,7 +305,11 @@ export default function CashRegister() {
         />
 
         {showDetails && selectedCaja && (
-          <CajaDetails caja={selectedCaja} open={showDetails} onOpenChange={setShowDetails} />
+          <DynamicCajaDetails
+            caja={selectedCaja}
+            open={showDetails}
+            onOpenChange={setShowDetails}
+          />
         )}
       </div>
     </PermissionGuard>

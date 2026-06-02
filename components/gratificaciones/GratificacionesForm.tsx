@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/input';
+﻿import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,8 @@ import { Controller } from 'react-hook-form';
 import { Loader2 } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Gratificacion } from '@/types/gratificacion';
-import { useGratificacionForm } from '@/hooks/personal/useGratificacionForm';
-import UserSelect from '@/components/shared/selects/UserSelect';
+import { useGratificacionForm } from '@/hooks/personal';
+import { UserSelect } from '@/components/shared/selects';
 
 interface GratificacionesFormProps {
   isEditMode: boolean;
@@ -77,8 +77,8 @@ export function GratificacionesForm({ isEditMode, gratificacion, open, isLoading
       </div>
 
       <div>
-        <Label htmlFor='descripcion' className='mb-2 text-sm font-semibold'>Descripción</Label>
-        <Textarea id='descripcion' {...register('descripcion')} placeholder='Detalles de la gratificación...'
+        <Label htmlFor='descripcion' className='mb-2 text-sm font-semibold'>DescripciÃ³n</Label>
+        <Textarea id='descripcion' {...register('descripcion')} placeholder='Detalles de la gratificaciÃ³n...'
           rows={3} disabled={isLoading} className='rounded-[20px] text-sm sm:text-base resize-none px-4 py-3' />
       </div>
 
@@ -107,3 +107,6 @@ export function GratificacionesForm({ isEditMode, gratificacion, open, isLoading
     </form>
   );
 }
+
+
+

@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useCuentas } from '@/hooks/caja/useCuentas';
 import { CreateCuentaRequest, CreateDetalleCuentaRequest } from '@/types/cuenta';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
-import { useChampagneRule } from '@/hooks/shared/useChampagneRule';
+import { useChampagneRule } from '@/hooks/shared';
 import logger from '@/lib/utils/logger';
 
 export function useAccountForm() {
@@ -270,3 +270,4 @@ export function useAccountForm() {
     calculateTotal
   };
 }
+

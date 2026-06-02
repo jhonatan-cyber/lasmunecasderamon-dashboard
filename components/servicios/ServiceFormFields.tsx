@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -9,7 +9,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import HostessSelect from '@/components/shared/selects/HostessSelect';
+import { HostessSelect } from '@/components/shared/selects';
 
 interface ServiceFormFieldsProps {
   anfitrionasDisponibles: any[];
@@ -81,7 +81,7 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
           )}
           {anfitrionasDelServicio.length > 0 && (
             <p className='text-xs text-blue-600'>
-              Anfitrionas actuales del servicio están incluidas en la lista
+              Anfitrionas actuales del servicio estÃ¡n incluidas en la lista
             </p>
           )}
         </div>
@@ -102,9 +102,9 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
           />
           {numAnfitrionas > 1 && precioServicioTotal > 0 && (
             <p className='text-xs text-gray-500'>
-              Total: {formatCurrencyNoDecimals(precioServicioTotal)} ({numAnfitrionas} ×{' '}
+              Total: {formatCurrencyNoDecimals(precioServicioTotal)} ({numAnfitrionas} Ã—{' '}
               {formatCurrencyNoDecimals(precioServicioTotal / numAnfitrionas / multiplicadorTiempo)}
-              {multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo}` : ''})
+              {multiplicadorTiempo > 1 ? ` Ã— ${multiplicadorTiempo}` : ''})
             </p>
           )}
           {multiplicadorTiempo > 1 && (
@@ -114,29 +114,29 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
 
         <div className='space-y-2'>
           <Label htmlFor='precio_habitacion'>
-            Precio de la Habitación {numAnfitrionas > 1 ? `(por anfitriona)` : ''}
+            Precio de la HabitaciÃ³n {numAnfitrionas > 1 ? `(por anfitriona)` : ''}
           </Label>
           <Input
             id='precio_habitacion'
             type='text'
             value={precioHabitacionDisplay}
-            placeholder='Precio tomado de habitación sin comisión'
+            placeholder='Precio tomado de habitaciÃ³n sin comisiÃ³n'
             disabled
             className='bg-gray-100 cursor-not-allowed'
           />
           {precioHabitacionSinComision > 0 && (
             <p className='text-xs text-blue-600'>
-              Precio automático de habitación sin comisión:{' '}
+              Precio automÃ¡tico de habitaciÃ³n sin comisiÃ³n:{' '}
               {formatCurrencyNoDecimals(precioHabitacionSinComision)}
             </p>
           )}
           {numAnfitrionas > 1 && precioHabitacionTotal > 0 && (
             <p className='text-xs text-gray-500'>
-              Total: {formatCurrencyNoDecimals(precioHabitacionTotal)} ({numAnfitrionas} ×{' '}
+              Total: {formatCurrencyNoDecimals(precioHabitacionTotal)} ({numAnfitrionas} Ã—{' '}
               {formatCurrencyNoDecimals(
                 precioHabitacionTotal / numAnfitrionas / multiplicadorTiempo
               )}
-              {multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo}` : ''})
+              {multiplicadorTiempo > 1 ? ` Ã— ${multiplicadorTiempo}` : ''})
             </p>
           )}
           {multiplicadorTiempo > 1 && precioHabitacionTotal > 0 && (
@@ -146,10 +146,10 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
 
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div className='space-y-2'>
-            <Label htmlFor='metodo_pago'>Método de Pago</Label>
+            <Label htmlFor='metodo_pago'>MÃ©todo de Pago</Label>
             <Select value={metodoPago} onValueChange={onMetodoPagoChange} disabled={isSaving}>
               <SelectTrigger className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10 [&>svg]:hidden'>
-                <SelectValue placeholder='Seleccione método de pago' />
+                <SelectValue placeholder='Seleccione mÃ©todo de pago' />
               </SelectTrigger>
               <SelectContent className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white'>
                 <SelectItem value='efectivo'>Efectivo</SelectItem>
@@ -160,7 +160,7 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
             {metodoPago === 'tarjeta' && (
               <div className='space-y-1'>
                 <p className='text-xs text-purple-600'>
-                  Se aplicará automáticamente 20% de IVA sobre el precio total del servicio (
+                  Se aplicarÃ¡ automÃ¡ticamente 20% de IVA sobre el precio total del servicio (
                   {formatCurrencyNoDecimals(precioServicioTotalForIVA)})
                 </p>
                 {iva > 0 && (
@@ -188,12 +188,12 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
               </SelectContent>
             </Select>
             <p className='text-xs text-blue-600'>
-              Este tiempo creará un nuevo servicio completo en la base de datos. El timer principal
-              se pausará hasta que termine.
+              Este tiempo crearÃ¡ un nuevo servicio completo en la base de datos. El timer principal
+              se pausarÃ¡ hasta que termine.
             </p>
             {tiempo === 60 && (
               <p className='text-xs text-orange-600 font-medium'>
-                Con 60 minutos los costos se duplicarán automáticamente
+                Con 60 minutos los costos se duplicarÃ¡n automÃ¡ticamente
               </p>
             )}
           </div>
@@ -204,3 +204,5 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
 );
 
 ServiceFormFields.displayName = 'ServiceFormFields';
+
+

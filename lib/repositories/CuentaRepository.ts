@@ -5,6 +5,7 @@ import { CashRegisterRepository } from './CashRegisterRepository';
 import { BaseRepository } from './BaseRepository';
 import { NotFoundError, BusinessError } from '@/lib/errors/errors';
 import { RoomManager } from '@/lib/services/RoomManager';
+import { buildFinancialSummary, type CuentaAnulacionRow } from './cuenta/cuentaFinancialSummary';
 
 // ─── Input types for CuentaRepository ───────────────────────────────────────
 
@@ -67,17 +68,6 @@ type CuentaRoomHistoryItem = {
 type CuentaRoomHistoryViewItem = CuentaRoomHistoryItem & {
   remainingMinutes: number;
   isActive: boolean;
-};
-
-type CuentaAnulacionRow = {
-  id: string;
-  monto: number;
-  motivo: string | null;
-  estado: string;
-  fecha_crea: string;
-  fecha_mod: string | null;
-  requested_by_nombre: string | null;
-  approved_by_nombre: string | null;
 };
 
 export class CuentaRepository {
@@ -275,31 +265,6 @@ export class CuentaRepository {
     });
   }
 
-  private static buildFinancialSummary(cuenta: any, solicitudes: CuentaAnulacionRow[]) {
-    const totalActual = Number(cuenta?.total || 0);
-    const totalAnuladoAprobado = solicitudes
-      .filter(item => item.estado === 'aprobado')
-      .reduce((sum, item) => sum + Number(item.monto || 0), 0);
-    const totalAnulacionPendiente = solicitudes
-      .filter(item => item.estado === 'pendiente')
-      .reduce((sum, item) => sum + Number(item.monto || 0), 0);
-    const totalAnulacionRechazada = solicitudes
-      .filter(item => item.estado === 'rechazado')
-      .reduce((sum, item) => sum + Number(item.monto || 0), 0);
-
-    const totalOriginal = totalActual + totalAnuladoAprobado;
-
-    return {
-      total_original: totalOriginal,
-      total_actual: totalActual,
-      total_anulado_aprobado: totalAnuladoAprobado,
-      total_anulacion_pendiente: totalAnulacionPendiente,
-      total_anulacion_rechazada: totalAnulacionRechazada,
-      tuvo_anulacion_parcial: totalAnuladoAprobado > 0 && totalActual > 0,
-      fue_anulada_total: totalAnuladoAprobado > 0 && totalActual <= 0
-    };
-  }
-
   static async finalizeRoomSession(id: string, nowStr = getNowInBusinessTimezone()) {
     const cuenta = await query<any[]>(
       `SELECT c.*, h.nombre as habitacion_numero
@@ -439,7 +404,7 @@ export class CuentaRepository {
       return {
         ...cuentaNormalizada,
         solicitudes_anulacion: solicitudesAnulacion,
-        resumen_financiero: this.buildFinancialSummary(cuentaNormalizada, solicitudesAnulacion)
+        resumen_financiero: buildFinancialSummary(cuentaNormalizada, solicitudesAnulacion)
       };
     });
   }

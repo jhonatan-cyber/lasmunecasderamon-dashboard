@@ -1,4 +1,4 @@
-ï»¿/* eslint-disable */
+/* eslint-disable */
 import { useState, useEffect } from 'react';
 import {
   Shield,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions, Permission } from '@/hooks/auth/usePermissions';
-import { Role } from '@/hooks/personal/useRoles';
+import { Role } from '@/hooks/personal';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
@@ -133,7 +133,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       advances: 'Anticipos',
       attendance: 'Asistencias',
       cash_register: 'Caja',
-      categories: 'CategorÃ­as',
+      categories: 'Categorías',
       commissions: 'Comisiones',
       overtime: 'Horas Extras',
       orders: 'Pedidos',
@@ -144,7 +144,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       roles: 'Roles',
       sales: 'Ventas',
       services: 'Servicios',
-      settings: 'ConfiguraciÃ³n',
+      settings: 'Configuración',
       tips: 'Propinas',
       users: 'Usuarios',
       caja: 'Caja',
@@ -201,7 +201,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                 key={module}
                 className='border border-gray-200 dark:border-neutral-800 rounded-lg overflow-hidden'
               >
-                {/* Header del mÃ³dulo */}
+                {/* Header del módulo */}
                 <div
                   className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
                   onClick={() => toggleModuleExpansion(module)}
@@ -316,3 +316,4 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
     </div>
   );
 }
+

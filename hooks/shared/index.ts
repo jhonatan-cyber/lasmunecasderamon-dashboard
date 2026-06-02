@@ -1,12 +1,16 @@
-// Hooks genéricos y compartidos
-export { useGenericFetch } from './useGenericFetch';
-export { useGenericMutations } from './useGenericMutations';
-export { useGenericFilters } from './useGenericFilters';
-export { usePagination } from './usePagination';
+// Generic shared hooks
+export { useChampagneRule } from './useChampagneRule';
 export { useConfirmModal } from './useConfirmModal';
+export { useGenericFetch } from './useGenericFetch';
+export { useGenericFilters } from './useGenericFilters';
+export { useGenericMutations } from './useGenericMutations';
+export { useMasterData } from './useMasterData';
+export { useNumberFormatter } from './useNumberFormatter';
+export { usePagination } from './usePagination';
 export { useProductCart } from './useProductCart';
 export { useProductSelection } from './useProductSelection';
-export { useSSE } from './useSSE';
-export { useNumberFormatter } from './useNumberFormatter';
+export { useIsMobile } from './use-mobile';
+export { useRefreshOnFocus } from './useRefreshOnFocus';
 export { useServicePricing } from './useServicePricing';
-export { useChampagneRule } from './useChampagneRule';
+export { useSharedSSE } from './useSharedSSE';
+export { useSSE } from './useSSE';

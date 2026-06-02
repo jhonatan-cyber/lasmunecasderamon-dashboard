@@ -13,7 +13,7 @@ import React, {
 import { useSignals } from '@preact/signals-react/runtime';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
-import { useConfirmModal } from '@/hooks/shared/useConfirmModal';
+import { useConfirmModal } from '@/hooks/shared';
 import { TimerExpiredModal } from '@/components/notifications';
 import { parseDateSafe, calculateRemainingTime, formatTime } from '@/lib/utils/timeUtils';
 
@@ -376,3 +376,4 @@ export const useCountdown = (timer: Timer | undefined | null) => {
 
   return timer.remainingTime;
 };
+

@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
-import { Anticipo } from '@/hooks/personal/useAnticipos';
+import { Anticipo } from '@/hooks/personal';
 import { User, Calendar, Wallet, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -442,3 +442,4 @@ export default function AdvancesTable({
     </div>
   );
 }
+

@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { NumberInputField } from '@/components/users/NumberInputField';
 import { DollarSign } from 'lucide-react';
 
-import { type UserFormValues } from '@/hooks/personal/useUserForm';
+import { type UserFormValues } from '@/hooks/personal';
 
 interface HousingDiscountFieldProps {
   control: Control<UserFormValues>;
@@ -67,3 +67,4 @@ export function HousingDiscountField({
 }
 
 export default HousingDiscountField;
+
