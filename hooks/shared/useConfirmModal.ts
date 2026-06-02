@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback } from 'react';
 
 interface ConfirmModalOptions {
@@ -31,7 +33,7 @@ export function useConfirmModal() {
   });
 
   const showConfirm = useCallback((options: ConfirmModalOptions): Promise<boolean> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setModalState({
         ...options,
         open: true,
@@ -56,4 +58,4 @@ export function useConfirmModal() {
     showConfirm,
     closeModal
   };
-} 
+}

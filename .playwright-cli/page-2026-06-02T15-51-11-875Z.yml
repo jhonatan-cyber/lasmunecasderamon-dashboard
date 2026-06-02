@@ -1,0 +1,357 @@
+- generic [ref=e1]:
+    - generic [ref=e702]:
+        - generic [ref=e939]:
+            - generic [ref=e940]:
+                - generic [ref=e942]:
+                    - img "Las Muñecas de Ramón" [ref=e944]
+                    - generic [ref=e945]:
+                        - paragraph [ref=e946]: Las Muñecas
+                        - paragraph [ref=e947]: Panel Administrativo
+                - button [ref=e948] [cursor=pointer]:
+                    - img [ref=e949]
+            - generic [ref=e953]:
+                - img
+                - textbox "Buscar opciones..." [ref=e954]
+            - navigation [ref=e955]:
+                - generic [ref=e956]:
+                    - generic [ref=e957]:
+                        - heading "Vista General" [level=3] [ref=e958]
+                        - paragraph [ref=e959]: Seguimiento y decisiones del día.
+                    - list [ref=e960]:
+                        - listitem [ref=e961]:
+                            - link "Dashboard" [ref=e962] [cursor=pointer]:
+                                - /url: /dashboard
+                                - img [ref=e963]
+                                - generic [ref=e966]: Dashboard
+                        - listitem [ref=e967]:
+                            - link "Reportes" [ref=e968] [cursor=pointer]:
+                                - /url: /reports
+                                - img [ref=e969]
+                                - generic [ref=e972]: Reportes
+                - generic [ref=e973]:
+                    - generic [ref=e974]:
+                        - heading "Operación" [level=3] [ref=e975]
+                        - paragraph [ref=e976]: Ventas, pedidos y atención en piso.
+                    - list [ref=e977]:
+                        - listitem [ref=e978]:
+                            - link "Pedidos" [ref=e979] [cursor=pointer]:
+                                - /url: /orders
+                                - img [ref=e980]
+                                - generic [ref=e984]: Pedidos
+                        - listitem [ref=e985]:
+                            - link "Ventas" [ref=e986] [cursor=pointer]:
+                                - /url: /sales
+                                - img [ref=e987]
+                                - generic [ref=e990]: Ventas
+                        - listitem [ref=e991]:
+                            - link "Cajas" [ref=e992] [cursor=pointer]:
+                                - /url: /cash-register
+                                - img [ref=e993]
+                                - generic [ref=e995]: Cajas
+                        - listitem [ref=e996]:
+                            - link "Cuentas" [ref=e997] [cursor=pointer]:
+                                - /url: /accounts
+                                - img [ref=e998]
+                                - generic [ref=e1000]: Cuentas
+                        - listitem [ref=e1001]:
+                            - link "Crear Privado" [ref=e1002] [cursor=pointer]:
+                                - /url: /rooms
+                                - img [ref=e1003]
+                                - generic [ref=e1005]: Crear Privado
+                        - listitem [ref=e1006]:
+                            - link "Vender Privado" [ref=e1007] [cursor=pointer]:
+                                - /url: /private-rooms
+                                - img [ref=e1008]
+                                - generic [ref=e1011]: Vender Privado
+                - generic [ref=e1012]:
+                    - generic [ref=e1013]:
+                        - heading "Catálogo y Clientes" [level=3] [ref=e1014]
+                        - paragraph [ref=e1015]: Base comercial y configuración del menú.
+                    - list [ref=e1016]:
+                        - listitem [ref=e1017]:
+                            - link "Clientes" [ref=e1018] [cursor=pointer]:
+                                - /url: /clients
+                                - img [ref=e1019]
+                                - generic [ref=e1023]: Clientes
+                        - listitem [ref=e1024]:
+                            - link "Productos" [ref=e1025] [cursor=pointer]:
+                                - /url: /products
+                                - img [ref=e1026]
+                                - generic [ref=e1030]: Productos
+                        - listitem [ref=e1031]:
+                            - link "Categorías" [ref=e1032] [cursor=pointer]:
+                                - /url: /categories
+                                - img [ref=e1033]
+                                - generic [ref=e1036]: Categorías
+                - generic [ref=e1037]:
+                    - generic [ref=e1038]:
+                        - heading "Finanzas" [level=3] [ref=e1039]
+                        - paragraph [ref=e1040]: Control de pagos, incentivos y cierres.
+                    - list [ref=e1041]:
+                        - listitem [ref=e1042]:
+                            - link "Propinas" [ref=e1043] [cursor=pointer]:
+                                - /url: /tips
+                                - img [ref=e1044]
+                                - generic [ref=e1048]: Propinas
+                        - listitem [ref=e1049]:
+                            - link "Comisiones" [ref=e1050] [cursor=pointer]:
+                                - /url: /commissions
+                                - img [ref=e1051]
+                                - generic [ref=e1055]: Comisiones
+                        - listitem [ref=e1056]:
+                            - link "Pagos a Trabajadores" [ref=e1057] [cursor=pointer]:
+                                - /url: /payroll
+                                - img [ref=e1058]
+                                - generic [ref=e1060]: Pagos a Trabajadores
+                        - listitem [ref=e1061]:
+                            - link "Detalle Planillas" [ref=e1062] [cursor=pointer]:
+                                - /url: /payroll/calendar
+                                - img [ref=e1063]
+                                - generic [ref=e1065]: Detalle Planillas
+                        - listitem [ref=e1066]:
+                            - link "Anticipos" [ref=e1067] [cursor=pointer]:
+                                - /url: /advances
+                                - img [ref=e1068]
+                                - generic [ref=e1070]: Anticipos
+                        - listitem [ref=e1071]:
+                            - link "Gratificaciones" [ref=e1072] [cursor=pointer]:
+                                - /url: /gratificaciones
+                                - img [ref=e1073]
+                                - generic [ref=e1079]: Gratificaciones
+                        - listitem [ref=e1080]:
+                            - link "Devoluciones" [ref=e1081] [cursor=pointer]:
+                                - /url: /returns
+                                - img [ref=e1082]
+                                - generic [ref=e1085]: Devoluciones
+                - generic [ref=e1086]:
+                    - generic [ref=e1087]:
+                        - heading "Equipo" [level=3] [ref=e1088]
+                        - paragraph [ref=e1089]: Personas, permisos y jornada laboral.
+                    - list [ref=e1090]:
+                        - listitem [ref=e1091]:
+                            - link "Usuarios" [ref=e1092] [cursor=pointer]:
+                                - /url: /users
+                                - img [ref=e1093]
+                                - generic [ref=e1098]: Usuarios
+                        - listitem [ref=e1099]:
+                            - link "Roles" [ref=e1100] [cursor=pointer]:
+                                - /url: /roles
+                                - img [ref=e1101]
+                                - generic [ref=e1103]: Roles
+                        - listitem [ref=e1104]:
+                            - link "Asistencias" [ref=e1105] [cursor=pointer]:
+                                - /url: /attendance
+                                - img [ref=e1106]
+                                - generic [ref=e1109]: Asistencias
+                        - listitem [ref=e1110]:
+                            - link "Horas Extras" [ref=e1111] [cursor=pointer]:
+                                - /url: /overtime
+                                - img [ref=e1112]
+                                - generic [ref=e1115]: Horas Extras
+                - generic [ref=e1116]:
+                    - generic [ref=e1117]:
+                        - heading "Configuración" [level=3] [ref=e1118]
+                        - paragraph [ref=e1119]: Ajustes generales de la plataforma.
+                    - list [ref=e1120]:
+                        - listitem [ref=e1121]:
+                            - link "Configuración" [ref=e1122] [cursor=pointer]:
+                                - /url: /settings
+                                - img [ref=e1123]
+                                - generic [ref=e1126]: Configuración
+        - generic [ref=e703]:
+            - banner [ref=e704]:
+                - button [active] [ref=e707] [cursor=pointer]:
+                    - img
+                - generic [ref=e708]:
+                    - generic [ref=e710]:
+                        - generic [ref=e711]: 'Código:'
+                        - generic [ref=e712]: '3600'
+                    - button "Cambiar tema" [ref=e713] [cursor=pointer]:
+                        - img
+                    - button [ref=e714] [cursor=pointer]:
+                        - img
+                    - button "Jhonatan Ancasi Flores JA" [ref=e717] [cursor=pointer]:
+                        - generic [ref=e718]:
+                            - img "Jhonatan Ancasi Flores" [ref=e719]
+                            - generic [ref=e720]: JA
+            - main [ref=e721]:
+                - generic [ref=e723]:
+                    - generic [ref=e724]:
+                        - generic [ref=e725]:
+                            - heading "Ventas" [level=1] [ref=e726]
+                            - paragraph [ref=e727]: Panel de control de ventas y transacciones
+                        - button "Nuevo" [ref=e729] [cursor=pointer]:
+                            - img
+                            - text: Nuevo
+                    - generic [ref=e730]:
+                        - generic [ref=e732]:
+                            - generic [ref=e733]:
+                                - img [ref=e735]
+                                - generic [ref=e738]: Ingresos
+                            - generic [ref=e739]:
+                                - paragraph [ref=e740]: Total Completado
+                                - heading "$110.000" [level=3] [ref=e741]
+                                - generic [ref=e742]:
+                                    - generic [ref=e743]: '3'
+                                    - generic [ref=e744]: Ventas
+                        - generic [ref=e746]:
+                            - generic [ref=e747]:
+                                - img [ref=e749]
+                                - generic [ref=e752]: En Proceso
+                            - generic [ref=e753]:
+                                - paragraph [ref=e754]: Sin Cerrar
+                                - heading "$0" [level=3] [ref=e755]
+                                - generic [ref=e756]:
+                                    - generic [ref=e757]: '0'
+                                    - generic [ref=e758]: Cuentas Abiertas
+                        - generic [ref=e760]:
+                            - generic [ref=e761]:
+                                - img [ref=e763]
+                                - generic [ref=e765]: Alertas
+                            - generic [ref=e766]:
+                                - paragraph [ref=e767]: Por Anular
+                                - heading "0" [level=3] [ref=e768]
+                                - generic [ref=e770]: 'Total: $0'
+                        - generic [ref=e772]:
+                            - generic [ref=e773]:
+                                - img [ref=e775]
+                                - generic [ref=e779]: Anulado
+                            - generic [ref=e780]:
+                                - paragraph [ref=e781]: Total Cancelado
+                                - heading "$0" [level=3] [ref=e782]
+                                - generic [ref=e783]:
+                                    - generic [ref=e784]: '0'
+                                    - generic [ref=e785]: Ventas
+                    - generic [ref=e788]:
+                        - generic [ref=e789]:
+                            - generic [ref=e790]: Buscar
+                            - generic [ref=e791]:
+                                - img
+                                - textbox "Buscar por código, cliente, habitación o anfitriona..." [ref=e792]
+                        - generic [ref=e793]:
+                            - generic [ref=e794]: Estados
+                            - combobox [ref=e795] [cursor=pointer]:
+                                - generic: Todos
+                                - img [ref=e796]
+                        - generic [ref=e798]:
+                            - generic [ref=e799]: Método
+                            - combobox [ref=e800] [cursor=pointer]:
+                                - generic: Todos
+                                - img [ref=e801]
+                        - generic [ref=e803]:
+                            - generic [ref=e804]: Ordenar por
+                            - generic [ref=e805]:
+                                - combobox [ref=e806] [cursor=pointer]:
+                                    - text: Fecha
+                                    - img [ref=e807]
+                                - button [ref=e809] [cursor=pointer]:
+                                    - img
+                        - generic [ref=e810]:
+                            - generic [ref=e811]: Listado
+                            - combobox [ref=e812] [cursor=pointer]:
+                                - generic: '5'
+                                - img [ref=e813]
+                        - button [ref=e815] [cursor=pointer]:
+                            - img
+                    - generic [ref=e816]:
+                        - tablist [ref=e817]:
+                            - tab "Todas las ventas" [selected] [ref=e818] [cursor=pointer]
+                            - tab "Ventas con habitación" [ref=e819] [cursor=pointer]
+                        - tabpanel "Todas las ventas" [ref=e820]:
+                            - generic [ref=e821]:
+                                - generic [ref=e824]:
+                                    - generic [ref=e825]:
+                                        - img [ref=e827]
+                                        - generic [ref=e830]:
+                                            - generic [ref=e831]: 27 may 2026 03:14
+                                            - generic [ref=e832]: Completado
+                                    - generic [ref=e834]:
+                                        - paragraph [ref=e835]: 2U38I9J9
+                                        - heading "$44.000" [level=3] [ref=e836]
+                                    - generic [ref=e837]:
+                                        - generic [ref=e838]:
+                                            - generic [ref=e839]: Sin cliente
+                                            - generic [ref=e840]:
+                                                - img [ref=e841]
+                                                - text: Privado 3
+                                        - generic [ref=e844]:
+                                            - generic [ref=e845]:
+                                                - img [ref=e846]
+                                                - text: 1 item
+                                            - generic [ref=e850]:
+                                                - img [ref=e851]
+                                                - text: Efectivo
+                                            - generic [ref=e854]: +$4.000 prop
+                                        - generic [ref=e856]: Sin anfitrionas
+                                    - generic [ref=e857]:
+                                        - button "Detalles" [ref=e858] [cursor=pointer]:
+                                            - img
+                                            - text: Detalles
+                                        - button "Anular" [ref=e859] [cursor=pointer]:
+                                            - img
+                                            - text: Anular
+                                - generic [ref=e862]:
+                                    - generic [ref=e863]:
+                                        - img [ref=e865]
+                                        - generic [ref=e868]:
+                                            - generic [ref=e869]: 27 may 2026 02:59
+                                            - generic [ref=e870]: Completado
+                                    - generic [ref=e872]:
+                                        - paragraph [ref=e873]: KAN7A68B
+                                        - heading "$33.000" [level=3] [ref=e874]
+                                    - generic [ref=e875]:
+                                        - generic [ref=e876]:
+                                            - generic [ref=e877]: Sin cliente
+                                            - generic [ref=e878]:
+                                                - img [ref=e879]
+                                                - text: Privado 1
+                                        - generic [ref=e882]:
+                                            - generic [ref=e883]:
+                                                - img [ref=e884]
+                                                - text: 1 item
+                                            - generic [ref=e888]:
+                                                - img [ref=e889]
+                                                - text: Efectivo
+                                            - generic [ref=e892]: +$3.000 prop
+                                        - generic [ref=e894]: Sin anfitrionas
+                                    - generic [ref=e895]:
+                                        - button "Detalles" [ref=e896] [cursor=pointer]:
+                                            - img
+                                            - text: Detalles
+                                        - button "Anular" [ref=e897] [cursor=pointer]:
+                                            - img
+                                            - text: Anular
+                                - generic [ref=e900]:
+                                    - generic [ref=e901]:
+                                        - img [ref=e903]
+                                        - generic [ref=e906]:
+                                            - generic [ref=e907]: 27 may 2026 02:44
+                                            - generic [ref=e908]: Completado
+                                    - generic [ref=e910]:
+                                        - paragraph [ref=e911]: 1G9OOCR9
+                                        - heading "$33.000" [level=3] [ref=e912]
+                                    - generic [ref=e913]:
+                                        - generic [ref=e914]:
+                                            - generic [ref=e915]: Sin cliente
+                                            - generic [ref=e916]:
+                                                - img [ref=e917]
+                                                - text: Barra
+                                        - generic [ref=e921]:
+                                            - generic [ref=e922]:
+                                                - img [ref=e923]
+                                                - text: 3 items
+                                            - generic [ref=e927]:
+                                                - img [ref=e928]
+                                                - text: Tarjeta
+                                            - generic [ref=e930]: +$3.000 prop
+                                        - generic [ref=e932]: Sin anfitrionas
+                                    - generic [ref=e933]:
+                                        - button "Detalles" [ref=e934] [cursor=pointer]:
+                                            - img
+                                            - text: Detalles
+                                        - button "Anular" [ref=e935] [cursor=pointer]:
+                                            - img
+                                            - text: Anular
+    - region "Notifications alt+T"
+    - alert [ref=e509]
+    - generic [ref=e510]: $0k

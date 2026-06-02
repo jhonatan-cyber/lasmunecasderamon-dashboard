@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Medal, Music2, Sofa, Sparkles, TrendingUp } from 'lucide-react';
+import { Medal, Music2, Sofa, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/shared/Skeletons';
 import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
-import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 
 const rankingConfig = [
@@ -51,7 +51,13 @@ export default function TopPerformers() {
     );
   }
 
-  if (error || !data) return null;
+  if (error || !data) {
+    return (
+      <div className='rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-200'>
+        No se pudieron cargar los rankings del dashboard.
+      </div>
+    );
+  }
 
   return (
     <div className='grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
