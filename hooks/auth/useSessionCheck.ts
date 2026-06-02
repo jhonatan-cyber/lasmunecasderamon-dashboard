@@ -11,11 +11,10 @@ export const useSessionCheck = () => {
   const pathname = usePathname();
   const isCheckingRef = useRef(false);
 
+  // El sitio marketing vive en el proyecto Astro (lasmunecasderamon-web).
+  // En el dashboard solo `/` (que redirige a /login) y `/login` son públicos.
   const isPublicPage =
     pathname === '/' ||
-    pathname === '/landing' ||
-    pathname === '/terminos-y-condiciones' ||
-    pathname === '/politica-de-privacidad' ||
     pathname === '/login' ||
     pathname === '/api-docs' ||
     pathname === '/confirmar-anulacion' ||

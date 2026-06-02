@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { useOvertime } from '@/hooks/personal/useOvertime';
+import { useOvertime } from '@/hooks/personal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { Clock, Calendar, DollarSign, Timer, CheckCircle2, User } from 'lucide-react';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import Paginate from '@/components/shared/Paginate';
 
 interface OvertimeDetailModalProps {
@@ -268,3 +268,6 @@ export default function OvertimeDetailModal({
     </Dialog>
   );
 }
+
+
+

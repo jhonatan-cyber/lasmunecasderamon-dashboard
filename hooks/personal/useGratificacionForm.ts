@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEmployees } from '@/hooks/personal/useEmployees';
+import { useEmployees } from '@/hooks/personal';
 import { Gratificacion } from '@/types/gratificacion';
 
 const gratificacionFormSchema = z.object({
@@ -96,3 +96,4 @@ export function useGratificacionForm({ gratificacion, open, onSubmit }: UseGrati
     onFormSubmit: handleSubmit(handleFormSubmit)
   };
 }
+

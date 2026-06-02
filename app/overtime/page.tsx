@@ -1,9 +1,9 @@
-ï»¿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useOvertime } from '@/hooks/personal/useOvertime';
+import { useOvertime } from '@/hooks/personal';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
-import { useOvertimeTable } from '@/hooks/personal/useOvertimeTable';
+import { useOvertimeTable } from '@/hooks/personal';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,7 +85,7 @@ export default function OvertimePage() {
           <div className='flex flex-col'>
             <h1 className='text-3xl font-bold tracking-tight'>Horas Extras</h1>
             <p className='text-gray-600 dark:text-neutral-300 mt-1'>
-              SupervisiÃ³n de registros, pagos y balances histÃ³ricos del personal.
+              Supervisión de registros, pagos y balances históricos del personal.
             </p>
           </div>
           <Button
@@ -162,3 +162,4 @@ export default function OvertimePage() {
     </PermissionGuard>
   );
 }
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { RoleFilter } from "@/hooks/personal/usePayroll";
+import { RoleFilter } from '@/hooks/personal';
 
 interface Props {
   roleFilter: RoleFilter;
@@ -46,5 +46,6 @@ export default function PayrollRoleButtons({ roleFilter, setRoleFilter }: Props)
     </div>
   );
 }
+
 
 

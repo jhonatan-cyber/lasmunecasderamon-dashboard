@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface OvertimeFiltersProps {
@@ -143,3 +143,5 @@ export default function OvertimeFilters({
     </Card>
   );
 }
+
+

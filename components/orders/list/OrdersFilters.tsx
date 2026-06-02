@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 
 interface AdminOrdersFiltersProps {
   searchTerm: string;
@@ -28,7 +28,7 @@ const sortOptions = [
   { value: 'total', label: 'Total' },
   { value: 'subtotal', label: 'Subtotal' },
   { value: 'cliente', label: 'Cliente' },
-  { value: 'codigo', label: 'Código' }
+  { value: 'codigo', label: 'CÃ³digo' }
 ];
 
 const rowsPerPageOptions = [
@@ -60,7 +60,7 @@ export function AdminOrdersFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
-          {/* Búsqueda */}
+          {/* BÃºsqueda */}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Buscar
@@ -70,8 +70,8 @@ export function AdminOrdersFilters({
               onChange={setCurrentSearchTerm}
               placeholder={
                 activeTab === 'productos'
-                  ? 'Buscar cliente, código, garzón...'
-                  : 'Buscar cliente, habitación...'
+                  ? 'Buscar cliente, cÃ³digo, garzÃ³n...'
+                  : 'Buscar cliente, habitaciÃ³n...'
               }
               className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
             />
@@ -120,7 +120,7 @@ export function AdminOrdersFilters({
             />
           </div>
 
-          {/* Botón Limpiar con ícono trash */}
+          {/* BotÃ³n Limpiar con Ã­cono trash */}
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
@@ -143,3 +143,5 @@ export function AdminOrdersFilters({
     </Card>
   );
 }
+
+

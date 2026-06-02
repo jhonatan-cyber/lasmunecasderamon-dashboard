@@ -3,8 +3,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import useAsistencias from '@/hooks/personal/useAsistencias';
-import { useAttendanceStats } from '@/hooks/personal/useAttendanceStats';
+import { useAsistencias } from '@/hooks/personal';
+import { useAttendanceStats } from '@/hooks/personal';
 import AttendanceTable from '@/components/attendance/AttendanceTable';
 import AttendanceFilters from '@/components/attendance/AttendanceFilters';
 import AttendanceStatsCard from '@/components/attendance/AttendanceStatsCard';
@@ -13,7 +13,7 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUsers } from '@/hooks/personal/useUsers';
+import { useUsers } from '@/hooks/personal';
 import { Badge } from '@/components/ui/badge';
 import logger from '@/lib/utils/logger';
 
@@ -429,3 +429,4 @@ export default function AttendancePage() {
     </PermissionGuard>
   );
 }
+

@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { useUsers } from '@/hooks/personal/useUsers';
-import useRooms from '@/hooks/habitaciones/useRooms';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAccountForm } from '@/hooks/cuentas/useAccountForm';
+import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import ProductModal from '@/components/products/ProductModal';
-import logger from '@/lib/utils/logger';
 
 import {
   ProductSearch,
@@ -19,13 +16,10 @@ import {
   ProductTable,
   NewAccountHeader
 } from '@/components/cuentas';
-import { useClientes } from '@/hooks/clientes';
 
 export default function NewCuentaPage() {
   const router = useRouter();
-  const { allClients } = useClientes();
-  const { users } = useUsers();
-  const { rooms } = useRooms();
+  const { clients, rooms, categories, anfitrionas, refreshAll } = useMasterData();
   const { startTimer } = useTimer();
 
   const {
@@ -55,55 +49,27 @@ export default function NewCuentaPage() {
     handleSubmit: handleAccountSubmit
   } = useAccountForm();
 
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [categoriasConProductos, setCategoriasConProductos] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalCategoria, setModalCategoria] = useState<any>(null);
   const [productosCategoria, setProductosCategoria] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
 
-  const anfitrionas = users.filter(
-    user => user.role?.toLowerCase().includes('anfitriona') && user.status === 1
+  const clientes = clients;
+  const anfitrionasFiltradas = useMemo(
+    () =>
+      anfitrionas.filter(
+        user => user.role?.toLowerCase().includes('anfitriona') && user.status === 1
+      ),
+    [anfitrionas]
   );
 
-  useEffect(() => {
-    if (allClients) {
-      setClientes(allClients);
-    }
-  }, [allClients]);
-
-  useEffect(() => {
-    const fetchCategorias = async () => {
-      try {
-        const res = await fetch('/api/categories');
-        const data = await res.json();
-        if (data.success) {
-          await loadCategoriasConProductos(data.data);
-        }
-      } catch (error) {
-        logger.captureException(error, { context: 'AccountsNew:fetchCategorias' });
-        toast.error('Error al cargar categorías');
-      }
-    };
-    fetchCategorias();
-  }, []);
-
-  const loadCategoriasConProductos = async (categoriasData: any[]) => {
-    const categoriasConConteo = categoriasData.map(cat => ({
-      ...cat,
-      productCount: cat.total_products || 0,
-      id_categoria: cat.id,
-      nombre: cat.name || cat.nombre,
-      estado: cat.status
-    }));
-    setCategoriasConProductos(categoriasConConteo);
-  };
+  useRefreshOnFocus(refreshAll, { immediate: false });
 
   const categoriasFiltradas = useMemo(() => {
-    return Array.isArray(categoriasConProductos)
-      ? categoriasConProductos.filter(cat => cat?.estado === 1 && (cat?.productCount || 0) > 0)
+    return Array.isArray(categories)
+      ? categories.filter(cat => cat?.estado === 1 && (cat?.productCount || 0) > 0)
       : [];
-  }, [categoriasConProductos]);
+  }, [categories]);
 
   const handleOpenCategoria = async (cat: any) => {
     setModalCategoria(cat);
@@ -147,7 +113,7 @@ export default function NewCuentaPage() {
 
         <AccountFormData
           clientes={clientes}
-          anfitrionas={anfitrionas}
+          anfitrionas={anfitrionasFiltradas}
           habitaciones={rooms}
           selectedCliente={selectedCliente}
           selectedAnfitrionas={selectedAnfitrionas}

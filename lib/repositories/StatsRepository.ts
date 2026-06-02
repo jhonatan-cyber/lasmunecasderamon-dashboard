@@ -13,24 +13,13 @@ import { TimerRepository } from './TimerRepository';
 import { ServiceRequestRepository } from './ServiceRequestRepository';
 import { RoomRepository } from './RoomRepository';
 import { OrderRepository } from './OrderRepository';
+import {
+  buildDashboardInsights,
+  buildPendingDashboardItem,
+  buildCajaStatsResult
+} from './stats';
 
 export class StatsRepository {
-  private static buildTrend(current: number, previous: number) {
-    const safeCurrent = Number(current || 0);
-    const safePrevious = Number(previous || 0);
-    const delta = safeCurrent - safePrevious;
-    const percentChange =
-      safePrevious === 0 ? (safeCurrent > 0 ? 100 : 0) : Math.round((delta / safePrevious) * 100);
-
-    return {
-      current: safeCurrent,
-      previous: safePrevious,
-      delta,
-      percentChange,
-      direction: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
-    };
-  }
-
   static async getDashboardAlerts() {
     const [cashRegisterRows, pendingOrdersRows, rooms, pendingServiceRequests, timers] =
       await Promise.all([
@@ -131,27 +120,11 @@ export class StatsRepository {
     const pendingOrders = orders
       .filter(order => Number(order.estado) === 1)
       .slice(0, 5)
-      .map(order => ({
-        id: String(order.id),
-        code: order.codigo || String(order.id),
-        title: order.cliente_nombre || 'Sin cliente registrado',
-        subtitle: order.mesero_nick || order.mesero_nombre || 'Sin garzón asignado',
-        amount: Number(order.total || 0),
-        createdAt: order.fecha_crea,
-        href: '/orders',
-        kind: 'order' as const
-      }));
+      .map(order => buildPendingDashboardItem(order, 'order'));
 
-    const pendingServiceRequests = serviceRequests.slice(0, 5).map(request => ({
-      id: String(request.id_solicitud),
-      code: request.codigo || String(request.id_solicitud),
-      title: request.habitacion_nombre || 'Sin habitación',
-      subtitle: request.cliente_nombre || 'Sin cliente registrado',
-      amount: Number(request.total || 0),
-      createdAt: request.fecha_solicitud,
-      href: '/orders',
-      kind: 'service_request' as const
-    }));
+    const pendingServiceRequests = serviceRequests
+      .slice(0, 5)
+      .map(request => buildPendingDashboardItem(request, 'service_request'));
 
     return {
       orders: pendingOrders,
@@ -390,139 +363,42 @@ export class StatsRepository {
     const projectedRevenue = Math.round((movementToday / elapsedMinutesToday) * 24 * 60);
     const yesterdaySalesSameTime = Number(comparisonBase.sales_same_time_yesterday || 0);
     const todaySalesSameTime = Number(comparisonBase.sales_same_time_today || 0);
-    const anomalies: Array<{
-      id: string;
-      tone: 'success' | 'warning' | 'critical';
-      title: string;
-      description: string;
-    }> = [];
-
-    if (yesterdaySalesSameTime > 0 && todaySalesSameTime <= yesterdaySalesSameTime * 0.75) {
-      anomalies.push({
-        id: 'sales-drop',
-        tone: 'critical',
-        title: 'Ventas por debajo del ritmo esperado',
-        description: 'El acumulado de hoy va por debajo de lo registrado a esta misma hora ayer.'
-      });
-    } else if (yesterdaySalesSameTime > 0 && todaySalesSameTime >= yesterdaySalesSameTime * 1.25) {
-      anomalies.push({
-        id: 'sales-boost',
-        tone: 'success',
-        title: 'Ventas aceleradas',
-        description: 'El día avanza por encima del ritmo de ventas observado ayer a esta hora.'
-      });
-    }
-
-    if (alerts.summary.pendingOrders >= 5) {
-      anomalies.push({
-        id: 'order-backlog',
-        tone: 'warning',
-        title: 'Acumulación en pedidos',
-        description: 'Hay una carga operativa alta en pedidos pendientes que conviene destrabar.'
-      });
-    }
-
-    if (alerts.summary.expiringServices >= 3) {
-      anomalies.push({
-        id: 'service-pressure',
-        tone: 'warning',
-        title: 'Servicios próximos a vencer',
-        description: 'Varios servicios están cerca de expirar y requieren atención del equipo.'
-      });
-    }
-
-    return {
-      comparisons: {
-        salesToday: this.buildTrend(comparisonBase.sales_today, comparisonBase.sales_yesterday),
-        servicesToday: this.buildTrend(
-          comparisonBase.services_today,
-          comparisonBase.services_yesterday
-        ),
-        movementToday: this.buildTrend(movementToday, movementYesterday),
-        salesWeek: this.buildTrend(
-          comparisonBase.sales_total_week,
-          comparisonBase.sales_total_previous_week
-        ),
-        operationsWeek: this.buildTrend(
-          comparisonBase.sales_count_week,
-          comparisonBase.sales_count_previous_week
-        )
-      },
-      localStatus: {
-        rooms: {
-          occupied: alerts.summary.occupiedRooms,
-          free: alerts.summary.freeRooms,
-          total: alerts.summary.totalRooms,
-          occupancyRate
-        },
-        services: {
-          active: servicesActive,
-          expiringSoon: alerts.summary.expiringServices
-        },
-        orders: {
-          open: alerts.summary.pendingOrders,
-          serviceRequests: alerts.summary.pendingServiceRequests
-        },
-        team: {
-          active: totalLoggedUsers,
-          total: totalTeamMembers,
-          coverageRate: teamCoverageRate
-        },
-        cash: {
-          openRegisters: alerts.summary.openCashRegisters
-        }
-      },
-      rankings: {
-        products: rankingRows
-          .filter(row => row.ranking_type === 'product')
-          .slice(0, 5)
-          .map(row => ({
-            name: row.item_name,
-            quantity: Number(row.primary_value || 0),
-            amount: Number(row.secondary_value || 0)
-          })),
-        rooms: rankingRows
-          .filter(row => row.ranking_type === 'room')
-          .slice(0, 5)
-          .map(row => ({
-            name: row.item_name,
-            quantity: Number(row.primary_value || 0),
-            amount: Number(row.secondary_value || 0)
-          })),
-        staff: rankingRows
-          .filter(row => row.ranking_type === 'staff')
-          .slice(0, 5)
-          .map(row => ({
-            name: row.item_name,
-            quantity: Number(row.primary_value || 0),
-            amount: Number(row.secondary_value || 0)
-          }))
-      },
-      financialSummary: {
-        openingAmount: Number(cajaStats.monto_apertura || 0),
-        sales: Number(cajaStats.total_ventas || 0),
-        services: Number(cajaStats.total_servicios || 0),
-        tips: Number(cajaStats.total_propina || 0),
-        advances: Number(cajaStats.total_anticipo || 0),
-        returns: Number(cajaStats.total_devolucion || 0),
-        withdrawals: totalWithdrawals,
-        netRevenue:
-          Number(cajaStats.total_ventas || 0) +
-          Number(cajaStats.total_servicios || 0) +
-          Number(cajaStats.total_propina || 0) -
-          Number(cajaStats.total_devolucion || 0) -
-          totalWithdrawals
-      },
-      forecast: {
-        projectedRevenue,
-        currentRevenue: movementToday,
-        yesterdayRevenue: movementYesterday,
-        elapsedMinutesToday,
-        anomalies
-      }
-    };
+    return buildDashboardInsights({
+      salesToday: comparisonBase.sales_today,
+      salesYesterday: comparisonBase.sales_yesterday,
+      servicesToday: comparisonBase.services_today,
+      servicesYesterday: comparisonBase.services_yesterday,
+      movementToday,
+      movementYesterday,
+      salesWeek: comparisonBase.sales_total_week,
+      salesWeekPrevious: comparisonBase.sales_total_previous_week,
+      operationsWeek: comparisonBase.sales_count_week,
+      operationsWeekPrevious: comparisonBase.sales_count_previous_week,
+      occupiedRooms: alerts.summary.occupiedRooms,
+      freeRooms: alerts.summary.freeRooms,
+      totalRooms: alerts.summary.totalRooms,
+      occupancyRate,
+      servicesActive,
+      expiringServices: alerts.summary.expiringServices,
+      pendingOrders: alerts.summary.pendingOrders,
+      pendingServiceRequests: alerts.summary.pendingServiceRequests,
+      totalLoggedUsers,
+      totalTeamMembers,
+      teamCoverageRate,
+      openCashRegisters: alerts.summary.openCashRegisters,
+      rankingRows,
+      openingAmount: Number(cajaStats.monto_apertura || 0),
+      sales: Number(cajaStats.total_ventas || 0),
+      services: Number(cajaStats.total_servicios || 0),
+      tips: Number(cajaStats.total_propina || 0),
+      advances: Number(cajaStats.total_anticipo || 0),
+      returns: Number(cajaStats.total_devolucion || 0),
+      withdrawals: totalWithdrawals,
+      todaySalesSameTime,
+      yesterdaySalesSameTime,
+      elapsedMinutesToday
+    });
   }
-
   static async getRecentActivity(limit: number = 8) {
     const rows = (await query<any[]>(
       `
@@ -1083,86 +959,41 @@ export class StatsRepository {
     const yesterdaySalesSameTime = Number(comparisonBase.sales_same_time_yesterday || 0);
     const todaySalesSameTime = Number(comparisonBase.sales_same_time_today || 0);
 
-    // Build insights structure (same as getDashboardInsights)
-    const insights = {
-      comparisons: {
-        salesToday: this.buildTrend(comparisonBase.sales_today, comparisonBase.sales_yesterday),
-        servicesToday: this.buildTrend(
-          comparisonBase.services_today,
-          comparisonBase.services_yesterday
-        ),
-        movementToday: this.buildTrend(movementToday, movementYesterday),
-        salesWeek: this.buildTrend(
-          comparisonBase.sales_total_week,
-          comparisonBase.sales_total_previous_week
-        ),
-        operationsWeek: this.buildTrend(
-          comparisonBase.sales_count_week,
-          comparisonBase.sales_count_previous_week
-        )
-      },
-      localStatus: {
-        rooms: { occupied: occupiedRooms, free: freeRooms, total: totalRooms, occupancyRate },
-        services: { active: servicesActive, expiringSoon: expiringServices },
-        orders: { open: pendingOrders, serviceRequests: pendingServiceRequestsCount },
-        team: { active: totalLoggedUsers, total: totalTeamMembers, coverageRate: teamCoverageRate },
-        cash: { openRegisters: openCashRegisters }
-      },
-      rankings: {
-        products: rankingRows
-          .filter(row => row.ranking_type === 'product')
-          .slice(0, 5)
-          .map(row => ({
-            name: row.item_name,
-            quantity: Number(row.primary_value || 0),
-            amount: Number(row.secondary_value || 0)
-          })),
-        rooms: rankingRows
-          .filter(row => row.ranking_type === 'room')
-          .slice(0, 5)
-          .map(row => ({
-            name: row.item_name,
-            quantity: Number(row.primary_value || 0),
-            amount: Number(row.secondary_value || 0)
-          })),
-        staff: rankingRows
-          .filter(row => row.ranking_type === 'staff')
-          .slice(0, 5)
-          .map(row => ({
-            name: row.item_name,
-            quantity: Number(row.primary_value || 0),
-            amount: Number(row.secondary_value || 0)
-          }))
-      },
-      financialSummary: {
-        openingAmount: Number(cajaRow?.monto_apertura || 0),
-        sales: Number(cajaStats.total_ventas || 0),
-        services: Number(cajaStats.total_servicios || 0),
-        tips: Number(cajaRow?.propina || 0),
-        advances: Number(cajaRow?.anticipo || 0),
-        returns: Number(cajaRow?.devolucion || 0),
-        withdrawals: totalWithdrawals,
-        netRevenue:
-          Number(cajaStats.total_ventas || 0) +
-          Number(cajaStats.total_servicios || 0) +
-          Number(cajaRow?.propina || 0) -
-          Number(cajaRow?.devolucion || 0) -
-          totalWithdrawals
-      },
-      forecast: {
-        projectedRevenue,
-        currentRevenue: movementToday,
-        yesterdayRevenue: movementYesterday,
-        elapsedMinutesToday,
-        anomalies: this.buildAnomalies(
-          todaySalesSameTime,
-          yesterdaySalesSameTime,
-          pendingOrders,
-          expiringServices
-        )
-      }
-    };
-
+    const insights = buildDashboardInsights({
+      salesToday: comparisonBase.sales_today,
+      salesYesterday: comparisonBase.sales_yesterday,
+      servicesToday: comparisonBase.services_today,
+      servicesYesterday: comparisonBase.services_yesterday,
+      movementToday,
+      movementYesterday,
+      salesWeek: comparisonBase.sales_total_week,
+      salesWeekPrevious: comparisonBase.sales_total_previous_week,
+      operationsWeek: comparisonBase.sales_count_week,
+      operationsWeekPrevious: comparisonBase.sales_count_previous_week,
+      occupiedRooms,
+      freeRooms,
+      totalRooms,
+      occupancyRate,
+      servicesActive,
+      expiringServices,
+      pendingOrders,
+      pendingServiceRequests: pendingServiceRequestsCount,
+      totalLoggedUsers,
+      totalTeamMembers,
+      teamCoverageRate,
+      openCashRegisters,
+      rankingRows,
+      openingAmount: Number(cajaRow?.monto_apertura || 0),
+      sales: Number(cajaStats.total_ventas || 0),
+      services: Number(cajaStats.total_servicios || 0),
+      tips: Number(cajaRow?.propina || 0),
+      advances: Number(cajaRow?.anticipo || 0),
+      returns: Number(cajaRow?.devolucion || 0),
+      withdrawals: totalWithdrawals,
+      todaySalesSameTime,
+      yesterdaySalesSameTime,
+      elapsedMinutesToday
+    });
     // Get recent activity
     const recentActivity = await this.getRecentActivity(8);
 
@@ -1173,37 +1004,11 @@ export class StatsRepository {
     insights.localStatus.orders.open = Number(pendingOrdersResult[0]?.total || 0);
 
     // Build cajaStats structure (same as getCajaGeneralStats)
-    const cajaStatsResult = {
-      caja_id: cajaId,
-      monto_apertura: parseFloat(cajaRow?.monto_apertura || '0'),
-      efectivo_en_caja:
-        parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
-      total_efectivo:
-        parseFloat(cajaRow?.monto_apertura || '0') + parseFloat(cajaRow?.efectivo || '0'),
-      total_tarjeta: parseFloat(cajaRow?.tarjeta || '0'),
-      total_transferencia: parseFloat(cajaRow?.transferencia || '0'),
-      total_anticipo: parseFloat(cajaRow?.anticipo || '0'),
-      total_devolucion: parseFloat(cajaRow?.devolucion || '0'),
-      total_comision: parseFloat(cajaRow?.comision || '0'),
-      total_propina: parseFloat(cajaRow?.propina || '0'),
-      total_iva: parseFloat(cajaRow?.iva || '0'),
-      total_ventas: parseFloat(cajaStats.total_ventas || '0'),
-      cantidad_ventas: parseInt(cajaStats.cantidad_ventas || '0'),
-      total_servicios: parseFloat(cajaStats.total_servicios || '0'),
-      cantidad_servicios: parseInt(cajaStats.cantidad_servicios || '0'),
-      balance_total:
-        parseFloat(cajaRow?.monto_apertura || '0') +
-        parseFloat(cajaRow?.efectivo || '0') +
-        parseFloat(cajaRow?.tarjeta || '0') +
-        parseFloat(cajaRow?.transferencia || '0') -
-        parseFloat(cajaRow?.anticipo || '0') -
-        parseFloat(cajaRow?.devolucion || '0'),
-      tiempo_abierta_horas: cajaRow?.horas_abierta || 0,
-      tiempo_abierta_minutos: cajaRow?.minutos_abierta || 0,
-      fecha_apertura_raw: cajaRow?.fecha_apertura || null,
-      usuario_id_apertura: cajaRow?.usuario_id_apertura || null
-    };
-
+    const cajaStatsResult = buildCajaStatsResult({
+      cajaId,
+      cajaRow,
+      cajaStats
+    });
     return {
       insights,
       cajaStats: cajaStatsResult,
@@ -1239,56 +1044,6 @@ export class StatsRepository {
         href: '/orders',
         kind: 'order' as const
       }));
-  }
-
-  private static buildAnomalies(
-    todaySalesSameTime: number,
-    yesterdaySalesSameTime: number,
-    pendingOrders: number,
-    expiringServices: number
-  ) {
-    const anomalies: Array<{
-      id: string;
-      tone: 'success' | 'warning' | 'critical';
-      title: string;
-      description: string;
-    }> = [];
-
-    if (yesterdaySalesSameTime > 0 && todaySalesSameTime <= yesterdaySalesSameTime * 0.75) {
-      anomalies.push({
-        id: 'sales-drop',
-        tone: 'critical',
-        title: 'Ventas por debajo del ritmo esperado',
-        description: 'El acumulado de hoy va por debajo de lo registrado a esta misma hora ayer.'
-      });
-    } else if (yesterdaySalesSameTime > 0 && todaySalesSameTime >= yesterdaySalesSameTime * 1.25) {
-      anomalies.push({
-        id: 'sales-boost',
-        tone: 'success',
-        title: 'Ventas aceleradas',
-        description: 'El día avanza por encima del ritmo de ventas observado ayer a esta hora.'
-      });
-    }
-
-    if (pendingOrders >= 5) {
-      anomalies.push({
-        id: 'order-backlog',
-        tone: 'warning',
-        title: 'Acumulación en pedidos',
-        description: 'Hay una carga operativa alta en pedidos pendientes que conviene destrabar.'
-      });
-    }
-
-    if (expiringServices >= 3) {
-      anomalies.push({
-        id: 'service-pressure',
-        tone: 'warning',
-        title: 'Servicios próximos a vencer',
-        description: 'Varios servicios están cerca de expirar y requieren atención del equipo.'
-      });
-    }
-
-    return anomalies;
   }
 
   static async getUserDashboardSummary(userId: string, role: string) {

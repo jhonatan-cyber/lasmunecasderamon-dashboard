@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useSaleAnulacionForm } from '@/hooks/personal/useSaleAnulacionForm';
+import { useSaleAnulacionForm } from '@/hooks/personal';
 
 interface AnulacionModalProps {
   open: boolean;
@@ -152,3 +152,4 @@ export function AnulacionModal({
     </Dialog>
   );
 }
+

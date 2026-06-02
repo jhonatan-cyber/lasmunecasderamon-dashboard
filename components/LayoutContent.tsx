@@ -79,10 +79,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     '/confirmar-anulacion-servicio',
     '/confirmar-anulacion-cuenta',
     '/confirmar-anticipo',
-    '/landing',
-    '/',
-    '/terminos-y-condiciones',
-    '/politica-de-privacidad'
+    '/'
   ].includes(pathname || '/');
 
   if (isPublicRoute) {

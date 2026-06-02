@@ -128,20 +128,6 @@ export default function Footer({ menuItems }: FooterProps) {
             <p className='text-silver-600 text-xs text-center md:text-left tracking-wider uppercase'>
               © {new Date().getFullYear()} Las Muñecas de Ramón. Todos los derechos reservados.
             </p>
-            <div className='flex gap-8 text-xs tracking-wider uppercase'>
-              <Link
-                href='/terminos-y-condiciones'
-                className='text-silver-600 hover:text-gold-400 transition-colors'
-              >
-                Términos y Condiciones
-              </Link>
-              <Link
-                href='/politica-de-privacidad'
-                className='text-silver-600 hover:text-gold-400 transition-colors'
-              >
-                Política de Privacidad
-              </Link>
-            </div>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useClients } from '@/hooks/clientes/useClients';
+import { useRefreshOnFocus } from '@/hooks/shared';
 import { Client } from '@/types/client';
 import { ClientTable } from '@/components/clients/ClientTable';
 import { ClientFilters } from '@/components/clients/ClientFilters';
@@ -13,7 +14,7 @@ import { useClientModals } from '@/hooks/clients/useClientModals';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ClientsSkeleton } from '@/components/shared/Skeletons';
-import { type ClientFormValues } from '@/hooks/personal/useClientForm';
+import { type ClientFormValues } from '@/hooks/personal';
 
 export default function Clients() {
   const {
@@ -94,6 +95,8 @@ export default function Clients() {
     },
     [deleteClient]
   );
+
+  useRefreshOnFocus(fetchClients);
 
   if (isLoading && allClients.length === 0) return <ClientsSkeleton />;
 
@@ -186,3 +189,4 @@ export default function Clients() {
     </PermissionGuard>
   );
 }
+

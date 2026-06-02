@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { ServicioWithDetails } from '@/types/servicio';
 import { Clock } from 'lucide-react';
-import { useEditServiceForm } from '@/hooks/personal/useEditServiceForm';
+import { useEditServiceForm } from '@/hooks/personal';
 import { ServiceFormFields } from './ServiceFormFields';
 import { ServicePriceSummary } from './ServicePriceSummary';
 
@@ -146,4 +146,5 @@ export default function EditServiceModal({
     </Dialog>
   );
 }
+
 

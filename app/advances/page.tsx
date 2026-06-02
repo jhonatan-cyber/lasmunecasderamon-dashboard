@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Clock, CheckCircle } from 'lucide-react';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
-import useAnticipos from '@/hooks/personal/useAnticipos';
+import { useAnticipos } from '@/hooks/personal';
 import AdvancesTable from '@/components/advances/AdvancesTable';
 import AdvancesFilters from '@/components/advances/AdvancesFilters';
 import AdvancesStatsCards from '@/components/advances/AdvancesStatsCards';
@@ -208,3 +208,4 @@ export default function AdvancesPage() {
     </PermissionGuard>
   );
 }
+

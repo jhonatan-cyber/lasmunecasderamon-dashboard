@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
+﻿import { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import OrderProductTable from './OrderProductTable';
-import CustomerSelect from '@/components/shared/selects/CustomerSelect';
+import { CustomerSelect } from '@/components/shared/selects';
 import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
 import CategoryCardList from '@/components/shared/CategoryCardList';
-import { useOrderForm, type OrderProducto, type OrderCategory, type OrderProductoPayload } from '@/hooks/personal/useOrderForm';
+import { useOrderForm, type OrderProducto, type OrderCategory, type OrderProductoPayload } from '@/hooks/personal';
 
 const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {
   loading: () => (
@@ -179,7 +179,7 @@ export default function OrderForm({
             Detalles del pedido
           </div>
           <div className='mt-1 text-sm text-zinc-500 dark:text-zinc-400'>
-            Revisá cantidades, comisiones y asignaciones antes de generar el pedido
+            RevisÃ¡ cantidades, comisiones y asignaciones antes de generar el pedido
           </div>
         </div>
         <OrderProductTable
@@ -195,4 +195,7 @@ export default function OrderForm({
     </div>
   );
 }
+
+
+
 

@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { useCategoryForm } from '@/hooks/personal/useCategoryForm';
+import { useCategoryForm } from '@/hooks/personal';
 
 export interface CategoryFormValues {
   name: string;
@@ -120,3 +120,4 @@ export function CategoryFormModal({
     </Dialog>
   );
 }
+

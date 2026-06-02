@@ -1,4 +1,4 @@
-import { Search, X, Plus } from 'lucide-react';
+﻿import { Search, X, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,8 +19,8 @@ import {
   CUENTA_TABLE_ROW_CLASS
 } from '@/components/cuentas/tables/cuentaTableStyles';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import HostessMultiSelect from '@/components/orders/HostessMultiSelect';
-import IndividualHostessSelect from '@/components/shared/selects/IndividualHostessSelect';
+import { HostessMultiSelect } from '@/components/orders';
+import { IndividualHostessSelect } from '@/components/shared/selects';
 
 interface NewSaleSearchProps {
   searchProducto: string;
@@ -94,10 +94,10 @@ export const NewSaleSearch = ({
                   <TableHead className={CUENTA_TABLE_HEAD_CLASS}>PRODUCTO</TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>PRECIO</TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
-                    COMISIÓN
+                    COMISIÃ“N
                   </TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center text-xs`}>
-                    CATEGORÍA
+                    CATEGORÃA
                   </TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
                     ANFITRIONA
@@ -217,7 +217,7 @@ export const NewSaleSearch = ({
                               })()
                             )
                           ) : (
-                            <span className='text-gray-400 text-xs'>Sin comisión</span>
+                            <span className='text-gray-400 text-xs'>Sin comisiÃ³n</span>
                           )}
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
@@ -253,3 +253,5 @@ export const NewSaleSearch = ({
     </div>
   );
 };
+
+

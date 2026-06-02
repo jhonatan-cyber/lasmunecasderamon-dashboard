@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { LucideIcon } from 'lucide-react';
-import { type UserFormValues } from '@/hooks/personal/useUserForm';
+import { type UserFormValues } from '@/hooks/personal';
 
 interface NumberInputFieldProps {
   control: Control<UserFormValues>;
@@ -58,3 +58,4 @@ function NumberInputFieldComponent({
 }
 
 export const NumberInputField = memo(NumberInputFieldComponent);
+

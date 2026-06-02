@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+﻿import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import SelectElements from '@/components/shared/SelectElements';
 import SearchInput from '@/components/shared/SearchInput';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -52,7 +52,7 @@ export default function AttendanceFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end w-full'>
-          {/* Búsqueda */}
+          {/* BÃºsqueda */}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
               Buscar
@@ -77,7 +77,7 @@ export default function AttendanceFilters({
                   { value: 'all', label: 'Todos los roles' },
                   { value: 'administrador', label: 'Administrador' },
                   { value: 'cajero', label: 'Cajero' },
-                  { value: 'garzon', label: 'Garzón' },
+                  { value: 'garzon', label: 'GarzÃ³n' },
                   { value: 'anfitriona', label: 'Anfitriona' }
                 ]}
               />
@@ -102,7 +102,7 @@ export default function AttendanceFilters({
               />
             </div>
 
-            {/* Botón de ordenamiento */}
+            {/* BotÃ³n de ordenamiento */}
             <div className='col-span-1 sm:col-auto flex items-end justify-center order-2 sm:order-none'>
               <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
                 &nbsp;
@@ -121,7 +121,7 @@ export default function AttendanceFilters({
               </Button>
             </div>
 
-            {/* Elementos por página */}
+            {/* Elementos por pÃ¡gina */}
             <div className='col-span-2 sm:col-auto min-w-0 sm:min-w-[140px] order-5 sm:order-none'>
               <FilterSelect
                 value={pageSize.toString()}
@@ -137,7 +137,7 @@ export default function AttendanceFilters({
               />
             </div>
 
-            {/* Botón limpiar filtros */}
+            {/* BotÃ³n limpiar filtros */}
             <div className='col-span-1 sm:col-auto flex justify-center sm:justify-start order-3 sm:order-none'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
@@ -162,3 +162,5 @@ export default function AttendanceFilters({
     </Card>
   );
 }
+
+

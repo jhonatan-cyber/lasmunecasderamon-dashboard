@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUsers } from '@/hooks/personal/useUsers';
+import { useUsers } from '@/hooks/personal';
 import { formatNumberCL } from '@/lib/utils/formatters';
 
 interface UseAdvanceFormProps {
@@ -102,3 +102,4 @@ export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
     loadingBalance
   };
 }
+

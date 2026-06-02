@@ -1,5 +1,5 @@
  
-import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import { useGenericFetch } from '@/hooks/shared';
 import { CashRegisterStatusSchema } from '@/lib/business/schemas';
 import { useCallback, useEffect } from 'react';
 
@@ -54,3 +54,4 @@ export function useCashRegisterStatus() {
     refresh: refetch
   };
 }
+

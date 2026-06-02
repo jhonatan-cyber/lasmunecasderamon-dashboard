@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, DollarSign, Users, Plus } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
-import FilterSelect from '@/components/shared/selects/FilterSelect';
+import { FilterSelect } from '@/components/shared/selects';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import AsistenciaForm from '@/components/attendance/AsistenciaForm';
@@ -81,7 +81,7 @@ export default function GarzonAsistenciasPage() {
       <div className='p-6 flex items-center justify-center min-h-screen'>
         <div className='text-center'>
           <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
-          <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
+          <p className='text-gray-600'>No tienes permisos para acceder a esta pÃ¡gina.</p>
         </div>
       </div>
     );
@@ -119,13 +119,13 @@ export default function GarzonAsistenciasPage() {
     }
   });
 
-  // Paginación
+  // PaginaciÃ³n
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedAsistencias = sortedAsistencias.slice(startIndex, endIndex);
   const totalPages = Math.ceil(sortedAsistencias.length / rowsPerPage);
 
-  // Cálculos - solo asistencias pendientes (estado = 1)
+  // CÃ¡lculos - solo asistencias pendientes (estado = 1)
   const asistenciasPendientes = asistencias.filter(asistencia => asistencia.estado === 1);
   const totalSalary = asistenciasPendientes.reduce(
     (sum, asistencia) => sum + (asistencia.sueldo || 0),
@@ -194,7 +194,7 @@ export default function GarzonAsistenciasPage() {
             className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
           >
             <ArrowLeft className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
-            Atrás
+            AtrÃ¡s
           </Button>
         </div>
       </div>
@@ -252,7 +252,7 @@ export default function GarzonAsistenciasPage() {
         />
       </div>
 
-      {/* Selector de filas por página */}
+      {/* Selector de filas por pÃ¡gina */}
       <div className='flex justify-between items-center'>
         <FilterSelect
           value={rowsPerPage.toString()}
@@ -260,7 +260,7 @@ export default function GarzonAsistenciasPage() {
             setRowsPerPage(parseInt(value));
             setCurrentPage(1);
           }}
-          label='Elementos por página'
+          label='Elementos por pÃ¡gina'
           placeholder='10'
           options={[
             { value: '5', label: '5 Datos' },
@@ -313,7 +313,7 @@ export default function GarzonAsistenciasPage() {
                         <td className='py-3 px-4'>
                           <div>
                             <div className='font-medium text-gray-900'>{date}</div>
-                            <div className='text-sm text-gray-500'>{hora || '—'}</div>
+                            <div className='text-sm text-gray-500'>{hora || 'â€”'}</div>
                           </div>
                         </td>
                         <td className='py-3 px-4 text-gray-900'>
@@ -339,7 +339,7 @@ export default function GarzonAsistenciasPage() {
         </CardContent>
       </Card>
 
-      {/* Paginación */}
+      {/* PaginaciÃ³n */}
       {totalPages > 1 && (
         <div className='flex justify-center'>
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
@@ -355,3 +355,5 @@ export default function GarzonAsistenciasPage() {
     </div>
   );
 }
+
+
