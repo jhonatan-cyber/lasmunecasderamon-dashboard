@@ -47,7 +47,7 @@ export default function TipsPage() {
     }
   };
 
-  // Filtrar y ordenar datos por término de búsqueda
+  // Filtrar y ordenar datos por tÃ©rmino de bÃºsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
 
@@ -84,7 +84,7 @@ export default function TipsPage() {
     });
   }, [tipsCajaActiva, searchTerm]);
 
-  // Calcular estadísticas
+  // Calcular estadÃ­sticas
   const stats = useMemo(() => {
     if (!filteredTips) {
       return {
@@ -114,7 +114,7 @@ export default function TipsPage() {
     };
   }, [filteredTips, filteredTipsCajaActiva]);
 
-  // Función para formatear moneda
+  // FunciÃ³n para formatear moneda
   const formatCurrency = (n: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -137,7 +137,7 @@ export default function TipsPage() {
     });
   }, [filteredTips, activeTab]);
 
-  // Paginación
+  // PaginaciÃ³n
   const tabPaginatedTips = tabFilteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const totalPages = Math.ceil(tabFilteredTips.length / rowsPerPage) || 1;
 
@@ -176,7 +176,7 @@ export default function TipsPage() {
             </div>
           </div>
 
-          {/* Estadísticas */}
+          {/* EstadÃ­sticas */}
           <TipsStatsCards
             totalTips={stats.totalTips}
             totalUsuarios={stats.totalUsuarios}
@@ -208,7 +208,10 @@ export default function TipsPage() {
           {/* Tabs - centrados debajo de los filtros */}
           <div className='flex justify-center gap-3 border-b pb-1'>
             <button
-              onClick={() => { setActiveTab('pending'); setPage(1); }}
+              onClick={() => {
+                setActiveTab('pending');
+                setPage(1);
+              }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'pending'
                   ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
@@ -217,14 +220,21 @@ export default function TipsPage() {
             >
               <Clock className='h-4 w-4' />
               Por Pagar
-              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-              }`}>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'pending'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
                 {pendingCount}
               </span>
             </button>
             <button
-              onClick={() => { setActiveTab('paid'); setPage(1); }}
+              onClick={() => {
+                setActiveTab('paid');
+                setPage(1);
+              }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'paid'
                   ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
@@ -233,9 +243,11 @@ export default function TipsPage() {
             >
               <CheckCircle className='h-4 w-4' />
               Pagadas
-              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-              }`}>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+                }`}
+              >
                 {paidCount}
               </span>
             </button>
@@ -266,4 +278,3 @@ export default function TipsPage() {
     </PermissionGuard>
   );
 }
-

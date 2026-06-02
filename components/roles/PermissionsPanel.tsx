@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable */
 import { useState, useEffect } from 'react';
 import {
@@ -133,7 +135,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       advances: 'Anticipos',
       attendance: 'Asistencias',
       cash_register: 'Caja',
-      categories: 'Categorías',
+      categories: 'CategorÃ­as',
       commissions: 'Comisiones',
       overtime: 'Horas Extras',
       orders: 'Pedidos',
@@ -144,7 +146,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       roles: 'Roles',
       sales: 'Ventas',
       services: 'Servicios',
-      settings: 'Configuración',
+      settings: 'ConfiguraciÃ³n',
       tips: 'Propinas',
       users: 'Usuarios',
       caja: 'Caja',
@@ -201,7 +203,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                 key={module}
                 className='border border-gray-200 dark:border-neutral-800 rounded-lg overflow-hidden'
               >
-                {/* Header del módulo */}
+                {/* Header del mÃ³dulo */}
                 <div
                   className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
                   onClick={() => toggleModuleExpansion(module)}
@@ -316,4 +318,3 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
     </div>
   );
 }
-
