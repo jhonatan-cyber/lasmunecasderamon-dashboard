@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 import { UserService } from '@/lib/services/UserService';
+import { AuditRepository } from '@/lib/repositories/AuditRepository';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
@@ -10,7 +11,6 @@ import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
-// GET sin verificación de permisos - solo requiere autenticación
 export const GET = withAppAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const params = {
@@ -162,13 +162,21 @@ export const PUT = withAppAuth(async (request: Request, { user }: { user: any })
   if (!id)
     return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-  // Dynamic Permission Check: allow self profile updates OR admin updates
   const isAdministrator = user.role?.toLowerCase() === 'administrador';
   const isSelfUpdate = user.id?.toString() === id.toString();
   const userPermissions = (user.permissions as any)?.users;
   const hasWritePermission = isAdministrator || (userPermissions && userPermissions.write === true);
 
   if (!isSelfUpdate && !hasWritePermission) {
+    try {
+      await AuditRepository.log({
+        user_id: user.id,
+        action: `PUT /api/users FORBIDDEN`,
+        resource_type: 'users',
+        details: { userId: user.id, requestId: id, isSelfUpdate, userRole: user.role }
+      });
+    } catch (e) {}
+
     return NextResponse.json(
       { success: false, message: 'Permisos insuficientes' },
       { status: 403 }
