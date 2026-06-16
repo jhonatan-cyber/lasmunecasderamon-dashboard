@@ -2,20 +2,7 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
-  allowedDevOrigins: [
-    'localhost',
-    'localhost:3000',
-    'http://localhost:3000',
-    '127.0.0.1',
-    '127.0.0.1:3000',
-    'http://127.0.0.1:3000',
-    '192.168.0.12',
-    '192.168.0.12:3000',
-    'http://192.168.0.12:3000',
-    'dev.xn--lasmuecasderamon-bub.com',
-    'dev.lasmuñecasderamon.com'
-  ],
-
+  allowedDevOrigins: ['dashboard.xn--lasmuecasderamon-bub.com'],
   images: {
     unoptimized: true,
     formats: ['image/avif', 'image/webp'],
