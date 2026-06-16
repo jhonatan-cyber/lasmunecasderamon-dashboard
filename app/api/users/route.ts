@@ -109,69 +109,79 @@ export const PATCH = withAppAuth(
   { module: 'users', action: 'write' }
 );
 
-export const PUT = withAppAuth(
-  async (request: Request) => {
-    const contentType = request.headers.get('content-type') || '';
-    let body: any;
-    let id: string | null = null;
-    let fotoFilename: string | null = null;
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      id = formData.get('id') as string;
-      body = Object.fromEntries(formData.entries());
-      const foto = formData.get('foto');
+export const PUT = withAppAuth(async (request: Request, { user }: { user: any }) => {
+  const contentType = request.headers.get('content-type') || '';
+  let body: any;
+  let id: string | null = null;
+  let fotoFilename: string | null = null;
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    id = formData.get('id') as string;
+    body = Object.fromEntries(formData.entries());
+    const foto = formData.get('foto');
 
-      if (foto && typeof foto !== 'string' && 'arrayBuffer' in (foto as any)) {
-        const file = foto as unknown as File;
-        if (file.size > 0) {
-          const buffer = Buffer.from(await file.arrayBuffer());
-          const filename = `user_${Date.now()}.webp`;
-          const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
+    if (foto && typeof foto !== 'string' && 'arrayBuffer' in (foto as any)) {
+      const file = foto as unknown as File;
+      if (file.size > 0) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `user_${Date.now()}.webp`;
+        const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
 
-          if (!existsSync(uploadDir)) {
-            await fs.mkdir(uploadDir, { recursive: true });
-          }
-
-          try {
-            const optimizedBuffer = await sharp(buffer)
-              .resize(500, 500, { fit: 'cover', position: 'center' })
-              .webp({ quality: 80 })
-              .toBuffer();
-
-            await fs.writeFile(path.join(uploadDir, filename), optimizedBuffer);
-            fotoFilename = filename;
-            logger.info(`[USER API PUT] Foto guardada OK: ${filename}`);
-          } catch (sharpError) {
-            logger.error(`[USER API PUT] Error en Sharp, guardando original:`, {
-              error: sharpError
-            });
-            const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
-            await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
-            fotoFilename = fallbackFilename;
-          }
+        if (!existsSync(uploadDir)) {
+          await fs.mkdir(uploadDir, { recursive: true });
         }
-      } else if (typeof foto === 'string' && foto.startsWith('http')) {
-        fotoFilename = foto;
-        logger.info(`[USER API PUT] Usando URL: ${fotoFilename}`);
+
+        try {
+          const optimizedBuffer = await sharp(buffer)
+            .resize(500, 500, { fit: 'cover', position: 'center' })
+            .webp({ quality: 80 })
+            .toBuffer();
+
+          await fs.writeFile(path.join(uploadDir, filename), optimizedBuffer);
+          fotoFilename = filename;
+          logger.info(`[USER API PUT] Foto guardada OK: ${filename}`);
+        } catch (sharpError) {
+          logger.error(`[USER API PUT] Error en Sharp, guardando original:`, {
+            error: sharpError
+          });
+          const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
+          await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
+          fotoFilename = fallbackFilename;
+        }
       }
-    } else {
-      const jsonBody = await request.json();
-      id = jsonBody.id;
-      body = jsonBody;
+    } else if (typeof foto === 'string' && foto.startsWith('http')) {
+      fotoFilename = foto;
+      logger.info(`[USER API PUT] Usando URL: ${fotoFilename}`);
     }
+  } else {
+    const jsonBody = await request.json();
+    id = jsonBody.id;
+    body = jsonBody;
+  }
 
-    if (!id)
-      return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
+  if (!id)
+    return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    logger.info(`[USER API PUT] Actualizando usuario ${id}`, {
-      foto: fotoFilename,
-      body: { ...body, password: '***' }
-    });
-    const data = await UserService.updateUser(id, body, fotoFilename);
-    return NextResponse.json({ success: true, message: 'Usuario actualizado', data });
-  },
-  { module: 'users', action: 'write' }
-);
+  // Dynamic Permission Check: allow self profile updates OR admin updates
+  const isAdministrator = user.role?.toLowerCase() === 'administrador';
+  const isSelfUpdate = user.id?.toString() === id.toString();
+  const userPermissions = (user.permissions as any)?.users;
+  const hasWritePermission = isAdministrator || (userPermissions && userPermissions.write === true);
+
+  if (!isSelfUpdate && !hasWritePermission) {
+    return NextResponse.json(
+      { success: false, message: 'Permisos insuficientes' },
+      { status: 403 }
+    );
+  }
+
+  logger.info(`[USER API PUT] Actualizando usuario ${id}`, {
+    foto: fotoFilename,
+    body: { ...body, password: '***' }
+  });
+  const data = await UserService.updateUser(id, body, fotoFilename);
+  return NextResponse.json({ success: true, message: 'Usuario actualizado', data });
+});
 
 export const DELETE = withAppAuth(
   async (request: Request) => {
