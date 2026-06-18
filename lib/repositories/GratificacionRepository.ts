@@ -140,6 +140,23 @@ export class GratificacionRepository {
       fecha_crea: now
     });
 
+    // Registrar también como anticipo pendiente
+    await BaseRepository.insert(query, 'anticipos', {
+      id_anticipo: id,
+      usuario_id: targetUserId,
+      monto,
+      motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
+      estado: 2,
+      fecha_crea: now
+    });
+
+    await BaseRepository.insert(query, 'anticipo_historial', {
+      anticipo_id: id,
+      accion: 'solicitud',
+      usuario_id: targetUserId,
+      fecha_crea: now
+    });
+
     const adminWhatsApp =
       process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
     const baseUrl = process.env.PUBLIC_BASE_URL || '';
@@ -176,6 +193,17 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
       solicitado_por: requestedByUserId,
       monto,
       descripcion: descripcion || '',
+      empleado: `${target.nombre} ${target.apellido}`,
+      nick: target.nick || null,
+      fecha_crea: now
+    });
+
+    // Notificar al listado de anticipos
+    sendNotificationToAll('new_anticipo_request', {
+      id,
+      usuario_id: targetUserId,
+      monto,
+      motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
       empleado: `${target.nombre} ${target.apellido}`,
       nick: target.nick || null,
       fecha_crea: now
@@ -232,9 +260,9 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
     };
   }
 
-  static async processSolicitud(id: string, action: GratificacionAction) {
+  static async processSolicitud(id: string, action: GratificacionAction, adminId?: string) {
     return await withTransaction(async trx => {
-      const rows = await query<any[]>(
+      const rows = await trx<any[]>(
         `
         SELECT
           g.id,
@@ -271,6 +299,22 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
         estado: nextState,
         fecha_mod: now
       });
+
+      // Sincronizar con el anticipo correspondiente
+      const antCheck = await trx<any[]>('SELECT estado FROM anticipos WHERE id_anticipo = ?', [id]);
+      if (antCheck.length > 0 && Number(antCheck[0].estado) === 2) {
+        await BaseRepository.update(trx, 'anticipos', 'id_anticipo', id, {
+          estado: nextState,
+          fecha_mod: now,
+          ...(action === 'approve' ? { fecha_aprobacion: now } : {})
+        });
+        await BaseRepository.insert(trx, 'anticipo_historial', {
+          anticipo_id: id,
+          accion: action === 'approve' ? 'aprobado' : 'rechazado',
+          usuario_id: adminId || null,
+          fecha_crea: now
+        });
+      }
 
       const approved = action === 'approve';
       const title = approved ? 'Gratificaci?n aprobada' : 'Gratificaci?n rechazada';

@@ -1,4 +1,5 @@
 import { useSSE } from '@/hooks/shared';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 interface OrderUpdateData {
   type: 'order-processed' | 'order-deleted' | 'order-created';
@@ -7,8 +8,7 @@ interface OrderUpdateData {
 }
 
 export function useOrdersSSE(onOrderUpdate: (data: OrderUpdateData) => void) {
-
-  useSSE('/api/orders/sse', (data) => {
+  useSSE('/api/orders/sse', data => {
     if (data.type === 'connected') {
       return;
     }
@@ -19,11 +19,7 @@ export function useOrdersSSE(onOrderUpdate: (data: OrderUpdateData) => void) {
       data.type === 'order-created'
     ) {
       if (data.type === 'order-processed') {
-        window.dispatchEvent(
-          new CustomEvent('closeOrderModal', {
-            detail: { orderId: data.orderId }
-          })
-        );
+        appEventBus.emit('closeOrderModal', { orderId: data.orderId });
       }
 
       onOrderUpdate({
@@ -32,18 +28,13 @@ export function useOrdersSSE(onOrderUpdate: (data: OrderUpdateData) => void) {
         timestamp: data.timestamp
       });
 
-      window.dispatchEvent(
-        new CustomEvent('updatePendingOrders', {
-          detail: {
-            type: data.type,
-            orderId: data.orderId
-          }
-        })
-      );
-      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+      appEventBus.emit('updatePendingOrders', {
+        type: data.type,
+        orderId: data.orderId
+      });
+      appEventBus.emit('refreshNotifications');
     }
   });
 
   return null;
 }
-

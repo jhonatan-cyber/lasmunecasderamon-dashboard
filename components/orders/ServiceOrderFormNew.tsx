@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { appEventBus } from '@/lib/utils/eventBus';
 import { useAnfitrionasDisponibles } from '@/hooks/personal';
 import { useAvailableRooms } from '@/hooks/habitaciones';
 import { useClients } from '@/hooks/clientes/useClients';
@@ -230,8 +231,8 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         showSuccessToast(
           'Solicitud de servicio enviada exitosamente. Esperando aprobaciÃ³n de cajera.'
         );
-        window.dispatchEvent(new CustomEvent('updateServiceRequests'));
-        window.dispatchEvent(new CustomEvent('refreshNotifications'));
+        appEventBus.emit('updateServiceRequests');
+        appEventBus.emit('refreshNotifications');
         setSelectedClienteId('');
         setTempForm({
           precio_servicio: 0,
@@ -501,6 +502,3 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     </div>
   );
 }
-
-
-

@@ -4,7 +4,8 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 export class EventRepository {
   static async getStats(userId: string) {
     const now = getNowInBusinessTimezone();
-    const weeklyIncome = await query<any[]>(`
+    const weeklyIncome = await query<any[]>(
+      `
       SELECT DATE(date) as day, SUM(amount) as total
       FROM (
         SELECT S.fecha_crea as date, COALESCE(DC.comision, 0) as amount FROM servicios S
@@ -25,26 +26,54 @@ export class EventRepository {
       ) as combined
       GROUP BY DATE(date)
       ORDER BY DATE(date) ASC
-    `, [userId, now, userId, now, userId, now, userId, now]);
+    `,
+      [userId, now, userId, now, userId, now, userId, now]
+    );
 
     const stats = await Promise.all([
-      query<any[]>('SELECT COUNT(*) as count FROM detalle_servicios WHERE usuario_id = ?', [userId]),
-      query<any[]>('SELECT SUM(comision) as total FROM detalle_comisiones WHERE usuario_id = ?', [userId]),
-      query<any[]>('SELECT SUM(monto) as total FROM detalle_propinas WHERE usuario_id = ?', [userId]),
+      query<any[]>('SELECT COUNT(*) as count FROM detalle_servicios WHERE usuario_id = ?', [
+        userId
+      ]),
+      query<any[]>('SELECT SUM(comision) as total FROM detalle_comisiones WHERE usuario_id = ?', [
+        userId
+      ]),
+      query<any[]>('SELECT SUM(monto) as total FROM detalle_propinas WHERE usuario_id = ?', [
+        userId
+      ]),
       query<any[]>('SELECT SUM(monto) as total FROM gratificaciones WHERE usuario_id = ?', [userId])
     ]);
 
     const svcCount = stats[0][0]?.count || 0;
-    const totalEarnings = Number(stats[1][0]?.total || 0) + Number(stats[2][0]?.total || 0) + Number(stats[3][0]?.total || 0);
+    const totalEarnings =
+      Number(stats[1][0]?.total || 0) +
+      Number(stats[2][0]?.total || 0) +
+      Number(stats[3][0]?.total || 0);
 
     const badges = [];
-    if (svcCount >= 10) badges.push({ id: 'pro', icon: '🏆', title: 'Top 10 Servicios', description: '¡Has completado más de 10 servicios!' });
-    if (totalEarnings >= 100000) badges.push({ id: 'gold', icon: '💰', title: 'Experta en Ventas', description: 'Más de $100,000 acumulados' });
+    if (svcCount >= 10)
+      badges.push({
+        id: 'pro',
+        icon: '🏆',
+        title: 'Top 10 Servicios',
+        description: '¡Has completado más de 10 servicios!'
+      });
+    if (totalEarnings >= 1000000000)
+      badges.push({
+        id: 'gold',
+        icon: '💰',
+        title: 'Experta en Ventas',
+        description: 'Más de $100,000,000 acumulados'
+      });
 
-    return { weeklyIncome: weeklyIncome.map(w => ({ ...w, total: Number(w.total) })), badges, svcCount, totalEarnings };
+    return {
+      weeklyIncome: weeklyIncome.map(w => ({ ...w, total: Number(w.total) })),
+      badges,
+      svcCount,
+      totalEarnings
+    };
   }
 
-  static async getUserEvents(userId: string) {
+  static async getUserEvents(userId: string, startDate?: string, endDate?: string) {
     const tableChecks = await query<any[]>(
       `SELECT table_name
        FROM information_schema.tables
@@ -52,8 +81,8 @@ export class EventRepository {
          AND table_name IN ('gratificaciones', 'horas_extras')`
     );
 
-    const hasGratificaciones = tableChecks.some((row) => row.table_name === 'gratificaciones');
-    const hasHorasExtras = tableChecks.some((row) => row.table_name === 'horas_extras');
+    const hasGratificaciones = tableChecks.some(row => row.table_name === 'gratificaciones');
+    const hasHorasExtras = tableChecks.some(row => row.table_name === 'horas_extras');
 
     const gratificacionesSql = hasGratificaciones
       ? `
@@ -91,7 +120,14 @@ export class EventRepository {
     if (hasHorasExtras) params.push(userId);
     if (hasGratificaciones) params.push(userId);
 
-    return await query(`
+    let whereClause = '';
+    if (startDate && endDate) {
+      whereClause = 'WHERE date >= ? AND date <= ?';
+      params.push(startDate, endDate);
+    }
+
+    return await query(
+      `
       SELECT *
       FROM (
         SELECT
@@ -170,8 +206,11 @@ export class EventRepository {
         ${horasExtrasSql}
         ${gratificacionesSql}
       ) events
+      ${whereClause}
       ORDER BY date DESC
       LIMIT 250
-    `, params);
+    `,
+      params
+    );
   }
 }

@@ -10,6 +10,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import dynamic from 'next/dynamic';
 import logger from '@/lib/utils/logger';
+import { appEventBus } from '@/lib/utils/eventBus';
 import {
   CajaCard,
   CajaFormDialog,
@@ -125,11 +126,11 @@ export default function CashRegister() {
       getCajas();
       getResumen();
     };
-    window.addEventListener('cajaClosed', refreshFromEvent);
-    window.addEventListener('cajaOpened', refreshFromEvent);
+    const u1 = appEventBus.on('cajaClosed', refreshFromEvent);
+    const u2 = appEventBus.on('cajaOpened', refreshFromEvent);
     return () => {
-      window.removeEventListener('cajaClosed', refreshFromEvent);
-      window.removeEventListener('cajaOpened', refreshFromEvent);
+      u1();
+      u2();
     };
   }, [getCajas, getResumen]);
 
