@@ -361,6 +361,15 @@ export class AnticipoRepository {
         fecha_crea: now
       });
 
+      // Sincronizar con la gratificación correspondiente si existe y está pendiente
+      const gratCheck = await trx<any[]>('SELECT estado FROM gratificaciones WHERE id = ?', [id]);
+      if (gratCheck.length > 0 && Number(gratCheck[0].estado) === 2) {
+        await BaseRepository.update(trx, 'gratificaciones', 'id', id, {
+          estado,
+          fecha_mod: now
+        });
+      }
+
       const { empleado: msgEmp, administrador: msgAdmin } = buildAnticipoProcessedMessages({
         action: action === 'approve' ? 'approved' : 'rejected',
         empleadoNombre: `${sol.nombre} ${sol.apellido}`,

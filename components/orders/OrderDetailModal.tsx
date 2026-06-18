@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react';
 import logger from '@/lib/utils/logger';
+import { appEventBus } from '@/lib/utils/eventBus';
 import {
   Dialog,
   DialogContent,
@@ -105,17 +106,17 @@ export default function OrderDetailModal({
   useRefreshOnFocus(refetchRooms, { enabled: open });
 
   useEffect(() => {
-    const handleCloseOrderModal = (event: CustomEvent) => {
-      const { orderId: processedOrderId } = event.detail;
+    const handleCloseOrderModal = (detail: { orderId: number | string }) => {
+      const { orderId: processedOrderId } = detail;
       if (open && orderId === processedOrderId) {
         onClose();
       }
     };
 
-    window.addEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+    const unsubscribe = appEventBus.on('closeOrderModal', handleCloseOrderModal);
 
     return () => {
-      window.removeEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+      unsubscribe();
     };
   }, [open, orderId, onClose]);
 
@@ -345,12 +346,8 @@ export default function OrderDetailModal({
         await actualizarEstadoPedido(0);
 
         onOrderStatusChange?.();
-        window.dispatchEvent(
-          new CustomEvent('updatePendingOrders', {
-            detail: { type: 'order-processed', orderId: orderId }
-          })
-        );
-        window.dispatchEvent(new CustomEvent('refreshNotifications'));
+        appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId: orderId });
+        appEventBus.emit('refreshNotifications');
 
         if (habitacionId) {
           const selectedRoom = rooms.find(room => getOrderRoomId(room) === String(habitacionId));
@@ -388,7 +385,7 @@ export default function OrderDetailModal({
         }
 
         toast.success('Venta registrada exitosamente');
-        window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+        appEventBus.emit('ventaRegistrada');
         onClose();
         onVentaRegistrada?.();
       }
@@ -407,12 +404,8 @@ export default function OrderDetailModal({
   const handleRechazarPedido = async () => {
     try {
       await actualizarEstadoPedido(2);
-      window.dispatchEvent(
-        new CustomEvent('updatePendingOrders', {
-          detail: { type: 'order-deleted', orderId: orderId }
-        })
-      );
-      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+      appEventBus.emit('updatePendingOrders', { type: 'order-deleted', orderId: orderId });
+      appEventBus.emit('refreshNotifications');
       toast.success('Pedido rechazado exitosamente');
       onClose();
       onVentaRegistrada?.();
@@ -473,14 +466,10 @@ export default function OrderDetailModal({
         toast.success('Cuenta registrada exitosamente');
 
         try {
-          // Marcar el pedido como procesado porque se convirtiÃ³ en una cuenta
+          // Marcar el pedido como procesado porque se convirtió en una cuenta
           await actualizarEstadoPedido(0);
-          window.dispatchEvent(
-            new CustomEvent('updatePendingOrders', {
-              detail: { type: 'order-processed', orderId: orderId }
-            })
-          );
-          window.dispatchEvent(new CustomEvent('refreshNotifications'));
+          appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId: orderId });
+          appEventBus.emit('refreshNotifications');
         } catch (estadoError) {
           logger.captureException(estadoError, { context: 'OrderDetailModal:fetchDetail' });
         }
@@ -792,5 +781,3 @@ export default function OrderDetailModal({
     </Dialog>
   );
 }
-
-
