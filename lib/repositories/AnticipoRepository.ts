@@ -287,6 +287,14 @@ export class AnticipoRepository {
     } catch (err) {
       logger.error('[AnticipoRepository] Error enviando WhatsApp al admin:', { err });
     }
+
+    if (user.telefono) {
+      const userMsg = `*Solicitud de Anticipo Recibida* ⏳\n\nHola ${user.nombre}, hemos recibido tu solicitud de anticipo por *${formatCurrencyCLP(monto)}*. Te notificaremos una vez que el administrador la revise.\n\n*Motivo:* ${motivo}\n*Fecha:* ${now}`;
+      enviarWhatsApp(user.telefono, userMsg).catch(err =>
+        logger.error('[AnticipoRepository] Error enviando WhatsApp de confirmación al empleado:', { err })
+      );
+    }
+
     sendNotificationToAll('new_anticipo_request', {
       id,
       usuario_id,
@@ -297,11 +305,23 @@ export class AnticipoRepository {
       fecha_crea: now
     });
 
-    await sendPushByRole(
+    sendPushByRole(
       'cajero',
       'Nueva solicitud de anticipo',
       `${user.nick} solicito ${formatCurrencyCLP(monto)}`
-    ).catch(err => logger.error('[AnticipoRepository] Error enviando push solicitud:', { err }));
+    ).catch(err => logger.error('[AnticipoRepository] Error enviando push al cajero:', { err }));
+
+    sendPushByRole(
+      'administrador',
+      'Nueva solicitud de anticipo',
+      `${user.nombre} ${user.apellido} (${user.nick}) solicitó ${formatCurrencyCLP(monto)}.`
+    ).catch(err => logger.error('[AnticipoRepository] Error enviando push al administrador:', { err }));
+
+    sendPushNotification(
+      usuario_id,
+      'Solicitud de anticipo recibida ⏳',
+      `Tu solicitud por ${formatCurrencyCLP(monto)} ha sido enviada para revisión.`
+    ).catch(err => logger.error('[AnticipoRepository] Error enviando push al empleado:', { err }));
 
     const res = await query<any[]>('SELECT * FROM anticipos WHERE id_anticipo = ?', [id]);
     return res.length > 0 ? res[0] : null;
