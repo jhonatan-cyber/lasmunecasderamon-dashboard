@@ -23,6 +23,7 @@ import { useOrdersList, Order, SolicitudServicio } from '@/hooks/orders/useOrder
 import { useOrderDetail } from '@/hooks/orders/useOrderDetail';
 import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { toast } from 'sonner';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 // Componentes Refactorizados
 import {
@@ -33,10 +34,13 @@ import {
   ServiceRequestCard
 } from '@/components/orders/list';
 
-const OrderDetailModal = dynamic(() => import('@/components/orders').then(mod => mod.OrderDetailModal), {
-  loading: () => null,
-  ssr: false
-});
+const OrderDetailModal = dynamic(
+  () => import('@/components/orders').then(mod => mod.OrderDetailModal),
+  {
+    loading: () => null,
+    ssr: false
+  }
+);
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -236,9 +240,7 @@ export default function OrdersPage() {
                     servicio={servicio}
                     canDelete={canDelete}
                     onServicioClick={s =>
-                      window.dispatchEvent(
-                        new CustomEvent('openServiceRequestModal', { detail: { solicitud: s } })
-                      )
+                      appEventBus.emit('openServiceRequestModal', { solicitud: s })
                     }
                     onDeleteClick={handleDeleteServicioClick}
                   />

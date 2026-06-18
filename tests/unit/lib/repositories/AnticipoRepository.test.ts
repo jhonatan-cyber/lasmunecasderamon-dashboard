@@ -414,6 +414,23 @@ describe('AnticipoRepository.processSolicitud', () => {
       })
     );
   });
+
+  it('sincroniza el estado de la gratificación si existe una pendiente con el mismo ID', async () => {
+    mockQueryImplementation({
+      'FROM anticipos a': USER_ROW_WITH_PUSH,
+      'SELECT estado FROM gratificaciones WHERE id = ?': [{ estado: 2 }]
+    });
+
+    await AnticipoRepository.processSolicitud('ant-1', 'approve', 'admin-123');
+
+    expect(BaseRepository.update).toHaveBeenCalledWith(
+      repositoryHarness.queryMock,
+      'gratificaciones',
+      'id',
+      'ant-1',
+      expect.objectContaining({ estado: 1 })
+    );
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════

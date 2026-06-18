@@ -21,6 +21,7 @@ import { useNotificationsContext } from '@/contexts/NotificationsContext';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { ServiceRequestModal } from './ServiceRequestModal';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
   loading: () => null,
@@ -130,9 +131,9 @@ export function HeaderNotifications() {
     setSelectedOrderCode('');
   };
 
-  // Listen for external events to open order modal
+  // Listen for external events to open order modal (via appEventBus)
   useEffect(() => {
-    const handleOpenOrderModal = (event: CustomEvent) => {
+    const handleOpenOrderModal = (detail: { orderId: number | string; codigo?: string }) => {
       if (!hasPermission('orders', 'process')) {
         toast.error('No tienes permisos para procesar pedidos');
         return;
@@ -144,7 +145,7 @@ export function HeaderNotifications() {
         return;
       }
 
-      const { orderId, codigo } = event.detail;
+      const { orderId, codigo } = detail;
       const normalizedOrderId = String(orderId);
       const order = orders.find((o: any) => String(getOrderId(o)) === normalizedOrderId);
       setSelectedOrderId(normalizedOrderId);
@@ -153,15 +154,14 @@ export function HeaderNotifications() {
       fetchOrderDetail(normalizedOrderId);
     };
 
-    window.addEventListener('openOrderModal', handleOpenOrderModal as EventListener);
-    return () =>
-      window.removeEventListener('openOrderModal', handleOpenOrderModal as EventListener);
+    const unsubscribe = appEventBus.on('openOrderModal', handleOpenOrderModal);
+    return () => unsubscribe();
   }, [fetchOrderDetail, orders, hasOpenCaja, hasPermission]);
 
-  // Listen for external events to open service request modal
+  // Listen for external events to open service request modal (via appEventBus)
   useEffect(() => {
-    const handleOpenServiceRequestModal = async (event: CustomEvent) => {
-      const solicitud = (event.detail && event.detail.solicitud) || event.detail;
+    const handleOpenServiceRequestModal = (detail: { solicitud: any }) => {
+      const solicitud = detail?.solicitud;
       if (!solicitud) return;
 
       setSelectedServiceRequest(solicitud);
@@ -169,22 +169,15 @@ export function HeaderNotifications() {
       setShowDropdown(false);
     };
 
-    window.addEventListener(
-      'openServiceRequestModal',
-      handleOpenServiceRequestModal as unknown as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        'openServiceRequestModal',
-        handleOpenServiceRequestModal as unknown as EventListener
-      );
+    const unsubscribe = appEventBus.on('openServiceRequestModal', handleOpenServiceRequestModal);
+    return () => unsubscribe();
   }, []);
 
-  // Update pending orders from external events
+  // Update pending orders from external events (via appEventBus)
   useEffect(() => {
-    const handleUpdatePendingOrders = (event?: CustomEvent) => {
-      if (event && event.detail) {
-        const { type, orderId } = event.detail;
+    const handleUpdatePendingOrders = (detail?: { type?: string; orderId?: number | string }) => {
+      if (detail) {
+        const { type, orderId } = detail;
         const normalizedOrderId = String(orderId);
         if (type === 'order-processed' || type === 'order-deleted') {
           setOrders((prevOrders: any[]) =>
@@ -198,23 +191,21 @@ export function HeaderNotifications() {
       }
     };
 
-    window.addEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
-    return () =>
-      window.removeEventListener('updatePendingOrders', handleUpdatePendingOrders as EventListener);
+    const unsubscribe = appEventBus.on('updatePendingOrders', handleUpdatePendingOrders);
+    return () => unsubscribe();
   }, [refetch, setOrders]);
 
-  // Close order modal from external event
+  // Close order modal from external event (via appEventBus)
   useEffect(() => {
-    const handleCloseOrderModal = (event: CustomEvent) => {
-      const processedOrderId = String(event.detail.orderId);
+    const handleCloseOrderModal = (detail: { orderId: number | string }) => {
+      const processedOrderId = String(detail.orderId);
       if (modalOpen && selectedOrderId === processedOrderId) {
         handleCloseModal();
       }
     };
 
-    window.addEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
-    return () =>
-      window.removeEventListener('closeOrderModal', handleCloseOrderModal as EventListener);
+    const unsubscribe = appEventBus.on('closeOrderModal', handleCloseOrderModal);
+    return () => unsubscribe();
   }, [modalOpen, selectedOrderId]);
 
   // Fetch pending service requests
@@ -238,8 +229,8 @@ export function HeaderNotifications() {
 
   useEffect(() => {
     const handleUpdateServiceRequests = () => fetchPendingServiceRequests();
-    window.addEventListener('updateServiceRequests', handleUpdateServiceRequests);
-    return () => window.removeEventListener('updateServiceRequests', handleUpdateServiceRequests);
+    const unsubscribe = appEventBus.on('updateServiceRequests', handleUpdateServiceRequests);
+    return () => unsubscribe();
   }, [fetchPendingServiceRequests]);
 
   const handleServiceClick = (solicitud: any) => {
@@ -251,7 +242,7 @@ export function HeaderNotifications() {
   const handleServiceProcessed = () => {
     setSelectedServiceRequest(null);
     fetchPendingServiceRequests();
-    window.dispatchEvent(new CustomEvent('updateServiceRequests'));
+    appEventBus.emit('updateServiceRequests');
   };
 
   // Don't render for anfitrionas or garzones

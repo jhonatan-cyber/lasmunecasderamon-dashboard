@@ -5,6 +5,7 @@ import { VentaWithDetails } from '@/types/venta';
 import SaleCard from './SaleCard';
 import { Bed } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 interface SalesWithRoomTabProps {
   ventas: VentaWithDetails[];
@@ -32,8 +33,8 @@ export default function SalesWithRoomTab({
     const handleUpdateSales = () => {
       if (onRefresh) onRefresh();
     };
-    window.addEventListener('updateSales', handleUpdateSales);
-    return () => window.removeEventListener('updateSales', handleUpdateSales);
+    const unsubscribe = appEventBus.on('updateSales', handleUpdateSales);
+    return () => unsubscribe();
   }, [onRefresh]);
 
   // Filtrar ventas que tienen habitación asignada
