@@ -12,6 +12,7 @@ import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 import logger from '@/lib/utils/logger';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 import {
   SalesHeader,
@@ -90,14 +91,14 @@ export default function Sales() {
       handleRefreshRef.current();
     };
 
-    window.addEventListener('ventaRegistrada', handleVentaRegistrada);
-    window.addEventListener('updateSales', handleUpdateSales);
-    window.addEventListener('timer_ended_event', handleTimerEnded);
+    const u1 = appEventBus.on('ventaRegistrada', handleVentaRegistrada);
+    const u2 = appEventBus.on('updateSales', handleUpdateSales);
+    const u3 = appEventBus.on('timer_ended_event', handleTimerEnded);
 
     return () => {
-      window.removeEventListener('ventaRegistrada', handleVentaRegistrada);
-      window.removeEventListener('updateSales', handleUpdateSales);
-      window.removeEventListener('timer_ended_event', handleTimerEnded);
+      u1();
+      u2();
+      u3();
     };
   }, []);
 

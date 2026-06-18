@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import useRooms from '@/hooks/habitaciones/useRooms';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 export type OrderProducto = {
   id_producto?: string | number;
@@ -75,8 +76,12 @@ export function useOrderForm({
   const [productosCategoria, setProductosCategoria] = useState<OrderProducto[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
-  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{ [key: string]: string[] }>({});
-  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{ [key: string]: string[] }>({});
+  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
   const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
   const [propina, setPropina] = useState(10);
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
@@ -85,18 +90,29 @@ export function useOrderForm({
   const router = useRouter();
   const { user } = useCurrentUser();
   const { rooms, fetchRooms } = useRooms();
-  
+
   const toNullableStringId = useCallback((value: unknown): string | null => {
     if (value === null || value === undefined) return null;
     const stringValue = String(value).trim();
-    if (!stringValue || stringValue === 'NaN' || stringValue === 'undefined' || stringValue === 'null') {
+    if (
+      !stringValue ||
+      stringValue === 'NaN' ||
+      stringValue === 'undefined' ||
+      stringValue === 'null'
+    ) {
       return null;
     }
     return stringValue;
   }, []);
 
-  const subtotal = useMemo(() => productos.reduce((acc, p) => acc + (p.subtotal || 0), 0), [productos]);
-  const tipAmount = useMemo(() => (propinaHabilitada ? (subtotal * propina) / 100 : 0), [propinaHabilitada, subtotal, propina]);
+  const subtotal = useMemo(
+    () => productos.reduce((acc, p) => acc + (p.subtotal || 0), 0),
+    [productos]
+  );
+  const tipAmount = useMemo(
+    () => (propinaHabilitada ? (subtotal * propina) / 100 : 0),
+    [propinaHabilitada, subtotal, propina]
+  );
   const total = useMemo(() => subtotal + tipAmount, [subtotal, tipAmount]);
 
   const handleTipChange = useCallback((enabled: boolean, percentage: number) => {
@@ -137,34 +153,49 @@ export function useOrderForm({
     setRoomSelections(prev => ({ ...prev, [productId]: roomId }));
   }, []);
 
-  const handleAgregarProducto = useCallback((producto: OrderProducto) => {
-    const productKey = String(producto.id_producto || producto.id || '');
-    const cantidad = cantidades[productKey] || 1;
-    const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
-    const generaComision = comisionUnitaria > 0 ? 1 : 0;
-    const selectedHostesses = producto.selectedHostesses || [];
+  const handleAgregarProducto = useCallback(
+    (producto: OrderProducto) => {
+      const productKey = String(producto.id_producto || producto.id || '');
+      const cantidad = cantidades[productKey] || 1;
+      const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
+      const generaComision = comisionUnitaria > 0 ? 1 : 0;
+      const selectedHostesses = producto.selectedHostesses || [];
 
-    if (onAddProducto) {
-      onAddProducto({
-        ...producto,
-        comision: comisionUnitaria * cantidad,
-        comisionUnitaria,
-        cantidad,
-        subtotal: Number(producto.precio || producto.price || 0) * cantidad,
-        generaComision,
-        hostessId: '',
-        selectedHostesses,
-        isChampagne: producto.isChampagne || false,
-        selectedRoom: producto.selectedRoom || null,
-        requiresRoom: producto.requiresRoom || false
+      if (onAddProducto) {
+        onAddProducto({
+          ...producto,
+          comision: comisionUnitaria * cantidad,
+          comisionUnitaria,
+          cantidad,
+          subtotal: Number(producto.precio || producto.price || 0) * cantidad,
+          generaComision,
+          hostessId: '',
+          selectedHostesses,
+          isChampagne: producto.isChampagne || false,
+          selectedRoom: producto.selectedRoom || null,
+          requiresRoom: producto.requiresRoom || false
+        });
+      }
+
+      setCantidades(prev => ({ ...prev, [productKey]: 1 }));
+      setChampagneHostessSelections(prev => {
+        const n = { ...prev };
+        delete n[productKey];
+        return n;
       });
-    }
-
-    setCantidades(prev => ({ ...prev, [productKey]: 1 }));
-    setChampagneHostessSelections(prev => { const n = { ...prev }; delete n[productKey]; return n; });
-    setOtherProductHostessSelections(prev => { const n = { ...prev }; delete n[productKey]; return n; });
-    setRoomSelections(prev => { const n = { ...prev }; delete n[productKey]; return n; });
-  }, [cantidades, onAddProducto]);
+      setOtherProductHostessSelections(prev => {
+        const n = { ...prev };
+        delete n[productKey];
+        return n;
+      });
+      setRoomSelections(prev => {
+        const n = { ...prev };
+        delete n[productKey];
+        return n;
+      });
+    },
+    [cantidades, onAddProducto]
+  );
 
   const handleSubmitInternal = async () => {
     if (productos.length === 0) {
@@ -175,7 +206,9 @@ export function useOrderForm({
     const bebidasConComision = productos.filter(p => p.generaComision === 1);
     for (const bebida of bebidasConComision) {
       if ((bebida.selectedHostesses || []).length === 0) {
-        setError(`La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`);
+        setError(
+          `La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`
+        );
         return;
       }
     }
@@ -185,17 +218,29 @@ export function useOrderForm({
       return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
     };
 
-    const anfitrionasUnicasBebidasNoChampagne = Array.from(new Set(bebidasConComision.filter(p => !isChampagneProduct(p)).flatMap(p => p.selectedHostesses || [])));
-    const anfitrionasBebidasNoChampagne = bebidasConComision.filter(p => !isChampagneProduct(p)).flatMap(p => p.selectedHostesses || []);
+    const anfitrionasUnicasBebidasNoChampagne = Array.from(
+      new Set(
+        bebidasConComision
+          .filter(p => !isChampagneProduct(p))
+          .flatMap(p => p.selectedHostesses || [])
+      )
+    );
+    const anfitrionasBebidasNoChampagne = bebidasConComision
+      .filter(p => !isChampagneProduct(p))
+      .flatMap(p => p.selectedHostesses || []);
 
     if (anfitrionasBebidasNoChampagne.length !== anfitrionasUnicasBebidasNoChampagne.length) {
       setError('Cada bebida (no champaña) debe tener anfitrionas únicas.');
       return;
     }
 
-    const anfitrionasChampagnes = bebidasConComision.filter(isChampagneProduct).flatMap(p => p.selectedHostesses || []);
+    const anfitrionasChampagnes = bebidasConComision
+      .filter(isChampagneProduct)
+      .flatMap(p => p.selectedHostesses || []);
     if (anfitrionasUnicasBebidasNoChampagne.some(id => anfitrionasChampagnes.includes(id))) {
-      setError('Las anfitrionas asignadas a bebidas no pueden estar asignadas también a champañas.');
+      setError(
+        'Las anfitrionas asignadas a bebidas no pueden estar asignadas también a champañas.'
+      );
       return;
     }
 
@@ -208,7 +253,9 @@ export function useOrderForm({
         else if (precio >= 140000) limit = 3;
         else if (precio >= 120000) limit = 2;
         if ((producto.selectedHostesses || []).length > limit) {
-          setError(`La champaña "${producto.nombre || producto.name}" excede el límite de ${limit}`);
+          setError(
+            `La champaña "${producto.nombre || producto.name}" excede el límite de ${limit}`
+          );
           return;
         }
       } else {
@@ -232,7 +279,9 @@ export function useOrderForm({
         codigo: generateRandomCode(),
         meseroId,
         clienteId: toNullableStringId(selectedCliente),
-        subtotal, total: subtotal, propina: tipAmount,
+        subtotal,
+        total: subtotal,
+        propina: tipAmount,
         totalComision: productos.reduce((sum, item) => sum + (item.comision || 0), 0),
         detalles: productos.map(item => ({
           productoId: toNullableStringId(item.id_producto || item.id),
@@ -256,7 +305,9 @@ export function useOrderForm({
 
       const detallesInvalidos = payload.detalles.some(detalle => !detalle.productoId);
       if (detallesInvalidos) {
-        setError('Hay productos sin identificador válido. Recargá la pantalla e intentá nuevamente.');
+        setError(
+          'Hay productos sin identificador válido. Recargá la pantalla e intentá nuevamente.'
+        );
         return;
       }
 
@@ -271,10 +322,10 @@ export function useOrderForm({
         showSuccessToast('¡Pedido generado exitosamente!');
         if (data.habitacion_auto_seleccionada) {
           await fetchRooms();
-          window.dispatchEvent(new CustomEvent('refreshRooms', { detail: { roomId: data.habitacion_auto_seleccionada } }));
+          appEventBus.emit('refreshRooms', { roomId: data.habitacion_auto_seleccionada });
         }
-        window.dispatchEvent(new CustomEvent('updatePendingOrders'));
-        window.dispatchEvent(new CustomEvent('refreshNotifications'));
+        appEventBus.emit('updatePendingOrders');
+        appEventBus.emit('refreshNotifications');
         setSelectedCliente('');
         setChampagneHostessSelections({});
         setOtherProductHostessSelections({});
@@ -290,7 +341,8 @@ export function useOrderForm({
   };
 
   return {
-    modalOpen, setModalOpen,
+    modalOpen,
+    setModalOpen,
     modalCategoria,
     productosCategoria,
     loadingProductos,
