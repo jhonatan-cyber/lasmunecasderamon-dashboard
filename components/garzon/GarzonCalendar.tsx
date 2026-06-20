@@ -17,8 +17,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrencyNoDecimals, formatCurrencyCLP } from '@/lib/utils/formatters';
-import { formatLongDateEs, formatShortDmyDateEs, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/utils/calendarUtils';
-
+import {
+  formatLongDateEs,
+  formatShortDmyDateEs,
+  getMonthDateRange,
+  matchesAnyDateKey,
+  toDateKey,
+  toDateKeys
+} from '@/lib/utils/calendarUtils';
 
 const months = [
   'Enero',
@@ -66,7 +72,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     'asistencias' | 'anticipos' | 'propinas' | 'horasExtras'
   >('asistencias');
 
-  
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -77,7 +82,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     let firstDayOfWeek = firstDay.getDay();
     const days = [];
 
-    
     const prevMonth = new Date(year, month - 1, 0);
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       days.push({
@@ -86,7 +90,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       });
     }
 
-    
     for (let day = 1; day <= daysInMonth; day++) {
       days.push({
         date: new Date(year, month, day),
@@ -94,7 +97,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       });
     }
 
-    
     const remainingDays = 42 - days.length;
     for (let day = 1; day <= remainingDays; day++) {
       days.push({
@@ -128,19 +130,18 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
   const getDataForDate = (date: Date) => {
     const dateKey = toDateKey(date);
 
-    
     const asistenciasMatch = calendarData.asistencias.some((item: any) => {
       return matchesAnyDateKey(item.fecha, [dateKey]);
     });
 
-    const anticiposMatch = calendarData.anticipos.some(
-      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
+    const anticiposMatch = calendarData.anticipos.some((item: any) =>
+      matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
-    const propinasMatch = calendarData.propinas.some(
-      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
+    const propinasMatch = calendarData.propinas.some((item: any) =>
+      matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
-    const horasExtrasMatch = calendarData.horasExtras.some(
-      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
+    const horasExtrasMatch = calendarData.horasExtras.some((item: any) =>
+      matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
 
     const result = {
@@ -149,8 +150,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       propinas: propinasMatch,
       horasExtras: horasExtrasMatch
     };
-
-  
 
     return result;
   };
@@ -184,7 +183,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     setIsDragging(false);
     setDragStartDate(null);
 
-    
     if (wasDragging && selectedDates.length > 0) {
       setIsModalOpen(true);
       setSelectedDataType('asistencias');
@@ -217,23 +215,19 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     try {
       const { startDate, endDate } = getMonthDateRange(currentDate);
 
-      
       const asistenciasRes = await fetch(
         `/api/attendance/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const asistenciasData = await asistenciasRes.json();
 
-      
       const anticiposRes = await fetch(
         `/api/anticipos/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const anticiposData = await anticiposRes.json();
 
-      
       const propinasRes = await fetch(`/api/tips/user?startDate=${startDate}&endDate=${endDate}`);
       const propinasData = await propinasRes.json();
 
-      
       const horasExtrasRes = await fetch(
         `/api/overtime/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
@@ -288,7 +282,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     try {
       const dateKeys = toDateKeys(selectedDates);
 
-      
       const newCounts: { [key: string]: number } = {
         asistencias: 0,
         anticipos: 0,
@@ -296,7 +289,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         horasExtras: 0
       };
 
-      
       try {
         const asistenciasDatesParam = dateKeys.join(',');
         const asistenciasRes = await fetch(
@@ -304,38 +296,30 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         );
         const asistenciasData = await asistenciasRes.json();
         newCounts.asistencias = asistenciasData.success ? asistenciasData.data?.length || 0 : 0;
-      } catch (error) {
-      }
+      } catch (error) {}
 
-      
       try {
         const anticiposDatesParam = dateKeys.join(',');
         const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
         const anticiposData = await anticiposRes.json();
         newCounts.anticipos = anticiposData.success ? anticiposData.data?.length || 0 : 0;
-      } catch (error) {
-      }
+      } catch (error) {}
 
-      
       newCounts.propinas = calendarData.propinas.filter(item =>
         matchesAnyDateKey(item.fecha_crea, dateKeys)
       ).length;
 
-      
       try {
         const horasExtrasDatesParam = dateKeys.join(',');
         const horasExtrasRes = await fetch(`/api/overtime/by-dates?dates=${horasExtrasDatesParam}`);
         const horasExtrasData = await horasExtrasRes.json();
         newCounts.horasExtras = horasExtrasData.success ? horasExtrasData.data?.length || 0 : 0;
-      } catch (error) {
-      }
+      } catch (error) {}
 
       setModalCounts(newCounts);
 
-      
       let total = 0;
 
-      
       if (newCounts.asistencias > 0) {
         try {
           const asistenciasDatesParam = dateKeys.join(',');
@@ -352,11 +336,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               0
             );
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
-      
       if (newCounts.propinas > 0) {
         const propinasEstado1 = calendarData.propinas.filter(
           (item: any) => matchesAnyDateKey(item.fecha_crea, dateKeys) && item.estado === 1
@@ -364,7 +346,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         total += propinasEstado1.reduce((sum: number, item: any) => sum + (item.monto || 0), 0);
       }
 
-      
       if (newCounts.horasExtras > 0) {
         try {
           const horasExtrasDatesParam = dateKeys.join(',');
@@ -381,11 +362,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               0
             );
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
-      
       if (newCounts.anticipos > 0) {
         try {
           const anticiposDatesParam = dateKeys.join(',');
@@ -398,13 +377,11 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               0
             );
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
       setModalTotal(total);
 
-      
       switch (selectedDataType) {
         case 'asistencias':
           const datesParam = dateKeys.join(',');
@@ -435,7 +412,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
           setSelectedDateData([]);
       }
     } catch (error) {
-
       setSelectedDateData([]);
     } finally {
       setIsLoadingSelectedData(false);
@@ -468,7 +444,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       return `${first.getDate()} de ${months[first.getMonth()]} - ${second.getDate()} de ${months[second.getMonth()]} ${second.getFullYear()}`;
     }
 
-    
     const first = sortedDates[0];
     const last = sortedDates[sortedDates.length - 1];
     return `${first.getDate()} de ${months[first.getMonth()]} - ${last.getDate()} de ${months[last.getMonth()]} ${last.getFullYear()}`;
@@ -722,219 +697,250 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       {}
       <Dialog open={isModalOpen && selectedDates.length > 0} onOpenChange={setIsModalOpen}>
         <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-lg font-semibold'>{formatDatesList()}</DialogTitle>
           </DialogHeader>
 
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-4 text-center'>
               {}
-            <div className='flex justify-center gap-4 flex-wrap'>
-              {Object.entries(dataTypeConfig).map(([key, config]) => {
-                const Icon = config.icon;
+              <div className='flex justify-center gap-4 flex-wrap'>
+                {Object.entries(dataTypeConfig).map(([key, config]) => {
+                  const Icon = config.icon;
 
-                
-                const count = modalCounts[key] || 0;
+                  const count = modalCounts[key] || 0;
 
-                return (
-                  <Button
-                    key={key}
-                    className={`flex-1 max-w-48 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3 ${
-                      selectedDataType === key
-                        ? 'bg-black text-white hover:bg-gray-800'
-                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
-                    variant={selectedDataType === key ? 'default' : 'outline'}
-                    onClick={() => setSelectedDataType(key as any)}
-                  >
-                    <Icon className={`w-5 h-5 mr-3 ${config.color}`} />
-                    {config.title} ({count})
-                  </Button>
-                );
-              })}
-            </div>
-
-            {}
-            <div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4'>
-              <div className='flex items-center justify-center gap-2'>
-                <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
-                <span className='text-2xl font-bold text-blue-600'>
-                {formatCurrencyCLP(modalTotal)}
-                </span>
+                  return (
+                    <Button
+                      key={key}
+                      className={`flex-1 max-w-48 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3 ${
+                        selectedDataType === key
+                          ? 'bg-black text-white hover:bg-gray-800'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                      }`}
+                      variant={selectedDataType === key ? 'default' : 'outline'}
+                      onClick={() => setSelectedDataType(key as any)}
+                    >
+                      <Icon className={`w-5 h-5 mr-3 ${config.color}`} />
+                      {config.title} ({count})
+                    </Button>
+                  );
+                })}
               </div>
-              <div className='text-sm text-gray-600 mt-1'>
-                (Asistencias + Propinas + Horas Extras - Anticipos)
-              </div>
-            </div>
 
-            {}
-            <div className='mt-6 border rounded-lg overflow-x-auto'>
-              {isLoadingSelectedData ? (
-                <div className='p-8 text-center'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
-                  <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                    Cargando datos...
-                  </div>
-                  <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                    Obteniendo {dataTypeConfig[selectedDataType].title.toLowerCase()} para las
-                    fechas seleccionadas
-                  </div>
+              {}
+              <div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4'>
+                <div className='flex items-center justify-center gap-2'>
+                  <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
+                  <span className='text-2xl font-bold text-blue-600'>
+                    {formatCurrencyCLP(modalTotal)}
+                  </span>
                 </div>
-              ) : getSelectedDateData().length === 0 ? (
-                <div className='p-8 text-center'>
-                  <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                    No hay datos
-                  </div>
-                  <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                    No se encontraron {dataTypeConfig[selectedDataType].title.toLowerCase()} para
-                    las fechas seleccionadas
-                  </div>
+                <div className='text-sm text-gray-600 mt-1'>
+                  (Asistencias + Propinas + Horas Extras - Anticipos)
                 </div>
-              ) : (
-                <div className='overflow-x-auto'>
-                  <table className='w-full'>
-                                         <thead>
-                       <tr className='border-b border-gray-200'>
-                         <th className='text-center py-3 px-4 font-medium text-gray-900'>#</th>
-                         {selectedDataType === 'asistencias' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>HORA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               SUELDO
-                             </th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               APORTE
-                             </th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               SUELDO FINAL
-                             </th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                         {selectedDataType === 'anticipos' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                         {selectedDataType === 'propinas' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                         {selectedDataType === 'horasExtras' && (
-                           <>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>HORAS</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                             <th className='text-center py-3 px-4 font-medium text-gray-900'>
-                               ESTADO
-                             </th>
-                           </>
-                         )}
-                       </tr>
-                     </thead>
-                    <tbody>
-                                             {getSelectedDateData().map((item, index) => (
-                         <tr key={index} className='border-b border-gray-100 hover:bg-gray-50'>
-                           <td className='py-3 px-4 text-center'>
-                             <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm mx-auto'>
-                               {index + 1}
-                             </div>
-                           </td>
-                           {selectedDataType === 'asistencias' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha)}
-                                   </div>
-                                   <div className='text-sm text-gray-500'>{item.hora || 'N/A'}</div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 'N/A'}</td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                 {' '}
-                                 {formatCurrencyNoDecimals(item.sueldo || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                 {' '}
-                                 {formatCurrencyNoDecimals(item.aporte || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
-                                 {' '}
-                                 {formatCurrencyNoDecimals(item.sueldo_final || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                           {selectedDataType === 'anticipos' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha_crea)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
+              </div>
+
+              {}
+              <div className='mt-6 border rounded-lg overflow-x-auto'>
+                {isLoadingSelectedData ? (
+                  <div className='p-8 text-center'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
+                      Cargando datos...
+                    </div>
+                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
+                      Obteniendo {dataTypeConfig[selectedDataType].title.toLowerCase()} para las
+                      fechas seleccionadas
+                    </div>
+                  </div>
+                ) : getSelectedDateData().length === 0 ? (
+                  <div className='p-8 text-center'>
+                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
+                      No hay datos
+                    </div>
+                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
+                      No se encontraron {dataTypeConfig[selectedDataType].title.toLowerCase()} para
+                      las fechas seleccionadas
+                    </div>
+                  </div>
+                ) : (
+                  <div className='overflow-x-auto'>
+                    <table className='w-full'>
+                      <thead>
+                        <tr className='border-b border-gray-200'>
+                          <th className='text-center py-3 px-4 font-medium text-gray-900'>#</th>
+                          {selectedDataType === 'asistencias' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                HORA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                SUELDO
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                APORTE
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                SUELDO FINAL
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                          {selectedDataType === 'anticipos' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                MONTO
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                          {selectedDataType === 'propinas' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                MONTO
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                          {selectedDataType === 'horasExtras' && (
+                            <>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                HORAS
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                MONTO
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                ESTADO
+                              </th>
+                            </>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getSelectedDateData().map((item, index) => (
+                          <tr key={index} className='border-b border-gray-100 hover:bg-gray-50'>
+                            <td className='py-3 px-4 text-center'>
+                              <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm mx-auto'>
+                                {index + 1}
+                              </div>
+                            </td>
+                            {selectedDataType === 'asistencias' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha)}
+                                    </div>
+                                    <div className='text-sm text-gray-500'>
+                                      {item.hora || 'N/A'}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {item.hora || 'N/A'}
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {' '}
+                                  {formatCurrencyNoDecimals(item.sueldo || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {' '}
+                                  {formatCurrencyNoDecimals(item.aporte || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {' '}
+                                  {formatCurrencyNoDecimals(item.sueldo_final || 0)}
+                                </td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
+                              </>
+                            )}
+                            {selectedDataType === 'anticipos' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha_crea)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
                                   {formatCurrencyNoDecimals(item.monto || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                           {selectedDataType === 'propinas' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha_crea)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
+                                </td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
+                              </>
+                            )}
+                            {selectedDataType === 'propinas' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha_crea)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
                                   {formatCurrencyNoDecimals(item.monto || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                           {selectedDataType === 'horasExtras' && (
-                             <>
-                               <td className='py-3 px-4 text-center'>
-                                 <div>
-                                   <div className='font-medium text-gray-900'>
-                                     {formatSimpleDate(item.fecha_crea)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 0}</td>
-                               <td className='py-3 px-4 text-gray-900 text-center'>
+                                </td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
+                              </>
+                            )}
+                            {selectedDataType === 'horasExtras' && (
+                              <>
+                                <td className='py-3 px-4 text-center'>
+                                  <div>
+                                    <div className='font-medium text-gray-900'>
+                                      {formatSimpleDate(item.fecha_crea)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {item.hora || 0}
+                                </td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
                                   {formatCurrencyNoDecimals(item.monto || 0)}
-                               </td>
-                               <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
-                             </>
-                           )}
-                         </tr>
-                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                                </td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className='flex-shrink-0 border-t px-6 py-4'>
             <div className='flex justify-center'>
               <Button
                 variant='outline'
@@ -950,4 +956,3 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     </div>
   );
 }
-

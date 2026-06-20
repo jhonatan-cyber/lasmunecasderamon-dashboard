@@ -14,7 +14,6 @@ async function runPayrollIntegrationTest() {
   });
 
   try {
-    
     const [users] = await connection.execute(
       'SELECT id_usuario, nombre, apellido, sueldo FROM usuarios WHERE estado = 1 LIMIT 1'
     );
@@ -28,7 +27,6 @@ async function runPayrollIntegrationTest() {
     const hora = now.toTimeString().substring(0, 8);
     const nowSql = now.toISOString().slice(0, 19).replace('T', ' ');
 
-    
     console.log('\n[1] Preparando datos de prueba (asistencias, horas extras, anticipos)...');
 
     const asisId = crypto.randomUUID();
@@ -50,7 +48,6 @@ async function runPayrollIntegrationTest() {
       [antId, userId, 50, 'Anticipo de prueba', 1, nowSql]
     );
 
-    
     console.log('\n[2] Verificando resumen de planilla...');
     const PAYROLL_SQL = `
             SELECT U.id_usuario, 
@@ -66,7 +63,6 @@ async function runPayrollIntegrationTest() {
     console.log('Fila de resumen encontrada:', JSON.stringify(summary[0], null, 2));
 
     if (!summary[0] || Number(summary[0].total) <= 0) {
-      
       if (Number(summary[0]?.total) !== Number(users[0].sueldo) + 200 - 50) {
         console.log(
           'âš ï¸ El total calculado no coincide exactamente con lo esperado, pero verificaremos si existe la fila.'
@@ -74,9 +70,8 @@ async function runPayrollIntegrationTest() {
       }
     }
 
-    
     console.log('\n[3] Ejecutando proceso de pago (pay)...');
-    
+
     await connection.beginTransaction();
     try {
       await connection.execute(
@@ -98,7 +93,6 @@ async function runPayrollIntegrationTest() {
       throw e;
     }
 
-    
     console.log('\n[4] Verificando que los registros se marcaron como pagados...');
     const [asisCheck] = await connection.execute(
       'SELECT estado FROM asistencias WHERE id_asistencia = ?',
@@ -119,7 +113,6 @@ async function runPayrollIntegrationTest() {
       throw new Error('Algunos registros no se actualizaron correctamente');
     }
 
-    
     console.log('\n[5] Limpiando datos de prueba...');
     await connection.execute('DELETE FROM asistencias WHERE id_asistencia = ?', [asisId]);
     await connection.execute('DELETE FROM horas_extras WHERE id_hora_extra = ?', [hxId]);

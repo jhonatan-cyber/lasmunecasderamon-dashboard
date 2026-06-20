@@ -120,7 +120,6 @@ class UserRepository {
 async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: UserRepository ---');
   try {
-    
     const roles = await queryMock('SELECT id_rol FROM roles LIMIT 1');
     const roleId = roles[0]?.id_rol;
     if (!roleId) throw new Error('No hay roles en la DB para probar UserRepository');

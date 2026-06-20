@@ -17,7 +17,6 @@ interface CategoryCardProps {
   onClick: () => void;
 }
 
-
 const generateColor = (id: string) => {
   const colors = [
     '#3B82F6',
@@ -41,14 +40,13 @@ const generateColor = (id: string) => {
     '#3B82F6',
     '#10B981'
   ];
-  
-  
+
   let hash = 0;
   const strId = String(id);
   for (let i = 0; i < strId.length; i++) {
     hash = strId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 };
@@ -56,19 +54,18 @@ const generateColor = (id: string) => {
 export default function CategoryCard({ category, onClick }: CategoryCardProps) {
   const categoryColor = generateColor(category.id);
 
-  
   const createdAt = category.created_at
     ? formatLongDateEs(category.created_at)
     : formatLongDateEs(new Date());
 
   return (
     <CardContainer className='inter-var'>
-      <CardBody 
+      <CardBody
         className='bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border cursor-pointer hover:scale-105 transition-all duration-300'
         onClick={onClick}
-        role="button"
+        role='button'
         tabIndex={0}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onClick();
@@ -88,13 +85,13 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
               <div className='text-sm sm:text-lg font-semibold text-neutral-600 dark:text-white group-hover:text-blue-600 transition-colors'>
                 {category.name}
               </div>
-              <p className='text-xs sm:text-sm text-gray-500 dark:text-neutral-300'>{category.total_products || 0} productos</p>
+              <p className='text-xs sm:text-sm text-gray-500 dark:text-neutral-300'>
+                {category.total_products || 0} productos
+              </p>
             </div>
           </div>
           <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
-            <ArrowRight
-              className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400 transition-colors'
-            />
+            <ArrowRight className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400 transition-colors' />
           </div>
         </div>
 

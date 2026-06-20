@@ -65,7 +65,6 @@ async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: AuditRepository ---');
   const logsCreated = [];
   try {
-    
     const users = await queryMock('SELECT id_usuario FROM usuarios LIMIT 1');
     const userId = users[0]?.id_usuario;
 
@@ -91,7 +90,7 @@ async function runTests() {
 
     if (myLog && myLog.action === testAction) {
       console.log('✅ getLatest() encontró el log creado');
-      
+
       const detailsRecuperados =
         typeof myLog.details === 'string' ? JSON.parse(myLog.details) : myLog.details;
       if (detailsRecuperados.key === 'value') {
@@ -112,7 +111,7 @@ async function runTests() {
     console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {
     console.error('\nâŒ ERROR EN PRUEBAS:', error);
-    
+
     for (const id of logsCreated) {
       try {
         await AuditRepository.delete(id);

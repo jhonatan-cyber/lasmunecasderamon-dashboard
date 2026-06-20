@@ -50,7 +50,6 @@ export function DevolucionesVentasPageClient() {
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
   const [activeTab, setActiveTab] = useState<'pendientes' | 'anuladas'>('pendientes');
 
-  
   useEffect(() => {
     const fetchSolicitudes = async () => {
       try {
@@ -68,7 +67,6 @@ export function DevolucionesVentasPageClient() {
     fetchSolicitudes();
   }, []);
 
-  
   const handleProcesarSolicitud = async (
     solicitudId: string,
     status: 'confirmada' | 'rechazada'
@@ -81,7 +79,6 @@ export function DevolucionesVentasPageClient() {
       });
       const data = await res.json();
       if (data.success) {
-        
         const res2 = await fetch('/api/ventas/solicitud-anulacion?list=true');
         const data2 = await res2.json();
         if (data2.solicitudes) {

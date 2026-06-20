@@ -1,22 +1,30 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: ['class'],
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "*.{js,ts,jsx,tsx,mdx}"
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    '*.{js,ts,jsx,tsx,mdx}'
   ],
   theme: {
     fontFamily: {
-      sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-      serif: ['Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
+      sans: [
+        'system-ui',
+        '-apple-system',
+        'BlinkMacSystemFont',
+        'Segoe UI',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'sans-serif'
+      ],
+      serif: ['Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif']
     },
     extend: {
       colors: {
-        
         gold: {
           50: '#fffbeb',
           100: '#fef3c7',
@@ -27,7 +35,7 @@ const config: Config = {
           600: '#d97706',
           700: '#b45309',
           800: '#92400e',
-          900: '#78350f',
+          900: '#78350f'
         },
         silver: {
           50: '#fafafa',
@@ -39,7 +47,7 @@ const config: Config = {
           600: '#52525b',
           700: '#3f3f46',
           800: '#27272a',
-          900: '#18181b',
+          900: '#18181b'
         },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -100,8 +108,8 @@ const config: Config = {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'shimmer': 'shimmer 2s linear infinite',
-        'float': 'float 6s ease-in-out infinite'
+        shimmer: 'shimmer 2s linear infinite',
+        float: 'float 6s ease-in-out infinite'
       },
       keyframes: {
         'accordion-down': {
@@ -120,7 +128,7 @@ const config: Config = {
             height: '0'
           }
         },
-        'shimmer': {
+        shimmer: {
           from: {
             backgroundPosition: '0 0'
           },
@@ -128,14 +136,14 @@ const config: Config = {
             backgroundPosition: '-200% 0'
           }
         },
-        'float': {
+        float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-10px)' }
         }
       }
     }
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [tailwindcssAnimate]
 };
 
 export default config;

@@ -16,7 +16,6 @@ interface UseChampagneRuleReturn {
   maxAnfitrionas: number;
 }
 
-
 export function useChampagneRule(
   productos: ChampagneProduct[],
   selectedAnfitrionas?: string[],
@@ -48,7 +47,6 @@ export function useChampagneRule(
     else maxAnfitrionas = 1;
   }
 
-  
   useEffect(() => {
     if (
       selectedAnfitrionas &&

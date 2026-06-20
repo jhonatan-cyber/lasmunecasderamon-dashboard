@@ -94,7 +94,6 @@ export class ServiceService {
         });
       }
 
-      
       let esLibreIngreso = false;
       if (v.habitacion_id) {
         const roomRows = await trx<any[]>(
@@ -121,7 +120,8 @@ export class ServiceService {
         tiempo: v.tiempo,
         metodo_pago: v.metodo_pago,
         caja_id: cajaId,
-        created_by: createdBy,            estado: (esLibreIngreso && (!v.tiempo || v.tiempo <= 0)) ? 1 : 2,
+        created_by: createdBy,
+        estado: esLibreIngreso && (!v.tiempo || v.tiempo <= 0) ? 1 : 2,
         es_temporal: v.es_temporal ? 1 : 0,
         servicio_original_id: v.servicio_original_id || null,
         fecha_crea: now,

@@ -27,18 +27,12 @@ export default function SortableCategoryCard({
   onDeactivate,
   isLoading = false
 }: SortableCategoryCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: category.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: category.id
+  });
 
   const { hasPermission } = useUserPermissions();
-  
-  
+
   const canEdit = hasPermission('categories', 'edit');
   const canDelete = hasPermission('categories', 'delete');
   const canActivate = hasPermission('categories', 'activate');
@@ -46,7 +40,7 @@ export default function SortableCategoryCard({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition
   };
 
   return (

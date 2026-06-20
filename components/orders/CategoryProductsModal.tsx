@@ -126,10 +126,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
     return precio >= 30000 && tieneComision && hayHabitacionesDisponibles;
   };
 
-  const availableHostesses = useMemo(
-    () => getActiveHostesses(anfitrionas || []),
-    [anfitrionas]
-  );
+  const availableHostesses = useMemo(() => getActiveHostesses(anfitrionas || []), [anfitrionas]);
 
   const getAllAssignedHostesses = useMemo(() => {
     return getAssignedHostessIds({
@@ -223,16 +220,19 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
           {!loading && hasProductsWithCommission && (
             <div className='text-xs text-gray-700 dark:text-gray-200 mt-2 p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded'>
               <strong className='text-gray-900 dark:text-gray-100'>Reglas de asignaciÃ³n:</strong>
-              <br />â€¢{' '}
+              <br />
+              â€¢{' '}
               <span className='text-purple-600 dark:text-purple-400 font-medium'>ChampaÃ±as</span>:
               Selecciona mÃºltiples anfitrionas (lÃ­mite segÃºn precio)
-              <br />â€¢{' '}
+              <br />
+              â€¢{' '}
               <span className='text-green-600 dark:text-green-400 font-medium'>
                 Bebidas â‰¥ $30,000
               </span>
               : Hasta el mismo nÃºmero de anfitrionas que la cantidad de tragos y se puede asignar
               habitaciÃ³n para liberar anfitrionas adicionales
-              <br />â€¢{' '}
+              <br />
+              â€¢{' '}
               <span className='text-blue-600 dark:text-blue-400 font-medium'>
                 Bebidas &lt; $30,000
               </span>
@@ -556,7 +556,3 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
 };
 
 export default CategoryProductsModal;
-
-
-
-

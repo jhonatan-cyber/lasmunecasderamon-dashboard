@@ -5,10 +5,11 @@ import { CuentaRepository } from './CuentaRepository';
 
 export class TimerRepository {
   static async getActive() {
-    const now = new Date(); 
+    const now = new Date();
 
     const [activeServices, activeVentas, activeCuentas] = await Promise.all([
-      query(`
+      query(
+        `
         SELECT s.id_servicio as id, s.codigo, s.id_servicio as servicioId, h.nombre as roomName, 
                s.tiempo as duration, s.fecha_crea as startTime, s.estado, s.paused_at as pausedAt, 
                s.habitacion_id as roomId, 'servicio' as tipoTransaccion,
@@ -29,8 +30,11 @@ export class TimerRepository {
           AND s.estado IN (1, 2, 3) 
           AND (s.estado = 3 OR TIMESTAMPDIFF(SECOND, s.fecha_crea, ?) < (s.tiempo * 60))
         GROUP BY s.id_servicio
-      `, [getNowInBusinessTimezone()]),
-      query(`
+      `,
+        [getNowInBusinessTimezone()]
+      ),
+      query(
+        `
         SELECT v.id_venta as id, v.codigo, v.id_venta as servicioId, h.nombre as roomName, 
                v.tiempo as duration, v.fecha_crea as startTime, v.estado, v.paused_at as pausedAt, 
                v.habitacion_id as roomId, 'venta' as tipoTransaccion,
@@ -48,8 +52,11 @@ export class TimerRepository {
           AND v.estado IN (1, 2, 3) 
           AND (v.estado = 3 OR TIMESTAMPDIFF(SECOND, v.fecha_crea, ?) < (v.tiempo * 60))
         GROUP BY v.id_venta
-      `, [getNowInBusinessTimezone()]),
-      query(`
+      `,
+        [getNowInBusinessTimezone()]
+      ),
+      query(
+        `
         SELECT c.id_cuenta as id, c.codigo, c.id_cuenta as servicioId, COALESCE(h.nombre, 'Sin habitacion') as roomName,
                COALESCE(c.tiempo_actual, c.tiempo) as duration, COALESCE(c.tiempo_inicio_actual, c.fecha_crea) as startTime, c.estado, NULL as pausedAt,
                c.habitacion_id as roomId, 'cuenta' as tipoTransaccion,
@@ -62,7 +69,9 @@ export class TimerRepository {
         WHERE c.estado = 1
           AND COALESCE(c.tiempo_actual, c.tiempo) > 0
           AND TIMESTAMPDIFF(SECOND, COALESCE(c.tiempo_inicio_actual, c.fecha_crea), ?) < (COALESCE(c.tiempo_actual, c.tiempo) * 60)
-      `, [getNowInBusinessTimezone()])
+      `,
+        [getNowInBusinessTimezone()]
+      )
     ]);
 
     const formatItem = (item: any) => {
@@ -100,27 +109,45 @@ export class TimerRepository {
     const nowStr = getNowInBusinessTimezone();
     let changed = false;
 
-    const expiredV = await query<any[]>('SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TIMESTAMPDIFF(SECOND, fecha_crea, ?) >= (tiempo * 60)', [nowStr]);
+    const expiredV = await query<any[]>(
+      'SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TIMESTAMPDIFF(SECOND, fecha_crea, ?) >= (tiempo * 60)',
+      [nowStr]
+    );
     for (const v of expiredV) {
-      await query('UPDATE ventas SET estado = 1, fecha_mod = ? WHERE id_venta = ?', [nowStr, v.id_venta]);
+      await query('UPDATE ventas SET estado = 1, fecha_mod = ? WHERE id_venta = ?', [
+        nowStr,
+        v.id_venta
+      ]);
       await this.handleRoomResume(v.habitacion_id, nowStr);
       changed = true;
     }
 
-    const expiredS = await query<any[]>('SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TIMESTAMPDIFF(SECOND, fecha_crea, ?) >= (tiempo * 60)', [nowStr]);
+    const expiredS = await query<any[]>(
+      'SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TIMESTAMPDIFF(SECOND, fecha_crea, ?) >= (tiempo * 60)',
+      [nowStr]
+    );
     for (const s of expiredS) {
       await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [s.id_servicio]);
-      await query('UPDATE usuarios u INNER JOIN detalle_servicios ds ON u.id_usuario = ds.usuario_id SET u.estado_servicio = 0 WHERE ds.servicio_id = ?', [s.id_servicio]);
+      await query(
+        'UPDATE usuarios u INNER JOIN detalle_servicios ds ON u.id_usuario = ds.usuario_id SET u.estado_servicio = 0 WHERE ds.servicio_id = ?',
+        [s.id_servicio]
+      );
       await this.handleRoomResume(s.habitacion_id, nowStr);
       changed = true;
     }
 
-    
-    const expiredC = await query<any[]>('SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TIMESTAMPDIFF(SECOND, COALESCE(tiempo_inicio_actual, fecha_crea), ?) >= (COALESCE(tiempo_actual, tiempo) * 60)', [nowStr]);
+    const expiredC = await query<any[]>(
+      'SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TIMESTAMPDIFF(SECOND, COALESCE(tiempo_inicio_actual, fecha_crea), ?) >= (COALESCE(tiempo_actual, tiempo) * 60)',
+      [nowStr]
+    );
     for (const c of expiredC) {
       await CuentaRepository.finalizeRoomSession(c.id_cuenta, nowStr);
       await this.handleRoomResume(c.habitacion_id, nowStr);
-      sendNotificationToAll('timer_stopped', { servicioId: c.id_cuenta, status: 1, tipoTransaccion: 'cuenta' });
+      sendNotificationToAll('timer_stopped', {
+        servicioId: c.id_cuenta,
+        status: 1,
+        tipoTransaccion: 'cuenta'
+      });
       changed = true;
     }
 
@@ -128,15 +155,29 @@ export class TimerRepository {
   }
 
   private static async handleRoomResume(habitacionId: string, nowStr: string) {
-    const [vP] = await query<any[]>('SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId]);
-    const [sP] = await query<any[]>('SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1', [habitacionId]);
+    const [vP] = await query<any[]>(
+      'SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1',
+      [habitacionId]
+    );
+    const [sP] = await query<any[]>(
+      'SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3 ORDER BY paused_at DESC LIMIT 1',
+      [habitacionId]
+    );
 
     if (vP || sP) {
       const vPDate = vP ? parseBusinessDate(vP.paused_at) : null;
       const sPDate = sP ? parseBusinessDate(sP.paused_at) : null;
       const resumeV = vP && (!sP || (vPDate?.getTime() || 0) >= (sPDate?.getTime() || 0));
-      if (resumeV) await query('UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_venta = ?', [nowStr, vP.id_venta]);
-      else await query('UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_servicio = ?', [nowStr, sP.id_servicio]);
+      if (resumeV)
+        await query(
+          'UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_venta = ?',
+          [nowStr, vP.id_venta]
+        );
+      else
+        await query(
+          'UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_servicio = ?',
+          [nowStr, sP.id_servicio]
+        );
     } else {
       await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacionId]);
     }

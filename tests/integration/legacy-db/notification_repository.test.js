@@ -78,7 +78,6 @@ async function runTests() {
       throw new Error('La notificación no se marcó como leída');
     }
 
-    
     console.log('\n[4] Limpiando datos de prueba...');
     await queryMock('DELETE FROM notificaciones WHERE id = ?', [notifId]);
     console.log('✅ Cleanup OK');

@@ -50,7 +50,6 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
   };
 
-  
   const CategorySkeleton = () => (
     <Card className='flex flex-col items-center justify-center w-full h-28 border-dashed border-2 border-gray-200 bg-gray-50 shadow-none'>
       <Skeleton className='w-10 h-10 rounded-full mb-2' />

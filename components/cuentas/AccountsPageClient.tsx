@@ -33,18 +33,15 @@ export function AccountsPageClient() {
 
   const cuentasData = useMemo(() => cuentas || [], [cuentas]);
 
-  
   const filteredCuentas = useMemo(() => {
     let result = cuentasData;
 
-    
     if (activeTab === 'pending') {
       result = result.filter(c => c.estado === 1);
     } else if (activeTab === 'paid') {
       result = result.filter(c => c.estado === 0);
     }
 
-    
     if (searchTerm) {
       result = result.filter(
         cuenta =>
@@ -58,7 +55,6 @@ export function AccountsPageClient() {
 
   if (isLoading || cajaLoading) return <ReportSkeleton />;
 
-  
   const pendingCount = cuentasData.filter(c => c.estado === 1).length;
   const paidCount = cuentasData.filter(c => c.estado === 0).length;
 

@@ -7,17 +7,18 @@ export function setupFetchInterceptor() {
   window.fetch = async (...args) => {
     let [input, init] = args;
 
-    
-    if (init && ['POST', 'PUT', 'PATCH'].includes(init.method?.toUpperCase() || '') && typeof init.body === 'string') {
+    if (
+      init &&
+      ['POST', 'PUT', 'PATCH'].includes(init.method?.toUpperCase() || '') &&
+      typeof init.body === 'string'
+    ) {
       try {
         const bodyObj = JSON.parse(init.body);
         if (typeof bodyObj === 'object' && bodyObj !== null && !bodyObj.device_date) {
           bodyObj.device_date = new Date().toISOString();
           init.body = JSON.stringify(bodyObj);
         }
-      } catch (e) {
-        
-      }
+      } catch (e) {}
     }
 
     try {

@@ -2,14 +2,11 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 
-
 export const useSessionCheck = () => {
   const router = useRouter();
   const pathname = usePathname();
   const isCheckingRef = useRef(false);
 
-  
-  
   const isPublicPage =
     pathname === '/' ||
     pathname === '/login' ||
@@ -46,7 +43,6 @@ export const useSessionCheck = () => {
         }, 500);
       }
     } catch {
-      
     } finally {
       isCheckingRef.current = false;
     }

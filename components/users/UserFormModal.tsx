@@ -32,25 +32,19 @@ import { RoleSelect } from '@/components/users/RoleSelect';
 import { useUserForm, type UserFormValues } from '@/hooks/personal';
 export type { UserFormValues };
 
-
 const formatRUT = (value: string): string => {
-  
   const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
   if (!clean) return '';
 
-  
   if (clean.length <= 1) return clean;
 
-  
   const cuerpo = clean.slice(0, -1);
   const dv = clean.slice(-1);
 
-  
   const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
   return `${formattedCuerpo}-${dv}`;
 };
-
 
 const isValidRUT = (rut: string): boolean => {
   const clean = rut.replace(/[^0-9kK]/gi, '');
@@ -109,7 +103,6 @@ export function UserFormModal({
   const [runFormatted, setRunFormatted] = useState(user?.run || '');
   const [runError, setRunError] = useState('');
 
-  
   useEffect(() => {
     if (user?.run) {
       const formatted = formatRUT(user.run);
@@ -125,7 +118,6 @@ export function UserFormModal({
     setRunFormatted(formatted);
     form.setValue('run', formatted);
 
-    
     const clean = value.replace(/[^0-9kK]/gi, '');
     if (clean && clean.length >= 2) {
       if (!isValidRUT(clean)) {
@@ -332,4 +324,3 @@ export function UserFormModal({
     </Dialog>
   );
 }
-

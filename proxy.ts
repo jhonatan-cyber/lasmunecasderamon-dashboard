@@ -4,7 +4,6 @@ import { jwtVerify } from 'jose';
 import { logger } from '@/lib/utils/logger';
 import { env } from '@/lib/utils/env';
 
-
 function addCspHeaders(request: NextRequest): {
   nonce: string;
   cspHeader: string;
@@ -100,31 +99,31 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/codigo',
   '/api/users/user',
   '/api/users',
-  
+
   '/api/attendance',
   '/api/attendance-stats',
-  
+
   '/api/anticipos',
-  
+
   '/api/tips',
-  
+
   '/api/overtime',
-  
+
   '/api/orders',
-  
+
   '/api/commissions',
-  
+
   '/api/servicios',
-  
+
   '/api/sales',
-  
+
   '/api/cashregister',
   '/api/caja',
-  
+
   '/api/cuentas',
-  
+
   '/api/gratificaciones',
-  
+
   '/api/stats/logged-users',
   '/api/anfitrionas',
   '/api/garzones',
@@ -179,9 +178,6 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/cajero-horas-extras': { module: 'overtime', action: 'view' }
 };
 
-
-
-
 const apiRoutePermissions: Record<string, { module: string; action: string }> = {
   '/api/roles': { module: 'roles', action: 'view' },
   '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
@@ -235,7 +231,6 @@ export default async function proxy(request: NextRequest) {
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-  
   const { nonce, cspHeader, headers: cspRequestHeaders } = addCspHeaders(request);
 
   const origin = request.headers.get('origin');

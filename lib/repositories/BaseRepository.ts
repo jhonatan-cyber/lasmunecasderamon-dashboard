@@ -1,8 +1,6 @@
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 
-
 export class BaseRepository {
-  
   static async insert(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -17,7 +15,6 @@ export class BaseRepository {
     await trx(sql, values);
   }
 
-  
   static async update(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -35,7 +32,6 @@ export class BaseRepository {
     await trx(sql, values);
   }
 
-  
   static async delete(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -46,7 +42,6 @@ export class BaseRepository {
     await trx(sql, [idValue]);
   }
 
-  
   static async findOne<T>(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -55,6 +50,6 @@ export class BaseRepository {
   ): Promise<T | null> {
     const sql = `SELECT * FROM ${table} WHERE ${column} = ? LIMIT 1`;
     const results = await trx<T[]>(sql, [value]);
-    return (results && Array.isArray(results) && results.length > 0) ? results[0] : null;
+    return results && Array.isArray(results) && results.length > 0 ? results[0] : null;
   }
 }

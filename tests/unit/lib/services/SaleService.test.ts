@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BusinessError, ValidationError } from '@/lib/errors/errors';
 
-
-
 vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'mock-uuid',
   withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
@@ -51,8 +49,6 @@ vi.mock('@/lib/utils/logger', () => ({
 vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-04-10 10:00:00'
 }));
-
-
 
 import {
   parsePagosMixtos,
@@ -130,8 +126,6 @@ describe('SaleService — lógica de pagos mixtos', () => {
   });
 });
 
-
-
 import { SaleService } from '@/lib/services/SaleService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
@@ -164,10 +158,7 @@ describe('SaleService.createSale', () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      const trx = vi
-        .fn()
-        .mockResolvedValueOnce([]) 
-        .mockResolvedValue([]);
+      const trx = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([]);
       return fn(trx);
     });
 
@@ -189,7 +180,7 @@ describe('SaleService.createSale', () => {
         {
           ...validSaleBody,
           metodo_pago: 'mixto' as any,
-          pagos_mixtos: [{ metodo: 'efectivo', monto: 15000 }] 
+          pagos_mixtos: [{ metodo: 'efectivo', monto: 15000 }]
         },
         'user-1'
       )
@@ -212,7 +203,7 @@ describe('SaleService.createSale', () => {
           metodo_pago: 'mixto' as any,
           pagos_mixtos: [
             { metodo: 'efectivo', monto: 5000 },
-            { metodo: 'tarjeta', monto: 5000 } 
+            { metodo: 'tarjeta', monto: 5000 }
           ]
         },
         'user-1'

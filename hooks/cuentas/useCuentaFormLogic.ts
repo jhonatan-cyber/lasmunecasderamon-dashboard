@@ -16,13 +16,12 @@ export function useCuentaFormLogic() {
   const [detalles, setDetalles] = useState<Detalle[]>([]);
   const [loading, setLoading] = useState(false);
 
-  
   const calculateSubTotal = () => {
     return detalles.reduce((sum, det) => sum + (det.sub_total || 0), 0);
   };
 
   const calculateTotalComision = () => {
-    return detalles.reduce((sum, det) => sum + ((det.comision || 0) * det.cantidad), 0);
+    return detalles.reduce((sum, det) => sum + (det.comision || 0) * det.cantidad, 0);
   };
 
   const calculateTotal = () => {
@@ -31,51 +30,43 @@ export function useCuentaFormLogic() {
     return subTotal + comisiones;
   };
 
-  
   const addDetalle = (detalle: Detalle) => {
-    
     if (detalle.cantidad <= 0 || detalle.precio <= 0) {
       return false;
     }
 
-    
     const existente = detalles.findIndex(d => d.producto_id === detalle.producto_id);
-    
+
     if (existente !== -1) {
-      
       const nuevosDetalles = [...detalles];
       nuevosDetalles[existente].cantidad += detalle.cantidad;
-      nuevosDetalles[existente].sub_total = nuevosDetalles[existente].precio * nuevosDetalles[existente].cantidad;
+      nuevosDetalles[existente].sub_total =
+        nuevosDetalles[existente].precio * nuevosDetalles[existente].cantidad;
       setDetalles(nuevosDetalles);
     } else {
-      
       setDetalles([...detalles, { ...detalle, id: Date.now() }]);
     }
 
     return true;
   };
 
-  
   const updateDetalle = (index: number, detalle: Partial<Detalle>) => {
     const nuevosDetalles = [...detalles];
     nuevosDetalles[index] = { ...nuevosDetalles[index], ...detalle };
-    
-    
+
     if (detalle.cantidad || detalle.precio) {
       const precio = detalle.precio ?? nuevosDetalles[index].precio;
       const cantidad = detalle.cantidad ?? nuevosDetalles[index].cantidad;
       nuevosDetalles[index].sub_total = precio * cantidad;
     }
-    
+
     setDetalles(nuevosDetalles);
   };
 
-  
   const removeDetalle = (index: number) => {
     setDetalles(detalles.filter((_, i) => i !== index));
   };
 
-  
   const validateForm = (): boolean => {
     if (!codigo.trim()) {
       return false;
@@ -92,7 +83,6 @@ export function useCuentaFormLogic() {
     return true;
   };
 
-  
   const resetForm = () => {
     setCodigo('');
     setClienteId('');
@@ -101,7 +91,6 @@ export function useCuentaFormLogic() {
     setLoading(false);
   };
 
-  
   const getFormData = () => {
     return {
       codigo,
@@ -115,26 +104,22 @@ export function useCuentaFormLogic() {
   };
 
   return {
-    
     codigo,
     clienteId,
     habitacionId,
     detalles,
     loading,
 
-    
     setCodigo,
     setClienteId,
     setHabitacionId,
     setDetalles,
     setLoading,
 
-    
     subTotal: calculateSubTotal(),
     totalComision: calculateTotalComision(),
     total: calculateTotal(),
 
-    
     addDetalle,
     updateDetalle,
     removeDetalle,
@@ -142,7 +127,6 @@ export function useCuentaFormLogic() {
     resetForm,
     getFormData,
 
-    
     calculateSubTotal,
     calculateTotalComision,
     calculateTotal

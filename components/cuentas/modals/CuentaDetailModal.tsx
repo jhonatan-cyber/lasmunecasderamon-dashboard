@@ -81,7 +81,6 @@ export default function CuentaDetailModal({
   const productosTabla = useMemo(
     () =>
       detalleResumen.groupedDetalles.map((detalle, index) => {
-        
         const hostessIds = detalle.hostess_id
           ? String(detalle.hostess_id)
               .split(',')
@@ -104,7 +103,6 @@ export default function CuentaDetailModal({
     [detalleResumen.groupedDetalles]
   );
 
-  
   const usuariosCuenta = cuenta?.usuarios ?? [];
   const comisionPorAnfitriona =
     usuariosCuenta.length > 0 && detalleResumen.totalComision > 0

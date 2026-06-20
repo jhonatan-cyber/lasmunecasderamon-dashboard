@@ -8,12 +8,7 @@ interface UseAdvanceFormProps {
 }
 
 export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
-  const { 
-    users, 
-    isLoading: loadingUsers, 
-    setPageSize, 
-    setFilterStatus 
-  } = useUsers();
+  const { users, isLoading: loadingUsers, setPageSize, setFilterStatus } = useUsers();
   const [selectedUser, setSelectedUser] = useState('');
   const [monto, setMonto] = useState('');
   const [montoDisplay, setMontoDisplay] = useState('');
@@ -27,9 +22,9 @@ export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
   }, [open, setPageSize, setFilterStatus]);
 
   useEffect(() => {
-    if (!open) { 
-      setSelectedUser(''); 
-      setMonto(''); 
+    if (!open) {
+      setSelectedUser('');
+      setMonto('');
       setMontoDisplay('');
       setMotivo('');
     }
@@ -73,14 +68,13 @@ export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
     e.preventDefault();
     if (!selectedUser || !monto || Number(monto) <= 0) return;
     await onSubmit({ usuario_id: selectedUser, monto, motivo });
-    
   };
 
-  const eligibleUsers = users.filter((u) => {
+  const eligibleUsers = users.filter(u => {
     const rolId = Number(u.rol_id || 0);
     const status = Number(u.status ?? (u as any).estado ?? 0);
     const roleName = (u.role || '').toLowerCase();
-    
+
     const isAdmin = rolId === 1 || roleName === 'administrador';
     const isActive = status === 1;
 
@@ -102,4 +96,3 @@ export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
     loadingBalance
   };
 }
-

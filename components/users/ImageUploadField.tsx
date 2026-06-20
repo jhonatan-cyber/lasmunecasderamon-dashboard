@@ -23,19 +23,17 @@ function ImageUploadFieldComponent({
   const [isDragging, setIsDragging] = useState(false);
   const [urlValue, setUrlValue] = useState('');
   const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 }); 
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  
-  
   const startDragRef = useRef({ x: 0, y: 0 });
   const startOffsetRef = useRef({ x: 0, y: 0 });
 
   const handleImageMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     startDragRef.current = { x: e.clientX, y: e.clientY };
     startOffsetRef.current = { ...imageOffset };
     setIsDraggingImage(true);
@@ -45,15 +43,12 @@ function ImageUploadFieldComponent({
     (e: MouseEvent) => {
       if (!isDraggingImage) return;
 
-      
       const deltaX = e.clientX - startDragRef.current.x;
       const deltaY = e.clientY - startDragRef.current.y;
 
-      
       const newX = startOffsetRef.current.x + deltaX;
       const newY = startOffsetRef.current.y + deltaY;
 
-      
       const clampedX = Math.max(-100, Math.min(100, newX));
       const clampedY = Math.max(-100, Math.min(100, newY));
 
@@ -66,7 +61,6 @@ function ImageUploadFieldComponent({
     setIsDraggingImage(false);
   }, []);
 
-  
   useEffect(() => {
     if (!isDraggingImage) return;
 
@@ -326,4 +320,3 @@ function ImageUploadFieldComponent({
 }
 
 export const ImageUploadField = memo(ImageUploadFieldComponent);
-

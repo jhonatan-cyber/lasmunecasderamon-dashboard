@@ -9,10 +9,9 @@ import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useState, useMemo, useCallback, memo } from 'react';
 
-
 const getTipoInfo = (timer: any) => {
   const tipo = timer.tipoTransaccion || 'servicio';
-  
+
   if (tipo === 'servicio') {
     return {
       label: 'Servicio',
@@ -34,7 +33,6 @@ const getTipoInfo = (timer: any) => {
   }
 
   if (tipo === 'venta') {
-    
     const codigo = (timer.servicioCode || '').toLowerCase();
     if (codigo.includes('champ') || codigo.includes('sham')) {
       return {
@@ -63,107 +61,117 @@ const getTipoInfo = (timer: any) => {
   };
 };
 
+const TimerItem = memo(
+  ({
+    timer,
+    onStop,
+    formatTime
+  }: {
+    timer: any;
+    onStop: (timerId: string, roomName: string) => void;
+    formatTime: (time: number) => string;
+  }) => {
+    const tipoInfo = useMemo(() => getTipoInfo(timer), [timer.tipoTransaccion, timer.servicioCode]);
+    const remainingTime = useCountdown(timer);
 
-const TimerItem = memo(({
-  timer,
-  onStop,
-  formatTime
-}: {
-  timer: any;
-  onStop: (timerId: string, roomName: string) => void;
-  formatTime: (time: number) => string;
-}) => {
-  const tipoInfo = useMemo(() => getTipoInfo(timer), [timer.tipoTransaccion, timer.servicioCode]);
-  const remainingTime = useCountdown(timer);
-
-  return (
-    <div className={`mb-1 flex items-center justify-between rounded border p-1.5 shadow-sm ${tipoInfo.bgColor} ${tipoInfo.borderColor}`}>
-      <div className='flex-1 min-w-0'>
-        <div className='flex flex-col'>
-          <span
-            className={`truncate text-sm font-bold ${timer.isPaused ? 'text-yellow-600 dark:text-yellow-300' : 'text-gray-900 dark:text-slate-100'
+    return (
+      <div
+        className={`mb-1 flex items-center justify-between rounded border p-1.5 shadow-sm ${tipoInfo.bgColor} ${tipoInfo.borderColor}`}
+      >
+        <div className='flex-1 min-w-0'>
+          <div className='flex flex-col'>
+            <span
+              className={`truncate text-sm font-bold ${
+                timer.isPaused
+                  ? 'text-yellow-600 dark:text-yellow-300'
+                  : 'text-gray-900 dark:text-slate-100'
               }`}
-          >
-            {timer.roomName}
-          </span>
-          <div className='flex items-center gap-1'>
-            {tipoInfo.icon}
-            <span className={`text-[10px] ${tipoInfo.color} font-bold uppercase tracking-tight`}>
-              {tipoInfo.label}
+            >
+              {timer.roomName}
+            </span>
+            <div className='flex items-center gap-1'>
+              {tipoInfo.icon}
+              <span className={`text-[10px] ${tipoInfo.color} font-bold uppercase tracking-tight`}>
+                {tipoInfo.label}
+              </span>
+            </div>
+            {timer.waiterName && (
+              <span className='truncate text-[9px] font-medium italic text-gray-500 dark:text-slate-400'>
+                Garzón: {timer.waiterName}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className='flex items-center gap-1.5 ml-1'>
+          <div className='flex flex-col items-end'>
+            <span
+              className={`font-mono text-sm font-black tabular-nums ${
+                timer.isPaused
+                  ? 'text-yellow-600 dark:text-yellow-300'
+                  : remainingTime < 60
+                    ? 'animate-pulse text-red-600 dark:text-red-300'
+                    : 'text-blue-700 dark:text-blue-300'
+              }`}
+            >
+              {formatTime(remainingTime)}
+              {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
             </span>
           </div>
-          {timer.waiterName && (
-            <span className='truncate text-[9px] font-medium italic text-gray-500 dark:text-slate-400'>
-              Garzón: {timer.waiterName}
-            </span>
+          {!timer.isPaused && (
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={() => onStop(timer.id, timer.roomName)}
+              className='h-6 w-6 p-0 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-300'
+            >
+              <Square className='w-3 h-3' />
+            </Button>
           )}
         </div>
       </div>
-      <div className='flex items-center gap-1.5 ml-1'>
-        <div className='flex flex-col items-end'>
-          <span
-            className={`font-mono text-sm font-black tabular-nums ${timer.isPaused ? 'text-yellow-600 dark:text-yellow-300' : (remainingTime < 60 ? 'animate-pulse text-red-600 dark:text-red-300' : 'text-blue-700 dark:text-blue-300')
-              }`}
-          >
-            {formatTime(remainingTime)}
-            {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
-          </span>
-        </div>
-        {!timer.isPaused && (
-          <Button
-            size='sm'
-            variant='ghost'
-            onClick={() => onStop(timer.id, timer.roomName)}
-            className='h-6 w-6 p-0 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-300'
-          >
-            <Square className='w-3 h-3' />
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  
-  
-  return (
-    prevProps.timer.id === nextProps.timer.id &&
-    prevProps.timer.isPaused === nextProps.timer.isPaused &&
-    prevProps.timer.isActive === nextProps.timer.isActive
-  );
-});
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.timer.id === nextProps.timer.id &&
+      prevProps.timer.isPaused === nextProps.timer.isPaused &&
+      prevProps.timer.isActive === nextProps.timer.isActive
+    );
+  }
+);
 
 export function TimerDisplay() {
   const { timers, stopTimer, formatTime } = useTimer();
   const { modalState, showConfirm } = useConfirmModal();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleStopTimer = useCallback(async (timerId: string, roomName: string) => {
-    
-    const confirmed = await showConfirm({
-      title: 'Detener Temporizador',
-      message: `¿Estás seguro de que quieres detener el temporizador de ${roomName}?`,
-      type: 'question',
-      confirmText: 'Sí, Detener',
-      cancelText: 'Cancelar',
-      size: 'sm'
-    });
+  const handleStopTimer = useCallback(
+    async (timerId: string, roomName: string) => {
+      const confirmed = await showConfirm({
+        title: 'Detener Temporizador',
+        message: `¿Estás seguro de que quieres detener el temporizador de ${roomName}?`,
+        type: 'question',
+        confirmText: 'Sí, Detener',
+        cancelText: 'Cancelar',
+        size: 'sm'
+      });
 
-    if (confirmed) {
-      await stopTimer(timerId);
-      toast.success(`Temporizador detenido para ${roomName}`);
-    }
-  }, [showConfirm, stopTimer]);
+      if (confirmed) {
+        await stopTimer(timerId);
+        toast.success(`Temporizador detenido para ${roomName}`);
+      }
+    },
+    [showConfirm, stopTimer]
+  );
 
-  
   const activeTimers = useMemo(() => {
     return timers.filter(t => !t.isPaused);
   }, [timers]);
 
   if (activeTimers.length === 0) {
-    return null; 
+    return null;
   }
 
-  
   if (activeTimers.length === 1) {
     const timer = activeTimers[0];
     return (
@@ -177,11 +185,7 @@ export function TimerDisplay() {
               </CardTitle>
             </CardHeader>
             <CardContent className='pt-0'>
-              <TimerItem
-                timer={timer}
-                onStop={handleStopTimer}
-                formatTime={formatTime}
-              />
+              <TimerItem timer={timer} onStop={handleStopTimer} formatTime={formatTime} />
             </CardContent>
           </Card>
         </div>
@@ -194,7 +198,7 @@ export function TimerDisplay() {
           cancelText={modalState.cancelText}
           hideCancel={modalState.hideCancel}
           type={modalState.type}
-          onConfirm={modalState.onConfirm || (() => { })}
+          onConfirm={modalState.onConfirm || (() => {})}
           onCancel={modalState.onCancel}
           confirmVariant={modalState.confirmVariant}
           cancelVariant={modalState.cancelVariant}
@@ -204,7 +208,6 @@ export function TimerDisplay() {
     );
   }
 
-  
   const firstTimer = activeTimers[0];
   const remainingCount = activeTimers.length - 1;
 
@@ -216,18 +219,17 @@ export function TimerDisplay() {
             <CardTitle className='flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-slate-100'>
               <Clock className='text-xs text-blue-600 dark:text-blue-300' />
               Temporizadores
-              <Badge variant='secondary' className='ml-auto text-xs dark:bg-slate-800 dark:text-slate-100'>
+              <Badge
+                variant='secondary'
+                className='ml-auto text-xs dark:bg-slate-800 dark:text-slate-100'
+              >
                 {activeTimers.length}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className='pt-0'>
             {}
-            <TimerItem
-              timer={firstTimer}
-              onStop={handleStopTimer}
-              formatTime={formatTime}
-            />
+            <TimerItem timer={firstTimer} onStop={handleStopTimer} formatTime={formatTime} />
 
             {}
             <Button
@@ -270,7 +272,7 @@ export function TimerDisplay() {
         cancelText={modalState.cancelText}
         hideCancel={modalState.hideCancel}
         type={modalState.type}
-        onConfirm={modalState.onConfirm || (() => { })}
+        onConfirm={modalState.onConfirm || (() => {})}
         onCancel={modalState.onCancel}
         confirmVariant={modalState.confirmVariant}
         cancelVariant={modalState.cancelVariant}
@@ -279,5 +281,3 @@ export function TimerDisplay() {
     </>
   );
 }
-
-

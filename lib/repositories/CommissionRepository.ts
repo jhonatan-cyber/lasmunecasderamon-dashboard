@@ -3,7 +3,6 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from './BaseRepository';
 
 export class CommissionRepository {
-
   static async createWithDetail(
     trx: TransactionQuery,
     data: {
@@ -34,7 +33,6 @@ export class CommissionRepository {
   }
 
   static async summary(): Promise<any> {
-    
     const summary = await query<any[]>(`
       SELECT 
         SUM(dc.comision) as total_comisiones,
@@ -45,23 +43,31 @@ export class CommissionRepository {
       INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
       WHERE c.estado = 1 AND dc.estado = 1
     `);
-    
-    const data = summary[0] || { total_comisiones: 0, cantidad_comisiones: 0, comision_ventas: 0, comision_servicios: 0 };
-    
-    
-    const total = data.total_comisiones || 1; 
+
+    const data = summary[0] || {
+      total_comisiones: 0,
+      cantidad_comisiones: 0,
+      comision_ventas: 0,
+      comision_servicios: 0
+    };
+
+    const total = data.total_comisiones || 1;
     data.porcentaje_ventas = Math.round(((data.comision_ventas || 0) / total) * 100);
     data.porcentaje_servicios = Math.round(((data.comision_servicios || 0) / total) * 100);
-    
+
     return data;
   }
 
-  static async list(params: { status?: string, employeeId?: string, search?: string }): Promise<any[]> {
+  static async list(params: {
+    status?: string;
+    employeeId?: string;
+    search?: string;
+  }): Promise<any[]> {
     let where = 'WHERE 1=1';
     let sqlParams: any[] = [];
 
     if (params.status && params.status !== 'all') {
-      const statusMap: Record<string, number> = { 'por_pagar': 1, 'pagado': 2, 'anulado': 0 };
+      const statusMap: Record<string, number> = { por_pagar: 1, pagado: 2, anulado: 0 };
       if (statusMap[params.status] !== undefined) {
         where += ' AND c.estado = ?';
         sqlParams.push(statusMap[params.status]);
@@ -118,7 +124,8 @@ export class CommissionRepository {
   }
 
   static async getDetails(usuarioId: string) {
-    return await query(`
+    return await query(
+      `
       SELECT 
         c.id_comision AS id,
         c.fecha_crea AS fecha_hora,
@@ -167,7 +174,9 @@ export class CommissionRepository {
       WHERE dc.usuario_id = ? AND c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0'
       
       ORDER BY fecha_hora DESC
-    `, [usuarioId, usuarioId]);
+    `,
+      [usuarioId, usuarioId]
+    );
   }
 
   static async delete(id: string) {

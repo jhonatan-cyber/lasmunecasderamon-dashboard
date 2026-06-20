@@ -47,9 +47,17 @@ export const DevolucionTable = ({
           </Badge>
         );
       case 3:
-        return <Badge variant='destructive' className='text-xs sm:text-sm'>Devuelto</Badge>;
+        return (
+          <Badge variant='destructive' className='text-xs sm:text-sm'>
+            Devuelto
+          </Badge>
+        );
       default:
-        return <Badge variant='outline' className='text-xs sm:text-sm'>Desconocido</Badge>;
+        return (
+          <Badge variant='outline' className='text-xs sm:text-sm'>
+            Desconocido
+          </Badge>
+        );
     }
   };
 
@@ -70,11 +78,12 @@ export const DevolucionTable = ({
 
   if (servicios.length === 0) {
     return (
-      <div className='text-center py-8 text-gray-500 text-sm sm:text-base'>No se encontraron servicios activos</div>
+      <div className='text-center py-8 text-gray-500 text-sm sm:text-base'>
+        No se encontraron servicios activos
+      </div>
     );
   }
 
-  
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {servicios.map(servicio => (
@@ -98,7 +107,9 @@ export const DevolucionTable = ({
                 <div className='flex items-center gap-2'>
                   <Bed className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Habitación:</span>
-                  <span className='text-gray-700'>{servicio.habitacion_numero || 'Sin habitación'}</span>
+                  <span className='text-gray-700'>
+                    {servicio.habitacion_numero || 'Sin habitación'}
+                  </span>
                 </div>
 
                 <div className='flex items-center gap-2'>
@@ -110,7 +121,9 @@ export const DevolucionTable = ({
                 <div className='flex items-center gap-2'>
                   <DollarSign className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Total:</span>
-                  <span className='text-gray-700 font-semibold'>{formatCurrency(servicio.total)}</span>
+                  <span className='text-gray-700 font-semibold'>
+                    {formatCurrency(servicio.total)}
+                  </span>
                 </div>
 
                 <div className='flex items-center gap-2'>
@@ -127,7 +140,7 @@ export const DevolucionTable = ({
                 <div className='flex items-center gap-2'>
                   <Calendar className='text-gray-500 w-4 h-4' />
                   <span className='font-medium'>Fecha:</span>
-                <span className='text-gray-700'>{formatLongDateEs(servicio.fecha_crea)}</span>
+                  <span className='text-gray-700'>{formatLongDateEs(servicio.fecha_crea)}</span>
                 </div>
               </div>
 
@@ -180,7 +193,6 @@ export const DevolucionTable = ({
     </div>
   );
 
-  
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <Table>
@@ -202,7 +214,9 @@ export const DevolucionTable = ({
             <TableRow key={servicio.id_servicio}>
               <TableCell className='font-medium text-sm'>{servicio.codigo}</TableCell>
               <TableCell className='text-sm'>{servicio.cliente_nombre || 'Sin cliente'}</TableCell>
-              <TableCell className='text-sm'>{servicio.habitacion_numero || 'Sin habitación'}</TableCell>
+              <TableCell className='text-sm'>
+                {servicio.habitacion_numero || 'Sin habitación'}
+              </TableCell>
               <TableCell className='text-sm'>{servicio.tiempo} min</TableCell>
               <TableCell className='text-sm'>{formatCurrency(servicio.total)}</TableCell>
               <TableCell>
@@ -214,7 +228,7 @@ export const DevolucionTable = ({
                 </Badge>
               </TableCell>
               <TableCell>{getEstadoBadge(servicio.estado)}</TableCell>
-                        <TableCell className='text-sm'>{formatLongDateEs(servicio.fecha_crea)}</TableCell>
+              <TableCell className='text-sm'>{formatLongDateEs(servicio.fecha_crea)}</TableCell>
               <TableCell>
                 <div className='flex items-center gap-2'>
                   <TooltipProvider>
@@ -270,4 +284,3 @@ export const DevolucionTable = ({
     </>
   );
 };
-

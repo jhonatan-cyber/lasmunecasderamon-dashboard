@@ -25,21 +25,15 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
-  
   const timer = getTimerByServicioId(String(venta.id));
 
-  
   const remainingTime = useCountdown(timer);
 
-  
-  useEffect(() => {
-    
-  }, [timers]);
+  useEffect(() => {}, [timers]);
 
   const confirmStopTimer = async () => {
     setStopping(true);
     try {
-      
       await stopTimerByServicioId(String(venta.id));
 
       toast.success('Temporizador finalizado exitosamente');
@@ -54,7 +48,6 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
 
   const isLowTime = isAdminOrCajero && timer && timer.isActive && remainingTime <= 300;
 
-  
   const hostesses = Array.from(
     new Set(
       (venta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) ||

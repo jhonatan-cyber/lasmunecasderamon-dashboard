@@ -1,4 +1,3 @@
-
 export interface Servicio {
   id_servicio?: string | number;
   codigo: string;
@@ -32,7 +31,6 @@ export interface ServicioWithDetails extends Servicio {
   servicio_original_id?: string | null;
 }
 
-
 export interface ServiceStatsData {
   totalServicios: number;
   serviciosActivos: number;
@@ -45,14 +43,12 @@ export interface RoomStatsData {
   habitacionesOcupadas: number;
 }
 
-
 export interface ServiceFiltersState {
   searchTerm: string;
   showAllServices: boolean;
   currentPage: number;
   itemsPerPage: number;
 }
-
 
 export interface PaginationData {
   currentPage: number;
@@ -61,7 +57,6 @@ export interface PaginationData {
   endIndex: number;
   itemsPerPage: number;
 }
-
 
 export interface ServiceFormData {
   cliente_id: string;
@@ -73,16 +68,14 @@ export interface ServiceFormData {
   usuarios: string[];
 }
 
-
 export interface ServiceValidationResult {
   isValid: boolean;
   errors: string[];
 }
-
 
 export interface ServiceActions {
   handleCreateServicio: () => void;
   handleShowActiveServices: () => Promise<void>;
   handleShowAllServices: () => Promise<void>;
   handleStopTimer: (servicioId: string | number) => Promise<void>;
-} 
+}

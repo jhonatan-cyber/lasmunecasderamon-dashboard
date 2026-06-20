@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import NextImage from 'next/image';
-import { Award, Shield, Calendar, Users, Star, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Award,
+  Shield,
+  Calendar,
+  Users,
+  Star,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 export default function AboutSection() {
   const [currentImage, setCurrentImage] = useState(0);
@@ -28,17 +37,17 @@ export default function AboutSection() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % images.length);
+      setCurrentImage(prev => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(timer);
   }, [images.length]);
 
   const nextImage = () => {
-    setCurrentImage((prev) => (prev + 1) % images.length);
+    setCurrentImage(prev => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
-    setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentImage(prev => (prev - 1 + images.length) % images.length);
   };
 
   return (
@@ -59,10 +68,16 @@ export default function AboutSection() {
                 </h2>
               </div>
               <p className='text-silver-300 text-base sm:text-lg leading-relaxed mb-6 font-light'>
-                <span className='text-gold-400 font-medium'>Las Muñecas de Ramón</span> se consolida como uno de los nightclubs más exclusivos y reconocidos de la Región del Maule, ofreciendo un servicio de calidad y primera clase. Contamos con nuevas instalaciones totalmente renovadas y una infraestructura de primer nivel.
+                <span className='text-gold-400 font-medium'>Las Muñecas de Ramón</span> se consolida
+                como uno de los nightclubs más exclusivos y reconocidos de la Región del Maule,
+                ofreciendo un servicio de calidad y primera clase. Contamos con nuevas instalaciones
+                totalmente renovadas y una infraestructura de primer nivel.
               </p>
               <p className='text-silver-400 text-base sm:text-lg leading-relaxed mb-8 font-light'>
-                Con 7 años de experiencia, somos una empresa joven siempre a la vanguardia, certificada por la preferencia de nuestros clientes. Disponemos de un local climatizado con los más altos estándares de higiene y un quincho exclusivo con todas las comodidades para que disfrutes de un asado privado con las chicas y tus amigos.
+                Con 7 años de experiencia, somos una empresa joven siempre a la vanguardia,
+                certificada por la preferencia de nuestros clientes. Disponemos de un local
+                climatizado con los más altos estándares de higiene y un quincho exclusivo con todas
+                las comodidades para que disfrutes de un asado privado con las chicas y tus amigos.
               </p>
 
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-10 pt-8 border-t border-white/10'>
@@ -71,12 +86,17 @@ export default function AboutSection() {
                   { number: '500+', label: 'Clientes VIP', icon: Users },
                   { number: '4.9', label: 'Rating', icon: Star }
                 ].map((stat, i) => (
-                  <div key={i} className='text-center group hover:scale-110 transition-transform duration-300'>
+                  <div
+                    key={i}
+                    className='text-center group hover:scale-110 transition-transform duration-300'
+                  >
                     <stat.icon className='w-8 h-8 mx-auto mb-3 text-gold-500/80 group-hover:text-gold-400 transition-colors' />
                     <div className='text-3xl font-bold text-silver-200 group-hover:text-gold-400 transition-colors'>
                       {stat.number}
                     </div>
-                    <div className='text-xs text-silver-500 mt-1 uppercase tracking-wider'>{stat.label}</div>
+                    <div className='text-xs text-silver-500 mt-1 uppercase tracking-wider'>
+                      {stat.label}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -84,11 +104,15 @@ export default function AboutSection() {
               <div className='flex flex-wrap gap-4 mt-10'>
                 <div className='flex items-center gap-2 px-4 py-2 bg-gold-500/10 border border-gold-500/20 rounded-full'>
                   <Shield className='w-4 h-4 text-gold-500' />
-                  <span className='text-xs text-gold-400 uppercase tracking-wide'>Seguridad Garantizada</span>
+                  <span className='text-xs text-gold-400 uppercase tracking-wide'>
+                    Seguridad Garantizada
+                  </span>
                 </div>
                 <div className='flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full'>
                   <Award className='w-4 h-4 text-silver-400' />
-                  <span className='text-xs text-silver-400 uppercase tracking-wide'>Certificado de Excelencia</span>
+                  <span className='text-xs text-silver-400 uppercase tracking-wide'>
+                    Certificado de Excelencia
+                  </span>
                 </div>
               </div>
             </div>
@@ -101,15 +125,16 @@ export default function AboutSection() {
               {images.map((img, index) => (
                 <div
                   key={index}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentImage ? 'opacity-100' : 'opacity-0'
-                    }`}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    index === currentImage ? 'opacity-100' : 'opacity-0'
+                  }`}
                 >
                   <NextImage
                     src={img.url}
                     alt={img.alt}
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform ease-linear transform scale-105 hover:scale-110"
+                    sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                    className='object-cover transition-transform ease-linear transform scale-105 hover:scale-110'
                     style={{ transitionDuration: '10000ms' }}
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60'></div>
@@ -119,32 +144,37 @@ export default function AboutSection() {
               {}
               <button
                 onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30"
+                className='absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30'
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className='w-6 h-6' />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30"
+                className='absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30'
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className='w-6 h-6' />
               </button>
 
               {}
-              <div className="absolute bottom-6 sm:bottom-24 left-0 right-0 flex justify-center gap-2 z-30">
+              <div className='absolute bottom-6 sm:bottom-24 left-0 right-0 flex justify-center gap-2 z-30'>
                 {images.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImage(index)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImage ? 'bg-gold-500 w-6' : 'bg-white/30 hover:bg-white/50'
-                      }`}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentImage ? 'bg-gold-500 w-6' : 'bg-white/30 hover:bg-white/50'
+                    }`}
                   />
                 ))}
               </div>
 
               <div className='absolute bottom-0 left-0 right-0 p-4 sm:p-8 z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500'>
-                <p className='text-gold-400 text-lg sm:text-xl font-medium mb-2 tracking-wide'>Experiencia Premium</p>
-                <p className='text-silver-400 text-sm font-light'>Un ambiente único de lujo y distinción</p>
+                <p className='text-gold-400 text-lg sm:text-xl font-medium mb-2 tracking-wide'>
+                  Experiencia Premium
+                </p>
+                <p className='text-silver-400 text-sm font-light'>
+                  Un ambiente único de lujo y distinción
+                </p>
               </div>
 
               <div className='absolute top-8 right-8 z-20'>
@@ -157,5 +187,3 @@ export default function AboutSection() {
     </section>
   );
 }
-
-

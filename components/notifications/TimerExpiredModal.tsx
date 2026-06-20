@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -12,7 +11,7 @@ interface TimerExpiredModalProps {
   roomName: string;
   servicioCode: string;
   clienteNombre: string;
-  tiempoTotal: number; 
+  tiempoTotal: number;
   isTemporary?: boolean;
   tipoTransaccion?: 'servicio' | 'venta' | 'cuenta';
   anfitrionas?: string;
@@ -34,7 +33,7 @@ export default function TimerExpiredModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => { }} modal={true}>
+    <Dialog open={open} onOpenChange={() => {}} modal={true}>
       <DialogContent
         className='timer-expired-modal w-[95vw] max-w-md mx-auto p-0 bg-white dark:bg-gray-800 border-2 border-red-200 dark:border-red-800 flex flex-col max-h-[90vh]'
         onPointerDownOutside={e => e.preventDefault()}
@@ -168,10 +167,11 @@ export default function TimerExpiredModal({
 
           {}
           <div
-            className={`text-center p-3 rounded-lg ${isTemporary
+            className={`text-center p-3 rounded-lg ${
+              isTemporary
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                 : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-              }`}
+            }`}
           >
             <p className='font-medium'>
               {isTemporary

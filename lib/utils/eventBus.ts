@@ -1,20 +1,24 @@
 import logger from '@/lib/utils/logger';
 
-
-
 export interface AppEvents {
   ventaRegistrada: { ventaId?: string; codigo?: string };
-  openOrderModal: { orderId: number; codigo?: string };
+  openOrderModal: { orderId: number | string; codigo?: string };
   updatePendingOrders: {
     type?: 'order-processed' | 'order-deleted' | 'order-created';
-    orderId?: number;
+    orderId?: number | string | null;
   };
-  closeOrderModal: { orderId: number };
+  closeOrderModal: { orderId: number | string };
   openServiceRequestModal: { solicitud: any };
   updateServiceRequests: void;
   'test-notification': { type: string; data: any };
   'sse-reconnect': void;
   'sse-message': any;
+  cajaClosed: void;
+  cajaOpened: void;
+  updateSales: void;
+  timer_ended_event: any;
+  refreshNotifications: void;
+  refreshRooms: { roomId?: any } | void;
 }
 
 type EventCallback<T extends keyof AppEvents> = (payload: AppEvents[T]) => void;

@@ -40,9 +40,7 @@ export default function GarzonPedidosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  
   const fetchOrders = async () => {
-    
     if (orders.length === 0) {
       setLoading(true);
     }
@@ -69,29 +67,23 @@ export default function GarzonPedidosPage() {
     }
   }, [user, userLoading]);
 
-  
   useOrdersSSE(data => {
     if (data.type === 'order-processed') {
-      
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.id_pedido === data.orderId ? { ...order, estado: 0 } : order
         )
       );
     } else if (data.type === 'order-deleted') {
-      
       setOrders(prevOrders => prevOrders.filter(order => order.id_pedido !== data.orderId));
     } else if (data.type === 'order-created') {
-      
       fetchOrders();
     }
   });
 
-  
   useEffect(() => {
     let filtered = [...orders];
 
-    
     if (searchTerm) {
       filtered = filtered.filter(
         order =>
@@ -101,12 +93,10 @@ export default function GarzonPedidosPage() {
       );
     }
 
-    
     if (statusFilter !== 'all') {
       filtered = filtered.filter(order => order.estado === parseInt(statusFilter));
     }
 
-    
     filtered.sort((a, b) => {
       let aValue: any = a[sortBy as keyof Order];
       let bValue: any = b[sortBy as keyof Order];
@@ -127,20 +117,17 @@ export default function GarzonPedidosPage() {
     setCurrentPage(1);
   }, [orders, searchTerm, statusFilter, sortBy, sortOrder]);
 
-  
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const currentOrders = filteredOrders.slice(startIndex, endIndex);
 
-  
   const totalOrders = orders.length;
   const totalAmount = orders.reduce((sum, order) => sum + (order.total || 0), 0);
   const pendingOrders = orders.filter(order => order.estado === 1).length;
   const approvedOrders = orders.filter(order => order.estado === 0).length;
   const rejectedOrders = orders.filter(order => order.estado === 2).length;
 
-  
   const getStatusBadge = (estado: number) => {
     switch (estado) {
       case 1:
@@ -187,7 +174,6 @@ export default function GarzonPedidosPage() {
     );
   }
 
-  
   if (user?.role?.toLowerCase() !== 'garzon') {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>

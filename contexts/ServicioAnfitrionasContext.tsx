@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import logger from '@/lib/utils/logger';
 
 interface ServicioAnfitrionasContextType {
-  anfitrionasActualizadas: Record<number, string>; 
+  anfitrionasActualizadas: Record<number, string>;
   actualizarAnfitrionas: (servicioId: number, anfitrionas: string) => void;
   obtenerAnfitrionas: (servicioId: number) => string | null;
 }
@@ -47,7 +47,6 @@ export const ServicioAnfitrionasProvider: React.FC<{ children: React.ReactNode }
     [anfitrionasActualizadas]
   );
 
-  
   const contextValue = useMemo(
     () => ({
       anfitrionasActualizadas,

@@ -7,7 +7,6 @@ export type MixedPayment = {
   monto: number;
 };
 
-
 export function parsePagosMixtos(raw: any): MixedPayment[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -17,7 +16,6 @@ export function parsePagosMixtos(raw: any): MixedPayment[] {
     }))
     .filter(pago => pago.metodo && pago.monto > 0);
 }
-
 
 export function validatePagosMixtos(pagosMixtos: MixedPayment[], total: number): void {
   if (pagosMixtos.length < 2) {
@@ -32,7 +30,6 @@ export function validatePagosMixtos(pagosMixtos: MixedPayment[], total: number):
   }
 }
 
-
 export function calcularDeltasCaja(pagosMixtos: MixedPayment[]) {
   return pagosMixtos.reduce(
     (acc, pago) => {
@@ -44,7 +41,6 @@ export function calcularDeltasCaja(pagosMixtos: MixedPayment[]) {
     { efectivo: 0, tarjeta: 0, transferencia: 0 }
   );
 }
-
 
 export async function procesarPrepago(
   trx: TransactionQuery,

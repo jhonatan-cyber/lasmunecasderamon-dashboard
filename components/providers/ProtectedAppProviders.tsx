@@ -27,8 +27,7 @@ function FeatureScopedProviders({ children }: { children: ReactNode }) {
 
   const role = user?.role?.toLowerCase();
   const isAdminOrCajero = role === 'administrador' || role === 'cajero';
-  
-  
+
   const needsNotifications = !!user;
   const needsAnulacion =
     pathname?.startsWith('/sales') || pathname?.startsWith('/returns/services');

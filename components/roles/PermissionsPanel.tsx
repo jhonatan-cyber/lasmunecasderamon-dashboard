@@ -31,10 +31,8 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
-  
   const canAssignPermissions = hasPermission('roles', 'asignar_permisos');
 
-  
   useEffect(() => {
     if (selectedRole) {
       loadRolePermissions(selectedRole.id);
@@ -44,7 +42,6 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
     }
   }, [selectedRole]);
 
-  
   useEffect(() => {
     if (rolePermissions.length > 0) {
       const assignedPermissionIds = rolePermissions
@@ -85,7 +82,6 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
     setIsSaving(true);
     try {
-      
       const permissionsToSave = [...selectedPermissions];
 
       const result = await updateRolePermissions(selectedRole.id.toString(), permissionsToSave);

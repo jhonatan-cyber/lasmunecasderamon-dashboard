@@ -13,7 +13,6 @@ import {
 } from '@/components/shared/selectStyles';
 import { cn } from '@/lib/utils/utils';
 
-
 const Select = (props: any) => <SelectPrimitive.Root {...props} />;
 Select.displayName = 'Select';
 
@@ -23,10 +22,7 @@ const SelectValue = SelectPrimitive.Value;
 const SelectTrigger = React.forwardRef((props: any, ref: any) => (
   <SelectPrimitive.Trigger
     ref={ref}
-    className={cn(
-      SELECT_TRIGGER_CLASS,
-      props.className
-    )}
+    className={cn(SELECT_TRIGGER_CLASS, props.className)}
     {...props}
   >
     {props.children}
@@ -73,9 +69,7 @@ const SelectContent = React.forwardRef((props: any, ref: any) => {
       >
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
-          className={cn(
-            position === 'popper' ? SELECT_VIEWPORT_CLASS : 'p-1'
-          )}
+          className={cn(position === 'popper' ? SELECT_VIEWPORT_CLASS : 'p-1')}
         >
           {children}
         </SelectPrimitive.Viewport>
@@ -98,14 +92,7 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName;
 const SelectItem = React.forwardRef((props: any, ref: any) => {
   const { className, children, ...rest } = props;
   return (
-    <SelectPrimitive.Item
-      ref={ref}
-      className={cn(
-        SELECT_ITEM_CLASS,
-        className
-      )}
-      {...rest}
-    >
+    <SelectPrimitive.Item ref={ref} className={cn(SELECT_ITEM_CLASS, className)} {...rest}>
       <span className={SELECT_ITEM_INDICATOR_CLASS}>
         <SelectPrimitive.ItemIndicator>
           <Check className='h-4 w-4' />
