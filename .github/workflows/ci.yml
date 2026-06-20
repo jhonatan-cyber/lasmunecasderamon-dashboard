@@ -56,10 +56,15 @@ jobs:
       - name: Unit Tests
         run: pnpm test:unit
 
+      - name: Install MySQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+
       - name: Wait for MySQL to be ready
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 --silent; then
+            if mysqladmin ping -h 127.0.0.1 -u root --silent; then
               echo "MySQL is up and running!"
               break
             fi
