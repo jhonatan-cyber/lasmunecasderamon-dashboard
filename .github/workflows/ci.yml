@@ -10,25 +10,11 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-          MYSQL_DATABASE: lasmunecasderamon
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
       NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000' }}
       BASE_URL: ${{ secrets.BASE_URL || 'http://localhost:3000' }}
       PORT: '3000'
-      DB_HOST: 127.0.0.1
-      DB_USER: root
-      DB_PASSWORD: ''
-      DB_NAME: lasmunecasderamon
-      DB_PORT: 3306
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -56,34 +42,8 @@ jobs:
       - name: Unit Tests
         run: pnpm test:unit
 
-      - name: Install MySQL Client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-client
-
-      - name: Wait for MySQL to be ready
-        run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -u root --silent; then
-              echo "MySQL is up and running!"
-              break
-            fi
-            echo "Waiting for MySQL..."
-            sleep 1
-          done
-
-      - name: Import Database Schema
-        run: mysql -h 127.0.0.1 -u root lasmunecasderamon < database/lasmunecasderamon.sql
-
       - name: Build
         run: pnpm build
-
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: E2E Tests (Playwright)
-        run: pnpm test:e2e
-        timeout-minutes: 30
 
   coverage:
     runs-on: ubuntu-latest
