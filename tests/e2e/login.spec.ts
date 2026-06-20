@@ -31,7 +31,7 @@ test.describe('Login E2E', () => {
 
   test('debería iniciar sesión exitosamente con credenciales válidas', async ({ page }) => {
     await page.fill('input[id="nick"]', 'admin');
-    await page.fill('input[id="password"]', 'admin123');
+    await page.fill('input[id="password"]', '10571705');
 
     await page.click('button[type="submit"]');
 
