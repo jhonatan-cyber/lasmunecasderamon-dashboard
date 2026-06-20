@@ -67,7 +67,12 @@ export function Header({ showSidebarControls = true }: { showSidebarControls?: b
 
       <div className='flex min-w-0 items-center gap-1.5 sm:gap-4'>
         {!isAnfitriona && (isAdmin || isCajero) && (
-          <CodigoVerificacionHeader userRole={user?.role} />
+          <div className='flex items-center gap-2'>
+            <CodigoVerificacionHeader userRole={user?.role} />
+            <span className='text-xs font-medium text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded animate-pulse'>
+              Deploy v1.0.2
+            </span>
+          </div>
         )}
         {user && !isAdmin && <AttendanceCodeModal />}
         <ThemeSwitcher />
