@@ -151,19 +151,19 @@ async function testVentasStatsRepository() {
     const cajaId = activeCaja[0].id_caja;
     console.log(`Usando caja ID: ${cajaId}`);
 
-    // 1. Test getVentasBarras
+    
     console.log('1. Probando getVentasBarras...');
     const barras = await VentasStatsRepository.getVentasBarras(cajaId);
     console.log(`   - Total Ventas Barras: ${barras.total_venta}`);
     if (typeof barras.total_venta !== 'number')
       throw new Error('getVentasBarras no retornó un número');
 
-    // 2. Test getVentasChampagne
+    
     console.log('2. Probando getVentasChampagne...');
     const champagne = await VentasStatsRepository.getVentasChampagne(cajaId);
     console.log(`   - Total Ventas Champagne: ${champagne.total_venta}`);
 
-    // 3. Test getVentasTragosChicas
+    
     console.log('3. Probando getVentasTragosChicas...');
     const tragos = await VentasStatsRepository.getVentasTragosChicas(cajaId);
     console.log(`   - Total Ventas Tragos Chicas: ${tragos.total_venta}`);

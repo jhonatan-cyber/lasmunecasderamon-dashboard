@@ -38,7 +38,7 @@ export default function SortableCategoryCard({
 
   const { hasPermission } = useUserPermissions();
   
-  // Verificar permisos
+  
   const canEdit = hasPermission('categories', 'edit');
   const canDelete = hasPermission('categories', 'delete');
   const canActivate = hasPermission('categories', 'activate');

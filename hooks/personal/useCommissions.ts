@@ -26,7 +26,7 @@ interface UseCommissionsReturn {
   deleteCommission: (id: string) => Promise<{ success: boolean; message: string }>;
   getCommissionById: (id: string) => Promise<Commission | null>;
   clearError: () => void;
-  // Estadísticas calculadas
+  
   totalCommissions: number;
   totalSales: number;
   pendingCommissions: number;
@@ -40,7 +40,7 @@ export function useCommissions(): UseCommissionsReturn {
   const [employeeFilter, setEmployeeFilter] = useState<string>('all');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
 
-  // Construir URL con parámetros
+  
   const buildUrl = useCallback(() => {
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.append('status', statusFilter);
@@ -50,7 +50,7 @@ export function useCommissions(): UseCommissionsReturn {
     return `/api/commissions?${params.toString()}`;
   }, [statusFilter, employeeFilter, debouncedSearchTerm]);
 
-  // Fetch de datos
+  
   const { data: commissions, isLoading, error, refetch, setData } = useGenericFetch<Commission>(
     buildUrl(),
     {
@@ -58,14 +58,14 @@ export function useCommissions(): UseCommissionsReturn {
     }
   );
 
-  // Mutaciones CRUD con toasts
+  
   const { create, update, remove } = useGenericMutations<Commission>('/api/commissions', {
     onSuccess: () => { refetch(); },
     showToasts: true,
     entityName: 'Comisión'
   });
 
-  // Debounce para el término de búsqueda
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -73,17 +73,17 @@ export function useCommissions(): UseCommissionsReturn {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Refetch cuando cambien los filtros
+  
   useEffect(() => {
     refetch();
   }, [statusFilter, employeeFilter, debouncedSearchTerm, refetch]);
 
-  // Filtrar comisiones localmente
+  
   const filteredCommissions = useMemo(() => {
     if (!commissions) return [];
     let filtered = [...commissions];
 
-    // Filtro por término de búsqueda
+    
     if (debouncedSearchTerm.trim()) {
       const lowercased = debouncedSearchTerm.toLowerCase().trim();
       filtered = filtered.filter(commission => {
@@ -97,12 +97,12 @@ export function useCommissions(): UseCommissionsReturn {
       });
     }
 
-    // Filtro por estado
+    
     if (statusFilter !== 'all') {
       filtered = filtered.filter(commission => commission.status === statusFilter);
     }
 
-    // Filtro por empleado
+    
     if (employeeFilter !== 'all') {
       filtered = filtered.filter(commission => commission.employeeId === employeeFilter);
     }
@@ -110,12 +110,12 @@ export function useCommissions(): UseCommissionsReturn {
     return filtered;
   }, [commissions, debouncedSearchTerm, statusFilter, employeeFilter]);
 
-  // Limpiar error
+  
   const clearError = useCallback(() => {
-    // El error se maneja en useGenericFetch
+    
   }, []);
 
-  // Obtener comisión por ID
+  
   const getCommissionById = useCallback(async (id: string): Promise<Commission | null> => {
     try {
       const res = await fetch(`/api/commissions?id=${id}`, {
@@ -132,10 +132,10 @@ export function useCommissions(): UseCommissionsReturn {
     }
   }, []);
 
-  // Wrappers para mantener API original
+  
   const createCommission = useCallback(async (commissionData: Partial<Commission>) => {
     try {
-      // Validar campos requeridos
+      
       const requiredFields = ['employeeId', 'venta', 'servicio', 'total'];
       const missingFields = requiredFields.filter(
         field => !commissionData[field as keyof Commission]
@@ -189,7 +189,7 @@ export function useCommissions(): UseCommissionsReturn {
     }
   }, [remove]);
 
-  // Calcular estadísticas
+  
   const totalCommissions = useMemo(() => 
     (commissions || []).reduce((sum, commission) => sum + commission.total, 0),
     [commissions]
@@ -239,7 +239,7 @@ export function useCommissions(): UseCommissionsReturn {
     deleteCommission,
     getCommissionById,
     clearError,
-    // Estadísticas
+    
     totalCommissions,
     totalSales,
     pendingCommissions,

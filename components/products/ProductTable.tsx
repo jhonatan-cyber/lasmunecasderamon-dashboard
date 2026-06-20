@@ -274,16 +274,16 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [localProducts, setLocalProducts] = useState(products);
   const { hasPermission } = useUserPermissions();
 
-  // Verificar permisos
+  
   const canEdit = hasPermission('productos', 'editar_categoria');
   const canDelete = hasPermission('productos', 'eliminar');
   const canActivate = hasPermission('productos', 'activar');
   const canDeactivate = hasPermission('productos', 'desactivar');
 
-  // Si no tiene ningún permiso de acción, no mostrar el menú
+  
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
-  // Actualizar localProducts cuando products cambia
+  
   React.useEffect(() => {
     setLocalProducts(products);
   }, [products]);
@@ -309,7 +309,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
       const newProducts = arrayMove(localProducts, oldIndex, newIndex);
       setLocalProducts(newProducts);
 
-      // Llamar al callback de reordenamiento si está disponible
+      
       if (onReorder) {
         onReorder(newProducts);
       }

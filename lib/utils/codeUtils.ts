@@ -8,6 +8,6 @@ export function generateRandomCode(): string {
 }
 
 export function generateRandomCode4(): string {
-  // Generate 4-digit numeric code (0000-9999)
+  
   return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 }

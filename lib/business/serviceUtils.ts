@@ -7,19 +7,19 @@ type HabitacionStatsRow = {
   status?: number | string | null;
 };
 
-// Generar código único de 8 caracteres alfanuméricos
+
 export function generateServiceCode(): string {
   return generateRandomCode();
 }
 
-// Calcular totales del servicio
+
 export function calculateServiceTotals(
   precioServicio: number,
   precioHabitacion: number,
   iva: number
 ) {
-  const subTotal = precioServicio; // Subtotal es igual al precio de servicio
-  const total = subTotal + precioHabitacion + iva; // Total = subtotal + precio_habitacion + iva
+  const subTotal = precioServicio; 
+  const total = subTotal + precioHabitacion + iva; 
 
   return {
     subTotal,
@@ -27,13 +27,13 @@ export function calculateServiceTotals(
   };
 }
 
-// Formatear fecha de creación
+
 export function formatServiceDate(dateString: string): string {
   const { date, time } = formatDateTimeDmyLabel(dateString);
   return `${date} ${time}`;
 }
 
-// Obtener badge de estado
+
 export function getServiceStatusBadge(estado: number) {
   const estadoNum = Number(estado);
 
@@ -71,7 +71,7 @@ export function getServiceStatusBadge(estado: number) {
   }
 }
 
-// Validar datos del servicio
+
 export function validateServiceData(data: {
   cliente_id: number;
   habitacion_id: number;
@@ -101,22 +101,22 @@ export function validateServiceData(data: {
   return errors;
 }
 
-// Calcular estadísticas de servicios
+
 export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   const totalServicios = servicios.length;
-  // Activos = En Proceso (2) o Pausado (3)
+  
   const serviciosActivos = servicios.filter(s => s.estado === 2 || s.estado === 3).length;
-  // Terminados = Finalizado (1), Anulado (0) o Solicitud de Anulación (4)
+  
   const serviciosTerminados = servicios.filter(
     s => s.estado === 1 || s.estado === 0 || s.estado === 4
   ).length;
 
-  // Ingresos totales de servicios finalizados (estado 1)
+  
   const ingresosTotales = servicios
-    .filter(s => s.estado === 1) // Solo servicios finalizados
+    .filter(s => s.estado === 1) 
     .reduce((sum, s) => sum + (s.total || 0), 0);
 
-  // Promedio de tiempo de servicios activos
+  
   const serviciosActivosArray = servicios.filter(s => s.estado === 2 || s.estado === 3);
   const promedioTiempo =
     serviciosActivosArray.length > 0
@@ -135,7 +135,7 @@ export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   };
 }
 
-// Calcular estadísticas de habitaciones
+
 export function calculateRoomStats(habitaciones: HabitacionStatsRow[]) {
   const habitacionesDisponibles = habitaciones.filter(
     h => Number(h.estado) === 1 || Number(h.status) === 1

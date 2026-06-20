@@ -172,7 +172,7 @@ export class ServiceRepository {
       sqlParams.push(Number(params.estado));
     } else if (params.all === 'true') where = 'WHERE s.estado IN (0, 1, 4)';
     else if (params.all === 'false') where = 'WHERE s.estado IN (2, 3)';
-    else where = 'WHERE s.estado IN (1, 2, 3, 4)'; // Default: todos los estados v?lidos
+    else where = 'WHERE s.estado IN (1, 2, 3, 4)'; 
 
     if (params.caja_id) {
       where += ' AND s.caja_id = ?';
@@ -276,8 +276,8 @@ export class ServiceRepository {
       await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado, fecha_mod: now });
 
       if (estado === 1 || estado === 0) {
-        // Solo manejar la habitación si el servicio venía de un estado activo/pausado,
-        // no si ya estaba finalizado (evita liberar la habitación doblemente)
+        
+        
         const wasActive = estadoAnterior === 2 || estadoAnterior === 3;
         if (habitacionId && wasActive) {
           await RoomManager.resumeRoomLogic(trx, habitacionId, id);

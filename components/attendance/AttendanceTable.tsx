@@ -1,5 +1,5 @@
 /* eslint-disable */
-// components/attendance/AttendanceTable.tsx
+
 'use client';
 
 import { useState } from 'react';
@@ -51,7 +51,6 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
   } | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Verificar permiso para ver detalles
   const canViewDetail = hasPermission('attendance', 'view_details');
 
   const handleViewDetail = (user: AttendanceData) => {
@@ -104,7 +103,6 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
     );
   }
 
-  // Vista de tabla
   const TableView = () => (
     <div className='hidden sm:block bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
@@ -298,7 +296,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
       <MobileCardView />
       <TableView />
 
-      {/* Modal de detalle */}
+      {}
       {selectedUser && (
         <AttendanceDetailModal
           isOpen={isDetailModalOpen}
@@ -311,4 +309,3 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
     </>
   );
 }
-

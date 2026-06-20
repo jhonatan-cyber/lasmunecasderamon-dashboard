@@ -85,7 +85,7 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
 
   const paymentMethods = useMemo(() => {
     const methods = [...BASE_PAYMENT_METHODS];
-    // Solo mostrar prepago si el cliente tiene saldo > 0
+    
     if (showPrepago && canUsePrepago) {
       methods.push({
         value: 'prepago',

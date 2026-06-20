@@ -54,7 +54,7 @@ export default function OvertimeFormModal({
 
         <div className='p-6 sm:p-8 bg-white dark:bg-slate-900'>
           <form onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
-            {/* SelecciÃ³n de Empleado */}
+            {}
             <div>
               <Label className='text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300'>
                 Empleado <span className='text-red-500'>*</span>
@@ -71,7 +71,7 @@ export default function OvertimeFormModal({
             </div>
 
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
-              {/* Cantidad de Horas */}
+              {}
               <div>
                 <Label
                   htmlFor='hora'
@@ -98,7 +98,7 @@ export default function OvertimeFormModal({
                 </div>
               </div>
 
-              {/* Precio por Hora */}
+              {}
               <div>
                 <Label
                   htmlFor='monto'
@@ -124,7 +124,7 @@ export default function OvertimeFormModal({
               </div>
             </div>
 
-            {/* Resultado Calculado */}
+            {}
             {hora && montoDisplay && (
               <div className='p-4 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-300 dark:border-gray-700 flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
@@ -139,7 +139,7 @@ export default function OvertimeFormModal({
               </div>
             )}
 
-            {/* Botones de acciÃ³n siguiendo la estructura de CategoryForm */}
+            {}
             <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full pt-4 border-t border-gray-100 dark:border-gray-800/50 mt-4'>
               <Button
                 type='button'

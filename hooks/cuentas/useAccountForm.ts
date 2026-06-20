@@ -49,7 +49,7 @@ export function useAccountForm() {
 
   const calculateTotal = () => productos.reduce((sum, p) => sum + p.subtotal, 0);
 
-  // Regla de champaña centralizada
+  
   const { isChampagneProduct, hasChampagneProducts, maxChampagnePrice, maxAnfitrionas } =
     useChampagneRule(productos, selectedAnfitrionas, setSelectedAnfitrionas);
 
@@ -183,7 +183,7 @@ export function useAccountForm() {
         comision: producto.comision ?? 0
       }));
 
-      // Calcular tiempo antes de crear la cuenta
+      
       let timerMinutes = 0;
       let habitacionSeleccionada: any = null;
       if (selectedHabitacion) {
@@ -191,7 +191,7 @@ export function useAccountForm() {
         if (habitacionSeleccionada) {
           const comision = habitacionSeleccionada.comision_anfitriona ?? 0;
           const roomTime = habitacionSeleccionada.time ?? habitacionSeleccionada.tiempo ?? 0;
-          // Con comisión: usa tiempo de la habitación. Sin comisión: usa tiempo manual
+          
           timerMinutes = comision > 0 ? roomTime || 60 : selectedTime;
         }
       }

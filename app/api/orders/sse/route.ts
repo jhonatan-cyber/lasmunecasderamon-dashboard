@@ -18,9 +18,7 @@ export async function GET() {
             controller.close();
           } catch {}
         },
-        onClose(_callback: () => void) {
-          // El cleanup real queda delegado al manager/heartbeat.
-        }
+        onClose(_callback: () => void) {}
       };
 
       sseManager.registerClient(writer);

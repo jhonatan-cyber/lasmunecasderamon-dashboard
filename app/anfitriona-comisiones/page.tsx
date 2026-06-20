@@ -34,7 +34,6 @@ export default function AnfitrionaComisionesPage() {
   const [sortField, setSortField] = useState<keyof Commission>('fecha_crea');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Fetch comisiones del usuario desde el endpoint específico
   const fetchCommissions = async () => {
     setLoading(true);
     try {
@@ -59,7 +58,6 @@ export default function AnfitrionaComisionesPage() {
     fetchCommissions();
   }, []);
 
-  // Verificar que el usuario sea anfitriona - DESPUÉS de todos los hooks
   if (userLoading) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -82,7 +80,6 @@ export default function AnfitrionaComisionesPage() {
     );
   }
 
-  // Calcular totales (ventas, servicios, otros)
   const totalCommissions = commissions.length;
   const totalAmount = commissions.reduce((sum, commission) => sum + (commission.comision || 0), 0);
   const pendingCommissionsCount = commissions.filter(commission => commission.estado === 1).length;
@@ -90,7 +87,6 @@ export default function AnfitrionaComisionesPage() {
     .filter(commission => commission.estado === 1)
     .reduce((sum, commission) => sum + (commission.comision || 0), 0);
 
-  // Ordenar y filtrar comisiones
   const filteredCommissions = commissions.filter(commission => {
     if (!searchTerm) return true;
 
@@ -156,7 +152,7 @@ export default function AnfitrionaComisionesPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex justify-between items-center'>
         <div>
           <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
@@ -174,7 +170,7 @@ export default function AnfitrionaComisionesPage() {
         </Button>
       </div>
 
-      {/* Totales centrados */}
+      {}
       <div className='text-center space-y-2'>
         <div className='flex justify-center flex-wrap gap-4 sm:gap-8'>
           <div>
@@ -207,7 +203,7 @@ export default function AnfitrionaComisionesPage() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <SelectElements
           value={rowsPerPage}
@@ -231,7 +227,7 @@ export default function AnfitrionaComisionesPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <Card>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -402,7 +398,7 @@ export default function AnfitrionaComisionesPage() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {}
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>

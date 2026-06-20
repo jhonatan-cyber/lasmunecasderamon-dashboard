@@ -74,20 +74,20 @@ export const DevolucionTable = ({
     );
   }
 
-  // Vista de tarjetas para móviles
+  
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {servicios.map(servicio => (
         <Card key={servicio.id_servicio} className='shadow-sm hover:shadow-md transition-shadow'>
           <CardContent className='p-4'>
             <div className='space-y-3'>
-              {/* Header con código y estado */}
+              {}
               <div className='flex items-center justify-between'>
                 <h3 className='font-semibold text-lg text-gray-900'>{servicio.codigo}</h3>
                 {getEstadoBadge(servicio.estado)}
               </div>
 
-              {/* Información del servicio */}
+              {}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
                   <User className='text-gray-500 w-4 h-4' />
@@ -131,7 +131,7 @@ export const DevolucionTable = ({
                 </div>
               </div>
 
-              {/* Acciones */}
+              {}
               <div className='flex items-center gap-2 pt-2 border-t border-gray-100'>
                 <TooltipProvider>
                   <Tooltip>
@@ -180,7 +180,7 @@ export const DevolucionTable = ({
     </div>
   );
 
-  // Vista de tabla para pantallas grandes
+  
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <Table>

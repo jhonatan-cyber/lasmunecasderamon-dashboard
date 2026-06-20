@@ -17,35 +17,35 @@ export function CashRegisterStatsCard({ isCajero = false }: CashRegisterStatsCar
       value: formatCurrencyNoDecimals(stats?.total_ventas || 0),
       subtitle: `${stats?.cantidad_ventas || 0} ventas realizadas`,
       icon: TrendingUp,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Servicios',
       value: formatCurrencyNoDecimals(stats?.total_servicios || 0),
       subtitle: `${stats?.cantidad_servicios || 0} servicios realizados`,
       icon: Activity,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Efectivo',
       value: formatCurrencyNoDecimals(stats?.total_efectivo || 0),
       subtitle: isCajero ? 'Efectivo en tu caja' : 'Ingresos en efectivo',
       icon: DollarSign,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Tarjeta',
       value: formatCurrencyNoDecimals(stats?.total_tarjeta || 0),
       subtitle: isCajero ? 'Pagos con tarjeta en tu caja' : 'Pagos con tarjeta',
       icon: CreditCard,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Transferencias',
       value: formatCurrencyNoDecimals(stats?.total_transferencia || 0),
       subtitle: isCajero ? 'Transferencias en tu caja' : 'Transferencias bancarias',
       icon: ArrowUpDown,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     }
   ];
 

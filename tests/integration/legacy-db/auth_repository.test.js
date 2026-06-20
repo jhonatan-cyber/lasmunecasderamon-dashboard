@@ -51,7 +51,7 @@ class AuthRepository {
 async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: AuthRepository (QR Flow) ---');
   try {
-    // Setup: Ensure a user has a QR token
+    
     const testQR = 'test_qr_' + Math.random().toString(36).substring(7);
     const users = await queryMock('SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1');
     const userId = users[0].id_usuario;

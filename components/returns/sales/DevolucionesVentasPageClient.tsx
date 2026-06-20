@@ -50,7 +50,7 @@ export function DevolucionesVentasPageClient() {
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
   const [activeTab, setActiveTab] = useState<'pendientes' | 'anuladas'>('pendientes');
 
-  // Cargar solicitudes de anulación pendientes
+  
   useEffect(() => {
     const fetchSolicitudes = async () => {
       try {
@@ -68,7 +68,7 @@ export function DevolucionesVentasPageClient() {
     fetchSolicitudes();
   }, []);
 
-  // Procesar solicitud de anulación
+  
   const handleProcesarSolicitud = async (
     solicitudId: string,
     status: 'confirmada' | 'rechazada'
@@ -81,7 +81,7 @@ export function DevolucionesVentasPageClient() {
       });
       const data = await res.json();
       if (data.success) {
-        // Recargar solicitudes
+        
         const res2 = await fetch('/api/ventas/solicitud-anulacion?list=true');
         const data2 = await res2.json();
         if (data2.solicitudes) {
@@ -130,7 +130,7 @@ export function DevolucionesVentasPageClient() {
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <DevolucionHeader />
 
-      {/* Tabs para cambiar entre solicitudes pendientes y ventas anuladas */}
+      {}
       <div className='flex gap-2 mb-4'>
         <Button
           variant={activeTab === 'pendientes' ? 'default' : 'outline'}
@@ -150,7 +150,7 @@ export function DevolucionesVentasPageClient() {
         </Button>
       </div>
 
-      {/* Panel de Solicitudes Pendientes */}
+      {}
       {activeTab === 'pendientes' && (
         <Card className='shadow-sm'>
           <CardHeader className='p-4 sm:p-6'>
@@ -213,7 +213,7 @@ export function DevolucionesVentasPageClient() {
         </Card>
       )}
 
-      {/* Panel de Ventas Anuladas */}
+      {}
       {activeTab === 'anuladas' && (
         <>
           <DevolucionFiltersComponent

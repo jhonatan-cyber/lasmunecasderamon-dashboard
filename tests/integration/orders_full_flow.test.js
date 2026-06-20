@@ -14,7 +14,7 @@ async function runTest() {
   });
 
   try {
-    // 1. Obtener datos necesarios (Cliente, Usuario, Producto)
+    
     const [clientes] = await connection.execute('SELECT id_cliente FROM clientes LIMIT 1');
     const [usuarios] = await connection.execute(
       'SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1'
@@ -37,7 +37,7 @@ async function runTest() {
       `✅ Datos base listos: Cliente ${clienteId}, Usuario ${usuarioId}, Producto ${producto.nombre}`
     );
 
-    // 2. Crear Pedido
+    
     const pedidoId = crypto.randomUUID();
     const pedidoCodigo = `TEST-${Math.floor(Math.random() * 10000)}`;
     const propina = 1000;
@@ -51,7 +51,7 @@ async function runTest() {
     );
     console.log(`✅ Pedido creado: ${pedidoCodigo} (ID: ${pedidoId})`);
 
-    // 3. Agregar Detalle del Pedido
+    
     const detalleId = crypto.randomUUID();
     await connection.execute(
       'INSERT INTO detalle_pedidos (id_detalle_pedido, pedido_id, producto_id, cantidad, precio, subtotal, comision, fecha_crea) VALUES (?, ?, ?, 1, ?, ?, ?, NOW())',
@@ -66,7 +66,7 @@ async function runTest() {
     );
     console.log(`✅ Detalle de pedido agregado para ${producto.nombre}`);
 
-    // 4. Procesar Venta (Facturación)
+    
     const ventaId = crypto.randomUUID();
     const ventaCodigo = `V-${Math.floor(Math.random() * 10000)}`;
     await connection.execute(
@@ -85,20 +85,20 @@ async function runTest() {
     );
     console.log(`✅ Venta registrada: ID ${ventaId} (Código: ${ventaCodigo})`);
 
-    // 5. Actualizar Estado del Pedido a Finalizado (0)
+    
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
     console.log(`✅ Pedido ${pedidoCodigo} marcado como FINALIZADO`);
 
-    // 6. VERIFICACIONES FINALES
+    
     console.log('\n--- VERIFICACIONES ---');
 
-    // Verificar Venta
+    
     const [vCheck] = await connection.execute('SELECT * FROM ventas WHERE id_venta = ?', [ventaId]);
     console.log(
       vCheck.length > 0 ? 'âœ”ï¸ Venta persistida correctamente' : 'âŒ Error: Venta no encontrada'
     );
 
-    // Verificar Estado Pedido
+    
     const [pCheck] = await connection.execute('SELECT estado FROM pedidos WHERE id_pedido = ?', [
       pedidoId
     ]);
@@ -108,7 +108,7 @@ async function runTest() {
         : 'âŒ Error: Estado incorrecto'
     );
 
-    // Verificar Detalle de Pedido
+    
     const [dCheck] = await connection.execute('SELECT * FROM detalle_pedidos WHERE pedido_id = ?', [
       pedidoId
     ]);

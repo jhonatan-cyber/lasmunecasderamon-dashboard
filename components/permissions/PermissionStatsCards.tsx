@@ -22,7 +22,7 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
 
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
-      {/* Total Permisos */}
+      {}
       <Card
         style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
@@ -45,7 +45,7 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
         </CardContent>
       </Card>
 
-      {/* Módulos Activos */}
+      {}
       <Card
         style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
@@ -68,7 +68,7 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
         </CardContent>
       </Card>
 
-      {/* Módulos Únicos */}
+      {}
       <Card
         style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
@@ -91,7 +91,7 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
         </CardContent>
       </Card>
 
-      {/* Acciones Únicas */}
+      {}
       <Card
         style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'

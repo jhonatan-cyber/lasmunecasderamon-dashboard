@@ -20,7 +20,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
     setIsExporting(true);
 
     try {
-      // Lazy load ExcelJS solo cuando se necesita
+      
       const ExcelJS = (await import('exceljs')).default;
 
       const data = users.map((user, index) => ({
@@ -44,7 +44,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Usuarios');
 
-      // Definir columnas
+      
       worksheet.columns = [
         { header: '#', key: 'index', width: 6 },
         { header: 'RUT', key: 'run', width: 20 },
@@ -106,7 +106,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
     setIsExporting(true);
 
     try {
-      // Lazy load jsPDF y autoTable solo cuando se necesita
+      
       const { jsPDF } = await import('jspdf');
       const autoTable = (await import('jspdf-autotable')).default;
 
@@ -125,13 +125,13 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         user.status === 1 ? 'Activo' : 'Inactivo'
       ]);
 
-      // Título del documento
+      
       doc.setFontSize(18);
       doc.text(title, 14, 22);
       doc.setFontSize(11);
       doc.setTextColor(100);
 
-      // Tabla de datos
+      
       autoTable(doc, {
         head: headers,
         body: data,
@@ -154,7 +154,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         margin: { top: 30 }
       });
 
-      // Pie de página
+      
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -205,7 +205,7 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         {isExporting ? 'Exportando...' : 'Excel'}
       </Button>
 
-      {/* Tabla oculta para la impresión */}
+      {}
       <div style={{ display: 'none' }}>
         <div className='p-6'>
           <h1 className='text-3xl font-bold mb-6'>Listado de Usuarios</h1>

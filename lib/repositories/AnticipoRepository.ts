@@ -140,7 +140,7 @@ export class AnticipoRepository {
         usuario_id,
         monto,
         motivo,
-        // El alta directa desde administracion ya descuenta caja y equivale a un anticipo entregado.
+        
         estado: 1,
         fecha_crea: now,
         fecha_aprobacion: now,
@@ -148,7 +148,7 @@ export class AnticipoRepository {
         fecha_entrega: now
       });
 
-      // Historial: solicitud -> aprobado -> entregado (consistente con backfill)
+      
       await BaseRepository.insert(trx, 'anticipo_historial', {
         anticipo_id: id,
         accion: 'solicitud',
@@ -381,7 +381,7 @@ export class AnticipoRepository {
         fecha_crea: now
       });
 
-      // Sincronizar con la gratificación correspondiente si existe y está pendiente
+      
       const gratCheck = await trx<any[]>('SELECT estado FROM gratificaciones WHERE id = ?', [id]);
       if (gratCheck.length > 0 && Number(gratCheck[0].estado) === 2) {
         await BaseRepository.update(trx, 'gratificaciones', 'id', id, {

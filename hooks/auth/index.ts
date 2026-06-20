@@ -1,4 +1,4 @@
-// Hooks de autenticación y permisos
+
 export { useCurrentUser } from './useCurrentUser';
 export { usePermissions } from './usePermissions';
 export { usePermissionsSSE } from './usePermissionsSSE';

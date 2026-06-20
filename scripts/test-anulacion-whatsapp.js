@@ -27,8 +27,8 @@ async function testAnulacionFlow() {
   console.log(`   Desde: ${whatsappNumber}`);
   console.log(`   Hacia (raw): ${adminWhatsApp}`);
 
-  // Simulate what happens in the route
-  const numeroAdmin = adminWhatsApp; // This is what route.ts passes
+  
+  const numeroAdmin = adminWhatsApp; 
   const numeroFormateado = `+${numeroAdmin.replace(/^\+/, '')}`;
   console.log(`   Hacia (formatted): ${numeroFormateado}`);
 

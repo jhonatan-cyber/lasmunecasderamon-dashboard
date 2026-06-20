@@ -122,7 +122,7 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
         <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-6'>
-              {/* Información básica */}
+              {}
               <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                 <div>
                   <Label htmlFor='codigo' className='text-sm font-medium'>
@@ -164,7 +164,7 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
                 </div>
               </div>
 
-              {/* Detalles */}
+              {}
               <div>
                 <div className='flex justify-between items-center mb-4'>
                   <Label className='text-sm font-medium'>Detalles de la cuenta</Label>
@@ -248,7 +248,7 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
                 </div>
               </div>
 
-              {/* Resumen */}
+              {}
               {detalles.length > 0 && (
                 <div className='p-4 bg-blue-50 rounded-lg border border-blue-200'>
                   <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-center'>
@@ -276,7 +276,7 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
             </div>
           </div>
 
-          {/* Botones */}
+          {}
           <div className='flex-shrink-0 border-t px-6 py-4'>
             <div className='flex justify-center gap-2 w-full'>
               <Button

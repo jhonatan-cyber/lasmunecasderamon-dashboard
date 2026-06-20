@@ -170,7 +170,7 @@ export function useEditServiceForm({
         });
       }
 
-      // Pausar inmediatamente el timer principal al abrir el modal
+      
       if (onPauseMainTimer) {
         onPauseMainTimer();
       }
@@ -181,7 +181,7 @@ export function useEditServiceForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id_servicio, servicio?.id, open]);
 
-  // Ref para saber si el modal estaba abierto antes del render actual
+  
   const prevOpenRef = useRef(open);
 
   useEffect(() => {
@@ -189,8 +189,8 @@ export function useEditServiceForm({
     const wasOpen = prevOpenRef.current;
     prevOpenRef.current = open;
 
-    // Solo reanudar cuando se CIERRA el modal (open cambia de true a false),
-    // NO en el montaje inicial con open=false
+    
+    
     if (wasOpen === true && !open && onResumeMainTimer && servicioPrincipalId) {
       if (temporaryCreatedRef.current) {
         temporaryCreatedRef.current = false;

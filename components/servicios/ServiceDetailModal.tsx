@@ -68,7 +68,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl">
-        {/* Header fijo */}
+        {}
         <DialogHeader className="p-6 pb-4 border-b shrink-0">
           <DialogTitle className="text-xl font-bold flex items-center gap-3">
             Detalle del Servicio
@@ -79,17 +79,17 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
           </DialogDescription>
         </DialogHeader>
 
-        {/* Contenido scrolleable */}
+        {}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-          {/* Estado */}
+          {}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-500">Estado</span>
             {getEstadoBadge(servicio.estado)}
           </div>
 
-          {/* Información Principal */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Cliente */}
+            {}
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <User className="w-4 h-4" />
@@ -100,7 +100,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
               </p>
             </div>
 
-            {/* Habitación */}
+            {}
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <Home className="w-4 h-4" />
@@ -111,7 +111,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
               </p>
             </div>
 
-            {/* Tiempo */}
+            {}
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <Clock className="w-4 h-4" />
@@ -122,7 +122,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
               </p>
             </div>
 
-            {/* Método de Pago */}
+            {}
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <CreditCard className="w-4 h-4" />
@@ -134,7 +134,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
             </div>
           </div>
 
-          {/* Anfitrionas */}
+          {}
           {servicio.anfitrionas_nombres && (
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
@@ -152,7 +152,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
             </div>
           )}
 
-          {/* Fechas */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
@@ -176,7 +176,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
             )}
           </div>
 
-          {/* Desglose de Precios */}
+          {}
           <div className="border-t pt-4">
             <div className="flex items-center gap-2 text-gray-500 mb-3">
               <Receipt className="w-4 h-4" />
@@ -213,7 +213,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
             </div>
           </div>
 
-          {/* Comisiones */}
+          {}
           {(servicio.habitacion_comision || servicio.total_comision || servicio.comision_individual) && (
             <div className="border-t pt-4">
               <div className="flex items-center gap-2 text-gray-500 mb-3">
@@ -242,7 +242,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
                   </>
                 )}
 
-                {/* Distribución por anfitriona */}
+                {}
                 {servicio.anfitrionas_nombres && servicio.total_usuarios && servicio.comision_individual && (
                   <div className="pt-3 border-t border-green-200 dark:border-green-800">
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
@@ -276,7 +276,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
           )}
         </div>
 
-        {/* Footer fijo */}
+        {}
         <div className="border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl shrink-0">
           <Button
             variant="outline"

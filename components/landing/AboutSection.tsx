@@ -97,7 +97,7 @@ export default function AboutSection() {
           <div className='relative h-[360px] sm:h-[500px] lg:h-[600px] order-1 md:order-2 group'>
             <div className='absolute inset-0 bg-gradient-to-br from-gold-500/10 to-silver-400/10 rounded-3xl blur-3xl animate-pulse'></div>
             <div className='relative h-full bg-zinc-900/50 rounded-3xl border border-white/10 overflow-hidden shadow-2xl'>
-              {/* Slider Images */}
+              {}
               {images.map((img, index) => (
                 <div
                   key={index}
@@ -116,7 +116,7 @@ export default function AboutSection() {
                 </div>
               ))}
 
-              {/* Navigation Controls */}
+              {}
               <button
                 onClick={prevImage}
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30"
@@ -130,7 +130,7 @@ export default function AboutSection() {
                 <ChevronRight className="w-6 h-6" />
               </button>
 
-              {/* Dots Indicators */}
+              {}
               <div className="absolute bottom-6 sm:bottom-24 left-0 right-0 flex justify-center gap-2 z-30">
                 {images.map((_, index) => (
                   <button

@@ -81,7 +81,7 @@ export function withAppAuth(
       return ApiResponse.unauthorized();
     }
 
-    // Await params for audit log
+    
     const params = await context.params;
 
     if (requiredPermission) {

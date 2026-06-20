@@ -13,7 +13,7 @@ import {
 } from '@/components/shared/selectStyles';
 import { cn } from '@/lib/utils/utils';
 
-// Simple wrapper to avoid type issues with React 19 + Radix
+
 const Select = (props: any) => <SelectPrimitive.Root {...props} />;
 Select.displayName = 'Select';
 

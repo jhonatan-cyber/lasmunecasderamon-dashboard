@@ -7,13 +7,12 @@ import Link from 'next/link';
 
 export default function GlobalError({
   error,
-  reset,
+  reset
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error to monitoring service
     console.error('Global error:', error);
   }, [error]);
 
@@ -22,35 +21,30 @@ export default function GlobalError({
       <body className='bg-gray-50 dark:bg-gray-950'>
         <div className='min-h-screen flex items-center justify-center p-4'>
           <div className='max-w-md w-full text-center space-y-6'>
-            {/* Icon */}
+            {}
             <div className='mx-auto w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center'>
               <AlertCircle className='w-8 h-8 text-red-600 dark:text-red-400' />
             </div>
 
-            {/* Title */}
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
-              Algo salió mal
-            </h1>
+            {}
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Algo salió mal</h1>
 
-            {/* Description */}
+            {}
             <p className='text-gray-600 dark:text-gray-400'>
-              Ha ocurrido un error inesperado. Por favor, intentá de nuevo o contactá al administrador si el problema persiste.
+              Ha ocurrido un error inesperado. Por favor, intentá de nuevo o contactá al
+              administrador si el problema persiste.
             </p>
 
-            {/* Error details (only in development) */}
+            {}
             {process.env.NODE_ENV === 'development' && (
               <div className='text-left p-4 bg-gray-100 dark:bg-gray-900 rounded-lg text-sm font-mono text-red-500 overflow-auto max-h-32'>
                 {error.message || 'Error desconocido'}
               </div>
             )}
 
-            {/* Actions */}
+            {}
             <div className='flex gap-3 justify-center'>
-              <Button
-                onClick={() => reset()}
-                variant='outline'
-                className='gap-2'
-              >
+              <Button onClick={() => reset()} variant='outline' className='gap-2'>
                 <RefreshCw className='w-4 h-4' />
                 Reintentar
               </Button>
@@ -63,10 +57,13 @@ export default function GlobalError({
               </Link>
             </div>
 
-            {/* Contact info */}
+            {}
             <p className='text-sm text-gray-500 dark:text-gray-500'>
               ¿Necesitás ayuda? Contactanos al{' '}
-              <a href='mailto:soporte@lasmunecasderamon.com' className='text-blue-600 hover:underline'>
+              <a
+                href='mailto:soporte@lasmunecasderamon.com'
+                className='text-blue-600 hover:underline'
+              >
                 soporte@lasmunecasderamon.com
               </a>
             </p>

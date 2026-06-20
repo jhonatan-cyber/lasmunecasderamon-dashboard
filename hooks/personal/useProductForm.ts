@@ -112,7 +112,7 @@ export function useProductForm({ open, initialValues, categoryId, onSubmit }: Us
     const name = target?.name;
     const value = target?.value;
 
-    // Handle file input (either from native event or custom event)
+    
     if (target?.type === 'file' || (target?.files && target?.files?.length > 0)) {
       const file = target.files?.[0];
       if (file) processFile(file);

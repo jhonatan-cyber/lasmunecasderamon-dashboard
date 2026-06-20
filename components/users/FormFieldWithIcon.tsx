@@ -24,10 +24,7 @@ interface FormFieldWithIconProps<T extends FieldValues> {
   capitalize?: boolean;
 }
 
-/**
- * Capitaliza cada palabra: primera letra mayúscula, resto minúscula.
- * Se aplica en tiempo real mientras el usuario escribe.
- */
+
 function capitalizeWords(text: string): string {
   return text.replace(/\b\w/g, (char) => char.toUpperCase())
     .replace(/\B\w/g, (char) => char.toLowerCase());
@@ -55,7 +52,7 @@ function FormFieldWithIconComponent<T extends FieldValues>({
         const capitalized = capitalizeWords(input.value);
         fieldOnChange(capitalized);
 
-        // Restaurar posición del cursor después del render
+        
         requestAnimationFrame(() => {
           if (inputRef.current) {
             inputRef.current.setSelectionRange(cursorPos, cursorPos);

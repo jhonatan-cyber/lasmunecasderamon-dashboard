@@ -11,16 +11,16 @@ import {
 } from '@/lib/utils/formatters';
 
 interface CajaOperationsTablesProps {
-  // Retiros
+  
   retirosLoading: boolean;
   retiros: any[];
-  // Ventas
+  
   loadingVentas: boolean;
   ventas: any[];
   ventasPage: number;
   totalVentasPages: number;
   onVentasPageChange: (page: number) => void;
-  // Servicios
+  
   loadingServicios: boolean;
   servicios: any[];
   serviciosPage: number;
@@ -44,7 +44,7 @@ export function CajaOperationsTables({
 }: CajaOperationsTablesProps) {
   return (
     <div className="px-6 space-y-12 pb-12">
-      {/* Historial de Retiros */}
+      {}
       <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800">
         <h5 className="font-medium text-lg mb-6 text-gray-900 dark:text-white flex items-center gap-2">
           <ArrowDownCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
@@ -96,7 +96,7 @@ export function CajaOperationsTables({
         )}
       </div>
 
-      {/* Listado de Ventas */}
+      {}
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <h5 className="font-medium text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -177,7 +177,7 @@ export function CajaOperationsTables({
         )}
       </div>
 
-      {/* Servicios Realizados */}
+      {}
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <h5 className="font-medium text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
           <Home className="w-5 h-5 text-purple-600 dark:text-purple-400" />

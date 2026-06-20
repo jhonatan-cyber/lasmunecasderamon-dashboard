@@ -113,7 +113,7 @@ export function PermissionModal({
           onSubmit={handleSubmit}
           className='flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6'
         >
-          {/* Nombre */}
+          {}
           <div>
             <Label htmlFor='permission-name' className='mb-2 text-sm sm:text-base'>
               Nombre
@@ -131,7 +131,7 @@ export function PermissionModal({
             </div>
           </div>
 
-          {/* Módulo */}
+          {}
           <div>
             <Label htmlFor='permission-module' className='mb-2 text-sm sm:text-base'>
               Módulo
@@ -149,7 +149,7 @@ export function PermissionModal({
             </div>
           </div>
 
-          {/* Acci?n */}
+          {}
           <div>
             <Label htmlFor='permission-action' className='mb-2 text-sm sm:text-base'>
               Acci?n
@@ -174,7 +174,7 @@ export function PermissionModal({
             </div>
           </div>
 
-          {/* Descripción */}
+          {}
           <div>
             <Label htmlFor='permission-description' className='mb-2 text-sm sm:text-base'>
               Descripción

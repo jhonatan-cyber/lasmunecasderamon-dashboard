@@ -18,11 +18,6 @@ import OvertimeFormModal from '@/components/overtime/OvertimeFormModal';
 import OvertimeDetailModal from '@/components/overtime/OvertimeDetailModal';
 import Paginate from '@/components/shared/Paginate';
 
-// --- SUB-COMPONENTS ---
-
-/**
- * Alerta de caja cerrada para informar al usuario
- */
 const CajaAviso = ({ loading, hasOpenCaja }: { loading: boolean; hasOpenCaja: boolean }) => {
   if (loading || hasOpenCaja) return null;
   return (
@@ -80,7 +75,7 @@ export default function OvertimePage() {
   return (
     <PermissionGuard module='overtime' action='view'>
       <div className='w-full max-w-none px-1 sm:px-6 lg:px-10 py-4 sm:py-6 space-y-6'>
-        {/* HEADER SECTION */}
+        {}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div className='flex flex-col'>
             <h1 className='text-3xl font-bold tracking-tight'>Horas Extras</h1>
@@ -100,10 +95,10 @@ export default function OvertimePage() {
           </Button>
         </div>
 
-        {/* ALERTS SECTION */}
+        {}
         <CajaAviso loading={!!cajaLoading} hasOpenCaja={hasOpenCaja === true} />
 
-        {/* DATA SECTION */}
+        {}
         <div>
           <OvertimeStatsCards overtime={data} />
         </div>

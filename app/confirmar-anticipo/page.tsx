@@ -160,7 +160,7 @@ function ConfirmarAnticipoContent() {
           </CardHeader>
 
           <CardContent className='space-y-6 pt-4'>
-            {/* Detalles principales */}
+            {}
             <div className='grid grid-cols-1 gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm'>
               <div className='flex items-center gap-4'>
                 <div className='p-3 bg-blue-100 dark:bg-blue-900/40 rounded-xl'>
@@ -215,7 +215,7 @@ function ConfirmarAnticipoContent() {
               </div>
             </div>
 
-            {/* Botones de acción */}
+            {}
             <div className='grid grid-cols-2 gap-4 pt-4'>
               <Button
                 onClick={() => procesarSolicitud('rechazar')}

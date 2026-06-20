@@ -122,8 +122,8 @@ async function runTests() {
     if (!userId) {
       console.log('âš ï¸ No hay usuarios en la DB para probar pay(). Saltando...');
     } else {
-      // No podemos pagar de verdad sin afectar datos reales, pero como es un test unitario mockeado contra DB de desarrollo
-      // Vamos a intentar ejecutarlo. El estado 1 es activo, pay lo pasa a 0.
+      
+      
       await PayrollRepository.pay(userId);
       console.log(`✅ pay() ejecutado para usuario ${userId}`);
     }

@@ -40,7 +40,7 @@ export const useSales = () => {
   } = useGenericFetch<VentaWithDetails>(endpoint, {
     initialFetch: false,
     transform: data => {
-      // API returns: { success: true, data: { data: [...], total: N } }
+      
       const payload = data?.data;
       const ventasArray = Array.isArray(payload?.data)
         ? payload.data
@@ -280,7 +280,7 @@ export const useSales = () => {
     setError(null);
   }, []);
 
-  // Escuchar eventos de actualización de ventas
+  
   useEffect(() => {
     const handleUpdateSales = () => {
       getVentas(currentFilters);

@@ -33,10 +33,10 @@ export default function NuevoServicioPage() {
   const { habitaciones, getHabitaciones } = useHabitaciones();
   const { startTimer } = useTimer();
 
-  // Form data
+  
   const [formData, setFormData] = useState({
-    clientes: [] as string[], // UUID/text ID support
-    usuarios: [] as string[], // UUID/text ID support
+    clientes: [] as string[], 
+    usuarios: [] as string[], 
     habitacion_id: '' as string,
     precio_habitacion: 0,
     tiempo_habitacion: 0,
@@ -46,11 +46,11 @@ export default function NuevoServicioPage() {
     tiempo: 0
   });
 
-  // Modal state
+  
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [servicioDataToSubmit, setServicioDataToSubmit] = useState<any>(null);
 
-  // Calculated values
+  
   const [precioHabitacion, setPrecioHabitacion] = useState(0);
   const [tiempoHabitacion, setTiempoHabitacion] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
@@ -72,7 +72,7 @@ export default function NuevoServicioPage() {
     display: montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
   });
 
-  // Dynamic limits calculation
+  
   const {
     selectedRoom,
     selectedClientData,
@@ -95,7 +95,7 @@ export default function NuevoServicioPage() {
     pagosMixtos
   });
 
-  // Format number with thousand separators
+  
   const formatNumberWithSeparators = (value: number): string => {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
@@ -104,16 +104,16 @@ export default function NuevoServicioPage() {
     await Promise.all([fetchClients(), refetchAnfitrionas(), getHabitaciones()]);
   }, [fetchClients, refetchAnfitrionas, getHabitaciones]);
 
-  // Generate random code function
+  
   const generateCode = generateRandomCode;
 
   useRefreshOnFocus(refreshLookupData);
 
-  // Calculate totals when form data changes
+  
   useEffect(() => {
-    // LÃ³gica: Si el nÃºmero de clientes es mayor al de anfitrionas y la habitaciÃ³n NO tiene comisiÃ³n,
-    // el precio de la habitaciÃ³n y el servicio se multiplican por el nÃºmero de clientes seleccionados.
-    // En otros casos, se multiplica por el nÃºmero de anfitrionas.
+    
+    
+    
     const cantidadAnfitrionas = formData.usuarios.length || 1;
     const cantidadClientes = formData.clientes.length || 1;
     let multiplicadorServicio = cantidadAnfitrionas;
@@ -128,7 +128,7 @@ export default function NuevoServicioPage() {
       multiplicadorHabitacion = cantidadClientes;
     }
 
-    // Si la habitaciÃ³n tiene comisiÃ³n mayor a cero, NO multiplicar el precio de la habitaciÃ³n
+    
     if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
       multiplicadorHabitacion = 1;
     }
@@ -136,7 +136,7 @@ export default function NuevoServicioPage() {
     const nuevoSubTotal = formData.precio_servicio * multiplicadorServicio;
     const precioHabitacionTotal = precioHabitacion * multiplicadorHabitacion;
 
-    // Calcular IVA sobre el precio de servicio ya multiplicado
+    
     let nuevoIVA = 0;
     if (formData.metodo_pago === 'tarjeta') {
       nuevoIVA = Math.floor(nuevoSubTotal * 0.2);
@@ -174,7 +174,7 @@ export default function NuevoServicioPage() {
     selectedRoom
   ]);
 
-  // Update habitacion data when selected
+  
   useEffect(() => {
     if (formData.habitacion_id) {
       if (selectedRoom) {
@@ -243,7 +243,7 @@ export default function NuevoServicioPage() {
       return;
     }
 
-    // Preparar datos del servicio
+    
     const normalizeId = (id: string) => {
       const num = Number(id);
       return Number.isNaN(num) ? id : num;
@@ -251,8 +251,8 @@ export default function NuevoServicioPage() {
 
     const servicioData = {
       codigo: generateCode(),
-      cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null, // Enviamos el primero como principal
-      clientes: formData.clientes.map(normalizeId), // Enviamos todos los clientes
+      cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null, 
+      clientes: formData.clientes.map(normalizeId), 
       habitacion_id: formData.habitacion_id,
       precio_habitacion: precioHabitacion,
       precio_servicio: formData.precio_servicio,
@@ -354,7 +354,7 @@ export default function NuevoServicioPage() {
     boletaWindow.print();
   };
 
-  // FunciÃ³n para enviar el servicio despuÃ©s de confirmar
+  
   const confirmAndSubmit = async () => {
     if (!servicioDataToSubmit) return;
 
@@ -373,7 +373,7 @@ export default function NuevoServicioPage() {
 
       if (data.success) {
         if (selectedRoom) {
-          // Obtener nombres de anfitrionas seleccionadas
+          
           const anfitrionasSeleccionadas = servicioDataToSubmit.usuarios
             .map((userId: any) => {
               const anfitriona = anfitrionas.find(
@@ -393,14 +393,14 @@ export default function NuevoServicioPage() {
             clientes.find(
               c => String(c.id_cliente ?? c.id ?? '') === String(servicioDataToSubmit.cliente_id)
             )?.nombre || '',
-            anfitrionasSeleccionadas // Pasar las anfitrionas
+            anfitrionasSeleccionadas 
           );
         }
 
-        // Invalidar cache de React Query para servicios
+        
         queryClient.invalidateQueries({ queryKey: ['/api/servicios'] });
 
-        // Refrescar maestros para que el siguiente alta use datos actualizados
+        
         await refreshLookupData();
 
         toast.success(`Servicio creado exitosamente`);
@@ -442,7 +442,7 @@ export default function NuevoServicioPage() {
 
       <div className='p-4 sm:p-6 lg:p-8 bg-white mx-4 sm:mx-6 lg:mx-8 space-y-4 sm:space-y-6 shadow-md rounded-xl'>
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
-          {/* HabitaciÃ³n */}
+          {}
           <RoomSelect
             habitaciones={habitaciones}
             value={formData.habitacion_id ? formData.habitacion_id.toString() : ''}
@@ -457,11 +457,11 @@ export default function NuevoServicioPage() {
             required={true}
             showPrice={true}
             showTime={true}
-            filterByStatus={1} // Solo habitaciones disponibles
+            filterByStatus={1} 
             requireCompleteConfig={true}
             className='w-full'
           />
-          {/* Anfitrionas */}
+          {}
           <HostessSelect
             anfitrionas={anfitrionas}
             value={formData.usuarios}
@@ -477,7 +477,7 @@ export default function NuevoServicioPage() {
             maxSelection={maxHostesses}
             className='w-full'
           />
-          {/* Cliente */}
+          {}
           <CustomersSelect
             clientes={clientes}
             value={formData.clientes}
@@ -526,7 +526,7 @@ export default function NuevoServicioPage() {
         )}
 
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
-          {/* Precio de servicio */}
+          {}
           <div>
             <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase'>
               PRECIO DE SERVICIO
@@ -566,7 +566,7 @@ export default function NuevoServicioPage() {
             </div>
           </div>
 
-          {/* MÃ©todo de pago */}
+          {}
           <div>
             <PaymentMethodSelect
               value={formData.metodo_pago}
@@ -595,7 +595,7 @@ export default function NuevoServicioPage() {
             />
           </div>
 
-          {/* IVA */}
+          {}
           <div>
             <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase'>
               IMPUESTO IVA (20%)
@@ -749,7 +749,7 @@ export default function NuevoServicioPage() {
         )}
 
         {false && precioHabitacionBoleta > 0 && null}
-        {/* Total y botÃ³n centrados */}
+        {}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
             TOTAL
@@ -770,7 +770,7 @@ export default function NuevoServicioPage() {
         </div>
       </div>
 
-      {/* Modal de confirmaciÃ³n */}
+      {}
       {showConfirmModal && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200'>

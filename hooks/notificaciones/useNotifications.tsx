@@ -30,7 +30,7 @@ export function useNotifications() {
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
     queryKey: ['notifications', 'pending-count'],
     queryFn: async () => {
-      // No pedir conteos si no hay usuario o es página pública
+      
       const isPublic = !pathname || pathname === '/' || pathname === '/login';
       if (!user || isPublic) return { pedidosCount: 0, solicitudesCount: 0 };
 
@@ -41,7 +41,7 @@ export function useNotifications() {
     staleTime: 20000,
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
-    enabled: !!user // Solo habilitar si hay usuario
+    enabled: !!user 
   });
 
   useEffect(() => {
@@ -78,10 +78,10 @@ export function useNotifications() {
       const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
       const shouldShowAlert = isCajeroOrAdmin;
 
-      // Actualizar el estado de la aplicación siempre
+      
       appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
 
-      // Solo mostrar alerta intrusiva si está en el dashboard
+      
       if (!shouldShowAlert) {
         return;
       }
@@ -138,7 +138,7 @@ export function useNotifications() {
         return;
       }
 
-      // Solo mostrar alerta intrusiva si está en el dashboard
+      
       if (!shouldShowAlert) {
         return;
       }

@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 import { logger } from '@/lib/utils/logger';
 import { env } from '@/lib/utils/env';
 
-// CSP Nonce middleware
+
 function addCspHeaders(request: NextRequest): {
   nonce: string;
   cspHeader: string;
@@ -100,31 +100,31 @@ const AUTHENTICATED_ONLY_APIS = [
   '/api/codigo',
   '/api/users/user',
   '/api/users',
-  // Attendance — acceso por autenticacion, sin verificacion de permisos extra
+  
   '/api/attendance',
   '/api/attendance-stats',
-  // Anticipos — acceso por autenticacion, sin verificacion de permisos extra
+  
   '/api/anticipos',
-  // Tips — acceso por autenticacion
+  
   '/api/tips',
-  // Overtime — acceso por autenticacion
+  
   '/api/overtime',
-  // Pedidos — acceso por autenticacion
+  
   '/api/orders',
-  // Comisiones — acceso por autenticacion
+  
   '/api/commissions',
-  // Servicios — acceso por autenticacion
+  
   '/api/servicios',
-  // Ventas — acceso por autenticacion
+  
   '/api/sales',
-  // Caja — acceso por autenticacion
+  
   '/api/cashregister',
   '/api/caja',
-  // Cuentas — acceso por autenticacion
+  
   '/api/cuentas',
-  // Gratificaciones — acceso por autenticacion
+  
   '/api/gratificaciones',
-  // Otros endpoints de empleados
+  
   '/api/stats/logged-users',
   '/api/anfitrionas',
   '/api/garzones',
@@ -179,9 +179,9 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/cajero-horas-extras': { module: 'overtime', action: 'view' }
 };
 
-// Solo rutas de administracion que requieren verificacion de permisos explicita.
-// Los endpoints de empleados (anticipos, attendance, comisiones, servicios, etc.)
-// estan en AUTHENTICATED_ONLY_APIS — solo requieren token valido.
+
+
+
 const apiRoutePermissions: Record<string, { module: string; action: string }> = {
   '/api/roles': { module: 'roles', action: 'view' },
   '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
@@ -235,7 +235,7 @@ export default async function proxy(request: NextRequest) {
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-  // Add CSP nonce to request headers
+  
   const { nonce, cspHeader, headers: cspRequestHeaders } = addCspHeaders(request);
 
   const origin = request.headers.get('origin');

@@ -37,26 +37,19 @@ export default function DevolucionesServiciosPage() {
   const { setRefreshCallback } = useAnulacionContext();
   const { setRefreshCallback: setTimerRefreshCallback } = useTimer();
 
-  // Sincronizar temporizadores con el estado de servicios
   useServicioTimerSync();
 
-  // Estado para mostrar servicios anulados
   const [showAnulados, setShowAnulados] = useState(false);
 
-  // Configurar callback de actualización para el contexto de anulación
   const updateCallback = useCallback(() => {
     logger.info('🔄 Actualizando servicios después de anulación');
     getServicios();
   }, [getServicios]);
 
-  // Configurar callback de actualización para cuando termine un timer
   const timerUpdateCallback = useCallback(() => {
     logger.info('🔄 Actualizando servicios después de timer terminado');
-    // Actualizar solo los datos sin recargar la página
-    // Los datos se actualizarán automáticamente cuando el timer termine
   }, []);
 
-  // Refs para callbacks estables
   const updateCallbackRef = useRef(updateCallback);
   const timerUpdateCallbackRef = useRef(timerUpdateCallback);
 
@@ -76,12 +69,10 @@ export default function DevolucionesServiciosPage() {
     setTimerRefreshCallback(() => timerUpdateCallbackRef.current);
   }, [setTimerRefreshCallback]);
 
-  // Filtrar servicios según el estado seleccionado
   const serviciosFiltrados = showAnulados
-    ? servicios.filter(servicio => servicio.estado === 3) // Solo anulados
-    : servicios.filter(servicio => servicio.estado === 1 || servicio.estado === 2); // Activos y pendientes
+    ? servicios.filter(servicio => servicio.estado === 3)
+    : servicios.filter(servicio => servicio.estado === 1 || servicio.estado === 2);
 
-  // Filtrar por término de búsqueda y método de pago
   const filteredServicios = serviciosFiltrados.filter(servicio => {
     const matchesSearch =
       filters.searchTerm === '' ||
@@ -95,14 +86,12 @@ export default function DevolucionesServiciosPage() {
     return matchesSearch && matchesPayment;
   });
 
-  // Calcular paginación
   const totalPages = Math.ceil(filteredServicios.length / filters.rowsPerPage);
   const startIndex = (filters.currentPage - 1) * filters.rowsPerPage;
   const endIndex = startIndex + filters.rowsPerPage;
   const paginatedServicios = filteredServicios.slice(startIndex, endIndex);
 
   useEffect(() => {
-    // En la página de devoluciones, obtener también servicios con estado 2 y 3
     getServicios();
   }, []);
 
@@ -156,7 +145,7 @@ export default function DevolucionesServiciosPage() {
             />
           </div>
 
-          {/* Paginación */}
+          {}
           {totalPages > 1 && (
             <div className='mt-4 sm:mt-6 flex justify-center'>
               <Paginate
@@ -169,7 +158,7 @@ export default function DevolucionesServiciosPage() {
         </CardContent>
       </Card>
 
-      {/* Modal de Detalles */}
+      {}
       <ServicioDetailModal
         open={isDetailModalOpen}
         onOpenChange={setIsDetailModalOpen}
@@ -178,7 +167,7 @@ export default function DevolucionesServiciosPage() {
         metodoPagoLabels={metodoPagoLabels}
       />
 
-      {/* Modal de Anulación */}
+      {}
       <AnulacionModal
         open={isAnulacionModalOpen}
         onOpenChange={setIsAnulacionModalOpen}

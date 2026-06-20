@@ -1,17 +1,9 @@
-/**
- * Vitest Setup - Configuración global para tests unitarios
- *
- * Proporciona:
- * - Mocks de Next.js
- * - Mocks de React Query
- * - Mocks de Redis
- * - Extensiones de expect
- */
+
 
 import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom';
 
-// Mock de Next.js
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
@@ -45,7 +37,7 @@ vi.mock('next/font/google', () => ({
   })
 }));
 
-// Mock de React Query
+
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(() => ({
     data: null,
@@ -63,7 +55,7 @@ vi.mock('@tanstack/react-query', () => ({
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
-// Mock de cookies
+
 vi.mock('next/headers', () => ({
   cookies: () => ({
     get: vi.fn(),
@@ -74,7 +66,7 @@ vi.mock('next/headers', () => ({
   })
 }));
 
-// Mock de window
+
 global.window =
   global.window ||
   ({
@@ -96,7 +88,7 @@ global.window =
     dispatchEvent: vi.fn()
   } as any);
 
-// Mock de matchMedia
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -111,7 +103,7 @@ Object.defineProperty(window, 'matchMedia', {
   }))
 });
 
-// Mock de IntersectionObserver
+
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
@@ -119,14 +111,14 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   takeRecords: vi.fn()
 }));
 
-// Mock de ResizeObserver
+
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn()
 }));
 
-// Mock de Notifications API
+
 if (typeof window !== 'undefined') {
   (window as any).Notification = {
     permission: 'default',
@@ -134,13 +126,13 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Mock de navigator
+
 Object.defineProperty(navigator, 'onLine', {
   writable: true,
   value: true
 });
 
-// Cleanup después de cada test
+
 afterEach(() => {
   vi.clearAllMocks();
 });

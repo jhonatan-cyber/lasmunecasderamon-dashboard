@@ -32,7 +32,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
 
     return (
       <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
-        {/* Total Órdenes */}
+        {}
         <Card
           style={{
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -66,7 +66,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
           </CardContent>
         </Card>
 
-        {/* Pendientes */}
+        {}
         <Card
           style={{
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -100,7 +100,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
           </CardContent>
         </Card>
 
-        {/* Completadas */}
+        {}
         <Card
           style={{
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -134,7 +134,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
           </CardContent>
         </Card>
 
-        {/* Canceladas */}
+        {}
         <Card
           style={{
             backgroundColor: 'rgba(244, 63, 94, 0.1)',
@@ -179,7 +179,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
 
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-3 mb-6 px-4 sm:px-8'>
-      {/* Total Solicitudes */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -210,7 +210,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
         </CardContent>
       </Card>
 
-      {/* Pendientes */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -241,7 +241,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
         </CardContent>
       </Card>
 
-      {/* Aprobadas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',

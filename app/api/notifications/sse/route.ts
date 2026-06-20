@@ -39,7 +39,6 @@ export async function GET(request: Request) {
           try {
             controller.close();
           } catch {
-            // Ignore close-after-close errors during cleanup.
           } finally {
             cleanup();
           }

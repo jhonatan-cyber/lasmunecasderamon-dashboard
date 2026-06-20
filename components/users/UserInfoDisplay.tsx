@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { AtSign, Phone, MapPin, User, Calendar, DollarSign, PiggyBank, Home } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
-// Función para formatear RUT chileno
+
 const formatRUTDisplay = (run: string): string => {
   if (!run) return '-';
   const clean = run.replace(/[^0-9kK]/gi, '').toUpperCase();
@@ -92,7 +92,7 @@ function UserInfoDisplayComponent({
 
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-      {/* Columna izquierda - Información personal */}
+      {}
       <div className='space-y-2'>
         <div className='flex items-center gap-2'>
           <Avatar className='h-8 w-8 sm:h-10 sm:w-10'>
@@ -176,7 +176,7 @@ function UserInfoDisplayComponent({
         </div>
       </div>
 
-      {/* Columna derecha - Información financiera */}
+      {}
       <div className='space-y-2'>
         <div className='text-xs font-medium text-gray-700 mb-2'>Información Financiera</div>
 

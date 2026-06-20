@@ -16,7 +16,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// ─── grantAnticipo ───────────────────────────────────────────────────────────
+
 
 describe('AnticipoService.grantAnticipo', () => {
   it('lanza ValidationError si monto es 0', async () => {
@@ -51,7 +51,7 @@ describe('AnticipoService.grantAnticipo', () => {
   });
 });
 
-// ─── processAnticipoFromCommand ──────────────────────────────────────────────
+
 
 describe('AnticipoService.processAnticipoFromCommand', () => {
   const pendientes = [

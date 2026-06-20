@@ -1,4 +1,4 @@
-// Tipos para el sistema de comisiones
+
 
 export type CommissionStatus = "por_pagar" | "pagado" | "anulado";
 
@@ -7,14 +7,14 @@ export type CommissionType = "producto" | "servicio" | "paquete" | "evento";
 export interface Commission {
   id: string;
   employeeId: string;
-  employeeName: string; // anfitriona
-  nick: string; // nick
-  venta: number; // venta
-  servicio: number; // servicio
-  total: number; // total (suma de venta + servicio)
+  employeeName: string; 
+  nick: string; 
+  venta: number; 
+  servicio: number; 
+  total: number; 
   status: CommissionStatus;
   
-  // Campos adicionales para compatibilidad con el frontend existente
+  
   saleAmount?: number;
   commissionRate?: number;
   commissionAmount?: number;
@@ -24,7 +24,7 @@ export interface Commission {
   description?: string;
   clientName?: string;
   
-  // Campos de usuario/foto
+  
   empleado_foto?: string;
   image_version?: string;
 }
@@ -43,7 +43,7 @@ export interface CommissionStats {
   avgCommissionRate: number;
 }
 
-// Tipos para respuestas de API
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

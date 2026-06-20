@@ -9,13 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import logger from '@/lib/utils/logger';
 
-import {
-  X,
-  Calendar,
-  User,
-  Printer,
-  Download
-} from 'lucide-react';
+import { X, Calendar, User, Printer, Download } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useUserImage } from '@/contexts/UserImageContext';
 import {
@@ -36,7 +30,6 @@ import {
 } from '@/lib/utils/formatters';
 import type { Caja } from '@/types/caja';
 
-// Estilos para impresiÃ³n
 const printStyles = `
   @media print {
     .print\\:overflow-visible {
@@ -60,7 +53,6 @@ const printStyles = `
   }
 `;
 
-// FunciÃ³n para obtener el dÃ­a de la semana en espaÃ±ol
 const getDiaSemana = (fecha: string | Date): string => {
   const date = new Date(fecha);
   const dias = ['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'];
@@ -73,7 +65,6 @@ interface CajaDetailsProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Skeleton para tabla
 function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className='space-y-3'>
@@ -89,7 +80,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
   const cajaId = caja?.id_caja;
   const { imageVersion } = useUserImage();
 
-  // FunciÃ³n para determinar si estamos en modo impresiÃ³n
   const isPrinting = () => {
     if (typeof window !== 'undefined') {
       return window.matchMedia('print').matches;
@@ -97,7 +87,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     return false;
   };
 
-  // Obtener todos los items para impresiÃ³n o paginados para vista normal
   const getVentasForDisplay = () => {
     return isPrinting() ? filteredVentas : getPaginatedItems(filteredVentas, ventasPage);
   };
@@ -110,17 +99,14 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     return isPrinting() ? retiros : getPaginatedItems(retiros, retirosPage);
   };
 
-  // Estados para ventas, retiros y servicios
   const [ventas, setVentas] = useState<any[]>([]);
   const [retiros, setRetiros] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
 
-  // Estados de carga
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [retirosLoading, setRetirosLoading] = useState(false);
   const [loadingServicios, setLoadingServicios] = useState(false);
 
-  // Estados para ventas por categorÃ­a
   const [ventasTragosChicas, setVentasTragosChicas] = useState<any>({
     total_venta: 0,
     propinas: 0
@@ -131,20 +117,16 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
   const [loadingChampagne, setLoadingChampagne] = useState(false);
   const [loadingBarras, setLoadingBarras] = useState(false);
 
-  // Estados para filtros
   const [searchVentas, setSearchVentas] = useState('');
   const [searchServicios, setSearchServicios] = useState('');
 
-  // PaginaciÃ³n
   const [ventasPage, setVentasPage] = useState(1);
   const [serviciosPage, setServiciosPage] = useState(1);
   const [retirosPage, setRetirosPage] = useState(1);
   const itemsLimit = 10;
 
-  // Tab activa
   const [activeTab, setActiveTab] = useState('resumen');
 
-  // Efecto para cargar datos cuando el modal abre
   useEffect(() => {
     if (open && cajaId) {
       fetchRetiros();
@@ -155,7 +137,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, cajaId]);
 
-  // Filtrar ventas
   const filteredVentas = useMemo(() => {
     if (!searchVentas.trim()) return ventas;
     return ventas.filter(
@@ -166,7 +147,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     );
   }, [ventas, searchVentas]);
 
-  // Filtrar servicios
   const filteredServicios = useMemo(() => {
     if (!searchServicios.trim()) return servicios;
     return servicios.filter(
@@ -224,16 +204,13 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       const data = await resp.json().catch(() => ({ success: false }));
       logger.info('API Ventas response:', data);
 
-      // Manejar diferentes estructuras de respuesta
       let ventasData = [];
       if (data.success) {
         if (Array.isArray(data.data)) {
           ventasData = data.data;
         } else if (data.data?.data && Array.isArray(data.data.data)) {
-          // Estructura anidada: {success: true, data: {data: [...], total: N}}
           ventasData = data.data.data;
         } else if (data.data?.data && Array.isArray(data.data.data.data)) {
-          // Doble anidaciÃ³n
           ventasData = data.data.data.data;
         }
       } else if (Array.isArray(data)) {
@@ -260,16 +237,13 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
       const data = await resp.json().catch(() => ({ success: false }));
       logger.info('API Servicios response:', data);
 
-      // Manejar diferentes estructuras de respuesta
       let serviciosData = [];
       if (data.success) {
         if (Array.isArray(data.data)) {
           serviciosData = data.data;
         } else if (data.data?.data && Array.isArray(data.data.data)) {
-          // Estructura anidada: {success: true, data: {data: [...], total: N}}
           serviciosData = data.data.data;
         } else if (data.data?.data?.data && Array.isArray(data.data.data.data)) {
-          // Doble anidaciÃ³n
           serviciosData = data.data.data.data;
         }
       } else if (Array.isArray(data)) {
@@ -285,7 +259,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     }
   };
 
-  // CÃ¡lculos financieros
   const totalPropinas =
     Number(ventasTragosChicas?.propinas || 0) +
     Number(ventasChampagne?.propinas || 0) +
@@ -318,7 +291,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     { concepto: 'Subtotal antes de egresos', monto: totalMetodosPago }
   ];
 
-  // Pagination
   const getPaginatedItems = (items: any[], page: number) => {
     const safeItems = Array.isArray(items) ? items : [];
     const startIndex = (page - 1) * itemsLimit;
@@ -330,7 +302,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     return Math.ceil(safeItems.length / itemsLimit);
   };
 
-  // Estados de carga combinados
   const isLoadingSummary = loadingTragosChicas || loadingChampagne || loadingBarras;
 
   const estadoInfo =
@@ -359,7 +330,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     distribucionDinero
   });
 
-  // Función para imprimir tabla completa con título personalizado
   const handlePrint = () => {
     const printContent = generatePrintContent(getCajaExportContext());
     const printWindow = window.open('', '_blank');
@@ -374,13 +344,11 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     }
   };
 
-  // Función para formatear fecha corta para nombres de archivo
   const formatFechaCorta = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toISOString().split('T')[0];
   };
 
-  // Función para exportar a PDF mejorado con logo y gráficos
   const exportToPDF = async () => {
     try {
       const { jsPDF } = await import('jspdf');
@@ -415,7 +383,11 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         40
       );
       doc.text(`Cajero: ${exportContext.caja.cajero_nombre}`, 14, 46);
-      doc.text(`Pestaña: ${exportContext.activeTab.charAt(0).toUpperCase() + exportContext.activeTab.slice(1)}`, 120, 40);
+      doc.text(
+        `Pestaña: ${exportContext.activeTab.charAt(0).toUpperCase() + exportContext.activeTab.slice(1)}`,
+        120,
+        40
+      );
       doc.text(`Estado: ${exportContext.estadoInfo.label}`, 120, 46);
 
       if (exportContext.activeTab === 'resumen') {
@@ -493,8 +465,14 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         const finalY = lastTable?.finalY || 100;
         doc.setFontSize(11);
         doc.setTextColor(40, 40, 40);
-        const totalVentas = exportContext.filteredVentas.reduce((sum, v) => sum + (v.total || 0), 0);
-        const totalPropinas = exportContext.filteredVentas.reduce((sum, v) => sum + (v.propina || 0), 0);
+        const totalVentas = exportContext.filteredVentas.reduce(
+          (sum, v) => sum + (v.total || 0),
+          0
+        );
+        const totalPropinas = exportContext.filteredVentas.reduce(
+          (sum, v) => sum + (v.propina || 0),
+          0
+        );
         doc.text(`Total Ventas: $${totalVentas.toLocaleString('es-CL')}`, 14, finalY + 12);
         doc.text(`Total Propinas: $${totalPropinas.toLocaleString('es-CL')}`, 14, finalY + 19);
       }
@@ -504,7 +482,10 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         const finalY = lastTable?.finalY || 100;
         doc.setFontSize(11);
         doc.setTextColor(40, 40, 40);
-        const totalServicios = exportContext.filteredServicios.reduce((sum, s) => sum + (s.total || 0), 0);
+        const totalServicios = exportContext.filteredServicios.reduce(
+          (sum, s) => sum + (s.total || 0),
+          0
+        );
         doc.text(`Total Servicios: $${totalServicios.toLocaleString('es-CL')}`, 14, finalY + 12);
       }
 
@@ -549,7 +530,9 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
         );
       }
 
-      doc.save(`caja-${exportContext.activeTab}-${formatFechaCorta(exportContext.caja.fecha_apertura)}.pdf`);
+      doc.save(
+        `caja-${exportContext.activeTab}-${formatFechaCorta(exportContext.caja.fecha_apertura)}.pdf`
+      );
     } catch (error) {
       logger.captureException(error, { context: 'CajaDetails:exportToPDF' });
     }
@@ -614,7 +597,6 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     return startY + cardHeight;
   };
 
-  // FunciÃ³n para formatear fecha corta para nombres de archivo
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: printStyles }} />
@@ -655,7 +637,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </DialogHeader>
 
-          {/* Quick Stats - Sticky Header */}
+          {}
           <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
             <div className='space-y-4'>
               <CajaPaymentSummary
@@ -707,9 +689,9 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </TabsList>
 
             <div className='flex-1 overflow-y-auto custom-scrollbar p-6 print:overflow-visible print:max-h-none'>
-              {/* TAB RESUMEN */}
+              {}
               <TabsContent value='resumen' className='mt-0 space-y-8'>
-                {/* Info de Caja */}
+                {}
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2'>
                   <div className='bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-700'>
                     <div className='mb-3'>
@@ -776,7 +758,8 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                         </div>
                       </div>
                       <p className='text-sm text-gray-600 dark:text-gray-400'>
-                        {formatFechaLarga(caja.fecha_cierre)} â€¢ {formatSoloHora(caja.fecha_cierre)}
+                        {formatFechaLarga(caja.fecha_cierre)} â€¢{' '}
+                        {formatSoloHora(caja.fecha_cierre)}
                       </p>
                     </div>
                   )}
@@ -810,7 +793,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                 />
               </TabsContent>
 
-              {/* TAB VENTAS */}
+              {}
               <TabsContent value='ventas' className='mt-0 space-y-4'>
                 <CajaVentasTable
                   loading={loadingVentas}
@@ -826,7 +809,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                 />
               </TabsContent>
 
-              {/* TAB SERVICIOS */}
+              {}
               <TabsContent value='servicios' className='mt-0 space-y-4'>
                 <CajaServiciosTable
                   loading={loadingServicios}
@@ -841,7 +824,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                 />
               </TabsContent>
 
-              {/* TAB RETIROS */}
+              {}
               <TabsContent value='retiros' className='mt-0 space-y-4'>
                 <CajaRetirosList
                   loading={retirosLoading}
@@ -855,7 +838,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </Tabs>
 
-          {/* Footer */}
+          {}
           <div className='flex-shrink-0 border-t border-slate-100 dark:border-slate-800 p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl print:hidden'>
             <Button
               variant='outline'
@@ -872,7 +855,3 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     </>
   );
 }
-
-
-
-

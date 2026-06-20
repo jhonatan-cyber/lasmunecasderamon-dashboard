@@ -26,7 +26,7 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
 
   return (
     <div className='grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
-      {/* Total a Pagar (Pendientes de Cobro) */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -64,7 +64,7 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
         </CardContent>
       </Card>
 
-      {/* Total Horas Registradas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(245, 158, 11, 0.1)',
@@ -99,7 +99,7 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
         </CardContent>
       </Card>
 
-      {/* Personal con Horas Extras */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
@@ -135,7 +135,7 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
         </CardContent>
       </Card>
 
-      {/* Promedio por Hora */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',

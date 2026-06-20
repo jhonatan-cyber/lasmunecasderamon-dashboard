@@ -101,7 +101,7 @@ export default function GratificacionesDetailModal({
 
         <div className='flex-1 overflow-y-auto px-6 py-6'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            {/* Información Principal */}
+            {}
             <div className='space-y-6'>
               <section>
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>
@@ -147,7 +147,7 @@ export default function GratificacionesDetailModal({
               </section>
             </div>
 
-            {/* Auditoría y Descripción */}
+            {}
             <div className='space-y-6'>
               <section>
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3'>

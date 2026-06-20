@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
-// Mock de funciones necesarias de db y BaseRepository
+
 const queryMock = async (sql, params = []) => {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -60,7 +60,7 @@ const BaseRepository = {
 
 const getNowInBusinessTimezone = () => new Date();
 
-// Implementación mínima del Repositorio para la prueba
+
 class CommissionRepository {
   static async summary() {
     const summary = await queryMock(`

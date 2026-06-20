@@ -36,8 +36,8 @@ export interface Timer {
   servicioId: string;
   roomId: string;
   roomName: string;
-  duration: number; // en minutos
-  remainingTime: number; // en segundos
+  duration: number; 
+  remainingTime: number; 
   isActive: boolean;
   isPaused: boolean;
   pausedByTemp?: boolean;
@@ -137,12 +137,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
   const { modalState, showConfirm, closeModal } = useConfirmModal();
 
-  // Exponer setRefreshCallback que guarda en ref en lugar de estado
+  
   const setRefreshCallback = useCallback((callback: (servicioId?: string | number) => void) => {
     refreshCallbackRef.current = callback;
   }, []);
 
-  // El array de timers para compatibilidad con componentes que no usan signals
+  
   const timers = useMemo(
     () => activeTimers.value.map(t => t.toPlainObject() as Timer),
     [activeTimers.value]
@@ -156,8 +156,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showTimerExpiredNotification = useCallback(
     (timer: Timer) => {
-      // PROTECCIÓN CRÍTICA: No mostrar notificación si el timer aún tiene tiempo.
-      // Esto previene que falsos positivos de sincronización disparen el modal.
+      
+      
       if (timer.remainingTime > 0) {
         logger.warn(
           `[TimerContext] Ignorado modal expirado para id:${timer.id} (${timer.roomName}), tiene ${timer.remainingTime}s restantes.`
@@ -216,10 +216,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (timer.isTemporary) {
         activeTimers.value = activeTimers.peek().filter(x => x.id !== timer.id);
-        // Reanudar el timer PRINCIPAL localmente (isPaused=false) SIN llamar al API
-        // El callback onExpire del temporal ya manejó la limpieza en servidor (PATCH a estado=0
-        // que dispara resumeRoomLogic). Llamar PATCH estado:2 aparte RACEARÍA con eso.
-        // Solo necesitamos que el timer local del principal deje de estar pausado.
+        
+        
+        
+        
         const mainTimer = activeTimers
           .peek()
           .find(t => t.servicioId === timer.servicioId && !t.isTemporary);
@@ -233,7 +233,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
         stopTimer(timer.id, false, timer);
 
-        // Llamar al callback de refresh para actualizar la lista de servicios
+        
         if (refreshCallbackRef.current) {
           logger.info('[TimerContext] Llamando refreshCallback para:', timer.servicioId);
           refreshCallbackRef.current(timer.servicioId);
@@ -272,7 +272,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateTimerByServicioId = useCallback((sid: string, dur: number) => {
     const target = activeTimers.peek().find(t => t.servicioId === sid);
     if (target) {
-      // En una clase con props readonly recreamos la instancia si hay cambio estructural
+      
       activeTimers.value = activeTimers
         .peek()
         .map(t =>
@@ -338,7 +338,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ]
   );
 
-  // Debug: mostrar cuando se inicializa
+  
   useEffect(() => {
     logger.info('[TimerContext] isInitialized', { isInitialized, timersCount: timers.length });
   }, [isInitialized, timers.length]);

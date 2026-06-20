@@ -1,4 +1,4 @@
-// types/asistencia.ts
+
 export interface AsistenciaResumen {
   id_usuario: string;
   nick: string;
@@ -22,7 +22,7 @@ export interface AsistenciaStats {
 
 export interface AsistenciaResponse {
   success: boolean;
-  data?: AsistenciaResumen[]; // Hacemos data opcional con el operador ?
+  data?: AsistenciaResumen[]; 
   error?: string;
   details?: unknown;
 }

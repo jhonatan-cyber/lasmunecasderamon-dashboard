@@ -60,7 +60,7 @@ export default function OvertimeTable({
     );
   };
 
-  // Vista de tarjetas para móviles
+  
   const renderMobileCardView = () => (
     <div className='lg:hidden space-y-4'>
       {loading
@@ -140,7 +140,7 @@ export default function OvertimeTable({
     </div>
   );
 
-  // Vista de tabla para desktop
+  
   const renderDesktopTableView = () => (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>

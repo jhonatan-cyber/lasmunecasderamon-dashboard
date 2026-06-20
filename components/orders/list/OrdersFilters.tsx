@@ -60,7 +60,7 @@ export function AdminOrdersFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
-          {/* BÃºsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Buscar
@@ -77,7 +77,7 @@ export function AdminOrdersFilters({
             />
           </div>
 
-          {/* Ordenar por */}
+          {}
           <div className='w-full lg:w-[180px]'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Ordenar por
@@ -106,7 +106,7 @@ export function AdminOrdersFilters({
             </div>
           </div>
 
-          {/* Mostrar (PageSize) */}
+          {}
           <div className='w-full lg:w-[100px]'>
             <FilterSelect
               value={String(rowsPerPage)}
@@ -120,7 +120,7 @@ export function AdminOrdersFilters({
             />
           </div>
 
-          {/* BotÃ³n Limpiar con Ã­cono trash */}
+          {}
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>

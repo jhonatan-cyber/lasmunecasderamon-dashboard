@@ -115,7 +115,7 @@ export function usePermissions() {
     }
   }, []);
 
-  // Agrupar permisos por módulo
+  
   const permissionsByModule = permissions.reduce(
     (acc, permission) => {
       if (!acc[permission.module]) {

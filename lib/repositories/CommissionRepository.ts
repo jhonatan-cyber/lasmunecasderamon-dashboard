@@ -34,7 +34,7 @@ export class CommissionRepository {
   }
 
   static async summary(): Promise<any> {
-    // Obtener totales agregados por tipo de comisión
+    
     const summary = await query<any[]>(`
       SELECT 
         SUM(dc.comision) as total_comisiones,
@@ -48,8 +48,8 @@ export class CommissionRepository {
     
     const data = summary[0] || { total_comisiones: 0, cantidad_comisiones: 0, comision_ventas: 0, comision_servicios: 0 };
     
-    // Calcular porcentajes
-    const total = data.total_comisiones || 1; // Evitar división por cero
+    
+    const total = data.total_comisiones || 1; 
     data.porcentaje_ventas = Math.round(((data.comision_ventas || 0) / total) * 100);
     data.porcentaje_servicios = Math.round(((data.comision_servicios || 0) / total) * 100);
     

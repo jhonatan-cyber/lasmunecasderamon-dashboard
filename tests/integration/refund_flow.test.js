@@ -20,7 +20,7 @@ const queryMock = async (sql, params = []) => {
 
 const generateUUID = () => crypto.randomUUID();
 
-// Minimal implementation of needed parts
+
 const BaseRepository = {
   insert: async (trx, table, data) => {
     const keys = Object.keys(data);
@@ -49,7 +49,7 @@ async function runTests() {
   };
 
   try {
-    // SETUP: Obtener dependencias
+    
     const users = await queryMock('SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1');
     testData.userId = users[0].id_usuario;
 
@@ -60,31 +60,31 @@ async function runTests() {
 
     console.log(`\n[1] Escenario: Cancelación de Venta con Habitación asociada`);
 
-    // 1. Crear una venta activa y marcar habitación como ocupada (simulado)
+    
     testData.saleId = generateUUID();
     await BaseRepository.insert(null, 'ventas', {
       id_venta: testData.saleId,
       habitacion_id: testData.habitId,
       total: 100,
-      estado: 1, // ACTIVA
+      estado: 1, 
       created_by: testData.userId,
       fecha_crea: new Date()
     });
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 2
-    }); // OCUPADA
+    }); 
     console.log('Venta creada y habitación marcada como ocupada.');
 
-    // 2. Ejecutar cancelación (devolución)
+    
     console.log('Cancelando venta (devolución)...');
-    await BaseRepository.update(null, 'ventas', 'id_venta', testData.saleId, { estado: 0 }); // CANCELADA
+    await BaseRepository.update(null, 'ventas', 'id_venta', testData.saleId, { estado: 0 }); 
 
-    // Simulación de RoomManager.resumeRoomLogic: Si se cancela la venta, liberar habitación
+    
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 1
-    }); // LIBRE
+    }); 
 
-    // 3. Verificar resultados
+    
     const sale = (
       await queryMock('SELECT estado FROM ventas WHERE id_venta = ?', [testData.saleId])
     )[0];
@@ -102,33 +102,33 @@ async function runTests() {
 
     console.log(`\n[2] Escenario: Cancelación de Servicio con Habitación asociada`);
 
-    // 1. Crear un servicio activo y marcar habitación como ocupada (simulado)
+    
     testData.serviceId = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: testData.serviceId,
       habitacion_id: testData.habitId,
       total: 50,
-      estado: 1, // ACTIVA
+      estado: 1, 
       created_by: testData.userId,
       fecha_crea: new Date()
     });
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 2
-    }); // OCUPADA
+    }); 
     console.log('Servicio creado y habitación marcada como ocupada.');
 
-    // 2. Ejecutar cancelación (devolución)
+    
     console.log('Cancelando servicio (devolución)...');
     await BaseRepository.update(null, 'servicios', 'id_servicio', testData.serviceId, {
       estado: 0
-    }); // CANCELADO
+    }); 
 
-    // Simulación de liberación
+    
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 1
-    }); // LIBRE
+    }); 
 
-    // 3. Verificar resultados
+    
     const service = (
       await queryMock('SELECT estado FROM servicios WHERE id_servicio = ?', [testData.serviceId])
     )[0];

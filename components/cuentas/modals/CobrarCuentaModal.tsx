@@ -114,7 +114,7 @@ export default function CobrarCuentaModal({
   const productosTabla = useMemo(
     () =>
       detalleResumen.groupedDetalles.map((item, index) => {
-        // Extract hostess IDs - they may be comma-separated if aggregated
+        
         const hostessIds = item.hostess_id
           ? String(item.hostess_id).split(',').map((id: string) => id.trim())
           : [];
@@ -135,7 +135,7 @@ export default function CobrarCuentaModal({
     [detalleResumen.groupedDetalles]
   );
 
-  // Calcular total de comisiones desde los productos
+  
   const totalComisionProductos = useMemo(
     () =>
       detalleResumen.groupedDetalles.reduce((sum, item) => sum + (item.comision || 0), 0),
@@ -147,7 +147,7 @@ export default function CobrarCuentaModal({
   const habitacionValue = habitacionId ?? '';
   const searchRoomValue = searchRoom ?? '';
 
-  // Efecto para cerrar/resettear cuando se cierra el modal
+  
   useEffect(() => {
     if (!open) {
       resetStates();
@@ -317,7 +317,7 @@ export default function CobrarCuentaModal({
                     </div>
                   </div>
 
-                  {/* Repartición de comisiones por anfitriona */}
+                  {}
                   {anfitrionasArray.length > 0 && totalComisionProductos > 0 && (
                     <div className='mt-4 pt-4 border-t'>
                       <Label className='block text-xs font-medium text-gray-500 mb-2'>
@@ -332,7 +332,7 @@ export default function CobrarCuentaModal({
                                 ? String(item.hostess_id).split(',').map((id: string) => id.trim()).filter(Boolean)
                                 : [];
                               if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
-                                // Dividir la comisión entre todas las anfitrionas del producto
+                                
                                 const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
                                 return sum + comisionPorAnfitriona;
                               }

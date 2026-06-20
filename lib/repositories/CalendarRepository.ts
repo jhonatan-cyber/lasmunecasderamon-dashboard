@@ -60,7 +60,7 @@ export class CalendarRepository {
     const pushAsis = await query(`SELECT 'asistencia' as tipo, DATE_FORMAT(a.fecha, '%Y-%m-%d') as fecha, CONCAT(u.nombre, ' ', u.apellido) as codigo, a.estado FROM asistencias a INNER JOIN usuarios u ON u.id_usuario = a.usuario_id WHERE DATE(a.fecha) BETWEEN ? AND ?`, [startDate, endDate]);
     all.push(...(pushAsis as any[]));
 
-    // Formatear y agrupar
+    
     const grouped: Record<string, any[]> = {};
     all.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
        .forEach(x => {
