@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell } from 'lucide-react';
@@ -21,7 +21,7 @@ import { useNotificationsContext } from '@/contexts/NotificationsContext';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { ServiceRequestModal } from './ServiceRequestModal';
-import { appEventBus } from '@/lib/utils/eventBus';
+import { appEventBus, type AppEvents } from '@/lib/utils/eventBus';
 
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
   loading: () => null,
@@ -168,11 +168,11 @@ export function HeaderNotifications() {
   }, []);
 
   useEffect(() => {
-    const handleUpdatePendingOrders = (detail?: { type?: string; orderId?: number | string }) => {
+    const handleUpdatePendingOrders = (detail?: AppEvents['updatePendingOrders']) => {
       if (detail) {
         const { type, orderId } = detail;
-        const normalizedOrderId = String(orderId);
-        if (type === 'order-processed' || type === 'order-deleted') {
+        if ((type === 'order-processed' || type === 'order-deleted') && orderId) {
+          const normalizedOrderId = String(orderId);
           setOrders((prevOrders: any[]) =>
             prevOrders.filter((o: any) => String(getOrderId(o)) !== normalizedOrderId)
           );
