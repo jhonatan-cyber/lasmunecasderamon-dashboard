@@ -105,7 +105,7 @@ export default function OvertimeDetailModal({
 
         <div className='flex-1 overflow-y-auto px-6 py-4'>
           <div className='space-y-4'>
-            {/* Card de Resumen */}
+            {}
             <Card>
               <CardContent className='p-6'>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -148,7 +148,7 @@ export default function OvertimeDetailModal({
             </Card>
           </div>
 
-          {/* Listado de Horas Extras */}
+          {}
           <div className='space-y-4'>
             <div className='flex items-center justify-between'>
               <h4 className='text-sm font-black uppercase tracking-widest text-gray-400'>

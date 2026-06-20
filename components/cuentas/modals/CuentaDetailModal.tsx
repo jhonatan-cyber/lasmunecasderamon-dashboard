@@ -81,7 +81,7 @@ export default function CuentaDetailModal({
   const productosTabla = useMemo(
     () =>
       detalleResumen.groupedDetalles.map((detalle, index) => {
-        // Extract hostess IDs - they may be comma-separated if aggregated
+        
         const hostessIds = detalle.hostess_id
           ? String(detalle.hostess_id)
               .split(',')
@@ -104,7 +104,7 @@ export default function CuentaDetailModal({
     [detalleResumen.groupedDetalles]
   );
 
-  // Calcular repartición de comisiones por anfitriona
+  
   const usuariosCuenta = cuenta?.usuarios ?? [];
   const comisionPorAnfitriona =
     usuariosCuenta.length > 0 && detalleResumen.totalComision > 0
@@ -424,7 +424,7 @@ export default function CuentaDetailModal({
                     emptyMessage='No hay productos registrados en esta cuenta'
                   />
 
-                  {/* Repartición de comisiones por anfitriona */}
+                  {}
                   {comisionPorAnfitriona.length > 0 && (
                     <div className='bg-slate-50 dark:bg-slate-800 rounded-lg p-4'>
                       <h4 className='text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3'>

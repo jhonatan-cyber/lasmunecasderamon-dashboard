@@ -59,77 +59,77 @@ const statusLabels = {
   0: 'Inactiva'
 };
 
-// Función para generar un color basado en el nombre de la categoría
+
 const generateColor = (name: string, id: string) => {
-  // Paleta de colores vibrantes y variados
+  
   const colors = [
-    // Azules
+    
     '#3B82F6',
     '#1D4ED8',
     '#2563EB',
     '#1E40AF',
     '#1E3A8A',
-    // Verdes
+    
     '#10B981',
     '#059669',
     '#047857',
     '#065F46',
     '#064E3B',
-    // Púrpuras
+    
     '#8B5CF6',
     '#7C3AED',
     '#6D28D9',
     '#5B21B6',
     '#4C1D95',
-    // Naranjas
+    
     '#F59E0B',
     '#D97706',
     '#B45309',
     '#92400E',
     '#78350F',
-    // Rojos
+    
     '#EF4444',
     '#DC2626',
     '#B91C1C',
     '#991B1B',
     '#7F1D1D',
-    // Grises
+    
     '#6B7280',
     '#4B5563',
     '#374151',
     '#1F2937',
     '#111827',
-    // Cian
+    
     '#06B6D4',
     '#0891B2',
     '#0E7490',
     '#155E75',
     '#164E63',
-    // Amarillos
+    
     '#84CC16',
     '#65A30D',
     '#4D7C0F',
     '#3F6212',
     '#365314',
-    // Rosas
+    
     '#EC4899',
     '#DB2777',
     '#BE185D',
     '#9D174D',
     '#831843',
-    // Índigo
+    
     '#6366F1',
     '#4F46E5',
     '#4338CA',
     '#3730A3',
     '#312E81',
-    // Esmeralda
+    
     '#10B981',
     '#059669',
     '#047857',
     '#065F46',
     '#064E3B',
-    // Teal
+    
     '#14B8A6',
     '#0D9488',
     '#0F766E',
@@ -137,7 +137,7 @@ const generateColor = (name: string, id: string) => {
     '#134E4A'
   ];
 
-  // Usar el ID para seleccionar un color de manera determinística
+  
   let hash = 0;
   const strId = String(id);
   for (let i = 0; i < strId.length; i++) {
@@ -165,16 +165,16 @@ export default function CategoryCard({
 
   const categoryColor = generateColor(category.name, category.id);
   
-  // Si no tiene ningún permiso de acción, no mostrar el menú
+  
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
-  // Crear slug para la URL
+  
   const slug = category.name
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
 
-  // Formatear fecha de creación
+  
   const createdAt = category.created_at
     ? formatLongDateEs(category.created_at)
     : formatLongDateEs(new Date());
@@ -190,10 +190,10 @@ export default function CategoryCard({
   return (
     <CardContainer className='inter-var'>
       <CardBody className={`bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border ${isDragging ? 'opacity-50' : ''}`}>
-        {/* Header */}
+        {}
         <div className='flex items-start justify-between pb-3'>
           <div className='flex items-center gap-2 sm:gap-3'>
-            {/* Drag Handle */}
+            {}
             <div {...dragHandleProps} className='cursor-grab active:cursor-grabbing touch-none'>
               <GripVertical className='h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600' />
             </div>
@@ -320,9 +320,9 @@ export default function CategoryCard({
           )}
         </div>
 
-        {/* Content */}
+        {}
         <div className='space-y-3 sm:space-y-4'>
-          {/* Status badges */}
+          {}
           <div className='flex items-center justify-between'>
             <Badge
               variant='secondary'
@@ -343,12 +343,12 @@ export default function CategoryCard({
             )}
           </div>
 
-          {/* Description */}
+          {}
           <p className='text-xs sm:text-sm text-gray-600 dark:text-neutral-300 line-clamp-2'>
             {category.description || 'Sin descripción'}
           </p>
 
-          {/* Footer info */}
+          {}
           <div className='flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700'>
             <div className='flex items-center gap-2'>
               <Package className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400' />

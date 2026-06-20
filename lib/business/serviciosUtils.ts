@@ -1,4 +1,4 @@
-// Service utilities for cancellation flow and UI helpers.
+
 
 import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';

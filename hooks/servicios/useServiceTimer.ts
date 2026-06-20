@@ -6,38 +6,38 @@ import { toast } from 'sonner';
 
 interface ServiceTimerConfig {
   servicioId: number;
-  initialTime: number; // en segundos
+  initialTime: number; 
   onExpire?: () => void;
   autoStart?: boolean;
 }
 
 interface TemporaryTimerConfig {
-  duration: number; // en minutos
+  duration: number; 
   onComplete: () => void;
 }
 
 interface TemporaryTimerInQueue {
   id: string;
-  duration: number; // en segundos
+  duration: number; 
   onComplete: () => void;
 }
 
 interface TimerState {
   servicioId: number;
-  startTime: number; // timestamp
-  duration: number; // segundos totales
+  startTime: number; 
+  duration: number; 
   isPaused: boolean;
   
-  // Cola de temporizadores temporales
+  
   temporaryQueue: TemporaryTimerInQueue[];
   currentTemporary?: {
     id: string;
     startTime: number;
-    duration: number; // en segundos
+    duration: number; 
   };
   
-  pausedAt?: number; // timestamp cuando se pausó
-  remainingTimeWhenPaused?: number; // tiempo restante cuando se pausó
+  pausedAt?: number; 
+  remainingTimeWhenPaused?: number; 
 }
 
 export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart = true }: ServiceTimerConfig) {

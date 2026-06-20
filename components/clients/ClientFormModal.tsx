@@ -74,7 +74,7 @@ function ClientForm({
 
   return (
     <form id='client-form' onSubmit={onFormSubmit} className='space-y-4 sm:space-y-6'>
-      {/* RUT */}
+      {}
       <div>
         <Label htmlFor='client-run' className='mb-2 text-sm sm:text-base'>
           RUT
@@ -97,7 +97,7 @@ function ClientForm({
         {errors.run && <p className='text-red-600 text-xs mt-1'>{errors.run.message as string}</p>}
       </div>
 
-      {/* Nombre */}
+      {}
       <div>
         <Label htmlFor='client-name' className='mb-2 text-sm sm:text-base'>
           Nombre
@@ -123,7 +123,7 @@ function ClientForm({
         )}
       </div>
 
-      {/* Apellido */}
+      {}
       <div>
         <Label htmlFor='client-lastName' className='mb-2 text-sm sm:text-base'>
           Apellido
@@ -149,7 +149,7 @@ function ClientForm({
         )}
       </div>
 
-      {/* Teléfono */}
+      {}
       <div>
         <Label htmlFor='client-phone' className='mb-2 text-sm sm:text-base'>
           Teléfono

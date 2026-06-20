@@ -50,7 +50,7 @@ export default function CommissionsStatsCards({
 
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
-      {/* Total Comisiones */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -83,7 +83,7 @@ export default function CommissionsStatsCards({
         </CardContent>
       </Card>
 
-      {/* Por Ventas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -117,7 +117,7 @@ export default function CommissionsStatsCards({
         </CardContent>
       </Card>
 
-      {/* Por Servicios */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
@@ -151,7 +151,7 @@ export default function CommissionsStatsCards({
         </CardContent>
       </Card>
 
-      {/* Anfitrionas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(249, 115, 22, 0.1)',

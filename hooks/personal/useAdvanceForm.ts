@@ -73,7 +73,7 @@ export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
     e.preventDefault();
     if (!selectedUser || !monto || Number(monto) <= 0) return;
     await onSubmit({ usuario_id: selectedUser, monto, motivo });
-    // Reset form after successful submit if needed, but normally handled by parent closing
+    
   };
 
   const eligibleUsers = users.filter((u) => {

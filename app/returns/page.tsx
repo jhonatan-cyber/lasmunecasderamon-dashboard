@@ -22,7 +22,7 @@ export default function ReturnsPage() {
 
         <div className='flex justify-center'>
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-6xl'>
-            {/* Card de Devoluciones de Ventas */}
+            {}
             <div className='space-y-4 sm:space-y-6'>
               <Link href='/returns/sales'>
                 <BackgroundGradient className='bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800'>
@@ -52,7 +52,7 @@ export default function ReturnsPage() {
                 </BackgroundGradient>
               </Link>
 
-              {/* Cards de Funcionalidades - Ventas */}
+              {}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
                 <Card className='bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900'>
                   <CardContent className='p-3 sm:p-4'>
@@ -98,7 +98,7 @@ export default function ReturnsPage() {
               </div>
             </div>
 
-            {/* Card de Devoluciones de Servicios */}
+            {}
             <div className='space-y-4 sm:space-y-6'>
               <Link href='/returns/services'>
                 <BackgroundGradient className='bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800'>
@@ -128,7 +128,7 @@ export default function ReturnsPage() {
                 </BackgroundGradient>
               </Link>
 
-              {/* Cards de Funcionalidades - Servicios */}
+              {}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
                 <Card className='bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-900'>
                   <CardContent className='p-3 sm:p-4'>

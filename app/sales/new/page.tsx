@@ -6,7 +6,6 @@ import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import SaleProductModal from '@/components/sales/SaleProductModal';
 
-// Nuevos componentes refactorizados
 import { NewSaleHeader } from '@/components/sales/new/NewSaleHeader';
 import { NewSaleSearch } from '@/components/sales/new/NewSaleSearch';
 import { NewSaleConfiguration } from '@/components/sales/new/NewSaleConfiguration';
@@ -57,7 +56,14 @@ export default function NewSale() {
   const [productosCategoria, setProductosCategoria] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
 
-  const { clients: clientes, anfitrionas, rooms: habitaciones, categories, isLoading: loadingCategorias, refreshAll } = useMasterData();
+  const {
+    clients: clientes,
+    anfitrionas,
+    rooms: habitaciones,
+    categories,
+    isLoading: loadingCategorias,
+    refreshAll
+  } = useMasterData();
   useRefreshOnFocus(refreshAll, { immediate: false });
 
   const categoriasFiltradas = useMemo(

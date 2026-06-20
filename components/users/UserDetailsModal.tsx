@@ -121,7 +121,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
             </div>
             <div className='space-y-4 sm:space-y-6'>
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-                {/* Información Personal */}
+                {}
                 <div className='space-y-3 sm:space-y-4'>
                   <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>
                     Información Personal
@@ -207,7 +207,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </div>
                 </div>
 
-                {/* Información Financiera */}
+                {}
                 <div className='space-y-3 sm:space-y-4'>
                   <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>
                     Información Financiera
@@ -246,7 +246,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                 </div>
               </div>
 
-              {/* Información de Registro */}
+              {}
               <div className='space-y-4'>
                 <h3 className='font-semibold text-gray-700 text-md'>Registro</h3>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>

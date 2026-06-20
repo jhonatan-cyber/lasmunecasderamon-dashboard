@@ -3,7 +3,6 @@ import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { AttendanceService } from '@/lib/services/AttendanceService';
 import { getAuth } from '@/lib/auth/auth-app';
 
-// register no requiere withAppAuth — el QR puede usarse sin sesión activa
 export const POST = withAppApiWrapper(async (request: Request) => {
   const user = await getAuth();
   const body = await request.json();

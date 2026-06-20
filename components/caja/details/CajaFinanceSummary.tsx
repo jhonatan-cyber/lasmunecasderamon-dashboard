@@ -40,7 +40,7 @@ export function CajaFinanceSummary({
         </h5>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {/* Monto Apertura */}
+          {}
           <div className="md:col-span-4 bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between group overflow-hidden relative mb-4">
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
               <Calendar className="w-32 h-32 -mr-8 -mt-8" />
@@ -58,7 +58,7 @@ export function CajaFinanceSummary({
             </div>
           </div>
 
-          {/* Tragos Chicas */}
+          {}
           <div className="bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-center space-y-4">
               <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto">
@@ -73,7 +73,7 @@ export function CajaFinanceSummary({
             </div>
           </div>
 
-          {/* Champañas */}
+          {}
           <div className="bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-center space-y-4">
               <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto">
@@ -88,7 +88,7 @@ export function CajaFinanceSummary({
             </div>
           </div>
 
-          {/* Barras */}
+          {}
           <div className="bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-center space-y-4">
               <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto">
@@ -103,7 +103,7 @@ export function CajaFinanceSummary({
             </div>
           </div>
 
-          {/* Servicios */}
+          {}
           <div className="bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-center space-y-4">
               <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto">
@@ -119,7 +119,7 @@ export function CajaFinanceSummary({
           </div>
         </div>
 
-        {/* Totales Globales */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 pt-12 border-t border-gray-100 dark:border-gray-800">
           <FinancialCard 
             title="Total Propinas"
@@ -164,7 +164,7 @@ export function CajaFinanceSummary({
           />
         </div>
 
-        {/* Balance Final */}
+        {}
         <div className="px-6 max-w-5xl mx-auto space-y-10 pt-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
             <div className="bg-gray-50/50 dark:bg-gray-800/20 p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 flex flex-col justify-center">

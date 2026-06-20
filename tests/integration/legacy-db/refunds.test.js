@@ -79,7 +79,7 @@ class SaleRepository {
   }
 
   static async processAnulacion(requestId, status) {
-    // status en DB: 'confirmada', 'rechazada'
+    
     const dbStatus = status === 'aprobado' ? 'confirmada' : 'rechazada';
 
     if (dbStatus === 'confirmada') {

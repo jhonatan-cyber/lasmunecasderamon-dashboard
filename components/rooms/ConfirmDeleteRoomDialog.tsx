@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { Room } from '@/types/room';
-import { Loader2 } from 'lucide-react'; // Added Loader2 import
+import { Loader2 } from 'lucide-react'; 
 
 interface ConfirmDeleteRoomDialogProps {
   open: boolean;

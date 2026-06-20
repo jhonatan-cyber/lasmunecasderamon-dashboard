@@ -11,7 +11,7 @@ const PROTECTED_TABLES = [
   'habitaciones',
   'productos',
   'categorias',
-  // Seguridad: sin esta tabla quedan roles y permisos desconectados.
+
   'role_permissions'
 ];
 
@@ -32,7 +32,6 @@ export const POST = withAppAuth(
     for (const table of tables) {
       const tableName = table.TABLE_NAME;
 
-      // `_migrations` se preserva para no perder el estado interno de migraciones.
       if (PROTECTED_TABLES.includes(tableName) || tableName === '_migrations') {
         skippedTables.push(tableName);
         continue;

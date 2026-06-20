@@ -1,13 +1,8 @@
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 
-/**
- * Utilidades base para reducir boilerplate en los Repositorios.
- * Mantiene el control total de SQL pero automatiza los INSERT y UPDATE simples.
- */
+
 export class BaseRepository {
-  /**
-   * Genera y ejecuta un INSERT dinámico a partir de un objeto.
-   */
+  
   static async insert(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -22,9 +17,7 @@ export class BaseRepository {
     await trx(sql, values);
   }
 
-  /**
-   * Genera y ejecuta un UPDATE dinámico basado en un ID.
-   */
+  
   static async update(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -42,9 +35,7 @@ export class BaseRepository {
     await trx(sql, values);
   }
 
-  /**
-   * Ejecuta un DELETE simple por ID.
-   */
+  
   static async delete(
     trx: TransactionQuery | typeof query,
     table: string,
@@ -55,9 +46,7 @@ export class BaseRepository {
     await trx(sql, [idValue]);
   }
 
-  /**
-   * Busca un registro por una columna específica.
-   */
+  
   static async findOne<T>(
     trx: TransactionQuery | typeof query,
     table: string,

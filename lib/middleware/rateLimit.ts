@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import { logger } from '@/lib/utils/logger';
 
-// ============== PAGES ROUTER IMPLEMENTATION (DEFAULT - BACKWARD COMPATIBLE) ==============
+
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
@@ -15,7 +15,7 @@ const cleanupExpiredEntries = () => {
   }
 };
 
-// Pages Router compatible rate limiter - backward compatible with tests
+
 export function createRateLimiter(windowMs: number, max: number) {
   return function (handler: NextApiHandler) {
     return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -72,12 +72,12 @@ export function createRateLimiter(windowMs: number, max: number) {
   };
 }
 
-// Pre-configured limiters for Pages Router (backward compatible with tests)
+
 export const loginLimiter = createRateLimiter(60 * 1000, 5);
 export const generalLimiter = createRateLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiter = createRateLimiter(5 * 60 * 1000, 20);
 
-// Utility function for Pages Router
+
 export function withRateLimit(
   limiter: (handler: NextApiHandler) => (req: NextApiRequest, res: NextApiResponse) => Promise<void>
 ) {
@@ -86,7 +86,7 @@ export function withRateLimit(
   };
 }
 
-// ============== APP ROUTER IMPLEMENTATION ==============
+
 
 const rateLimitStoreApp = new Map<string, { count: number; resetTime: number }>();
 
@@ -150,7 +150,7 @@ export function createAppRouterLimiter(windowMs: number, max: number) {
 
       const response = await handler(request);
 
-      // Set rate limit headers
+      
       const currentState = rateLimitStoreApp.get(key);
       if (currentState) {
         const remaining = Math.max(0, max - currentState.count);
@@ -164,21 +164,21 @@ export function createAppRouterLimiter(windowMs: number, max: number) {
   };
 }
 
-// Pre-configured limiters for App Router
+
 export const loginLimiterApp = createAppRouterLimiter(60 * 1000, 5);
 export const generalLimiterApp = createAppRouterLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiterApp = createAppRouterLimiter(5 * 60 * 1000, 20);
 
-// ============== UNIFIED EXPORT ==============
 
-// Legacy export for backward compatibility
+
+
 export const rateLimitMiddleware = {
   loginLimiter,
   generalLimiter,
   sensitiveApiLimiter,
   withRateLimit,
   createRateLimiter,
-  // App Router specific exports
+  
   createAppRouterLimiter,
   loginLimiterApp,
   generalLimiterApp,

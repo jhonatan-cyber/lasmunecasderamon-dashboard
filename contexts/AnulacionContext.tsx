@@ -16,7 +16,7 @@ import logger from '@/lib/utils/logger';
 interface AnulacionContextType {
   showNotification: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
   setRefreshCallback: (callback: () => void) => void;
-  // Nuevo estado para modal de servicios
+  
   modalData: {
     tipo: 'confirmada' | 'rechazada';
     tipo_operacion: 'venta' | 'servicio';
@@ -45,7 +45,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
   const [modalData, setModalData] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Usar useRef para mantener una referencia estable al callback
+  
   const refreshCallbackRef = useRef<(() => void) | null>(null);
 
   const showNotification = useCallback(
@@ -82,9 +82,9 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
     setModalData(null);
   }, []);
 
-  // Escuchar notificaciones SSE para servicios
+  
   useSharedSSE('/api/notifications/sse', (data: any) => {
-    // Manejar notificaciones de anulación de servicios
+    
     if (
       data.type === 'anulacion_servicio_confirmada' ||
       data.type === 'anulacion_servicio_rechazada'
@@ -104,7 +104,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
       openModal(modalData);
 
-      // Ejecutar callback de actualización si existe
+      
       if (refreshCallbackRef.current) {
         try {
           refreshCallbackRef.current();
@@ -113,7 +113,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Mostrar toast
+      
       showNotification(
         data.type === 'anulacion_servicio_confirmada'
           ? '✅ Anulación de servicio confirmada'
@@ -122,7 +122,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // Manejar notificaciones de anulación de ventas (mantener compatibilidad)
+    
     if (data.type === 'anulacion_confirmada' || data.type === 'anulacion_rechazada') {
       const modalData = {
         tipo: data.type === 'anulacion_confirmada' ? 'confirmada' : 'rechazada',
@@ -136,7 +136,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
       openModal(modalData);
 
-      // Ejecutar callback de actualización si existe
+      
       if (refreshCallbackRef.current) {
         try {
           refreshCallbackRef.current();
@@ -145,7 +145,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Mostrar toast
+      
       showNotification(
         data.type === 'anulacion_confirmada'
           ? '✅ Anulación de venta confirmada'
@@ -155,7 +155,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // Verificar notificaciones pendientes al cargar
+  
   useEffect(() => {
     const checkPendingNotifications = async () => {
       try {
@@ -163,12 +163,12 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
 
         if (data.success && data.notifications.length > 0) {
-          // Procesar cada notificación pendiente
+          
           data.notifications.forEach((notification: any) => {
             try {
               const notificationData = JSON.parse(notification.datos);
 
-              // Procesar según el tipo
+              
               if (
                 notification.tipo === 'anulacion_confirmada' ||
                 notification.tipo === 'anulacion_rechazada'
@@ -185,7 +185,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
                 openModal(modalData);
 
-                // Mostrar toast
+                
                 showNotification(
                   notification.tipo === 'anulacion_confirmada'
                     ? '✅ Anulación de venta confirmada'
@@ -214,7 +214,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
                 openModal(modalData);
 
-                // Mostrar toast
+                
                 showNotification(
                   notification.tipo === 'anulacion_servicio_confirmada'
                     ? '✅ Anulación de servicio confirmada'
@@ -234,13 +234,13 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Verificar notificaciones pendientes después de un pequeño delay
+    
     const timer = setTimeout(checkPendingNotifications, 1000);
 
     return () => clearTimeout(timer);
   }, [openModal, showNotification]);
 
-  // Listener para eventos de test
+  
   useEffect(() => {
     const handleTestNotification = (event: CustomEvent) => {
       const data = event.detail;
@@ -258,7 +258,7 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
 
         openModal(modalData);
 
-        // Mostrar toast
+        
         showNotification(
           data.type === 'anulacion_confirmada'
             ? '✅ Test: Anulación de venta confirmada'
@@ -273,9 +273,9 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener('test-notification', handleTestNotification as EventListener);
     };
-  }, [openModal, showNotification]); // Removido refreshCallback de las dependencias
+  }, [openModal, showNotification]); 
 
-  // Memoizar el valor del contexto para evitar re-renders innecesarios
+  
   const contextValue = useMemo(
     () => ({
       showNotification,

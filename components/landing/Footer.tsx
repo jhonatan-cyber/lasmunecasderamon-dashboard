@@ -28,7 +28,7 @@ export default function Footer({ menuItems }: FooterProps) {
         <div className='grid md:grid-cols-4 gap-8 sm:gap-12 mb-12 sm:mb-16'>
           <div className='md:col-span-2 text-center md:text-left'>
             <div className='flex items-center justify-center md:justify-start space-x-3 mb-8'>
-              {/* Logo para desktop */}
+              {}
               <NextImage
                 src='/img/system/logo2.png'
                 alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'
@@ -37,7 +37,7 @@ export default function Footer({ menuItems }: FooterProps) {
                 className='hidden md:block object-contain brightness-110 drop-shadow-lg'
                 style={{ width: '200px', height: 'auto' }}
               />
-              {/* Logo para mobile */}
+              {}
               <NextImage
                 src='/img/system/logo1.png'
                 alt='Las Muñecas de Ramón - Nightclub Exclusivo en Linares'

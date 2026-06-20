@@ -16,19 +16,7 @@ interface UseChampagneRuleReturn {
   maxAnfitrionas: number;
 }
 
-/**
- * Hook que centraliza la regla de negocio de champaña:
- * - Detecta si un producto es de champaña
- * - Calcula el precio máximo de champaña
- * - Determina el máximo de anfitrionas permitido según precio
- *
- * Regla de anfitrionas:
- *   >= 240.000 → 5 anfitrionas
- *   >= 200.000 → 4 anfitrionas
- *   >= 140.000 → 3 anfitrionas
- *   >= 120.000 → 2 anfitrionas
- *   <  120.000 → 1 anfitriona
- */
+
 export function useChampagneRule(
   productos: ChampagneProduct[],
   selectedAnfitrionas?: string[],
@@ -60,7 +48,7 @@ export function useChampagneRule(
     else maxAnfitrionas = 1;
   }
 
-  // Auto-limitar anfitrionas seleccionadas si excede el máximo
+  
   useEffect(() => {
     if (
       selectedAnfitrionas &&

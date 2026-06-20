@@ -33,7 +33,7 @@ export function useServiceAnulacionForm({
     setIsLoading(true);
 
     try {
-      // Llamar a la API en lugar de usar la función directamente
+      
       const response = await fetch('/api/servicios/solicitud-anulacion', {
         method: 'POST',
         headers: {

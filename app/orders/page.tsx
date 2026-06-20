@@ -25,7 +25,6 @@ import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { toast } from 'sonner';
 import { appEventBus } from '@/lib/utils/eventBus';
 
-// Componentes Refactorizados
 import {
   OrdersHeader,
   OrdersStats,
@@ -78,7 +77,7 @@ export default function OrdersPage() {
         setSelectedOrderId(foundOrder.id_pedido || foundOrder.id);
         setSelectedOrderCode(foundOrder.codigo);
         setModalOpen(true);
-        // Remove param from URL to prevent reopening on reload
+
         router.replace('/orders', { scroll: false });
       }
     }
@@ -264,7 +263,7 @@ export default function OrdersPage() {
         />
       )}
 
-      {/* Dialogs de eliminación (Product Order) */}
+      {}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>
@@ -295,7 +294,7 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogs de eliminación (Service) */}
+      {}
       <Dialog open={deleteServicioModalOpen} onOpenChange={setDeleteServicioModalOpen}>
         <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>

@@ -54,7 +54,6 @@ export default function GarzonPropinasPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Fetch propinas
   const fetchTips = async () => {
     setLoading(true);
     try {
@@ -89,7 +88,6 @@ export default function GarzonPropinasPage() {
     );
   }
 
-  // Verificar que el usuario sea garzon
   if (user?.role?.toLowerCase() !== 'garzon') {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -101,7 +99,6 @@ export default function GarzonPropinasPage() {
     );
   }
 
-  // Filtrado
   const filteredTips = tips.filter(tip => {
     const matchesSearch =
       tip.codigo_venta?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,7 +113,6 @@ export default function GarzonPropinasPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Ordenamiento
   const sortedTips = [...filteredTips].sort((a, b) => {
     let aValue: any = a[sortBy as keyof Tip];
     let bValue: any = b[sortBy as keyof Tip];
@@ -133,18 +129,15 @@ export default function GarzonPropinasPage() {
     }
   });
 
-  // PaginaciÃ³n
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedTips = sortedTips.slice(startIndex, endIndex);
   const totalPages = Math.ceil(sortedTips.length / rowsPerPage);
 
-  // CÃ¡lculos
   const totalToCollect = tips
     .filter(tip => tip.estado === 1)
     .reduce((sum, tip) => sum + (tip.monto || 0), 0);
 
-  // Obtener badge de estado
   const getStatusBadge = (estado: number) => {
     if (estado === 1) {
       return (
@@ -183,7 +176,7 @@ export default function GarzonPropinasPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900'>Listado de Propinas</h1>
@@ -201,13 +194,13 @@ export default function GarzonPropinasPage() {
         </Button>
       </div>
 
-      {/* Total a cobrar centrado */}
+      {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
         <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToCollect)}</p>
       </div>
 
-      {/* Filtros */}
+      {}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
@@ -239,7 +232,7 @@ export default function GarzonPropinasPage() {
         />
       </div>
 
-      {/* Selector de filas por pÃ¡gina */}
+      {}
       <div className='flex justify-between items-center'>
         <SelectElements
           value={rowsPerPage}
@@ -256,7 +249,7 @@ export default function GarzonPropinasPage() {
         />
       </div>
 
-      {/* Tabla */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Propinas ({filteredTips.length})</CardTitle>
@@ -315,7 +308,7 @@ export default function GarzonPropinasPage() {
         </CardContent>
       </Card>
 
-      {/* PaginaciÃ³n */}
+      {}
       {totalPages > 1 && (
         <div className='flex justify-center'>
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
@@ -324,5 +317,3 @@ export default function GarzonPropinasPage() {
     </div>
   );
 }
-
-

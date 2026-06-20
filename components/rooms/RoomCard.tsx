@@ -80,13 +80,13 @@ const RoomCard: React.FC<{
   return (
     <div className="group" ref={isDraggable ? setNodeRef : undefined} style={style}>
       <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-        {/* Status indicator */}
+        {}
         <div className={`absolute top-0 left-0 right-0 h-1 ${getStatusColor()}`} />
         
-        {/* Header */}
+        {}
         <div className="flex items-start justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {/* Drag handle en lugar del ícono de cama */}
+            {}
             {isDraggable ? (
               <div
                 {...attributes}
@@ -115,7 +115,7 @@ const RoomCard: React.FC<{
             </div>
           </div>
           
-          {/* Solo mostrar el menú si tiene al menos un permiso */}
+          {}
           {(canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -168,7 +168,7 @@ const RoomCard: React.FC<{
           )}
         </div>
 
-        {/* Info Grid */}
+        {}
         <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
           <div className="bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0">
             <div className="flex items-center gap-1 text-gray-600 mb-1">
@@ -211,7 +211,7 @@ const RoomCard: React.FC<{
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         {room.fecha_crea && (
           <div className="pt-2 sm:pt-3 border-t border-gray-100">
             <p className="text-xs text-gray-500 text-center truncate">

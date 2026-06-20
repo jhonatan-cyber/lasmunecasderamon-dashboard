@@ -87,7 +87,7 @@ async function runTests() {
       throw new Error('No se pudo encontrar el retiro recién creado');
     }
 
-    // Cleanup
+    
     console.log('\n[3] Limpiando datos de prueba...');
     await queryMock('DELETE FROM retiros_caja WHERE id_retiro = ?', [withdrawalId]);
     console.log('✅ Cleanup OK');

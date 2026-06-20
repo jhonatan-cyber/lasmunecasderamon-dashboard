@@ -48,16 +48,13 @@ export default function CashRegister() {
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
   const [showRetiroDialog, setShowRetiroDialog] = useState(false);
 
-  // Verificar si el usuario es cajero
   const isCajero = user?.role === 'cajero';
 
-  // Verificar permisos específicos
   const canOpenCaja = hasPermission('cash_register', 'open');
   const canCloseCaja = hasPermission('cash_register', 'close');
   const canViewDetails = hasPermission('cash_register', 'view_details');
   const canWithdrawMoney = hasPermission('cash_register', 'withdraw');
 
-  // Filtrar cajas
   const filteredCajas = cajas.filter(caja => {
     const matchesSearch =
       caja.cajero_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,7 +159,7 @@ export default function CashRegister() {
   return (
     <PermissionGuard module='cash_register' action='view'>
       <div className='w-full p-4 sm:p-6 lg:p-10 space-y-8 mt-4 sm:mt-6 lg:mt-10'>
-        {/* Header Section */}
+        {}
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
           <div className='space-y-1'>
             <h1 className='text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 dark:text-white'>
@@ -192,10 +189,10 @@ export default function CashRegister() {
           </div>
         </div>
 
-        {/* Stats Section */}
+        {}
         <CashRegisterStatsCard isCajero={isCajero} />
 
-        {/* Main Content Sections */}
+        {}
         <Tabs defaultValue='cajas' className='space-y-8'>
           {!isCajero && (
             <div className='flex justify-center w-full'>
@@ -287,7 +284,7 @@ export default function CashRegister() {
           </TabsContent>
         </Tabs>
 
-        {/* Dialogs */}
+        {}
         <CerrarCajaDialog
           caja={selectedCaja}
           open={showCerrarDialog}

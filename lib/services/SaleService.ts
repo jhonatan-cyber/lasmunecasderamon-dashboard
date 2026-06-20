@@ -76,7 +76,7 @@ export class SaleService {
         });
       }
 
-      // Verificar si la habitación es de libre ingreso (sin precio o sin comisión)
+      
       let esLibreIngreso = false;
       if (validated.habitacion_id) {
         const roomRows = await trx<any[]>(
@@ -235,7 +235,7 @@ export class SaleService {
             fecha_crea: now
           });
 
-          // Registro de comisiones usando el repositorio especializado
+          
           if (hostessId && commPart > 0) {
             await CommissionRepository.createWithDetail(trx, {
               venta_id: ventaId,
@@ -246,7 +246,7 @@ export class SaleService {
         }
       }
 
-      // 6. Actualización de Caja
+      
       if (cajaId && !skipCashRegisterPosting) {
         if (esMixto) {
           const deltas = calcularDeltasCaja(pagosMixtos);
@@ -274,7 +274,7 @@ export class SaleService {
         }
       }
 
-      // 7. Auditoría de negocio
+      
       await AuditRepository.log(
         {
           user_id: createdBy,
@@ -286,12 +286,12 @@ export class SaleService {
         trx
       );
 
-      // 8. Actualizar estado del pedido a procesado (estado = 0)
+      
       if (pedidoId) {
         await trx('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
       }
 
-      // 7b. Registrar propina si existe
+      
       if (validated.propina && validated.propina > 0) {
         try {
           const pedidoUsuarios = pedidoId
@@ -317,7 +317,7 @@ export class SaleService {
           );
         } catch (tipError: any) {
           logger.error('[SaleService] Error al registrar propina:', tipError?.message || tipError);
-          // La falla de propina no debe impedir la venta
+          
         }
       }
 
@@ -331,7 +331,7 @@ export class SaleService {
       };
     });
 
-    // Notificar a todos los clientes SSE para que actualicen los timers activos
+    
     sendNotificationToAll('timers_updated', { timestamp: now });
 
     return result;

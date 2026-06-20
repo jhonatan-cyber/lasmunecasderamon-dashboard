@@ -120,7 +120,7 @@ async function runTests() {
       throw new Error('No se pudo encontrar la solicitud recién creada en getAll()');
     }
 
-    // Cleanup
+    
     console.log('\n[4] Limpiando datos de prueba...');
     await ServiceRequestRepository.delete(requestId);
     console.log('✅ delete() OK');

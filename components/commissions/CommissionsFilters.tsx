@@ -42,7 +42,7 @@ export function CommissionsFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end w-full'>
-          {/* BÃºsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Buscar
@@ -55,7 +55,7 @@ export function CommissionsFilters({
             />
           </div>
 
-          {/* Ordenar */}
+          {}
           <div className='w-full sm:w-auto min-w-[180px]'>
             <FilterSelect
               value={sortBy}
@@ -73,7 +73,7 @@ export function CommissionsFilters({
             />
           </div>
 
-          {/* BotÃ³n de ordenamiento */}
+          {}
           <div className='flex items-end'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               &nbsp;
@@ -92,7 +92,7 @@ export function CommissionsFilters({
             </Button>
           </div>
 
-          {/* Mostrar (PageSize) */}
+          {}
           <div className='w-full sm:w-auto min-w-[100px]'>
             <FilterSelect
               value={rowsPerPage.toString()}
@@ -110,7 +110,7 @@ export function CommissionsFilters({
             />
           </div>
 
-          {/* BotÃ³n Limpiar con Ã­cono trash */}
+          {}
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>

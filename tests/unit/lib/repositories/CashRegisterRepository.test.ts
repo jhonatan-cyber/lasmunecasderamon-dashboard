@@ -52,7 +52,7 @@ describe('CashRegisterRepository.open', () => {
 
   it('abre caja cuando no existe ninguna abierta', async () => {
     repositoryHarness.queryMock
-      .mockResolvedValueOnce([]) // check open
+      .mockResolvedValueOnce([]) 
       .mockResolvedValueOnce([
         {
           id_caja: 'caja-1',
@@ -78,8 +78,8 @@ describe('CashRegisterRepository.open', () => {
           usuario_apertura: 'Usuario Uno',
           cajero_nombre: 'Usuario Uno'
         }
-      ]) // getById main query
-      .mockResolvedValue([]); // default fallback: empty results for any extra queries (getPrepagoMetrics)
+      ]) 
+      .mockResolvedValue([]); 
 
     const result = await CashRegisterRepository.open('user-1', 100);
 

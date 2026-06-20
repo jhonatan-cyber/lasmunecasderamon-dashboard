@@ -64,7 +64,6 @@ export default function Sales() {
     await Promise.all([getVentas(), getResumen(), getHabitaciones()]);
   }, [getHabitaciones, getResumen, getVentas]);
 
-  // Ref para mantener la función de refresh estable
   const handleRefreshRef = useRef(handleRefresh);
 
   useEffect(() => {
@@ -77,7 +76,6 @@ export default function Sales() {
 
   useRefreshOnFocus(handleRefresh);
 
-  // Escuchar evento de venta registrada para refrescar automáticamente
   useEffect(() => {
     const handleVentaRegistrada = () => {
       handleRefreshRef.current();
@@ -139,7 +137,6 @@ export default function Sales() {
     }
   };
 
-  // Solicitar anulación de venta
   const handleAnularVenta = async (ventaId: string | number, motivo: string, monto: number) => {
     try {
       const authResponse = await fetch('/api/test-auth');
@@ -153,7 +150,6 @@ export default function Sales() {
         showSuccessToast('Solicitud de anulación enviada al administrador');
         await handleRefresh();
       } else {
-        // Manejar diferentes tipos de errores
         if (result.error?.includes('401') || result.error?.includes('Token')) {
           showErrorToast('Sesión expirada. Por favor, inicia sesión nuevamente.');
         } else if (result.error?.includes('404')) {

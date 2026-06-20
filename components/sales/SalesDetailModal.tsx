@@ -75,7 +75,7 @@ export function SalesDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[95vh] p-0 border-none shadow-2xl rounded-3xl overflow-hidden bg-white dark:bg-slate-900 flex flex-col'>
-        {/* Header */}
+        {}
         <DialogHeader className='px-8 pt-8 pb-4 bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-gray-800'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
@@ -100,9 +100,9 @@ export function SalesDetailModal({
           </div>
         </DialogHeader>
 
-        {/* Content */}
+        {}
         <div className='flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800'>
-          {/* Summary Cards */}
+          {}
           <div className='grid grid-cols-2 md:grid-cols-3 gap-3'>
             <Card className='rounded-3xl border-none shadow-md bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden'>
               <CardContent className='p-4 flex items-center gap-3'>
@@ -153,9 +153,9 @@ export function SalesDetailModal({
             </Card>
           </div>
 
-          {/* Info Section */}
+          {}
           <div className='space-y-4'>
-            {/* Fecha */}
+            {}
             <div className='flex items-center gap-3'>
               <Clock className='w-4 h-4 text-gray-400 flex-shrink-0' />
               <div>
@@ -168,7 +168,7 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {/* Habitación */}
+            {}
             <div className='flex items-center gap-3'>
               <Home className='w-4 h-4 text-indigo-500 flex-shrink-0' />
               <div>
@@ -184,7 +184,7 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {/* Cliente */}
+            {}
             <div className='flex items-center gap-3'>
               <User className='w-4 h-4 text-blue-500 flex-shrink-0' />
               <div>
@@ -200,7 +200,7 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {/* Vendido por / Cajero */}
+            {}
             <div className='flex items-center gap-3'>
               <User className='w-4 h-4 text-green-500 flex-shrink-0' />
               <div>
@@ -218,7 +218,7 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {/* Pedido por / Garzón (si viene de un pedido) */}
+            {}
             {selectedVenta.pedido_id && (
               <div className='flex items-center gap-3'>
                 <Receipt className='w-4 h-4 text-amber-500 flex-shrink-0' />
@@ -234,7 +234,7 @@ export function SalesDetailModal({
               </div>
             )}
 
-            {/* Anfitrionas */}
+            {}
             <div className='flex items-start gap-3'>
               <Users className='w-4 h-4 text-purple-500 flex-shrink-0 mt-1' />
               <div className='flex-1'>
@@ -261,7 +261,7 @@ export function SalesDetailModal({
             </div>
           </div>
 
-          {/* Productos */}
+          {}
           <div>
             <div className='flex items-center gap-2 mb-3'>
               <ShoppingBag className='w-4 h-4 text-orange-500' />
@@ -299,7 +299,7 @@ export function SalesDetailModal({
                   ))}
                 </div>
 
-                {/* Totales */}
+                {}
                 <div className='px-5 py-3.5 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800'>
                   <div className='flex items-center justify-between text-sm'>
                     <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>
@@ -339,7 +339,7 @@ export function SalesDetailModal({
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <DialogFooter className='px-8 py-4 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center sm:justify-center'>
           <Button
             onClick={() => onOpenChange(false)}

@@ -21,22 +21,19 @@ interface UserSelectProps {
   label?: string;
   placeholder?: string;
   searchPlaceholder?: string;
-  /** Roles a filtrar (opcional) */
+  
   roles?: string[];
-  /** Solo usuarios activos (por defecto true) */
+  
   onlyActive?: boolean;
-  /** Clase personalizada para el trigger */
+  
   className?: string;
-  /** Si debe mostrar el nickname */
+  
   showNick?: boolean;
   disabled?: boolean;
   required?: boolean;
 }
 
-/**
- * Componente genérico para selección de usuarios con búsqueda integrada.
- * Diseño consistente con CustomerSelect del módulo de ventas.
- */
+
 export default function UserSelect({
   users = [],
   value,
@@ -55,18 +52,18 @@ export default function UserSelect({
   const [searchTerm, setSearchTerm] = useState('');
   const uniqueId = React.useId();
 
-  // 1. Filtrado por lógica de negocio (Roles y Estado)
+  
   const eligibleUsers = useMemo(() => {
     return (users || []).filter(u => {
-      // Filtrar por estado activo si corresponde
+      
       const isActive = u.status === 1 || u.status === undefined || u.status === null;
       if (onlyActive && !isActive) return false;
 
-      // Excluir administradores por defecto
+      
       const userRole = (u.role || '').toLowerCase();
       if (userRole === 'administrador' || userRole === 'admin') return false;
 
-      // Filtrar por roles si se especifican
+      
       if (roles && roles.length > 0) {
         return roles.some(r => r.toLowerCase() === userRole);
       }
@@ -75,7 +72,7 @@ export default function UserSelect({
     });
   }, [users, roles, onlyActive]);
 
-  // 2. Filtrado por búsqueda de texto
+  
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return eligibleUsers;
     const s = searchTerm.toLowerCase();

@@ -23,19 +23,19 @@ function ImageUploadFieldComponent({
   const [isDragging, setIsDragging] = useState(false);
   const [urlValue, setUrlValue] = useState('');
   const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 }); // pixeles de offset
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 }); 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Handler para arrastrar la imagen con el mouse
-  // Estado para drag
+  
+  
   const startDragRef = useRef({ x: 0, y: 0 });
   const startOffsetRef = useRef({ x: 0, y: 0 });
 
   const handleImageMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Guardar posición inicial del mouse y offset actual
+    
     startDragRef.current = { x: e.clientX, y: e.clientY };
     startOffsetRef.current = { ...imageOffset };
     setIsDraggingImage(true);
@@ -45,15 +45,15 @@ function ImageUploadFieldComponent({
     (e: MouseEvent) => {
       if (!isDraggingImage) return;
 
-      // Calcular cuánto se movió el mouse desde que empezó el drag
+      
       const deltaX = e.clientX - startDragRef.current.x;
       const deltaY = e.clientY - startDragRef.current.y;
 
-      // Sumar al offset inicial
+      
       const newX = startOffsetRef.current.x + deltaX;
       const newY = startOffsetRef.current.y + deltaY;
 
-      // Limitar movimiento a +/- 100px desde el centro
+      
       const clampedX = Math.max(-100, Math.min(100, newX));
       const clampedY = Math.max(-100, Math.min(100, newY));
 
@@ -66,7 +66,7 @@ function ImageUploadFieldComponent({
     setIsDraggingImage(false);
   }, []);
 
-  // Event listeners para drag
+  
   useEffect(() => {
     if (!isDraggingImage) return;
 
@@ -226,7 +226,7 @@ function ImageUploadFieldComponent({
                   }
                 }}
               >
-                {/* Overlay para mostrar estado */}
+                {}
                 <div
                   className={cn(
                     'absolute inset-0 flex items-center justify-center',

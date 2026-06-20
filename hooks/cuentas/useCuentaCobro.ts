@@ -12,7 +12,7 @@ export function useCuentaCobro() {
   const [habitacionId, setHabitacionId] = useState<string | null>(null);
   const [showError, setShowError] = useState(false);
 
-  // Cargar habitaciones al inicializar
+  
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -29,10 +29,10 @@ export function useCuentaCobro() {
     fetchRooms();
   }, []);
 
-  // Filtro de habitaciones activas
+  
   const habitacionesActivas = rooms.filter(r => r.status === 1 || r.estado === 1);
 
-  // Filtro por búsqueda
+  
   const habitacionesFiltradas = searchRoom.trim()
     ? habitacionesActivas.filter(
         r =>
@@ -41,7 +41,7 @@ export function useCuentaCobro() {
       )
     : habitacionesActivas;
 
-  // Validación de producto de champaña
+  
   const isChampagneProduct = (producto: any) => {
     const normalized =
       typeof producto === 'string'
@@ -65,7 +65,7 @@ export function useCuentaCobro() {
     );
   };
 
-  // Reset de states cuando cierra el modal
+  
   const resetStates = () => {
     setSearchRoom('');
     setIsCobrando(false);
@@ -76,7 +76,7 @@ export function useCuentaCobro() {
     setShowError(false);
   };
 
-  // Función principal de cobro - orquesta las 3 APIs
+  
   const handleCobrarCuenta = async (
     cuenta: any,
     propinaMonto: number | null,
@@ -87,7 +87,7 @@ export function useCuentaCobro() {
     const montoFinal = Number(cuenta?.total ?? cuenta?.sub_total ?? 0);
     const propinaFinal = Number(propinaMonto ?? 0);
 
-    // Validaciones
+    
     if (!cuenta || !cuentaId || !metodoPagoSeleccionado) {
       setShowError(true);
       toast.error('Método de pago requerido');
@@ -97,7 +97,7 @@ export function useCuentaCobro() {
     setIsCobrando(true);
 
     try {
-      // 1️⃣ Llamada 1: Cobrar la cuenta
+      
       const cobroRes = await fetch(`/api/cuentas/${cuentaId}/cobrar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,14 +123,14 @@ export function useCuentaCobro() {
             errorData?.error?.details?.[0]?.message ||
             errorMessage;
         } catch {
-          // Mantener el mensaje genérico si la respuesta no puede parsearse
+          
         }
         throw new Error(errorMessage);
       }
 
       await cobroRes.json();
 
-      // 2️⃣ Llamada 2: Registrar venta
+      
       const ventaRes = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +184,7 @@ export function useCuentaCobro() {
   };
 
   return {
-    // States
+    
     rooms,
     searchRoom,
     isCobrando,
@@ -194,7 +194,7 @@ export function useCuentaCobro() {
     habitacionId,
     showError,
 
-    // Setters
+    
     setSearchRoom,
     setMetodoPago,
     setPropina,
@@ -202,11 +202,11 @@ export function useCuentaCobro() {
     setHabitacionId,
     setShowError,
 
-    // Computed
+    
     habitacionesActivas,
     habitacionesFiltradas,
 
-    // Methods
+    
     handleCobrarCuenta,
     resetStates,
     isChampagneProduct

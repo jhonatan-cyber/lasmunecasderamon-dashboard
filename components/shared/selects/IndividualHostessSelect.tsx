@@ -46,7 +46,7 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filtrar anfitrionas basado en el término de búsqueda
+  
   const filteredAnfitrionas = useMemo(() => {
     if (!searchTerm) return anfitrionas;
 
@@ -88,7 +88,7 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className={`${ORDER_FIELD_POPOVER_CLASS} max-h-80`}>
-            {/* Barra de búsqueda */}
+            {}
             <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
               <Input
                 placeholder={searchPlaceholder}
@@ -99,7 +99,7 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
               />
             </div>
 
-            {/* Lista de anfitrionas */}
+            {}
             <div className="max-h-60 overflow-y-auto">
               {filteredAnfitrionas.length === 0 ? (
                 <div className="p-2 text-center text-gray-500 text-sm">

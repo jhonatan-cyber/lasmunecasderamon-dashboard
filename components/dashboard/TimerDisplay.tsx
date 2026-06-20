@@ -9,7 +9,7 @@ import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useState, useMemo, useCallback, memo } from 'react';
 
-// Función memoizada para determinar el tipo de transacción y su estilo
+
 const getTipoInfo = (timer: any) => {
   const tipo = timer.tipoTransaccion || 'servicio';
   
@@ -34,7 +34,7 @@ const getTipoInfo = (timer: any) => {
   }
 
   if (tipo === 'venta') {
-    // Para ventas, intentar determinar si es champaña o tragos
+    
     const codigo = (timer.servicioCode || '').toLowerCase();
     if (codigo.includes('champ') || codigo.includes('sham')) {
       return {
@@ -63,7 +63,7 @@ const getTipoInfo = (timer: any) => {
   };
 };
 
-// Componente memoizado para cada timer individual
+
 const TimerItem = memo(({
   timer,
   onStop,
@@ -123,8 +123,8 @@ const TimerItem = memo(({
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Solo re-renderizar si cambian estos valores
-  // NOTA: remainingTime ya no se pasa como prop, se maneja internamente con useCountdown
+  
+  
   return (
     prevProps.timer.id === nextProps.timer.id &&
     prevProps.timer.isPaused === nextProps.timer.isPaused &&
@@ -138,7 +138,7 @@ export function TimerDisplay() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleStopTimer = useCallback(async (timerId: string, roomName: string) => {
-    // Mostrar confirmación con modal personalizado antes de detener
+    
     const confirmed = await showConfirm({
       title: 'Detener Temporizador',
       message: `¿Estás seguro de que quieres detener el temporizador de ${roomName}?`,
@@ -154,16 +154,16 @@ export function TimerDisplay() {
     }
   }, [showConfirm, stopTimer]);
 
-  // Filtrar solo timers activos (no pausados)
+  
   const activeTimers = useMemo(() => {
     return timers.filter(t => !t.isPaused);
   }, [timers]);
 
   if (activeTimers.length === 0) {
-    return null; // No mostrar nada si no hay temporizadores activos
+    return null; 
   }
 
-  // Si solo hay un timer, mostrarlo directamente
+  
   if (activeTimers.length === 1) {
     const timer = activeTimers[0];
     return (
@@ -204,7 +204,7 @@ export function TimerDisplay() {
     );
   }
 
-  // Si hay múltiples timers, mostrar el primero y permitir expandir
+  
   const firstTimer = activeTimers[0];
   const remainingCount = activeTimers.length - 1;
 
@@ -222,14 +222,14 @@ export function TimerDisplay() {
             </CardTitle>
           </CardHeader>
           <CardContent className='pt-0'>
-            {/* Timer principal (siempre visible) */}
+            {}
             <TimerItem
               timer={firstTimer}
               onStop={handleStopTimer}
               formatTime={formatTime}
             />
 
-            {/* Botón para expandir/contraer */}
+            {}
             <Button
               variant='ghost'
               size='sm'
@@ -244,7 +244,7 @@ export function TimerDisplay() {
               {isExpanded ? 'Ocultar' : `Mostrar ${remainingCount} más`}
             </Button>
 
-            {/* Timers adicionales (solo visibles cuando está expandido) */}
+            {}
             {isExpanded && (
               <div className='space-y-1 mt-1 max-h-32 overflow-y-auto'>
                 {activeTimers.slice(1).map(timer => (

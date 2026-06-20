@@ -35,7 +35,7 @@ export default function ForecastInsights() {
 
   return (
     <div className='grid gap-6 grid-cols-1 lg:grid-cols-2'>
-      {/* Projection Card */}
+      {}
       <div className='flex flex-col gap-4'>
         <div className='flex items-center gap-3 px-1'>
           <div className='p-2 rounded-xl bg-emerald-500/10 text-emerald-500'>
@@ -82,7 +82,7 @@ export default function ForecastInsights() {
         </div>
       </div>
 
-      {/* Anomalies Card */}
+      {}
       <div className='flex flex-col gap-4'>
         <div className='flex items-center gap-3 px-1'>
           <div className='p-2 rounded-xl bg-amber-500/10 text-amber-500'>

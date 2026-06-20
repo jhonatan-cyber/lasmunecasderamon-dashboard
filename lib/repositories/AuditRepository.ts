@@ -13,9 +13,7 @@ export interface AuditLog {
 }
 
 export class AuditRepository {
-  /**
-   * Registra un evento de auditoría en la base de datos.
-   */
+  
   static async log(data: AuditLog, trx?: TransactionQuery): Promise<void> {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
@@ -41,9 +39,7 @@ export class AuditRepository {
     }
   }
 
-  /**
-   * Obtiene los últimos logs de auditoría.
-   */
+  
   static async getLatest(limit: number = 100): Promise<any[]> {
     return await query(
       `

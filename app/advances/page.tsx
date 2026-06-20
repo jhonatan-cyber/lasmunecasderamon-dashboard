@@ -55,20 +55,29 @@ export default function AdvancesPage() {
 
   const canCreate = hasPermission('anticipos', 'crear');
 
-  // Counts for tabs - anticipos por cobrar (estado 1) vs cobrados (estado 4 o con fecha_cobro)
-  const pendingCount = (allAnticipos || []).filter(a => Number(a.estado) === 1 && !a.fecha_cobro).length;
-  const paidCount = (allAnticipos || []).filter(a => Number(a.estado) === 4 || !!a.fecha_cobro).length;
+  const pendingCount = (allAnticipos || []).filter(
+    a => Number(a.estado) === 1 && !a.fecha_cobro
+  ).length;
+  const paidCount = (allAnticipos || []).filter(
+    a => Number(a.estado) === 4 || !!a.fecha_cobro
+  ).length;
 
   const handleOpenDialog = () => {
     if (!hasOpenCaja) {
-      toast.error('No se puede crear anticipos sin caja abierta. Por favor, abre una caja primero.');
+      toast.error(
+        'No se puede crear anticipos sin caja abierta. Por favor, abre una caja primero.'
+      );
       return;
     }
     setAdvanceError(null);
     setOpenDialog(true);
   };
 
-  const handleAdvanceSubmit = async (data: { usuario_id: string; monto: string; motivo: string }) => {
+  const handleAdvanceSubmit = async (data: {
+    usuario_id: string;
+    monto: string;
+    motivo: string;
+  }) => {
     setAdvanceError(null);
     if (!data.usuario_id) {
       setAdvanceError('Selecciona un usuario');
@@ -117,10 +126,7 @@ export default function AdvancesPage() {
           onOpenDialog={handleOpenDialog}
         />
 
-        <AdvancesCajaAlert
-          cajaLoading={cajaLoading}
-          hasOpenCaja={hasOpenCaja}
-        />
+        <AdvancesCajaAlert cajaLoading={cajaLoading} hasOpenCaja={hasOpenCaja} />
 
         <div className='px-4 sm:px-8'>
           <AdvancesStatsCards advances={allAnticipos || []} />
@@ -143,10 +149,13 @@ export default function AdvancesPage() {
             isAdmin={isAdmin}
           />
 
-          {/* Tabs */}
+          {}
           <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
             <button
-              onClick={() => { setActiveTab('pending'); setPage(1); }}
+              onClick={() => {
+                setActiveTab('pending');
+                setPage(1);
+              }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'pending'
                   ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
@@ -155,14 +164,21 @@ export default function AdvancesPage() {
             >
               <Clock className='h-4 w-4' />
               Por Cobrar
-              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-              }`}>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'pending'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
                 {pendingCount}
               </span>
             </button>
             <button
-              onClick={() => { setActiveTab('paid'); setPage(1); }}
+              onClick={() => {
+                setActiveTab('paid');
+                setPage(1);
+              }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'paid'
                   ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
@@ -171,9 +187,11 @@ export default function AdvancesPage() {
             >
               <CheckCircle className='h-4 w-4' />
               Cobrados
-              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-              }`}>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+                }`}
+              >
                 {paidCount}
               </span>
             </button>
@@ -208,4 +226,3 @@ export default function AdvancesPage() {
     </PermissionGuard>
   );
 }
-

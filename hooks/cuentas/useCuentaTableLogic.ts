@@ -13,7 +13,7 @@ export function useCuentaTableLogic() {
   const [cobrarCuentaOpen, setCobrarCuentaOpen] = useState(false);
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState<any>(null);
 
-  // Mapping de estado a badge - retorna datos para que el componente decida cómo renderizar
+  
   const getEstadoInfo = (estado: number | string): EstadoBadge => {
     const estadoStr = String(estado).toLowerCase();
     switch (estadoStr) {
@@ -32,39 +32,39 @@ export function useCuentaTableLogic() {
     }
   };
 
-  // Ver detalles de una cuenta
+  
   const handleVerDetalles = (cuenta: any) => {
     setCuentaSeleccionada(cuenta);
     setSelectedCuentaId(cuenta.id_cuenta || cuenta.id);
     setDetailModalOpen(true);
   };
 
-  // Abrir modal para agregar productos
+  
   const handleAgregarProductos = (cuenta: any) => {
     setCuentaSeleccionada(cuenta);
     setAgregarProductosOpen(true);
   };
 
-  // Abrir modal para cobrar
+  
   const handleCobrarCuenta = (cuenta: any) => {
     setCuentaSeleccionada(cuenta);
     setCobrarCuentaOpen(true);
   };
 
-  // Callback cuando se agregan productos
+  
   const handleProductosAgregados = () => {
     setAgregarProductosOpen(false);
     toast.success('Productos agregados correctamente');
   };
 
-  // Callback cuando se cobra
+  
   const handleCuentaCobrada = () => {
     setCobrarCuentaOpen(false);
     setDetailModalOpen(false);
     toast.success('Cuenta cobrada correctamente');
   };
 
-  // Cerrar detalles
+  
   const handleCloseDetail = () => {
     setDetailModalOpen(false);
     setCuentaSeleccionada(null);
@@ -72,7 +72,7 @@ export function useCuentaTableLogic() {
   };
 
   return {
-    // States
+    
     selectedCuentaId,
     setSelectedCuentaId,
     detailModalOpen,
@@ -84,7 +84,7 @@ export function useCuentaTableLogic() {
     cuentaSeleccionada,
     setCuentaSeleccionada,
 
-    // Handlers
+    
     handleVerDetalles,
     handleAgregarProductos,
     handleCobrarCuenta,
@@ -92,7 +92,7 @@ export function useCuentaTableLogic() {
     handleCuentaCobrada,
     handleCloseDetail,
 
-    // Utilities
+    
     getEstadoInfo,
     getEstadoBadge: getEstadoInfo
   };

@@ -135,7 +135,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
 
   return (
     <form id='product-form' onSubmit={handleSubmit} className='space-y-6 py-2'>
-      {/* Código y Nombre */}
+      {}
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
         <div className='space-y-2'>
           <label htmlFor='prod-code' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
@@ -178,7 +178,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
         </div>
       </div>
 
-      {/* Precios y Comisiones */}
+      {}
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
         <div className='space-y-2'>
           <label htmlFor='prod-price' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
@@ -227,7 +227,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
         </div>
       </div>
 
-      {/* Descripción */}
+      {}
       <div className='space-y-2'>
         <label htmlFor='prod-desc' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
           Descripción
@@ -248,14 +248,14 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
         </div>
       </div>
 
-      {/* Imagen Section */}
+      {}
       <div className='space-y-3'>
         <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
           Imagen del Producto
         </label>
 
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-          {/* Área de carga */}
+          {}
           <div
             className={`relative rounded-xl border-2 border-dashed transition-all duration-200 overflow-hidden ${
               isDragging
@@ -267,7 +267,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
             onDrop={onDrop}
           >
             <div className='p-4 flex flex-col items-center gap-3'>
-              {/* Preview */}
+              {}
               <div className='relative w-28 h-28 rounded-xl border-2 border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden bg-gray-50 dark:bg-slate-800'>
                 {imagePreview ? (
                   <img src={imagePreview} alt='Preview' className='w-full h-full object-cover' />
@@ -279,7 +279,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
                 )}
               </div>
 
-              {/* Info y botón */}
+              {}
               <div className='flex flex-col items-center gap-2 w-full'>
                 <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
                   Arrastrá una imagen o
@@ -316,7 +316,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
             </div>
           </div>
 
-          {/* URL Input */}
+          {}
           <div className='flex flex-col justify-center'>
             <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1'>
               URL de imagen

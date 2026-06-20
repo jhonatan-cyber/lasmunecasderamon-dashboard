@@ -10,7 +10,6 @@ import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck, LogIn } fro
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils/utils';
 
-// New simplified components
 import CriticalMetrics from '@/components/dashboard/CriticalMetrics';
 import LocalAndPending from '@/components/dashboard/LocalAndPending';
 import RecentActivityCompact from '@/components/dashboard/RecentActivityCompact';
@@ -21,7 +20,6 @@ import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
 import logger from '@/lib/utils/logger';
 
-// Keep existing components
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
   loading: () => <ChartSkeleton />
 });
@@ -121,7 +119,7 @@ export default function Dashboard() {
 
   return (
     <div className='p-4 md:p-8 space-y-10 bg-slate-50/50 dark:bg-transparent min-h-screen pb-20'>
-      {/* Header Section */}
+      {}
       <div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
         <div className='flex flex-col gap-1'>
           <h1 className='text-3xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
@@ -140,7 +138,7 @@ export default function Dashboard() {
         <DashboardSkeleton />
       ) : (
         <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
-          {/* 0. PERSONAL EN LOCAL (LOGIN) */}
+          {}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>
               <ShieldCheck className='h-4 w-4 text-emerald-500' />
@@ -151,7 +149,7 @@ export default function Dashboard() {
             <LoggedUsersCards />
           </section>
 
-          {/* 1. SALES CHART - FULL WIDTH */}
+          {}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>
               <BarChart3 className='h-4 w-4 text-emerald-500' />
@@ -162,7 +160,7 @@ export default function Dashboard() {
             <MiniSalesChart />
           </section>
 
-          {/* 2. CRITICAL METRICS - FULL WIDTH */}
+          {}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>
               <TrendingUp className='h-4 w-4 text-emerald-500' />
@@ -173,7 +171,7 @@ export default function Dashboard() {
             <CriticalMetrics />
           </section>
 
-          {/* 3. RANKINGS & PROJECTIONS - 50/50 ROW */}
+          {}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>
               <Medal className='h-4 w-4 text-amber-400' />
@@ -192,7 +190,7 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {/* 4. OPERATIONS & ACTIVITY - 50/50 ROW (NEW!) */}
+          {}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>
               <Activity className='h-4 w-4 text-indigo-500' />
@@ -241,7 +239,7 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {/* 5. FINAL SECTION: ASISTENCIA & SPECIAL STATS */}
+          {}
           <section className='grid grid-cols-1 lg:grid-cols-3 gap-10 items-start'>
             {isCajero && (
               <div className='lg:col-span-2'>

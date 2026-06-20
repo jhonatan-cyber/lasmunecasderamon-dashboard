@@ -42,12 +42,12 @@ export default function ProductSearch({
     goToPage
   } = useProductSearch(300);
 
-  // Determinar si estamos en modo controlado (props externas) o no controlado
+  
   const isControlled = externalSearchTerm !== undefined || searchProducto !== undefined;
   const searchTerm = externalSearchTerm ?? searchProducto ?? internalSearchTerm;
   const setSearchTerm = onSearchTermChange ?? onSearchChange ?? handleSearchChange;
 
-  // Sincronizar props externas con el hook cuando estamos en modo controlado
+  
   useEffect(() => {
     const termToSync = externalSearchTerm ?? searchProducto;
     if (isControlled && termToSync !== undefined) {
@@ -75,7 +75,7 @@ export default function ProductSearch({
   return (
     <>
       <div className={`${className}`}>
-        {/* Barra de búsqueda */}
+        {}
         <div className='flex justify-center mb-6'>
           <div className='w-full max-w-md'>
             <div className='flex items-center gap-2'>
@@ -110,7 +110,7 @@ export default function ProductSearch({
           </div>
         </div>
 
-        {/* Tabla de resultados de búsqueda en tiempo real - Solo si no es searchOnly */}
+        {}
         {!searchOnly && searchTerm && (
           <>
             <ProductSelectionTable
@@ -121,7 +121,7 @@ export default function ProductSearch({
               showSelection={false}
             />
 
-            {/* Paginación */}
+            {}
             {searchResults.length > itemsPerPage && (
               <Paginate page={currentPage} totalPages={totalPaginas} setPage={goToPage} />
             )}

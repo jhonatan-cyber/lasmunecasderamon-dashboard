@@ -51,7 +51,7 @@ export default function EventsSection() {
                 </div>
 
                 <div className='grid md:grid-cols-2 gap-8 lg:gap-12 items-center'>
-                    {/* Text Content */}
+                    {}
                     <div className='order-2 md:order-1'>
                         <div className='bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl hover:border-gold-500/30 transition-all duration-500'>
                             <p className='text-silver-300 text-base sm:text-lg leading-relaxed mb-8 font-light'>
@@ -93,7 +93,7 @@ export default function EventsSection() {
                         </div>
                     </div>
 
-                    {/* Gallery Slider */}
+                    {}
                     <div className='order-1 md:order-2 relative h-[340px] sm:h-[420px] lg:h-[500px] group'>
                         <div className='absolute inset-0 bg-gradient-to-br from-gold-500/10 to-silver-400/10 rounded-3xl blur-3xl animate-pulse'></div>
                         <div className='relative h-full bg-zinc-900/50 rounded-3xl border border-white/10 overflow-hidden shadow-2xl'>
@@ -115,7 +115,7 @@ export default function EventsSection() {
                                 </div>
                             ))}
 
-                            {/* Navigation Controls */}
+                            {}
                             <button
                                 onClick={prevImage}
                                 className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white hover:bg-gold-500 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 z-30"
@@ -129,7 +129,7 @@ export default function EventsSection() {
                                 <ChevronRight className="w-6 h-6" />
                             </button>
 
-                            {/* Dots Indicators */}
+                            {}
                             <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-30">
                                 {galleryImages.map((_, index) => (
                                     <button

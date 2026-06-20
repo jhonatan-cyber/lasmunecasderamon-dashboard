@@ -7,7 +7,7 @@ interface UseRefreshOnFocusOptions {
   immediate?: boolean;
 }
 
-// Refreshes data on mount, when the window regains focus, and when the tab becomes visible again.
+
 export function useRefreshOnFocus(
   refresh: () => void | Promise<unknown>,
   options: UseRefreshOnFocusOptions = {}

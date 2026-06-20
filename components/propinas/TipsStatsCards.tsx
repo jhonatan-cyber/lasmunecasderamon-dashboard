@@ -18,7 +18,7 @@ export default function TipsStatsCards({
 }: TipsStatsCardsProps) {
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-3 mb-6'>
-      {/* Total Propinas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -46,7 +46,7 @@ export default function TipsStatsCards({
         </CardContent>
       </Card>
 
-      {/* Usuarios */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -72,7 +72,7 @@ export default function TipsStatsCards({
         </CardContent>
       </Card>
 
-      {/* Propina por Usuario */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(139, 92, 246, 0.1)',

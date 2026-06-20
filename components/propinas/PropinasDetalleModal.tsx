@@ -55,7 +55,7 @@ export default function PropinasDetalleModal({
         </DialogHeader>
 
         <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
-          {/* Información del usuario */}
+          {}
           <div className='border-b pb-4 mb-4 flex flex-col items-center gap-1'>
             <div className='flex items-center gap-2 text-gray-700 text-sm sm:text-base'>
               <User className='text-gray-500 w-3 h-3 sm:w-4 sm:h-4' />
@@ -72,7 +72,7 @@ export default function PropinasDetalleModal({
             </div>
           </div>
 
-          {/* Tabla de detalles */}
+          {}
           <div>
             <h3 className='text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600'>
               Detalle de las Propinas
@@ -186,7 +186,7 @@ export default function PropinasDetalleModal({
           </div>
         </div>
 
-        {/* Botón cerrar */}
+        {}
         <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
           <div className='flex justify-center'>
             <Button

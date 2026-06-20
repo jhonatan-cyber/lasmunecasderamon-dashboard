@@ -83,7 +83,7 @@ interface ReportResponse {
   };
 }
 
-// REDUCER FOR STATE MANAGEMENT
+
 type ReportState = {
   period: string;
   startDate: string;
@@ -229,10 +229,10 @@ export function CashRegisterReport() {
   };
 
   const exportReport = () => {
-    // TODO: exportar a CSV/PDF si se requiere
+    
   };
 
-  // CHART DATA
+  
   const paymentPieData = useMemo(() => {
     if (!data?.summary) return [];
     return [
@@ -295,7 +295,7 @@ export function CashRegisterReport() {
 
   return (
     <div className="space-y-6">
-      {/* Filtros Rápidos - Action Chips */}
+      {}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
           {[
@@ -349,7 +349,7 @@ export function CashRegisterReport() {
         </div>
       </div>
 
-      {/* Balance de Caja - Diseño Premium */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { 
@@ -444,9 +444,9 @@ export function CashRegisterReport() {
         ))}
       </div>
 
-      {/* Row: Métodos de Pago (Donut) + Flujo de Efectivo */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Donut - Métodos de Pago */}
+        {}
         <Card className="border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
           <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
             <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -527,7 +527,7 @@ export function CashRegisterReport() {
           </CardContent>
         </Card>
 
-        {/* Flujo de Efectivo - Barras */}
+        {}
         <Card className="border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
           <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
             <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -595,7 +595,7 @@ export function CashRegisterReport() {
         </Card>
       </div>
 
-      {/* Movimientos: Ingresos vs Egresos */}
+      {}
       <Card className="border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
         <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
           <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -607,7 +607,7 @@ export function CashRegisterReport() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Chart */}
+            {}
             <div className="h-[250px] sm:h-[350px] w-full">
               {movBarData.length > 0 && movBarData.some(d => d.valor > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -643,7 +643,7 @@ export function CashRegisterReport() {
               )}
             </div>
 
-            {/* Detalle */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-5 rounded-2xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border border-green-100 dark:border-green-800/50 shadow-sm flex flex-col justify-between">
                 <div>
@@ -678,7 +678,7 @@ export function CashRegisterReport() {
         </CardContent>
       </Card>
 
-      {/* Cajas por Turno - Chart + Table */}
+      {}
       <Card className="border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md mb-8">
         <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
           <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -689,7 +689,7 @@ export function CashRegisterReport() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 px-0 sm:px-6">
-          {/* Chart de Cajas */}
+          {}
           {cajasBarData.length > 0 && (
             <div className="mb-8 h-[260px] sm:h-[350px] w-full px-4 sm:px-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -724,7 +724,7 @@ export function CashRegisterReport() {
             </div>
           )}
 
-          {/* Tabla */}
+          {}
           <div className="overflow-x-auto border-t border-gray-100 dark:border-gray-800">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50/50 dark:bg-gray-800/50">

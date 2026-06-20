@@ -26,7 +26,6 @@ export async function POST(request: Request) {
 
     if (numeroRemitente !== adminWhatsApp) return NextResponse.json({ message: 'No autorizado' });
 
-    // Fetch pending items (logic from original handler)
     const [ventasPendientes, serviciosPendientes, cuentasPendientes, anticiposPendientes] =
       await Promise.all([
         query(
@@ -60,7 +59,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'No hay solicitudes pendientes' });
     }
 
-    // Command parsing (logic from original handler)
     const comandoAnticipo = parseAnticipoCommand(mensaje);
     if (comandoAnticipo) {
       const result = await AnticipoService.processAnticipoFromCommand(

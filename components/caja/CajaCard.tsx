@@ -6,7 +6,6 @@ import { Eye, Lock, Wallet, ArrowDownCircle, User, Calendar, Hash } from 'lucide
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
-// Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const fechaObj = new Date(fecha);
@@ -63,12 +62,9 @@ export const CajaCard = ({
 
   const efectivoBase = Number(caja.monto_apertura || 0) + Number(caja.efectivo || 0);
   const totalEgresos =
-    Number(caja.devoluciones || 0) +
-    Number(caja.anticipo || 0) +
-    Number(caja.retiro_total || 0);
+    Number(caja.devoluciones || 0) + Number(caja.anticipo || 0) + Number(caja.retiro_total || 0);
   const efectivoNeto = efectivoBase - totalEgresos;
-  const balanceActual =
-    efectivoNeto + Number(caja.tarjeta || 0) + Number(caja.transferencia || 0);
+  const balanceActual = efectivoNeto + Number(caja.tarjeta || 0) + Number(caja.transferencia || 0);
 
   return (
     <Card className='group border border-slate-100 dark:border-white/10 shadow-sm hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[2rem] overflow-hidden'>

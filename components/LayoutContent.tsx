@@ -19,7 +19,6 @@ interface LayoutUser {
 
 function MainLayout({ children, user }: { children: React.ReactNode; user: LayoutUser | null }) {
   useEffect(() => {
-    // Prevent double scroll by hiding body overflow when in the app layout
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'auto';

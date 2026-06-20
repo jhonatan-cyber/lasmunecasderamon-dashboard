@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { cn } from '@/lib/utils/utils';
 
-// Skeleton base
+
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
@@ -11,11 +11,11 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
   );
 }
 
-// Table Skeleton
+
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="space-y-3">
-      {/* Header */}
+      {}
       <div className="flex gap-4 pb-3 border-b">
         <Skeleton className="h-4 w-12" />
         <Skeleton className="h-4 w-32" />
@@ -24,7 +24,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
         <Skeleton className="h-4 flex-1" />
       </div>
       
-      {/* Rows */}
+      {}
       {[...Array(rows)].map((_, i) => (
         <div key={i} className="flex gap-4 items-center py-3">
           <Skeleton className="h-4 w-12" />
@@ -38,7 +38,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
-// Card Skeleton
+
 export function CardSkeleton() {
   return (
     <div className="p-6 border rounded-lg space-y-3">
@@ -50,7 +50,7 @@ export function CardSkeleton() {
   );
 }
 
-// Stats Card Skeleton
+
 export function StatsCardSkeleton() {
   return (
     <div className="p-6 border rounded-lg">
@@ -64,7 +64,7 @@ export function StatsCardSkeleton() {
   );
 }
 
-// Chart Skeleton
+
 export function ChartSkeleton() {
   return (
     <div className="p-6 border rounded-lg">
@@ -88,7 +88,7 @@ export function ChartSkeleton() {
   );
 }
 
-// Form Skeleton
+
 export function FormSkeleton() {
   return (
     <div className="space-y-6">
@@ -107,11 +107,11 @@ export function FormSkeleton() {
   );
 }
 
-// Report Skeleton
+
 export function ReportSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
@@ -120,17 +120,17 @@ export function ReportSkeleton() {
         <Skeleton className="h-10 w-32" />
       </div>
       
-      {/* Stats Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <StatsCardSkeleton key={i} />
         ))}
       </div>
       
-      {/* Chart */}
+      {}
       <ChartSkeleton />
       
-      {/* Table */}
+      {}
       <div className="border rounded-lg p-6">
         <Skeleton className="h-6 w-32 mb-4" />
         <TableSkeleton rows={8} />
@@ -139,25 +139,25 @@ export function ReportSkeleton() {
   );
 }
 
-// Dashboard Skeleton
+
 export function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       
-      {/* Stats */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <StatsCardSkeleton key={i} />
         ))}
       </div>
       
-      {/* Charts */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartSkeleton />
         <ChartSkeleton />
       </div>
       
-      {/* Recent Activity */}
+      {}
       <div className="border rounded-lg p-6">
         <Skeleton className="h-6 w-40 mb-4" />
         <TableSkeleton rows={5} />
@@ -166,7 +166,7 @@ export function DashboardSkeleton() {
   );
 }
 
-// List Skeleton
+
 export function ListSkeleton({ items = 5 }: { items?: number }) {
   return (
     <div className="space-y-3">
@@ -184,7 +184,7 @@ export function ListSkeleton({ items = 5 }: { items?: number }) {
   );
 }
 
-// Users Skeleton
+
 export function UsersSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -195,7 +195,7 @@ export function UsersSkeleton() {
         <Skeleton className="h-10 w-full rounded-lg" />
       </div>
 
-      {/* Table Skeleton */}
+      {}
       <div className="border rounded-xl overflow-hidden bg-white mt-6">
         <div className="hidden lg:block">
           <div className="flex bg-gray-50 border-b p-4">
@@ -226,7 +226,7 @@ export function UsersSkeleton() {
           ))}
         </div>
         
-        {/* Mobile Cards Skeleton */}
+        {}
         <div className="lg:hidden space-y-4 p-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="p-4 border rounded-lg space-y-4">
@@ -252,11 +252,11 @@ export function UsersSkeleton() {
   );
 }
 
-// Clients Skeleton
+
 export function ClientsSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
         <div className="space-y-2">
           <Skeleton className="h-8 w-32 sm:h-10 sm:w-48" />
@@ -268,7 +268,7 @@ export function ClientsSkeleton() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-xl bg-gray-50/50">
         <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-10 w-full rounded-lg" />
@@ -276,7 +276,7 @@ export function ClientsSkeleton() {
         <Skeleton className="h-10 w-full rounded-lg" />
       </div>
 
-      {/* Table */}
+      {}
       <div className="border rounded-xl overflow-hidden bg-white mt-6">
         <div className="hidden lg:block">
           <div className="flex bg-gray-50 border-b p-4">
@@ -315,11 +315,11 @@ export function ClientsSkeleton() {
   );
 }
 
-// Categories Skeleton
+
 export function CategoriesSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
         <div className="space-y-2">
           <Skeleton className="h-8 w-40 sm:h-10 sm:w-48" />
@@ -328,7 +328,7 @@ export function CategoriesSkeleton() {
         <Skeleton className="h-10 w-40 rounded-full" />
       </div>
 
-      {/* Filters */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-xl bg-gray-50/50">
         <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-10 w-full rounded-lg" />
@@ -336,7 +336,7 @@ export function CategoriesSkeleton() {
         <Skeleton className="h-10 w-full rounded-lg" />
       </div>
 
-      {/* Category Cards Grid */}
+      {}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {[...Array(6)].map((_, i) => (
           <div key={i} className="p-6 border rounded-xl space-y-4 bg-white">
@@ -360,11 +360,11 @@ export function CategoriesSkeleton() {
   );
 }
 
-// Products Skeleton
+
 export function ProductsSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <Skeleton className="h-8 w-40 sm:h-10 sm:w-48" />
@@ -372,7 +372,7 @@ export function ProductsSkeleton() {
         </div>
       </div>
 
-      {/* Category Cards Grid */}
+      {}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="p-6 border rounded-xl space-y-3 bg-white">
@@ -386,11 +386,11 @@ export function ProductsSkeleton() {
   );
 }
 
-// Settings (Permissions) Skeleton
+
 export function SettingsSkeleton() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl space-y-4 sm:space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
           <Skeleton className="h-8 w-56 sm:h-10 sm:w-72" />
@@ -399,7 +399,7 @@ export function SettingsSkeleton() {
         <Skeleton className="h-10 w-36 rounded-full" />
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="p-4 border rounded-lg">
@@ -411,7 +411,7 @@ export function SettingsSkeleton() {
         ))}
       </div>
 
-      {/* Filter Card */}
+      {}
       <div className="p-4 sm:p-6 border rounded-lg">
         <div className="flex flex-col sm:flex-row gap-4">
           <Skeleton className="h-10 flex-1 rounded-full" />
@@ -419,7 +419,7 @@ export function SettingsSkeleton() {
         </div>
       </div>
 
-      {/* Permissions List */}
+      {}
       <div className="border rounded-lg p-6 space-y-4">
         <Skeleton className="h-6 w-40" />
         {[...Array(6)].map((_, i) => (
@@ -443,11 +443,11 @@ export function SettingsSkeleton() {
   );
 }
 
-// Profile Skeleton
+
 export function ProfileSkeleton() {
   return (
     <div className="flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
         <div className="space-y-2">
           <Skeleton className="h-10 w-48 sm:w-64" />
@@ -456,9 +456,9 @@ export function ProfileSkeleton() {
         <Skeleton className="h-10 w-32 rounded-full" />
       </div>
 
-      {/* Profile Grid */}
+      {}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Personal Info Card */}
+        {}
         <div className="border rounded-lg p-6 space-y-4">
           <div className="space-y-1">
             <Skeleton className="h-6 w-48" />
@@ -483,7 +483,7 @@ export function ProfileSkeleton() {
           </div>
         </div>
 
-        {/* Activity Card */}
+        {}
         <div className="border rounded-lg p-6 space-y-4">
           <div className="space-y-1">
             <Skeleton className="h-6 w-40" />
@@ -503,7 +503,7 @@ export function ProfileSkeleton() {
   );
 }
 
-// Error Logs Skeleton
+
 export function ErrorLogsSkeleton() {
   return (
     <div className="p-8 space-y-4">
@@ -525,11 +525,11 @@ export function ErrorLogsSkeleton() {
   );
 }
 
-// Notifications Skeleton
+
 export function NotificationsSkeleton() {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
@@ -541,10 +541,10 @@ export function NotificationsSkeleton() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <Skeleton className="h-10 w-full max-w-2xl rounded-lg" />
 
-      {/* Notification Items */}
+      {}
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="border rounded-lg p-4">
@@ -567,11 +567,11 @@ export function NotificationsSkeleton() {
   );
 }
 
-// Role Dashboard Skeleton (for anfitriona-dashboard, garzon-dashboard)
+
 export function RoleDashboardSkeleton() {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {}
       <div className="space-y-4">
         <div className="text-left space-y-2">
           <Skeleton className="h-8 w-64" />
@@ -583,7 +583,7 @@ export function RoleDashboardSkeleton() {
         </div>
       </div>
 
-      {/* Dashboard Cards */}
+      {}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="border-dotted border-2 border-gray-200 rounded-lg p-6 space-y-3">
@@ -600,11 +600,11 @@ export function RoleDashboardSkeleton() {
   );
 }
 
-// Rooms Skeleton
+
 export function RoomsSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
         <Skeleton className="h-8 w-48 sm:h-10 sm:w-64" />
         <div className="flex gap-2">
@@ -614,7 +614,7 @@ export function RoomsSkeleton() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-xl bg-gray-50/50">
         <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-10 w-full rounded-lg" />
@@ -622,7 +622,7 @@ export function RoomsSkeleton() {
         <Skeleton className="h-10 w-full rounded-lg" />
       </div>
 
-      {/* Grid of Rooms */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mt-4 sm:mt-6">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="border rounded-xl p-4 space-y-4 bg-white">
@@ -645,11 +645,11 @@ export function RoomsSkeleton() {
   );
 }
 
-// Role Table Skeleton (for anfitriona/garzon/cajero list pages: anticipos, asistencias, comisiones, etc.)
+
 export function RoleTableSkeleton() {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <Skeleton className="h-4 w-40" />
@@ -658,13 +658,13 @@ export function RoleTableSkeleton() {
         <Skeleton className="h-10 w-24 rounded-full" />
       </div>
 
-      {/* Totals */}
+      {}
       <div className="text-center">
         <Skeleton className="h-4 w-28 mx-auto mb-2" />
         <Skeleton className="h-8 w-36 mx-auto" />
       </div>
 
-      {/* Filters */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Skeleton className="h-10 w-32 rounded-md" />
         <div className="flex items-center gap-2">
@@ -673,7 +673,7 @@ export function RoleTableSkeleton() {
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <div className="border rounded-lg overflow-hidden">
         <div className="bg-gray-50 p-4 flex gap-4">
           <Skeleton className="h-4 w-8" />
@@ -696,7 +696,7 @@ export function RoleTableSkeleton() {
         ))}
       </div>
 
-      {/* Pagination */}
+      {}
       <div className="flex justify-center">
         <Skeleton className="h-10 w-64 rounded-lg" />
       </div>
@@ -704,11 +704,11 @@ export function RoleTableSkeleton() {
   );
 }
 
-// Role Calendar Skeleton
+
 export function RoleCalendarSkeleton() {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-center">
         <Skeleton className="h-8 w-48" />
         <div className="flex gap-2">
@@ -718,15 +718,15 @@ export function RoleCalendarSkeleton() {
         </div>
       </div>
 
-      {/* Calendar Grid */}
+      {}
       <div className="border rounded-lg p-4">
-        {/* Day headers */}
+        {}
         <div className="grid grid-cols-7 gap-2 mb-4">
           {[...Array(7)].map((_, i) => (
             <Skeleton key={i} className="h-6 w-full rounded-md" />
           ))}
         </div>
-        {/* Calendar cells */}
+        {}
         {[...Array(5)].map((_, row) => (
           <div key={row} className="grid grid-cols-7 gap-2 mb-2">
             {[...Array(7)].map((_, col) => (
@@ -739,27 +739,27 @@ export function RoleCalendarSkeleton() {
   );
 }
 
-// Sales Skeleton
+
 export function SalesSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10">
-      {/* Sales Header */}
+      {}
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 shadow-sm">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-10 w-10 rounded-full" />
       </div>
 
-      {/* Caja Status Banner */}
+      {}
       <Skeleton className="h-16 w-full rounded-xl" />
 
-      {/* Sales Stats Grid */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <StatsCardSkeleton key={i} />
         ))}
       </div>
 
-      {/* Sales Filters */}
+      {}
       <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Skeleton className="h-10 w-full rounded-full" />
@@ -768,12 +768,12 @@ export function SalesSkeleton() {
         </div>
       </div>
 
-      {/* Sales Tabs */}
+      {}
       <div className="flex justify-center mb-6">
         <Skeleton className="h-12 w-64 rounded-full" />
       </div>
 
-      {/* Sales List */}
+      {}
       <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 overflow-hidden">
         <div className="bg-gray-50 dark:bg-slate-800/50 p-4 flex gap-4 border-b dark:border-slate-700">
           <Skeleton className="h-4 w-12" />

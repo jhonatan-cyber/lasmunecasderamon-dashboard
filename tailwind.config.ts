@@ -16,7 +16,7 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Club colors
+        
         gold: {
           50: '#fffbeb',
           100: '#fef3c7',

@@ -1,9 +1,6 @@
 import logger from '@/lib/utils/logger';
 
-/**
- * Event Bus Tipado para comunicacion entre componentes y comunicacion global.
- * Reemplaza el uso de `window.dispatchEvent` con payloads "any".
- */
+
 
 export interface AppEvents {
   ventaRegistrada: { ventaId?: string; codigo?: string };

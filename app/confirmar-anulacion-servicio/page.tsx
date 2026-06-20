@@ -42,7 +42,6 @@ function ConfirmarAnulacionServicioContent() {
       return;
     }
 
-    // Cargar datos de la solicitud
     const cargarSolicitud = async () => {
       try {
         const response = await fetch(`/api/servicios/solicitud-anulacion?token=${token}`);
@@ -108,10 +107,8 @@ function ConfirmarAnulacionServicioContent() {
             : '❌ Anulación de servicio rechazada exitosamente'
         );
 
-        // Mostrar mensaje de que la ventana se cerrará
         toast.info('La ventana se cerrará automáticamente en 2 segundos');
 
-        // Cerrar la ventana después de 2 segundos
         setTimeout(() => {
           window.close();
         }, 2000);
@@ -189,7 +186,7 @@ function ConfirmarAnulacionServicioContent() {
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            {/* Detalles del servicio */}
+            {}
             <div className='bg-blue-50 p-4 rounded-lg'>
               <h4 className='font-semibold text-blue-900 mb-3'>Detalles del Servicio</h4>
               <div className='space-y-4'>
@@ -245,7 +242,7 @@ function ConfirmarAnulacionServicioContent() {
               </div>
             </div>
 
-            {/* Botones de acción */}
+            {}
             <div className='flex gap-4 pt-4'>
               <div className='flex justify-center gap-2 w-full'>
                 <Button
@@ -272,7 +269,7 @@ function ConfirmarAnulacionServicioContent() {
               </div>
             </div>
 
-            {/* Información sobre cierre automático */}
+            {}
             <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
               <p className='text-sm text-blue-800 text-center'>
                 <strong>ℹ️ Información:</strong> Después de procesar la anulación, esta ventana se

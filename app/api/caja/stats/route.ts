@@ -6,7 +6,6 @@ import { formatDateLabel } from '@/lib/utils/calendarUtils';
 export const GET = withAppApiWrapper(async () => {
   const stats = await StatsRepository.getCajaGeneralStats();
 
-  // Formatear para compatibilidad con el frontend antiguo
   const formattedStats = {
     ...stats,
     tiempo_abierta: stats.fecha_apertura_raw

@@ -36,33 +36,33 @@ export default function AdvancesTable({
   onAction,
   activeTab = 'pending'
 }: AdvancesTableProps) {
-  // Filter by tab
   const filteredAdvances = advances.filter(a => {
     if (activeTab === 'pending') {
-      // Por cobrar: estado 1 sin fecha_cobro, estado 2 (pendiente), estado 0 (pagado directo sin cobrar)
       return Number(a.estado) === 1 || Number(a.estado) === 2;
     } else {
-      // Cobrados: estado 4 (cobrado en planilla) o tiene fecha_cobro
       return Number(a.estado) === 4 || !!a.fecha_cobro;
     }
   });
 
   const paidAdvances = filteredAdvances.filter(a => Number(a.estado) === 0);
-  const pendingAdvances = filteredAdvances.filter(a => Number(a.estado) === 1 || Number(a.estado) === 2);
+  const pendingAdvances = filteredAdvances.filter(
+    a => Number(a.estado) === 1 || Number(a.estado) === 2
+  );
 
   if (filteredAdvances.length === 0 && !loading) {
     return (
       <Card className='border-none shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
         <CardContent className='flex flex-col items-center justify-center py-16 text-gray-500'>
           <Wallet className='h-12 w-12 mb-4 opacity-20' />
-          <p className='text-lg font-medium'>No hay anticipos {activeTab === 'pending' ? 'por cobrar' : 'cobrados'}</p>
+          <p className='text-lg font-medium'>
+            No hay anticipos {activeTab === 'pending' ? 'por cobrar' : 'cobrados'}
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   const getStatusBadge = (estado: number, anticipo: Anticipo) => {
-    // Si tiene fecha_cobro es cobrado (desde planilla)
     if (anticipo.fecha_cobro) {
       return (
         <Badge className='rounded-full px-3 py-1 bg-purple-100 text-purple-700 border-none hover:bg-purple-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
@@ -70,7 +70,7 @@ export default function AdvancesTable({
         </Badge>
       );
     }
-    // Si tiene fecha_entrega es entregado (entrega manual)
+
     if (anticipo.fecha_entrega) {
       return (
         <Badge className='rounded-full px-3 py-1 bg-emerald-100 text-emerald-700 border-none hover:bg-emerald-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
@@ -78,7 +78,7 @@ export default function AdvancesTable({
         </Badge>
       );
     }
-    // Estado 2 = Pendiente (solicitado, sin aprobar)
+
     if (Number(estado) === 2) {
       return (
         <Badge className='rounded-full px-3 py-1 bg-blue-100 text-blue-700 border-none hover:bg-blue-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
@@ -86,7 +86,7 @@ export default function AdvancesTable({
         </Badge>
       );
     }
-    // Estado 3 = Rechazado
+
     if (Number(estado) === 3) {
       return (
         <Badge className='rounded-full px-3 py-1 bg-rose-100 text-rose-700 border-none hover:bg-rose-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
@@ -94,7 +94,7 @@ export default function AdvancesTable({
         </Badge>
       );
     }
-    // Estado 1 = Por Cobrar (aprobado, sin entregar)
+
     return (
       <Badge className='rounded-full px-3 py-1 bg-amber-100 text-amber-700 border-none hover:bg-amber-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
         Por Cobrar
@@ -102,7 +102,6 @@ export default function AdvancesTable({
     );
   };
 
-  // Vista de tarjetas para móviles
   const renderMobileCardView = (advancesToRender: Anticipo[], title: string) => (
     <div className='lg:hidden space-y-4'>
       <h3 className='text-sm font-semibold text-gray-900 dark:text-white px-2'>
@@ -200,7 +199,6 @@ export default function AdvancesTable({
     </div>
   );
 
-  // Vista de tabla para desktop
   const renderDesktopTableView = (advancesToRender: Anticipo[], title: string) => (
     <div className='hidden lg:block space-y-4'>
       <h3 className='text-sm font-semibold text-gray-900 dark:text-white px-2'>
@@ -242,23 +240,23 @@ export default function AdvancesTable({
                   <TableCell>
                     <Skeleton className='h-10 w-40 rounded-full' />
                   </TableCell>
-<TableCell>
-                      <Skeleton className='h-4 w-24 mx-auto' />
-                    </TableCell>
+                  <TableCell>
+                    <Skeleton className='h-4 w-24 mx-auto' />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className='h-6 w-20 mx-auto rounded-full' />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className='h-4 w-24 ml-auto' />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className='h-4 w-24 mx-auto' />
+                  </TableCell>
+                  {isAdmin && (
                     <TableCell>
-                      <Skeleton className='h-6 w-20 mx-auto rounded-full' />
+                      <Skeleton className='h-8 w-20 mx-auto rounded-full' />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className='h-4 w-24 ml-auto' />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className='h-4 w-24 mx-auto' />
-                    </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <Skeleton className='h-8 w-20 mx-auto rounded-full' />
-                      </TableCell>
-                    )}
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -415,19 +413,31 @@ export default function AdvancesTable({
 
   return (
     <div className='space-y-6'>
-      {/* Anticipos Por Cobrar */}
+      {}
       {(pendingAdvances.length > 0 || loading) && (
         <>
-          {renderMobileCardView(pendingAdvances, activeTab === 'pending' ? 'Por Cobrar' : 'Cobrados')}
-          {renderDesktopTableView(pendingAdvances, activeTab === 'pending' ? 'Por Cobrar' : 'Cobrados')}
+          {renderMobileCardView(
+            pendingAdvances,
+            activeTab === 'pending' ? 'Por Cobrar' : 'Cobrados'
+          )}
+          {renderDesktopTableView(
+            pendingAdvances,
+            activeTab === 'pending' ? 'Por Cobrar' : 'Cobrados'
+          )}
         </>
       )}
 
-      {/* Anticipos Pagados */}
+      {}
       {(paidAdvances.length > 0 || loading) && (
         <>
-          {renderMobileCardView(paidAdvances, activeTab === 'pending' ? 'Entregados' : 'Cobrados en Planilla')}
-          {renderDesktopTableView(paidAdvances, activeTab === 'pending' ? 'Entregados' : 'Cobrados en Planilla')}
+          {renderMobileCardView(
+            paidAdvances,
+            activeTab === 'pending' ? 'Entregados' : 'Cobrados en Planilla'
+          )}
+          {renderDesktopTableView(
+            paidAdvances,
+            activeTab === 'pending' ? 'Entregados' : 'Cobrados en Planilla'
+          )}
         </>
       )}
 
@@ -435,11 +445,12 @@ export default function AdvancesTable({
         <Card className='border-none shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
           <CardContent className='flex flex-col items-center justify-center py-16 text-gray-500'>
             <Wallet className='h-12 w-12 mb-4 opacity-20' />
-            <p className='text-lg font-medium'>No hay anticipos {activeTab === 'pending' ? 'por cobrar' : 'cobrados'}</p>
+            <p className='text-lg font-medium'>
+              No hay anticipos {activeTab === 'pending' ? 'por cobrar' : 'cobrados'}
+            </p>
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
-

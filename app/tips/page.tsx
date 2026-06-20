@@ -47,7 +47,6 @@ export default function TipsPage() {
     }
   };
 
-  // Filtrar y ordenar datos por término de búsqueda
   const filteredTips = useMemo(() => {
     if (!tips) return [];
 
@@ -84,7 +83,6 @@ export default function TipsPage() {
     });
   }, [tipsCajaActiva, searchTerm]);
 
-  // Calcular estadísticas
   const stats = useMemo(() => {
     if (!filteredTips) {
       return {
@@ -114,7 +112,6 @@ export default function TipsPage() {
     };
   }, [filteredTips, filteredTipsCajaActiva]);
 
-  // Función para formatear moneda
   const formatCurrency = (n: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -124,11 +121,9 @@ export default function TipsPage() {
     }).format(n);
   };
 
-  // Contar por tab
   const pendingCount = filteredTips.filter((t: any) => toNumber(t.propinas_pendientes) > 0).length;
   const paidCount = filteredTips.filter((t: any) => toNumber(t.propinas_cobradas) > 0).length;
 
-  // Filtrar por tab activo
   const tabFilteredTips = useMemo(() => {
     return filteredTips.filter((tip: any) => {
       if (activeTab === 'pending') return toNumber(tip.propinas_pendientes) > 0;
@@ -137,7 +132,6 @@ export default function TipsPage() {
     });
   }, [filteredTips, activeTab]);
 
-  // Paginación
   const tabPaginatedTips = tabFilteredTips.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const totalPages = Math.ceil(tabFilteredTips.length / rowsPerPage) || 1;
 
@@ -176,7 +170,7 @@ export default function TipsPage() {
             </div>
           </div>
 
-          {/* Estadísticas */}
+          {}
           <TipsStatsCards
             totalTips={stats.totalTips}
             totalUsuarios={stats.totalUsuarios}
@@ -184,14 +178,14 @@ export default function TipsPage() {
             formatCurrency={formatCurrency}
           />
 
-          {/* Error */}
+          {}
           {error && (
             <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm'>
               <strong>Error al cargar propinas:</strong> {error}
             </div>
           )}
 
-          {/* Filtros */}
+          {}
           <TipsFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -205,7 +199,7 @@ export default function TipsPage() {
             onClearFilters={handleClearFilters}
           />
 
-          {/* Tabs - centrados debajo de los filtros */}
+          {}
           <div className='flex justify-center gap-3 border-b pb-1'>
             <button
               onClick={() => {
@@ -253,7 +247,7 @@ export default function TipsPage() {
             </button>
           </div>
 
-          {/* Lista de tips */}
+          {}
           <div className='overflow-x-auto'>
             <TipsTable
               loading={loading}
@@ -267,7 +261,7 @@ export default function TipsPage() {
               <Paginate page={page} totalPages={totalPages} setPage={setPage} />
             </div>
           )}
-          {/* Modal de detalles */}
+          {}
           <PropinasDetalleModal
             open={isModalOpen}
             onClose={() => setIsModalOpen(false)}

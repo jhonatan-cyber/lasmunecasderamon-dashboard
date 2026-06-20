@@ -12,7 +12,7 @@ vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'mock-uuid-1234'
 }));
 
-// ─── parsePagosMixtos ────────────────────────────────────────────────────────
+
 
 describe('parsePagosMixtos', () => {
   it('retorna array vacío si el input no es array', () => {
@@ -56,7 +56,7 @@ describe('parsePagosMixtos', () => {
   });
 });
 
-// ─── validatePagosMixtos ─────────────────────────────────────────────────────
+
 
 describe('validatePagosMixtos', () => {
   it('lanza ValidationError si hay menos de 2 métodos', () => {
@@ -100,7 +100,7 @@ describe('validatePagosMixtos', () => {
   });
 });
 
-// ─── calcularDeltasCaja ──────────────────────────────────────────────────────
+
 
 describe('calcularDeltasCaja', () => {
   it('suma correctamente por método', () => {
@@ -150,7 +150,7 @@ describe('calcularDeltasCaja', () => {
   });
 });
 
-// ─── procesarPrepago ─────────────────────────────────────────────────────────
+
 
 describe('procesarPrepago', () => {
   const baseParams = {
@@ -168,7 +168,7 @@ describe('procesarPrepago', () => {
     const trx = vi.fn().mockResolvedValueOnce([{ saldo: 0 }]);
     const result = await procesarPrepago(trx as any, baseParams);
     expect(result).toBe(0);
-    expect(trx).toHaveBeenCalledTimes(1); // solo el SELECT
+    expect(trx).toHaveBeenCalledTimes(1); 
   });
 
   it('retorna 0 si prepagoSolicitado es 0', async () => {
@@ -180,16 +180,16 @@ describe('procesarPrepago', () => {
   it('descuenta el saldo completo si prepagoSolicitado es null y saldo < total', async () => {
     const trx = vi
       .fn()
-      .mockResolvedValueOnce([{ saldo: 2000 }]) // SELECT saldo
-      .mockResolvedValueOnce([]) // UPDATE clientes
-      .mockResolvedValueOnce([]); // INSERT movimiento
+      .mockResolvedValueOnce([{ saldo: 2000 }]) 
+      .mockResolvedValueOnce([]) 
+      .mockResolvedValueOnce([]); 
 
     const result = await procesarPrepago(trx as any, {
       ...baseParams,
       total: 5000,
       prepagoSolicitado: null
     });
-    expect(result).toBe(2000); // min(2000, 5000)
+    expect(result).toBe(2000); 
   });
 
   it('descuenta el total si prepagoSolicitado es null y saldo >= total', async () => {
@@ -204,7 +204,7 @@ describe('procesarPrepago', () => {
       total: 5000,
       prepagoSolicitado: null
     });
-    expect(result).toBe(5000); // min(10000, 5000)
+    expect(result).toBe(5000); 
   });
 
   it('descuenta el monto exacto si prepagoSolicitado está definido', async () => {
@@ -221,8 +221,8 @@ describe('procesarPrepago', () => {
   it('lanza BusinessError si prepagoSolicitado > saldo disponible', async () => {
     const trx = vi
       .fn()
-      .mockResolvedValueOnce([{ saldo: 1000 }]) // primera llamada
-      .mockResolvedValueOnce([{ saldo: 1000 }]); // segunda llamada (el test llama dos veces)
+      .mockResolvedValueOnce([{ saldo: 1000 }]) 
+      .mockResolvedValueOnce([{ saldo: 1000 }]); 
 
     await expect(
       procesarPrepago(trx as any, { ...baseParams, prepagoSolicitado: 5000 })

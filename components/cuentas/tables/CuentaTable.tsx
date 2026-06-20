@@ -130,12 +130,12 @@ export default function CuentaTable({
     getEstadoBadge
   } = useCuentaTableLogic();
 
-  // Verificar permisos
+  
   const canViewDetails = hasPermission('cuentas', 'ver_detalles');
   const canAddProducts = hasPermission('cuentas', 'agregar_productos');
   const canCobrar = hasPermission('cuentas', 'cobrar');
 
-  // Si no tiene ningún permiso de acción, no mostrar el menú
+  
   const hasAnyAction = canViewDetails || canAddProducts || canCobrar;
 
   const selectedCuentaIdForAction = cuentaSeleccionada
@@ -149,7 +149,7 @@ export default function CuentaTable({
 
   const handleProductosAgregados = () => {
     hookHandleProductosAgregados();
-    // Actualizar los datos de la página
+    
     if (onRefresh) {
       onRefresh();
     }
@@ -157,7 +157,7 @@ export default function CuentaTable({
 
   const handleCuentaCobrada = () => {
     hookHandleCuentaCobrada();
-    // Actualizar los datos de la página
+    
     if (onRefresh) {
       onRefresh();
     }
@@ -287,14 +287,14 @@ export default function CuentaTable({
     );
   }
 
-  // Vista de tarjetas para móviles
+  
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {rows.map(cuenta => (
         <Card key={cuenta.id_cuenta} className='shadow-sm hover:shadow-md transition-shadow'>
           <CardContent className='p-4'>
             <div className='space-y-3'>
-              {/* Header con código y estado */}
+              {}
               <div className='flex items-center justify-between'>
                 <div className='space-y-2'>
                   <h3 className='font-semibold text-lg text-gray-900'>{cuenta.codigo}</h3>
@@ -305,7 +305,7 @@ export default function CuentaTable({
                 </Badge>
               </div>
 
-              {/* Información de la cuenta */}
+              {}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
                   <User className='text-gray-500 w-4 h-4' />
@@ -366,7 +366,7 @@ export default function CuentaTable({
                 </div>
               </div>
 
-              {/* Acciones */}
+              {}
               {hasAnyAction && (
                 <div className='flex items-center gap-2 pt-2 border-t border-gray-100'>
                   {canViewDetails && (
@@ -451,7 +451,7 @@ export default function CuentaTable({
     </div>
   );
 
-  // Vista de tabla para pantallas grandes
+  
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
@@ -602,14 +602,14 @@ export default function CuentaTable({
       <MobileCardView />
       <DesktopTableView />
 
-      {/* Modal de detalles */}
+      {}
       <CuentaDetailModal
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         cuentaId={selectedCuentaId}
       />
 
-      {/* Modal de Agregar Productos */}
+      {}
       <AgregarProductosModal
         open={agregarProductosOpen}
         onOpenChange={setAgregarProductosOpen}
@@ -617,7 +617,7 @@ export default function CuentaTable({
         onProductosAgregados={handleProductosAgregados}
       />
 
-      {/* Modal de Cobrar Cuenta */}
+      {}
       <CobrarCuentaModal
         open={cobrarCuentaOpen}
         onClose={() => setCobrarCuentaOpen(false)}

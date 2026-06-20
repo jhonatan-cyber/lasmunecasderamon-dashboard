@@ -120,7 +120,7 @@ export const useOrdersList = () => {
     fetchServicios();
   }, [fetchOrders, fetchServicios]);
 
-  // Public filtering logic
+  
   const filteredOrders = useMemo(() => {
     if (!searchTerm) return orders;
     const term = searchTerm.toLowerCase();
