@@ -186,7 +186,7 @@ export default function MiniSalesChart() {
         'DIC'
       ];
 
-      // Creamos un array con los 12 meses inicializados en 0
+      
       const fullYearData = monthNames.map((name, index) => ({
         label: name,
         ventas: 0,
@@ -195,7 +195,7 @@ export default function MiniSalesChart() {
         mes_num: index + 1
       }));
 
-      // Rellenamos con los datos reales que vinieron del servidor
+      
       monthData.data.forEach(item => {
         const monthIndex = item.mes_num - 1;
         if (fullYearData[monthIndex]) {
@@ -247,7 +247,7 @@ export default function MiniSalesChart() {
 
   return (
     <div className='w-full space-y-10 group'>
-      {/* 1. TOP HEADER & FILTERS */}
+      {}
       <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-8'>
         <div className='flex flex-col gap-4'>
           <div className='flex items-center gap-4'>
@@ -300,9 +300,9 @@ export default function MiniSalesChart() {
           )}
         </div>
 
-        {/* CONTROLS */}
+        {}
         <div className='flex flex-wrap items-center gap-4'>
-          {/* Refresh Button */}
+          {}
           <button
             onClick={refreshData}
             disabled={isRefreshing}
@@ -314,7 +314,7 @@ export default function MiniSalesChart() {
             <RefreshCw className='h-5 w-5' />
           </button>
 
-          {/* Temporal Navigation */}
+          {}
           <div className='flex items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-1 shadow-sm'>
             <button
               onClick={() =>
@@ -347,7 +347,7 @@ export default function MiniSalesChart() {
             </button>
           </div>
 
-          {/* Today Button */}
+          {}
           <button
             onClick={() => {
               setYearOffset(0);
@@ -364,7 +364,7 @@ export default function MiniSalesChart() {
             Hoy
           </button>
 
-          {/* Mode Switcher */}
+          {}
           <div className='flex p-1 bg-slate-950 dark:bg-slate-900 rounded-[1.25rem] border border-white/5 shadow-2xl'>
             <button
               onClick={() => setViewMode('month')}
@@ -392,7 +392,7 @@ export default function MiniSalesChart() {
         </div>
       </div>
 
-      {/* 2. MAIN CHART AREA */}
+      {}
       <div className='relative h-[450px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-sm rounded-[3rem] p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden'>
         <div className='absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent' />
 

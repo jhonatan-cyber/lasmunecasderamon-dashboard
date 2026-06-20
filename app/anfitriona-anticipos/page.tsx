@@ -32,7 +32,6 @@ export default function AnfitrionaAnticiposPage() {
   const [sortField, setSortField] = useState<keyof Advance>('fecha_crea');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Fetch anticipos del usuario desde el endpoint específico
   const fetchAdvances = async () => {
     setLoading(true);
     try {
@@ -57,7 +56,6 @@ export default function AnfitrionaAnticiposPage() {
     fetchAdvances();
   }, []);
 
-  // Verificar que el usuario sea anfitriona - DESPUÉS de todos los hooks
   if (userLoading) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -80,14 +78,12 @@ export default function AnfitrionaAnticiposPage() {
     );
   }
 
-  // Calcular totales
   const totalAdvances = advances.length;
   const totalAmount = advances.reduce((sum, advance) => sum + (advance.monto || 0), 0);
   const totalToPay = advances
     .filter(advance => advance.estado === 1)
     .reduce((sum, advance) => sum + (advance.monto || 0), 0);
 
-  // Ordenar y filtrar anticipos
   const filteredAdvances = advances.filter(advance => {
     if (!searchTerm) return true;
 
@@ -168,7 +164,7 @@ export default function AnfitrionaAnticiposPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex justify-between items-center'>
         <div>
           <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
@@ -186,13 +182,13 @@ export default function AnfitrionaAnticiposPage() {
         </Button>
       </div>
 
-      {/* Total a pagar centrado */}
+      {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>Total a pagar:</p>
         <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToPay)}</p>
       </div>
 
-      {/* Filters */}
+      {}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <SelectElements
           value={rowsPerPage}
@@ -216,7 +212,7 @@ export default function AnfitrionaAnticiposPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <Card>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -348,7 +344,7 @@ export default function AnfitrionaAnticiposPage() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {}
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>

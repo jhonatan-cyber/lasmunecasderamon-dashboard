@@ -188,7 +188,7 @@ export const LoginForm = ({
           </Button>
         )}
 
-        {/* Theme Selector */}
+        {}
         <div className='flex justify-center mt-4'>
           <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-gray-900'>
             {themeOptions.map(opt => {
@@ -300,4 +300,3 @@ export const LoginForm = ({
     </form>
   );
 };
-

@@ -5,19 +5,11 @@ const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config();
 
-/**
- * PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza de Base de Datos
- *
- * Esta prueba verifica el endpoint /api/settings/database-clean
- * que vacía todas las tablas excepto: usuarios, roles, permissions, configuraciones,
- * role_permissions y _migrations
- *
- * IMPORTANTE: hace backup antes de limpiar y restaura después
- */
+
 
 const BACKUP_DIR = path.join(__dirname, 'backups');
 
-//ç¡®ä¿å¤‡ä»½ç›®å½•å­˜åœ¨
+
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
@@ -30,11 +22,11 @@ async function backupTable(connection, tableName) {
 async function restoreTable(connection, tableName, data) {
   if (!data || data.length === 0) return;
 
-  // èŽ·å–è¡¨ç»“æž„ä¿¡æ¯
+  
   const [columns] = await connection.execute(`DESCRIBE \`${tableName}\``);
   const columnNames = columns.map(c => c.Field);
 
-  // æ‰¹é‡æ’å…¥
+  
   const placeholders = columnNames.map(() => '?').join(', ');
   const columnStr = columnNames.join(', ');
 
@@ -46,7 +38,7 @@ async function restoreTable(connection, tableName, data) {
         values
       );
     } catch (e) {
-      // å¿½ç•¥é‡å¤é”®ç­‰é”™è¯¯
+      
     }
   }
 }
@@ -66,7 +58,7 @@ async function runIntegrationTest() {
   const backupData = {};
 
   try {
-    // 1. Verificar datos iniciales y hacer backup
+    
     console.log('[1] Verificando estado inicial y creando backup...\n');
 
     const PROTECTED_TABLES = [
@@ -78,7 +70,7 @@ async function runIntegrationTest() {
       'configuraciones'
     ];
 
-    // Obtener todas las tablas
+    
     const [tables] = await connection.execute(`
             SELECT TABLE_NAME 
             FROM information_schema.TABLES 
@@ -86,7 +78,7 @@ async function runIntegrationTest() {
             AND TABLE_TYPE = 'BASE TABLE'
         `);
 
-    // Backup de tablas no protegidas
+    
     const tablesToBackup = [];
     for (const table of tables) {
       const tableName = table.TABLE_NAME;
@@ -97,11 +89,11 @@ async function runIntegrationTest() {
       }
     }
 
-    // Guardar backup a archivo
+    
     fs.writeFileSync(backupFile, JSON.stringify(backupData, null, 2));
     console.log(`\n   ✅ Backup guardado en: ${backupFile}`);
 
-    // Mostrar resumen del backup
+    
     let totalBackupRecords = 0;
     for (const [table, data] of Object.entries(backupData)) {
       console.log(`   - ${table}: ${data.length} registros`);
@@ -109,10 +101,10 @@ async function runIntegrationTest() {
     }
     console.log(`\n   Total: ${totalBackupRecords} registros respaldados`);
 
-    // 2. Ejecutar limpieza (simulando el endpoint)
+    
     console.log('\n[2] Ejecutando limpieza de base de datos...\n');
 
-    // Desactivar foreign keys
+    
     await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
 
     const deletedTables = [];
@@ -130,13 +122,13 @@ async function runIntegrationTest() {
       deletedTables.push(tableName);
     }
 
-    // Reactivar foreign keys
+    
     await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
 
     console.log(`   ✅ ${deletedTables.length} tablas vaciadas`);
     console.log(`   ✅ ${skippedTables.length} tablas protegidas (omitidas)`);
 
-    // 3. Verificar que las tablas protegidas conservaron sus datos
+    
     console.log('\n[3] Verificando tablas protegidas...\n');
 
     const [usersBefore] = await connection.execute('SELECT COUNT(*) as count FROM usuarios');
@@ -175,7 +167,7 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Todas las tablas protegidas mantienen sus datos');
 
-    // 4. Verificar que las tablas no protegidas fueron vaciadas
+    
     console.log('\n[4] Verificando tablas vaciadas...\n');
 
     const [ventasAfter] = await connection.execute('SELECT COUNT(*) as count FROM ventas');
@@ -199,7 +191,7 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Tablas correctamente vaciadas');
 
-    // 5. Restaurar datos desde backup
+    
     console.log('\n[5] Restaurando datos desde backup...\n');
 
     await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
@@ -213,7 +205,7 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Datos restaurados correctamente');
 
-    // 6. Verificar restauración
+    
     console.log('\n[6] Verificando restauración...\n');
 
     const [ventasRestored] = await connection.execute('SELECT COUNT(*) as count FROM ventas');
@@ -228,7 +220,7 @@ async function runIntegrationTest() {
     console.log(`   - Clientes: ${clientesRestored[0].count}`);
     console.log(`   - Productos: ${productosRestored[0].count}`);
 
-    // Verificar que coinciden con los counts originales
+    
     const originalCounts = {
       ventas: backupData.ventas?.length || 0,
       categorias: backupData.categorias?.length || 0,
@@ -247,7 +239,7 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Restauración verificada');
 
-    // Limpiar archivo de backup
+    
     fs.unlinkSync(backupFile);
     console.log(`\n   ðŸ—‘ï¸  Archivo de backup eliminado`);
 

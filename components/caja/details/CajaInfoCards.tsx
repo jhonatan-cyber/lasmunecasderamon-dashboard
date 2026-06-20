@@ -16,7 +16,7 @@ export function CajaInfoCards({
 }: CajaInfoCardsProps) {
   return (
     <div className="px-6 flex flex-col md:flex-row justify-between items-start gap-8">
-      {/* Apertura */}
+      {}
       <div className="bg-gray-50/50 dark:bg-gray-800/20 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 flex-1 w-full relative overflow-hidden group">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
           <div className="space-y-1">
@@ -31,7 +31,7 @@ export function CajaInfoCards({
         </div>
       </div>
 
-      {/* Cierre */}
+      {}
       {fechaCierre && (
         <div className="bg-gray-50/50 dark:bg-gray-800/20 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 flex-1 w-full relative overflow-hidden group">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">

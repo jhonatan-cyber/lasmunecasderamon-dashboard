@@ -22,7 +22,7 @@ class TimerRepository {
     return await queryMock('SELECT * FROM servicios WHERE estado IN (2, 3) AND tiempo > 0');
   }
   static async runAutoCleanup() {
-    // Simulación de lógica
+    
     return true;
   }
 }

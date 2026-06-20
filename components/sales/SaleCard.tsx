@@ -25,21 +25,21 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
 
-  // Obtener el timer sincronizado con el contexto global
+  
   const timer = getTimerByServicioId(String(venta.id));
 
-  // Hook específico para obtener el segundero en tiempo real sin re-renderizar todo
+  
   const remainingTime = useCountdown(timer);
 
-  // Forzar re-render cuando cambian los timers para mantener sincronización
+  
   useEffect(() => {
-    // Este efecto se ejecuta cada vez que cambian los timers globales
+    
   }, [timers]);
 
   const confirmStopTimer = async () => {
     setStopping(true);
     try {
-      // Detener el timer usando el contexto global
+      
       await stopTimerByServicioId(String(venta.id));
 
       toast.success('Temporizador finalizado exitosamente');
@@ -54,7 +54,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
 
   const isLowTime = isAdminOrCajero && timer && timer.isActive && remainingTime <= 300;
 
-  // En listado la API trae `anfitrionas_nicks`; en detalle trae `usuarios`
+  
   const hostesses = Array.from(
     new Set(
       (venta.usuarios?.map(u => u.nick || u.usuario_nombre).filter(Boolean) ||
@@ -78,7 +78,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
       onClick={handleCardClick}
     >
       <div className='p-4 space-y-4'>
-        {/* Header Row */}
+        {}
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
             <div className='flex items-center gap-2'>
@@ -99,7 +99,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
           </span>
         </div>
 
-        {/* Timer Section - Solo para Admin y Cajero */}
+        {}
         {isAdminOrCajero && (
           <div className='bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3'>
             <div className='flex items-center justify-between'>
@@ -159,9 +159,9 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
           </div>
         )}
 
-        {/* Client and Details */}
+        {}
         <div className='space-y-3'>
-          {/* Cliente */}
+          {}
           <div className='flex items-center gap-2'>
             <User className='w-4 h-4 text-blue-500 flex-shrink-0' />
             <div className='min-w-0'>
@@ -176,7 +176,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
             </div>
           </div>
 
-          {/* Anfitrionas */}
+          {}
           <div className='flex items-start gap-2'>
             <Users className='w-4 h-4 text-purple-500 flex-shrink-0 mt-1' />
             <div className='min-w-0 flex-1'>
@@ -204,7 +204,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
           </div>
         </div>
 
-        {/* Garzón (si aplica) */}
+        {}
         {(venta.garzon_nombre || timer?.waiterName) && (
           <div className='flex items-center gap-2 text-sm'>
             <User className='w-4 h-4 text-green-600 flex-shrink-0' />
@@ -219,7 +219,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
           </div>
         )}
 
-        {/* Pricing Section */}
+        {}
         <div className='flex items-center justify-between pt-3 border-t border-gray-200 dark:border-neutral-800'>
           <div className='flex flex-col'>
             <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold'>
@@ -237,7 +237,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
           </div>
         </div>
 
-        {/* Actions */}
+        {}
         <div className='flex items-center justify-end pt-2 gap-2'>
           {onVerDetalles && (
             <Button

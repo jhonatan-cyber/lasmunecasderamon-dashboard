@@ -35,11 +35,7 @@ const routePermissions: Record<string, { module: string; action: string }> = {
   '/settings': { module: 'settings', action: 'view' }
 };
 
-const publicRoutes = [
-  '/',
-  '/login',
-  '/access-denied'
-];
+const publicRoutes = ['/', '/login', '/access-denied'];
 
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
@@ -88,8 +84,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
         return;
       }
 
-      // Esperar a que los permisos terminen de cargar para no redirigir
-      // a access-denied antes de tiempo
       if (permissionsLoading) {
         return;
       }
@@ -132,7 +126,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
     checkAuth();
   }, [user, userLoading, hasPermission, permissionsLoading, permissionsLoaded]);
 
-  // Siempre mostrar loader mientras carga
   if (checking || userLoading) {
     return (
       <div className='flex items-center justify-center min-h-screen bg-gray-50 dark:bg-neutral-900'>

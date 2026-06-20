@@ -23,7 +23,7 @@ export function useCashRegisterStatus() {
     }
   );
 
-  // Listener para eventos de apertura/cierre de caja
+  
   useEffect(() => {
     const handleCajaChanged = () => refetch();
 

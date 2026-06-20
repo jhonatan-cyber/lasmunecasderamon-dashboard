@@ -1,5 +1,5 @@
 export function useCuentaStatsCalculations(cuentas: any[]) {
-  // Cálculos de estadísticas - todas las agregaciones reutilizables
+  
   
   const totalCuentas = cuentas.length;
 
@@ -32,7 +32,7 @@ export function useCuentaStatsCalculations(cuentas: any[]) {
     0
   );
 
-  // Cálculos por estado
+  
   const stats = {
     totalCuentas,
     cuentasActivas,

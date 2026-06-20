@@ -21,7 +21,7 @@ export default function PedidosStatsCards({
 }: PedidosStatsCardsProps) {
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
-      {/* Total Ganado */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -55,7 +55,7 @@ export default function PedidosStatsCards({
         </CardContent>
       </Card>
 
-      {/* Pendientes */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -86,7 +86,7 @@ export default function PedidosStatsCards({
         </CardContent>
       </Card>
 
-      {/* Aprobados */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -117,7 +117,7 @@ export default function PedidosStatsCards({
         </CardContent>
       </Card>
 
-      {/* Rechazados */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(244, 63, 94, 0.1)',

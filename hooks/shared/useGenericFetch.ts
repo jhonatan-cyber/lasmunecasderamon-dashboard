@@ -13,9 +13,9 @@ export function useGenericFetch<T>(
     initialFetch?: boolean;
     transform?: (data: any) => T[];
     schema?: z.ZodSchema<any>;
-    /** QueryKey centralizado desde queryClient.ts. Si no se proporciona, usa [endpoint] */
+    
     queryKey?: readonly unknown[];
-    /** Tiempo de stale en ms (default: 60000) */
+    
     staleTime?: number;
   }
 ) {
@@ -39,7 +39,7 @@ export function useGenericFetch<T>(
       const result = await response.json();
       let rawData = options?.transform ? options.transform(result) : result;
 
-      // Validación con Zod
+      
       if (options?.schema && Array.isArray(rawData)) {
         try {
           z.array(options.schema).parse(rawData);

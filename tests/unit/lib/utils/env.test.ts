@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// We need to mock the env module to prevent the Zod schema validation from running
-// at import time. We'll provide our own mock that exports validateJwtSecret.
+
+
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: {
@@ -11,8 +11,8 @@ vi.mock('@/lib/utils/logger', () => ({
   }
 }));
 
-// Now import and test the validation function directly
-// We need to re-implement it here since we're mocking the module
+
+
 
 function calculateEntropy(str: string): number {
   if (!str || str.length === 0) return 0;
@@ -35,12 +35,12 @@ function calculateEntropy(str: string): number {
 function detectPatterns(str: string): string[] {
   const patterns: string[] = [];
 
-  // Check for repeated characters (aaaa, 1111, etc)
+  
   if (/(.)\1{3,}/.test(str)) {
     patterns.push('repeated_chars');
   }
 
-  // Check for sequential characters (abcd, 1234)
+  
   if (
     /(?:abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz|0123|1234|2345|3456|4567|5678|6789)/i.test(
       str
@@ -49,7 +49,7 @@ function detectPatterns(str: string): string[] {
     patterns.push('sequential');
   }
 
-  // Check for common weak patterns
+  
   if (
     /^(password|qwerty|admin|123456|letmein|welcome|monkey|dragon|master|login|shadow|sunshine|princess|football|super|baseball|michael|jesus|ninja|mustang|batman)/i.test(
       str
@@ -58,12 +58,12 @@ function detectPatterns(str: string): string[] {
     patterns.push('common_weak');
   }
 
-  // Check for keyboard patterns
+  
   if (/(qwerty|asdf|zxcv|qazwsx|12345|54321|09876|0123456789|password|passwd)/i.test(str)) {
     patterns.push('keyboard');
   }
 
-  // Check for base64-like patterns only when it contains actual base64 delimiters
+  
   if (/^[A-Za-z0-9+/]{50,}={0,2}$/.test(str) && str.length > 64 && /[+/=]/.test(str)) {
     patterns.push('base64');
   }
@@ -166,7 +166,7 @@ describe('validateJwtSecret', () => {
 
   describe('strong secrets', () => {
     it('should accept high-entropy random string with special chars', () => {
-      // Use special characters to avoid base64 pattern
+      
       const randomSecret = 'kL9mN2pQ4rS6tU8vW0xY2zA4bC6dE8fG0hJ2kM4nP6qR8sT0!uV2wX4yZ6aB8cD0eF2gH4';
       const result = validateJwtSecret(randomSecret);
       expect(result.valid).toBe(true);
@@ -180,7 +180,7 @@ describe('validateJwtSecret', () => {
     });
 
     it('should return high score for strong secrets with mixed chars', () => {
-      // Use special characters to avoid base64 pattern
+      
       const strongSecret =
         'Sunset@Over#Ocean$Wave%2024^Mountain&Peak*Forest(River)Valley+Wild/Animal=Journey';
       const result = validateJwtSecret(strongSecret);

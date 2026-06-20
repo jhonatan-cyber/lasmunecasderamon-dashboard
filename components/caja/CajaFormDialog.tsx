@@ -40,7 +40,6 @@ export const CajaFormDialog = ({
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [displayValue, setDisplayValue] = useState('');
 
-  // Actualizar fecha y hora en tiempo real
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
@@ -49,22 +48,19 @@ export const CajaFormDialog = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Formatear número con separador de miles
   const formatNumber = (value: number): string => {
     if (!value || value === 0) return '';
     return formatNumberCL(value);
   };
 
-  // Parsear número desde string formateado
   const parseFormattedNumber = (value: string): number => {
     if (!value) return 0;
-    // Remover puntos de miles
+
     const cleanValue = value.replace(/\./g, '');
     return parseFloat(cleanValue) || 0;
   };
 
   const handleInputChange = (inputValue: string) => {
-    // Permitir solo números
     const cleanValue = inputValue.replace(/[^\d]/g, '');
 
     if (cleanValue === '') {
@@ -82,7 +78,6 @@ export const CajaFormDialog = ({
       }));
     }
 
-    // Limpiar error del campo
     if (errors.monto_apertura) {
       setErrors(prev => ({
         ...prev,
@@ -113,7 +108,6 @@ export const CajaFormDialog = ({
       return;
     }
 
-    // Asegurar que el usuario logueado esté disponible
     if (!currentUser?.id) {
       logger.error('No hay usuario logueado');
       return;
@@ -148,7 +142,6 @@ export const CajaFormDialog = ({
     }
   };
 
-  // Si hideButton es true, no renderizar el botón
   if (hideButton) {
     return null;
   }

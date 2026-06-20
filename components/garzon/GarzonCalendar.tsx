@@ -19,7 +19,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrencyNoDecimals, formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs, formatShortDmyDateEs, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/utils/calendarUtils';
 
-// Utilidades para fechas
+
 const months = [
   'Enero',
   'Febrero',
@@ -66,7 +66,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     'asistencias' | 'anticipos' | 'propinas' | 'horasExtras'
   >('asistencias');
 
-  // Obtener días del mes
+  
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -77,7 +77,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     let firstDayOfWeek = firstDay.getDay();
     const days = [];
 
-    // Días del mes anterior para completar la primera semana
+    
     const prevMonth = new Date(year, month - 1, 0);
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       days.push({
@@ -86,7 +86,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       });
     }
 
-    // Días del mes actual
+    
     for (let day = 1; day <= daysInMonth; day++) {
       days.push({
         date: new Date(year, month, day),
@@ -94,7 +94,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       });
     }
 
-    // Días del mes siguiente para completar la última semana
+    
     const remainingDays = 42 - days.length;
     for (let day = 1; day <= remainingDays; day++) {
       days.push({
@@ -128,7 +128,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
   const getDataForDate = (date: Date) => {
     const dateKey = toDateKey(date);
 
-    // Verificar asistencias - usar la misma lógica que anticipos y horas extras
+    
     const asistenciasMatch = calendarData.asistencias.some((item: any) => {
       return matchesAnyDateKey(item.fecha, [dateKey]);
     });
@@ -184,7 +184,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     setIsDragging(false);
     setDragStartDate(null);
 
-    // Si hubo drag, abrir modal inmediatamente
+    
     if (wasDragging && selectedDates.length > 0) {
       setIsModalOpen(true);
       setSelectedDataType('asistencias');
@@ -217,23 +217,23 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     try {
       const { startDate, endDate } = getMonthDateRange(currentDate);
 
-      // Fetch asistencias usando la nueva API
+      
       const asistenciasRes = await fetch(
         `/api/attendance/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const asistenciasData = await asistenciasRes.json();
 
-      // Fetch anticipos usando la nueva API
+      
       const anticiposRes = await fetch(
         `/api/anticipos/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const anticiposData = await anticiposRes.json();
 
-      // Fetch propinas
+      
       const propinasRes = await fetch(`/api/tips/user?startDate=${startDate}&endDate=${endDate}`);
       const propinasData = await propinasRes.json();
 
-      // Fetch horas extras usando la nueva API
+      
       const horasExtrasRes = await fetch(
         `/api/overtime/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
@@ -288,7 +288,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     try {
       const dateKeys = toDateKeys(selectedDates);
 
-      // Calcular conteos para todos los tipos de datos
+      
       const newCounts: { [key: string]: number } = {
         asistencias: 0,
         anticipos: 0,
@@ -296,7 +296,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         horasExtras: 0
       };
 
-      // Obtener conteo de asistencias
+      
       try {
         const asistenciasDatesParam = dateKeys.join(',');
         const asistenciasRes = await fetch(
@@ -307,7 +307,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       } catch (error) {
       }
 
-      // Obtener conteo de anticipos
+      
       try {
         const anticiposDatesParam = dateKeys.join(',');
         const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
@@ -316,12 +316,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       } catch (error) {
       }
 
-      // Calcular conteo de propinas
+      
       newCounts.propinas = calendarData.propinas.filter(item =>
         matchesAnyDateKey(item.fecha_crea, dateKeys)
       ).length;
 
-      // Obtener conteo de horas extras
+      
       try {
         const horasExtrasDatesParam = dateKeys.join(',');
         const horasExtrasRes = await fetch(`/api/overtime/by-dates?dates=${horasExtrasDatesParam}`);
@@ -332,10 +332,10 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
       setModalCounts(newCounts);
 
-      // Calcular total: Asistencias + Propinas + Horas Extras - Anticipos (solo estado 1)
+      
       let total = 0;
 
-      // Sumar asistencias (sueldo_final)
+      
       if (newCounts.asistencias > 0) {
         try {
           const asistenciasDatesParam = dateKeys.join(',');
@@ -356,7 +356,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         }
       }
 
-      // Sumar propinas (monto)
+      
       if (newCounts.propinas > 0) {
         const propinasEstado1 = calendarData.propinas.filter(
           (item: any) => matchesAnyDateKey(item.fecha_crea, dateKeys) && item.estado === 1
@@ -364,7 +364,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         total += propinasEstado1.reduce((sum: number, item: any) => sum + (item.monto || 0), 0);
       }
 
-      // Sumar horas extras (total)
+      
       if (newCounts.horasExtras > 0) {
         try {
           const horasExtrasDatesParam = dateKeys.join(',');
@@ -385,7 +385,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         }
       }
 
-      // Restar anticipos (monto)
+      
       if (newCounts.anticipos > 0) {
         try {
           const anticiposDatesParam = dateKeys.join(',');
@@ -404,7 +404,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
       setModalTotal(total);
 
-      // Obtener datos para el tipo seleccionado
+      
       switch (selectedDataType) {
         case 'asistencias':
           const datesParam = dateKeys.join(',');
@@ -468,7 +468,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       return `${first.getDate()} de ${months[first.getMonth()]} - ${second.getDate()} de ${months[second.getMonth()]} ${second.getFullYear()}`;
     }
 
-    // Para rangos más largos
+    
     const first = sortedDates[0];
     const last = sortedDates[sortedDates.length - 1];
     return `${first.getDate()} de ${months[first.getMonth()]} - ${last.getDate()} de ${months[last.getMonth()]} ${last.getFullYear()}`;
@@ -490,7 +490,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
     return (
       <>
-        {/* Días de la semana */}
+        {}
         <div className='grid grid-cols-7 border-b border-gray-200 dark:border-gray-700'>
           {weekdays.map(day => (
             <div
@@ -502,7 +502,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
           ))}
         </div>
 
-        {/* Días del mes */}
+        {}
         <div
           className='grid grid-cols-7'
           style={{ minHeight: '500px' }}
@@ -543,7 +543,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                   {day.date.getDate()}
                 </div>
 
-                {/* Indicadores de datos */}
+                {}
                 {(() => {
                   const data = getDataForDate(day.date);
                   const indicators = [];
@@ -650,7 +650,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       </div>
 
       <div className='flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700'>
-        {/* Header del calendario */}
+        {}
         <div className='flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700'>
           <div className='flex items-center gap-4'>
             <Button variant='ghost' size='sm' onClick={() => navigate(-1)}>
@@ -693,10 +693,10 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
           </div>
         </div>
 
-        {/* Vista del calendario */}
+        {}
         <div className='flex-1'>{renderMonthView()}</div>
 
-        {/* Leyenda */}
+        {}
         <div className='p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'>
           <div className='flex flex-wrap gap-6 text-xs'>
             <div className='flex items-center gap-2'>
@@ -719,7 +719,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         </div>
       </div>
 
-      {/* Modal de fecha seleccionada */}
+      {}
       <Dialog open={isModalOpen && selectedDates.length > 0} onOpenChange={setIsModalOpen}>
         <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
           <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
@@ -728,12 +728,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
 
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-4 text-center'>
-              {/* Botones de tipo de datos */}
+              {}
             <div className='flex justify-center gap-4 flex-wrap'>
               {Object.entries(dataTypeConfig).map(([key, config]) => {
                 const Icon = config.icon;
 
-                // Usar los conteos calculados previamente
+                
                 const count = modalCounts[key] || 0;
 
                 return (
@@ -754,7 +754,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               })}
             </div>
 
-            {/* Total */}
+            {}
             <div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4'>
               <div className='flex items-center justify-center gap-2'>
                 <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
@@ -767,7 +767,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               </div>
             </div>
 
-            {/* Tabla de datos */}
+            {}
             <div className='mt-6 border rounded-lg overflow-x-auto'>
               {isLoadingSelectedData ? (
                 <div className='p-8 text-center'>

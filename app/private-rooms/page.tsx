@@ -26,7 +26,6 @@ export default function ServiciosPage() {
   const { setRefreshCallback } = useTimer();
   const { hasPermission } = useUserPermissions();
 
-  // State para el modal de detalle
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);
 
@@ -58,11 +57,9 @@ export default function ServiciosPage() {
     includeAll
   } = useServiceLogic();
 
-  // Refs para mantener referencias estables
   const handleServiceFinalizedRef = useRef(handleServiceFinalized);
   const handleServiceAutoFinishedRef = useRef(handleServiceAutoFinished);
 
-  // Mantener refs actualizadas
   useEffect(() => {
     handleServiceFinalizedRef.current = handleServiceFinalized;
   }, [handleServiceFinalized]);
@@ -71,17 +68,13 @@ export default function ServiciosPage() {
     handleServiceAutoFinishedRef.current = handleServiceAutoFinished;
   }, [handleServiceAutoFinished]);
 
-  // Configurar callback de actualización para cuando termine un timer
   useEffect(() => {
     setRefreshCallback((servicioId?: string | number) => {
-
-      // Usar refs estables en lugar de funciones que pueden cambiar
       if (servicioId) {
         const numericId = typeof servicioId === 'string' ? servicioId : String(servicioId);
         handleServiceFinalizedRef.current(numericId as any);
       }
 
-      // Luego recargar todos los datos
       handleServiceAutoFinishedRef.current();
     });
   }, [setRefreshCallback]);
@@ -102,7 +95,6 @@ export default function ServiciosPage() {
     handleCreateServicio();
   };
 
-  // Handler para mostrar el detalle del servicio (solo en finalizados)
   const handleShowServiceDetail = (servicio: ServicioWithDetails) => {
     if (showAllServices) {
       setSelectedServicio(servicio);
@@ -113,7 +105,7 @@ export default function ServiciosPage() {
   return (
     <PermissionGuard module='private_rooms' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        {/* Header estándar del sistema */}
+        {}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6'>
           <div>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
@@ -153,7 +145,7 @@ export default function ServiciosPage() {
           )}
         </div>
 
-        {/* Estadísticas de servicios */}
+        {}
         {loading || loadingAll ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
             {[...Array(4)].map((_, i) => (
@@ -164,7 +156,7 @@ export default function ServiciosPage() {
           <ServiceStats servicios={allServicios} />
         )}
 
-        {/* List Content */}
+        {}
         <div className='bg-transparent p-0'>
           <ServiceFilters
             searchTerm={searchTerm}
@@ -175,14 +167,14 @@ export default function ServiciosPage() {
             onRefresh={() => getServicios(includeAll)}
           />
 
-          {/* Tabs de estado: En Proceso / Finalizados */}
+          {}
           <ServiceStatusTabs
             showAllServices={showAllServices}
             onShowActiveServices={handleShowActiveServices}
             onShowAllServices={handleShowAllServices}
           />
 
-          {/* Mensaje de historial cuando está en finalizados */}
+          {}
           {showAllServices && (
             <div className='mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl flex items-center gap-3'>
               <div className='w-2 h-2 rounded-full bg-blue-500 animate-pulse' />
@@ -192,7 +184,7 @@ export default function ServiciosPage() {
             </div>
           )}
 
-          {/* Grid de servicios */}
+          {}
           <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
             {currentServicios.map((servicio: any, index: number) => (
               <ServicioCard
@@ -206,7 +198,7 @@ export default function ServiciosPage() {
             ))}
           </div>
 
-          {/* Paginación */}
+          {}
           {currentServicios.length > 0 && totalPages > 1 && (
             <div className='mt-4 sm:mt-6'>
               <div className='flex justify-between items-center text-xs sm:text-sm text-gray-600 mb-4'>
@@ -222,7 +214,7 @@ export default function ServiciosPage() {
           )}
         </div>
 
-        {/* Modal de Detalle del Servicio */}
+        {}
         <ServiceDetailModal
           open={detailModalOpen}
           onOpenChange={setDetailModalOpen}
@@ -232,6 +224,3 @@ export default function ServiciosPage() {
     </PermissionGuard>
   );
 }
-
-
-

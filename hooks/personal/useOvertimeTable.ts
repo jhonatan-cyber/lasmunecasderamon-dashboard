@@ -8,7 +8,7 @@ interface UseOvertimeTableProps {
 }
 
 export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
-  // --- ESTADOS DE FILTROS Y TABLA ---
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
@@ -16,11 +16,11 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
-  // --- LÓGICA DE PROCESAMIENTO (FILTRADO, ORDENAMIENTO, PAGINACIÓN) ---
+  
   const processedData = useMemo(() => {
     let data = [...(overtime || [])];
 
-    // 1. Filtrado
+    
     data = data.filter(item => {
       const matchesSearch = 
         item.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,7 +33,7 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
       return matchesSearch && matchesStatus;
     });
 
-    // 2. Agrupación por Usuario
+    
     const groupedMap = new Map<string, Overtime>();
     
     data.forEach(item => {
@@ -41,19 +41,19 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
       if (existing) {
         existing.hora += item.hora;
         existing.total += item.total;
-        // Mantener la fecha más reciente
+        
         if (new Date(item.fecha_crea) > new Date(existing.fecha_crea)) {
           existing.fecha_crea = item.fecha_crea;
         }
       } else {
-        // Clonar para no mutar el original
+        
         groupedMap.set(item.id_usuario, { ...item });
       }
     });
 
     const groupedData = Array.from(groupedMap.values());
 
-    // 3. Ordenamiento
+    
     groupedData.sort((a, b) => {
       let aValue: any = a[sortBy as keyof typeof a];
       let bValue: any = b[sortBy as keyof typeof b];
@@ -77,7 +77,7 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
     [processedData, page, pageSize]
   );
 
-  // --- HANDLERS ---
+  
   const handleClearFilters = useCallback(() => {
     setSearchTerm('');
     setStatusFilter('all');
@@ -87,7 +87,7 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
   }, []);
 
   return {
-    // States
+    
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -101,12 +101,12 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
     page,
     setPage,
     
-    // Computed
+    
     processedData,
     paginatedData,
     totalPages,
     
-    // Handlers
+    
     handleClearFilters
   };
 }

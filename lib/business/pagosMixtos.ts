@@ -7,9 +7,7 @@ export type MixedPayment = {
   monto: number;
 };
 
-/**
- * Normaliza y filtra el array de pagos mixtos desde el input del request.
- */
+
 export function parsePagosMixtos(raw: any): MixedPayment[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -20,10 +18,7 @@ export function parsePagosMixtos(raw: any): MixedPayment[] {
     .filter(pago => pago.metodo && pago.monto > 0);
 }
 
-/**
- * Valida que un pago mixto sea coherente (mínimo 2 métodos, suma == total).
- * Lanza Error si no es válido.
- */
+
 export function validatePagosMixtos(pagosMixtos: MixedPayment[], total: number): void {
   if (pagosMixtos.length < 2) {
     throw new ValidationError('Pago mixto invalido: se requieren al menos 2 metodos');
@@ -37,9 +32,7 @@ export function validatePagosMixtos(pagosMixtos: MixedPayment[], total: number):
   }
 }
 
-/**
- * Calcula los deltas por método de pago para actualizar la caja.
- */
+
 export function calcularDeltasCaja(pagosMixtos: MixedPayment[]) {
   return pagosMixtos.reduce(
     (acc, pago) => {
@@ -52,10 +45,7 @@ export function calcularDeltasCaja(pagosMixtos: MixedPayment[]) {
   );
 }
 
-/**
- * Procesa el descuento de saldo prepago del cliente dentro de una transacción.
- * Retorna el monto efectivamente descontado.
- */
+
 export async function procesarPrepago(
   trx: TransactionQuery,
   params: {

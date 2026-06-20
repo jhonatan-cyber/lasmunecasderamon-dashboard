@@ -51,13 +51,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const { hasPermission } = useUserPermissions();
 
-  // Verificar permisos
+  
   const canEdit = hasPermission('productos', 'editar_categoria');
   const canDelete = hasPermission('productos', 'eliminar');
   const canActivate = hasPermission('productos', 'activar');
   const canDeactivate = hasPermission('productos', 'desactivar');
 
-  // Si no tiene ningún permiso de acción, no mostrar el menú
+  
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -90,7 +90,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         ref={isDraggable ? setNodeRef : undefined}
         style={style}
       >
-        {/* Drag handle */}
+        {}
         {isDraggable && (
           <div
             {...attributes}
@@ -101,7 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        {/* Action Menu */}
+        {}
         <div className='absolute top-4 right-4 z-20'>
           {hasAnyAction && (
             <DropdownMenu>
@@ -166,7 +166,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Imagen */}
+        {}
         <div className='relative w-full aspect-[4/3] overflow-hidden group-hover:scale-105 transition-transform duration-500'>
           <Image
             src={
@@ -181,7 +181,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             sizes='(max-width: 768px) 100vw, 33vw'
             className='w-full h-full object-cover'
           />
-          {/* Status Badge Overlay */}
+          {}
           <div className='absolute bottom-3 left-3 flex gap-2'>
             {product.status === 1 ? (
               <div className='flex items-center gap-1.5 px-3 py-1 bg-green-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>

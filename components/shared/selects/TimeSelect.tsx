@@ -19,7 +19,7 @@ interface TimeSelectProps {
   timeOptions?: number[];
 }
 
-const DEFAULT_TIME_OPTIONS = Array.from({ length: 12 }, (_, i) => (i + 1) * 5); // 5, 10, 15, ..., 60
+const DEFAULT_TIME_OPTIONS = Array.from({ length: 12 }, (_, i) => (i + 1) * 5); 
 
 const TimeSelect: React.FC<TimeSelectProps> = ({
   value,

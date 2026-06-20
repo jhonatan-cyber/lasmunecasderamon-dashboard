@@ -72,7 +72,7 @@ export function DevolucionDetailModal({
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-6">
-          {/* Alerta de devolución */}
+          {}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="text-red-500 w-4 h-4" />
@@ -82,7 +82,7 @@ export function DevolucionDetailModal({
             </div>
           </div>
 
-          {/* Información general */}
+          {}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export function DevolucionDetailModal({
             </div>
           </div>
 
-          {/* Anfitrionas */}
+          {}
           {hasAnfitrionas && (
             <div className="space-y-3">
               <Label className="text-sm font-medium flex items-center gap-2">
@@ -163,7 +163,7 @@ export function DevolucionDetailModal({
             </div>
           )}
 
-          {/* Información financiera */}
+          {}
           <div className="space-y-3">
             <Label className="text-sm font-medium flex items-center gap-2">
               <DollarSign className="text-gray-500 w-4 h-4" />
@@ -211,7 +211,7 @@ export function DevolucionDetailModal({
             </Table>
           </div>
 
-          {/* Información adicional */}
+          {}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <Label className="text-sm font-medium flex items-center gap-2">
@@ -265,7 +265,7 @@ export function DevolucionDetailModal({
             </div>
           </div>
 
-          {/* Campo de motivo de devolución */}
+          {}
           <div className="space-y-3">
             <Label htmlFor="motivo" className="text-sm font-medium flex items-center gap-2">
               <AlertTriangle className="text-red-500 w-4 h-4" />

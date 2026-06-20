@@ -208,7 +208,7 @@ export class ClientRepository {
       [clientId]
     );
 
-    // Enriquecer ventas con productos y anfitrionas
+    
     for (const sale of sales) {
       const products = await query<any[]>(
         `

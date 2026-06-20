@@ -34,13 +34,13 @@ export default function LandingClientBlocks({ children }: { children: React.Reac
       <SnowEffect />
       <Navigation scrollY={scrollY} />
       
-      {/* El HeroSection necesita scrollY para sus transformaciones de logo */}
+      {}
       <HeroSection scrollY={scrollY} />
       
-      {/* El resto de la página es estática (children) */}
+      {}
       {children}
 
-      {/* Los componentes interactivos del final siguen en el cliente */}
+      {}
       <div className="relative z-10">
         <TestimonialsSection reviews={reviews} />
         <CareersSection handlePositionClick={handlePositionClick} />

@@ -4,12 +4,12 @@ import { ServicioWithDetails } from '@/types/servicio';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useSharedSSE } from '@/hooks/shared';
 
-// QueryKey compartido para invalidar desde cualquier mutación
+
 export const SERVICIOS_QUERY_KEY = ['servicios'] as const;
 
 export function useServicios() {
   const queryClient = useQueryClient();
-  const [includeAll, setIncludeAll] = useState(false); // Iniciar con false = servicios activos (estado 2,3,4)
+  const [includeAll, setIncludeAll] = useState(false); 
   const endpoint = useMemo(() => {
     const ep = includeAll ? '/api/servicios?all=true' : '/api/servicios?all=false';
     return ep;
@@ -29,10 +29,10 @@ export function useServicios() {
   } = useGenericFetch<ServicioWithDetails>(endpoint, {
     initialFetch: true,
     queryKey: serviciosQueryKey,
-    staleTime: 5000, // 5 segundos — refresco rápido sin recargar
+    staleTime: 5000, 
     transform: data => {
       if (data.success && data.data) {
-        // La respuesta puede ser { data: [...] } o [...] directamente
+        
         let rawData = data.data;
         if (data.data.data) {
           rawData = data.data.data;
@@ -45,7 +45,7 @@ export function useServicios() {
         return rawData
           .map((servicio: any) => ({
             ...servicio,
-            // Asegurar que siempre tenga id_servicio (el API devuelve "id")
+            
             id_servicio: servicio.id_servicio || servicio.id
           }));
       }
@@ -59,8 +59,8 @@ export function useServicios() {
         setIncludeAll(includeAllParam);
         return;
       }
-      // Invalidar todo el grupo SERVICIOS_QUERY_KEY para que React Query refetchee
-      // incluso si el cache aún es "fresco" (staleTime no expirado)
+      
+      
       await queryClient.invalidateQueries({ queryKey: SERVICIOS_QUERY_KEY });
     },
     [includeAll, queryClient]
@@ -113,7 +113,7 @@ export function useServicios() {
     }
   });
 
-  // Optimistic Mutation for PATCH (status changes)
+  
   const patchMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const normalizedId = String(id ?? '').trim();
@@ -210,7 +210,7 @@ export function useServicios() {
   };
 }
 
-// Hook para obtener TODOS los servicios (sin filtro por estado) para estadísticas
+
 export function useAllServicios() {
   const queryClient = useQueryClient();
   const endpoint = '/api/servicios';

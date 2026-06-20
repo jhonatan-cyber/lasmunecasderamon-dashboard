@@ -44,7 +44,7 @@ export const useLoginForm = () => {
         cache: 'no-store'
       });
     } catch {
-      // Ignorar: igualmente forzamos redirección.
+      
     }
 
     if (typeof window !== 'undefined') {
@@ -93,7 +93,7 @@ export const useLoginForm = () => {
     setThemeMode(next);
   }, [theme, setThemeMode]);
 
-  // Efectos de carga
+  
   useEffect(() => {
     if (step === 'login') {
       setCodigo('');

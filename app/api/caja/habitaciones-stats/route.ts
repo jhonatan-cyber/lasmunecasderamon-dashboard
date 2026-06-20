@@ -10,7 +10,6 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     return NextResponse.json({ error: 'caja_id es requerido' }, { status: 400 });
   }
 
-  // Usando el Patrón Repositorio en vez de SQL crudo en el Handler
   const data = await StatsRepository.getHabitacionesStats(caja_id);
 
   return NextResponse.json(

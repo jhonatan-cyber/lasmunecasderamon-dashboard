@@ -36,7 +36,7 @@ async function runFinanceCashFlowTest() {
       [antId, userId, montoAnt, 'Anticipo integración', 1, now]
     );
 
-    // Actualizar balance de caja (simulado)
+    
     await connection.execute(
       'UPDATE cajas SET efectivo = efectivo - ?, anticipo = anticipo + ? WHERE id_caja = ?',
       [montoAnt, montoAnt, cajaId]

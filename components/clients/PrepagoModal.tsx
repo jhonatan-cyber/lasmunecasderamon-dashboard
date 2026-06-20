@@ -64,7 +64,7 @@ function PrepagoForm({
 
   return (
     <form id='prepago-form' onSubmit={onSubmit} className='space-y-6'>
-      {/* Cliente info */}
+      {}
       <div className='space-y-2'>
         <Label
           htmlFor='prepago-client'
@@ -83,7 +83,7 @@ function PrepagoForm({
         </div>
       </div>
 
-      {/* Saldo info */}
+      {}
       <div className='p-4 rounded-xl bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20'>
         <div className='flex items-center gap-3'>
           <div className='p-2 rounded-lg bg-green-100 dark:bg-green-900/30'>
@@ -228,7 +228,7 @@ function PrepagoForm({
         </div>
       )}
 
-      {/* Monto a cargar */}
+      {}
       <div className='space-y-2'>
         <Label
           htmlFor='prepago-amount'

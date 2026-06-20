@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 
-// Direct config - no env validation
+
 const config = {
   host: '127.0.0.1',
   user: 'root',

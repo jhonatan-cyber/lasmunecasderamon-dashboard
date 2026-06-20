@@ -42,7 +42,6 @@ export default function GratificacionesPage() {
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
 
-  // States
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
@@ -51,7 +50,6 @@ export default function GratificacionesPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [activeTab, setActiveTab] = useState<TabType>('pending');
 
-  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gratificacionToEdit, setGratificacionToEdit] = useState<Gratificacion | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -60,18 +58,15 @@ export default function GratificacionesPage() {
   const [gratificacionToDelete, setGratificacionToDelete] = useState<Gratificacion | null>(null);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
-  // Filters and sorting logic
   const filteredData = useMemo(() => {
     let result = [...gratificaciones];
 
-    // Filter by tab
     if (activeTab === 'pending') {
       result = result.filter(g => g.estado === 1);
     } else if (activeTab === 'paid') {
       result = result.filter(g => g.estado === 0);
     }
 
-    // Filter by search term
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
       result = result.filter(
@@ -79,7 +74,6 @@ export default function GratificacionesPage() {
       );
     }
 
-    // Sort
     result.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -112,7 +106,6 @@ export default function GratificacionesPage() {
     return result;
   }, [gratificaciones, searchTerm, sortBy, sortOrder, activeTab]);
 
-  // Counts for tabs
   const pendingCount = gratificaciones.filter(g => g.estado === 1).length;
   const paidCount = gratificaciones.filter(g => g.estado === 0).length;
 
@@ -122,7 +115,6 @@ export default function GratificacionesPage() {
     currentPage * rowsPerPage
   );
 
-  // Pagination helper: Calculate visible pages (showing up to 5 around current)
   const visiblePages = useMemo(() => {
     if (totalPages <= 1) return [1];
     const pages = [];
@@ -140,7 +132,6 @@ export default function GratificacionesPage() {
     return pages;
   }, [currentPage, totalPages]);
 
-  // Handlers
   const handleOpenForm = () => {
     setGratificacionToEdit(null);
     setIsModalOpen(true);
@@ -193,9 +184,12 @@ export default function GratificacionesPage() {
 
   const formatCurrency = (amount: number) => formatCurrencyNoDecimals(amount);
 
-  // Cálculos para stats
-  const totalPagado = gratificaciones.filter(g => g.estado === 0).reduce((acc, g) => acc + g.monto, 0);
-  const totalPorPagar = gratificaciones.filter(g => g.estado === 1).reduce((acc, g) => acc + g.monto, 0);
+  const totalPagado = gratificaciones
+    .filter(g => g.estado === 0)
+    .reduce((acc, g) => acc + g.monto, 0);
+  const totalPorPagar = gratificaciones
+    .filter(g => g.estado === 1)
+    .reduce((acc, g) => acc + g.monto, 0);
 
   if (error) {
     return (
@@ -215,13 +209,13 @@ export default function GratificacionesPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Listado de Gratificaciones</h1>
-          <p className='text-gray-600 dark:text-gray-400'>
-            Control de bonificaciones de personal
-          </p>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+            Listado de Gratificaciones
+          </h1>
+          <p className='text-gray-600 dark:text-gray-400'>Control de bonificaciones de personal</p>
         </div>
         {hasPermission('gratificaciones', 'create') && (
           <Button
@@ -235,16 +229,21 @@ export default function GratificacionesPage() {
         )}
       </div>
 
-      {/* Total a pagar centrado */}
+      {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL POR PAGAR</p>
-        <p className='text-2xl font-bold text-gray-900 dark:text-gray-100'>{formatCurrency(totalPorPagar)}</p>
+        <p className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+          {formatCurrency(totalPorPagar)}
+        </p>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className='flex justify-center gap-3 border-b pb-1'>
         <button
-          onClick={() => { setActiveTab('pending'); setCurrentPage(1); }}
+          onClick={() => {
+            setActiveTab('pending');
+            setCurrentPage(1);
+          }}
           className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
             activeTab === 'pending'
               ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
@@ -253,14 +252,19 @@ export default function GratificacionesPage() {
         >
           <Clock className='h-4 w-4' />
           Por Pagar
-          <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-            activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-          }`}>
+          <span
+            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+            }`}
+          >
             {pendingCount}
           </span>
         </button>
         <button
-          onClick={() => { setActiveTab('paid'); setCurrentPage(1); }}
+          onClick={() => {
+            setActiveTab('paid');
+            setCurrentPage(1);
+          }}
           className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
             activeTab === 'paid'
               ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
@@ -269,15 +273,17 @@ export default function GratificacionesPage() {
         >
           <CheckCircle className='h-4 w-4' />
           Pagadas
-          <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-            activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-          }`}>
+          <span
+            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+            }`}
+          >
             {paidCount}
           </span>
         </button>
       </div>
 
-      {/* Filtros */}
+      {}
       <GratificacionesFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -324,7 +330,7 @@ export default function GratificacionesPage() {
         />
       </div>
 
-      {/* Modales */}
+      {}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
           <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
@@ -393,4 +399,3 @@ export default function GratificacionesPage() {
     </div>
   );
 }
-

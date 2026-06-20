@@ -13,7 +13,7 @@ export default function NewOrder() {
   const [activeTab, setActiveTab] = useState('productos');
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
-  const [productos, setProductos] = useState<any[]>([]); // productos agregados
+  const [productos, setProductos] = useState<any[]>([]);
   const { clients: clientes, anfitrionas, categories, refreshAll } = useMasterData();
   const [searchCliente, setSearchCliente] = useState('');
   const [searchAnfitriona, setSearchAnfitriona] = useState('');
@@ -42,24 +42,19 @@ export default function NewOrder() {
     return categories.filter(cat => cat.status === 1 && (cat.total_products || 0) > 0);
   }, [categories]);
 
-  // Handler para eliminar producto
   const handleRemoveProducto = (idx: number) => {
     setProductos((prev: any[]) => prev.filter((_, i) => i !== idx));
   };
 
-  // Handler para agregar producto (mock)
   const handleAddProducto = (producto: any) => {
     setProductos((prev: any[]) => [...prev, producto]);
   };
 
-  // Handler para actualizar cantidad de producto
   const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
     setProductos((prev: any[]) =>
       prev.map((producto, i) => {
         if (i !== index) return producto;
 
-        // Obtener la comisión unitaria
-        // Si ya existe comisionUnitaria, usarla; si no, calcularla desde la comisión actual
         const comisionUnitaria =
           producto.comisionUnitaria ??
           (producto.cantidad > 0 ? (producto.comision || 0) / producto.cantidad : 0);
@@ -69,7 +64,7 @@ export default function NewOrder() {
           cantidad: nuevaCantidad,
           subtotal: (producto.precio || producto.price) * nuevaCantidad,
           comision: comisionUnitaria * nuevaCantidad,
-          comisionUnitaria: comisionUnitaria // Guardar para futuros cálculos
+          comisionUnitaria: comisionUnitaria
         };
       })
     );
@@ -79,7 +74,6 @@ export default function NewOrder() {
     setProductos((prev: any[]) => prev.map((p, i) => (i === index ? { ...p, hostessId } : p)));
   };
 
-  // Handler para toggle de comisión
   const handleToggleComision = (index: number) => {
     setProductos((prev: any[]) =>
       prev.map((producto, i) =>
@@ -94,9 +88,7 @@ export default function NewOrder() {
     );
   };
 
-  // Handler para submit (mock)
   const handleSubmit = () => {
-    // Si no hay cliente seleccionado, usar cliente ID 1 por defecto
     const clienteId = selectedCliente || '1';
   };
 

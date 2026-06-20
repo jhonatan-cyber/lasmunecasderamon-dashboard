@@ -19,7 +19,6 @@ export const GET = withAppApiWrapper(
 
     const roleId = userResult[0].rol_id;
 
-    // Obtener los permisos del rol del usuario
     const permissions = await query<any[]>(
       `
       SELECT 

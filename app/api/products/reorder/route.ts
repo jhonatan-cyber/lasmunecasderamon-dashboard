@@ -5,8 +5,7 @@ import { ProductRepository } from '@/lib/repositories/ProductRepository';
 export const PUT = withAppAuth(
   async (request: Request) => {
     const body = await request.json();
-    
-    // El hook envía { category_id, product_orders }
+
     const product_orders = Array.isArray(body) ? body : body.product_orders;
 
     if (!Array.isArray(product_orders)) {
@@ -17,10 +16,10 @@ export const PUT = withAppAuth(
     }
 
     await ProductRepository.reorder(product_orders);
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Orden de productos actualizado correctamente' 
+
+    return NextResponse.json({
+      success: true,
+      message: 'Orden de productos actualizado correctamente'
     });
   },
   { module: 'products', action: 'edit' }

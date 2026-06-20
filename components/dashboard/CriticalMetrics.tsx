@@ -142,7 +142,7 @@ export default function CriticalMetrics() {
             key={kpi.label}
             className='group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950/40 p-5 shadow-lg shadow-slate-200/40 dark:shadow-none transition-all hover:border-slate-300 dark:hover:border-slate-700'
           >
-            {/* Background decoration */}
+            {}
             <div
               className={cn(
                 'absolute -right-4 -top-4 h-24 w-24 rounded-full blur-3xl opacity-5 dark:opacity-10',
@@ -172,7 +172,7 @@ export default function CriticalMetrics() {
 
             {kpi.alert && <CriticalAlert count={kpi.alert.count} label={kpi.alert.label} />}
 
-            {/* Subtle bottom progress-like bar */}
+            {}
             <div className='absolute bottom-0 left-0 h-1 bg-slate-100 dark:bg-slate-800 w-full overflow-hidden'>
               <div
                 className={cn(

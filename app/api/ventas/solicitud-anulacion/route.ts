@@ -6,7 +6,6 @@ export async function GET(request: Request) {
   const token = searchParams.get('token');
   const listAll = searchParams.get('list');
 
-  // Si no hay token, listar todas las solicitudes pendientes
   if (listAll === 'true' || (!token && !listAll)) {
     const rows = await query<any[]>(
       `SELECT sav.id, sav.token, sav.estado, sav.motivo, sav.monto, sav.solicitado_por, sav.fecha_solicitud,

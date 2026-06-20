@@ -116,7 +116,7 @@ export class CashRegisterRepository {
     const entries = Object.entries(deltas).filter(([_, v]) => v !== 0 && v !== undefined);
     if (entries.length === 0) return;
 
-    // Map business fields to DB columns
+    
     const columnMap: Record<string, string> = {
       venta: 'venta',
       servicio: 'servicio',
@@ -128,16 +128,16 @@ export class CashRegisterRepository {
       iva: 'iva',
       comision: 'comision',
       propina: 'propina',
-      // La tabla `cajas` no expone una columna `cuenta`; ese importe se contabiliza en `venta`
+      
       cuenta: 'venta',
       devolucion: 'devolucion'
     };
 
-    // Only include entries that have a known column mapping; skip unknowns to avoid SQL errors
+    
     const knownEntries = entries.filter(([k]) => k in columnMap);
     if (knownEntries.length === 0) return;
 
-    // Deduplicate by mapped column name (e.g. both 'venta' and 'cuenta' → 'venta'), summing their values
+    
     const colTotals: Record<string, number> = {};
     for (const [k, v] of knownEntries) {
       const col = columnMap[k];
@@ -205,7 +205,7 @@ export class CashRegisterRepository {
       total_servicios: Number(cajaRow.servicio || 0),
       cantidad_servicios: stats.servicios.cantidad,
       promedio_servicio: stats.servicios.promedio,
-      // Alias para compatibilidad con la app
+      
       total_tarjeta: Number(cajaRow.tarjeta || 0),
       total_transferencia: Number(cajaRow.transferencia || 0),
       total_anticipo: cajaRow.anticipo || 0,
@@ -304,7 +304,7 @@ export class CashRegisterRepository {
       Number(caja.transferencia || 0) -
       Number(caja.devolucion || 0);
 
-    // Cerrar sesiones de todos los usuarios al cerrar caja
+    
     await query(`
       UPDATE logins SET estado = 0 WHERE estado = 1
     `);

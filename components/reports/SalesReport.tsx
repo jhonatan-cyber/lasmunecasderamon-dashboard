@@ -257,7 +257,7 @@ export function SalesReport() {
 
   return (
     <div className="space-y-8 pb-10">
-      {/* Filtros Rápidos - Action Chips */}
+      {}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
           {[
@@ -311,7 +311,7 @@ export function SalesReport() {
         </div>
       </div>
 
-      {/* Estadísticas Principales con Diseño Premium */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { 
@@ -367,7 +367,7 @@ export function SalesReport() {
         ))}
       </div>
 
-      {/* Resumen de Métodos de Pago - Chips Compactos */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {paymentItems.map((item, index) => (
           <div key={index} className="bg-white dark:bg-gray-800/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
@@ -389,9 +389,9 @@ export function SalesReport() {
         ))}
       </div>
 
-      {/* Gráficos de Ventas con Diseño Premium */}
+      {}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Distribución por Método (Pie Chart) */}
+        {}
         <Card className="xl:col-span-1 border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
           <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
             <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -461,7 +461,7 @@ export function SalesReport() {
           </CardContent>
         </Card>
 
-        {/* Evolución de Ventas (Bar Chart con Gradientes) */}
+        {}
         <Card className="xl:col-span-2 border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
           <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
             <CardTitle className="text-lg font-black flex items-center gap-2">

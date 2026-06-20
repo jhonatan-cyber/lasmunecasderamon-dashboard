@@ -16,7 +16,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
 
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
-      {/* Total Cuentas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -42,7 +42,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
         </CardContent>
       </Card>
 
-      {/* Cuentas Activas */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -70,7 +70,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
         </CardContent>
       </Card>
 
-      {/* Total Ingresos */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
@@ -98,7 +98,7 @@ export default function CuentaStatsCards({ cuentas, formatCurrency }: CuentaStat
         </CardContent>
       </Card>
 
-      {/* Total Comisiones */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(245, 158, 11, 0.1)',

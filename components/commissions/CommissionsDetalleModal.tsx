@@ -107,7 +107,7 @@ export default function CommissionsDetalleModal({
               <span>{usuario.nombre_completo}</span>
             </div>
 
-            {/* Resumen de totales */}
+            {}
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 w-full'>
               <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
@@ -145,7 +145,7 @@ export default function CommissionsDetalleModal({
             </div>
           </div>
 
-          {/* Tabla de detalles */}
+          {}
           <div>
             <h3 className='text-sm font-semibold mb-4 text-center text-gray-600 dark:text-gray-400'>
               Detalle de Comisiones
@@ -277,7 +277,7 @@ export default function CommissionsDetalleModal({
           </div>
         </div>
 
-        {/* Botón cerrar */}
+        {}
         <div className='flex-shrink-0 border-t dark:border-gray-800 px-2 sm:px-4 py-4'>
           <div className='flex justify-center'>
             <Button

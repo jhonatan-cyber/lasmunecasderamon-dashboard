@@ -32,26 +32,26 @@ import { RoleSelect } from '@/components/users/RoleSelect';
 import { useUserForm, type UserFormValues } from '@/hooks/personal';
 export type { UserFormValues };
 
-// Función para formatear RUT chileno
+
 const formatRUT = (value: string): string => {
-  // Limpiar todo excepto números y K
+  
   const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
   if (!clean) return '';
 
-  // Si tiene menos de 2 dígitos, retornar solo números
+  
   if (clean.length <= 1) return clean;
 
-  // Separar cuerpo y dígito verificador
+  
   const cuerpo = clean.slice(0, -1);
   const dv = clean.slice(-1);
 
-  // Formatear cuerpo con puntos
+  
   const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
   return `${formattedCuerpo}-${dv}`;
 };
 
-// Función para validar RUT chileno
+
 const isValidRUT = (rut: string): boolean => {
   const clean = rut.replace(/[^0-9kK]/gi, '');
   if (clean.length < 2) return false;
@@ -109,7 +109,7 @@ export function UserFormModal({
   const [runFormatted, setRunFormatted] = useState(user?.run || '');
   const [runError, setRunError] = useState('');
 
-  // Sincronizar el valor inicial
+  
   useEffect(() => {
     if (user?.run) {
       const formatted = formatRUT(user.run);
@@ -125,7 +125,7 @@ export function UserFormModal({
     setRunFormatted(formatted);
     form.setValue('run', formatted);
 
-    // Validar en tiempo real si tiene suficientes caracteres
+    
     const clean = value.replace(/[^0-9kK]/gi, '');
     if (clean && clean.length >= 2) {
       if (!isValidRUT(clean)) {
@@ -174,7 +174,7 @@ export function UserFormModal({
 
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start'>
                 <div className='flex flex-col gap-4 sm:gap-6'>
-                  {/* RUT */}
+                  {}
                   <div>
                     <label className='block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200 mb-1'>
                       RUT
@@ -193,7 +193,7 @@ export function UserFormModal({
                     {runError && <p className='text-red-500 text-xs mt-1'>{runError}</p>}
                   </div>
 
-                  {/* Nick */}
+                  {}
                   <FormFieldWithIcon
                     control={form.control}
                     name='nick'
@@ -204,7 +204,7 @@ export function UserFormModal({
                   />
                 </div>
 
-                {/* Imagen */}
+                {}
                 <ImageUploadField
                   control={form.control}
                   initialImageUrl={user?.foto}
@@ -212,9 +212,9 @@ export function UserFormModal({
                 />
               </div>
 
-              {/* Segunda fila: todos los demás campos, ocupa 2 columnas */}
+              {}
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-                {/* Nombre */}
+                {}
                 <FormFieldWithIcon
                   control={form.control}
                   name='name'
@@ -224,7 +224,7 @@ export function UserFormModal({
                   capitalize
                 />
 
-                {/* Apellido */}
+                {}
                 <FormFieldWithIcon
                   control={form.control}
                   name='lastName'
@@ -234,7 +234,7 @@ export function UserFormModal({
                   capitalize
                 />
 
-                {/* Dirección - ocupa 2 columnas */}
+                {}
                 <div className='lg:col-span-2'>
                   <FormFieldWithIcon
                     control={form.control}
@@ -246,7 +246,7 @@ export function UserFormModal({
                   />
                 </div>
 
-                {/* Teléfono */}
+                {}
                 <FormFieldWithIcon
                   control={form.control}
                   name='phone'
@@ -255,13 +255,13 @@ export function UserFormModal({
                   icon={Phone}
                 />
 
-                {/* Estado Civil */}
+                {}
                 <MaritalStatusSelect control={form.control} name='maritalStatus' />
 
-                {/* AFP */}
+                {}
                 <AfpInputField control={form.control} name='afp' />
 
-                {/* Rol */}
+                {}
                 <RoleSelect
                   control={form.control}
                   name='rol_id'
@@ -271,7 +271,7 @@ export function UserFormModal({
                   placeholder='Seleccione un rol'
                 />
 
-                {/* Sueldo */}
+                {}
                 <NumberInputField
                   control={form.control}
                   name='salary'
@@ -281,7 +281,7 @@ export function UserFormModal({
                   onValueChange={sueldo.handleChange}
                 />
 
-                {/* Aporte AFP */}
+                {}
                 <NumberInputField
                   control={form.control}
                   name='contributions'
@@ -291,7 +291,7 @@ export function UserFormModal({
                   onValueChange={aporte.handleChange}
                 />
 
-                {/* Descuento de Alojamiento */}
+                {}
                 <HousingDiscountField
                   control={form.control}
                   watch={form.watch}

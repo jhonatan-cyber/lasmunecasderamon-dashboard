@@ -17,7 +17,7 @@ interface CategoryCardProps {
   onClick: () => void;
 }
 
-// Función para generar un color basado en el ID de la categoría
+
 const generateColor = (id: string) => {
   const colors = [
     '#3B82F6',
@@ -42,7 +42,7 @@ const generateColor = (id: string) => {
     '#10B981'
   ];
   
-  // Hash simple para strings
+  
   let hash = 0;
   const strId = String(id);
   for (let i = 0; i < strId.length; i++) {
@@ -56,7 +56,7 @@ const generateColor = (id: string) => {
 export default function CategoryCard({ category, onClick }: CategoryCardProps) {
   const categoryColor = generateColor(category.id);
 
-  // Formatear fecha de creación
+  
   const createdAt = category.created_at
     ? formatLongDateEs(category.created_at)
     : formatLongDateEs(new Date());
@@ -75,7 +75,7 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
           }
         }}
       >
-        {/* Header */}
+        {}
         <div className='flex items-start justify-between pb-3'>
           <div className='flex items-center gap-2 sm:gap-3'>
             <div
@@ -98,9 +98,9 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
           </div>
         </div>
 
-        {/* Content */}
+        {}
         <div className='space-y-3 sm:space-y-4'>
-          {/* Status badges */}
+          {}
           <div className='flex items-center justify-between'>
             <Badge variant='secondary' className='bg-green-100 text-green-800 text-xs sm:text-sm'>
               Activa
@@ -111,12 +111,12 @@ export default function CategoryCard({ category, onClick }: CategoryCardProps) {
             </div>
           </div>
 
-          {/* Description */}
+          {}
           <p className='text-xs sm:text-sm text-gray-600 dark:text-neutral-300 line-clamp-2'>
             {category.description || 'Sin descripción'}
           </p>
 
-          {/* Footer info */}
+          {}
           <div className='flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700'>
             <span className='text-xs text-gray-500 dark:text-neutral-400'>Creada: {createdAt}</span>
           </div>

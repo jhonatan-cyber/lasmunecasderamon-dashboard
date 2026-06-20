@@ -86,7 +86,7 @@ export function ConfirmModal({
       <DialogContent
         className={`${sizeClasses[size]} flex flex-col p-0 overflow-hidden rounded-2xl`}
       >
-        {/* Header */}
+        {}
         <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
           <DialogTitle className='flex items-center gap-2'>
             <span className={`p-1.5 rounded-lg ${variantConfig.iconBg}`}>{variantConfig.icon}</span>
@@ -96,7 +96,7 @@ export function ConfirmModal({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Body */}
+        {}
         <div className='flex-1 px-6 py-6'>
           <div className='bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-slate-700'>
             <p className='text-sm text-gray-700 dark:text-gray-300 text-center leading-relaxed'>
@@ -110,7 +110,7 @@ export function ConfirmModal({
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <div className='flex-shrink-0 border-t dark:border-slate-800 px-6 py-4 bg-gray-50 dark:bg-slate-900/50 rounded-b-2xl'>
           <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 w-full'>
             {!hideCancel && (

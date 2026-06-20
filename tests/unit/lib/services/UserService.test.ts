@@ -42,7 +42,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// ─── createUser ──────────────────────────────────────────────────────────────
+
 
 describe('UserService.createUser', () => {
   const validBody = {
@@ -93,7 +93,7 @@ describe('UserService.createUser', () => {
   });
 });
 
-// ─── updateUser ──────────────────────────────────────────────────────────────
+
 
 describe('UserService.updateUser', () => {
   const existingUser = {
@@ -149,7 +149,7 @@ describe('UserService.updateUser', () => {
       run: '12345678-9',
       name: 'Test',
       lastName: 'User',
-      rol_id: 'rol-2' // rol diferente
+      rol_id: 'rol-2' 
     });
 
     expect(PermissionsCache.invalidate).toHaveBeenCalledWith('user-1');
@@ -164,15 +164,15 @@ describe('UserService.updateUser', () => {
       name: 'New Name',
       lastName: 'User',
       run: '12345678-9',
-      rol_id: 'rol-1' // mismo rol
+      rol_id: 'rol-1' 
     });
 
-    // rol_id está definido → sí invalida (comportamiento actual correcto)
+    
     expect(PermissionsCache.invalidate).toHaveBeenCalledWith('user-1');
   });
 });
 
-// ─── toggleUserStatus ─────────────────────────────────────────────────────────
+
 
 describe('UserService.toggleUserStatus', () => {
   it('lanza ValidationError para acción inválida', async () => {

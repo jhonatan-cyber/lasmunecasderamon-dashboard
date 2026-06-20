@@ -66,7 +66,7 @@ export function CommissionsList({
     );
   }
 
-  // Vista de tarjetas para móviles
+  
   const MobileCardView = () => (
     <div className='lg:hidden space-y-3'>
       {loading
@@ -92,7 +92,7 @@ export function CommissionsList({
               key={commission.id}
               className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl shadow-md border-none p-4 space-y-3'
             >
-              {/* Header con empleado y estado */}
+              {}
               <div className='flex justify-between items-start'>
                 <div className='flex items-center gap-2'>
                   <Avatar className='h-8 w-8'>
@@ -117,7 +117,7 @@ export function CommissionsList({
                 </Badge>
               </div>
 
-              {/* Información */}
+              {}
               <div className='space-y-2'>
                 <div className='flex items-center gap-2'>
                   <Tag className='h-3 w-3 text-gray-400' />
@@ -163,7 +163,7 @@ export function CommissionsList({
     </div>
   );
 
-  // Vista de tabla para desktop
+  
   const DesktopTableView = () => (
     <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>

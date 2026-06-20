@@ -269,7 +269,7 @@ export function SalesChart() {
         </div>
       </CardHeader>
       <CardContent className='p-6'>
-        {/* Summary Cards */}
+        {}
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
           <div className='text-center p-4 dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-blue-800/10 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm'>
             <div className='flex items-center justify-center mb-2'>
@@ -315,7 +315,7 @@ export function SalesChart() {
           </div>
         </div>
 
-        {/* Recharts Bar Chart */}
+        {}
         <div className='h-[300px] sm:h-[400px] w-full dark:bg-gray-800/50 bg-white rounded-xl p-2 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700'>
           <ResponsiveContainer width='100%' height='100%'>
             <BarChart
@@ -377,7 +377,7 @@ export function SalesChart() {
           </ResponsiveContainer>
         </div>
 
-        {/* Footer Legend */}
+        {}
         <div className='mt-4 flex items-center justify-center'>
           <div className='flex items-center gap-3 text-sm dark:bg-gray-800/80 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700'>
             <span className='text-gray-500 dark:text-gray-400 text-xs'>

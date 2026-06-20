@@ -39,11 +39,9 @@ export default function AnfitrionaAsistenciasPage() {
   const [weeksWithDiscount, setWeeksWithDiscount] = useState<number>(0);
   const [discountPerWeek, setDiscountPerWeek] = useState<number>(0);
 
-  // Fetch asistencias del usuario desde el endpoint específico (detalle)
   const fetchAttendances = async () => {
     setLoading(true);
     try {
-      // 1) Detalle por asistencia
       const res = await fetch('/api/attendance/user?tipo=detalle');
       const data = await res.json();
 
@@ -54,7 +52,6 @@ export default function AnfitrionaAsistenciasPage() {
         setAttendances([]);
       }
 
-      // 2) Resumen para calcular descuento por habitación (se aplica por semana)
       const resSummary = await fetch('/api/attendance/user');
       const summary = await resSummary.json();
       if (
@@ -64,10 +61,10 @@ export default function AnfitrionaAsistenciasPage() {
         summary.data.length > 0
       ) {
         const row = summary.data[0];
-        // Esperamos campos: descuento_total, descuento (monto semanal) y posiblemente semanas_con_descuento
+
         setHousingDiscountTotal(Number(row.descuento_total || 0));
         setDiscountPerWeek(Number(row.descuento || 0));
-        // Si no tenemos semanas, derivar: semanas = descuento_total / descuento (evitar división por 0)
+
         const weeks =
           row.semanas_con_descuento !== undefined && row.semanas_con_descuento !== null
             ? Number(row.semanas_con_descuento)
@@ -97,7 +94,6 @@ export default function AnfitrionaAsistenciasPage() {
     }
   }, [user, userLoading]);
 
-  // Verificar que el usuario sea anfitriona - DESPUÉS de todos los hooks
   if (userLoading) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -123,7 +119,6 @@ export default function AnfitrionaAsistenciasPage() {
     );
   }
 
-  // Calcular totales - solo asistencias pendientes (estado = 1)
   const asistenciasPendientes = attendances.filter(attendance => attendance.estado === 1);
   const totalSalary = asistenciasPendientes.reduce(
     (sum, attendance) => sum + (attendance.sueldo || 0),
@@ -136,7 +131,6 @@ export default function AnfitrionaAsistenciasPage() {
   const totalToCollectBase = totalSalary - totalContribution;
   const totalToCollect = Math.max(0, totalToCollectBase - (housingDiscountTotal || 0));
 
-  // Ordenar y filtrar asistencias
   const filteredAttendances = attendances.filter(attendance => {
     if (!searchTerm) return true;
 
@@ -213,7 +207,7 @@ export default function AnfitrionaAsistenciasPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex justify-between items-center'>
         <div>
           <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
@@ -231,7 +225,7 @@ export default function AnfitrionaAsistenciasPage() {
         </Button>
       </div>
 
-      {/* Totales centrados */}
+      {}
       <div className='text-center space-y-2'>
         <div className='flex justify-center gap-8 flex-wrap'>
           <div>
@@ -260,7 +254,7 @@ export default function AnfitrionaAsistenciasPage() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <SelectElements
           value={rowsPerPage}
@@ -284,7 +278,7 @@ export default function AnfitrionaAsistenciasPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <Card>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -458,7 +452,7 @@ export default function AnfitrionaAsistenciasPage() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {}
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>

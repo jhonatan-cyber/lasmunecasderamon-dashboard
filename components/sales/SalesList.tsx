@@ -40,7 +40,7 @@ interface SalesListProps {
   totalPages: number;
 }
 
-// Full color theme per status — matches SalesStatsCards style
+
 const statusTheme: Record<
   number,
   {
@@ -253,7 +253,7 @@ export function SalesList({
           hover:scale-[1.02] hover:shadow-md transition-all duration-300 group'
       >
         <div className='p-5 sm:p-6 overflow-hidden'>
-          {/* Top: icon + status badge */}
+          {}
           <div className='flex items-center justify-between mb-4'>
             <div className={`p-3 ${t.iconBg} rounded-2xl`}>
               <StatusIcon className={`h-5 w-5 ${t.iconColor}`} />
@@ -276,7 +276,7 @@ export function SalesList({
             </div>
           </div>
 
-          {/* Total — hero number */}
+          {}
           <div className='mb-4'>
             <p className={`text-xs font-bold ${t.mutedColor} uppercase tracking-widest mb-0.5`}>
               {venta?.codigo || '—'}
@@ -288,9 +288,9 @@ export function SalesList({
             </h3>
           </div>
 
-          {/* Info section */}
+          {}
           <div className='rounded-2xl bg-white/60 dark:bg-slate-950/30 p-4 space-y-3 mb-4'>
-            {/* Client + location */}
+            {}
             <div className='flex items-center justify-between'>
               <span className={`text-base font-bold ${t.textColor} truncate max-w-[55%]`}>
                 {venta.cliente_nombre || 'Sin cliente'}
@@ -309,7 +309,7 @@ export function SalesList({
               )}
             </div>
 
-            {/* Items + payment method */}
+            {}
             <div className='flex items-center gap-3'>
               <span
                 className={`inline-flex items-center gap-1 text-xs ${t.mutedColor} font-medium`}
@@ -333,7 +333,7 @@ export function SalesList({
               )}
             </div>
 
-            {/* Anfitrionas */}
+            {}
             <div className='flex flex-wrap items-center gap-1.5'>
               {anfitrionasNicks.length > 0 ? (
                 anfitrionasNicks.map((nick: string, uIdx: number) => (
@@ -352,7 +352,7 @@ export function SalesList({
             </div>
           </div>
 
-          {/* Actions */}
+          {}
           {hasAnyAction && (
             <div className='flex gap-2'>
               {canViewDetails && (

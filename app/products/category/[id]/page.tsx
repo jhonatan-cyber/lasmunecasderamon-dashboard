@@ -37,7 +37,7 @@ const PRODUCT_CARD_PAGE_SIZE_STORAGE_KEY = 'products:card-page-size';
 const ProductCategoryPage = () => {
   const params = useParams();
   const rawId = params?.id;
-  // El categoryId ya es el UUID correcto de la categoría
+
   const categoryId = typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : '';
 
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
@@ -276,7 +276,7 @@ const ProductCategoryPage = () => {
           viewMode={showTableView ? 'table' : 'cards'}
         />
 
-        {/* Vista de tabla solo en desktop */}
+        {}
         <div className='hidden lg:block'>
           {showTableView ? (
             <>
@@ -336,7 +336,7 @@ const ProductCategoryPage = () => {
           )}
         </div>
 
-        {/* Vista de cards siempre en móvil */}
+        {}
         <div className='lg:hidden'>
           <DndContext
             sensors={sensors}

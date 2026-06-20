@@ -12,7 +12,7 @@ interface TimerExpiredModalProps {
   roomName: string;
   servicioCode: string;
   clienteNombre: string;
-  tiempoTotal: number; // en minutos
+  tiempoTotal: number; 
   isTemporary?: boolean;
   tipoTransaccion?: 'servicio' | 'venta' | 'cuenta';
   anfitrionas?: string;
@@ -40,12 +40,12 @@ export default function TimerExpiredModal({
         onPointerDownOutside={e => e.preventDefault()}
         onEscapeKeyDown={e => e.preventDefault()}
       >
-        {/* DialogTitle para accesibilidad */}
+        {}
         <DialogTitle className='sr-only'>
           {isTemporary ? 'Timer temporal finalizado' : `Tiempo de ${tipoTransaccion} terminado`}
         </DialogTitle>
 
-        {/* Header (Fijo) */}
+        {}
         <div className='bg-gradient-to-r from-red-500 to-red-600 text-white p-4 flex-shrink-0'>
           <div className='flex items-center justify-center gap-3'>
             <Clock className='w-8 h-8' />
@@ -66,9 +66,9 @@ export default function TimerExpiredModal({
           </div>
         </div>
 
-        {/* Contenido (Scrollable) */}
+        {}
         <div className='flex-1 overflow-y-auto p-6 space-y-4'>
-          {/* Información del servicio */}
+          {}
           <div className='bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3'>
             <div className='flex items-center gap-3'>
               <Home className='w-5 h-5 text-blue-500' />
@@ -110,7 +110,7 @@ export default function TimerExpiredModal({
               </div>
             </div>
 
-            {/* Anfitrionas */}
+            {}
             {anfitrionas && anfitrionas.trim() !== '' && (
               <div className='flex items-start gap-3'>
                 <Users className='w-5 h-5 text-pink-500 mt-0.5' />
@@ -166,7 +166,7 @@ export default function TimerExpiredModal({
             </div>
           </div>
 
-          {/* Mensaje de estado */}
+          {}
           <div
             className={`text-center p-3 rounded-lg ${isTemporary
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
@@ -185,7 +185,7 @@ export default function TimerExpiredModal({
           </div>
         </div>
 
-        {/* Footer (Fijo) */}
+        {}
         <div className='p-4 border-t flex justify-center flex-shrink-0'>
           <Button
             className='px-8 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium w-full sm:w-auto'

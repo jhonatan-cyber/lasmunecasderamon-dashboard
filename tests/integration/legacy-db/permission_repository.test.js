@@ -45,7 +45,7 @@ class PermissionRepository {
     await queryMock('UPDATE permissions SET deleted_at = ? WHERE id = ?', [new Date(), id]);
   }
 
-  // Función auxiliar para limpieza real en tests
+  
   static async hardDelete(id) {
     await queryMock('DELETE FROM permissions WHERE id = ?', [id]);
   }

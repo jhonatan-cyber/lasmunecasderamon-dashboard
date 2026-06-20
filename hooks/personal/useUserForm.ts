@@ -6,7 +6,7 @@ import { User as UserType } from '@/types/user';
 import { useRoles } from '@/hooks/personal';
 import { useNumberFormatter } from '@/hooks/shared';
 
-// Función para limpiar RUT (quitar puntos y guiones)
+
 const cleanRUT = (rut: string): string => {
   return rut.replace(/[^0-9kK]/gi, '').toUpperCase();
 };
@@ -221,7 +221,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       processedValues.discount = Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
       processedValues.maritalStatus = mapSelectToEstadoCivil(processedValues.maritalStatus);
 
-      // Limpiar el RUT (quitar puntos y guiones) antes de guardar
+      
       processedValues.run = cleanRUT(processedValues.run);
 
       if (isEditMode && user && processedValues.run !== user.run) {

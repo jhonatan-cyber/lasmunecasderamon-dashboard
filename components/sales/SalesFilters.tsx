@@ -51,7 +51,7 @@ export function SalesFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
-          {/* Búsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Buscar
@@ -64,7 +64,7 @@ export function SalesFilters({
             />
           </div>
 
-          {/* Estado */}
+          {}
           <div className='w-full lg:w-[130px]'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Estados
@@ -83,7 +83,7 @@ export function SalesFilters({
             </Select>
           </div>
 
-          {/* Método de Pago */}
+          {}
           <div className='w-full lg:w-[130px]'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Método
@@ -102,7 +102,7 @@ export function SalesFilters({
             </Select>
           </div>
 
-          {/* Ordenar por */}
+          {}
           <div className='w-full lg:w-[180px]'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Ordenar por
@@ -134,7 +134,7 @@ export function SalesFilters({
             </div>
           </div>
 
-          {/* Mostrar (PageSize) */}
+          {}
           <div className='w-full lg:w-[100px]'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               Listado
@@ -158,7 +158,7 @@ export function SalesFilters({
             </Select>
           </div>
 
-          {/* Botón Limpiar con ícono trash */}
+          {}
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>

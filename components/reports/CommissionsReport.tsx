@@ -100,7 +100,7 @@ interface CommissionResponse {
   dailyCommissions: DailyCommission[];
 }
 
-// REDUCER FOR STATE MANAGEMENT
+
 type ReportState = {
   data: CommissionResponse | null;
   loading: boolean;
@@ -343,7 +343,7 @@ export function CommissionsReport() {
 
   return (
     <div className="space-y-8 pb-10">
-      {/* Filtros Rápidos - Action Chips */}
+      {}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
           {[
@@ -397,7 +397,7 @@ export function CommissionsReport() {
         </div>
       </div>
 
-      {/* Estadísticas Generales - Diseño Premium */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {[
           { 
@@ -460,7 +460,7 @@ export function CommissionsReport() {
         ))}
       </div>
 
-      {/* Gráfico de Mejores Anfitrionas con Diseño Premium */}
+      {}
       <Card className="border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
         <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
           <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -546,7 +546,7 @@ export function CommissionsReport() {
         </CardContent>
       </Card>
 
-      {/* Tabla de Comisiones por Anfitriona */}
+      {}
       <CollapsibleCard
         title={<><UserCheck className="h-5 w-5" /> Comisiones por Anfitriona</>}
         headerRight={
@@ -600,7 +600,7 @@ export function CommissionsReport() {
           </table>
         </div>
 
-        {/* Paginación */}
+        {}
         {data.commissions.length > ITEMS_PER_PAGE && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -643,7 +643,7 @@ export function CommissionsReport() {
         )}
       </CollapsibleCard>
 
-      {/* Comisiones por Día de la Semana - Composed Chart */}
+      {}
       <CollapsibleCard
         title={<><BarChart3 className="h-5 w-5" /> Comisiones por Día de la Semana</>}
         headerClassName="bg-gradient-to-r from-indigo-600 to-blue-600 text-white"

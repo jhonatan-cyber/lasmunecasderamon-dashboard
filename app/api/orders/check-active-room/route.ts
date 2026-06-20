@@ -8,7 +8,6 @@ export const POST = withAppApiWrapper(async (request: Request) => {
     return NextResponse.json({ success: true, hasActiveRoom: false });
   }
 
-  // Buscar si alguna anfitriona está en una venta activa con habitación
   const result = await query<any[]>(
     `
       SELECT v.habitacion_id as habitacionId, h.nombre as habitacionNombre, v.tiempo, vu.usuario_id as anfitrionaId

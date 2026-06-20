@@ -53,7 +53,7 @@ export function ClientFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
-          {/* Búsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label
               htmlFor='search'
@@ -71,7 +71,7 @@ export function ClientFilters({
           </div>
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
-            {/* Filtro de estado */}
+            {}
             <div className='w-full sm:w-auto min-w-[160px]'>
               <Label
                 htmlFor='status'
@@ -96,7 +96,7 @@ export function ClientFilters({
               </Select>
             </div>
 
-            {/* Ordenar */}
+            {}
             <div className='w-full sm:w-auto min-w-[180px]'>
               <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
                 Ordenar por
@@ -130,7 +130,7 @@ export function ClientFilters({
               </div>
             </div>
 
-            {/* Elementos por página */}
+            {}
             <div className='w-full sm:w-auto'>
               <SelectElements
                 value={pageSize}
@@ -140,7 +140,7 @@ export function ClientFilters({
               />
             </div>
 
-            {/* Botón limpiar filtros */}
+            {}
             <div className='w-full sm:w-auto'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>

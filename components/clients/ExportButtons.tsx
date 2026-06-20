@@ -20,7 +20,7 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
     setIsExporting(true);
 
     try {
-      // Lazy load ExcelJS solo cuando se necesita
+      
       const ExcelJS = (await import('exceljs')).default;
 
       const data = clients.map((client, index) => ({
@@ -90,7 +90,7 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
     setIsExporting(true);
 
     try {
-      // Lazy load jsPDF y autoTable solo cuando se necesita
+      
       const { jsPDF } = await import('jspdf');
       const autoTable = (await import('jspdf-autotable')).default;
 
@@ -107,13 +107,13 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         client.status === 1 ? 'Activo' : 'Inactivo'
       ]);
 
-      // Título del documento
+      
       doc.setFontSize(18);
       doc.text(title, 14, 22);
       doc.setFontSize(11);
       doc.setTextColor(100);
 
-      // Tabla de datos
+      
       autoTable(doc, {
         head: headers,
         body: data,
@@ -136,7 +136,7 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         margin: { top: 30 }
       });
 
-      // Pie de página
+      
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -187,7 +187,7 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         {isExporting ? 'Exportando...' : 'Excel'}
       </Button>
 
-      {/* Tabla oculta para la impresión */}
+      {}
       <div style={{ display: 'none' }}>
         <div className='p-6'>
           <h1 className='text-3xl font-bold mb-6'>Listado de Clientes</h1>

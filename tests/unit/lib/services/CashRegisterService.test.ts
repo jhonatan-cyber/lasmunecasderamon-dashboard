@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// ─── openCaja ────────────────────────────────────────────────────────────────
+
 
 describe('CashRegisterService.openCaja', () => {
   it('llama al repositorio con los parámetros validados', async () => {
@@ -71,7 +71,7 @@ describe('CashRegisterService.openCaja', () => {
   });
 });
 
-// ─── closeCaja ───────────────────────────────────────────────────────────────
+
 
 describe('CashRegisterService.closeCaja', () => {
   it('llama al repositorio con los parámetros validados', async () => {
@@ -107,7 +107,7 @@ describe('CashRegisterService.closeCaja', () => {
   });
 });
 
-// ─── updateCaja ──────────────────────────────────────────────────────────────
+
 
 describe('CashRegisterService.updateCaja', () => {
   it('llama al repositorio con los datos validados', async () => {

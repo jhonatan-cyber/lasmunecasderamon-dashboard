@@ -17,7 +17,6 @@ export default function GarzonHorasExtrasPage() {
   const [overtime, setOvertime] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Estados de Filtros y Tabla
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
@@ -46,11 +45,9 @@ export default function GarzonHorasExtrasPage() {
     }
   }, [user, userLoading]);
 
-  // Lógica de Filtrado y Ordenamiento
   const processedOvertime = useMemo(() => {
     const data = overtime || [];
 
-    // 1. Filtrado
     const filtered = data.filter(item => {
       const matchesSearch =
         item.total?.toString().includes(searchTerm) || item.hora?.toString().includes(searchTerm);
@@ -61,7 +58,6 @@ export default function GarzonHorasExtrasPage() {
       return matchesSearch && matchesStatus;
     });
 
-    // 2. Ordenamiento
     return [...filtered].sort((a, b) => {
       let aValue: any = a[sortBy];
       let bValue: any = b[sortBy];
@@ -98,7 +94,6 @@ export default function GarzonHorasExtrasPage() {
     );
   }
 
-  // Verificar que el usuario sea garzon
   if (user?.role?.toLowerCase() !== 'garzon') {
     return (
       <div className='p-6 flex flex-col items-center justify-center min-h-[60vh] gap-4'>
@@ -118,7 +113,7 @@ export default function GarzonHorasExtrasPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header Premium */}
+      {}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
         <div className='flex flex-col'>
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Mis Horas Extras</h1>
@@ -143,10 +138,10 @@ export default function GarzonHorasExtrasPage() {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {}
       <OvertimeStatsCards overtime={overtime} />
 
-      {/* Filtros Section */}
+      {}
       <OvertimeFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -163,7 +158,7 @@ export default function GarzonHorasExtrasPage() {
         isAdmin={false}
       />
 
-      {/* Tabla Section */}
+      {}
       <OvertimeTable
         loading={loading}
         rows={paginatedOvertime}
@@ -171,7 +166,7 @@ export default function GarzonHorasExtrasPage() {
         isAdmin={false}
       />
 
-      {/* Paginador Section */}
+      {}
       {totalPages > 1 && (
         <div className='flex justify-center pt-4'>
           <Paginate page={page} totalPages={totalPages} setPage={setPage} />

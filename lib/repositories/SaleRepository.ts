@@ -604,9 +604,7 @@ export class SaleRepository {
     await BaseRepository.insert(trx, 'detalle_ventas', data);
   }
 
-  /**
-   * Registra la relación entre una venta y el personal involucrado.
-   */
+  
   static async insertUserRelation(
     trx: TransactionQuery,
     ventaId: string,
@@ -619,7 +617,7 @@ export class SaleRepository {
   }
 
   static async getById(id: string): Promise<any | null> {
-    // 1. Fetch main venta data
+    
     const res = await query<any[]>(
       `
       SELECT v.*, CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_numero,
@@ -649,7 +647,7 @@ export class SaleRepository {
     const venta = this.mapSaleFromDB(res[0]);
     if (!venta) return null;
 
-    // 2. Fetch detalle items with product info
+    
     const detalles = await query<any[]>(
       `
       SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
@@ -662,7 +660,7 @@ export class SaleRepository {
       [id]
     );
 
-    // 3. Fetch anfitrionas/users assigned to this venta
+    
     const usuarios = await query<any[]>(
       `
       SELECT vu.usuario_id, u.nick, u.nombre as usuario_nombre
@@ -673,7 +671,7 @@ export class SaleRepository {
       [id]
     );
 
-    // 4. Fetch comisiones por anfitriona
+    
     const comisiones = await query<any[]>(
       `
       SELECT u.nick, u.foto, SUM(dv.comision) as monto
@@ -686,7 +684,7 @@ export class SaleRepository {
       [id]
     );
 
-    // 5. Fetch distribución de propinas
+    
     const propinas = await query<any[]>(
       `
       SELECT

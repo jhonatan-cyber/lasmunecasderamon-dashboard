@@ -43,7 +43,6 @@ export default function AnfitrionaServiciosPage() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Fetch servicios del usuario desde el endpoint específico
   const fetchServices = async () => {
     setLoading(true);
     try {
@@ -68,7 +67,6 @@ export default function AnfitrionaServiciosPage() {
     fetchServices();
   }, []);
 
-  // Verificar que el usuario sea anfitriona - DESPUÉS de todos los hooks
   if (userLoading) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -91,7 +89,6 @@ export default function AnfitrionaServiciosPage() {
     );
   }
 
-  // Calcular totales
   const totalServices = services.length;
   const totalEarnings = services.reduce((sum, service) => sum + (service.precio_servicio || 0), 0);
   const serviciosEnProceso = services.filter(service => service.estado === 2).length;
@@ -100,12 +97,9 @@ export default function AnfitrionaServiciosPage() {
   const serviciosPausados = services.filter(service => service.estado === 3).length;
   const solicitudesAnulacion = services.filter(service => service.estado === 4).length;
 
-  // Ordenar y filtrar servicios
   const filteredServices = services.filter(service => {
-    // Primero filtrar por estado según la pestaña seleccionada
-    // Pestaña "Proceso": incluye En Proceso (2), Pausado (3) y Solicitud Anulación (4)
     const isProceso = [2, 3, 4].includes(service.estado);
-    // Pestaña "Finalizados": incluye Finalizado (1) y Anulado (0)
+
     const isFinalizado = [1, 0].includes(service.estado);
 
     if (statusFilter === 'proceso' && !isProceso) return false;
@@ -197,7 +191,7 @@ export default function AnfitrionaServiciosPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex justify-between items-center'>
         <div>
           <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
@@ -215,7 +209,7 @@ export default function AnfitrionaServiciosPage() {
         </Button>
       </div>
 
-      {/* Totales centrados */}
+      {}
       <div className='text-center space-y-2'>
         <div className='flex justify-center gap-8 flex-wrap'>
           <div>
@@ -249,7 +243,7 @@ export default function AnfitrionaServiciosPage() {
         </div>
       </div>
 
-      {/* Tabs de Filtro de Estado */}
+      {}
       <div className='flex justify-center sm:justify-start'>
         <Tabs
           value={statusFilter}
@@ -276,7 +270,7 @@ export default function AnfitrionaServiciosPage() {
         </Tabs>
       </div>
 
-      {/* Filters */}
+      {}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <SelectElements
           value={rowsPerPage}
@@ -300,7 +294,7 @@ export default function AnfitrionaServiciosPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <Card>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
@@ -500,7 +494,7 @@ export default function AnfitrionaServiciosPage() {
                           {getStatusBadge(service.estado)}
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap'>
-                          {/* Mostrar botón editar si la habitación tiene comisión mayor a 0 */}
+                          {}
                           {(service.habitacion_comision || 0) > 0 && service.estado === 2 && (
                             <button
                               onClick={() => {
@@ -524,12 +518,12 @@ export default function AnfitrionaServiciosPage() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {}
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>
 
-      {/* Modal de Edición de Servicio */}
+      {}
       <EditServiceModal
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}

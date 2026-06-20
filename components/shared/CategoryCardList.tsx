@@ -50,7 +50,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
   };
 
-  // Skeleton de categoría individual
+  
   const CategorySkeleton = () => (
     <Card className='flex flex-col items-center justify-center w-full h-28 border-dashed border-2 border-gray-200 bg-gray-50 shadow-none'>
       <Skeleton className='w-10 h-10 rounded-full mb-2' />
@@ -60,7 +60,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
 
   return (
     <div className={`${className}`}>
-      {/* Loading state */}
+      {}
       {loading && (
         <>
           <div className='flex items-center justify-center gap-2 mb-4'>
@@ -75,7 +75,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
         </>
       )}
 
-      {/* Grid de categorías */}
+      {}
       {!loading && currentCategorias.length > 0 && (
         <div className='grid grid-cols-4 gap-6 justify-center'>
           {currentCategorias.map((cat, index) => (
@@ -95,14 +95,14 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
         </div>
       )}
 
-      {/* Mensaje cuando no hay categorías */}
+      {}
       {!loading && categoriasFiltradas.length === 0 && (
         <div className='text-center w-full py-8'>
           <div className='text-gray-400'>No hay categorías disponibles</div>
         </div>
       )}
 
-      {/* Paginación */}
+      {}
       {!loading && totalPages > 1 && (
         <div className='flex justify-center items-center gap-4 mt-8'>
           <Button

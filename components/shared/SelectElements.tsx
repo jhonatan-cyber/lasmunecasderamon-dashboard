@@ -14,10 +14,10 @@ import {
 import React from 'react';
 
 interface SelectElementsProps {
-  // API A (actual)
+  
   value?: number;
   onChange?: (value: number) => void;
-  // API B (legado en algunos componentes)
+  
   rowsPerPage?: number;
   setRowsPerPage?: (value: number) => void;
   setPage?: (page: number) => void;
@@ -32,11 +32,11 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
     rowsPerPage,
     setRowsPerPage,
     setPage,
-    options = [5, 10, 20, 40], // Valores por defecto
+    options = [5, 10, 20, 40], 
     label = 'Listado'
   } = props;
 
-  // Compatibilidad hacia atrás: preferir value/onChange; si no existen, usar rowsPerPage/setRowsPerPage
+  
   const effectiveValue = value ?? rowsPerPage ?? 5;
   const effectiveOnChange = (v: number) => {
     if (onChange) onChange(v);

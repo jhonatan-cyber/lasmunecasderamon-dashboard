@@ -56,11 +56,11 @@ async function testBaseRepository() {
   };
 
   try {
-    // 1. Test insert
+    
     console.log('1. Probando insert...');
     await BaseRepository.insert(null, table, testData);
 
-    // 2. Test findOne
+    
     console.log('2. Probando findOne...');
     const found = await BaseRepository.findOne(null, table, 'id_rol', testData.id_rol);
     if (!found || found.nombre !== testData.nombre) {
@@ -68,7 +68,7 @@ async function testBaseRepository() {
     }
     console.log('   - Registro encontrado correctamente');
 
-    // 3. Test update
+    
     console.log('3. Probando update...');
     const updateData = { nombre: 'ROL TEST BASE UPDATED' };
     await BaseRepository.update(null, table, 'id_rol', testData.id_rol, updateData);
@@ -78,7 +78,7 @@ async function testBaseRepository() {
     }
     console.log('   - Registro actualizado correctamente');
 
-    // 4. Test delete
+    
     console.log('4. Probando delete...');
     await BaseRepository.delete(null, table, 'id_rol', testData.id_rol);
     const deleted = await BaseRepository.findOne(null, table, 'id_rol', testData.id_rol);

@@ -1,4 +1,4 @@
-// Generic shared hooks
+
 export { useChampagneRule } from './useChampagneRule';
 export { useConfirmModal } from './useConfirmModal';
 export { useGenericFetch } from './useGenericFetch';

@@ -12,7 +12,7 @@ let cachedTableChecks: { hasGratificaciones: boolean; hasHorasExtras: boolean } 
 
 export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBalances> {
   try {
-    // 1. Module-level caching for table existence checks
+    
     if (!cachedTableChecks) {
       const tableChecks = await query<any[]>(
         `SELECT table_name 
@@ -26,7 +26,7 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
       };
     }
 
-    // 2. Optimized single query for standard income and deductions
+    
     const mainSql = `
       SELECT 
         U.id_usuario,

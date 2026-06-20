@@ -43,7 +43,6 @@ export default function Clients() {
   } = useClients();
 
   const {
-    // Form Modal State
     isModalOpen: isFormModalOpen,
     setIsModalOpen,
     isEditMode,
@@ -51,13 +50,11 @@ export default function Clients() {
     editClientId,
     closeFormModal,
 
-    // Details Modal State
     isDetailsOpen: isDetailsModalOpen,
     setIsDetailsOpen,
     selectedClient,
     closeDetailsModal,
 
-    // Prepago Modal State
     isPrepagoModalOpen,
     setIsPrepagoModalOpen,
     prepagoClient,
@@ -70,7 +67,6 @@ export default function Clients() {
     prepagoSubmitting,
     closePrepagoModal,
 
-    // Actions
     openCreateModal,
     openEditModal,
     openDetailsModal,
@@ -147,7 +143,6 @@ export default function Clients() {
         )}
 
         <ClientModals
-          // Form Modal Props
           isFormModalOpen={isFormModalOpen}
           onFormModalChange={setIsModalOpen}
           isEditMode={isEditMode}
@@ -168,11 +163,9 @@ export default function Clients() {
           }}
           onFormCancel={closeFormModal}
           isFormLoading={isMutating}
-          // Details Modal Props
           isDetailsModalOpen={isDetailsModalOpen}
           onDetailsModalChange={setIsDetailsOpen}
           selectedClient={selectedClient}
-          // Prepago Modal Props
           isPrepagoModalOpen={isPrepagoModalOpen}
           onPrepagoModalChange={setIsPrepagoModalOpen}
           prepagoClient={prepagoClient}
@@ -189,4 +182,3 @@ export default function Clients() {
     </PermissionGuard>
   );
 }
-

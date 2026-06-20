@@ -21,56 +21,56 @@ export function CashRegisterDetailedStats() {
       value: formatCurrencyNoDecimals(stats?.total_ventas || 0),
       subtitle: `${stats?.cantidad_ventas || 0} ventas realizadas`,
       icon: TrendingUp,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Efectivo',
       value: formatCurrencyNoDecimals(stats?.total_efectivo || 0),
       subtitle: 'Ingresos en efectivo',
       icon: DollarSign,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Tarjeta',
       value: formatCurrencyNoDecimals(stats?.total_tarjeta || 0),
       subtitle: 'Pagos con tarjeta',
       icon: CreditCard,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Transferencias',
       value: formatCurrencyNoDecimals(stats?.total_transferencia || 0),
       subtitle: 'Transferencias bancarias',
       icon: ArrowUpDown,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Promedio Venta',
       value: formatCurrencyNoDecimals(stats?.promedio_venta || 0),
       subtitle: 'Por transacción',
       icon: TrendingUp,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Servicios',
       value: formatCurrencyNoDecimals(stats?.total_servicios || 0),
       subtitle: `${stats?.cantidad_servicios || 0} servicios realizados`,
       icon: Activity,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Promedio Servicio',
       value: formatCurrencyNoDecimals(stats?.promedio_servicio || 0),
       subtitle: 'Por servicio',
       icon: Calendar,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     },
     {
       title: 'Total Devoluciones',
       value: formatCurrencyNoDecimals(stats?.total_devoluciones || 0),
       subtitle: 'Devoluciones realizadas',
       icon: TrendingDown,
-      formatAsCurrency: false // No usar el formateo automático
+      formatAsCurrency: false 
     }
   ];
 

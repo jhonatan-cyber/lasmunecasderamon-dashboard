@@ -3,7 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-// Props para QRCodeSVG - definición mínima basada en qrcode.react
+
 export interface QRCodeProps {
   value: string;
   size?: number;

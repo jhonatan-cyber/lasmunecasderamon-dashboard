@@ -11,13 +11,10 @@ interface TimerSyncProps {
   isInitialized: boolean;
   setIsInitialized: (val: boolean) => void;
   onTimerStopped?: (servicioId: string) => void;
-  setServerOffset: (offset: number) => void; // Aun lo pasamos para sync interno
+  setServerOffset: (offset: number) => void; 
 }
 
-/**
- * Hook que gestiona la sincronizacion de timers con la DB (via REST/SSE)
- * y la persistencia en localStorage.
- */
+
 export function useTimerSync({
   isInitialized,
   setIsInitialized,
@@ -27,11 +24,11 @@ export function useTimerSync({
   const initialSyncExecutedRef = useRef(false);
   const periodicSyncStartedRef = useRef(false);
 
-  // --- PERSISTENCIA LOCAL ---
+  
   useEffect(() => {
     if (isInitialized) {
       const timers = activeTimers.value.map(t => t.toPlainObject());
-      // Limpiar duplicados por servicioId (cada timer es unico)
+      
       const unique = timers.filter(
         (t, i, self) => i === self.findIndex(x => x.servicioId === t.servicioId)
       );
@@ -40,7 +37,7 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTimers.value, isInitialized]);
 
-  // --- SINCRONIZACION INICIAL ---
+  
   useEffect(() => {
     if (initialSyncExecutedRef.current) return;
     initialSyncExecutedRef.current = true;
@@ -150,7 +147,7 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- SINCRONIZACION SSE (REAL TIME) ---
+  
   const sseUrl =
     typeof window !== 'undefined' && !['/', '/login'].includes(window.location.pathname)
       ? '/api/notifications/sse'
@@ -164,7 +161,7 @@ export function useTimerSync({
       case 'timer_started': {
         const { servicioId, codigo, roomId, duration, startTime } = payload.data;
 
-        // Verificar si ya existe un timer para este servicio (incluyendo locales y SSE)
+        
         const existing = activeTimers.peek().find(t => t.servicioId === servicioId);
         if (existing) {
           return;
@@ -211,10 +208,10 @@ export function useTimerSync({
         const { servicioId, newStartTime } = payload.data;
         const target = activeTimers.peek().find(t => t.servicioId === servicioId);
         if (target) {
-          // Actualizacion atomica de la instancia
+          
           target.isPaused.value = false;
-          // Si quisieramos recalcular startTime, tendriamos que manejarlo en la instancia o el store
-          // pero al ser signals, el tick seguira restando.
+          
+          
         }
         break;
       }
@@ -231,7 +228,7 @@ export function useTimerSync({
           );
           const remaining = Math.max(0, dur * 60 - elapsed);
 
-          // ACTUALIZACION QUIRURGICA: Solo los valores, sin tocar el array
+          
           batch(() => {
             target.patch({
               duration: dur,
@@ -248,7 +245,7 @@ export function useTimerSync({
     }
   });
 
-  // --- FALLBACK POLLING (60s) ---
+  
   useEffect(() => {
     if (!isInitialized || periodicSyncStartedRef.current) return;
 
@@ -257,8 +254,8 @@ export function useTimerSync({
         const res = await fetch('/api/timers/active?source=poll');
         const data = await res.json();
         if (data.success) {
-          // Logica de merge simplificada:
-          // 1. Agregar faltantes 2. Actualizar estados divergentes 3. Remover expirados
+          
+          
           const dbIds = new Set(data.data.map((t: any) => t.servicioId));
           activeTimers.value = activeTimers
             .peek()

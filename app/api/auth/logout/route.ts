@@ -4,7 +4,6 @@ import { AuthRepository } from '@/lib/repositories/AuthRepository';
 import { cookies } from 'next/headers';
 import { getAuth } from '@/lib/auth/auth-app';
 
-// logout no requiere withAppAuth — debe funcionar incluso con token expirado
 export const POST = withAppApiWrapper(async () => {
   const user = await getAuth();
   if (user) await AuthRepository.logout(user.id);

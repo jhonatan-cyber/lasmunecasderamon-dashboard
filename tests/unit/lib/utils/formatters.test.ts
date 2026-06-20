@@ -1,6 +1,4 @@
-/**
- * Tests unitarios para lib/utils/formatters.ts
- */
+
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
@@ -16,7 +14,7 @@ import {
   toTitleCase
 } from '@/lib/utils/formatters';
 
-// Mock de timezoneService
+
 vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago'
 }));
@@ -131,7 +129,7 @@ describe('formatSoloHora', () => {
 
 describe('formatCurrencyAbbreviated', () => {
   it('debería abbreviate a miles (K)', () => {
-    // El formato real usa punto en vez de coma
+    
     expect(formatCurrencyAbbreviated(1000)).toContain('K');
     expect(formatCurrencyAbbreviated(10000)).toContain('K');
     expect(formatCurrencyAbbreviated(999999)).toContain('K');

@@ -43,7 +43,7 @@ const makeLogEntry = (
   meta: formatPayload(meta)
 });
 
-// Guardamos referencias originales para evitar bucles infinitos
+
 const originalConsole = {
   log: console.log,
   warn: console.warn,
@@ -141,15 +141,15 @@ const getLogger = () => {
       );
     }
 
-    // En producción, redirigimos console.log/warn/error a través de winston
-    // para capturar cualquier log que no use el logger directamente
+    
+    
     if (process.env.NODE_ENV === 'production') {
       overrideConsole(winstonLogger);
     }
 
     loggerInstance = winstonLogger;
   } else {
-    // Browser fallback estructurado (consistente con el formato de la App)
+    
     loggerInstance = {
       info: (msg: string, meta?: unknown) => {
         originalConsole.info(
@@ -186,7 +186,7 @@ export const logger = {
   error: (msg: string, meta?: unknown) => getLogger().error(msg, meta),
   debug: (msg: string, meta?: unknown) => getLogger().debug(msg, meta),
 
-  /** Captura una excepción con stack trace y meta-datos, consistente con el logger de la App */
+  
   captureException: (error: unknown, meta?: Record<string, unknown>) => {
     getLogger().error(error instanceof Error ? error.message : String(error), {
       ...meta,

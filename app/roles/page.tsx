@@ -36,8 +36,6 @@ import { FilterSelect } from '@/components/shared/selects';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
-// Las interfaces Role y Permission se importan desde los hooks
-
 const ROLE_STATUS_OPTIONS = [
   { value: 'all', label: 'Todos' },
   { value: '1', label: 'Activo' },
@@ -70,10 +68,9 @@ export default function RolesPage() {
   const [modalAction, setModalAction] = useState<'delete' | 'deactivate'>('delete');
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
 
-  // Cargar los roles al montar el componente
   useEffect(() => {
     fetchRoles();
-  }, []); // Removed fetchRoles from dependencies
+  }, []);
 
   const setupRolesTable = async () => {
     try {
@@ -145,12 +142,10 @@ export default function RolesPage() {
     }
   };
 
-  // Calcular estadísticas
   const totalRoles = roles.length;
   const activeRoles = roles.filter(role => role.status === 1).length;
   const totalUsersAssigned = roles.reduce((total, role) => total + (role.userCount || 0), 0);
 
-  // Filtrar roles
   const filteredRoles = roles.filter(role => {
     const matchesSearch =
       (role.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -206,7 +201,7 @@ export default function RolesPage() {
     <PermissionGuard module='roles' action='view'>
       <TooltipProvider>
         <>
-          {/* Modal */}
+          {}
           <Dialog
             open={isAddRoleModalOpen}
             onOpenChange={open => {
@@ -273,7 +268,7 @@ export default function RolesPage() {
             </DialogContent>
           </Dialog>
 
-          {/* Confirmation Modal */}
+          {}
           <DeleteRoleConfirmModal
             open={isConfirmModalOpen}
             onOpenChange={setIsConfirmModalOpen}
@@ -299,7 +294,7 @@ export default function RolesPage() {
             </DialogContent>
           </Dialog>
           <div className='w-full max-w-none flex flex-col gap-4 sm:gap-6 px-1 sm:p-6 lg:p-10 mt-3 sm:mt-6 lg:mt-10'>
-            {/* Header */}
+            {}
             <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
               <div>
                 <h2 className='text-3xl font-bold text-black dark:text-neutral-100'>
@@ -332,7 +327,7 @@ export default function RolesPage() {
               </PermissionGuard>
             </div>
 
-            {/* Stats Cards */}
+            {}
             <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
               <StatsCard
                 icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
@@ -355,9 +350,9 @@ export default function RolesPage() {
             </div>
 
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-              {/* Columna izquierda - Filtros y Roles (50%) */}
+              {}
               <div className='space-y-4'>
-                {/* Filters */}
+                {}
                 <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
                   <div className='flex flex-col sm:flex-row gap-4'>
                     <div className='flex-1'>
@@ -387,7 +382,7 @@ export default function RolesPage() {
                   </div>
                 </div>
 
-                {/* Roles List */}
+                {}
                 <div className='space-y-4 overflow-y-auto max-h-[500px] pr-3 pl-3 pt-3'>
                   {filteredRoles.length === 0 ? (
                     <div className='text-center py-8'>
@@ -433,7 +428,7 @@ export default function RolesPage() {
                 </div>
               </div>
 
-              {/* Columna derecha - Permissions Panel (50%) */}
+              {}
               <div className='hidden lg:block'>
                 <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
                   <PermissionsPanel selectedRole={selectedRole} />
@@ -446,6 +441,3 @@ export default function RolesPage() {
     </PermissionGuard>
   );
 }
-
-
-

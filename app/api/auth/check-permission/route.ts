@@ -41,7 +41,6 @@ const actionMap: Record<string, string[]> = {
   withdraw: ['withdraw']
 };
 
-// Alias de módulos: lo que llega en la petición → lo que puede estar en la BD
 const moduleAliases: Record<string, string[]> = {
   cash_register: ['cash_register', 'cashregister', 'caja', 'finances'],
   cashregister: ['cash_register', 'cashregister', 'caja', 'finances'],
@@ -81,7 +80,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Obtener rol del usuario
     const userResult = await query<any[]>(
       'SELECT u.rol_id, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?',
       [String(userId)]
@@ -102,11 +100,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, hasPermission: false });
     }
 
-    // Resolver módulos y acciones equivalentes
     const resolvedModules = moduleAliases[module] || [module];
     const resolvedActions = actionMap[action] || [action];
 
-    // Consultar directamente en la BD si el rol tiene alguno de los permisos equivalentes
     const placeholdersModules = resolvedModules.map(() => '?').join(',');
     const placeholdersActions = resolvedActions.map(() => '?').join(',');
 

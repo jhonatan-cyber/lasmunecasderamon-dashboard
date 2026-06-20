@@ -27,8 +27,8 @@ function FeatureScopedProviders({ children }: { children: ReactNode }) {
 
   const role = user?.role?.toLowerCase();
   const isAdminOrCajero = role === 'administrador' || role === 'cajero';
-  // Always provide notifications context for authenticated users (not just admin/cajero)
-  // The useNotifications hook handles role-based logic internally
+  
+  
   const needsNotifications = !!user;
   const needsAnulacion =
     pathname?.startsWith('/sales') || pathname?.startsWith('/returns/services');

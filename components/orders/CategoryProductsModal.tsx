@@ -523,7 +523,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                     </Table>
                   </div>
 
-                  {/* Paginador */}
+                  {}
                   {totalPages > 1 && (
                     <div className='flex justify-center mt-4'>
                       <Paginate

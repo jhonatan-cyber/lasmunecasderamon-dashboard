@@ -14,7 +14,7 @@ interface TimerActionsProps {
 export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerActionsProps) {
   const updateRoomStatus = async (roomId: string, status: number) => {
     try {
-      // Siempre liberamos/ocupamos la habitación sin condiciones
+      
       await fetch(`/api/rooms/${roomId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -22,7 +22,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       });
     } catch (e) {
       logger.captureException(e, { context: 'useTimerActions:updateRoomStatus' });
-      // No mostramos toast para no molestar al usuario en cada operación
+      
     }
   };
 
@@ -196,8 +196,8 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         duration * 60
       );
 
-      // Pausamos TODO timer principal de la misma habitación para garantizar
-      // que no haya dos servicios corriendo en paralelo en una habitación.
+      
+      
       const roomMainTimers = current.filter(
         t => String(t.roomId.peek()) === normalizedRoomId && !t.isTemporary
       );
@@ -211,8 +211,8 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         updateServiceStatus(String(main.servicioId), 3);
       }
 
-      // Garantía de negocio: el servicio principal SIEMPRE debe quedar pausado en backend,
-      // incluso si no fue encontrado en el estado local por desincronización temporal.
+      
+      
       updateServiceStatus(normalizedServicioId, 3);
 
       activeTimers.value = [...current, temporaryTimer];

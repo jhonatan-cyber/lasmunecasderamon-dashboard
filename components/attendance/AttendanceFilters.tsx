@@ -52,7 +52,7 @@ export default function AttendanceFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end w-full'>
-          {/* BÃºsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
               Buscar
@@ -66,7 +66,7 @@ export default function AttendanceFilters({
           </div>
 
           <div className='grid grid-cols-5 gap-2 sm:flex sm:flex-nowrap sm:gap-4 w-full lg:w-auto items-end'>
-            {/* Filtro de rol */}
+            {}
             <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[160px] order-1 sm:order-none'>
               <FilterSelect
                 value={filterRole}
@@ -83,7 +83,7 @@ export default function AttendanceFilters({
               />
             </div>
 
-            {/* Ordenar */}
+            {}
             <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[180px] order-4 sm:order-none'>
               <FilterSelect
                 value={sortBy}
@@ -102,7 +102,7 @@ export default function AttendanceFilters({
               />
             </div>
 
-            {/* BotÃ³n de ordenamiento */}
+            {}
             <div className='col-span-1 sm:col-auto flex items-end justify-center order-2 sm:order-none'>
               <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
                 &nbsp;
@@ -121,7 +121,7 @@ export default function AttendanceFilters({
               </Button>
             </div>
 
-            {/* Elementos por pÃ¡gina */}
+            {}
             <div className='col-span-2 sm:col-auto min-w-0 sm:min-w-[140px] order-5 sm:order-none'>
               <FilterSelect
                 value={pageSize.toString()}
@@ -137,7 +137,7 @@ export default function AttendanceFilters({
               />
             </div>
 
-            {/* BotÃ³n limpiar filtros */}
+            {}
             <div className='col-span-1 sm:col-auto flex justify-center sm:justify-start order-3 sm:order-none'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
@@ -162,5 +162,3 @@ export default function AttendanceFilters({
     </Card>
   );
 }
-
-

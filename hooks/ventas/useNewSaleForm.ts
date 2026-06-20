@@ -11,14 +11,14 @@ export const useNewSaleForm = () => {
   const { createVenta } = useSales();
   const { startTimer } = useTimer();
 
-  // persistence states
+  
   const [selectedCliente, setSelectedCliente] = useState('none');
   const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
   const [productos, setProductos] = useState<any[]>([]);
   const [enableTip, setEnableTip] = useState(false);
 
-  // loading and metadata states
+  
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searchProducto, setSearchProducto] = useState('');
@@ -36,7 +36,7 @@ export const useNewSaleForm = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Initialize from localStorage
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setSelectedCliente(localStorage.getItem('selectedCliente') || 'none');
@@ -47,7 +47,7 @@ export const useNewSaleForm = () => {
     }
   }, []);
 
-  // Persist to localStorage
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedCliente', selectedCliente);
@@ -57,7 +57,7 @@ export const useNewSaleForm = () => {
     }
   }, [selectedCliente, selectedHabitacion, metodoPago, productos]);
 
-  // Clean up on unmount
+  
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined') {
@@ -277,15 +277,15 @@ export const useNewSaleForm = () => {
         if (selectedHabitacion) {
           const duration = requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60;
 
-          // Validar solo datos de la habitación seleccionada
+          
           const roomPrice = selectedRoomInfo?.precio ?? selectedRoomInfo?.price ?? 0;
           const roomTime = selectedRoomInfo?.tiempo ?? selectedRoomInfo?.time ?? 0;
           const roomCommission = selectedRoomInfo?.comision_anfitriona ?? 0;
 
-          // Solo ocupar la habitación si NO es libre ingreso (precio > 0, tiempo > 0 y comisión > 0)
+          
           const shouldOccupyRoom = roomPrice > 0 && roomTime > 0 && roomCommission > 0;
 
-          // Iniciar timer si hay tiempo válido (independientemente de si se ocupa la habitación)
+          
           if (duration > 0) {
             const anfNombres = todasAnf
               .map(
@@ -308,7 +308,7 @@ export const useNewSaleForm = () => {
             );
           }
 
-          // Ocupar la habitación solo si la habitación tiene sus propios datos válidos
+          
           if (shouldOccupyRoom) {
             await fetch(`/api/rooms/${selectedHabitacion}`, {
               method: 'PATCH',

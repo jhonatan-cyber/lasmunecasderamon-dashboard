@@ -243,7 +243,7 @@ export function WeeklySalesChart() {
       </CardHeader>
 
       <CardContent className='p-6'>
-        {/* Summary Cards */}
+        {}
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
           <div className='text-center p-4 dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-blue-800/10 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm'>
             <div className='flex items-center justify-center mb-2'>
@@ -292,7 +292,7 @@ export function WeeklySalesChart() {
           </div>
         </div>
 
-        {/* Recharts Area Chart */}
+        {}
         <div className='h-[300px] sm:h-[400px] w-full dark:bg-gray-800/50 bg-white rounded-xl p-2 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700'>
           <ResponsiveContainer width='100%' height='100%'>
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
@@ -355,7 +355,7 @@ export function WeeklySalesChart() {
           </ResponsiveContainer>
         </div>
 
-        {/* Footer Legend */}
+        {}
         <div className='mt-4 flex items-center justify-center'>
           <div className='flex items-center gap-4 text-xs sm:text-sm bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-600'>
             <div className='flex items-center gap-2'>

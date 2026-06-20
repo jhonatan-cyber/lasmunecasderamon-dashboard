@@ -142,7 +142,7 @@ async function runTests() {
       throw new Error('No se pudo recuperar el servicio creado');
     }
 
-    await ServiceRepository.updateStatus(testId, 0); // Anular
+    await ServiceRepository.updateStatus(testId, 0); 
     const serviceAnulado = await ServiceRepository.getById(testId);
     if (serviceAnulado && serviceAnulado.estado === 0) {
       console.log('✅ updateStatus() OK');

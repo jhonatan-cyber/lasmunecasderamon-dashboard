@@ -50,7 +50,7 @@ export function UserFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-3 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
-          {/* Búsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label
               htmlFor='search'
@@ -68,7 +68,7 @@ export function UserFilters({
           </div>
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
-            {/* Filtro de estado */}
+            {}
             <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 sm:min-w-[140px] order-1'>
               <Label
                 htmlFor='status'
@@ -88,7 +88,7 @@ export function UserFilters({
               </Select>
             </div>
 
-            {/* Filtro de rol */}
+            {}
             <div className='w-[70%] sm:w-auto min-w-0 sm:min-w-[160px] order-3 sm:order-none'>
               <Label
                 htmlFor='role'
@@ -110,7 +110,7 @@ export function UserFilters({
               </Select>
             </div>
 
-            {/* Elementos por página */}
+            {}
             <div className='w-[calc(50%-0.5rem)] sm:w-auto order-2 sm:order-none'>
               <SelectElements
                 value={pageSize}
@@ -120,7 +120,7 @@ export function UserFilters({
               />
             </div>
 
-            {/* Botón limpiar filtros */}
+            {}
             <div className='w-[20%] sm:w-auto order-4 sm:order-none'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>

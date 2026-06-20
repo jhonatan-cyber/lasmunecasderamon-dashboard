@@ -46,12 +46,12 @@ export function HeaderNotifications() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
-  // Order modal state
+  
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState<string>('');
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Service request state
+  
   const [pendingServiceRequests, setPendingServiceRequests] = useState<any[]>([]);
   const [selectedServiceRequest, setSelectedServiceRequest] = useState<any | null>(null);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
@@ -62,7 +62,7 @@ export function HeaderNotifications() {
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
 
-  // Audio enable on first interaction
+  
   const enableAudio = () => {
     if (audioRef.current) {
       audioRef.current
@@ -97,7 +97,7 @@ export function HeaderNotifications() {
     };
   }, [audioEnabled]);
 
-  // Order handling
+  
   const pendingOrders = orders.filter((o: any) => String(o.estado) === '1');
   const getOrderId = (order: any) => order?.id_pedido ?? order?.id ?? order?.pedidoId ?? null;
   const getOrderKey = (order: any, index: number) =>
@@ -131,7 +131,7 @@ export function HeaderNotifications() {
     setSelectedOrderCode('');
   };
 
-  // Listen for external events to open order modal (via appEventBus)
+  
   useEffect(() => {
     const handleOpenOrderModal = (detail: { orderId: number | string; codigo?: string }) => {
       if (!hasPermission('orders', 'process')) {
@@ -158,7 +158,7 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [fetchOrderDetail, orders, hasOpenCaja, hasPermission]);
 
-  // Listen for external events to open service request modal (via appEventBus)
+  
   useEffect(() => {
     const handleOpenServiceRequestModal = (detail: { solicitud: any }) => {
       const solicitud = detail?.solicitud;
@@ -173,7 +173,7 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, []);
 
-  // Update pending orders from external events (via appEventBus)
+  
   useEffect(() => {
     const handleUpdatePendingOrders = (detail?: { type?: string; orderId?: number | string }) => {
       if (detail) {
@@ -195,7 +195,7 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [refetch, setOrders]);
 
-  // Close order modal from external event (via appEventBus)
+  
   useEffect(() => {
     const handleCloseOrderModal = (detail: { orderId: number | string }) => {
       const processedOrderId = String(detail.orderId);
@@ -208,7 +208,7 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [modalOpen, selectedOrderId]);
 
-  // Fetch pending service requests
+  
   const fetchPendingServiceRequests = useCallback(async () => {
     try {
       const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
@@ -245,7 +245,7 @@ export function HeaderNotifications() {
     appEventBus.emit('updateServiceRequests');
   };
 
-  // Don't render for anfitrionas or garzones
+  
   if (isAnfitriona || isGarzon) return null;
 
   return (
@@ -265,7 +265,7 @@ export function HeaderNotifications() {
           <DropdownMenuLabel>Notificaciones Pendientes</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          {/* Pedidos de productos */}
+          {}
           <div className='px-3 py-2 text-xs font-semibold text-gray-500'>Pedidos de Productos</div>
           {pendingOrders.length === 0 ? (
             <div className='text-xs text-gray-400 px-4 py-2'>No hay pedidos pendientes</div>
@@ -300,7 +300,7 @@ export function HeaderNotifications() {
 
           <DropdownMenuSeparator />
 
-          {/* Solicitudes de servicio */}
+          {}
           <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
             Solicitudes de Servicio
           </div>

@@ -91,16 +91,16 @@ export const CardBody = ({
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
         
-        // Calcular la posición relativa del mouse (0-1)
+        
         const relativeX = (mouseX - centerX) / centerX;
         const relativeY = (mouseY - centerY) / centerY;
         
-        // Aplicar rotación basada en la posición del mouse
-        // Mouse a la derecha = rotación positiva Y (card se inclina hacia la derecha)
-        // Mouse a la izquierda = rotación negativa Y (card se inclina hacia la izquierda)
-        // Mouse arriba = rotación negativa X (card se inclina hacia arriba)
-        // Mouse abajo = rotación positiva X (card se inclina hacia abajo)
-        const rotateXValue = -relativeY * 15; // Invertir Y para que sea más intuitivo
+        
+        
+        
+        
+        
+        const rotateXValue = -relativeY * 15; 
         const rotateYValue = relativeX * 15;
         
         ref.current.style.transform = `perspective(1000px) rotateX(${rotateXValue}deg) rotateY(${rotateYValue}deg)`;
@@ -158,11 +158,11 @@ export const CardItem = ({
           const centerX = containerRect.width / 2;
           const centerY = containerRect.height / 2;
           
-          // Calcular la posición relativa del mouse (0-1)
+          
           const relativeX = (mouseX - centerX) / centerX;
           const relativeY = (mouseY - centerY) / centerY;
           
-          // Aplicar rotación basada en la posición del mouse
+          
           const rotateXValue = -relativeY * 15;
           const rotateYValue = relativeX * 15;
 

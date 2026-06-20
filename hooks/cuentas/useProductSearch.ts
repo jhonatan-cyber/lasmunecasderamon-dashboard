@@ -16,7 +16,7 @@ export function useProductSearch(debounceMs: number = 300) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Efecto de búsqueda con debounce
+  
   useEffect(() => {
     const searchProducts = async () => {
       if (!internalSearchTerm.trim()) {
@@ -33,7 +33,7 @@ export function useProductSearch(debounceMs: number = 300) {
         }
         const data = await res.json();
         setSearchResults(data.success ? data.data : []);
-        setCurrentPage(1); // Reset a primera página
+        setCurrentPage(1); 
       } catch (error) {
         logger.captureException(error, { context: 'ProductSearch:searchProducts' });
         setSearchResults([]);
@@ -46,7 +46,7 @@ export function useProductSearch(debounceMs: number = 300) {
     return () => clearTimeout(timeoutId);
   }, [internalSearchTerm, debounceMs]);
 
-  // Paginación
+  
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedResults = searchResults.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(searchResults.length / itemsPerPage);
@@ -70,7 +70,7 @@ export function useProductSearch(debounceMs: number = 300) {
   };
 
   return {
-    // States
+    
     internalSearchTerm,
     searchResults,
     searchLoading,
@@ -79,10 +79,10 @@ export function useProductSearch(debounceMs: number = 300) {
     totalPages,
     itemsPerPage,
 
-    // Setters
+    
     setInternalSearchTerm: handleSearchChange,
 
-    // Handlers
+    
     handleSearchChange,
     handleClearSearch,
     goToPage

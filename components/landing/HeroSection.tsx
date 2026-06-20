@@ -11,7 +11,7 @@ export default function HeroSection({ scrollY }: { scrollY: number }) {
       id='home'
       className='relative min-h-[92svh] lg:min-h-screen flex items-center justify-center pt-20 z-10 overflow-hidden'
     >
-      {/* Background Elements specific to Hero */}
+      {}
       <div className='absolute inset-0 z-0'>
         <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gold-500/5 rounded-full blur-[120px] animate-pulse'></div>
       </div>

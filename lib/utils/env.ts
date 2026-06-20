@@ -28,12 +28,12 @@ function calculateEntropy(str: string): number {
 function detectPatterns(str: string): string[] {
   const patterns: string[] = [];
 
-  // Check for repeated characters (aaaa, 1111, etc)
+  
   if (/(.)\1{3,}/.test(str)) {
     patterns.push('repeated_chars');
   }
 
-  // Check for sequential characters (abcd, 1234)
+  
   if (
     /(?:abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz|0123|1234|2345|3456|4567|5678|6789)/i.test(
       str
@@ -42,7 +42,7 @@ function detectPatterns(str: string): string[] {
     patterns.push('sequential');
   }
 
-  // Check for common weak patterns
+  
   if (
     /^(password|qwerty|admin|123456|letmein|welcome|monkey|dragon|master|login|shadow|sunshine|princess|football|super|baseball|michael|jesus|ninja|mustang|batman)/i.test(
       str
@@ -51,12 +51,12 @@ function detectPatterns(str: string): string[] {
     patterns.push('common_weak');
   }
 
-  // Check for keyboard patterns
+  
   if (/(qwerty|asdf|zxcv|qazwsx|12345|54321|09876|0123456789|password|passwd)/i.test(str)) {
     patterns.push('keyboard');
   }
 
-  // Check for base64-like patterns only when it contains actual base64 delimiters
+  
   if (/^[A-Za-z0-9+/]{50,}={0,2}$/.test(str) && str.length > 64 && /[+/=]/.test(str)) {
     patterns.push('base64');
   }
@@ -127,7 +127,7 @@ function validateStartupEnv() {
   logger.info('JWT_SECRET validation passed', { score: jwtValidation.score });
 }
 
-// Run validation at startup in production (skip during build)
+
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
 if (
   process.env.NODE_ENV === 'production' &&
@@ -157,8 +157,8 @@ const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
   logger.error('Error de validación en variables de entorno:', _env.error.format());
-  // Error nativo intencional: ocurre en startup antes de que el sistema esté listo.
-  // No se usa AppError porque este código corre fuera de cualquier request handler.
+  
+  
   throw new Error('Variables de entorno inválidas');
 }
 

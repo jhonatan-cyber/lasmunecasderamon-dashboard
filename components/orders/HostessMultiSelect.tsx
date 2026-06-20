@@ -16,7 +16,7 @@ interface HostessMultiSelectProps {
   onChange: (v: string[]) => void;
   searchValue: string;
   onSearchChange: (v: string) => void;
-  maxSelection?: number; // NUEVO: Límite máximo de selecciones
+  maxSelection?: number; 
 }
 
 const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({ 
@@ -30,7 +30,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   
-  // Verificar si se ha alcanzado el límite máximo
+  
   const hasReachedLimit = maxSelection ? value.length >= maxSelection : false;
   return (
     <div className="flex-1 min-w-[200px]">
@@ -91,10 +91,10 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                       disabled={!canSelect}
                       onCheckedChange={() => {
                         if (isSelected) {
-                          // Siempre permitir deseleccionar
+                          
                           onChange(value.filter((x) => x !== id));
                         } else if (!hasReachedLimit) {
-                          // Solo permitir seleccionar si no se ha alcanzado el límite
+                          
                           onChange([...value, id]);
                         }
                       }}

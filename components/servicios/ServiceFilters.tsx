@@ -30,7 +30,7 @@ export default function ServiceFilters({
     setCurrentPage(1);
   };
 
-  // Verificar si hay filtros activos
+  
   const hasActiveFilters = searchTerm.trim() !== '';
 
   const handleClearFilters = () => {
@@ -42,7 +42,7 @@ export default function ServiceFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
-          {/* Búsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label htmlFor='search' className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
               Buscar Servicios
@@ -57,7 +57,7 @@ export default function ServiceFilters({
           </div>
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
-            {/* Elementos por página */}
+            {}
             <div className='w-full sm:w-auto'>
               <SelectElements
                 value={itemsPerPage}
@@ -67,7 +67,7 @@ export default function ServiceFilters({
               />
             </div>
 
-            {/* Botón actualizar */}
+            {}
             {onRefresh && (
               <div className='w-full sm:w-auto'>
                 <TooltipProvider>
@@ -89,7 +89,7 @@ export default function ServiceFilters({
               </div>
             )}
 
-            {/* Botón limpiar filtros */}
+            {}
             {hasActiveFilters && (
               <div className='w-full sm:w-auto'>
                 <TooltipProvider>
