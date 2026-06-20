@@ -60,19 +60,11 @@ export function Header({ showSidebarControls = true }: { showSidebarControls?: b
     <header className='bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800 h-14 sm:h-16 flex items-center justify-between px-2 sm:px-6 sticky top-0 z-50'>
       <div className='flex min-w-[44px] items-center gap-2 sm:gap-4'>
         {showSidebarControls ? <SidebarControls /> : null}
-        <span className='text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded'>
-          CI/CD Test
-        </span>
       </div>
 
       <div className='flex min-w-0 items-center gap-1.5 sm:gap-4'>
         {!isAnfitriona && (isAdmin || isCajero) && (
-          <div className='flex items-center gap-2'>
-            <CodigoVerificacionHeader userRole={user?.role} />
-            <span className='text-xs font-medium text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded animate-pulse'>
-              Deploy v1.0.2
-            </span>
-          </div>
+          <CodigoVerificacionHeader userRole={user?.role} />
         )}
         {user && !isAdmin && <AttendanceCodeModal />}
         <ThemeSwitcher />
