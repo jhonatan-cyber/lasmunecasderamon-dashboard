@@ -143,5 +143,3 @@ export function AdminOrdersFilters({
     </Card>
   );
 }
-
-

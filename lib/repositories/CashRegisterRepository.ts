@@ -116,7 +116,6 @@ export class CashRegisterRepository {
     const entries = Object.entries(deltas).filter(([_, v]) => v !== 0 && v !== undefined);
     if (entries.length === 0) return;
 
-    
     const columnMap: Record<string, string> = {
       venta: 'venta',
       servicio: 'servicio',
@@ -128,16 +127,14 @@ export class CashRegisterRepository {
       iva: 'iva',
       comision: 'comision',
       propina: 'propina',
-      
+
       cuenta: 'venta',
       devolucion: 'devolucion'
     };
 
-    
     const knownEntries = entries.filter(([k]) => k in columnMap);
     if (knownEntries.length === 0) return;
 
-    
     const colTotals: Record<string, number> = {};
     for (const [k, v] of knownEntries) {
       const col = columnMap[k];
@@ -205,7 +202,7 @@ export class CashRegisterRepository {
       total_servicios: Number(cajaRow.servicio || 0),
       cantidad_servicios: stats.servicios.cantidad,
       promedio_servicio: stats.servicios.promedio,
-      
+
       total_tarjeta: Number(cajaRow.tarjeta || 0),
       total_transferencia: Number(cajaRow.transferencia || 0),
       total_anticipo: cajaRow.anticipo || 0,
@@ -304,7 +301,6 @@ export class CashRegisterRepository {
       Number(caja.transferencia || 0) -
       Number(caja.devolucion || 0);
 
-    
     await query(`
       UPDATE logins SET estado = 0 WHERE estado = 1
     `);

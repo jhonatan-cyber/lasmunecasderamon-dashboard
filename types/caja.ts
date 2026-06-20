@@ -79,7 +79,7 @@ export interface CajaResumen {
   cajas_abiertas: number;
   cajas_cerradas: number;
   monto_apertura?: number;
-  
+
   balance_total?: number;
   cantidad_ventas?: number;
   cantidad_servicios?: number;

@@ -4,7 +4,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import logger from '@/lib/utils/logger';
 
-
 export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   const eventSourceRef = useRef<EventSource | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -12,12 +11,10 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
   const isMountedRef = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
 
-  
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
-  
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -41,7 +38,6 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
       retryTimeoutRef.current = null;
     }
 
-    
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
@@ -82,7 +78,6 @@ export function useSSE(url: string | null, onMessage: (payload: any) => void) {
       connect();
     }
     return () => {
-      
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;

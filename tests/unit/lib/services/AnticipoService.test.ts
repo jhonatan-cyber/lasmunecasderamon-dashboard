@@ -16,8 +16,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-
-
 describe('AnticipoService.grantAnticipo', () => {
   it('lanza ValidationError si monto es 0', async () => {
     await expect(AnticipoService.grantAnticipo('user-1', 0)).rejects.toThrow(ValidationError);
@@ -50,8 +48,6 @@ describe('AnticipoService.grantAnticipo', () => {
     expect(result).toEqual(mockResult);
   });
 });
-
-
 
 describe('AnticipoService.processAnticipoFromCommand', () => {
   const pendientes = [

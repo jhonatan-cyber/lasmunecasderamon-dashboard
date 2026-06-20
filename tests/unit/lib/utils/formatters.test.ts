@@ -1,5 +1,3 @@
-
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   formatCurrency,
@@ -13,7 +11,6 @@ import {
   formatCurrencyAbbreviated,
   toTitleCase
 } from '@/lib/utils/formatters';
-
 
 vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago'
@@ -129,7 +126,6 @@ describe('formatSoloHora', () => {
 
 describe('formatCurrencyAbbreviated', () => {
   it('debería abbreviate a miles (K)', () => {
-    
     expect(formatCurrencyAbbreviated(1000)).toContain('K');
     expect(formatCurrencyAbbreviated(10000)).toContain('K');
     expect(formatCurrencyAbbreviated(999999)).toContain('K');

@@ -38,7 +38,6 @@ export class TipRepository {
           );
 
     if (distribucionUsuarios.length === 0) {
-      
       const now = getNowInBusinessTimezone();
       const id = generateUUID();
 

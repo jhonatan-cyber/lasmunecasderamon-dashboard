@@ -9,7 +9,7 @@ export function CajaStatusBanner() {
   const router = useRouter();
 
   if (loading || hasOpenCaja === null) {
-    return null; 
+    return null;
   }
 
   if (error) {

@@ -7,19 +7,17 @@ type HabitacionStatsRow = {
   status?: number | string | null;
 };
 
-
 export function generateServiceCode(): string {
   return generateRandomCode();
 }
-
 
 export function calculateServiceTotals(
   precioServicio: number,
   precioHabitacion: number,
   iva: number
 ) {
-  const subTotal = precioServicio; 
-  const total = subTotal + precioHabitacion + iva; 
+  const subTotal = precioServicio;
+  const total = subTotal + precioHabitacion + iva;
 
   return {
     subTotal,
@@ -27,12 +25,10 @@ export function calculateServiceTotals(
   };
 }
 
-
 export function formatServiceDate(dateString: string): string {
   const { date, time } = formatDateTimeDmyLabel(dateString);
   return `${date} ${time}`;
 }
-
 
 export function getServiceStatusBadge(estado: number) {
   const estadoNum = Number(estado);
@@ -71,7 +67,6 @@ export function getServiceStatusBadge(estado: number) {
   }
 }
 
-
 export function validateServiceData(data: {
   cliente_id: number;
   habitacion_id: number;
@@ -101,22 +96,19 @@ export function validateServiceData(data: {
   return errors;
 }
 
-
 export function calculateServiceStats(servicios: ServicioWithDetails[]) {
   const totalServicios = servicios.length;
-  
+
   const serviciosActivos = servicios.filter(s => s.estado === 2 || s.estado === 3).length;
-  
+
   const serviciosTerminados = servicios.filter(
     s => s.estado === 1 || s.estado === 0 || s.estado === 4
   ).length;
 
-  
   const ingresosTotales = servicios
-    .filter(s => s.estado === 1) 
+    .filter(s => s.estado === 1)
     .reduce((sum, s) => sum + (s.total || 0), 0);
 
-  
   const serviciosActivosArray = servicios.filter(s => s.estado === 2 || s.estado === 3);
   const promedioTiempo =
     serviciosActivosArray.length > 0
@@ -134,7 +126,6 @@ export function calculateServiceStats(servicios: ServicioWithDetails[]) {
     promedioTiempo
   };
 }
-
 
 export function calculateRoomStats(habitaciones: HabitacionStatsRow[]) {
   const habitacionesDisponibles = habitaciones.filter(

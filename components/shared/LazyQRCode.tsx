@@ -3,7 +3,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-
 export interface QRCodeProps {
   value: string;
   size?: number;

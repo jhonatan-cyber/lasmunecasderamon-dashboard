@@ -36,8 +36,8 @@ export interface Timer {
   servicioId: string;
   roomId: string;
   roomName: string;
-  duration: number; 
-  remainingTime: number; 
+  duration: number;
+  remainingTime: number;
   isActive: boolean;
   isPaused: boolean;
   pausedByTemp?: boolean;
@@ -137,12 +137,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
   const { modalState, showConfirm, closeModal } = useConfirmModal();
 
-  
   const setRefreshCallback = useCallback((callback: (servicioId?: string | number) => void) => {
     refreshCallbackRef.current = callback;
   }, []);
 
-  
   const timers = useMemo(
     () => activeTimers.value.map(t => t.toPlainObject() as Timer),
     [activeTimers.value]
@@ -156,8 +154,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showTimerExpiredNotification = useCallback(
     (timer: Timer) => {
-      
-      
       if (timer.remainingTime > 0) {
         logger.warn(
           `[TimerContext] Ignorado modal expirado para id:${timer.id} (${timer.roomName}), tiene ${timer.remainingTime}s restantes.`
@@ -216,10 +212,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (timer.isTemporary) {
         activeTimers.value = activeTimers.peek().filter(x => x.id !== timer.id);
-        
-        
-        
-        
+
         const mainTimer = activeTimers
           .peek()
           .find(t => t.servicioId === timer.servicioId && !t.isTemporary);
@@ -233,7 +226,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
         stopTimer(timer.id, false, timer);
 
-        
         if (refreshCallbackRef.current) {
           logger.info('[TimerContext] Llamando refreshCallback para:', timer.servicioId);
           refreshCallbackRef.current(timer.servicioId);
@@ -272,7 +264,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateTimerByServicioId = useCallback((sid: string, dur: number) => {
     const target = activeTimers.peek().find(t => t.servicioId === sid);
     if (target) {
-      
       activeTimers.value = activeTimers
         .peek()
         .map(t =>
@@ -338,7 +329,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ]
   );
 
-  
   useEffect(() => {
     logger.info('[TimerContext] isInitialized', { isInitialized, timersCount: timers.length });
   }, [isInitialized, timers.length]);
@@ -376,4 +366,3 @@ export const useCountdown = (timer: Timer | undefined | null) => {
 
   return timer.remainingTime;
 };
-

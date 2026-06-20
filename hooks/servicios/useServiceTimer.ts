@@ -6,41 +6,45 @@ import { toast } from 'sonner';
 
 interface ServiceTimerConfig {
   servicioId: number;
-  initialTime: number; 
+  initialTime: number;
   onExpire?: () => void;
   autoStart?: boolean;
 }
 
 interface TemporaryTimerConfig {
-  duration: number; 
+  duration: number;
   onComplete: () => void;
 }
 
 interface TemporaryTimerInQueue {
   id: string;
-  duration: number; 
+  duration: number;
   onComplete: () => void;
 }
 
 interface TimerState {
   servicioId: number;
-  startTime: number; 
-  duration: number; 
+  startTime: number;
+  duration: number;
   isPaused: boolean;
-  
-  
+
   temporaryQueue: TemporaryTimerInQueue[];
   currentTemporary?: {
     id: string;
     startTime: number;
-    duration: number; 
+    duration: number;
   };
-  
-  pausedAt?: number; 
-  remainingTimeWhenPaused?: number; 
+
+  pausedAt?: number;
+  remainingTimeWhenPaused?: number;
 }
 
-export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart = true }: ServiceTimerConfig) {
+export function useServiceTimer({
+  servicioId,
+  initialTime,
+  onExpire,
+  autoStart = true
+}: ServiceTimerConfig) {
   const [timerState, setTimerState] = useState<TimerState>({
     servicioId,
     startTime: Date.now(),
@@ -48,7 +52,7 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     isPaused: !autoStart,
     temporaryQueue: []
   });
-  
+
   const [currentTime, setCurrentTime] = useState(Date.now());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const temporaryCallbacksRef = useRef<Map<string, () => void>>(new Map());
@@ -56,7 +60,7 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
   useEffect(() => {
     const storageKey = `timer_${servicioId}`;
     const stored = localStorage.getItem(storageKey);
-    
+
     if (stored) {
       try {
         const parsedState: TimerState = JSON.parse(stored);
@@ -67,17 +71,20 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     }
   }, [servicioId]);
 
-  const saveTimerState = useCallback((state: TimerState) => {
-    const storageKey = `timer_${servicioId}`;
-    localStorage.setItem(storageKey, JSON.stringify(state));
-    setTimerState(state);
-  }, [servicioId]);
+  const saveTimerState = useCallback(
+    (state: TimerState) => {
+      const storageKey = `timer_${servicioId}`;
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      setTimerState(state);
+    },
+    [servicioId]
+  );
 
   const calculateRemainingTime = useCallback((state: TimerState, now: number) => {
     if (state.isPaused && state.remainingTimeWhenPaused !== undefined) {
       return Math.max(0, state.remainingTimeWhenPaused);
     }
-    
+
     if (state.isPaused) {
       return Math.max(0, state.duration);
     }
@@ -95,29 +102,33 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     return Math.max(0, state.currentTemporary.duration - elapsed);
   }, []);
 
-  const startNextTemporaryTimer = useCallback((state: TimerState, now: number): TimerState | null => {
-    if (state.temporaryQueue.length === 0) {
-      return null;
-    }
-
-    const nextTemporary = state.temporaryQueue[0];
-    const remainingQueue = state.temporaryQueue.slice(1);
-
-    const newState: TimerState = {
-      ...state,
-      temporaryQueue: remainingQueue,
-      currentTemporary: {
-        id: nextTemporary.id,
-        startTime: now,
-        duration: nextTemporary.duration
+  const startNextTemporaryTimer = useCallback(
+    (state: TimerState, now: number): TimerState | null => {
+      if (state.temporaryQueue.length === 0) {
+        return null;
       }
-    };
 
-    toast.info(`Timer temporal ${remainingQueue.length > 0 ? `(${remainingQueue.length + 1} en cola)` : ''}: ${Math.ceil(nextTemporary.duration / 60)} min`);
-    
-    return newState;
-  }, []);
+      const nextTemporary = state.temporaryQueue[0];
+      const remainingQueue = state.temporaryQueue.slice(1);
 
+      const newState: TimerState = {
+        ...state,
+        temporaryQueue: remainingQueue,
+        currentTemporary: {
+          id: nextTemporary.id,
+          startTime: now,
+          duration: nextTemporary.duration
+        }
+      };
+
+      toast.info(
+        `Timer temporal ${remainingQueue.length > 0 ? `(${remainingQueue.length + 1} en cola)` : ''}: ${Math.ceil(nextTemporary.duration / 60)} min`
+      );
+
+      return newState;
+    },
+    []
+  );
 
   useEffect(() => {
     if (intervalRef.current) {
@@ -138,7 +149,7 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
           pausedAt: now,
           remainingTimeWhenPaused: mainRemaining
         };
-        
+
         saveTimerState(newState);
         toast.info('Timer principal pausado automáticamente - Timer temporal activo');
         return;
@@ -154,14 +165,14 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
         }
 
         if (timerState.temporaryQueue.length > 0) {
-
           const newStateWithNext = startNextTemporaryTimer(timerState, now);
           if (newStateWithNext) {
             saveTimerState(newStateWithNext);
-            toast.success(`Timer temporal completado. Iniciando siguiente... (${timerState.temporaryQueue.length} restantes)`);
+            toast.success(
+              `Timer temporal completado. Iniciando siguiente... (${timerState.temporaryQueue.length} restantes)`
+            );
           }
         } else {
-
           const newState: TimerState = {
             ...timerState,
             currentTemporary: undefined,
@@ -178,15 +189,20 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
         return;
       }
 
-      if (!timerState.currentTemporary && !timerState.isPaused && mainRemaining <= 0 && !expiredRef.current) {
+      if (
+        !timerState.currentTemporary &&
+        !timerState.isPaused &&
+        mainRemaining <= 0 &&
+        !expiredRef.current
+      ) {
         expiredRef.current = true;
-        
+
         if (onExpire) {
           onExpire();
         }
-        
+
         toast.success(`Tiempo terminado para servicio ${servicioId}`);
-        
+
         localStorage.removeItem(`timer_${servicioId}`);
       }
     }, 1000);
@@ -196,49 +212,61 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
         clearInterval(intervalRef.current);
       }
     };
-  }, [timerState, calculateRemainingTime, calculateTemporaryRemainingTime, onExpire, servicioId, saveTimerState, startNextTemporaryTimer]);
+  }, [
+    timerState,
+    calculateRemainingTime,
+    calculateTemporaryRemainingTime,
+    onExpire,
+    servicioId,
+    saveTimerState,
+    startNextTemporaryTimer
+  ]);
 
-  const startTemporaryTimer = useCallback((config: TemporaryTimerConfig) => {
-    const now = Date.now();
-    const tempId = `temp_${now}_${Math.random().toString(36).substr(2, 9)}`;
-    const durationInSeconds = config.duration * 60;
+  const startTemporaryTimer = useCallback(
+    (config: TemporaryTimerConfig) => {
+      const now = Date.now();
+      const tempId = `temp_${now}_${Math.random().toString(36).substr(2, 9)}`;
+      const durationInSeconds = config.duration * 60;
 
-    temporaryCallbacksRef.current.set(tempId, config.onComplete);
+      temporaryCallbacksRef.current.set(tempId, config.onComplete);
 
-    const newTemporary: TemporaryTimerInQueue = {
-      id: tempId,
-      duration: durationInSeconds,
-      onComplete: config.onComplete
-    };
-
-    if (timerState.currentTemporary) {
-      const newState: TimerState = {
-        ...timerState,
-        temporaryQueue: [...timerState.temporaryQueue, newTemporary]
+      const newTemporary: TemporaryTimerInQueue = {
+        id: tempId,
+        duration: durationInSeconds,
+        onComplete: config.onComplete
       };
 
-      saveTimerState(newState);
-      toast.info(`Timer temporal agregado a la cola. Posición: ${timerState.temporaryQueue.length + 2}`);
-    } else {
+      if (timerState.currentTemporary) {
+        const newState: TimerState = {
+          ...timerState,
+          temporaryQueue: [...timerState.temporaryQueue, newTemporary]
+        };
 
-      const currentMainRemaining = calculateRemainingTime(timerState, now);
+        saveTimerState(newState);
+        toast.info(
+          `Timer temporal agregado a la cola. Posición: ${timerState.temporaryQueue.length + 2}`
+        );
+      } else {
+        const currentMainRemaining = calculateRemainingTime(timerState, now);
 
-      const newState: TimerState = {
-        ...timerState,
-        isPaused: true,
-        pausedAt: now,
-        remainingTimeWhenPaused: currentMainRemaining,
-        currentTemporary: {
-          id: tempId,
-          startTime: now,
-          duration: durationInSeconds
-        }
-      };
+        const newState: TimerState = {
+          ...timerState,
+          isPaused: true,
+          pausedAt: now,
+          remainingTimeWhenPaused: currentMainRemaining,
+          currentTemporary: {
+            id: tempId,
+            startTime: now,
+            duration: durationInSeconds
+          }
+        };
 
-      saveTimerState(newState);
-      toast.info(`⏱️ Timer temporal iniciado: ${config.duration} minutos`);
-    }
-  }, [timerState, calculateRemainingTime, saveTimerState]);
+        saveTimerState(newState);
+        toast.info(`⏱️ Timer temporal iniciado: ${config.duration} minutos`);
+      }
+    },
+    [timerState, calculateRemainingTime, saveTimerState]
+  );
 
   const pauseMainTimer = useCallback(() => {
     if (!timerState.currentTemporary && !timerState.isPaused) {
@@ -256,7 +284,6 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
       toast.info('Timer principal pausado manualmente');
     }
   }, [timerState, calculateRemainingTime, saveTimerState]);
-
 
   const resumeMainTimer = useCallback(() => {
     if (!timerState.currentTemporary && timerState.isPaused) {
@@ -298,31 +325,35 @@ export function useServiceTimer({ servicioId, initialTime, onExpire, autoStart =
     isRunning: !timerState.isPaused && !timerState.currentTemporary && mainRemainingTime > 0
   };
 
-  const temporaryTimer = timerState.currentTemporary ? {
-    totalSeconds: tempRemainingTime,
-    isPaused: false,
-    isActive: true,
-    isRunning: true,
-    queueLength: timerState.temporaryQueue.length
-  } : null;
+  const temporaryTimer = timerState.currentTemporary
+    ? {
+        totalSeconds: tempRemainingTime,
+        isPaused: false,
+        isActive: true,
+        isRunning: true,
+        queueLength: timerState.temporaryQueue.length
+      }
+    : null;
 
-  const displayTimer = timerState.currentTemporary ? {
-    totalSeconds: tempRemainingTime,
-    isPaused: false,
-    isActive: true,
-    isRunning: true,
-    isTemporary: true,
-    startTime: new Date(timerState.currentTemporary.startTime),
-    queueLength: timerState.temporaryQueue.length
-  } : {
-    totalSeconds: mainRemainingTime,
-    isPaused: timerState.isPaused || !!timerState.currentTemporary,
-    isActive: mainTimer.isActive,
-    isRunning: mainTimer.isRunning,
-    isTemporary: false,
-    startTime: new Date(timerState.startTime),
-    queueLength: 0
-  };
+  const displayTimer = timerState.currentTemporary
+    ? {
+        totalSeconds: tempRemainingTime,
+        isPaused: false,
+        isActive: true,
+        isRunning: true,
+        isTemporary: true,
+        startTime: new Date(timerState.currentTemporary.startTime),
+        queueLength: timerState.temporaryQueue.length
+      }
+    : {
+        totalSeconds: mainRemainingTime,
+        isPaused: timerState.isPaused || !!timerState.currentTemporary,
+        isActive: mainTimer.isActive,
+        isRunning: mainTimer.isRunning,
+        isTemporary: false,
+        startTime: new Date(timerState.startTime),
+        queueLength: 0
+      };
 
   return {
     mainTimer,

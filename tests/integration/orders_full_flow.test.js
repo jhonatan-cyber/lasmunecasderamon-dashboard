@@ -14,7 +14,6 @@ async function runTest() {
   });
 
   try {
-    
     const [clientes] = await connection.execute('SELECT id_cliente FROM clientes LIMIT 1');
     const [usuarios] = await connection.execute(
       'SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1'
@@ -37,7 +36,6 @@ async function runTest() {
       `✅ Datos base listos: Cliente ${clienteId}, Usuario ${usuarioId}, Producto ${producto.nombre}`
     );
 
-    
     const pedidoId = crypto.randomUUID();
     const pedidoCodigo = `TEST-${Math.floor(Math.random() * 10000)}`;
     const propina = 1000;
@@ -51,7 +49,6 @@ async function runTest() {
     );
     console.log(`✅ Pedido creado: ${pedidoCodigo} (ID: ${pedidoId})`);
 
-    
     const detalleId = crypto.randomUUID();
     await connection.execute(
       'INSERT INTO detalle_pedidos (id_detalle_pedido, pedido_id, producto_id, cantidad, precio, subtotal, comision, fecha_crea) VALUES (?, ?, ?, 1, ?, ?, ?, NOW())',
@@ -66,7 +63,6 @@ async function runTest() {
     );
     console.log(`✅ Detalle de pedido agregado para ${producto.nombre}`);
 
-    
     const ventaId = crypto.randomUUID();
     const ventaCodigo = `V-${Math.floor(Math.random() * 10000)}`;
     await connection.execute(
@@ -85,20 +81,16 @@ async function runTest() {
     );
     console.log(`✅ Venta registrada: ID ${ventaId} (Código: ${ventaCodigo})`);
 
-    
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
     console.log(`✅ Pedido ${pedidoCodigo} marcado como FINALIZADO`);
 
-    
     console.log('\n--- VERIFICACIONES ---');
 
-    
     const [vCheck] = await connection.execute('SELECT * FROM ventas WHERE id_venta = ?', [ventaId]);
     console.log(
       vCheck.length > 0 ? 'âœ”ï¸ Venta persistida correctamente' : 'âŒ Error: Venta no encontrada'
     );
 
-    
     const [pCheck] = await connection.execute('SELECT estado FROM pedidos WHERE id_pedido = ?', [
       pedidoId
     ]);
@@ -108,7 +100,6 @@ async function runTest() {
         : 'âŒ Error: Estado incorrecto'
     );
 
-    
     const [dCheck] = await connection.execute('SELECT * FROM detalle_pedidos WHERE pedido_id = ?', [
       pedidoId
     ]);

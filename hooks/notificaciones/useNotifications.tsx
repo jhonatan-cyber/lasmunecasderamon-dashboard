@@ -30,7 +30,6 @@ export function useNotifications() {
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
     queryKey: ['notifications', 'pending-count'],
     queryFn: async () => {
-      
       const isPublic = !pathname || pathname === '/' || pathname === '/login';
       if (!user || isPublic) return { pedidosCount: 0, solicitudesCount: 0 };
 
@@ -41,7 +40,7 @@ export function useNotifications() {
     staleTime: 20000,
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
-    enabled: !!user 
+    enabled: !!user
   });
 
   useEffect(() => {
@@ -59,13 +58,14 @@ export function useNotifications() {
     const handleRefresh = () => refetchCounts();
     const u1 = appEventBus.on('updatePendingOrders', handleRefresh);
     const u2 = appEventBus.on('updateServiceRequests', handleRefresh);
-    return () => { u1(); u2(); };
+    return () => {
+      u1();
+      u2();
+    };
   }, [refetchCounts]);
 
   const showNotification = useCallback(
     (data: NotificationData) => {
-
-
       if (user && data.createdBy && user.id === data.createdBy) {
         appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
         return;
@@ -78,10 +78,8 @@ export function useNotifications() {
       const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
       const shouldShowAlert = isCajeroOrAdmin;
 
-      
       appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
 
-      
       if (!shouldShowAlert) {
         return;
       }
@@ -108,9 +106,7 @@ export function useNotifications() {
             )}
             <div className='flex items-center gap-2'>
               <span className='font-medium'>Total:</span>
-              <span className='font-bold text-green-600'>
-                {formatCurrencyCLP(data.total)}
-              </span>
+              <span className='font-bold text-green-600'>{formatCurrencyCLP(data.total)}</span>
             </div>
           </div>
         ),
@@ -124,7 +120,8 @@ export function useNotifications() {
 
   const showServiceNotification = useCallback(
     (data: any) => {
-      const userRole = (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
+      const userRole =
+        (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
       const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
       const shouldShowAlert = isCajeroOrAdmin;
 
@@ -138,7 +135,6 @@ export function useNotifications() {
         return;
       }
 
-      
       if (!shouldShowAlert) {
         return;
       }
@@ -161,9 +157,7 @@ export function useNotifications() {
             </div>
             <div className='flex items-center gap-2'>
               <span className='font-medium'>Total:</span>
-              <span className='font-bold text-green-600'>
-                {formatCurrencyCLP(data.total || 0)}
-              </span>
+              <span className='font-bold text-green-600'>{formatCurrencyCLP(data.total || 0)}</span>
             </div>
           </div>
         ),
@@ -175,12 +169,14 @@ export function useNotifications() {
     [user, pathname]
   );
 
-  const sseUrl = (!pathname || pathname === '/' || pathname === '/login' || !user)
-    ? null 
-    : '/api/notifications/sse';
+  const sseUrl =
+    !pathname || pathname === '/' || pathname === '/login' || !user
+      ? null
+      : '/api/notifications/sse';
 
-  const { reconnect } = useSharedSSE(sseUrl, (payload) => {
-    const userRole = (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
+  const { reconnect } = useSharedSSE(sseUrl, payload => {
+    const userRole =
+      (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
 
     if (payload?.type === 'new_order' && payload?.data) {
       showNotification(payload.data as NotificationData);
@@ -216,7 +212,10 @@ export function useNotifications() {
 
     if (payload?.type === 'order_deleted' && payload?.data) {
       setPendingOrdersCount(prev => Math.max(0, prev - 1));
-      appEventBus.emit('updatePendingOrders', { type: 'order-deleted', orderId: payload.data.orderId });
+      appEventBus.emit('updatePendingOrders', {
+        type: 'order-deleted',
+        orderId: payload.data.orderId
+      });
     }
 
     if (payload?.type === 'sale_cancelled' && payload?.data) {
@@ -283,5 +282,3 @@ export function useNotifications() {
     pendingServiceRequestsCount
   };
 }
-
-

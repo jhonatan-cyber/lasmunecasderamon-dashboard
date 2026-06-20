@@ -48,7 +48,6 @@ const alertIcons = {
 export default function OperationalAlerts() {
   const { data: composite, isLoading, error, refetch } = useDashboardComposite();
 
-  
   const insights = composite?.insights;
   const timers = composite?.timers || [];
   const pendingServiceRequestsCount = composite?.pendingServiceRequestsCount || 0;

@@ -84,6 +84,6 @@ export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps
     errors: form.formState.errors,
     register: form.register,
     setValue,
-    isLoading: false 
+    isLoading: false
   };
 };

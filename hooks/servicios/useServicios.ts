@@ -4,12 +4,11 @@ import { ServicioWithDetails } from '@/types/servicio';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useSharedSSE } from '@/hooks/shared';
 
-
 export const SERVICIOS_QUERY_KEY = ['servicios'] as const;
 
 export function useServicios() {
   const queryClient = useQueryClient();
-  const [includeAll, setIncludeAll] = useState(false); 
+  const [includeAll, setIncludeAll] = useState(false);
   const endpoint = useMemo(() => {
     const ep = includeAll ? '/api/servicios?all=true' : '/api/servicios?all=false';
     return ep;
@@ -29,10 +28,9 @@ export function useServicios() {
   } = useGenericFetch<ServicioWithDetails>(endpoint, {
     initialFetch: true,
     queryKey: serviciosQueryKey,
-    staleTime: 5000, 
+    staleTime: 5000,
     transform: data => {
       if (data.success && data.data) {
-        
         let rawData = data.data;
         if (data.data.data) {
           rawData = data.data.data;
@@ -42,12 +40,11 @@ export function useServicios() {
         if (!Array.isArray(rawData)) {
           return [];
         }
-        return rawData
-          .map((servicio: any) => ({
-            ...servicio,
-            
-            id_servicio: servicio.id_servicio || servicio.id
-          }));
+        return rawData.map((servicio: any) => ({
+          ...servicio,
+
+          id_servicio: servicio.id_servicio || servicio.id
+        }));
       }
       return [];
     }
@@ -59,8 +56,7 @@ export function useServicios() {
         setIncludeAll(includeAllParam);
         return;
       }
-      
-      
+
       await queryClient.invalidateQueries({ queryKey: SERVICIOS_QUERY_KEY });
     },
     [includeAll, queryClient]
@@ -113,7 +109,6 @@ export function useServicios() {
     }
   });
 
-  
   const patchMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const normalizedId = String(id ?? '').trim();
@@ -210,7 +205,6 @@ export function useServicios() {
   };
 }
 
-
 export function useAllServicios() {
   const queryClient = useQueryClient();
   const endpoint = '/api/servicios';
@@ -276,4 +270,3 @@ export function useAllServicios() {
     getAllServicios
   };
 }
-

@@ -40,7 +40,6 @@ export const useSales = () => {
   } = useGenericFetch<VentaWithDetails>(endpoint, {
     initialFetch: false,
     transform: data => {
-      
       const payload = data?.data;
       const ventasArray = Array.isArray(payload?.data)
         ? payload.data
@@ -280,7 +279,6 @@ export const useSales = () => {
     setError(null);
   }, []);
 
-  
   useEffect(() => {
     const handleUpdateSales = () => {
       getVentas(currentFilters);

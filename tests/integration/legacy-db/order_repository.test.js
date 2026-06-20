@@ -2,24 +2,19 @@
 
 const { z } = require('zod');
 
-
-
 const timezoneServiceMock = {
   getNowInBusinessTimezone: date => (date ? new Date(date) : new Date('2026-03-30T17:18:00Z'))
 };
-
 
 const orderRoomAssignmentMock = {
   hasSpecialHostessProducts: () => false,
   applyAutoRoomToDetails: detalles => detalles
 };
 
-
 const notificationUtilsMock = {
   buildOrderNotificationData: async data => ({ ...data, cliente: 'Test Client' }),
   buildOrderDeletionNotificationData: (id, userId) => ({ id, userId })
 };
-
 
 const sseServiceMock = {
   sendNotificationToAll: () => {}
@@ -30,7 +25,6 @@ const pushNotificationsMock = {
 const notificationMessagesMock = {
   buildOrderPushBody: () => 'Push notification body'
 };
-
 
 let mockQueryResults = [];
 let mockTransactions = [];
@@ -48,7 +42,6 @@ const dbMock = {
   }
 };
 
-
 const baseRepositoryMock = {
   insert: async (trx, table, data) => {
     mockTransactions.push({ action: 'insert', table, data });
@@ -63,7 +56,6 @@ const baseRepositoryMock = {
     return mockQueryResults.shift() || null;
   }
 };
-
 
 const OrderSchema = z.object({
   id: z.string().optional(),
@@ -115,7 +107,6 @@ const OrderCreateSchema = z.object({
     .optional()
     .default([])
 });
-
 
 class OrderRepository {
   static mapOrderFromDB(row) {
@@ -230,7 +221,6 @@ class OrderRepository {
   }
 }
 
-
 async function runTests() {
   console.log('ðŸš€ Iniciando pruebas unitarias mejoradas para OrderRepository (v2)...\n');
   let passed = 0;
@@ -250,7 +240,6 @@ async function runTests() {
     }
   };
 
-  
   await test('getAll() debería mapear correctamente los resultados de DB', async () => {
     mockQueryResults = [
       [
@@ -272,7 +261,6 @@ async function runTests() {
     if (res[0].mesero_nombre !== 'Lola') throw new Error('Nombre del mesero no coincide');
   });
 
-  
   await test('getByUser() debería filtrar por usuario y mapear resultados', async () => {
     mockQueryResults = [
       [{ id_pedido: 'order-u1', codigo: 'PED-U1', total: 5000, subtotal: 5000, estado: 1 }]
@@ -282,7 +270,6 @@ async function runTests() {
     if (res[0].codigo !== 'PED-U1') throw new Error('Código incorrecto');
   });
 
-  
   await test('create() debería insertar pedido, detalles y usuarios en una transacción', async () => {
     const body = {
       codigo: 'NEW-PED',
@@ -298,7 +285,6 @@ async function runTests() {
     const res = await OrderRepository.create(body);
     if (!res.id.startsWith('test-uuid')) throw new Error('No retornó un ID válido');
 
-    
     const orderInsert = mockTransactions.find(t => t.action === 'insert' && t.table === 'pedidos');
     const detailInsert = mockTransactions.find(
       t => t.action === 'insert' && t.table === 'detalle_pedidos'
@@ -313,9 +299,8 @@ async function runTests() {
     if (orderInsert.data.total !== 1100) throw new Error('Total incorrecto en inserción');
   });
 
-  
   await test('delete() debería eliminar el pedido y sus relaciones', async () => {
-    mockQueryResults = [{ id_pedido: 'del-id', mesero_id: 'm1' }]; 
+    mockQueryResults = [{ id_pedido: 'del-id', mesero_id: 'm1' }];
     await OrderRepository.delete('del-id');
 
     const deleteOrder = mockTransactions.find(t => t.action === 'delete' && t.table === 'pedidos');
@@ -327,18 +312,14 @@ async function runTests() {
     if (!deleteDetails) throw new Error('No se eliminaron los detalles');
   });
 
-  
   await test('getDetail() debería retornar filas de la DB', async () => {
     mockQueryResults = [[{ id_pedido: 'det-id', producto_nombre: 'Cerveza' }]];
     const res = await OrderRepository.getDetail('det-id');
     if (res[0].producto_nombre !== 'Cerveza') throw new Error('Detalle incorrecto');
   });
 
-  
   await test('updateStatus() debería actualizar y refrescar el objeto', async () => {
-    mockQueryResults = [
-      [{ id_pedido: 'upd-id', estado: 2, total: 2000 }] 
-    ];
+    mockQueryResults = [[{ id_pedido: 'upd-id', estado: 2, total: 2000 }]];
     const res = await OrderRepository.updateStatus('upd-id', 2);
 
     const updateAction = mockTransactions.find(t => t.action === 'update' && t.table === 'pedidos');

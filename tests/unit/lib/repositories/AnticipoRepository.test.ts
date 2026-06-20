@@ -67,7 +67,6 @@ import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 
-
 const USER_ROW = [{ nombre: 'Ana', apellido: 'Perez', nick: 'ana', telefono: null }];
 const USER_ROW_WITH_PUSH = [
   {
@@ -95,7 +94,7 @@ function mockQueryImplementation(customMocks?: Record<string, any[]>) {
     if (sql.includes('FROM usuarios WHERE id_usuario = ?')) return USER_ROW;
     if (sql.includes('COUNT(*) as count FROM anticipos WHERE usuario_id = ?'))
       return [{ count: 0 }];
-    
+
     if (sql.includes('FROM anticipos a') && sql.includes('INNER JOIN usuarios')) {
       return USER_ROW_WITH_PUSH;
     }
@@ -109,9 +108,6 @@ function mockQueryImplementation(customMocks?: Record<string, any[]>) {
 beforeEach(() => {
   vi.clearAllMocks();
 });
-
-
-
 
 describe('AnticipoRepository.updateStatus', () => {
   beforeEach(() => {
@@ -192,9 +188,6 @@ describe('AnticipoRepository.updateStatus', () => {
   });
 });
 
-
-
-
 describe('AnticipoRepository.grant', () => {
   beforeEach(() => {
     mockQueryImplementation();
@@ -225,7 +218,6 @@ describe('AnticipoRepository.grant', () => {
   it('inserta historial con solicitud + aprobado + entregado', async () => {
     await AnticipoRepository.grant('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
 
-    
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'anticipo_historial',
@@ -237,7 +229,6 @@ describe('AnticipoRepository.grant', () => {
       }
     );
 
-    
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'anticipo_historial',
@@ -249,7 +240,6 @@ describe('AnticipoRepository.grant', () => {
       }
     );
 
-    
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'anticipo_historial',
@@ -270,7 +260,6 @@ describe('AnticipoRepository.grant', () => {
   it('inserta historial sin usuario_id en aprobado/entregado si no se pasa adminId', async () => {
     await AnticipoRepository.grant('user-1', 100, 'Sin admin', undefined, undefined);
 
-    
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'anticipo_historial',
@@ -280,7 +269,6 @@ describe('AnticipoRepository.grant', () => {
       })
     );
 
-    
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'anticipo_historial',
@@ -290,7 +278,6 @@ describe('AnticipoRepository.grant', () => {
       })
     );
 
-    
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'anticipo_historial',
@@ -302,12 +289,8 @@ describe('AnticipoRepository.grant', () => {
   });
 });
 
-
-
-
 describe('AnticipoRepository.request', () => {
   beforeEach(() => {
-    
     mockQueryImplementation({
       'FROM usuarios WHERE id_usuario = ?': USER_ROW,
       'COUNT(*) as count FROM anticipos WHERE usuario_id = ?': [{ count: 0 }],
@@ -345,9 +328,6 @@ describe('AnticipoRepository.request', () => {
     );
   });
 });
-
-
-
 
 describe('AnticipoRepository.processSolicitud', () => {
   beforeEach(() => {
@@ -433,12 +413,8 @@ describe('AnticipoRepository.processSolicitud', () => {
   });
 });
 
-
-
-
 describe('AnticipoRepository.deliverAnticipo', () => {
   beforeEach(() => {
-    
     const approvedRow = [
       {
         ...USER_ROW_WITH_PUSH[0],

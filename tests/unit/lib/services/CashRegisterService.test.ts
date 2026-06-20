@@ -17,8 +17,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-
-
 describe('CashRegisterService.openCaja', () => {
   it('llama al repositorio con los parámetros validados', async () => {
     const mockCaja = { id_caja: 'caja-1', estado: 1, monto_apertura: 50000 };
@@ -71,8 +69,6 @@ describe('CashRegisterService.openCaja', () => {
   });
 });
 
-
-
 describe('CashRegisterService.closeCaja', () => {
   it('llama al repositorio con los parámetros validados', async () => {
     const mockCaja = { id_caja: 'caja-1', estado: 0 };
@@ -106,8 +102,6 @@ describe('CashRegisterService.closeCaja', () => {
     ).rejects.toThrow(NotFoundError);
   });
 });
-
-
 
 describe('CashRegisterService.updateCaja', () => {
   it('llama al repositorio con los datos validados', async () => {

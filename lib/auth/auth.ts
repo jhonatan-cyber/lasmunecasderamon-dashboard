@@ -28,10 +28,7 @@ type TokenRequest = {
 
 export function verifyToken(token: string): AuthenticatedUser | null {
   try {
-    const decoded = jwt.verify(
-      token,
-      env.JWT_SECRET
-    ) as AuthenticatedUser;
+    const decoded = jwt.verify(token, env.JWT_SECRET) as AuthenticatedUser;
 
     return decoded;
   } catch {
@@ -97,9 +94,8 @@ export async function registrarLogin(usuarioId: string | number): Promise<void> 
     }
 
     const now = getNowInBusinessTimezone();
-    const today = now.substring(0, 10); 
+    const today = now.substring(0, 10);
 
-    
     const existingLogin = await query<any[]>(
       `SELECT id_login, last_login FROM logins WHERE usuario_id = ? AND estado = 1`,
       [usuarioId]
@@ -108,19 +104,13 @@ export async function registrarLogin(usuarioId: string | number): Promise<void> 
     if (existingLogin.length > 0) {
       const lastLoginDate = existingLogin[0].last_login.toString().substring(0, 10);
 
-      
       if (lastLoginDate === today) {
         return;
       }
 
-      
-      await query(
-        `UPDATE logins SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
-        [usuarioId]
-      );
+      await query(`UPDATE logins SET estado = 0 WHERE usuario_id = ? AND estado = 1`, [usuarioId]);
     }
 
-    
     await query(
       'INSERT INTO logins (id_login, usuario_id, last_login, estado) VALUES (?, ?, ?, 1)',
       [generateUUID(), usuarioId, now]

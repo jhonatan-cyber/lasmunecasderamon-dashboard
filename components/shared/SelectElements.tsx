@@ -14,10 +14,9 @@ import {
 import React from 'react';
 
 interface SelectElementsProps {
-  
   value?: number;
   onChange?: (value: number) => void;
-  
+
   rowsPerPage?: number;
   setRowsPerPage?: (value: number) => void;
   setPage?: (page: number) => void;
@@ -32,11 +31,10 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
     rowsPerPage,
     setRowsPerPage,
     setPage,
-    options = [5, 10, 20, 40], 
+    options = [5, 10, 20, 40],
     label = 'Listado'
   } = props;
 
-  
   const effectiveValue = value ?? rowsPerPage ?? 5;
   const effectiveOnChange = (v: number) => {
     if (onChange) onChange(v);
@@ -47,10 +45,7 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
   return (
     <div>
       {label && (
-        <Label
-          htmlFor='list'
-          className={`${SELECT_LABEL_CLASS} ml-1`}
-        >
+        <Label htmlFor='list' className={`${SELECT_LABEL_CLASS} ml-1`}>
           {label}
         </Label>
       )}

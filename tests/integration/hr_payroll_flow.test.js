@@ -14,7 +14,6 @@ async function runHRIntegrationTest() {
   });
 
   try {
-    
     const [users] = await connection.execute(
       'SELECT id_usuario, sueldo FROM usuarios WHERE estado = 1 LIMIT 1'
     );
@@ -42,7 +41,7 @@ async function runHRIntegrationTest() {
     );
 
     console.log(`\n[3] Verificando Summary de Planilla (Simulado)`);
-    
+
     const [payroll] = await connection.execute(
       `
             SELECT 
@@ -63,8 +62,7 @@ async function runHRIntegrationTest() {
     }
 
     console.log(`\n[4] Procesando Pago (Limpieza lógica)`);
-    
-    
+
     await connection.execute('DELETE FROM asistencias WHERE id_asistencia = ?', [asisId]);
     await connection.execute('DELETE FROM horas_extras WHERE id_hora_extra = ?', [hxId]);
 

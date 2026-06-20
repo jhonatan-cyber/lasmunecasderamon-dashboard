@@ -4,11 +4,9 @@ import { announceVoice, playNotificationSound } from '@/lib/utils/audioUtils';
 import { activeTimers, serverOffsetSignal } from '@/lib/store/timerStore';
 
 export function useTimerAudio(timers: Timer[], serverOffset: number) {
-  
   const lastAnnouncedRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    
     const interval = setInterval(() => {
       activeTimers.peek().forEach(instance => {
         if (!instance.isActive.peek() || instance.isPaused.peek() || instance.isTemporary) return;

@@ -63,19 +63,16 @@ async function testReportRepository() {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    
     console.log('1. Probando getSales...');
     const sales = await ReportRepository.getSales(today, today);
     console.log(`   - Ventas encontradas hoy: ${sales.length}`);
     if (!Array.isArray(sales)) throw new Error('getSales no retornó un array');
 
-    
     console.log('2. Probando getCommissions...');
     const commissions = await ReportRepository.getCommissions(today, today);
     console.log(`   - Comisiones encontradas hoy: ${commissions.length}`);
     if (!Array.isArray(commissions)) throw new Error('getCommissions no retornó un array');
 
-    
     console.log('3. Probando getCashRegister...');
     const activeCaja = await queryMock('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1');
     if (activeCaja.length > 0) {

@@ -1,16 +1,12 @@
 /* eslint-disable */
 
-
-
 const CACHE_NAME = 'lasmunecas-pwa-v2';
 const RUNTIME_CACHE = 'runtime-cache-v2';
 const API_CACHE = 'api-cache-v1';
 
 const PRECACHE_URLS = ['/', '/dashboard', '/login', '/manifest.json'];
 
-
 const STATIC_ASSETS = ['/img/system/logo1.png', '/img/system/logo2.png', '/favicon.ico'];
-
 
 self.addEventListener('install', event => {
   console.log('[SW] Installing service worker v2...');
@@ -27,7 +23,6 @@ self.addEventListener('install', event => {
   );
   self.skipWaiting();
 });
-
 
 self.addEventListener('activate', event => {
   console.log('[SW] Activating service worker...');
@@ -46,19 +41,15 @@ self.addEventListener('activate', event => {
   return self.clients.claim();
 });
 
-
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  
   if (request.method !== 'GET') {
     return;
   }
 
-  
   if (url.origin !== self.location.origin) {
-    
     if (url.href.includes('fonts.googleapis.com') || url.href.includes('fonts.gstatic.com')) {
       event.respondWith(cacheFirst(request));
       return;
@@ -66,28 +57,23 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirstWithCache(request, API_CACHE));
     return;
   }
 
-  
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  
   event.respondWith(networkFirst(request));
 });
-
 
 async function cacheFirst(request) {
   const cachedResponse = await caches.match(request);
@@ -107,7 +93,6 @@ async function cacheFirst(request) {
   }
 }
 
-
 async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
@@ -122,13 +107,12 @@ async function networkFirst(request) {
   }
 }
 
-
 async function networkFirstWithCache(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
-      
+
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
@@ -137,7 +121,6 @@ async function networkFirstWithCache(request, cacheName) {
     return cachedResponse;
   }
 }
-
 
 function isStaticAsset(pathname) {
   const staticExtensions = [
@@ -155,7 +138,6 @@ function isStaticAsset(pathname) {
   ];
   return staticExtensions.some(ext => pathname.endsWith(ext));
 }
-
 
 self.addEventListener('push', event => {
   if (!event.data) return;
@@ -179,7 +161,6 @@ self.addEventListener('push', event => {
   );
 });
 
-
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
@@ -197,7 +178,6 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
-
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-pending-data') {
     event.waitUntil(syncPendingData());
@@ -208,10 +188,8 @@ async function syncPendingData() {
   const cache = await caches.open(RUNTIME_CACHE);
   const requests = await cache.keys();
 
-  
   console.log('[SW] Background sync: processing pending requests');
 }
-
 
 self.addEventListener('message', event => {
   if (!event.data) return;

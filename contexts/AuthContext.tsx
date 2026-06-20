@@ -18,7 +18,7 @@ interface CurrentUser {
   lastName: string;
   email?: string;
   role: string;
-  roleId?: number; 
+  roleId?: number;
   status: number;
   foto?: string;
   username?: string;
@@ -119,44 +119,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionExpiredShownRef = useRef(false);
   const pendingPermissionsRefreshRef = useRef(false);
   const isMountedRef = useRef(true);
-  
-  
-  
-  
-  
+
   const isPublicPage =
     pathname === '/' ||
     pathname === '/login' ||
     pathname === '/api-docs' ||
     pathname === '/confirmar-anulacion' ||
     pathname === '/confirmar-anulacion-servicio';
-  
+
   const handleSessionExpired = useCallback(() => {
-    
     if (sessionExpiredShownRef.current) return;
     sessionExpiredShownRef.current = true;
-    
+
     setUser(null);
     setUserPermissions([]);
     setPermissionsLoaded(false);
     userFetchedRef.current = false;
     permissionsFetchedRef.current = false;
-    
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_role_hint');
     }
-    
+
     toast.error('Sesion expirada', {
       description: 'Debe ingresar con codigo de verificacion',
       duration: 3000
     });
-    
+
     setTimeout(() => {
       router.push(`/login?redirect=${encodeURIComponent(pathname || '')}`);
       sessionExpiredShownRef.current = false;
     }, 500);
   }, [pathname, router]);
-  
+
   const fetchUser = useCallback(
     async (silent = false) => {
       if (!isMountedRef.current || isPublicPage || isFetchingUserRef.current) return;
@@ -185,17 +180,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const result = await response.json();
           if (result.success && result.user) {
             setUser(result.user);
-            
+
             if (typeof window !== 'undefined') {
               localStorage.setItem('auth_role_hint', result.user.role?.toLowerCase() || '');
             }
             userFetchedRef.current = true;
           } else if (!result.success) {
-            
             handleSessionExpired();
           }
         } else if (response.status === 401) {
-          
           handleSessionExpired();
         }
       } catch (error) {
@@ -207,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [handleSessionExpired, isPublicPage, user]
   );
-  
+
   const fetchPermissions = useCallback(
     async (forceRefresh = false) => {
       if (!isMountedRef.current || !user?.id || user.role?.toLowerCase() === 'administrador') {
@@ -241,14 +234,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
-            
             if (isMountedRef.current) {
               setUserPermissions([...result.data]);
             }
             permissionsFetchedRef.current = true;
           }
         } else if (response.status === 401) {
-          
           handleSessionExpired();
         }
       } catch (error) {
@@ -257,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPermissionsLoaded(true);
         setPermissionsLoading(false);
         isFetchingPermissionsRef.current = false;
-        
+
         if (pendingPermissionsRefreshRef.current && isMountedRef.current) {
           pendingPermissionsRefreshRef.current = false;
           setTimeout(() => fetchPermissions(true), 50);
@@ -273,12 +264,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!userPermissions || userPermissions.length === 0) {
         return false;
       }
-      
+
       let match = userPermissions.some(p => p.module === module && p.action === action);
       if (match) {
         return true;
       }
-      
+
       const allowedModules = moduleMap[module] || [module];
       const allowedActions = actionMap[action] || [action];
       return userPermissions.some(
@@ -287,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [userPermissions, user?.role]
   );
-  
+
   const hasAnyPermission = useCallback(
     (module: string): boolean => {
       if (module === 'dashboard' || module === 'Dashboard') return true;
@@ -299,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [userPermissions, user?.role]
   );
-  
+
   const hasAllPermissions = useCallback(
     (module: string, actions: string[]): boolean => {
       if (module === 'dashboard' || module === 'Dashboard') return true;
@@ -315,19 +306,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [userPermissions, user?.role]
   );
-  
+
   useEffect(() => {
     if (!isPublicPage && !userFetchedRef.current) {
       fetchUser();
     }
   }, [isPublicPage, fetchUser]);
-  
+
   useEffect(() => {
     if (user && !permissionsFetchedRef.current && user.role?.toLowerCase() !== 'administrador') {
       fetchPermissions();
     }
   }, [user, fetchPermissions]);
-  
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -379,9 +370,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!data.registrada) {
           doLogout('No registraste tu asistencia hoy. Ingresa nuevamente para registrarla.');
         }
-      } catch {
-        
-      }
+      } catch {}
     }
   });
   const value: AuthContextType = {
@@ -405,4 +394,3 @@ export function useAuth() {
   }
   return context;
 }
-

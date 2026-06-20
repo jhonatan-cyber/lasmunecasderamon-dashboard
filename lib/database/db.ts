@@ -51,7 +51,6 @@ if (!globalThis.__lasMunecasDbPoolListenersAttached) {
 
 export type TransactionQuery = <R>(sql: string, params?: any[]) => Promise<R>;
 
-
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
   const safeParams = (params || []).map(p => {
     if (p === undefined) return null;
@@ -62,11 +61,9 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
   });
 
   try {
-    
     const hasLimitOrOffset = /LIMIT\s+\?|OFFSET\s+\?/i.test(sql);
 
     if (hasLimitOrOffset && safeParams.length > 0) {
-      
       let finalSql = sql;
       let paramIndex = 0;
 
@@ -84,7 +81,6 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
       const [rows] = await pool.query(finalSql);
       return (rows || []) as T;
     } else {
-      
       const [rows] =
         safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
 

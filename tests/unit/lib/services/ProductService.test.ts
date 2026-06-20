@@ -30,8 +30,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-
-
 describe('ProductService.createProduct', () => {
   it('lanza ConflictError si ya existe un producto con el mismo código/nombre', async () => {
     vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue({ id: 'existing-1' } as any);
@@ -82,8 +80,6 @@ describe('ProductService.createProduct', () => {
     );
   });
 });
-
-
 
 describe('ProductService.updateProduct', () => {
   const existingProduct = {

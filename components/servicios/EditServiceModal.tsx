@@ -55,34 +55,34 @@ export default function EditServiceModal({
     onTemporaryTimerComplete
   });
 
-  const { precioServicioTotal, precioHabitacionTotal, iva, subTotal, total, multiplicadorTiempo } = pricing;
+  const { precioServicioTotal, precioHabitacionTotal, iva, subTotal, total, multiplicadorTiempo } =
+    pricing;
 
   if (!servicio) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b">
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[600px] max-h-[90vh] flex flex-col p-0'>
+        <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
+          <DialogTitle className='flex items-center justify-between'>
             <span>Crear Nuevo Servicio + Timer</span>
-            <div className="flex items-center gap-2 text-sm text-blue-600">
-              <Clock className="w-4 h-4" />
+            <div className='flex items-center gap-2 text-sm text-blue-600'>
+              <Clock className='w-4 h-4' />
               <span>Timer principal pausado</span>
             </div>
           </DialogTitle>
-          <p className="text-sm text-gray-600">
+          <p className='text-sm text-gray-600'>
             Habitación {servicio.habitacion_numero} - Código #{servicio.codigo}
           </p>
           {numAnfitrionasOriginal > 1 && (
-            <p className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+            <p className='text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded'>
               {numAnfitrionasOriginal} anfitrionas - Los precios se multiplicarán automáticamente
             </p>
           )}
-
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
-          <div className="space-y-4">
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+          <div className='space-y-4'>
             <ServiceFormFields
               anfitrionasDisponibles={anfitrionasDisponibles}
               selectedUsuarios={formData.usuarios}
@@ -91,8 +91,8 @@ export default function EditServiceModal({
               loadingAnfitrionas={loadingAnfitrionas}
               precioServicioDisplay={precioServicioDisplay}
               onPrecioServicioChange={handlePrecioServicioChange}
-              onPrecioServicioFocus={() => { }}
-              onPrecioServicioBlur={() => { }}
+              onPrecioServicioFocus={() => {}}
+              onPrecioServicioBlur={() => {}}
               precioServicioTotal={precioServicioTotal}
               numAnfitrionas={numAnfitrionasSeleccionadas}
               multiplicadorTiempo={multiplicadorTiempo}
@@ -123,21 +123,17 @@ export default function EditServiceModal({
         </div>
 
         {}
-        <div className="flex-shrink-0 border-t px-4 sm:px-6 py-4">
-          <div className="flex gap-3">
+        <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
+          <div className='flex gap-3'>
             <Button
-              variant="outline"
-              className="flex-1 rounded-full"
+              variant='outline'
+              className='flex-1 rounded-full'
               onClick={handleClose}
               disabled={isSaving}
             >
               Cancelar
             </Button>
-            <Button
-              className="flex-1 rounded-full"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
+            <Button className='flex-1 rounded-full' onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
           </div>
@@ -146,5 +142,3 @@ export default function EditServiceModal({
     </Dialog>
   );
 }
-
-

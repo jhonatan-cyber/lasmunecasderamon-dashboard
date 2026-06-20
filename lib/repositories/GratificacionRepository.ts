@@ -48,7 +48,7 @@ export class GratificacionRepository {
     const rows = await query<any[]>(sql, params);
     return rows.map(row => ({
       id: String(row.id),
-      
+
       fecha_hora: row.fecha_crea_fmt,
       usuario_id: String(row.usuario_id),
       id_usuario: String(row.id_usuario),
@@ -140,7 +140,6 @@ export class GratificacionRepository {
       fecha_crea: now
     });
 
-    
     await BaseRepository.insert(query, 'anticipos', {
       id_anticipo: id,
       usuario_id: targetUserId,
@@ -198,7 +197,6 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
       fecha_crea: now
     });
 
-    
     sendNotificationToAll('new_anticipo_request', {
       id,
       usuario_id: targetUserId,
@@ -300,7 +298,6 @@ _Haz clic en el link para aprobar o rechazar la solicitud._`
         fecha_mod: now
       });
 
-      
       const antCheck = await trx<any[]>('SELECT estado FROM anticipos WHERE id_anticipo = ?', [id]);
       if (antCheck.length > 0 && Number(antCheck[0].estado) === 2) {
         await BaseRepository.update(trx, 'anticipos', 'id_anticipo', id, {

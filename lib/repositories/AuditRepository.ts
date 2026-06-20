@@ -13,7 +13,6 @@ export interface AuditLog {
 }
 
 export class AuditRepository {
-  
   static async log(data: AuditLog, trx?: TransactionQuery): Promise<void> {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
@@ -39,7 +38,6 @@ export class AuditRepository {
     }
   }
 
-  
   static async getLatest(limit: number = 100): Promise<any[]> {
     return await query(
       `

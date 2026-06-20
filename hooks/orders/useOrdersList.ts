@@ -120,7 +120,6 @@ export const useOrdersList = () => {
     fetchServicios();
   }, [fetchOrders, fetchServicios]);
 
-  
   const filteredOrders = useMemo(() => {
     if (!searchTerm) return orders;
     const term = searchTerm.toLowerCase();

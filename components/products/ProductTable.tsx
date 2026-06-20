@@ -274,16 +274,13 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [localProducts, setLocalProducts] = useState(products);
   const { hasPermission } = useUserPermissions();
 
-  
   const canEdit = hasPermission('productos', 'editar_categoria');
   const canDelete = hasPermission('productos', 'eliminar');
   const canActivate = hasPermission('productos', 'activar');
   const canDeactivate = hasPermission('productos', 'desactivar');
 
-  
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
-  
   React.useEffect(() => {
     setLocalProducts(products);
   }, [products]);
@@ -309,7 +306,6 @@ const ProductTable: React.FC<ProductTableProps> = ({
       const newProducts = arrayMove(localProducts, oldIndex, newIndex);
       setLocalProducts(newProducts);
 
-      
       if (onReorder) {
         onReorder(newProducts);
       }

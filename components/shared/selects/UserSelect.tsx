@@ -21,18 +21,17 @@ interface UserSelectProps {
   label?: string;
   placeholder?: string;
   searchPlaceholder?: string;
-  
+
   roles?: string[];
-  
+
   onlyActive?: boolean;
-  
+
   className?: string;
-  
+
   showNick?: boolean;
   disabled?: boolean;
   required?: boolean;
 }
-
 
 export default function UserSelect({
   users = [],
@@ -52,18 +51,14 @@ export default function UserSelect({
   const [searchTerm, setSearchTerm] = useState('');
   const uniqueId = React.useId();
 
-  
   const eligibleUsers = useMemo(() => {
     return (users || []).filter(u => {
-      
       const isActive = u.status === 1 || u.status === undefined || u.status === null;
       if (onlyActive && !isActive) return false;
 
-      
       const userRole = (u.role || '').toLowerCase();
       if (userRole === 'administrador' || userRole === 'admin') return false;
 
-      
       if (roles && roles.length > 0) {
         return roles.some(r => r.toLowerCase() === userRole);
       }
@@ -72,7 +67,6 @@ export default function UserSelect({
     });
   }, [users, roles, onlyActive]);
 
-  
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return eligibleUsers;
     const s = searchTerm.toLowerCase();

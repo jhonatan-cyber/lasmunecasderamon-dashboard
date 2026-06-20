@@ -6,7 +6,7 @@ export interface OrderDetail {
   comision: number;
   cantidad: number;
   subtotal: number;
-  fechaCrea: string; 
+  fechaCrea: string;
 }
 
 export interface OrderUser {
@@ -23,8 +23,8 @@ export interface Order {
   subtotal: number;
   total: number;
   totalComision: number;
-  fechaCrea: string; 
+  fechaCrea: string;
   estado: string;
   detalles: OrderDetail[];
   usuarios: OrderUser[];
-} 
+}

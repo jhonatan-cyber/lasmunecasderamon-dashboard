@@ -1,4 +1,3 @@
-
 export interface AsistenciaResumen {
   id_usuario: string;
   nick: string;
@@ -22,7 +21,7 @@ export interface AsistenciaStats {
 
 export interface AsistenciaResponse {
   success: boolean;
-  data?: AsistenciaResumen[]; 
+  data?: AsistenciaResumen[];
   error?: string;
   details?: unknown;
 }

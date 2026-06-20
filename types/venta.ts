@@ -10,8 +10,8 @@ export interface Venta {
   total: number;
   fecha_crea: string;
   fecha_mod?: string;
-  estado: number; 
-  tiempo?: number; 
+  estado: number;
+  tiempo?: number;
   anfitrionas_nicks?: string | null;
 }
 
@@ -59,8 +59,8 @@ export interface VentaCreate {
   sub_total: number;
   total: number;
   detalles: VentaDetalleCreate[];
-  usuarios?: Array<string | number>; 
-  tiempo?: number; 
+  usuarios?: Array<string | number>;
+  tiempo?: number;
 }
 
 export interface VentaDetalleCreate {

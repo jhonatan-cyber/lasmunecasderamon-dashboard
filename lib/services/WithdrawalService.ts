@@ -16,7 +16,6 @@ export class WithdrawalService {
     return await withTransaction(async trx => {
       let cajaId = validated.caja_id || validated.id_caja;
 
-      
       if (!cajaId) {
         const rows = await trx<any[]>(
           'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
@@ -30,7 +29,6 @@ export class WithdrawalService {
           'NO_CAJA_ABIERTA'
         );
 
-      
       const cajaRows = await trx<any[]>(
         'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? FOR UPDATE',
         [cajaId]
@@ -51,7 +49,6 @@ export class WithdrawalService {
         );
       }
 
-      
       const idRetiro = await WithdrawalRepository.create(
         {
           ...validated,
@@ -60,11 +57,10 @@ export class WithdrawalService {
         trx
       );
 
-      
-      await trx(
-        'UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ?',
-        [validated.monto, cajaId]
-      );
+      await trx('UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ?', [
+        validated.monto,
+        cajaId
+      ]);
 
       return { id_retiro: idRetiro, caja_id: cajaId };
     });

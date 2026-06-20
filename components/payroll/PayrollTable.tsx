@@ -56,8 +56,6 @@ export default function PayrollTable({
     );
   }, [userPermissions, user?.role]);
 
-  
-
   const handlePay = async (row: PayrollRow) => {
     const confirmed = await showConfirm({
       title: 'Confirmar pago',

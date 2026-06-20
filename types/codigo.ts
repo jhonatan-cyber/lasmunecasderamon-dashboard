@@ -1,4 +1,3 @@
-
 export interface Codigo {
   id_codigo: number;
   codigo: string;

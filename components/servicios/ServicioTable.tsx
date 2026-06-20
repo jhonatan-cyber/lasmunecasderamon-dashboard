@@ -67,7 +67,7 @@ export default function ServicioTable({
 
   const handleVerDetalles = (servicioId: string | number) => {
     setSelectedServicioId(servicioId);
-    
+
     logger.info('Ver detalles del servicio:', servicioId);
   };
 

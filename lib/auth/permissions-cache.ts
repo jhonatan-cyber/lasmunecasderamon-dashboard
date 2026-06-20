@@ -1,14 +1,11 @@
-
-
 import { UserPermissions } from '@/lib/middleware/auth';
 
-const TTL_MS = 1 * 60 * 1000; 
+const TTL_MS = 1 * 60 * 1000;
 
 interface CacheEntry {
   permissions: UserPermissions;
   expiresAt: number;
 }
-
 
 const cache = new Map<string, CacheEntry>();
 
@@ -30,12 +27,10 @@ export const PermissionsCache = {
     });
   },
 
-  
   invalidate(userId: string): void {
     cache.delete(userId);
   },
 
-  
   purgeExpired(): void {
     const now = Date.now();
     for (const [key, entry] of cache.entries()) {
@@ -43,7 +38,6 @@ export const PermissionsCache = {
     }
   },
 
-  
   clear(): void {
     cache.clear();
   },

@@ -51,13 +51,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const { hasPermission } = useUserPermissions();
 
-  
   const canEdit = hasPermission('productos', 'editar_categoria');
   const canDelete = hasPermission('productos', 'eliminar');
   const canActivate = hasPermission('productos', 'activar');
   const canDeactivate = hasPermission('productos', 'desactivar');
 
-  
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

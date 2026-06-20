@@ -20,7 +20,6 @@ const queryMock = async (sql, params = []) => {
 
 const generateUUID = () => crypto.randomUUID();
 
-
 const BaseRepository = {
   insert: async (trx, table, data) => {
     const keys = Object.keys(data);
@@ -49,7 +48,6 @@ async function runTests() {
   };
 
   try {
-    
     const users = await queryMock('SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1');
     testData.userId = users[0].id_usuario;
 
@@ -60,31 +58,27 @@ async function runTests() {
 
     console.log(`\n[1] Escenario: Cancelación de Venta con Habitación asociada`);
 
-    
     testData.saleId = generateUUID();
     await BaseRepository.insert(null, 'ventas', {
       id_venta: testData.saleId,
       habitacion_id: testData.habitId,
       total: 100,
-      estado: 1, 
+      estado: 1,
       created_by: testData.userId,
       fecha_crea: new Date()
     });
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 2
-    }); 
+    });
     console.log('Venta creada y habitación marcada como ocupada.');
 
-    
     console.log('Cancelando venta (devolución)...');
-    await BaseRepository.update(null, 'ventas', 'id_venta', testData.saleId, { estado: 0 }); 
+    await BaseRepository.update(null, 'ventas', 'id_venta', testData.saleId, { estado: 0 });
 
-    
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 1
-    }); 
+    });
 
-    
     const sale = (
       await queryMock('SELECT estado FROM ventas WHERE id_venta = ?', [testData.saleId])
     )[0];
@@ -102,33 +96,29 @@ async function runTests() {
 
     console.log(`\n[2] Escenario: Cancelación de Servicio con Habitación asociada`);
 
-    
     testData.serviceId = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: testData.serviceId,
       habitacion_id: testData.habitId,
       total: 50,
-      estado: 1, 
+      estado: 1,
       created_by: testData.userId,
       fecha_crea: new Date()
     });
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 2
-    }); 
+    });
     console.log('Servicio creado y habitación marcada como ocupada.');
 
-    
     console.log('Cancelando servicio (devolución)...');
     await BaseRepository.update(null, 'servicios', 'id_servicio', testData.serviceId, {
       estado: 0
-    }); 
+    });
 
-    
     await BaseRepository.update(null, 'habitaciones', 'id_habitacion', testData.habitId, {
       estado: 1
-    }); 
+    });
 
-    
     const service = (
       await queryMock('SELECT estado FROM servicios WHERE id_servicio = ?', [testData.serviceId])
     )[0];

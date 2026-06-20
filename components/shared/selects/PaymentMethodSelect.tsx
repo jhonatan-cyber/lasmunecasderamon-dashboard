@@ -85,7 +85,7 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
 
   const paymentMethods = useMemo(() => {
     const methods = [...BASE_PAYMENT_METHODS];
-    
+
     if (showPrepago && canUsePrepago) {
       methods.push({
         value: 'prepago',

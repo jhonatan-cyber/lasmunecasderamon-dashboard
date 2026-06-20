@@ -114,9 +114,10 @@ export default function CobrarCuentaModal({
   const productosTabla = useMemo(
     () =>
       detalleResumen.groupedDetalles.map((item, index) => {
-        
         const hostessIds = item.hostess_id
-          ? String(item.hostess_id).split(',').map((id: string) => id.trim())
+          ? String(item.hostess_id)
+              .split(',')
+              .map((id: string) => id.trim())
           : [];
         return {
           id_producto: item.id_producto ?? item.producto_id ?? item.agrupacionKey ?? index,
@@ -135,10 +136,8 @@ export default function CobrarCuentaModal({
     [detalleResumen.groupedDetalles]
   );
 
-  
   const totalComisionProductos = useMemo(
-    () =>
-      detalleResumen.groupedDetalles.reduce((sum, item) => sum + (item.comision || 0), 0),
+    () => detalleResumen.groupedDetalles.reduce((sum, item) => sum + (item.comision || 0), 0),
     [detalleResumen.groupedDetalles]
   );
 
@@ -147,7 +146,6 @@ export default function CobrarCuentaModal({
   const habitacionValue = habitacionId ?? '';
   const searchRoomValue = searchRoom ?? '';
 
-  
   useEffect(() => {
     if (!open) {
       resetStates();
@@ -325,15 +323,20 @@ export default function CobrarCuentaModal({
                       </Label>
                       <div className='space-y-2'>
                         {cuentaActual?.usuarios?.map((usuario: any) => {
-                          const usuarioId = String(usuario.usuario_id || usuario.id_usuario || usuario.id || '');
+                          const usuarioId = String(
+                            usuario.usuario_id || usuario.id_usuario || usuario.id || ''
+                          );
                           const comisionesAnfitriona = detalleResumen.groupedDetalles.reduce(
                             (sum, item) => {
                               const hostessIds = item.hostess_id
-                                ? String(item.hostess_id).split(',').map((id: string) => id.trim()).filter(Boolean)
+                                ? String(item.hostess_id)
+                                    .split(',')
+                                    .map((id: string) => id.trim())
+                                    .filter(Boolean)
                                 : [];
                               if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
-                                
-                                const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
+                                const comisionPorAnfitriona =
+                                  (item.comision || 0) / hostessIds.length;
                                 return sum + comisionPorAnfitriona;
                               }
                               return sum;

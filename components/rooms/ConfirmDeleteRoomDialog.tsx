@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { Room } from '@/types/room';
-import { Loader2 } from 'lucide-react'; 
+import { Loader2 } from 'lucide-react';
 
 interface ConfirmDeleteRoomDialogProps {
   open: boolean;
@@ -48,7 +48,9 @@ export default function ConfirmDeleteRoomDialog({
             <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-xl border border-red-200 dark:border-red-800'>
               <div className='space-y-2 text-sm text-red-900 dark:text-red-100 text-center'>
                 <p>
-                  <strong className='opacity-70 text-xs uppercase tracking-widest block mb-1'>Habitación</strong>
+                  <strong className='opacity-70 text-xs uppercase tracking-widest block mb-1'>
+                    Habitación
+                  </strong>
                   <span className='text-base font-bold'>{room.name}</span>
                 </p>
               </div>
@@ -75,8 +77,8 @@ export default function ConfirmDeleteRoomDialog({
             className='bg-black rounded-full px-6 text-white hover:scale-105 transition-all duration-200'
           >
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+              <div className='flex items-center gap-2'>
+                <Loader2 className='w-4 h-4 animate-spin' />
                 <span>Eliminando...</span>
               </div>
             ) : (
@@ -88,4 +90,3 @@ export default function ConfirmDeleteRoomDialog({
     </Dialog>
   );
 }
-

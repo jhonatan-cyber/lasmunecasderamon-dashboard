@@ -1,4 +1,3 @@
-
 export interface Login {
   id_login: string;
   usuario_id: string;
