@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { SwaggerUIWrapper } from '@/components/SwaggerUIWrapper';
+import { SwaggerUIWrapper } from '@/components/shared/SwaggerUIWrapper';
+
 import { useSwaggerWarnings } from '@/hooks/docs/useSwaggerWarnings';
 import './swagger-styles.css';
 
