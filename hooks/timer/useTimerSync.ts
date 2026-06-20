@@ -11,9 +11,8 @@ interface TimerSyncProps {
   isInitialized: boolean;
   setIsInitialized: (val: boolean) => void;
   onTimerStopped?: (servicioId: string) => void;
-  setServerOffset: (offset: number) => void; 
+  setServerOffset: (offset: number) => void;
 }
-
 
 export function useTimerSync({
   isInitialized,
@@ -24,11 +23,10 @@ export function useTimerSync({
   const initialSyncExecutedRef = useRef(false);
   const periodicSyncStartedRef = useRef(false);
 
-  
   useEffect(() => {
     if (isInitialized) {
       const timers = activeTimers.value.map(t => t.toPlainObject());
-      
+
       const unique = timers.filter(
         (t, i, self) => i === self.findIndex(x => x.servicioId === t.servicioId)
       );
@@ -37,7 +35,6 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTimers.value, isInitialized]);
 
-  
   useEffect(() => {
     if (initialSyncExecutedRef.current) return;
     initialSyncExecutedRef.current = true;
@@ -147,7 +144,6 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  
   const sseUrl =
     typeof window !== 'undefined' && !['/', '/login'].includes(window.location.pathname)
       ? '/api/notifications/sse'
@@ -161,7 +157,6 @@ export function useTimerSync({
       case 'timer_started': {
         const { servicioId, codigo, roomId, duration, startTime } = payload.data;
 
-        
         const existing = activeTimers.peek().find(t => t.servicioId === servicioId);
         if (existing) {
           return;
@@ -208,10 +203,7 @@ export function useTimerSync({
         const { servicioId, newStartTime } = payload.data;
         const target = activeTimers.peek().find(t => t.servicioId === servicioId);
         if (target) {
-          
           target.isPaused.value = false;
-          
-          
         }
         break;
       }
@@ -228,7 +220,6 @@ export function useTimerSync({
           );
           const remaining = Math.max(0, dur * 60 - elapsed);
 
-          
           batch(() => {
             target.patch({
               duration: dur,
@@ -245,7 +236,6 @@ export function useTimerSync({
     }
   });
 
-  
   useEffect(() => {
     if (!isInitialized || periodicSyncStartedRef.current) return;
 
@@ -254,8 +244,6 @@ export function useTimerSync({
         const res = await fetch('/api/timers/active?source=poll');
         const data = await res.json();
         if (data.success) {
-          
-          
           const dbIds = new Set(data.data.map((t: any) => t.servicioId));
           activeTimers.value = activeTimers
             .peek()
@@ -271,4 +259,3 @@ export function useTimerSync({
     return () => clearInterval(interval);
   }, [isInitialized]);
 }
-

@@ -1,5 +1,3 @@
-
-
 import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { logger } from '@/lib/utils/logger';

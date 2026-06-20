@@ -11,7 +11,6 @@ export function useServiceLogic() {
   const { servicios, loading, getServicios, removeServicioFromState, patchServicio, includeAll } =
     useServicios();
 
-  
   const { servicios: allServicios, loading: loadingAll } = useAllServicios();
 
   const router = useRouter();
@@ -28,24 +27,22 @@ export function useServiceLogic() {
   const handleShowActiveServices = useCallback(() => {
     setShowAllServices(false);
     setCurrentPage(1);
-    
+
     getServicios(false);
   }, [getServicios]);
 
   const handleShowAllServices = useCallback(() => {
     setShowAllServices(true);
     setCurrentPage(1);
-    
+
     getServicios(true);
   }, [getServicios]);
 
   const handleStopTimer = useCallback(
     async (servicioId: string | number) => {
       try {
-        
-        await patchServicio(servicioId, { estado: 1 }); 
+        await patchServicio(servicioId, { estado: 1 });
 
-        
         removeServicioFromState(servicioId);
 
         toast.success('Servicio finalizado exitosamente');
@@ -66,7 +63,7 @@ export function useServiceLogic() {
 
   const handleServiceAutoFinished = useCallback(async () => {
     try {
-      await getServicios(false); 
+      await getServicios(false);
       setCurrentPage(prev => prev);
     } catch (error) {
       logger.captureException(error, { context: 'ServiceLogic:handleServiceAutoFinished' });
@@ -77,13 +74,11 @@ export function useServiceLogic() {
   const serviciosByStatus = useMemo(() => {
     if (!servicios || servicios.length === 0) return [];
     if (showAllServices) {
-      
       return servicios.filter(
         (servicio: ServicioWithDetails) =>
           servicio.estado === 1 || servicio.estado === 0 || servicio.estado === 4
       );
     } else {
-      
       return servicios.filter(
         (servicio: ServicioWithDetails) => servicio.estado === 2 || servicio.estado === 3
       );

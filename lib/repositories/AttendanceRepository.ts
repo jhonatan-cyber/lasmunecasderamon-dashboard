@@ -134,7 +134,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     );
     const alreadyRegistered = existing.length > 0;
 
-    
     if (alreadyRegistered) {
       await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
         en_local: 1,
@@ -147,7 +146,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
-    
     if (hour < 21 || hour >= 23) {
       await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
         en_local: 1,
@@ -160,7 +158,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
-    
     const timeStr = nowStr.substring(11, 19);
     const id = generateUUID();
     await BaseRepository.insert(query, 'asistencias', {
@@ -291,7 +288,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     estado: string,
     currentUser?: any
   ) {
-    
     const existing = await query<any[]>(
       'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
       [usuarioId, fecha]
@@ -304,7 +300,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
-    
     const user = await query<any[]>('SELECT sueldo, aporte FROM usuarios WHERE id_usuario = ?', [
       usuarioId
     ]);
@@ -317,7 +312,7 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
     }
 
     const id = generateUUID();
-    
+
     const estadoNumerico = estado === 'presente' || estado === 'tardanza' ? 1 : 0;
 
     await BaseRepository.insert(query, 'asistencias', {
@@ -358,7 +353,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
-    
     if (hour < 21 || hour >= 23) {
       await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
         en_local: 1,
@@ -371,7 +365,6 @@ LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHE
       };
     }
 
-    
     const timeStr = nowStr.substring(11, 19);
     const id = generateUUID();
     await BaseRepository.insert(query, 'asistencias', {

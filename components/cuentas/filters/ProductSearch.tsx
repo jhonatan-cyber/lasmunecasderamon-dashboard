@@ -42,12 +42,10 @@ export default function ProductSearch({
     goToPage
   } = useProductSearch(300);
 
-  
   const isControlled = externalSearchTerm !== undefined || searchProducto !== undefined;
   const searchTerm = externalSearchTerm ?? searchProducto ?? internalSearchTerm;
   const setSearchTerm = onSearchTermChange ?? onSearchChange ?? handleSearchChange;
 
-  
   useEffect(() => {
     const termToSync = externalSearchTerm ?? searchProducto;
     if (isControlled && termToSync !== undefined) {

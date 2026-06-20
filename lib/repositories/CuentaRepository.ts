@@ -7,8 +7,6 @@ import { NotFoundError, BusinessError } from '@/lib/errors/errors';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { buildFinancialSummary, type CuentaAnulacionRow } from './cuenta/cuentaFinancialSummary';
 
-
-
 type CuentaDetalle = {
   producto_id: string;
   precio: number;
@@ -239,8 +237,6 @@ export class CuentaRepository {
             Math.ceil((endedAt.getTime() - startedAt.getTime()) / 60000)
           );
 
-          
-          
           if (
             !Number.isFinite(consumedMinutes) ||
             consumedMinutes <= 0 ||
@@ -704,8 +700,6 @@ export class CuentaRepository {
       }
     }
 
-    
-    
     if (body.habitacion_id && (body.tiempo ?? 0) >= 0) {
       const room = await query<any[]>(
         'SELECT nombre, precio, tiempo as room_tiempo, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
@@ -788,7 +782,6 @@ export class CuentaRepository {
         sendNotificationToAll('room_available', { roomId: previousRoomId });
       }
 
-      
       if ((body.tiempo ?? 0) > 0) {
         sendNotificationToAll('timer_started', {
           servicioId: id,
@@ -862,7 +855,6 @@ export class CuentaRepository {
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
       if (idCaja) {
         await CashRegisterRepository.updateBalances(trx, idCaja, {
-          
           venta: montoFinal - propinaFinal,
           propina: propinaFinal,
           efectivo: tipoPago === 'efectivo' ? montoFinal : 0,
@@ -871,10 +863,6 @@ export class CuentaRepository {
           prepago: tipoPago === 'prepago' ? montoFinal : 0
         });
       }
-
-      
-      
-      
 
       if (cuenta[0].habitacion_id) {
         await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [

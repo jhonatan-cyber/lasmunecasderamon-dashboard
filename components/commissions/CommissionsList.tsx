@@ -66,7 +66,6 @@ export function CommissionsList({
     );
   }
 
-  
   const MobileCardView = () => (
     <div className='lg:hidden space-y-3'>
       {loading
@@ -112,7 +111,9 @@ export function CommissionsList({
                   </Avatar>
                   <span className='font-bold text-sm'>{commission.nick}</span>
                 </div>
-                <Badge className={`${getStatusColor(commission.status)} text-xs rounded-full px-2 py-1`}>
+                <Badge
+                  className={`${getStatusColor(commission.status)} text-xs rounded-full px-2 py-1`}
+                >
                   {statusLabel(commission.status)}
                 </Badge>
               </div>
@@ -163,7 +164,6 @@ export function CommissionsList({
     </div>
   );
 
-  
   const DesktopTableView = () => (
     <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
@@ -223,7 +223,7 @@ export function CommissionsList({
                         <Avatar className='h-8 w-8'>
                           {commission.empleado_foto && commission.empleado_foto !== '' ? (
                             <Image
-src={`/img/users/${commission.empleado_foto}`}
+                              src={`/img/users/${commission.empleado_foto}`}
                               alt={commission.employeeName || 'Usuario'}
                               width={32}
                               height={32}

@@ -153,5 +153,3 @@ export function OrdersFilters({
     </Card>
   );
 }
-
-

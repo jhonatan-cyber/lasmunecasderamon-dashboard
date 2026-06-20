@@ -27,8 +27,7 @@ async function testAnulacionFlow() {
   console.log(`   Desde: ${whatsappNumber}`);
   console.log(`   Hacia (raw): ${adminWhatsApp}`);
 
-  
-  const numeroAdmin = adminWhatsApp; 
+  const numeroAdmin = adminWhatsApp;
   const numeroFormateado = `+${numeroAdmin.replace(/^\+/, '')}`;
   console.log(`   Hacia (formatted): ${numeroFormateado}`);
 

@@ -208,7 +208,6 @@ export class ClientRepository {
       [clientId]
     );
 
-    
     for (const sale of sales) {
       const products = await query<any[]>(
         `

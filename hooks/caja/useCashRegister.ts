@@ -1,4 +1,3 @@
- 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Caja,
@@ -230,7 +229,6 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         await getCajas();
         await checkCajaStatus();
 
-        
         window.dispatchEvent(new CustomEvent('cajaClosed', { detail: result.data }));
 
         return result.data;
@@ -305,7 +303,6 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     [getCajas, handleError]
   );
 
-  
   useEffect(() => {
     getCajas();
     getResumen();
@@ -332,4 +329,3 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     deleteCaja
   };
 };
-

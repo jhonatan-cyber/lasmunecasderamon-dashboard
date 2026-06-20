@@ -6,7 +6,7 @@ interface CurrentUser {
   lastName: string;
   email?: string;
   role: string;
-  roleId?: number; 
+  roleId?: number;
   status: number;
   foto?: string;
   username?: string;
@@ -24,7 +24,6 @@ interface UseCurrentUserReturn {
   refetch: (silent?: boolean) => Promise<void>;
 }
 
-
 export const useCurrentUser = (): UseCurrentUserReturn => {
   const { user, userLoading, refreshUser } = useAuth();
 
@@ -37,4 +36,3 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
 };
 
 export default useCurrentUser;
-

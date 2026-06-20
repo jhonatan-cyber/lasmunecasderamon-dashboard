@@ -1,11 +1,11 @@
 'use client';
 
-import { 
-  Navigation, 
-  HeroSection, 
-  TestimonialsSection, 
-  CareersSection, 
-  ReviewsSection, 
+import {
+  Navigation,
+  HeroSection,
+  TestimonialsSection,
+  CareersSection,
+  ReviewsSection,
   ApplicationModal,
   WhatsAppWidget
 } from '@/components/landing';
@@ -33,15 +33,15 @@ export default function LandingClientBlocks({ children }: { children: React.Reac
     <>
       <SnowEffect />
       <Navigation scrollY={scrollY} />
-      
+
       {}
       <HeroSection scrollY={scrollY} />
-      
+
       {}
       {children}
 
       {}
-      <div className="relative z-10">
+      <div className='relative z-10'>
         <TestimonialsSection reviews={reviews} />
         <CareersSection handlePositionClick={handlePositionClick} />
         <ReviewsSection

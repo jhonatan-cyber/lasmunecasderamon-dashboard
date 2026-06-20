@@ -40,7 +40,6 @@ interface SalesListProps {
   totalPages: number;
 }
 
-
 const statusTheme: Record<
   number,
   {

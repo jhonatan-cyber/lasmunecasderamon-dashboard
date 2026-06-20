@@ -22,12 +22,12 @@ export default function CommissionsStatsCards({
   cantidadComisiones,
   porcentajeVentas,
   porcentajeServicios,
-  isLoading = false,
+  isLoading = false
 }: CommissionsStatsCardsProps) {
   if (isLoading) {
     return (
       <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2, 3, 4].map(i => (
           <Card
             key={i}
             className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden h-[140px]'
@@ -54,7 +54,7 @@ export default function CommissionsStatsCards({
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
+          border: '1px solid rgba(16, 185, 129, 0.2)'
         }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
@@ -87,7 +87,7 @@ export default function CommissionsStatsCards({
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
+          border: '1px solid rgba(59, 130, 246, 0.2)'
         }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
@@ -121,7 +121,7 @@ export default function CommissionsStatsCards({
       <Card
         style={{
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
-          border: '1px solid rgba(139, 92, 246, 0.2)',
+          border: '1px solid rgba(139, 92, 246, 0.2)'
         }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
@@ -155,7 +155,7 @@ export default function CommissionsStatsCards({
       <Card
         style={{
           backgroundColor: 'rgba(249, 115, 22, 0.1)',
-          border: '1px solid rgba(249, 115, 22, 0.2)',
+          border: '1px solid rgba(249, 115, 22, 0.2)'
         }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >

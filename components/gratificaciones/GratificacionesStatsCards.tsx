@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,15 +9,21 @@ interface GratificacionesStatsCardsProps {
   formatCurrency: (amount: number) => string;
 }
 
-export default function GratificacionesStatsCards({ gratificaciones, formatCurrency }: GratificacionesStatsCardsProps) {
-  
+export default function GratificacionesStatsCards({
+  gratificaciones,
+  formatCurrency
+}: GratificacionesStatsCardsProps) {
   const totalRegistros = gratificaciones.length;
   const usuariosUnicos = new Set(gratificaciones.map(g => g.usuario_id || g.id_usuario));
   const totalUsuarios = usuariosUnicos.size;
-  
+
   const totalMonto = gratificaciones.reduce((acc, g) => acc + g.monto, 0);
-  const totalPagado = gratificaciones.filter(g => g.estado === 0).reduce((acc, g) => acc + g.monto, 0);
-  const totalPorPagar = gratificaciones.filter(g => g.estado === 1).reduce((acc, g) => acc + g.monto, 0);
+  const totalPagado = gratificaciones
+    .filter(g => g.estado === 0)
+    .reduce((acc, g) => acc + g.monto, 0);
+  const totalPorPagar = gratificaciones
+    .filter(g => g.estado === 1)
+    .reduce((acc, g) => acc + g.monto, 0);
 
   const stats = [
     {
@@ -66,15 +71,24 @@ export default function GratificacionesStatsCards({ gratificaciones, formatCurre
   return (
     <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6'>
       {stats.map((stat, index) => (
-        <Card key={index} className={`overflow-hidden border-none shadow-sm group hover:shadow-md transition-all duration-300`}>
-          <div className={`${stat.bgColor} p-4 h-full flex flex-col justify-between border-b-4 ${stat.borderColor}`}>
+        <Card
+          key={index}
+          className={`overflow-hidden border-none shadow-sm group hover:shadow-md transition-all duration-300`}
+        >
+          <div
+            className={`${stat.bgColor} p-4 h-full flex flex-col justify-between border-b-4 ${stat.borderColor}`}
+          >
             <div className='flex justify-between items-start mb-4'>
-              <div className={`p-2 rounded-xl bg-white dark:bg-neutral-800 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+              <div
+                className={`p-2 rounded-xl bg-white dark:bg-neutral-800 shadow-sm group-hover:scale-110 transition-transform duration-300`}
+              >
                 <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
               </div>
-              <span className='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>{stat.title}</span>
+              <span className='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>
+                {stat.title}
+              </span>
             </div>
-            
+
             <div>
               <div className='text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight'>
                 {stat.value}

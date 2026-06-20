@@ -7,7 +7,6 @@ interface UseRefreshOnFocusOptions {
   immediate?: boolean;
 }
 
-
 export function useRefreshOnFocus(
   refresh: () => void | Promise<unknown>,
   options: UseRefreshOnFocusOptions = {}

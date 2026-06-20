@@ -33,10 +33,9 @@ export default function NuevoServicioPage() {
   const { habitaciones, getHabitaciones } = useHabitaciones();
   const { startTimer } = useTimer();
 
-  
   const [formData, setFormData] = useState({
-    clientes: [] as string[], 
-    usuarios: [] as string[], 
+    clientes: [] as string[],
+    usuarios: [] as string[],
     habitacion_id: '' as string,
     precio_habitacion: 0,
     tiempo_habitacion: 0,
@@ -46,11 +45,9 @@ export default function NuevoServicioPage() {
     tiempo: 0
   });
 
-  
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [servicioDataToSubmit, setServicioDataToSubmit] = useState<any>(null);
 
-  
   const [precioHabitacion, setPrecioHabitacion] = useState(0);
   const [tiempoHabitacion, setTiempoHabitacion] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
@@ -72,7 +69,6 @@ export default function NuevoServicioPage() {
     display: montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
   });
 
-  
   const {
     selectedRoom,
     selectedClientData,
@@ -95,7 +91,6 @@ export default function NuevoServicioPage() {
     pagosMixtos
   });
 
-  
   const formatNumberWithSeparators = (value: number): string => {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
@@ -104,16 +99,11 @@ export default function NuevoServicioPage() {
     await Promise.all([fetchClients(), refetchAnfitrionas(), getHabitaciones()]);
   }, [fetchClients, refetchAnfitrionas, getHabitaciones]);
 
-  
   const generateCode = generateRandomCode;
 
   useRefreshOnFocus(refreshLookupData);
 
-  
   useEffect(() => {
-    
-    
-    
     const cantidadAnfitrionas = formData.usuarios.length || 1;
     const cantidadClientes = formData.clientes.length || 1;
     let multiplicadorServicio = cantidadAnfitrionas;
@@ -128,7 +118,6 @@ export default function NuevoServicioPage() {
       multiplicadorHabitacion = cantidadClientes;
     }
 
-    
     if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
       multiplicadorHabitacion = 1;
     }
@@ -136,7 +125,6 @@ export default function NuevoServicioPage() {
     const nuevoSubTotal = formData.precio_servicio * multiplicadorServicio;
     const precioHabitacionTotal = precioHabitacion * multiplicadorHabitacion;
 
-    
     let nuevoIVA = 0;
     if (formData.metodo_pago === 'tarjeta') {
       nuevoIVA = Math.floor(nuevoSubTotal * 0.2);
@@ -174,7 +162,6 @@ export default function NuevoServicioPage() {
     selectedRoom
   ]);
 
-  
   useEffect(() => {
     if (formData.habitacion_id) {
       if (selectedRoom) {
@@ -243,7 +230,6 @@ export default function NuevoServicioPage() {
       return;
     }
 
-    
     const normalizeId = (id: string) => {
       const num = Number(id);
       return Number.isNaN(num) ? id : num;
@@ -251,8 +237,8 @@ export default function NuevoServicioPage() {
 
     const servicioData = {
       codigo: generateCode(),
-      cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null, 
-      clientes: formData.clientes.map(normalizeId), 
+      cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null,
+      clientes: formData.clientes.map(normalizeId),
       habitacion_id: formData.habitacion_id,
       precio_habitacion: precioHabitacion,
       precio_servicio: formData.precio_servicio,
@@ -354,7 +340,6 @@ export default function NuevoServicioPage() {
     boletaWindow.print();
   };
 
-  
   const confirmAndSubmit = async () => {
     if (!servicioDataToSubmit) return;
 
@@ -373,7 +358,6 @@ export default function NuevoServicioPage() {
 
       if (data.success) {
         if (selectedRoom) {
-          
           const anfitrionasSeleccionadas = servicioDataToSubmit.usuarios
             .map((userId: any) => {
               const anfitriona = anfitrionas.find(
@@ -393,14 +377,12 @@ export default function NuevoServicioPage() {
             clientes.find(
               c => String(c.id_cliente ?? c.id ?? '') === String(servicioDataToSubmit.cliente_id)
             )?.nombre || '',
-            anfitrionasSeleccionadas 
+            anfitrionasSeleccionadas
           );
         }
 
-        
         queryClient.invalidateQueries({ queryKey: ['/api/servicios'] });
 
-        
         await refreshLookupData();
 
         toast.success(`Servicio creado exitosamente`);
@@ -457,7 +439,7 @@ export default function NuevoServicioPage() {
             required={true}
             showPrice={true}
             showTime={true}
-            filterByStatus={1} 
+            filterByStatus={1}
             requireCompleteConfig={true}
             className='w-full'
           />
@@ -665,12 +647,12 @@ export default function NuevoServicioPage() {
                           prev.map((item, itemIndex) =>
                             itemIndex === index
                               ? {
-                                ...item,
-                                baseMonto: montoBase,
-                                monto: calcularMontoPagoMixto(item.metodo, montoBase),
-                                display:
-                                  montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
-                              }
+                                  ...item,
+                                  baseMonto: montoBase,
+                                  monto: calcularMontoPagoMixto(item.metodo, montoBase),
+                                  display:
+                                    montoBase > 0 ? formatNumberWithSeparators(montoBase) : ''
+                                }
                               : item
                           )
                         );
@@ -808,7 +790,3 @@ export default function NuevoServicioPage() {
     </>
   );
 }
-
-
-
-

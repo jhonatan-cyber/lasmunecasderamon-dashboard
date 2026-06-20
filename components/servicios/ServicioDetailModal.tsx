@@ -35,7 +35,6 @@ export function ServicioDetailModal({
   const hasAnfitrionas =
     selectedServicio.anfitrionas_nombres && selectedServicio.anfitrionas_nombres.length > 0;
 
-  
   const precioServicioInput = Number(selectedServicio.precio_servicio) || 0;
   const habitacionComision = Number(selectedServicio.habitacion_comision) || 0;
   const mostrarBotonEditar = precioServicioInput === 0 && habitacionComision > 0;

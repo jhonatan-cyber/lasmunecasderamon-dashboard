@@ -13,7 +13,6 @@ const SHIFT_END = 23 * 60;
 
 export class AuthRepository {
   private static async mapAuthenticatedUser(user: any) {
-    
     const permissions = await this.getUserPermissions(
       user.id_usuario,
       user.rol_id,
@@ -43,7 +42,6 @@ export class AuthRepository {
     roleId: string | number,
     roleName?: string
   ): Promise<UserPermissions> {
-    
     const defaultPermissions: Record<string, UserPermissions> = {
       administrador: {
         users: { read: true, write: true, delete: true },
@@ -91,7 +89,6 @@ export class AuthRepository {
       }
     };
 
-    
     if (!roleId) {
       const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
       return defaultPermissions[roleKey] || defaultPermissions.administrador;
@@ -106,7 +103,6 @@ export class AuthRepository {
         [String(roleId)]
       );
 
-      
       if (!perms || perms.length === 0) {
         const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
         logger.info('[Auth] No hay permisos en DB para rol', { roleKey });
@@ -154,7 +150,7 @@ export class AuthRepository {
       return userPerms;
     } catch (err) {
       logger.captureException(err, { context: 'AuthRepository:fetchPermissions' });
-      
+
       const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
       return defaultPermissions[roleKey] || defaultPermissions.administrador;
     }
@@ -255,7 +251,6 @@ export class AuthRepository {
     const marksAsis = (isCajeroRole && needsCode) || (needsCode && usedQrOrCodigo);
     let asistenciaRegistrada = false;
     if (marksAsis && !hasAsis) {
-      
       await query(
         'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
         [generateUUID(), user.id_usuario, dateString, timeString]
@@ -269,7 +264,6 @@ export class AuthRepository {
       }
       asistenciaRegistrada = true;
     } else if (usedQrOrCodigo && !marksAsis) {
-      
       await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
         user.id_usuario
       ]);
@@ -385,7 +379,6 @@ export class AuthRepository {
     const hashedPassword = await argon2.hash(data.password.trim());
     const id = generateUUID();
 
-    
     let adminRoleId = '';
     const roles = await query<any[]>('SELECT id_rol FROM roles WHERE nombre = ?', [
       'Administrador'

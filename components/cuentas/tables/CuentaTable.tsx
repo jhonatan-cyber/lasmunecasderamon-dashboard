@@ -130,12 +130,10 @@ export default function CuentaTable({
     getEstadoBadge
   } = useCuentaTableLogic();
 
-  
   const canViewDetails = hasPermission('cuentas', 'ver_detalles');
   const canAddProducts = hasPermission('cuentas', 'agregar_productos');
   const canCobrar = hasPermission('cuentas', 'cobrar');
 
-  
   const hasAnyAction = canViewDetails || canAddProducts || canCobrar;
 
   const selectedCuentaIdForAction = cuentaSeleccionada
@@ -149,7 +147,7 @@ export default function CuentaTable({
 
   const handleProductosAgregados = () => {
     hookHandleProductosAgregados();
-    
+
     if (onRefresh) {
       onRefresh();
     }
@@ -157,7 +155,7 @@ export default function CuentaTable({
 
   const handleCuentaCobrada = () => {
     hookHandleCuentaCobrada();
-    
+
     if (onRefresh) {
       onRefresh();
     }
@@ -287,7 +285,6 @@ export default function CuentaTable({
     );
   }
 
-  
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {rows.map(cuenta => (
@@ -451,7 +448,6 @@ export default function CuentaTable({
     </div>
   );
 
-  
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>

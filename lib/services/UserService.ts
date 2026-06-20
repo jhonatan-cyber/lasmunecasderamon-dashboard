@@ -74,8 +74,6 @@ export class UserService {
 
     const result = await UserRepository.update(id.toString(), updateData, fotoFilename);
 
-    
-    
     if (validated.rol_id !== undefined) {
       PermissionsCache.invalidate(id.toString());
     }
@@ -90,7 +88,7 @@ export class UserService {
         allowed: ['activate', 'deactivate']
       });
     }
-    
+
     if (action === 'deactivate') {
       PermissionsCache.invalidate(id);
     }

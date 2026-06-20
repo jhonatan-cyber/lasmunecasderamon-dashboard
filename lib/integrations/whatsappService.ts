@@ -4,12 +4,10 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '../utils/logger';
 
-
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const whatsappNumber =
   process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '+14155238886';
-
 
 if (!accountSid || !authToken || !whatsappNumber) {
   logger.warn('⚠️  Variables de entorno de Twilio no configuradas. WhatsApp no funcionará.');

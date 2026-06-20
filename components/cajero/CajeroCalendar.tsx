@@ -17,8 +17,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrencyNoDecimals, formatCurrencyCLP } from '@/lib/utils/formatters';
-import { formatLongDateEs, formatShortDmyDateEs, getMonthDateRange, matchesAnyDateKey, toDateKey, toDateKeys } from '@/lib/utils/calendarUtils';
-
+import {
+  formatLongDateEs,
+  formatShortDmyDateEs,
+  getMonthDateRange,
+  matchesAnyDateKey,
+  toDateKey,
+  toDateKeys
+} from '@/lib/utils/calendarUtils';
 
 const months = [
   'Enero',
@@ -66,7 +72,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     'asistencias' | 'anticipos' | 'propinas' | 'horasExtras'
   >('asistencias');
 
-  
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -77,7 +82,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     let firstDayOfWeek = firstDay.getDay();
     const days = [];
 
-    
     const prevMonth = new Date(year, month - 1, 0);
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       days.push({
@@ -86,7 +90,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       });
     }
 
-    
     for (let day = 1; day <= daysInMonth; day++) {
       days.push({
         date: new Date(year, month, day),
@@ -94,7 +97,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       });
     }
 
-    
     const remainingDays = 42 - days.length;
     for (let day = 1; day <= remainingDays; day++) {
       days.push({
@@ -128,19 +130,18 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
   const getDataForDate = (date: Date) => {
     const dateKey = toDateKey(date);
 
-    
     const asistenciasMatch = calendarData.asistencias.some((item: any) => {
       return matchesAnyDateKey(item.fecha, [dateKey]);
     });
 
-    const anticiposMatch = calendarData.anticipos.some(
-      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
+    const anticiposMatch = calendarData.anticipos.some((item: any) =>
+      matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
-    const propinasMatch = calendarData.propinas.some(
-      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
+    const propinasMatch = calendarData.propinas.some((item: any) =>
+      matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
-    const horasExtrasMatch = calendarData.horasExtras.some(
-      (item: any) => matchesAnyDateKey(item.fecha_crea, [dateKey])
+    const horasExtrasMatch = calendarData.horasExtras.some((item: any) =>
+      matchesAnyDateKey(item.fecha_crea, [dateKey])
     );
 
     const result = {
@@ -149,8 +150,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       propinas: propinasMatch,
       horasExtras: horasExtrasMatch
     };
-
-
 
     return result;
   };
@@ -184,7 +183,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     setIsDragging(false);
     setDragStartDate(null);
 
-    
     if (wasDragging && selectedDates.length > 0) {
       setIsModalOpen(true);
       setSelectedDataType('asistencias');
@@ -217,23 +215,19 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     try {
       const { startDate, endDate } = getMonthDateRange(currentDate);
 
-      
       const asistenciasRes = await fetch(
         `/api/attendance/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const asistenciasData = await asistenciasRes.json();
 
-      
       const anticiposRes = await fetch(
         `/api/anticipos/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
       const anticiposData = await anticiposRes.json();
 
-      
       const propinasRes = await fetch(`/api/tips/user?startDate=${startDate}&endDate=${endDate}`);
       const propinasData = await propinasRes.json();
 
-      
       const horasExtrasRes = await fetch(
         `/api/overtime/by-dates?startDate=${startDate}&endDate=${endDate}`
       );
@@ -288,7 +282,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     try {
       const dateKeys = toDateKeys(selectedDates);
 
-      
       const newCounts: { [key: string]: number } = {
         asistencias: 0,
         anticipos: 0,
@@ -296,7 +289,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         horasExtras: 0
       };
 
-      
       try {
         const asistenciasDatesParam = dateKeys.join(',');
         const asistenciasRes = await fetch(
@@ -304,38 +296,30 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         );
         const asistenciasData = await asistenciasRes.json();
         newCounts.asistencias = asistenciasData.success ? asistenciasData.data?.length || 0 : 0;
-      } catch (error) {
-      }
+      } catch (error) {}
 
-      
       try {
         const anticiposDatesParam = dateKeys.join(',');
         const anticiposRes = await fetch(`/api/anticipos/by-dates?dates=${anticiposDatesParam}`);
         const anticiposData = await anticiposRes.json();
         newCounts.anticipos = anticiposData.success ? anticiposData.data?.length || 0 : 0;
-      } catch (error) {
-      }
+      } catch (error) {}
 
-      
       newCounts.propinas = calendarData.propinas.filter(item =>
         matchesAnyDateKey(item.fecha_crea, dateKeys)
       ).length;
 
-      
       try {
         const horasExtrasDatesParam = dateKeys.join(',');
         const horasExtrasRes = await fetch(`/api/overtime/by-dates?dates=${horasExtrasDatesParam}`);
         const horasExtrasData = await horasExtrasRes.json();
         newCounts.horasExtras = horasExtrasData.success ? horasExtrasData.data?.length || 0 : 0;
-      } catch (error) {
-      }
+      } catch (error) {}
 
       setModalCounts(newCounts);
 
-      
       let total = 0;
 
-      
       if (newCounts.asistencias > 0) {
         try {
           const asistenciasDatesParam = dateKeys.join(',');
@@ -352,11 +336,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               0
             );
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
-      
       if (newCounts.propinas > 0) {
         const propinasEstado1 = calendarData.propinas.filter(
           (item: any) => matchesAnyDateKey(item.fecha_crea, dateKeys) && item.estado === 1
@@ -364,7 +346,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
         total += propinasEstado1.reduce((sum: number, item: any) => sum + (item.monto || 0), 0);
       }
 
-      
       if (newCounts.horasExtras > 0) {
         try {
           const horasExtrasDatesParam = dateKeys.join(',');
@@ -381,11 +362,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               0
             );
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
-      
       if (newCounts.anticipos > 0) {
         try {
           const anticiposDatesParam = dateKeys.join(',');
@@ -398,13 +377,11 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
               0
             );
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
       setModalTotal(total);
 
-      
       switch (selectedDataType) {
         case 'asistencias':
           const datesParam = dateKeys.join(',');
@@ -435,7 +412,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
           setSelectedDateData([]);
       }
     } catch (error) {
-
       setSelectedDateData([]);
     } finally {
       setIsLoadingSelectedData(false);
@@ -468,7 +444,6 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       return `${first.getDate()} de ${months[first.getMonth()]} - ${second.getDate()} de ${months[second.getMonth()]} ${second.getFullYear()}`;
     }
 
-    
     const first = sortedDates[0];
     const last = sortedDates[sortedDates.length - 1];
     return `${first.getDate()} de ${months[first.getMonth()]} - ${last.getDate()} de ${months[last.getMonth()]} ${last.getFullYear()}`;
@@ -517,11 +492,13 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
             return (
               <div
                 key={index}
-                className={`min-h-[90px] p-2 border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors select-none ${isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  } ${isSelectedDay
+                className={`min-h-[90px] p-2 border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors select-none ${
+                  isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                } ${
+                  isSelectedDay
                     ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600'
                     : ''
-                  } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
+                } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
                 onMouseDown={e => {
                   e.preventDefault();
                   handleMouseDown(day.date);
@@ -530,12 +507,13 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                 onClick={() => handleDateClick(day.date)}
               >
                 <div
-                  className={`text-sm font-medium mb-2 ${!day.isCurrentMonth
+                  className={`text-sm font-medium mb-2 ${
+                    !day.isCurrentMonth
                       ? 'text-gray-400 dark:text-gray-600'
                       : isCurrentDay
                         ? 'text-blue-600 dark:text-blue-400 font-bold'
                         : 'text-gray-900 dark:text-white'
-                    }`}
+                  }`}
                 >
                   {day.date.getDate()}
                 </div>
@@ -719,7 +697,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
       {}
       <Dialog open={isModalOpen && selectedDates.length > 0} onOpenChange={setIsModalOpen}>
         <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-lg font-semibold'>{formatDatesList()}</DialogTitle>
           </DialogHeader>
 
@@ -730,16 +708,16 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                 {Object.entries(dataTypeConfig).map(([key, config]) => {
                   const Icon = config.icon;
 
-                  
                   const count = modalCounts[key] || 0;
 
                   return (
                     <Button
                       key={key}
-                      className={`flex-1 max-w-48 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3 ${selectedDataType === key
+                      className={`flex-1 max-w-48 rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto px-6 sm:px-8 py-3 ${
+                        selectedDataType === key
                           ? 'bg-black text-white hover:bg-gray-800'
                           : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
-                        }`}
+                      }`}
                       variant={selectedDataType === key ? 'default' : 'outline'}
                       onClick={() => setSelectedDataType(key as any)}
                     >
@@ -755,7 +733,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                 <div className='flex items-center justify-center gap-2'>
                   <span className='text-lg font-semibold text-gray-700'>Total a Cobrar:</span>
                   <span className='text-2xl font-bold text-blue-600'>
-                {formatCurrencyCLP(modalTotal)}
+                    {formatCurrencyCLP(modalTotal)}
                   </span>
                 </div>
                 <div className='text-sm text-gray-600 mt-1'>
@@ -794,8 +772,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                           <th className='text-center py-3 px-4 font-medium text-gray-900'>#</th>
                           {selectedDataType === 'asistencias' && (
                             <>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>HORA</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                HORA
+                              </th>
                               <th className='text-center py-3 px-4 font-medium text-gray-900'>
                                 SUELDO
                               </th>
@@ -812,8 +794,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                           )}
                           {selectedDataType === 'anticipos' && (
                             <>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                MONTO
+                              </th>
                               <th className='text-center py-3 px-4 font-medium text-gray-900'>
                                 ESTADO
                               </th>
@@ -821,8 +807,12 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                           )}
                           {selectedDataType === 'propinas' && (
                             <>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                MONTO
+                              </th>
                               <th className='text-center py-3 px-4 font-medium text-gray-900'>
                                 ESTADO
                               </th>
@@ -830,9 +820,15 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                           )}
                           {selectedDataType === 'horasExtras' && (
                             <>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>HORAS</th>
-                              <th className='text-center py-3 px-4 font-medium text-gray-900'>MONTO</th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                FECHA
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                HORAS
+                              </th>
+                              <th className='text-center py-3 px-4 font-medium text-gray-900'>
+                                MONTO
+                              </th>
                               <th className='text-center py-3 px-4 font-medium text-gray-900'>
                                 ESTADO
                               </th>
@@ -855,10 +851,14 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                                     <div className='font-medium text-gray-900'>
                                       {formatSimpleDate(item.fecha)}
                                     </div>
-                                    <div className='text-sm text-gray-500'>{item.hora || 'N/A'}</div>
+                                    <div className='text-sm text-gray-500'>
+                                      {item.hora || 'N/A'}
+                                    </div>
                                   </div>
                                 </td>
-                                <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 'N/A'}</td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {item.hora || 'N/A'}
+                                </td>
                                 <td className='py-3 px-4 text-gray-900 text-center'>
                                   {' '}
                                   {formatCurrencyNoDecimals(item.sueldo || 0)}
@@ -871,7 +871,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                                   {' '}
                                   {formatCurrencyNoDecimals(item.sueldo_final || 0)}
                                 </td>
-                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
                               </>
                             )}
                             {selectedDataType === 'anticipos' && (
@@ -886,7 +888,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                                 <td className='py-3 px-4 text-gray-900 text-center'>
                                   {formatCurrencyNoDecimals(item.monto || 0)}
                                 </td>
-                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
                               </>
                             )}
                             {selectedDataType === 'propinas' && (
@@ -901,7 +905,9 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                                 <td className='py-3 px-4 text-gray-900 text-center'>
                                   {formatCurrencyNoDecimals(item.monto || 0)}
                                 </td>
-                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
                               </>
                             )}
                             {selectedDataType === 'horasExtras' && (
@@ -913,11 +919,15 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
                                     </div>
                                   </div>
                                 </td>
-                                <td className='py-3 px-4 text-gray-900 text-center'>{item.hora || 0}</td>
+                                <td className='py-3 px-4 text-gray-900 text-center'>
+                                  {item.hora || 0}
+                                </td>
                                 <td className='py-3 px-4 text-gray-900 text-center'>
                                   {formatCurrencyNoDecimals(item.monto || 0)}
                                 </td>
-                                <td className='py-3 px-4 text-center'>{getStatusBadge(item.estado)}</td>
+                                <td className='py-3 px-4 text-center'>
+                                  {getStatusBadge(item.estado)}
+                                </td>
                               </>
                             )}
                           </tr>
@@ -930,7 +940,7 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
             </div>
           </div>
 
-          <div className="flex-shrink-0 border-t px-6 py-4">
+          <div className='flex-shrink-0 border-t px-6 py-4'>
             <div className='flex justify-center'>
               <Button
                 variant='outline'
@@ -946,4 +956,3 @@ export default function GarzonCalendar({ userId }: GarzonCalendarProps) {
     </div>
   );
 }
-

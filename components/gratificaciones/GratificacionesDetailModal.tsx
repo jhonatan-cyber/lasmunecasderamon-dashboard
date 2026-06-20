@@ -51,7 +51,8 @@ export default function GratificacionesDetailModal({
     }
   };
 
-  const fechaModLabel = gratificacion.estado === 0 ? 'Fecha de pago' : '\u00daltima modificaci\u00f3n';
+  const fechaModLabel =
+    gratificacion.estado === 0 ? 'Fecha de pago' : '\u00daltima modificaci\u00f3n';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

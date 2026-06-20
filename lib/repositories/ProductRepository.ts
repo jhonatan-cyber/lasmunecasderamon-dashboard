@@ -143,13 +143,10 @@ export class ProductRepository {
       [termWithWildcards, termWithWildcards, termWithWildcards, termWithWildcards]
     );
 
-    
-    
     if (results.length > 0 && searchTerm === normalizedTerm) {
       return results.map(row => this.mapProductFromDB(row));
     }
 
-    
     const allProducts = await this.getAll();
     return allProducts.filter(product => {
       const haystack = [
@@ -157,7 +154,7 @@ export class ProductRepository {
         product.name,
         product.code,
         product.description,
-        (product as any).categoria 
+        (product as any).categoria
       ]
         .map(value => this.normalizeSearchText(value))
         .join(' ');

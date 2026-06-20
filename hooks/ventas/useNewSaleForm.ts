@@ -11,14 +11,12 @@ export const useNewSaleForm = () => {
   const { createVenta } = useSales();
   const { startTimer } = useTimer();
 
-  
   const [selectedCliente, setSelectedCliente] = useState('none');
   const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
   const [productos, setProductos] = useState<any[]>([]);
   const [enableTip, setEnableTip] = useState(false);
 
-  
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searchProducto, setSearchProducto] = useState('');
@@ -36,7 +34,6 @@ export const useNewSaleForm = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setSelectedCliente(localStorage.getItem('selectedCliente') || 'none');
@@ -47,7 +44,6 @@ export const useNewSaleForm = () => {
     }
   }, []);
 
-  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedCliente', selectedCliente);
@@ -57,7 +53,6 @@ export const useNewSaleForm = () => {
     }
   }, [selectedCliente, selectedHabitacion, metodoPago, productos]);
 
-  
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined') {
@@ -277,15 +272,12 @@ export const useNewSaleForm = () => {
         if (selectedHabitacion) {
           const duration = requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60;
 
-          
           const roomPrice = selectedRoomInfo?.precio ?? selectedRoomInfo?.price ?? 0;
           const roomTime = selectedRoomInfo?.tiempo ?? selectedRoomInfo?.time ?? 0;
           const roomCommission = selectedRoomInfo?.comision_anfitriona ?? 0;
 
-          
           const shouldOccupyRoom = roomPrice > 0 && roomTime > 0 && roomCommission > 0;
 
-          
           if (duration > 0) {
             const anfNombres = todasAnf
               .map(
@@ -308,7 +300,6 @@ export const useNewSaleForm = () => {
             );
           }
 
-          
           if (shouldOccupyRoom) {
             await fetch(`/api/rooms/${selectedHabitacion}`, {
               method: 'PATCH',

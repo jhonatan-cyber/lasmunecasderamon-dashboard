@@ -46,12 +46,10 @@ export function HeaderNotifications() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
-  
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderCode, setSelectedOrderCode] = useState<string>('');
   const [modalOpen, setModalOpen] = useState(false);
 
-  
   const [pendingServiceRequests, setPendingServiceRequests] = useState<any[]>([]);
   const [selectedServiceRequest, setSelectedServiceRequest] = useState<any | null>(null);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
@@ -62,7 +60,6 @@ export function HeaderNotifications() {
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
 
-  
   const enableAudio = () => {
     if (audioRef.current) {
       audioRef.current
@@ -97,7 +94,6 @@ export function HeaderNotifications() {
     };
   }, [audioEnabled]);
 
-  
   const pendingOrders = orders.filter((o: any) => String(o.estado) === '1');
   const getOrderId = (order: any) => order?.id_pedido ?? order?.id ?? order?.pedidoId ?? null;
   const getOrderKey = (order: any, index: number) =>
@@ -131,7 +127,6 @@ export function HeaderNotifications() {
     setSelectedOrderCode('');
   };
 
-  
   useEffect(() => {
     const handleOpenOrderModal = (detail: { orderId: number | string; codigo?: string }) => {
       if (!hasPermission('orders', 'process')) {
@@ -158,7 +153,6 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [fetchOrderDetail, orders, hasOpenCaja, hasPermission]);
 
-  
   useEffect(() => {
     const handleOpenServiceRequestModal = (detail: { solicitud: any }) => {
       const solicitud = detail?.solicitud;
@@ -173,7 +167,6 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, []);
 
-  
   useEffect(() => {
     const handleUpdatePendingOrders = (detail?: { type?: string; orderId?: number | string }) => {
       if (detail) {
@@ -195,7 +188,6 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [refetch, setOrders]);
 
-  
   useEffect(() => {
     const handleCloseOrderModal = (detail: { orderId: number | string }) => {
       const processedOrderId = String(detail.orderId);
@@ -208,7 +200,6 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [modalOpen, selectedOrderId]);
 
-  
   const fetchPendingServiceRequests = useCallback(async () => {
     try {
       const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
@@ -245,7 +236,6 @@ export function HeaderNotifications() {
     appEventBus.emit('updateServiceRequests');
   };
 
-  
   if (isAnfitriona || isGarzon) return null;
 
   return (

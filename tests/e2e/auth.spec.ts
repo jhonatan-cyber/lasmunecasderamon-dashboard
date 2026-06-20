@@ -12,7 +12,6 @@ test.describe('Flujo de Autenticación', () => {
     await passwordInput.fill('password_incorrecto');
     await loginButton.click();
 
-    
     await expect(loginButton).toBeEnabled();
   });
 
@@ -34,23 +33,22 @@ test.describe('Flujo de Autenticación', () => {
   test('debería permitir alternar entre temas claro y oscuro', async ({ page }) => {
     await page.goto('/login');
 
-    const themeButton = page.locator('button:has(svg.lucide-sun), button:has(svg.lucide-moon), button:has(svg.lucide-monitor)');
+    const themeButton = page.locator(
+      'button:has(svg.lucide-sun), button:has(svg.lucide-moon), button:has(svg.lucide-monitor)'
+    );
     await themeButton.click();
 
-    
     const darkOption = page.locator('button', { hasText: /Dark/i });
     await expect(darkOption).toBeVisible();
     await darkOption.click();
-    
-    
+
     await expect(page.locator('html')).toHaveClass(/dark/);
 
     await themeButton.click();
     const lightOption = page.locator('button', { hasText: /Light/i });
     await expect(lightOption).toBeVisible();
     await lightOption.click();
-    
-    
+
     await expect(page.locator('html')).not.toHaveClass(/dark/);
   });
 });

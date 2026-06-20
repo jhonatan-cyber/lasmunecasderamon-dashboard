@@ -28,8 +28,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-
-
 describe('WithdrawalService.getByCajaId', () => {
   it('lanza ValidationError si cajaId está vacío', async () => {
     await expect(WithdrawalService.getByCajaId('')).rejects.toThrow(ValidationError);
@@ -53,8 +51,6 @@ describe('WithdrawalService.getByCajaId', () => {
   });
 });
 
-
-
 describe('WithdrawalService.addRetiro', () => {
   const validRetiro = {
     monto: 50000,
@@ -67,7 +63,7 @@ describe('WithdrawalService.addRetiro', () => {
     const retiroSinCaja = { ...validRetiro, caja_id: undefined };
 
     vi.mocked(withTransaction).mockImplementation(async (fn: any) => {
-      const trx = vi.fn().mockResolvedValue([]); 
+      const trx = vi.fn().mockResolvedValue([]);
       vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue(null);
       return fn(trx);
     });
@@ -102,7 +98,6 @@ describe('WithdrawalService.addRetiro', () => {
 
     await WithdrawalService.addRetiro(validRetiro as any);
 
-    
     expect(capturedTrx).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE cajas SET efectivo = efectivo - ?'),
       expect.arrayContaining([50000, 'caja-1'])

@@ -43,9 +43,7 @@ export const useLoginForm = () => {
         credentials: 'include',
         cache: 'no-store'
       });
-    } catch {
-      
-    }
+    } catch {}
 
     if (typeof window !== 'undefined') {
       window.location.assign(target);
@@ -93,7 +91,6 @@ export const useLoginForm = () => {
     setThemeMode(next);
   }, [theme, setThemeMode]);
 
-  
   useEffect(() => {
     if (step === 'login') {
       setCodigo('');

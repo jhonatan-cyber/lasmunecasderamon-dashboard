@@ -1,13 +1,6 @@
- 
 import { memo, useCallback, useRef } from 'react';
 import { Control, FieldPath, FieldValues } from 'react-hook-form';
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { LucideIcon } from 'lucide-react';
 
@@ -24,10 +17,10 @@ interface FormFieldWithIconProps<T extends FieldValues> {
   capitalize?: boolean;
 }
 
-
 function capitalizeWords(text: string): string {
-  return text.replace(/\b\w/g, (char) => char.toUpperCase())
-    .replace(/\B\w/g, (char) => char.toLowerCase());
+  return text
+    .replace(/\b\w/g, char => char.toUpperCase())
+    .replace(/\B\w/g, char => char.toLowerCase());
 }
 
 function FormFieldWithIconComponent<T extends FieldValues>({
@@ -45,20 +38,18 @@ function FormFieldWithIconComponent<T extends FieldValues>({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleCapitalizeChange = useCallback(
-    (fieldOnChange: (...event: any[]) => void) =>
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const input = e.target;
-        const cursorPos = input.selectionStart ?? input.value.length;
-        const capitalized = capitalizeWords(input.value);
-        fieldOnChange(capitalized);
+    (fieldOnChange: (...event: any[]) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.target;
+      const cursorPos = input.selectionStart ?? input.value.length;
+      const capitalized = capitalizeWords(input.value);
+      fieldOnChange(capitalized);
 
-        
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.setSelectionRange(cursorPos, cursorPos);
-          }
-        });
-      },
+      requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.setSelectionRange(cursorPos, cursorPos);
+        }
+      });
+    },
     []
   );
 
@@ -77,7 +68,7 @@ function FormFieldWithIconComponent<T extends FieldValues>({
               </span>
               <FormControl>
                 <Input
-                  ref={(el) => {
+                  ref={el => {
                     if (capitalize) {
                       (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
                     }
@@ -105,5 +96,6 @@ function FormFieldWithIconComponent<T extends FieldValues>({
   );
 }
 
-export const FormFieldWithIcon = memo(FormFieldWithIconComponent) as typeof FormFieldWithIconComponent;
-
+export const FormFieldWithIcon = memo(
+  FormFieldWithIconComponent
+) as typeof FormFieldWithIconComponent;

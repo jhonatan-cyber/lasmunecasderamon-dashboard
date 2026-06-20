@@ -6,13 +6,10 @@ import { ConflictError, ValidationError } from '@/lib/errors/errors';
 
 export class RoomRepository {
   private static mapRoomFromDB(row: any): RoomType {
-    
-    
     const tieneServiciosActivos = row.servicios_activos > 0;
     const tieneVentasActivas = row.ventas_activas > 0;
     const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
 
-    
     const precio = Number(row.precio || 0);
     const comision = Number(row.comision_anfitriona || 0);
     const esLibreIngreso = precio <= 0 || comision <= 0;
@@ -35,7 +32,6 @@ export class RoomRepository {
     let results: any[];
     if (status !== undefined) {
       if (status === '1') {
-        
         results = await query<any[]>(
           `SELECT h.*, 
             (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
@@ -65,7 +61,6 @@ export class RoomRepository {
         );
       }
     } else {
-      
       results = await query<any[]>(
         `SELECT h.*, 
           (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
@@ -86,7 +81,6 @@ export class RoomRepository {
   static async create(data: any): Promise<RoomType | null> {
     const validated = RoomSchema.parse(data);
 
-    
     const dup = await query<any[]>(
       'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?)',
       [validated.name]
@@ -112,7 +106,6 @@ export class RoomRepository {
   static async update(id: string, data: any): Promise<RoomType | null> {
     const validated = RoomSchema.partial().parse(data);
 
-    
     if (validated.name) {
       const dup = await query<any[]>(
         'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?) AND id_habitacion != ?',
@@ -152,7 +145,6 @@ export class RoomRepository {
   }
 
   static async delete(id: string): Promise<{ success: boolean; deactivated: boolean }> {
-    
     const refs = await query<any[]>(
       'SELECT COUNT(*) AS cnt FROM servicios WHERE habitacion_id = ?',
       [id]
@@ -160,7 +152,6 @@ export class RoomRepository {
     const count = refs[0]?.cnt ?? 0;
 
     if (count > 0) {
-      
       await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, {
         estado: 0,
         fecha_mod: getNowInBusinessTimezone()
