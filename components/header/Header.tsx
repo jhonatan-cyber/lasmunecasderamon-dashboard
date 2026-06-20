@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import ThemeSwitcher from '@/components/shared/ThemeSwitcher';
-import { HeaderUserMenu } from './header/HeaderUserMenu';
+import { HeaderUserMenu } from './HeaderUserMenu';
 import { AttendanceCodeModal } from '@/components/attendance/AttendanceCodeModal';
 
 const CodigoVerificacionHeader = dynamic(
@@ -20,7 +20,7 @@ const CodigoVerificacionHeader = dynamic(
 );
 
 const HeaderNotifications = dynamic(
-  () => import('./header/HeaderNotifications').then(mod => mod.HeaderNotifications),
+  () => import('./HeaderNotifications').then(mod => mod.HeaderNotifications),
   {
     loading: () => null
   }

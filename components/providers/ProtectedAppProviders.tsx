@@ -9,13 +9,13 @@ import { TimerProvider } from '@/contexts/TimerContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ServicioAnfitrionasProvider } from '@/contexts/ServicioAnfitrionasContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
-import { FetchInterceptorInit } from '@/components/FetchInterceptorInit';
+import { FetchInterceptorInit } from '@/components/providers/FetchInterceptorInit';
 import { SyncProvider } from '@/contexts/SyncContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 const AnulacionNotificationModal = dynamic(
-  () => import('@/components/AnulacionNotificationModal'),
+  () => import('@/components/notifications/AnulacionNotificationModal'),
   {
     loading: () => null
   }
