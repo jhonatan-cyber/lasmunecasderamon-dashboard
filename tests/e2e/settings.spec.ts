@@ -9,7 +9,7 @@ test.describe('Módulo de Configuración', () => {
     const loginButton = page.getByRole('button', { name: /Iniciar sesión/i });
 
     await userInput.fill('admin');
-    await passwordInput.fill('admin');
+    await passwordInput.fill('admin123');
     await loginButton.click();
 
     await page.waitForURL(/\/(dashboard|settings)/);

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Mail, Lock, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -97,6 +97,7 @@ export const LoginForm = ({
             <Mail className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none' />
             <Input
               ref={emailInputRef}
+              id='nick'
               type='text'
               placeholder='admin, pepe, lizi...'
               autoComplete='username'
@@ -124,6 +125,7 @@ export const LoginForm = ({
             <Lock className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none' />
             <Input
               ref={passwordInputRef}
+              id='password'
               type={showPassword ? 'text' : 'password'}
               placeholder='Contraseña'
               className='pl-12 pr-14 bg-white dark:bg-gray-800'
@@ -157,7 +159,7 @@ export const LoginForm = ({
 
         <Button
           ref={submitButtonRef}
-          type='button'
+          type='submit'
           variant='outline'
           disabled={loading}
           onPointerDown={e => {
