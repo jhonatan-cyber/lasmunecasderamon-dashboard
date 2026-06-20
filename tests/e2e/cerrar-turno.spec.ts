@@ -6,7 +6,7 @@ test.describe('Cerrar Turno E2E', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
     await page.fill('input[id="nick"]', 'admin');
-    await page.fill('input[id="password"]', 'admin123');
+    await page.fill('input[id="password"]', 'REMOVED_PASSWORD');
     await page.click('button[type="submit"]');
 
     await page.waitForURL(/\/dashboard|\/orders|\/sales/, { timeout: 10000 });
