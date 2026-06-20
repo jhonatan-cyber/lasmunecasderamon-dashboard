@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Toaster } from 'sonner';
-import LayoutContent from '@/components/LayoutContent';
+import LayoutContent from '@/components/layout/LayoutContent';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { siteConfig } from '@/lib/api/site';
 
 import './globals.css';
