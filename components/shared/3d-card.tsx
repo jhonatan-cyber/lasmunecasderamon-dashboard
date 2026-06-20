@@ -1,4 +1,3 @@
- 
 'use client';
 
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
@@ -90,19 +89,13 @@ export const CardBody = ({
         const rect = ref.current.getBoundingClientRect();
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        
-        
+
         const relativeX = (mouseX - centerX) / centerX;
         const relativeY = (mouseY - centerY) / centerY;
-        
-        
-        
-        
-        
-        
-        const rotateXValue = -relativeY * 15; 
+
+        const rotateXValue = -relativeY * 15;
         const rotateYValue = relativeX * 15;
-        
+
         ref.current.style.transform = `perspective(1000px) rotateX(${rotateXValue}deg) rotateY(${rotateYValue}deg)`;
       } else {
         ref.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
@@ -157,12 +150,10 @@ export const CardItem = ({
         if (containerRect) {
           const centerX = containerRect.width / 2;
           const centerY = containerRect.height / 2;
-          
-          
+
           const relativeX = (mouseX - centerX) / centerX;
           const relativeY = (mouseY - centerY) / centerY;
-          
-          
+
           const rotateXValue = -relativeY * 15;
           const rotateYValue = relativeX * 15;
 
@@ -174,8 +165,9 @@ export const CardItem = ({
     }
   }, [mouseX, mouseY, isHovered, translateX, translateY, translateZ, rotateX, rotateY, rotateZ]);
 
-  return <Tag ref={ref} className={`transition-all duration-200 ease-out ${className}`} {...rest}>
-    {children}
-  </Tag>;
+  return (
+    <Tag ref={ref} className={`transition-all duration-200 ease-out ${className}`} {...rest}>
+      {children}
+    </Tag>
+  );
 };
-

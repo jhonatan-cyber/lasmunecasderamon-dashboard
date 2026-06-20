@@ -186,7 +186,6 @@ export default function MiniSalesChart() {
         'DIC'
       ];
 
-      
       const fullYearData = monthNames.map((name, index) => ({
         label: name,
         ventas: 0,
@@ -195,7 +194,6 @@ export default function MiniSalesChart() {
         mes_num: index + 1
       }));
 
-      
       monthData.data.forEach(item => {
         const monthIndex = item.mes_num - 1;
         if (fullYearData[monthIndex]) {

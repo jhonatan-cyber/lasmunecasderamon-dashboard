@@ -76,7 +76,6 @@ export class SaleService {
         });
       }
 
-      
       let esLibreIngreso = false;
       if (validated.habitacion_id) {
         const roomRows = await trx<any[]>(
@@ -235,7 +234,6 @@ export class SaleService {
             fecha_crea: now
           });
 
-          
           if (hostessId && commPart > 0) {
             await CommissionRepository.createWithDetail(trx, {
               venta_id: ventaId,
@@ -246,7 +244,6 @@ export class SaleService {
         }
       }
 
-      
       if (cajaId && !skipCashRegisterPosting) {
         if (esMixto) {
           const deltas = calcularDeltasCaja(pagosMixtos);
@@ -274,7 +271,6 @@ export class SaleService {
         }
       }
 
-      
       await AuditRepository.log(
         {
           user_id: createdBy,
@@ -286,12 +282,10 @@ export class SaleService {
         trx
       );
 
-      
       if (pedidoId) {
         await trx('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
       }
 
-      
       if (validated.propina && validated.propina > 0) {
         try {
           const pedidoUsuarios = pedidoId
@@ -317,7 +311,6 @@ export class SaleService {
           );
         } catch (tipError: any) {
           logger.error('[SaleService] Error al registrar propina:', tipError?.message || tipError);
-          
         }
       }
 
@@ -331,7 +324,6 @@ export class SaleService {
       };
     });
 
-    
     sendNotificationToAll('timers_updated', { timestamp: now });
 
     return result;

@@ -58,7 +58,6 @@ export default function AccountFormData({
         )
       : habitaciones;
 
-  
   const habitacionSeleccionada = selectedHabitacion
     ? habitaciones.find(r => String(r.id ?? r.id_habitacion) === selectedHabitacion)
     : null;
@@ -66,7 +65,6 @@ export default function AccountFormData({
   const mostrarSelectorTiempo =
     habitacionSeleccionada && (habitacionSeleccionada.comision_anfitriona ?? 0) === 0;
 
-  
   useEffect(() => {
     if (habitacionSeleccionada && onTimeChange) {
       const tiempo = habitacionSeleccionada.time ?? habitacionSeleccionada.tiempo ?? 0;
@@ -137,5 +135,3 @@ export default function AccountFormData({
     </div>
   );
 }
-
-

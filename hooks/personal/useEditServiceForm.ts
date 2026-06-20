@@ -170,7 +170,6 @@ export function useEditServiceForm({
         });
       }
 
-      
       if (onPauseMainTimer) {
         onPauseMainTimer();
       }
@@ -181,7 +180,6 @@ export function useEditServiceForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id_servicio, servicio?.id, open]);
 
-  
   const prevOpenRef = useRef(open);
 
   useEffect(() => {
@@ -189,8 +187,6 @@ export function useEditServiceForm({
     const wasOpen = prevOpenRef.current;
     prevOpenRef.current = open;
 
-    
-    
     if (wasOpen === true && !open && onResumeMainTimer && servicioPrincipalId) {
       if (temporaryCreatedRef.current) {
         temporaryCreatedRef.current = false;
@@ -398,5 +394,3 @@ export function useEditServiceForm({
     numAnfitrionasOriginal: numAnfitrionas
   };
 }
-
-

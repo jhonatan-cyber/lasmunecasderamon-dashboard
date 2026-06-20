@@ -434,7 +434,7 @@ export default function OrderDetailModal({
         cliente_id: pedido.cliente_id || null,
         total_comision: total_comision,
         sub_total: sub_total,
-        total: sub_total + recargoAnfitrionas, 
+        total: sub_total + recargoAnfitrionas,
         habitacion_id: shouldShowRoomSelector && habitacionId ? parseInt(habitacionId) : null,
         detalles: detail.map((item: any) => ({
           producto_id: item.id_producto || 1,
@@ -446,7 +446,6 @@ export default function OrderDetailModal({
         usuarios: anfitrionasIds
       };
 
-      
       const response = await fetch('/api/cuentas', {
         method: 'POST',
         headers: {
@@ -466,7 +465,6 @@ export default function OrderDetailModal({
         toast.success('Cuenta registrada exitosamente');
 
         try {
-          
           await actualizarEstadoPedido(0);
           appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId: orderId });
           appEventBus.emit('refreshNotifications');
@@ -512,8 +510,6 @@ export default function OrderDetailModal({
 
     return result;
   };
-
-  
 
   const hasChampagne = detail.some((item: any) => {
     const cat = (item.categoria || '').toLowerCase();

@@ -16,7 +16,6 @@ export function useProductSearch(debounceMs: number = 300) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  
   useEffect(() => {
     const searchProducts = async () => {
       if (!internalSearchTerm.trim()) {
@@ -33,7 +32,7 @@ export function useProductSearch(debounceMs: number = 300) {
         }
         const data = await res.json();
         setSearchResults(data.success ? data.data : []);
-        setCurrentPage(1); 
+        setCurrentPage(1);
       } catch (error) {
         logger.captureException(error, { context: 'ProductSearch:searchProducts' });
         setSearchResults([]);
@@ -46,7 +45,6 @@ export function useProductSearch(debounceMs: number = 300) {
     return () => clearTimeout(timeoutId);
   }, [internalSearchTerm, debounceMs]);
 
-  
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedResults = searchResults.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(searchResults.length / itemsPerPage);
@@ -70,7 +68,6 @@ export function useProductSearch(debounceMs: number = 300) {
   };
 
   return {
-    
     internalSearchTerm,
     searchResults,
     searchLoading,
@@ -79,10 +76,8 @@ export function useProductSearch(debounceMs: number = 300) {
     totalPages,
     itemsPerPage,
 
-    
     setInternalSearchTerm: handleSearchChange,
 
-    
     handleSearchChange,
     handleClearSearch,
     goToPage

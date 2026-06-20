@@ -1,20 +1,17 @@
+export type CommissionStatus = 'por_pagar' | 'pagado' | 'anulado';
 
-
-export type CommissionStatus = "por_pagar" | "pagado" | "anulado";
-
-export type CommissionType = "producto" | "servicio" | "paquete" | "evento";
+export type CommissionType = 'producto' | 'servicio' | 'paquete' | 'evento';
 
 export interface Commission {
   id: string;
   employeeId: string;
-  employeeName: string; 
-  nick: string; 
-  venta: number; 
-  servicio: number; 
-  total: number; 
+  employeeName: string;
+  nick: string;
+  venta: number;
+  servicio: number;
+  total: number;
   status: CommissionStatus;
-  
-  
+
   saleAmount?: number;
   commissionRate?: number;
   commissionAmount?: number;
@@ -23,8 +20,7 @@ export interface Commission {
   date?: Date;
   description?: string;
   clientName?: string;
-  
-  
+
   empleado_foto?: string;
   image_version?: string;
 }
@@ -42,7 +38,6 @@ export interface CommissionStats {
   paidCommissions: number;
   avgCommissionRate: number;
 }
-
 
 export interface ApiResponse<T> {
   success: boolean;

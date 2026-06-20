@@ -1,8 +1,6 @@
-
 export const getSystemTimezone = (): string => {
   return 'America/Santiago';
 };
-
 
 export const getSQLTimezoneOffset = (): string => {
   if (process.env.DB_TZ) {
@@ -20,7 +18,7 @@ export const getSQLTimezoneOffset = (): string => {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false,
+      hour12: false
     });
 
     const parts = formatter.formatToParts(now);
@@ -52,7 +50,7 @@ export const getNowInBusinessTimezone = (inputDate?: Date | string | number): st
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false,
+    hour12: false
   });
 
   const parts = formatter.formatToParts(finalDate);
@@ -61,24 +59,23 @@ export const getNowInBusinessTimezone = (inputDate?: Date | string | number): st
   return `${getVal('year')}-${getVal('month')}-${getVal('day')} ${getVal('hour')}:${getVal('minute')}:${getVal('second')}`;
 };
 
-
 export const parseBusinessDate = (dateStr: string | Date | null | undefined): Date => {
   if (!dateStr) return new Date();
   if (dateStr instanceof Date) return dateStr;
-  
+
   const cleanStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
-  
-  if (cleanStr.includes('Z') || cleanStr.includes('+') || (cleanStr.includes('-') && cleanStr.length > 19)) {
+
+  if (
+    cleanStr.includes('Z') ||
+    cleanStr.includes('+') ||
+    (cleanStr.includes('-') && cleanStr.length > 19)
+  ) {
     return new Date(cleanStr);
   }
 
-  
-  
   try {
     const tz = getSystemTimezone();
-    
-    
-    
+
     const offset = getSQLTimezoneOffset();
     return new Date(`${cleanStr}${offset}`);
   } catch {

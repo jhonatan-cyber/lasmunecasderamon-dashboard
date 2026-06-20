@@ -113,9 +113,9 @@ export default function useRooms(): UseRooms {
           (old || []).map(room => {
             if (String(room.id) === String(id)) {
               let newStatus = room.status;
-              if (action === 'occupy') newStatus = 2; 
-              if (action === 'activate') newStatus = 1; 
-              if (action === 'deactivate') newStatus = 0; 
+              if (action === 'occupy') newStatus = 2;
+              if (action === 'activate') newStatus = 1;
+              if (action === 'deactivate') newStatus = 0;
               return { ...room, status: newStatus };
             }
             return room;

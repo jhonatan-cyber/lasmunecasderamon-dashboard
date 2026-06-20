@@ -122,8 +122,6 @@ async function runTests() {
     if (!userId) {
       console.log('âš ï¸ No hay usuarios en la DB para probar pay(). Saltando...');
     } else {
-      
-      
       await PayrollRepository.pay(userId);
       console.log(`✅ pay() ejecutado para usuario ${userId}`);
     }

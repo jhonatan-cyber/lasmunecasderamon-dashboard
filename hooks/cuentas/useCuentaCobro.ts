@@ -12,7 +12,6 @@ export function useCuentaCobro() {
   const [habitacionId, setHabitacionId] = useState<string | null>(null);
   const [showError, setShowError] = useState(false);
 
-  
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -29,10 +28,8 @@ export function useCuentaCobro() {
     fetchRooms();
   }, []);
 
-  
   const habitacionesActivas = rooms.filter(r => r.status === 1 || r.estado === 1);
 
-  
   const habitacionesFiltradas = searchRoom.trim()
     ? habitacionesActivas.filter(
         r =>
@@ -41,7 +38,6 @@ export function useCuentaCobro() {
       )
     : habitacionesActivas;
 
-  
   const isChampagneProduct = (producto: any) => {
     const normalized =
       typeof producto === 'string'
@@ -65,7 +61,6 @@ export function useCuentaCobro() {
     );
   };
 
-  
   const resetStates = () => {
     setSearchRoom('');
     setIsCobrando(false);
@@ -76,7 +71,6 @@ export function useCuentaCobro() {
     setShowError(false);
   };
 
-  
   const handleCobrarCuenta = async (
     cuenta: any,
     propinaMonto: number | null,
@@ -87,7 +81,6 @@ export function useCuentaCobro() {
     const montoFinal = Number(cuenta?.total ?? cuenta?.sub_total ?? 0);
     const propinaFinal = Number(propinaMonto ?? 0);
 
-    
     if (!cuenta || !cuentaId || !metodoPagoSeleccionado) {
       setShowError(true);
       toast.error('Método de pago requerido');
@@ -97,7 +90,6 @@ export function useCuentaCobro() {
     setIsCobrando(true);
 
     try {
-      
       const cobroRes = await fetch(`/api/cuentas/${cuentaId}/cobrar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,15 +114,12 @@ export function useCuentaCobro() {
             errorData?.error?.message ||
             errorData?.error?.details?.[0]?.message ||
             errorMessage;
-        } catch {
-          
-        }
+        } catch {}
         throw new Error(errorMessage);
       }
 
       await cobroRes.json();
 
-      
       const ventaRes = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +173,6 @@ export function useCuentaCobro() {
   };
 
   return {
-    
     rooms,
     searchRoom,
     isCobrando,
@@ -194,7 +182,6 @@ export function useCuentaCobro() {
     habitacionId,
     showError,
 
-    
     setSearchRoom,
     setMetodoPago,
     setPropina,
@@ -202,11 +189,9 @@ export function useCuentaCobro() {
     setHabitacionId,
     setShowError,
 
-    
     habitacionesActivas,
     habitacionesFiltradas,
 
-    
     handleCobrarCuenta,
     resetStates,
     isChampagneProduct

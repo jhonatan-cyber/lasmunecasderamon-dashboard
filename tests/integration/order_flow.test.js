@@ -6,7 +6,6 @@ function uuidv4() {
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-
 const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -22,27 +21,22 @@ async function runIntegrationTest() {
     connection = await mysql.createConnection(dbConfig);
     console.log('✅ Conexión a la base de datos establecida.');
 
-    
     const testOrderId = uuidv4();
     const testSaleId = uuidv4();
-    const testClientId = '06dc47fb-d18f-4c25-9035-c4a2a458da9d'; 
-    const testGarzonId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f'; 
+    const testClientId = '06dc47fb-d18f-4c25-9035-c4a2a458da9d';
+    const testGarzonId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f';
     const testAnfitrionaId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f';
 
     console.log(`ðŸ“ Generando pedido de prueba: ${testOrderId}`);
 
-    
     await connection.execute(
       'INSERT INTO pedidos (id_pedido, cliente_id, total, propina, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
-      [testOrderId, testClientId, 20000, 2000, 1] 
+      [testOrderId, testClientId, 20000, 2000, 1]
     );
     console.log('✅ Pedido insertado.');
 
-    
-    
     const [detailCols] = await connection.execute('DESCRIBE detalle_pedidos');
 
-    
     const [prods] = await connection.execute('SELECT id_producto FROM productos LIMIT 1');
     const testProductId = prods.length > 0 ? prods[0].id_producto : 'test-prod-1';
 
@@ -54,7 +48,6 @@ async function runIntegrationTest() {
     await connection.execute(insertDetailSql, insertDetailParams);
     console.log(`✅ Detalle de pedido insertado (ID: ${lastDetailId}).`);
 
-    
     const pedidoUsuarioId = uuidv4();
     await connection.execute(
       'INSERT INTO pedidos_usuarios (id_pedido_usuario, usuario_id, pedido_id) VALUES (?, ?, ?)',
@@ -62,7 +55,6 @@ async function runIntegrationTest() {
     );
     console.log('✅ Anfitriona asignada al pedido.');
 
-    
     console.log(`ðŸ’° Procesando venta para el pedido: ${testSaleId}`);
 
     await connection.execute(
@@ -70,17 +62,14 @@ async function runIntegrationTest() {
       [testSaleId, testOrderId, 20000, 2000, 'Efectivo']
     );
 
-    
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [testOrderId]);
     console.log('✅ Venta registrada y pedido finalizado.');
 
-    
-    
     console.log('âš–ï¸ Verificando distribuciÃ³n de comisiones...');
     const commissionId = uuidv4();
     await connection.execute(
       'INSERT INTO comisiones (id_comision, venta_id, monto, estado, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
-      [commissionId, testSaleId, 5000, 1] 
+      [commissionId, testSaleId, 5000, 1]
     );
 
     const detailCommissionId = uuidv4();
@@ -90,10 +79,8 @@ async function runIntegrationTest() {
     );
     console.log('✅ Comisiones registradas.');
 
-    
     console.log('ðŸŽ Verificando distribuciÃ³n de propinas...');
 
-    
     const loginId = uuidv4();
     await connection.execute(
       'INSERT INTO logins (id_login, usuario_id, last_login, estado, en_local) VALUES (?, ?, NOW(), 1, 1)',
@@ -113,7 +100,6 @@ async function runIntegrationTest() {
     );
     console.log('✅ Propinas distribuidas.');
 
-    
     console.log('\nðŸ” Realizando validaciones finales...');
 
     const [comms] = await connection.execute('SELECT * FROM comisiones WHERE venta_id = ?', [
@@ -150,9 +136,6 @@ async function runIntegrationTest() {
     process.exit(1);
   } finally {
     if (connection) {
-      
-      
-      
       await connection.end();
     }
   }

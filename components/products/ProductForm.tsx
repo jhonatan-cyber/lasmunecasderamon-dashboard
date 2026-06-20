@@ -3,7 +3,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/types/product';
-import { Barcode, Image, DollarSign, FileText, Package, Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
+import {
+  Barcode,
+  Image,
+  DollarSign,
+  FileText,
+  Package,
+  Upload,
+  Link as LinkIcon,
+  Loader2
+} from 'lucide-react';
 import { useProductForm } from '@/hooks/personal';
 import {
   Dialog,
@@ -104,7 +113,14 @@ interface ProductFormProps {
   hideButtons?: boolean;
 }
 
-export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoading, hideButtons = false }: ProductFormProps) {
+export function ProductForm({
+  open,
+  onSubmit,
+  initialValues,
+  categoryId,
+  isLoading,
+  hideButtons = false
+}: ProductFormProps) {
   const {
     form,
     errors,
@@ -138,7 +154,10 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
       {}
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
         <div className='space-y-2'>
-          <label htmlFor='prod-code' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+          <label
+            htmlFor='prod-code'
+            className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+          >
             Código
           </label>
           <div className='relative group'>
@@ -153,11 +172,16 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
               className='h-12 pl-12 rounded-2xl bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 cursor-not-allowed font-mono text-sm'
             />
           </div>
-          {errors.code && <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.code}</p>}
+          {errors.code && (
+            <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.code}</p>
+          )}
         </div>
 
         <div className='space-y-2'>
-          <label htmlFor='prod-name' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+          <label
+            htmlFor='prod-name'
+            className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+          >
             Nombre del Producto
           </label>
           <div className='relative group'>
@@ -174,14 +198,19 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
               className='h-12 pl-12'
             />
           </div>
-          {errors.name && <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.name}</p>}
+          {errors.name && (
+            <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.name}</p>
+          )}
         </div>
       </div>
 
       {}
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
         <div className='space-y-2'>
-          <label htmlFor='prod-price' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+          <label
+            htmlFor='prod-price'
+            className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+          >
             Precio de Venta
           </label>
           <div className='relative group'>
@@ -200,11 +229,16 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
               className='h-12 pl-12'
             />
           </div>
-          {errors.price && <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.price}</p>}
+          {errors.price && (
+            <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.price}</p>
+          )}
         </div>
 
         <div className='space-y-2'>
-          <label htmlFor='prod-commission' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+          <label
+            htmlFor='prod-commission'
+            className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+          >
             Comisión (Opcional)
           </label>
           <div className='relative group'>
@@ -223,13 +257,18 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
               className='h-12 pl-12'
             />
           </div>
-          {errors.commission && <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.commission}</p>}
+          {errors.commission && (
+            <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.commission}</p>
+          )}
         </div>
       </div>
 
       {}
       <div className='space-y-2'>
-        <label htmlFor='prod-desc' className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+        <label
+          htmlFor='prod-desc'
+          className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+        >
           Descripción
         </label>
         <div className='relative group'>
@@ -274,7 +313,9 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
                 ) : (
                   <div className='w-full h-full flex flex-col items-center justify-center gap-2 text-gray-400'>
                     <Image className='w-10 h-10 stroke-1' />
-                    <span className='text-[9px] font-semibold uppercase tracking-wide'>Sin imagen</span>
+                    <span className='text-[9px] font-semibold uppercase tracking-wide'>
+                      Sin imagen
+                    </span>
                   </div>
                 )}
               </div>
@@ -288,7 +329,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
                   <input
                     type='file'
                     accept='image/*'
-                    onChange={(e) => {
+                    onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
                         const fakeEvent = {
@@ -309,9 +350,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
                     Elegir archivo
                   </div>
                 </label>
-                <p className='text-[10px] text-gray-400'>
-                  JPG, PNG • Máx 5MB
-                </p>
+                <p className='text-[10px] text-gray-400'>JPG, PNG • Máx 5MB</p>
               </div>
             </div>
           </div>
@@ -328,7 +367,7 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
               <Input
                 placeholder='https://ejemplo.com/imagen.jpg'
                 value={form.fotoUrl}
-                onChange={(e) => handleUrlChange(e.target.value)}
+                onChange={e => handleUrlChange(e.target.value)}
                 disabled={isLoading}
                 className='h-11 pl-10 rounded-xl bg-white dark:bg-slate-800'
               />
@@ -338,10 +377,10 @@ export function ProductForm({ open, onSubmit, initialValues, categoryId, isLoadi
             </p>
           </div>
         </div>
-        {errors.foto && <p className='text-red-500 text-xs font-medium text-center'>{errors.foto}</p>}
+        {errors.foto && (
+          <p className='text-red-500 text-xs font-medium text-center'>{errors.foto}</p>
+        )}
       </div>
-
     </form>
   );
 }
-

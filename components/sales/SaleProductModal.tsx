@@ -45,12 +45,12 @@ interface SaleProductModalProps {
   handleCantidadChange: (id: string, value: string) => void;
   handleAgregarProducto: (producto: any) => void;
   categoria: any;
-  anfitrionas: any[]; 
-  champagneHostessSelections: { [key: string]: string[] }; 
-  onChampagneHostessChange: (productId: string, hostessIds: string[]) => void; 
-  otherProductHostessSelections: { [key: string]: string[] }; 
-  onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void; 
-  productosEnCarrito: any[]; 
+  anfitrionas: any[];
+  champagneHostessSelections: { [key: string]: string[] };
+  onChampagneHostessChange: (productId: string, hostessIds: string[]) => void;
+  otherProductHostessSelections: { [key: string]: string[] };
+  onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void;
+  productosEnCarrito: any[];
 }
 
 export default function SaleProductModal({
@@ -73,19 +73,16 @@ export default function SaleProductModal({
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
   const itemsPerPage = 5;
 
-  
   useEffect(() => {
     setCurrentPage(1);
   }, [open, productos]);
 
-  
   const availableHostesses = getActiveHostesses(anfitrionas || []);
 
   const getAvailableHostessesForChampagne = (_currentProductId: string) => availableHostesses;
 
   const getAvailableHostessesForOtherProducts = (_currentProductId: string) => availableHostesses;
 
-  
   const totalPages = Math.ceil((productos?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -386,7 +383,3 @@ export default function SaleProductModal({
     </Dialog>
   );
 }
-
-
-
-

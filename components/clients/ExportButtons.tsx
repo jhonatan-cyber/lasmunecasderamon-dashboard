@@ -20,7 +20,6 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
     setIsExporting(true);
 
     try {
-      
       const ExcelJS = (await import('exceljs')).default;
 
       const data = clients.map((client, index) => ({
@@ -90,7 +89,6 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
     setIsExporting(true);
 
     try {
-      
       const { jsPDF } = await import('jspdf');
       const autoTable = (await import('jspdf-autotable')).default;
 
@@ -107,13 +105,11 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         client.status === 1 ? 'Activo' : 'Inactivo'
       ]);
 
-      
       doc.setFontSize(18);
       doc.text(title, 14, 22);
       doc.setFontSize(11);
       doc.setTextColor(100);
 
-      
       autoTable(doc, {
         head: headers,
         body: data,
@@ -136,7 +132,6 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         margin: { top: 30 }
       });
 
-      
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);

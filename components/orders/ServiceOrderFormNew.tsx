@@ -48,7 +48,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const { rooms: habitaciones, refetchRooms } = useAvailableRooms();
   const { allClients: clientesDB = [], fetchClients } = useClients();
 
-  
   const habitacionesDisponibles = habitaciones?.filter(h => h.estado === 1 || h.status === 1) || [];
 
   const [selectedClienteId, setSelectedClienteId] = useState('');
@@ -64,7 +63,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     comision_anfitriona: 0,
     habitacion_id: undefined as string | undefined,
     anfitrionas_ids: [] as string[],
-    clientes_ids: [] as string[], 
+    clientes_ids: [] as string[],
     metodo_pago: 'efectivo',
     tiempo: 0
   });
@@ -74,42 +73,37 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     precio_habitacion: ''
   });
 
-  
   const habitacionSeleccionada = Boolean(tempForm.habitacion_id);
   const tieneComision = tempForm.comision_anfitriona > 0;
 
-  
   const maxAnfitrionasPermitidas = 3;
   const maxClientesPermitidos = 3;
   const maxTotalPersonas = 4;
 
-  
   const maxAnfitrionasSegunClientes =
     tempForm.comision_anfitriona > 0
-      ? 3 
-      : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1); 
+      ? 3
+      : Math.max(0, maxTotalPersonas - tempForm.clientes_ids.length - 1);
 
   const maxClientesSegunAnfitrionas =
     tempForm.comision_anfitriona > 0
-      ? 1 
+      ? 1
       : Math.max(0, maxTotalPersonas - tempForm.anfitrionas_ids.length);
 
-  
   const maxAnfitrionasCon1Cliente =
     tempForm.comision_anfitriona > 0 && tempForm.clientes_ids.length === 1
-      ? 3 
-      : Math.max(0, maxTotalPersonas - 1); 
+      ? 3
+      : Math.max(0, maxTotalPersonas - 1);
 
   const maxClientesCon2Anfitrionas =
     tempForm.comision_anfitriona > 0 && tempForm.anfitrionas_ids.length === 2
-      ? 2 
-      : Math.max(0, maxTotalPersonas - 2); 
+      ? 2
+      : Math.max(0, maxTotalPersonas - 2);
 
-  
   const maxAnfitrionasFinal =
     tempForm.comision_anfitriona > 0
       ? tempForm.clientes_ids.length === 0
-        ? 3 
+        ? 3
         : tempForm.clientes_ids.length === 1
           ? maxAnfitrionasCon1Cliente
           : tempForm.clientes_ids.length === 2
@@ -124,7 +118,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     await Promise.all([fetchClients(), getAnfitrionasDisponibles(), refetchRooms()]);
   }, [fetchClients, getAnfitrionasDisponibles, refetchRooms]);
 
-  
   useEffect(() => {
     const fetchAnfitrionasOcupadas = async () => {
       try {
@@ -153,7 +146,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
   useRefreshOnFocus(refreshLookupData);
 
-  
   const anfitrionasDisponibles =
     anfitrionasDisponiblesBase?.filter(a => {
       const id = String(a.id_usuario || a.id || '');
@@ -211,8 +203,8 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cliente_id: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids[0] : null, 
-          clientes_ids: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids : [], 
+          cliente_id: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids[0] : null,
+          clientes_ids: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids : [],
           habitacion_id: tempForm.habitacion_id,
           precio_servicio: tempForm.precio_servicio,
           precio_habitacion: tempForm.precio_habitacion,
@@ -256,38 +248,28 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     }
   };
 
-  
   const totalCalculado = useMemo(() => {
     const numAnfitrionas = tempForm.anfitrionas_ids.length;
     const numClientes = tempForm.clientes_ids.length;
     const tieneComision = tempForm.comision_anfitriona > 0;
 
-    
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
 
-    
     if (tieneComision) {
-      
-      
       const precioHabitacionTotal = tempForm.precio_habitacion * multiplicador;
       const precioServicioTotal = tempForm.precio_servicio * multiplicador;
 
-      
       return precioServicioTotal + precioHabitacionTotal;
     }
 
-    
     if (numAnfitrionas === 0) {
       return tempForm.precio_habitacion * multiplicador;
     }
 
-    
     const precioHabitacionTotal = tempForm.precio_habitacion * numAnfitrionas * multiplicador;
 
-    
     const precioServicioTotal = tempForm.precio_servicio * numAnfitrionas * multiplicador;
 
-    
     const ivaTotal = calculateIVA(
       tempForm.precio_servicio * multiplicador,
       tempForm.metodo_pago,
@@ -311,7 +293,6 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
     const tieneComision = tempForm.comision_anfitriona > 0;
 
-    
     if (tieneComision) {
       return 0;
     }

@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server';
 import { AppError, formatErrorResponse } from '../errors/errors';
 
-
 export class ApiResponse {
-  
   static success<T>(data: T, message?: string, statusCode: number = 200) {
     return NextResponse.json(
       {
         success: true,
         data,
-        message,
+        message
       },
       { status: statusCode }
     );
   }
 
-  
   static created<T>(data: T, message: string = 'Recurso creado correctamente') {
     return this.success(data, message, 201);
   }
 
-  
   static error(error: unknown) {
     const formatted = formatErrorResponse(error);
     const statusCode = error instanceof AppError ? error.statusCode : 500;
@@ -28,7 +24,6 @@ export class ApiResponse {
     return NextResponse.json(formatted, { status: statusCode });
   }
 
-  
   static validationError(message: string, details?: any) {
     return NextResponse.json(
       {
@@ -37,14 +32,13 @@ export class ApiResponse {
         error: {
           code: 'VALIDATION_ERROR',
           message,
-          details,
-        },
+          details
+        }
       },
       { status: 400 }
     );
   }
 
-  
   static notFound(message: string = 'Recurso no encontrado') {
     return NextResponse.json(
       {
@@ -52,14 +46,13 @@ export class ApiResponse {
         message,
         error: {
           code: 'NOT_FOUND',
-          message,
-        },
+          message
+        }
       },
       { status: 404 }
     );
   }
 
-  
   static unauthorized(message: string = 'No autorizado') {
     return NextResponse.json(
       {
@@ -67,14 +60,13 @@ export class ApiResponse {
         message,
         error: {
           code: 'UNAUTHORIZED',
-          message,
-        },
+          message
+        }
       },
       { status: 401 }
     );
   }
 
-  
   static forbidden(message: string = 'Permisos insuficientes') {
     return NextResponse.json(
       {
@@ -82,8 +74,8 @@ export class ApiResponse {
         message,
         error: {
           code: 'FORBIDDEN',
-          message,
-        },
+          message
+        }
       },
       { status: 403 }
     );

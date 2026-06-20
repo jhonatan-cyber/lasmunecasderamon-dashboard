@@ -36,7 +36,6 @@ describe('PermissionsCache.get / set', () => {
     vi.useFakeTimers();
     PermissionsCache.set('user-1', mockPerms);
 
-    
     vi.advanceTimersByTime(60 * 1000 + 1);
 
     expect(PermissionsCache.get('user-1')).toBeNull();
@@ -46,7 +45,7 @@ describe('PermissionsCache.get / set', () => {
     vi.useFakeTimers();
     PermissionsCache.set('user-1', mockPerms);
 
-    vi.advanceTimersByTime(30 * 1000); 
+    vi.advanceTimersByTime(30 * 1000);
 
     expect(PermissionsCache.get('user-1')).toEqual(mockPerms);
   });
@@ -72,8 +71,8 @@ describe('PermissionsCache.purgeExpired', () => {
     vi.useFakeTimers();
 
     PermissionsCache.set('user-1', mockPerms);
-    vi.advanceTimersByTime(60 * 1000 + 1); 
-    PermissionsCache.set('user-2', mockPerms); 
+    vi.advanceTimersByTime(60 * 1000 + 1);
+    PermissionsCache.set('user-2', mockPerms);
 
     PermissionsCache.purgeExpired();
 

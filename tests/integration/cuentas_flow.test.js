@@ -14,7 +14,6 @@ async function runIntegrationTest() {
   });
 
   try {
-    
     const [users] = await connection.execute(
       'SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 2'
     );
@@ -79,7 +78,6 @@ async function runIntegrationTest() {
       ]
     );
 
-    
     await connection.execute('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
       roomId
     ]);
@@ -120,10 +118,9 @@ async function runIntegrationTest() {
 
     console.log(`\n[4] Simulando Cobro de Cuenta`);
     const metodoPago = 'efectivo';
-    const totalCobrado = product.precio + 2000; 
+    const totalCobrado = product.precio + 2000;
     const propina = 2000;
 
-    
     await connection.execute(
       `
             UPDATE cuentas 
@@ -133,12 +130,10 @@ async function runIntegrationTest() {
       [metodoPago, userId, new Date(), cuentaId]
     );
 
-    
     await connection.execute('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
       roomId
     ]);
 
-    
     await connection.execute(
       `
             UPDATE cajas 
@@ -166,7 +161,6 @@ async function runIntegrationTest() {
     await connection.execute('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [cuentaId]);
     await connection.execute('DELETE FROM cuentas WHERE id_cuenta = ?', [cuentaId]);
 
-    
     await connection.execute(
       `
             UPDATE cajas 

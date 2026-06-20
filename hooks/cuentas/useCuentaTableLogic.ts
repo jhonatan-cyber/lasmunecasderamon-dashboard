@@ -13,7 +13,6 @@ export function useCuentaTableLogic() {
   const [cobrarCuentaOpen, setCobrarCuentaOpen] = useState(false);
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState<any>(null);
 
-  
   const getEstadoInfo = (estado: number | string): EstadoBadge => {
     const estadoStr = String(estado).toLowerCase();
     switch (estadoStr) {
@@ -32,39 +31,33 @@ export function useCuentaTableLogic() {
     }
   };
 
-  
   const handleVerDetalles = (cuenta: any) => {
     setCuentaSeleccionada(cuenta);
     setSelectedCuentaId(cuenta.id_cuenta || cuenta.id);
     setDetailModalOpen(true);
   };
 
-  
   const handleAgregarProductos = (cuenta: any) => {
     setCuentaSeleccionada(cuenta);
     setAgregarProductosOpen(true);
   };
 
-  
   const handleCobrarCuenta = (cuenta: any) => {
     setCuentaSeleccionada(cuenta);
     setCobrarCuentaOpen(true);
   };
 
-  
   const handleProductosAgregados = () => {
     setAgregarProductosOpen(false);
     toast.success('Productos agregados correctamente');
   };
 
-  
   const handleCuentaCobrada = () => {
     setCobrarCuentaOpen(false);
     setDetailModalOpen(false);
     toast.success('Cuenta cobrada correctamente');
   };
 
-  
   const handleCloseDetail = () => {
     setDetailModalOpen(false);
     setCuentaSeleccionada(null);
@@ -72,7 +65,6 @@ export function useCuentaTableLogic() {
   };
 
   return {
-    
     selectedCuentaId,
     setSelectedCuentaId,
     detailModalOpen,
@@ -84,7 +76,6 @@ export function useCuentaTableLogic() {
     cuentaSeleccionada,
     setCuentaSeleccionada,
 
-    
     handleVerDetalles,
     handleAgregarProductos,
     handleCobrarCuenta,
@@ -92,7 +83,6 @@ export function useCuentaTableLogic() {
     handleCuentaCobrada,
     handleCloseDetail,
 
-    
     getEstadoInfo,
     getEstadoBadge: getEstadoInfo
   };

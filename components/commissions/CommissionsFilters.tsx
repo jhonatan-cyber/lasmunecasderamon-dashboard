@@ -133,5 +133,3 @@ export function CommissionsFilters({
     </Card>
   );
 }
-
-

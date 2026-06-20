@@ -12,7 +12,6 @@ let cachedTableChecks: { hasGratificaciones: boolean; hasHorasExtras: boolean } 
 
 export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBalances> {
   try {
-    
     if (!cachedTableChecks) {
       const tableChecks = await query<any[]>(
         `SELECT table_name 
@@ -26,7 +25,6 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
       };
     }
 
-    
     const mainSql = `
       SELECT 
         U.id_usuario,

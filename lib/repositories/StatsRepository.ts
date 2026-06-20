@@ -775,7 +775,6 @@ export class StatsRepository {
     const minutesElapsed = Number(now.slice(14, 16) || 0);
     const elapsedMinutesToday = Math.max(1, hoursElapsed * 60 + minutesElapsed);
 
-    
     const cajaRows = await query<any[]>(
       `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
               tarjeta, transferencia, comision, anticipo, devolucion, iva,
@@ -787,7 +786,6 @@ export class StatsRepository {
     const cajaRow = cajaRows[0] || null;
     const cajaId = cajaRow?.id_caja;
 
-    
     const [
       cajaStatsRows,
       comparisonsRows,
@@ -799,7 +797,6 @@ export class StatsRepository {
       pendingOrdersResult,
       withdrawalsRows
     ] = await Promise.all([
-      
       cajaId
         ? query<any[]>(
             `SELECT 
@@ -829,7 +826,6 @@ export class StatsRepository {
             }
           ]),
 
-      
       query<any[]>(
         `SELECT
           COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
@@ -865,7 +861,6 @@ export class StatsRepository {
         ]
       ),
 
-      
       query<any[]>(
         `SELECT * FROM (
           SELECT 'product' AS ranking_type, p.nombre AS item_name, SUM(dv.cantidad) AS primary_value, SUM(dv.sub_total) AS secondary_value
@@ -902,22 +897,16 @@ export class StatsRepository {
         [now, now, now, now, now, now, now, now, now, now]
       ),
 
-      
       this.getLoggedUsers(),
 
-      
       TimerRepository.getActive(),
 
-      
       RoomRepository.getAll(),
 
-      
       ServiceRequestRepository.getPendingCount(),
 
-      
       query<any[]>(`SELECT COUNT(*) as total FROM pedidos WHERE estado = 1`),
 
-      
       cajaId
         ? query<any[]>(
             `SELECT COALESCE(SUM(monto), 0) AS total FROM retiros_caja WHERE caja_id = ?`,
@@ -926,7 +915,6 @@ export class StatsRepository {
         : Promise.resolve([{ total: 0 }])
     ]);
 
-    
     const cajaStats = cajaStatsRows[0] || {};
     const occupiedRooms = rooms.filter(room => Number(room.status) === 2).length;
     const freeRooms = rooms.filter(room => Number(room.status) === 1).length;
@@ -997,10 +985,8 @@ export class StatsRepository {
 
     insights.localStatus.orders.open = pendingOrders;
 
-    
     const recentActivity = await this.getRecentActivity(8);
 
-    
     const cajaStatsResult = buildCajaStatsResult({
       cajaId,
       cajaRow,

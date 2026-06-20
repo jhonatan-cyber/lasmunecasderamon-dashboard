@@ -7,7 +7,6 @@ import logger from '@/lib/utils/logger';
 
 const SSE_NOTIFICATION_URL = '/api/notifications/sse';
 
-
 export function useSharedSSE(
   url: string | null,
   onMessage: (payload: any) => void
@@ -15,7 +14,6 @@ export function useSharedSSE(
   const onMessageRef = useRef(onMessage);
   const isMountedRef = useRef(true);
 
-  
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
@@ -30,22 +28,18 @@ export function useSharedSSE(
   useEffect(() => {
     if (!url || typeof window === 'undefined') return;
 
-    
     if (url === SSE_NOTIFICATION_URL) {
-      
       sseManager.connect(url);
 
-      
       const unsub = appEventBus.on('sse-message', payload => {
         if (isMountedRef.current) {
           onMessageRef.current(payload);
         }
       });
 
-      return unsub; 
+      return unsub;
     }
 
-    
     const es = new EventSource(url);
     es.onmessage = event => {
       if (!isMountedRef.current) return;

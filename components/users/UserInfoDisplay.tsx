@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { AtSign, Phone, MapPin, User, Calendar, DollarSign, PiggyBank, Home } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
-
 const formatRUTDisplay = (run: string): string => {
   if (!run) return '-';
   const clean = run.replace(/[^0-9kK]/gi, '').toUpperCase();

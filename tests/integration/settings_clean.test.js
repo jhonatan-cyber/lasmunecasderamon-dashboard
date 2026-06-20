@@ -5,10 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config();
 
-
-
 const BACKUP_DIR = path.join(__dirname, 'backups');
-
 
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -22,11 +19,9 @@ async function backupTable(connection, tableName) {
 async function restoreTable(connection, tableName, data) {
   if (!data || data.length === 0) return;
 
-  
   const [columns] = await connection.execute(`DESCRIBE \`${tableName}\``);
   const columnNames = columns.map(c => c.Field);
 
-  
   const placeholders = columnNames.map(() => '?').join(', ');
   const columnStr = columnNames.join(', ');
 
@@ -37,9 +32,7 @@ async function restoreTable(connection, tableName, data) {
         `INSERT INTO \`${tableName}\` (${columnStr}) VALUES (${placeholders})`,
         values
       );
-    } catch (e) {
-      
-    }
+    } catch (e) {}
   }
 }
 
@@ -58,7 +51,6 @@ async function runIntegrationTest() {
   const backupData = {};
 
   try {
-    
     console.log('[1] Verificando estado inicial y creando backup...\n');
 
     const PROTECTED_TABLES = [
@@ -70,7 +62,6 @@ async function runIntegrationTest() {
       'configuraciones'
     ];
 
-    
     const [tables] = await connection.execute(`
             SELECT TABLE_NAME 
             FROM information_schema.TABLES 
@@ -78,7 +69,6 @@ async function runIntegrationTest() {
             AND TABLE_TYPE = 'BASE TABLE'
         `);
 
-    
     const tablesToBackup = [];
     for (const table of tables) {
       const tableName = table.TABLE_NAME;
@@ -89,11 +79,9 @@ async function runIntegrationTest() {
       }
     }
 
-    
     fs.writeFileSync(backupFile, JSON.stringify(backupData, null, 2));
     console.log(`\n   ✅ Backup guardado en: ${backupFile}`);
 
-    
     let totalBackupRecords = 0;
     for (const [table, data] of Object.entries(backupData)) {
       console.log(`   - ${table}: ${data.length} registros`);
@@ -101,10 +89,8 @@ async function runIntegrationTest() {
     }
     console.log(`\n   Total: ${totalBackupRecords} registros respaldados`);
 
-    
     console.log('\n[2] Ejecutando limpieza de base de datos...\n');
 
-    
     await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
 
     const deletedTables = [];
@@ -122,13 +108,11 @@ async function runIntegrationTest() {
       deletedTables.push(tableName);
     }
 
-    
     await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
 
     console.log(`   ✅ ${deletedTables.length} tablas vaciadas`);
     console.log(`   ✅ ${skippedTables.length} tablas protegidas (omitidas)`);
 
-    
     console.log('\n[3] Verificando tablas protegidas...\n');
 
     const [usersBefore] = await connection.execute('SELECT COUNT(*) as count FROM usuarios');
@@ -167,7 +151,6 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Todas las tablas protegidas mantienen sus datos');
 
-    
     console.log('\n[4] Verificando tablas vaciadas...\n');
 
     const [ventasAfter] = await connection.execute('SELECT COUNT(*) as count FROM ventas');
@@ -191,7 +174,6 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Tablas correctamente vaciadas');
 
-    
     console.log('\n[5] Restaurando datos desde backup...\n');
 
     await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
@@ -205,7 +187,6 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Datos restaurados correctamente');
 
-    
     console.log('\n[6] Verificando restauración...\n');
 
     const [ventasRestored] = await connection.execute('SELECT COUNT(*) as count FROM ventas');
@@ -220,7 +201,6 @@ async function runIntegrationTest() {
     console.log(`   - Clientes: ${clientesRestored[0].count}`);
     console.log(`   - Productos: ${productosRestored[0].count}`);
 
-    
     const originalCounts = {
       ventas: backupData.ventas?.length || 0,
       categorias: backupData.categorias?.length || 0,
@@ -239,7 +219,6 @@ async function runIntegrationTest() {
 
     console.log('   ✅ Restauración verificada');
 
-    
     fs.unlinkSync(backupFile);
     console.log(`\n   ðŸ—‘ï¸  Archivo de backup eliminado`);
 

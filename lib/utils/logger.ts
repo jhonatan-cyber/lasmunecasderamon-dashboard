@@ -43,7 +43,6 @@ const makeLogEntry = (
   meta: formatPayload(meta)
 });
 
-
 const originalConsole = {
   log: console.log,
   warn: console.warn,
@@ -141,15 +140,12 @@ const getLogger = () => {
       );
     }
 
-    
-    
     if (process.env.NODE_ENV === 'production') {
       overrideConsole(winstonLogger);
     }
 
     loggerInstance = winstonLogger;
   } else {
-    
     loggerInstance = {
       info: (msg: string, meta?: unknown) => {
         originalConsole.info(
@@ -186,7 +182,6 @@ export const logger = {
   error: (msg: string, meta?: unknown) => getLogger().error(msg, meta),
   debug: (msg: string, meta?: unknown) => getLogger().debug(msg, meta),
 
-  
   captureException: (error: unknown, meta?: Record<string, unknown>) => {
     getLogger().error(error instanceof Error ? error.message : String(error), {
       ...meta,

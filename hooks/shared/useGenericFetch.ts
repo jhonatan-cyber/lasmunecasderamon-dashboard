@@ -13,9 +13,9 @@ export function useGenericFetch<T>(
     initialFetch?: boolean;
     transform?: (data: any) => T[];
     schema?: z.ZodSchema<any>;
-    
+
     queryKey?: readonly unknown[];
-    
+
     staleTime?: number;
   }
 ) {
@@ -39,7 +39,6 @@ export function useGenericFetch<T>(
       const result = await response.json();
       let rawData = options?.transform ? options.transform(result) : result;
 
-      
       if (options?.schema && Array.isArray(rawData)) {
         try {
           z.array(options.schema).parse(rawData);

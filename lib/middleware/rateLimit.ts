@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import { logger } from '@/lib/utils/logger';
 
-
-
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 const cleanupExpiredEntries = () => {
@@ -14,7 +12,6 @@ const cleanupExpiredEntries = () => {
     }
   }
 };
-
 
 export function createRateLimiter(windowMs: number, max: number) {
   return function (handler: NextApiHandler) {
@@ -72,11 +69,9 @@ export function createRateLimiter(windowMs: number, max: number) {
   };
 }
 
-
 export const loginLimiter = createRateLimiter(60 * 1000, 5);
 export const generalLimiter = createRateLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiter = createRateLimiter(5 * 60 * 1000, 20);
-
 
 export function withRateLimit(
   limiter: (handler: NextApiHandler) => (req: NextApiRequest, res: NextApiResponse) => Promise<void>
@@ -85,8 +80,6 @@ export function withRateLimit(
     return limiter(handler);
   };
 }
-
-
 
 const rateLimitStoreApp = new Map<string, { count: number; resetTime: number }>();
 
@@ -150,7 +143,6 @@ export function createAppRouterLimiter(windowMs: number, max: number) {
 
       const response = await handler(request);
 
-      
       const currentState = rateLimitStoreApp.get(key);
       if (currentState) {
         const remaining = Math.max(0, max - currentState.count);
@@ -164,13 +156,9 @@ export function createAppRouterLimiter(windowMs: number, max: number) {
   };
 }
 
-
 export const loginLimiterApp = createAppRouterLimiter(60 * 1000, 5);
 export const generalLimiterApp = createAppRouterLimiter(15 * 60 * 1000, 100);
 export const sensitiveApiLimiterApp = createAppRouterLimiter(5 * 60 * 1000, 20);
-
-
-
 
 export const rateLimitMiddleware = {
   loginLimiter,
@@ -178,7 +166,7 @@ export const rateLimitMiddleware = {
   sensitiveApiLimiter,
   withRateLimit,
   createRateLimiter,
-  
+
   createAppRouterLimiter,
   loginLimiterApp,
   generalLimiterApp,

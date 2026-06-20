@@ -14,7 +14,6 @@ interface TimerActionsProps {
 export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerActionsProps) {
   const updateRoomStatus = async (roomId: string, status: number) => {
     try {
-      
       await fetch(`/api/rooms/${roomId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -22,7 +21,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       });
     } catch (e) {
       logger.captureException(e, { context: 'useTimerActions:updateRoomStatus' });
-      
     }
   };
 
@@ -196,8 +194,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         duration * 60
       );
 
-      
-      
       const roomMainTimers = current.filter(
         t => String(t.roomId.peek()) === normalizedRoomId && !t.isTemporary
       );
@@ -211,8 +207,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         updateServiceStatus(String(main.servicioId), 3);
       }
 
-      
-      
       updateServiceStatus(normalizedServicioId, 3);
 
       activeTimers.value = [...current, temporaryTimer];

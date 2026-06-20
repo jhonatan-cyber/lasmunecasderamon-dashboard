@@ -11,7 +11,7 @@ class SSEManager {
     if (typeof window === 'undefined') return;
 
     if (this.url === url && this.isConnected && this.eventSource) {
-      return; 
+      return;
     }
 
     this.url = url;
@@ -30,7 +30,6 @@ class SSEManager {
       try {
         const payload = JSON.parse(event.data);
 
-        
         appEventBus.emit('sse-message', payload);
       } catch (err) {
         logger.captureException(err, { context: 'SSEManager:parseMessage' });

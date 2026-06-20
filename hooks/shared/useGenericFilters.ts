@@ -35,36 +35,30 @@ export function useGenericFilters<T>(
       result = result.filter((item: any) => item.status === filterStatus);
     }
 
-    
     if (sortBy) {
       result = [...result].sort((a: any, b: any) => {
         const aValue = a[sortBy];
         const bValue = b[sortBy];
 
-        
         if (aValue == null && bValue == null) return 0;
         if (aValue == null) return sortOrder === 'asc' ? 1 : -1;
         if (bValue == null) return sortOrder === 'asc' ? -1 : 1;
 
-        
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue);
           return sortOrder === 'asc' ? comparison : -comparison;
         }
 
-        
         if (typeof aValue === 'number' && typeof bValue === 'number') {
           return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
         }
 
-        
         if (aValue instanceof Date && bValue instanceof Date) {
           return sortOrder === 'asc'
             ? aValue.getTime() - bValue.getTime()
             : bValue.getTime() - aValue.getTime();
         }
 
-        
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const aDate = new Date(aValue);
           const bDate = new Date(bValue);
@@ -75,7 +69,6 @@ export function useGenericFilters<T>(
           }
         }
 
-        
         const aStr = String(aValue);
         const bStr = String(bValue);
         const comparison = aStr.localeCompare(bStr);

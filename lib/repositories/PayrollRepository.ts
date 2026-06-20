@@ -29,19 +29,16 @@ export class PayrollRepository {
   static async pay(userId: string, entregadoPor?: string) {
     const now = getNowInBusinessTimezone();
     await withTransaction(async trx => {
-      
       await trx(
         'UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      
       await trx(
         'UPDATE detalle_comisiones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      
       await trx(
         `UPDATE comisiones c
          SET c.estado = 2, c.fecha_mod = ?
@@ -53,13 +50,11 @@ export class PayrollRepository {
         [now]
       );
 
-      
       await trx(
         'UPDATE detalle_propinas SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      
       await trx(
         `UPDATE propinas p
          SET p.estado = 0, p.fecha_mod = ?
@@ -71,7 +66,6 @@ export class PayrollRepository {
         [now]
       );
 
-      
       if (entregadoPor) {
         await trx(
           'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1',
@@ -84,13 +78,11 @@ export class PayrollRepository {
         );
       }
 
-      
       await trx(
         'UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      
       await trx(
         'UPDATE gratificaciones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]

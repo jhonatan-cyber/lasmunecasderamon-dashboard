@@ -18,7 +18,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  
   useEffect(() => {
     const savedCollapsed = localStorage.getItem('sidebar-collapsed');
     if (savedCollapsed !== null) {
@@ -26,16 +25,13 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        
         setIsSidebarOpen(false);
       }
     };

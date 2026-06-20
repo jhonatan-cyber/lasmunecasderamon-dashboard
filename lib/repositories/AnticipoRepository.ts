@@ -140,7 +140,7 @@ export class AnticipoRepository {
         usuario_id,
         monto,
         motivo,
-        
+
         estado: 1,
         fecha_crea: now,
         fecha_aprobacion: now,
@@ -148,7 +148,6 @@ export class AnticipoRepository {
         fecha_entrega: now
       });
 
-      
       await BaseRepository.insert(trx, 'anticipo_historial', {
         anticipo_id: id,
         accion: 'solicitud',
@@ -291,7 +290,9 @@ export class AnticipoRepository {
     if (user.telefono) {
       const userMsg = `*Solicitud de Anticipo Recibida* ⏳\n\nHola ${user.nombre}, hemos recibido tu solicitud de anticipo por *${formatCurrencyCLP(monto)}*. Te notificaremos una vez que el administrador la revise.\n\n*Motivo:* ${motivo}\n*Fecha:* ${now}`;
       enviarWhatsApp(user.telefono, userMsg).catch(err =>
-        logger.error('[AnticipoRepository] Error enviando WhatsApp de confirmación al empleado:', { err })
+        logger.error('[AnticipoRepository] Error enviando WhatsApp de confirmación al empleado:', {
+          err
+        })
       );
     }
 
@@ -315,7 +316,9 @@ export class AnticipoRepository {
       'administrador',
       'Nueva solicitud de anticipo',
       `${user.nombre} ${user.apellido} (${user.nick}) solicitó ${formatCurrencyCLP(monto)}.`
-    ).catch(err => logger.error('[AnticipoRepository] Error enviando push al administrador:', { err }));
+    ).catch(err =>
+      logger.error('[AnticipoRepository] Error enviando push al administrador:', { err })
+    );
 
     sendPushNotification(
       usuario_id,
@@ -381,7 +384,6 @@ export class AnticipoRepository {
         fecha_crea: now
       });
 
-      
       const gratCheck = await trx<any[]>('SELECT estado FROM gratificaciones WHERE id = ?', [id]);
       if (gratCheck.length > 0 && Number(gratCheck[0].estado) === 2) {
         await BaseRepository.update(trx, 'gratificaciones', 'id', id, {

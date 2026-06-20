@@ -1,8 +1,5 @@
-
-
 import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom';
-
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -37,7 +34,6 @@ vi.mock('next/font/google', () => ({
   })
 }));
 
-
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(() => ({
     data: null,
@@ -55,7 +51,6 @@ vi.mock('@tanstack/react-query', () => ({
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
-
 vi.mock('next/headers', () => ({
   cookies: () => ({
     get: vi.fn(),
@@ -65,7 +60,6 @@ vi.mock('next/headers', () => ({
     has: vi.fn()
   })
 }));
-
 
 global.window =
   global.window ||
@@ -88,7 +82,6 @@ global.window =
     dispatchEvent: vi.fn()
   } as any);
 
-
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -103,7 +96,6 @@ Object.defineProperty(window, 'matchMedia', {
   }))
 });
 
-
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
@@ -111,13 +103,11 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   takeRecords: vi.fn()
 }));
 
-
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn()
 }));
-
 
 if (typeof window !== 'undefined') {
   (window as any).Notification = {
@@ -126,12 +116,10 @@ if (typeof window !== 'undefined') {
   };
 }
 
-
 Object.defineProperty(navigator, 'onLine', {
   writable: true,
   value: true
 });
-
 
 afterEach(() => {
   vi.clearAllMocks();

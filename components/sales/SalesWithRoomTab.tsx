@@ -23,12 +23,10 @@ export default function SalesWithRoomTab({
   const { getTimerByServicioId, timers } = useTimer();
   const [, forceUpdate] = useState({});
 
-  
   useEffect(() => {
     forceUpdate({});
   }, [timers]);
 
-  
   useEffect(() => {
     const handleUpdateSales = () => {
       if (onRefresh) onRefresh();
@@ -37,19 +35,14 @@ export default function SalesWithRoomTab({
     return () => unsubscribe();
   }, [onRefresh]);
 
-  
-  
   const ventasConHabitacion = ventas.filter(v => {
-    
     const roomId = String(v.habitacion_id);
     if (!roomId || roomId === '0' || roomId === 'null' || roomId === 'undefined') {
       return false;
     }
 
-    
     const timer = getTimerByServicioId(String(v.id));
 
-    
     const isInProcess = Number(v.estado) === 2;
     const hasTimer = !!timer;
 

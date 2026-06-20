@@ -42,8 +42,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-
-
 describe('UserService.createUser', () => {
   const validBody = {
     run: '12345678-9',
@@ -92,8 +90,6 @@ describe('UserService.createUser', () => {
     ).rejects.toThrow();
   });
 });
-
-
 
 describe('UserService.updateUser', () => {
   const existingUser = {
@@ -149,7 +145,7 @@ describe('UserService.updateUser', () => {
       run: '12345678-9',
       name: 'Test',
       lastName: 'User',
-      rol_id: 'rol-2' 
+      rol_id: 'rol-2'
     });
 
     expect(PermissionsCache.invalidate).toHaveBeenCalledWith('user-1');
@@ -164,15 +160,12 @@ describe('UserService.updateUser', () => {
       name: 'New Name',
       lastName: 'User',
       run: '12345678-9',
-      rol_id: 'rol-1' 
+      rol_id: 'rol-1'
     });
 
-    
     expect(PermissionsCache.invalidate).toHaveBeenCalledWith('user-1');
   });
 });
-
-
 
 describe('UserService.toggleUserStatus', () => {
   it('lanza ValidationError para acción inválida', async () => {

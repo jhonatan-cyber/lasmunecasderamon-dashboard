@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Key, Shield, Layers, Hash } from "lucide-react";
-import { Permission } from "./PermissionTable";
+import { Card, CardContent } from '@/components/ui/card';
+import { Key, Shield, Layers, Hash } from 'lucide-react';
+import { Permission } from './PermissionTable';
 
 interface PermissionStatsCardsProps {
   permissions: Permission[];
@@ -12,7 +12,7 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
   const stats = {
     total: permissions?.length || 0,
     modulosActivos: (permissions || []).filter(p => p.module).length,
-    modulosUnicos: new Set((permissions || []).map(p => p.module)).size,
+    modulosUnicos: new Set((permissions || []).map(p => p.module)).size
   };
 
   const actionsCount = (permissions || []).reduce((acc, p) => {
@@ -24,7 +24,10 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
     <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
       {}
       <Card
-        style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+        style={{
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.2)'
+        }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
@@ -37,17 +40,20 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
             </span>
           </div>
           <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-blue-700/60 uppercase tracking-widest'>Permisos</p>
-            <h3 className='text-xl font-black text-blue-900 dark:text-blue-100'>
-              {stats.total}
-            </h3>
+            <p className='text-[10px] font-bold text-blue-700/60 uppercase tracking-widest'>
+              Permisos
+            </p>
+            <h3 className='text-xl font-black text-blue-900 dark:text-blue-100'>{stats.total}</h3>
           </div>
         </CardContent>
       </Card>
 
       {}
       <Card
-        style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+        style={{
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          border: '1px solid rgba(16, 185, 129, 0.2)'
+        }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
@@ -60,7 +66,9 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
             </span>
           </div>
           <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-emerald-700/60 uppercase tracking-widest'>Módulos</p>
+            <p className='text-[10px] font-bold text-emerald-700/60 uppercase tracking-widest'>
+              Módulos
+            </p>
             <h3 className='text-xl font-black text-emerald-900 dark:text-emerald-100'>
               {stats.modulosActivos}
             </h3>
@@ -70,7 +78,10 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
 
       {}
       <Card
-        style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
+        style={{
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          border: '1px solid rgba(245, 158, 11, 0.2)'
+        }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
@@ -83,7 +94,9 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
             </span>
           </div>
           <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-amber-700/60 uppercase tracking-widest'>Módulos</p>
+            <p className='text-[10px] font-bold text-amber-700/60 uppercase tracking-widest'>
+              Módulos
+            </p>
             <h3 className='text-xl font-black text-amber-900 dark:text-amber-100'>
               {stats.modulosUnicos}
             </h3>
@@ -93,7 +106,10 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
 
       {}
       <Card
-        style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)' }}
+        style={{
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          border: '1px solid rgba(139, 92, 246, 0.2)'
+        }}
         className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
@@ -106,7 +122,9 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
             </span>
           </div>
           <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-violet-700/60 uppercase tracking-widest'>Acciones</p>
+            <p className='text-[10px] font-bold text-violet-700/60 uppercase tracking-widest'>
+              Acciones
+            </p>
             <h3 className='text-xl font-black text-violet-900 dark:text-violet-100'>
               {actionsCount}
             </h3>

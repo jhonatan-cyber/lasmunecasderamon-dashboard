@@ -3,7 +3,6 @@ const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
-
 const queryMock = async (sql, params = []) => {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,

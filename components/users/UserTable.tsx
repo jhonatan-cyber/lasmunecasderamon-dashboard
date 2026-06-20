@@ -49,7 +49,6 @@ export function UserTable({
 }: UserTableProps) {
   const { hasPermission } = useUserPermissions();
 
-  
   const permissions = useMemo(
     () => ({
       canViewDetails: hasPermission('users', 'view_details'),
@@ -71,7 +70,6 @@ export function UserTable({
     );
   }
 
-  
   const MobileCardView = () => (
     <div className='lg:hidden space-y-3'>
       {users.length === 0 ? (
@@ -122,7 +120,6 @@ export function UserTable({
     </div>
   );
 
-  
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>

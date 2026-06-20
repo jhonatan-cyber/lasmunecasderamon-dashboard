@@ -20,10 +20,10 @@ export function usePermissions() {
     data: permissions,
     isLoading,
     error: fetchError,
-    refetch: fetchPermissions,
+    refetch: fetchPermissions
   } = useGenericFetch<Permission>('/api/permissions', {
     initialFetch: true,
-    transform: (data) => (data.success ? data.data : []),
+    transform: data => (data.success ? data.data : [])
   });
 
   const error = fetchError || mutationError;
@@ -115,7 +115,6 @@ export function usePermissions() {
     }
   }, []);
 
-  
   const permissionsByModule = permissions.reduce(
     (acc, permission) => {
       if (!acc[permission.module]) {
