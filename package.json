@@ -27,15 +27,12 @@
     "audit:web:quality": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=markdown",
     "audit:web:quality:json": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json",
     "audit:web:quality:ci": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json \"--fail-rules=Accessibility:high,SEO:high,Best Practices:high\"",
-    "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.ts",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
     "test:integration": "node tests/integration/order_flow.test.js",
     "test:integration:settings": "node tests/integration/settings_clean.test.js",
-    "test:ci": "vitest run && playwright test",
+    "test:ci": "vitest run",
     "test:integration:legacy-db": "node scripts/run-legacy-db-tests.js"
   },
   "dependencies": {
@@ -136,7 +133,6 @@
     ]
   },
   "devDependencies": {
-    "@playwright/test": "^1.35.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
