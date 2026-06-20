@@ -12,7 +12,7 @@ test.describe('Flujo de Autenticación', () => {
     await passwordInput.fill('password_incorrecto');
     await loginButton.click();
 
-    // Esperar a que el botón vuelva a estar habilitado (terminó la carga)
+    
     await expect(loginButton).toBeEnabled();
   });
 
@@ -37,12 +37,12 @@ test.describe('Flujo de Autenticación', () => {
     const themeButton = page.locator('button:has(svg.lucide-sun), button:has(svg.lucide-moon), button:has(svg.lucide-monitor)');
     await themeButton.click();
 
-    // El popover debería mostrarse. Buscamos opciones de tema.
+    
     const darkOption = page.locator('button', { hasText: /Dark/i });
     await expect(darkOption).toBeVisible();
     await darkOption.click();
     
-    // Verificar que el HTML tiene la clase 'dark'
+    
     await expect(page.locator('html')).toHaveClass(/dark/);
 
     await themeButton.click();
@@ -50,7 +50,7 @@ test.describe('Flujo de Autenticación', () => {
     await expect(lightOption).toBeVisible();
     await lightOption.click();
     
-    // Verificar que el HTML NO tiene la clase 'dark'
+    
     await expect(page.locator('html')).not.toHaveClass(/dark/);
   });
 });

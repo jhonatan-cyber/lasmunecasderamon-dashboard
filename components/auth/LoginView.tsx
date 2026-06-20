@@ -39,7 +39,7 @@ export const LoginView = () => {
   return (
     <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black transition-colors duration-300'>
       <div className='flex w-full max-w-6xl mx-auto items-center justify-center gap-8'>
-        {/* Lado izquierdo: Logo y presentación */}
+        {}
         <div className='hidden md:flex flex-1 flex-col items-center justify-center'>
           <Image
             src='/img/system/logo2.png'
@@ -69,10 +69,10 @@ export const LoginView = () => {
           </div>
         </div>
 
-        {/* Lado derecho: Formulario de login */}
+        {}
         <div className='flex-1 flex items-center justify-center w-full'>
           <div className='w-full flex flex-col items-center'>
-            {/* Logo solo en móvil */}
+            {}
             <div className='md:hidden mb-6 flex justify-center w-full'>
               <Image
                 src='/img/system/logo2.png'

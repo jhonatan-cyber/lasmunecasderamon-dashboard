@@ -74,8 +74,8 @@ export class UserService {
 
     const result = await UserRepository.update(id.toString(), updateData, fotoFilename);
 
-    // Si cambió el rol, invalidar el caché de permisos para que el próximo
-    // request cargue los permisos actualizados desde la BD
+    
+    
     if (validated.rol_id !== undefined) {
       PermissionsCache.invalidate(id.toString());
     }
@@ -90,7 +90,7 @@ export class UserService {
         allowed: ['activate', 'deactivate']
       });
     }
-    // Al desactivar un usuario, limpiar su caché de permisos
+    
     if (action === 'deactivate') {
       PermissionsCache.invalidate(id);
     }

@@ -434,7 +434,7 @@ export default function OrderDetailModal({
         cliente_id: pedido.cliente_id || null,
         total_comision: total_comision,
         sub_total: sub_total,
-        total: sub_total + recargoAnfitrionas, // Sin propina para cuentas
+        total: sub_total + recargoAnfitrionas, 
         habitacion_id: shouldShowRoomSelector && habitacionId ? parseInt(habitacionId) : null,
         detalles: detail.map((item: any) => ({
           producto_id: item.id_producto || 1,
@@ -446,7 +446,7 @@ export default function OrderDetailModal({
         usuarios: anfitrionasIds
       };
 
-      // Crear la cuenta
+      
       const response = await fetch('/api/cuentas', {
         method: 'POST',
         headers: {
@@ -466,7 +466,7 @@ export default function OrderDetailModal({
         toast.success('Cuenta registrada exitosamente');
 
         try {
-          // Marcar el pedido como procesado porque se convirtió en una cuenta
+          
           await actualizarEstadoPedido(0);
           appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId: orderId });
           appEventBus.emit('refreshNotifications');
@@ -513,7 +513,7 @@ export default function OrderDetailModal({
     return result;
   };
 
-  // Filtrar habitaciones activas, pero incluir la habitaciÃ³n pre-seleccionada aunque estÃ© ocupada
+  
 
   const hasChampagne = detail.some((item: any) => {
     const cat = (item.categoria || '').toLowerCase();
@@ -563,10 +563,10 @@ export default function OrderDetailModal({
           </div>
         ) : detail && detail.length > 0 ? (
           <>
-            {/* Contenido con scroll */}
+            {}
             <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
               <div className='space-y-6'>
-                {/* Info general */}
+                {}
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                   <OrderDetailInfoPanel
                     createdAt={`${formatLongDateEs(detail[0]?.fecha_crea)} ${formatShortTimeEs(detail[0]?.fecha_crea)}`}
@@ -578,7 +578,7 @@ export default function OrderDetailModal({
                     cantidadAnfitrionas={cantidadAnfitrionas}
                     maxAnfitrionas={maxAnfitrionas}
                   />
-                  {/* Columna derecha - Formulario de pago */}
+                  {}
                   <OrderDetailPaymentPanel
                     metodoPago={metodoPago}
                     setMetodoPago={setMetodoPago}
@@ -598,7 +598,7 @@ export default function OrderDetailModal({
                   />
                 </div>
 
-                {/* Tabla de productos */}
+                {}
                 <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-2xl border-none shadow-md overflow-hidden'>
                   <Table>
                     <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -655,7 +655,7 @@ export default function OrderDetailModal({
                 </div>
               </div>
             </div>
-            {/* Footer con botones - fijo en la parte inferior */}
+            {}
             <div className='flex-shrink-0 border-t border-border/60 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-6'>
               <div className='flex flex-col sm:flex-row justify-center gap-2 sm:gap-4'>
                 <Button
@@ -705,7 +705,7 @@ export default function OrderDetailModal({
         )}
       </DialogContent>
 
-      {/* Modal de confirmaciÃ³n de registro de venta */}
+      {}
       <Dialog open={confirmVentaModalOpen} onOpenChange={setConfirmVentaModalOpen}>
         <DialogContent className='sm:max-w-md border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
           <DialogHeader>

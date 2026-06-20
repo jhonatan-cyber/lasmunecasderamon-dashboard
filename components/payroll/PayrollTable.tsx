@@ -56,7 +56,7 @@ export default function PayrollTable({
     );
   }, [userPermissions, user?.role]);
 
-  // Logging adicional para depuración
+  
 
   const handlePay = async (row: PayrollRow) => {
     const confirmed = await showConfirm({

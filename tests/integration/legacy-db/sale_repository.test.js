@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
-// Mock de funciones necesarias de db y BaseRepository
+
 const queryMock = async (sql, params = []) => {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -60,7 +60,7 @@ const BaseRepository = {
 
 const getNowInBusinessTimezone = () => new Date();
 
-// Mock simplificado del SaleRepository para pruebas unitarias
+
 class SaleRepository {
   static async getAll(params) {
     if (params.tipo === 'resumen') {
@@ -214,7 +214,7 @@ async function runTests() {
 
     console.log('\n[3] Probando ciclo de vida (create/getById/updateStatus/delete)...');
 
-    // Obtener un usuario y cliente para la prueba
+    
     const [users] = await connection.execute(
       'SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1'
     );
@@ -250,7 +250,7 @@ async function runTests() {
       throw new Error('No se pudo recuperar la venta creada o el código no coincide');
     }
 
-    await SaleRepository.updateStatus(testVentaId, 0); // Anular
+    await SaleRepository.updateStatus(testVentaId, 0); 
     const ventaAnulada = await SaleRepository.getById(testVentaId);
     if (ventaAnulada && ventaAnulada.estado === 0) {
       console.log('✅ updateStatus() OK');

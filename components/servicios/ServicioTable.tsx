@@ -67,7 +67,7 @@ export default function ServicioTable({
 
   const handleVerDetalles = (servicioId: string | number) => {
     setSelectedServicioId(servicioId);
-    // Aquí puedes abrir un modal de detalles
+    
     logger.info('Ver detalles del servicio:', servicioId);
   };
 

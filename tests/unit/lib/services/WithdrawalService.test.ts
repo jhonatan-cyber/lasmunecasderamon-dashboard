@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// ─── getByCajaId ─────────────────────────────────────────────────────────────
+
 
 describe('WithdrawalService.getByCajaId', () => {
   it('lanza ValidationError si cajaId está vacío', async () => {
@@ -53,7 +53,7 @@ describe('WithdrawalService.getByCajaId', () => {
   });
 });
 
-// ─── addRetiro ───────────────────────────────────────────────────────────────
+
 
 describe('WithdrawalService.addRetiro', () => {
   const validRetiro = {
@@ -67,7 +67,7 @@ describe('WithdrawalService.addRetiro', () => {
     const retiroSinCaja = { ...validRetiro, caja_id: undefined };
 
     vi.mocked(withTransaction).mockImplementation(async (fn: any) => {
-      const trx = vi.fn().mockResolvedValue([]); // devuelve [] para que rows[0]?.id_caja sea undefined
+      const trx = vi.fn().mockResolvedValue([]); 
       vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue(null);
       return fn(trx);
     });
@@ -102,7 +102,7 @@ describe('WithdrawalService.addRetiro', () => {
 
     await WithdrawalService.addRetiro(validRetiro as any);
 
-    // Ahora usa UPDATE directo en cajas en vez de CashRegisterRepository.updateBalances
+    
     expect(capturedTrx).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE cajas SET efectivo = efectivo - ?'),
       expect.arrayContaining([50000, 'caja-1'])

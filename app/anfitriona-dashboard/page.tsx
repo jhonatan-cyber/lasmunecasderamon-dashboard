@@ -179,7 +179,7 @@ export default function AnfitrionaDashboard() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='space-y-4'>
         <div className='text-left'>
           <h1 className='text-2xl font-bold text-gray-900'>
@@ -188,7 +188,7 @@ export default function AnfitrionaDashboard() {
           <p className='text-gray-600'>Panel de control para anfitrionas</p>
         </div>
 
-        {/* Total a Cobrar centrado debajo del nombre */}
+        {}
         <div className='text-center'>
           <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
           <div className='text-2xl font-bold text-gray-900'>
@@ -201,7 +201,7 @@ export default function AnfitrionaDashboard() {
         </div>
       </div>
 
-      {/* QR de Asistencia - Biométrica */}
+      {}
       {user?.qr_token && (
         <div className='max-w-sm mx-auto space-y-4'>
           <div className='flex items-center gap-2 px-2'>
@@ -257,7 +257,7 @@ export default function AnfitrionaDashboard() {
         </div>
       )}
 
-      {/* Dashboard Cards */}
+      {}
       <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
         {dashboardItems.map(item => (
           <Link key={item.title} href={item.href}>

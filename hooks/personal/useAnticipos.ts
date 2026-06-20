@@ -17,8 +17,8 @@ export interface Anticipo {
   nick: string;
   name: string;
   lastName: string;
-  nombre?: string; // Fallback
-  apellido?: string; // Fallback
+  nombre?: string; 
+  apellido?: string; 
   foto?: string;
   estado_texto?: string;
   entregado_por?: number | string;
@@ -33,13 +33,13 @@ export default function useAnticipos() {
     return !['garzon', 'anfitriona', 'cajero'].includes(role || '');
   }, [user?.role]);
   
-  // --- Filtros ---
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
-  // --- Paginación ---
+  
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -54,11 +54,11 @@ export default function useAnticipos() {
     }
   )
 
-  // --- Lógica de Filtrado y Búsqueda ---
+  
   const filteredData = useMemo(() => {
     let result = [...(allAnticipos || [])];
     
-    // 1. Búsqueda por texto (Nombre usuario, Nick o monto)
+    
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
       result = result.filter(item => 
@@ -71,21 +71,21 @@ export default function useAnticipos() {
       );
     }
     
-    // 2. Filtro por estado
+    
     if (statusFilter !== 'all') {
-      const targetState = statusFilter === 'por_cobrar' ? 1 : 2; // 1: Por cobrar, 2+: Pagado
+      const targetState = statusFilter === 'por_cobrar' ? 1 : 2; 
       result = result.filter(item => {
         if (statusFilter === 'por_cobrar') return Number(item.estado) === 1;
         return Number(item.estado) !== 1;
       });
     }
 
-    // 3. Ordenamiento
+    
     result.sort((a, b) => {
       let valA: any = a[sortBy as keyof Anticipo];
       let valB: any = b[sortBy as keyof Anticipo];
       
-      // Manejo de fechas
+      
       if (sortBy.includes('fecha')) {
         valA = new Date(valA).getTime();
         valB = new Date(valB).getTime();
@@ -99,7 +99,7 @@ export default function useAnticipos() {
     return result;
   }, [allAnticipos, searchTerm, statusFilter, sortBy, sortOrder]);
 
-  // --- Lógica de Paginación ---
+  
   const paginatedData = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredData.slice(start, start + pageSize);
@@ -107,7 +107,7 @@ export default function useAnticipos() {
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
-  // Resetear página al cambiar filtros
+  
   useEffect(() => {
     setPage(1);
   }, [searchTerm, statusFilter, pageSize]);
@@ -148,17 +148,17 @@ export default function useAnticipos() {
   }, [refetch]);
 
   return {
-    // Datos
+    
     anticipos: paginatedData,
     allAnticipos,
     filteredAnticipos: filteredData,
     
-    // Estados
+    
     loading: isLoading,
     error,
     isAdmin,
     
-    // Filtros
+    
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -168,14 +168,14 @@ export default function useAnticipos() {
     sortOrder,
     setSortOrder,
     
-    // Paginación
+    
     page,
     setPage,
     pageSize,
     setPageSize,
     totalPages,
     
-    // Acciones
+    
     fetchAnticipos,
     onClearFilters,
     processAnticipo

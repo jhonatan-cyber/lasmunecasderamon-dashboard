@@ -115,7 +115,6 @@ export default function AttendanceDetailModal({
     }
   };
 
-  // Lógica de paginación
   const totalPages = Math.ceil(asistencias.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -125,13 +124,11 @@ export default function AttendanceDetailModal({
     setCurrentPage(page);
   };
 
-  // Calcular totales
   const totalSueldos = asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0);
   const totalAportes = asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0);
   const totalDescuentos = asistencias.length > 0 ? asistencias[0].descuento_total || 0 : 0;
   const totalFinal = totalSueldos - totalAportes - totalDescuentos;
 
-  // Obtener información del descuento (tomar del primer registro ya que es la misma para todos)
   const primerRegistro = asistencias[0];
   const semanasConDescuento = primerRegistro?.semanas_con_descuento || 0;
   const montoDescuento = primerRegistro?.descuento || 0;
@@ -149,11 +146,11 @@ export default function AttendanceDetailModal({
 
         <div className='flex-1 overflow-y-auto px-6 py-4'>
           <div className='space-y-4'>
-            {/* Información del usuario con resumen */}
+            {}
             <Card>
               <CardContent className='p-6'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                  {/* Sección Izquierda: Información del Usuario */}
+                  {}
                   <div className='flex flex-col space-y-2'>
                     <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
                       Información del Usuario
@@ -166,7 +163,7 @@ export default function AttendanceDetailModal({
                     </div>
                   </div>
 
-                  {/* Sección Derecha: Totales Financieros */}
+                  {}
                   <div className='flex flex-col space-y-2'>
                     <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
                       Resumen Financiero
@@ -208,7 +205,7 @@ export default function AttendanceDetailModal({
                   </div>
                 </div>
 
-                {/* Información adicional sobre el descuento */}
+                {}
                 {semanasConDescuento > 0 && (
                   <div className='mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/50'>
                     <div className='flex items-start gap-2'>
@@ -244,7 +241,7 @@ export default function AttendanceDetailModal({
               </CardContent>
             </Card>
 
-            {/* Lista de asistencias */}
+            {}
             {loading ? (
               <div className='text-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto'></div>
@@ -271,7 +268,7 @@ export default function AttendanceDetailModal({
                 <div className='flex items-center justify-between'>
                   <h3 className='font-semibold text-lg dark:text-white'>Registro de Asistencias</h3>
 
-                  {/* Controles de paginación para la tabla */}
+                  {}
                   <SelectElements
                     value={pageSize}
                     onChange={value => {
@@ -283,7 +280,7 @@ export default function AttendanceDetailModal({
                   />
                 </div>
 
-                {/* Vista móvil */}
+                {}
                 <div className='lg:hidden space-y-3'>
                   {paginatedAsistencias.map(asistencia => (
                     <Card key={asistencia.id_asistencia} className='shadow-sm'>
@@ -325,7 +322,7 @@ export default function AttendanceDetailModal({
                     </Card>
                   ))}
 
-                  {/* Paginación para móvil */}
+                  {}
                   {totalPages > 1 && (
                     <div className='flex justify-center mt-4'>
                       <Paginate
@@ -337,7 +334,7 @@ export default function AttendanceDetailModal({
                   )}
                 </div>
 
-                {/* Vista desktop */}
+                {}
                 <div className='hidden lg:block'>
                   <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
                     <div className='overflow-x-auto'>
@@ -389,7 +386,7 @@ export default function AttendanceDetailModal({
                     </div>
                   </div>
 
-                  {/* Paginación debajo de la tabla */}
+                  {}
                   {totalPages > 1 && (
                     <div className='flex justify-center mt-4'>
                       <Paginate
@@ -405,7 +402,7 @@ export default function AttendanceDetailModal({
           </div>
         </div>
 
-        {/* Footer con botón cerrar */}
+        {}
         <div className='flex-shrink-0 px-6 py-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-slate-900/40'>
           <div className='flex justify-center'>
             <Button

@@ -12,7 +12,7 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
   const [loading, setLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
 
-  // Fetch de detalles de la cuenta
+  
   useEffect(() => {
     if (!open || !cuentaId) {
       setCuenta(null);
@@ -44,7 +44,7 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
     fetchCuentaDetails();
   }, [cuentaId, open]);
 
-  // Mapping de estado a badge
+  
   const getEstadoBadge = (estado: number | string): EstadoBadge => {
     const estadoStr = String(estado).toLowerCase();
     return (
@@ -66,12 +66,12 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
   };
 
   return {
-    // States
+    
     cuenta,
     loading,
     hasFetched,
 
-    // Methods
+    
     handleClose,
     getEstadoBadge
   };

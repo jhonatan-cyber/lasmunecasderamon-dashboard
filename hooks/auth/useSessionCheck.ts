@@ -2,17 +2,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 
-/**
- * Revalida sesión solo cuando la pestaña vuelve a estar activa.
- * El flujo principal de expiración ya lo cubren fetchInterceptor y SSE.
- */
+
 export const useSessionCheck = () => {
   const router = useRouter();
   const pathname = usePathname();
   const isCheckingRef = useRef(false);
 
-  // El sitio marketing vive en el proyecto Astro (lasmunecasderamon-web).
-  // En el dashboard solo `/` (que redirige a /login) y `/login` son públicos.
+  
+  
   const isPublicPage =
     pathname === '/' ||
     pathname === '/login' ||
@@ -49,7 +46,7 @@ export const useSessionCheck = () => {
         }, 500);
       }
     } catch {
-      // ignorar error puntual de red
+      
     } finally {
       isCheckingRef.current = false;
     }

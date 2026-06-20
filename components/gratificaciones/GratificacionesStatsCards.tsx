@@ -11,7 +11,7 @@ interface GratificacionesStatsCardsProps {
 }
 
 export default function GratificacionesStatsCards({ gratificaciones, formatCurrency }: GratificacionesStatsCardsProps) {
-  // Cálculos de métricas
+  
   const totalRegistros = gratificaciones.length;
   const usuariosUnicos = new Set(gratificaciones.map(g => g.usuario_id || g.id_usuario));
   const totalUsuarios = usuariosUnicos.size;

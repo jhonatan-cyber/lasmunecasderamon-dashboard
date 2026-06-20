@@ -58,7 +58,7 @@ export default function AccountFormData({
         )
       : habitaciones;
 
-  // Detectar si hay habitaciÃ³n seleccionada y NO tiene comisiÃ³n
+  
   const habitacionSeleccionada = selectedHabitacion
     ? habitaciones.find(r => String(r.id ?? r.id_habitacion) === selectedHabitacion)
     : null;
@@ -66,7 +66,7 @@ export default function AccountFormData({
   const mostrarSelectorTiempo =
     habitacionSeleccionada && (habitacionSeleccionada.comision_anfitriona ?? 0) === 0;
 
-  // Auto-setear tiempo de la habitaciÃ³n al seleccionarla
+  
   useEffect(() => {
     if (habitacionSeleccionada && onTimeChange) {
       const tiempo = habitacionSeleccionada.time ?? habitacionSeleccionada.tiempo ?? 0;
@@ -122,7 +122,7 @@ export default function AccountFormData({
         />
       </div>
 
-      {/* Selector de tiempo al seleccionar habitaciÃ³n (excepto con comisiÃ³n) */}
+      {}
       {mostrarSelectorTiempo && selectedTime !== undefined && onTimeChange && (
         <div className='max-w-xs'>
           <TimeSelector

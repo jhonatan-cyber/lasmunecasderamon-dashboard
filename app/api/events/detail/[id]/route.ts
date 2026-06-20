@@ -56,7 +56,6 @@ export const GET = withAppApiWrapper(
 );
 
 async function getPropinaDetail(id: string) {
-  // Obtener detalle de la propina
   const detalPropina = await query<any[]>(
     `
     SELECT 
@@ -95,7 +94,6 @@ async function getPropinaDetail(id: string) {
 
   const dp = detalPropina[0];
 
-  // Obtener información del usuario que recibió la propina
   const usuario = await query<any[]>(
     `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, u.foto
@@ -104,7 +102,6 @@ async function getPropinaDetail(id: string) {
     [dp.usuario_id]
   );
 
-  // Obtener información del garzón (quién hizo la venta)
   let garzon = null;
   if (dp.venta_id) {
     const garzonData = await query<any[]>(
@@ -119,7 +116,6 @@ async function getPropinaDetail(id: string) {
     if (garzonData.length > 0) garzon = garzonData[0];
   }
 
-  // Obtener detalles del pedido/venta
   let detalles: any[] = [];
   if (dp.venta_id) {
     detalles = await query<any[]>(
@@ -133,7 +129,6 @@ async function getPropinaDetail(id: string) {
     );
   }
 
-  // Obtener todas las propinas de esta venta (para mostrar cómo se dividió)
   let propinas_detalle: any[] = [];
   if (dp.venta_id) {
     propinas_detalle = await query<any[]>(
@@ -148,7 +143,6 @@ async function getPropinaDetail(id: string) {
     );
   }
 
-  // Obtener tiempo del servicio si aplica
   let tiempo = null;
   if (dp.venta_id) {
     const tiempoData = await query<any[]>(
@@ -163,24 +157,24 @@ async function getPropinaDetail(id: string) {
   return {
     tipo: 'propina',
     monto: dp.monto,
-    // Usuario que recibió
+
     usuario_nick: usuario[0]?.nick,
     usuario_nombre: usuario[0]?.nombre,
-    // Datos de la venta
+
     habitacion_nombre: dp.habitacion_nombre,
     codigo: dp.codigo_venta,
     tiempo: tiempo,
-    // Garzón
+
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    // Cajero
+
     cajero_nick: dp.cajero_nick,
     cajero_nombre: dp.cajero_nombre,
-    // Productos
+
     detalles: detalles,
-    // Propinas detalle (para admins)
+
     propinas_detalle: propinas_detalle,
-    // Para anfitriona - anfitrionas
+
     anfitrionas: propinas_detalle.map((p: any) => ({
       nick: p.nick,
       nombre: p.nombre,
@@ -190,7 +184,6 @@ async function getPropinaDetail(id: string) {
 }
 
 async function getComisionDetail(id: string) {
-  // Obtener detalle de la comisión
   const detalComision = await query(
     `
     SELECT 
@@ -233,7 +226,6 @@ async function getComisionDetail(id: string) {
 
   const dc = detalComision[0];
 
-  // Obtener información del usuario
   const usuario = await query(
     `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, u.foto
@@ -242,11 +234,9 @@ async function getComisionDetail(id: string) {
     [dc.usuario_id]
   );
 
-  // Es de venta o servicio?
   const esVenta = !!dc.venta_id;
   const esServicio = !!dc.servicio_id;
 
-  // Obtener garzón
   let garzon = null;
   if (esVenta) {
     const garzonData = await query(
@@ -261,13 +251,11 @@ async function getComisionDetail(id: string) {
     if (garzonData.length > 0) garzon = garzonData[0];
   }
 
-  // Tiempo del servicio
   let tiempo = null;
   if (esServicio && dc.tiempo) {
     tiempo = dc.tiempo;
   }
 
-  // Obtener detalles del pedido si es venta
   let detalles = [];
   if (esVenta) {
     detalles = await query(
@@ -284,27 +272,26 @@ async function getComisionDetail(id: string) {
   return {
     tipo: 'comision',
     monto: dc.comision,
-    // Usuario que recibió
+
     usuario_nick: usuario[0]?.nick,
     usuario_nombre: usuario[0]?.nombre,
-    // Datos relacionados
+
     habitacion_nombre: esVenta ? dc.habitacion_nombre : null,
     codigo: esVenta ? dc.codigo_venta : dc.codigo_servicio,
     tiempo: tiempo,
     subType: esVenta ? 'venta' : esServicio ? 'servicio' : null,
-    // Garzón
+
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    // Cajero
+
     cajero_nick: dc.cajero_nick,
     cajero_nombre: dc.cajero_nombre,
-    // Productos
+
     detalles: detalles
   };
 }
 
 async function getAsistenciaDetail(id: string) {
-  // La tabla correcta es "asistencias" (plural)
   const asistencia = await query(
     `
     SELECT 
@@ -334,11 +321,9 @@ async function getAsistenciaDetail(id: string) {
 
   const a = asistencia[0];
 
-  // Calcular liquidación
   const liquiSueldo = Number(a.sueldo || 0);
   const liquiAporte = Number(a.aporte || 0);
 
-  // Obtener descuento de habitación si hay semanas
   const semanasData = await query(
     `
     SELECT COUNT(DISTINCT YEARWEEK(fecha, 1)) as semanas
@@ -348,30 +333,28 @@ async function getAsistenciaDetail(id: string) {
     [a.id_usuario, a.fecha]
   );
 
-  // Si no hay datos de semanas, continuar con 0
   const semanas = semanasData.length > 0 ? Number(semanasData[0]?.semanas || 0) : 0;
-  const descuento_total = 0; // Por ahora 0, ajustar según lógica de negocio
+  const descuento_total = 0;
   const neto = liquiSueldo - liquiAporte - descuento_total;
 
   return {
     tipo: 'asistencia',
-    // Datos del usuario
+
     usuario_nick: a.nick,
     usuario_nombre: a.nombre,
-    // Liquidación
+
     sueldo: liquiSueldo,
     aporte: liquiAporte,
     descuento_total: descuento_total,
     semanas_con_descuento: semanas,
     neto: neto,
-    // Fechas
+
     fecha: a.fecha,
     hora: a.hora
   };
 }
 
 async function getAnticipoDetail(id: string) {
-  // Obtener detalle del anticipo
   const anticipo = await query(
     `
     SELECT 
@@ -400,7 +383,6 @@ async function getAnticipoDetail(id: string) {
 
   const a = anticipo[0];
 
-  // Obtener historial de aprobaciones
   const historial = await query(
     `
     SELECT h.accion, h.fecha_crea, u.nick as usuario_accion_nick
@@ -414,22 +396,21 @@ async function getAnticipoDetail(id: string) {
 
   return {
     tipo: 'anticipo',
-    // Solicitante
+
     solicitante_nick: a.nick,
     solicitante_nombre: a.nombre,
-    // Datos
+
     monto: a.monto,
     estado: a.estado,
     observacion: a.motivo,
-    // Fechas
+
     fecha: a.fecha_crea,
-    // Historial
+
     historial: historial
   };
 }
 
 async function getServicioDetail(id: string) {
-  // Obtener detalle del servicio
   const servicio = await query(
     `
     SELECT 
@@ -462,10 +443,8 @@ async function getServicioDetail(id: string) {
 
   const s = servicio[0];
 
-  // Tiempo del servicio
   let tiempo = s.tiempo || null;
 
-  // Obtener comisiones/anfitrionas (misma query, datos reusados)
   const comisiones = await query(
     `
     SELECT 
@@ -483,7 +462,6 @@ async function getServicioDetail(id: string) {
   );
   const anfitrionas = comisiones;
 
-  // Obtener garzón (quien hizo el servicio)
   let garzon = null;
   const garzonData = await query(
     `
@@ -499,26 +477,26 @@ async function getServicioDetail(id: string) {
   return {
     tipo: 'servicio',
     monto: s.total,
-    // Datos
+
     codigo: s.codigo,
     tiempo: tiempo,
     habitacion_nombre: s.habitacion_nombre,
     cliente_nombre: s.cliente_nombre || 'Sin cliente',
-    // Garzón
+
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    // Cajero
+
     cajero_nick: s.cajero_nick,
     cajero_nombre: s.cajero_nombre,
-    // Productos (mapeados desde anfitrionas — servicios no tienen productos)
+
     detalles: anfitrionas.map((a: any) => ({
       cantidad: a.comision,
       producto_nombre: a.nick || `${a.nombre} ${a.apellido}`.trim(),
       subtotal: a.comision
     })),
-    // Anfitrionas
+
     anfitrionas: anfitrionas,
-    // Comisiones
+
     propinas_detalle: comisiones.map((c: any) => ({
       monto: c.comision,
       nick: c.nick,
@@ -529,7 +507,6 @@ async function getServicioDetail(id: string) {
 }
 
 async function getVentaDetail(id: string) {
-  // Obtener detalle de la venta
   const venta = await query(
     `
     SELECT 
@@ -563,7 +540,6 @@ async function getVentaDetail(id: string) {
 
   const v = venta[0];
 
-  // Obtener detalle de los productos
   const productos = await query(
     `
     SELECT 
@@ -577,7 +553,6 @@ async function getVentaDetail(id: string) {
     [id]
   );
 
-  // Obtener comisiones
   const comisiones = await query(
     `
     SELECT 
@@ -594,7 +569,6 @@ async function getVentaDetail(id: string) {
     [id]
   );
 
-  // Obtener propinas
   const propinas = await query(
     `
     SELECT 
@@ -611,7 +585,6 @@ async function getVentaDetail(id: string) {
     [id]
   );
 
-  // Obtener garzón
   let garzon = null;
   const garzonData = await query(
     `
@@ -624,7 +597,6 @@ async function getVentaDetail(id: string) {
   );
   if (garzonData.length > 0) garzon = garzonData[0];
 
-  // Obtener anfitrionas
   const anfitrionas = await query(
     `
     SELECT u.id_usuario, u.nick, u.nombre, u.apellido, dc.monto as comision
@@ -636,7 +608,6 @@ async function getVentaDetail(id: string) {
     [id]
   );
 
-  // Obtener tiempo si hay servicio relacionado
   let tiempo = null;
   const tiempoData = await query(
     `SELECT s.tiempo as minutos
@@ -653,26 +624,26 @@ async function getVentaDetail(id: string) {
   return {
     tipo: 'venta',
     monto: v.total,
-    // Datos
+
     codigo: v.codigo,
     tiempo: tiempo,
     habitacion_nombre: v.habitacion_nombre,
     cliente_nombre: v.cliente_nombre || 'Sin cliente',
-    // Garzón
+
     garzon_nick: garzon?.nick,
     garzon_nombre: garzon?.nombre,
-    // Cajero
+
     cajero_nick: v.cajero_nick,
     cajero_nombre: v.cajero_nombre,
-    // Productos
+
     detalles: productos.map((p: any) => ({
       cantidad: p.cantidad,
       producto_nombre: p.producto_nombre,
       subtotal: p.sub_total
     })),
-    // Anfitrionas
+
     anfitrionas: anfitrionas,
-    // Propinas y comisiones
+
     propinas_detalle: propinas.map((p: any) => ({
       monto: p.monto,
       nick: p.nick,

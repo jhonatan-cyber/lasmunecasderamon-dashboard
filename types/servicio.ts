@@ -1,4 +1,4 @@
-// Tipos para servicios
+
 export interface Servicio {
   id_servicio?: string | number;
   codigo: string;
@@ -32,7 +32,7 @@ export interface ServicioWithDetails extends Servicio {
   servicio_original_id?: string | null;
 }
 
-// Tipos para estadísticas
+
 export interface ServiceStatsData {
   totalServicios: number;
   serviciosActivos: number;
@@ -45,7 +45,7 @@ export interface RoomStatsData {
   habitacionesOcupadas: number;
 }
 
-// Tipos para filtros
+
 export interface ServiceFiltersState {
   searchTerm: string;
   showAllServices: boolean;
@@ -53,7 +53,7 @@ export interface ServiceFiltersState {
   itemsPerPage: number;
 }
 
-// Tipos para paginación
+
 export interface PaginationData {
   currentPage: number;
   totalPages: number;
@@ -62,7 +62,7 @@ export interface PaginationData {
   itemsPerPage: number;
 }
 
-// Tipos para formularios
+
 export interface ServiceFormData {
   cliente_id: string;
   habitacion_id: string | null;
@@ -73,13 +73,13 @@ export interface ServiceFormData {
   usuarios: string[];
 }
 
-// Tipos para validación
+
 export interface ServiceValidationResult {
   isValid: boolean;
   errors: string[];
 }
 
-// Tipos para acciones
+
 export interface ServiceActions {
   handleCreateServicio: () => void;
   handleShowActiveServices: () => Promise<void>;

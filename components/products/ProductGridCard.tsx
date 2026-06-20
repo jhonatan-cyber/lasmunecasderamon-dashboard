@@ -32,7 +32,7 @@ export const ProductGridCard = React.memo<ProductGridCardProps>(({
     >
       <CardContent className="p-4">
         <div className="space-y-3">
-          {/* Header del producto */}
+          {}
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="font-semibold text-sm line-clamp-2">
@@ -51,7 +51,7 @@ export const ProductGridCard = React.memo<ProductGridCardProps>(({
             )}
           </div>
 
-          {/* Precios */}
+          {}
           <div className="space-y-1">
             <div className="flex items-center gap-1">
               <DollarSign className="w-3 h-3 text-green-600" />
@@ -69,7 +69,7 @@ export const ProductGridCard = React.memo<ProductGridCardProps>(({
             )}
           </div>
 
-          {/* Controles de cantidad */}
+          {}
           <div className="flex items-center justify-between">
             <QuantityControl
               value={cantidad}
@@ -77,7 +77,7 @@ export const ProductGridCard = React.memo<ProductGridCardProps>(({
               size="sm"
             />
 
-            {/* Botones de acción */}
+            {}
             <div className="flex gap-1">
 
               <Button

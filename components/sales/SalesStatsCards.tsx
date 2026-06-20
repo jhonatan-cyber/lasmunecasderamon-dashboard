@@ -30,7 +30,7 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
 
   return (
     <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
-      {/* Ingresos Reales (Completados) */}
+      {}
       <Card 
         style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300'
@@ -57,7 +57,7 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         </CardContent>
       </Card>
 
-      {/* En Barra / Proceso (Pendientes) */}
+      {}
       <Card 
         style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300'
@@ -84,7 +84,7 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         </CardContent>
       </Card>
 
-      {/* Solicitudes de Anulación */}
+      {}
       <Card 
         style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300'
@@ -110,7 +110,7 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         </CardContent>
       </Card>
 
-      {/* Anuladas */}
+      {}
       <Card 
         style={{ backgroundColor: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)' }}
         className='shadow-sm border-none backdrop-blur-sm rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300'

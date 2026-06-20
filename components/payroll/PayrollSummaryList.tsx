@@ -30,7 +30,7 @@ export default function PayrollSummaryList({
   isLoading = false,
   onFilterChange,
 }: PayrollSummaryListProps) {
-  const todayStr = getTodayDateKey(); // "YYYY-MM-DD" in business timezone
+  const todayStr = getTodayDateKey(); 
   const [month, setMonth] = useState(parseInt(todayStr.substring(5, 7)))
   const [year, setYear] = useState(parseInt(todayStr.substring(0, 4)))
 

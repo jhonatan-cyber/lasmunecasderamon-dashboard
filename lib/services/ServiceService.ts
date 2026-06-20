@@ -94,7 +94,7 @@ export class ServiceService {
         });
       }
 
-      // Verificar si la habitación es de libre ingreso (sin precio o sin comisión)
+      
       let esLibreIngreso = false;
       if (v.habitacion_id) {
         const roomRows = await trx<any[]>(

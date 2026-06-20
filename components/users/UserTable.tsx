@@ -49,7 +49,7 @@ export function UserTable({
 }: UserTableProps) {
   const { hasPermission } = useUserPermissions();
 
-  // Memoizar permisos
+  
   const permissions = useMemo(
     () => ({
       canViewDetails: hasPermission('users', 'view_details'),
@@ -71,7 +71,7 @@ export function UserTable({
     );
   }
 
-  // Vista de tarjetas para móviles
+  
   const MobileCardView = () => (
     <div className='lg:hidden space-y-3'>
       {users.length === 0 ? (
@@ -82,7 +82,7 @@ export function UserTable({
         users.map((user, idx) => (
           <Card key={user.id} className='p-4 sm:p-6'>
             <CardContent className='space-y-3'>
-              {/* Header con número, estado y acciones */}
+              {}
               <div className='flex justify-between items-start'>
                 <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1 text-xs sm:text-sm'>
                   {(currentPage - 1) * pageSize + idx + 1}
@@ -108,7 +108,7 @@ export function UserTable({
                 </div>
               </div>
 
-              {/* Información del usuario */}
+              {}
               <UserInfoDisplay
                 user={user}
                 formatDate={formatDate}
@@ -122,7 +122,7 @@ export function UserTable({
     </div>
   );
 
-  // Vista de tabla para desktop
+  
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>

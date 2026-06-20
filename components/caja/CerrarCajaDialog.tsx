@@ -22,7 +22,6 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Loader2 } from 'lucide-react';
 
-// Función para obtener el día de la semana en español
 const getDiaSemana = (fecha: string): string => {
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const fechaObj = new Date(fecha);
@@ -55,7 +54,6 @@ export const CerrarCajaDialog = ({
   const { users, isLoading: usersLoading } = useUsers();
   const { user: currentUser, loading: currentUserLoading } = useCurrentUser();
 
-  // Actualizar formData cuando cambia la caja o el usuario actual
   useEffect(() => {
     if (caja && currentUser) {
       setFormData({
@@ -68,7 +66,6 @@ export const CerrarCajaDialog = ({
   }, [caja, currentUser]);
 
   const validateForm = (): boolean => {
-    // No hay validaciones necesarias ya que todo se calcula automáticamente
     return true;
   };
 
@@ -85,7 +82,6 @@ export const CerrarCajaDialog = ({
     }
 
     try {
-      // Calcular monto de cierre automáticamente si no se pide al usuario
       const devoluciones = (caja.devoluciones as number) || 0;
       const montoCierreCalculado =
         (caja.monto_apertura || 0) +
@@ -94,7 +90,6 @@ export const CerrarCajaDialog = ({
         (caja.transferencia || 0) -
         devoluciones;
 
-      // Asegurar que se envíe la fecha actual al momento del cierre y el monto_cierre requerido por la API
       const dataToSend = {
         ...formData,
         monto_cierre: Number(montoCierreCalculado) || 0,
@@ -139,7 +134,7 @@ export const CerrarCajaDialog = ({
 
         <div className='flex-1 overflow-y-auto px-6 py-4'>
           <div className='space-y-4'>
-            {/* Resumen de la caja */}
+            {}
             <div className='bg-gray-50 p-1 px-2  rounded-lg space-y-2'>
               <h4 className='font-medium text-sm'>Resumen de la caja:</h4>
               <div className='grid grid-cols-2 gap-2 text-sm'>

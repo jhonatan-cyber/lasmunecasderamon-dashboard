@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// ─── createProduct ───────────────────────────────────────────────────────────
+
 
 describe('ProductService.createProduct', () => {
   it('lanza ConflictError si ya existe un producto con el mismo código/nombre', async () => {
@@ -83,7 +83,7 @@ describe('ProductService.createProduct', () => {
   });
 });
 
-// ─── updateProduct ───────────────────────────────────────────────────────────
+
 
 describe('ProductService.updateProduct', () => {
   const existingProduct = {

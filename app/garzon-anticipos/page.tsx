@@ -51,7 +51,6 @@ export default function GarzonAnticiposPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Fetch anticipos
   const fetchAdvances = async () => {
     setLoading(true);
     try {
@@ -86,7 +85,6 @@ export default function GarzonAnticiposPage() {
     );
   }
 
-  // Verificar que el usuario sea garzon
   if (user?.role?.toLowerCase() !== 'garzon') {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -98,7 +96,6 @@ export default function GarzonAnticiposPage() {
     );
   }
 
-  // Filtrado
   const filteredAdvances = advances.filter(advance => {
     const matchesSearch = advance.monto.toString().includes(searchTerm);
     const matchesStatus =
@@ -109,7 +106,6 @@ export default function GarzonAnticiposPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Ordenamiento
   const sortedAdvances = [...filteredAdvances].sort((a, b) => {
     let aValue: any = a[sortBy as keyof Advance];
     let bValue: any = b[sortBy as keyof Advance];
@@ -126,18 +122,15 @@ export default function GarzonAnticiposPage() {
     }
   });
 
-  // PaginaciÃ³n
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedAdvances = sortedAdvances.slice(startIndex, endIndex);
   const totalPages = Math.ceil(sortedAdvances.length / rowsPerPage);
 
-  // CÃ¡lculos
   const totalToPay = advances
     .filter(advance => advance.estado === 1)
     .reduce((sum, advance) => sum + (advance.monto || 0), 0);
 
-  // Obtener badge de estado
   const getStatusBadge = (estado: number) => {
     if (estado === 1) {
       return (
@@ -156,7 +149,7 @@ export default function GarzonAnticiposPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900'>Listado de Anticipos</h1>
@@ -174,13 +167,13 @@ export default function GarzonAnticiposPage() {
         </Button>
       </div>
 
-      {/* Total a pagar centrado */}
+      {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL A PAGAR</p>
         <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToPay)}</p>
       </div>
 
-      {/* Filtros */}
+      {}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
@@ -212,7 +205,7 @@ export default function GarzonAnticiposPage() {
         />
       </div>
 
-      {/* Selector de filas por pÃ¡gina */}
+      {}
       <div className='flex justify-between items-center'>
         <SelectElements
           value={rowsPerPage}
@@ -229,7 +222,7 @@ export default function GarzonAnticiposPage() {
         />
       </div>
 
-      {/* Tabla */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Anticipos ({filteredAdvances.length})</CardTitle>
@@ -300,7 +293,7 @@ export default function GarzonAnticiposPage() {
         </CardContent>
       </Card>
 
-      {/* PaginaciÃ³n */}
+      {}
       {totalPages > 1 && (
         <div className='flex justify-center'>
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
@@ -309,5 +302,3 @@ export default function GarzonAnticiposPage() {
     </div>
   );
 }
-
-

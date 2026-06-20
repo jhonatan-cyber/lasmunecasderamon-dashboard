@@ -12,7 +12,6 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { RoomsSkeleton } from '@/components/shared/Skeletons';
 import { toTitleCase } from '@/lib/utils/formatters';
 
-// Nuevos componentes refactorizados
 import { RoomsHeader } from '@/components/rooms/RoomsHeader';
 import { RoomGridView } from '@/components/rooms/RoomGridView';
 import { RoomFormDialog } from '@/components/rooms/RoomFormDialog';
@@ -41,7 +40,7 @@ const RoomsPage = () => {
     canActivate: hasPermission('rooms', 'activate'),
     canDeactivate: hasPermission('rooms', 'deactivate'),
     canOccupy: hasPermission('rooms', 'occupy'),
-    canLiberate: hasPermission('rooms', 'liberate'),
+    canLiberate: hasPermission('rooms', 'liberate')
   };
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -65,7 +64,7 @@ const RoomsPage = () => {
     if (filterStatus !== null) {
       result = result.filter(room => room.status === filterStatus);
     }
-    // Aplicar ordenamiento
+
     result = [...result].sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
@@ -82,7 +81,8 @@ const RoomsPage = () => {
           comparison = (a.display_order || 0) - (b.display_order || 0);
           break;
         case 'created_at':
-          comparison = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          comparison =
+            new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
           break;
         default:
           comparison = 0;
@@ -156,11 +156,14 @@ const RoomsPage = () => {
   return (
     <PermissionGuard module='rooms' action='view'>
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-        <RoomsHeader 
-          showTableView={showTableView} 
-          setShowTableView={setShowTableView} 
+        <RoomsHeader
+          showTableView={showTableView}
+          setShowTableView={setShowTableView}
           canCreate={permissions.canCreate}
-          onNew={() => { setEditRoom(null); setOpenDialog(true); }}
+          onNew={() => {
+            setEditRoom(null);
+            setOpenDialog(true);
+          }}
         />
 
         <RoomFilters
@@ -201,7 +204,7 @@ const RoomsPage = () => {
           </div>
         ) : (
           <div className='mt-4 sm:mt-6'>
-            <RoomGridView 
+            <RoomGridView
               rooms={paginatedRooms}
               localRooms={localRooms}
               setLocalRooms={setLocalRooms}
@@ -213,7 +216,10 @@ const RoomsPage = () => {
               onOccupy={room => occupyRoom(room.id)}
               isMutating={isMutating}
               {...permissions}
-              onNew={() => { setEditRoom(null); setOpenDialog(true); }}
+              onNew={() => {
+                setEditRoom(null);
+                setOpenDialog(true);
+              }}
             />
             {totalPages > 1 && paginatedRooms.length > 0 && (
               <div className='flex justify-center mt-4 sm:mt-6'>
@@ -223,7 +229,7 @@ const RoomsPage = () => {
           </div>
         )}
 
-        <RoomFormDialog 
+        <RoomFormDialog
           open={openDialog}
           onClose={handleDialogClose}
           onSubmit={editRoom ? handleUpdate : handleCreate}
@@ -236,4 +242,3 @@ const RoomsPage = () => {
 };
 
 export default RoomsPage;
-

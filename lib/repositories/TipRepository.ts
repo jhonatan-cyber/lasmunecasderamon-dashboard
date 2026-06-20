@@ -38,7 +38,7 @@ export class TipRepository {
           );
 
     if (distribucionUsuarios.length === 0) {
-      // No hay usuarios disponibles - registrar la propina sin distribución pero no fallar
+      
       const now = getNowInBusinessTimezone();
       const id = generateUUID();
 

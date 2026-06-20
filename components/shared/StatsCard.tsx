@@ -40,7 +40,7 @@ export function StatsCard({
   };
 
   const formatValue = (stat: StatCard) => {
-    // Si el valor ya es un string (ya formateado), devolverlo directamente
+    
     if (typeof stat.value === 'string') return stat.value;
     
     const numValue = Number(stat.value);

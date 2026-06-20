@@ -14,7 +14,7 @@ async function runIntegrationTest() {
   });
 
   try {
-    // 1. Obtener datos necesarios
+    
     const [users] = await connection.execute(
       'SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 2'
     );
@@ -79,7 +79,7 @@ async function runIntegrationTest() {
       ]
     );
 
-    // Marcar habitación como ocupada
+    
     await connection.execute('UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?', [
       roomId
     ]);
@@ -120,10 +120,10 @@ async function runIntegrationTest() {
 
     console.log(`\n[4] Simulando Cobro de Cuenta`);
     const metodoPago = 'efectivo';
-    const totalCobrado = product.precio + 2000; // precio + propina
+    const totalCobrado = product.precio + 2000; 
     const propina = 2000;
 
-    // Actualizar cuenta a estado 2 (cobrada)
+    
     await connection.execute(
       `
             UPDATE cuentas 
@@ -133,12 +133,12 @@ async function runIntegrationTest() {
       [metodoPago, userId, new Date(), cuentaId]
     );
 
-    // Liberar habitación
+    
     await connection.execute('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
       roomId
     ]);
 
-    // Actualizar Caja (Simulación de CashRegisterRepository.updateBalances)
+    
     await connection.execute(
       `
             UPDATE cajas 
@@ -166,7 +166,7 @@ async function runIntegrationTest() {
     await connection.execute('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [cuentaId]);
     await connection.execute('DELETE FROM cuentas WHERE id_cuenta = ?', [cuentaId]);
 
-    // Revertir cambios en caja (opcional, pero buena práctica en tests)
+    
     await connection.execute(
       `
             UPDATE cajas 

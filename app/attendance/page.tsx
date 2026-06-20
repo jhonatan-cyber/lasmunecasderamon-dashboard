@@ -33,7 +33,6 @@ export default function AttendancePage() {
   const { stats: attendanceStats, loading: statsLoading, error: statsError } = useAttendanceStats();
   const { users, isLoading: usersLoading } = useUsers();
 
-  // Estados para filtros y paginación
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [pageSize, setPageSize] = useState(10);
@@ -45,7 +44,6 @@ export default function AttendancePage() {
   const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
   const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
 
-  // Filtrar y paginar datos
   const filteredData = useMemo(() => {
     if (!data) return [];
 
@@ -101,7 +99,6 @@ export default function AttendancePage() {
     );
   }, [users]);
 
-  // Escuchar cambios en tiempo real via SSE (sin polling)
   useEffect(() => {
     if (!selectedUserForQR) return;
     const fetchCodigo = async () => {
@@ -128,7 +125,6 @@ export default function AttendancePage() {
     };
   }, [selectedUserForQR?.id]);
 
-  // Polling para actualización del QR en tiempo real
   useEffect(() => {
     if (!selectedUserForQR) return;
 
@@ -144,7 +140,7 @@ export default function AttendancePage() {
       }
     };
 
-    const interval = setInterval(checkQR, 15000); // Polling cada 15 segundos
+    const interval = setInterval(checkQR, 15000);
 
     window.addEventListener('focus', checkQR);
 
@@ -180,7 +176,6 @@ export default function AttendancePage() {
       if (result.success) {
         toast.success('Token QR generado con éxito');
 
-        // Actualizar el usuario seleccionado localmente
         setSelectedUserForQR((prev: any) =>
           prev && prev.id === userId ? { ...prev, qr_token: result.qr_token } : prev
         );
@@ -194,7 +189,6 @@ export default function AttendancePage() {
     }
   };
 
-  // Usar estadísticas del hook basadas en el estado de la caja
   const stats = attendanceStats;
 
   return (
@@ -233,10 +227,10 @@ export default function AttendancePage() {
           </Card>
         ) : (
           <>
-            {/* Estadísticas (Globales) */}
+            {}
             <AttendanceStatsCard stats={stats} isLoading={statsLoading} />
 
-            {/* Filtros (Globales o afectan al menos la tabla principal) */}
+            {}
             <AttendanceFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -269,7 +263,7 @@ export default function AttendancePage() {
               </TabsList>
 
               <TabsContent value='history' className='space-y-6'>
-                {/* Tabla de asistencias */}
+                {}
                 <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
                   <CardContent className='p-0 sm:p-0'>
                     <div className='overflow-x-auto'>
@@ -287,7 +281,7 @@ export default function AttendancePage() {
                       className='group relative overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer'
                       onClick={() => setSelectedUserForQR(person)}
                     >
-                      {/* Background */}
+                      {}
                       <div className='absolute inset-0'>
                         <img
                           src={person.foto ? `/img/users/${person.foto}` : `/placeholder-user.jpg`}
@@ -300,7 +294,7 @@ export default function AttendancePage() {
                         <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity' />
                       </div>
 
-                      {/* Content */}
+                      {}
                       <div className='relative h-[280px] flex flex-col justify-end p-5'>
                         <div className='transform translate-y-2 group-hover:translate-y-0 transition-all duration-300'>
                           <h3 className='text-2xl font-black text-white leading-tight tracking-tight uppercase drop-shadow-lg'>
@@ -420,7 +414,7 @@ export default function AttendancePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de registro manual de asistencia */}
+      {}
       <AsistenciaForm
         isOpen={asistenciaFormOpen}
         onOpenChange={setAsistenciaFormOpen}
@@ -429,4 +423,3 @@ export default function AttendancePage() {
     </PermissionGuard>
   );
 }
-

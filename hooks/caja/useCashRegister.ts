@@ -230,7 +230,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         await getCajas();
         await checkCajaStatus();
 
-        // Disparar evento para actualizar el estado de caja en otros componentes
+        
         window.dispatchEvent(new CustomEvent('cajaClosed', { detail: result.data }));
 
         return result.data;
@@ -305,7 +305,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     [getCajas, handleError]
   );
 
-  // Cargar datos iniciales
+  
   useEffect(() => {
     getCajas();
     getResumen();

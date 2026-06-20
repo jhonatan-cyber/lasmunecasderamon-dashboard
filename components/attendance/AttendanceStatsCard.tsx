@@ -53,7 +53,7 @@ export default function AttendanceStatsCard({
 
   return (
     <div className='grid gap-4 grid-cols-2 md:grid-cols-3 mb-6 [&>*:last-child:nth-child(odd)]:col-span-2 md:[&>*:last-child:nth-child(odd)]:col-span-1'>
-      {/* Presentes */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -89,7 +89,7 @@ export default function AttendanceStatsCard({
         </CardContent>
       </Card>
 
-      {/* Ausentes */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(244, 63, 94, 0.1)',
@@ -125,7 +125,7 @@ export default function AttendanceStatsCard({
         </CardContent>
       </Card>
 
-      {/* Total Usuarios / Plantilla */}
+      {}
       <Card
         style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',

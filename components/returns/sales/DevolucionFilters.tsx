@@ -27,7 +27,7 @@ export const DevolucionFiltersComponent = ({
   <Card className='mb-4 sm:mb-6 shadow-sm'>
     <CardContent className='pt-6 p-4 sm:p-6'>
       <div className='flex flex-col gap-4 sm:gap-6'>
-        {/* Búsqueda - Ocupa todo el ancho en móviles */}
+        {}
         <div className='w-full'>
           <Label htmlFor='search' className='mb-2 text-sm sm:text-base'>
             Buscar
@@ -44,9 +44,9 @@ export const DevolucionFiltersComponent = ({
           </div>
         </div>
 
-        {/* Controles - Responsive layout */}
+        {}
         <div className='flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-end justify-center'>
-          {/* Método de pago */}
+          {}
           <div className='flex-1 sm:flex-none'>
             <Label htmlFor='payment' className='mb-2 text-sm sm:text-base'>
               Método de pago
@@ -67,7 +67,7 @@ export const DevolucionFiltersComponent = ({
             </Select>
           </div>
 
-          {/* Listado */}
+          {}
           <div className='flex-1 sm:flex-none'>
             <Label htmlFor='list' className='mb-2 text-sm sm:text-base'>
               Listado
@@ -88,7 +88,7 @@ export const DevolucionFiltersComponent = ({
             </Select>
           </div>
 
-          {/* Botón limpiar filtros */}
+          {}
           <div className='flex-1 sm:flex-none'>
             <TooltipProvider>
               <Tooltip delayDuration={300}>

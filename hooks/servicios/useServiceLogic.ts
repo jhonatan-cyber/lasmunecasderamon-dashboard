@@ -11,7 +11,7 @@ export function useServiceLogic() {
   const { servicios, loading, getServicios, removeServicioFromState, patchServicio, includeAll } =
     useServicios();
 
-  // Obtener todos los servicios (sin filtro por estado) para los stats
+  
   const { servicios: allServicios, loading: loadingAll } = useAllServicios();
 
   const router = useRouter();
@@ -28,24 +28,24 @@ export function useServiceLogic() {
   const handleShowActiveServices = useCallback(() => {
     setShowAllServices(false);
     setCurrentPage(1);
-    // También recargar con all=false para obtener activos
+    
     getServicios(false);
   }, [getServicios]);
 
   const handleShowAllServices = useCallback(() => {
     setShowAllServices(true);
     setCurrentPage(1);
-    // Recargar con all=true para obtener finalizados
+    
     getServicios(true);
   }, [getServicios]);
 
   const handleStopTimer = useCallback(
     async (servicioId: string | number) => {
       try {
-        // Usar patchServicio que ya implementa actualizaciones optimistas
-        await patchServicio(servicioId, { estado: 1 }); // 1 = Terminado
+        
+        await patchServicio(servicioId, { estado: 1 }); 
 
-        // Remover del estado local inmediatamente para que desaparezca de la vista
+        
         removeServicioFromState(servicioId);
 
         toast.success('Servicio finalizado exitosamente');
@@ -66,7 +66,7 @@ export function useServiceLogic() {
 
   const handleServiceAutoFinished = useCallback(async () => {
     try {
-      await getServicios(false); // false = obtener servicios activos
+      await getServicios(false); 
       setCurrentPage(prev => prev);
     } catch (error) {
       logger.captureException(error, { context: 'ServiceLogic:handleServiceAutoFinished' });
@@ -77,13 +77,13 @@ export function useServiceLogic() {
   const serviciosByStatus = useMemo(() => {
     if (!servicios || servicios.length === 0) return [];
     if (showAllServices) {
-      // Mostrar servicios finalizados (1), anulados (0) o con solicitud de anulación (4)
+      
       return servicios.filter(
         (servicio: ServicioWithDetails) =>
           servicio.estado === 1 || servicio.estado === 0 || servicio.estado === 4
       );
     } else {
-      // Mostrar solo servicios en proceso (2) o pausados (3)
+      
       return servicios.filter(
         (servicio: ServicioWithDetails) => servicio.estado === 2 || servicio.estado === 3
       );

@@ -80,15 +80,12 @@ export const GET = withAppApiWrapper(async () => {
         room_name: item.room_name
       });
 
-      // Liberar habitación, marcar venta/servicio como finalizado y actualizarListing
       if (item.habitacion_id) {
-        // Liberar la habitación
         await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
           item.habitacion_id
         ]);
 
         if (item.type === 'servicio') {
-          // Finalizar servicio
           await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [item.id]);
           await withTransaction(async trx => {
             const anfsResult = await trx<any[]>(
@@ -99,19 +96,16 @@ export const GET = withAppApiWrapper(async () => {
             if (hostessIds.length > 0) {
               await RoomManager.updateHostessServiceStatus(trx, hostessIds, item.id);
             }
-            // Liberar la habitación usando el RoomManager
+
             await RoomManager.resumeRoomLogic(trx, item.habitacion_id, item.id);
           });
         } else if (item.type === 'venta') {
-          // Finalizar venta
           await query('UPDATE ventas SET estado = 1 WHERE id_venta = ?', [item.id]);
         } else if (item.type === 'cuenta') {
-          // Finalizar cuenta
           await query('UPDATE cuentas SET estado = 0 WHERE id_cuenta = ?', [item.id]);
         }
       }
 
-      // Dispatch evento para actualizar el listado en Tiempo real
       if (item.type === 'venta') {
         sendNotificationToAll('updateSales', { id: item.id, type: item.type });
       } else if (item.type === 'servicio') {

@@ -35,36 +35,36 @@ export function useGenericFilters<T>(
       result = result.filter((item: any) => item.status === filterStatus);
     }
 
-    // Ordenamiento
+    
     if (sortBy) {
       result = [...result].sort((a: any, b: any) => {
         const aValue = a[sortBy];
         const bValue = b[sortBy];
 
-        // Manejar valores null/undefined
+        
         if (aValue == null && bValue == null) return 0;
         if (aValue == null) return sortOrder === 'asc' ? 1 : -1;
         if (bValue == null) return sortOrder === 'asc' ? -1 : 1;
 
-        // Comparación de strings
+        
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue);
           return sortOrder === 'asc' ? comparison : -comparison;
         }
 
-        // Comparación numérica
+        
         if (typeof aValue === 'number' && typeof bValue === 'number') {
           return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
         }
 
-        // Comparación de fechas
+        
         if (aValue instanceof Date && bValue instanceof Date) {
           return sortOrder === 'asc'
             ? aValue.getTime() - bValue.getTime()
             : bValue.getTime() - aValue.getTime();
         }
 
-        // Convertir strings de fecha a Date si es posible
+        
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const aDate = new Date(aValue);
           const bDate = new Date(bValue);
@@ -75,7 +75,7 @@ export function useGenericFilters<T>(
           }
         }
 
-        // Fallback: comparación como strings
+        
         const aStr = String(aValue);
         const bStr = String(bValue);
         const comparison = aStr.localeCompare(bStr);

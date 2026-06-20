@@ -23,12 +23,12 @@ export default function SalesWithRoomTab({
   const { getTimerByServicioId, timers } = useTimer();
   const [, forceUpdate] = useState({});
 
-  // Forzar re-render cuando cambian los timers
+  
   useEffect(() => {
     forceUpdate({});
   }, [timers]);
 
-  // Escuchar evento updateSales para refrescar cuando el tiempoexpira automáticamente
+  
   useEffect(() => {
     const handleUpdateSales = () => {
       if (onRefresh) onRefresh();
@@ -37,19 +37,19 @@ export default function SalesWithRoomTab({
     return () => unsubscribe();
   }, [onRefresh]);
 
-  // Filtrar ventas que tienen habitación asignada
-  // Y que están en estado 2 (En Proceso) O tienen un temporizador activo
+  
+  
   const ventasConHabitacion = ventas.filter(v => {
-    // Si no tiene habitación válida vinculada, omitir
+    
     const roomId = String(v.habitacion_id);
     if (!roomId || roomId === '0' || roomId === 'null' || roomId === 'undefined') {
       return false;
     }
 
-    // Obtener el timer por su ID de venta (servicioId en el contexto)
+    
     const timer = getTimerByServicioId(String(v.id));
 
-    // Mostramos si el estado es 2 (activas/en proceso) o si tiene timer activo
+    
     const isInProcess = Number(v.estado) === 2;
     const hasTimer = !!timer;
 

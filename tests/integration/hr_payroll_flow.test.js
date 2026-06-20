@@ -14,7 +14,7 @@ async function runHRIntegrationTest() {
   });
 
   try {
-    // 1. Obtener un usuario de prueba (usaremos uno existente para no romper integridad de roles)
+    
     const [users] = await connection.execute(
       'SELECT id_usuario, sueldo FROM usuarios WHERE estado = 1 LIMIT 1'
     );
@@ -42,7 +42,7 @@ async function runHRIntegrationTest() {
     );
 
     console.log(`\n[3] Verificando Summary de Planilla (Simulado)`);
-    // Simular cálculo de planilla
+    
     const [payroll] = await connection.execute(
       `
             SELECT 
@@ -63,8 +63,8 @@ async function runHRIntegrationTest() {
     }
 
     console.log(`\n[4] Procesando Pago (Limpieza lógica)`);
-    // En un flujo real esto marcaría los registros como estado 0 y pondría fecha de pago
-    // Aquí los eliminaremos para dejar la DB limpia
+    
+    
     await connection.execute('DELETE FROM asistencias WHERE id_asistencia = ?', [asisId]);
     await connection.execute('DELETE FROM horas_extras WHERE id_hora_extra = ?', [hxId]);
 

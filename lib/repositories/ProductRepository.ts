@@ -143,13 +143,13 @@ export class ProductRepository {
       [termWithWildcards, termWithWildcards, termWithWildcards, termWithWildcards]
     );
 
-    // Si encontramos resultados exactos con LIKE, mapeamos y devolvemos
-    // Pero aún así corremos el fallback si el término tiene caracteres especiales para ser más permisivos con acentos
+    
+    
     if (results.length > 0 && searchTerm === normalizedTerm) {
       return results.map(row => this.mapProductFromDB(row));
     }
 
-    // Fallback más potente: carga todo y filtra por texto normalizado (sin acentos)
+    
     const allProducts = await this.getAll();
     return allProducts.filter(product => {
       const haystack = [
@@ -157,7 +157,7 @@ export class ProductRepository {
         product.name,
         product.code,
         product.description,
-        (product as any).categoria // Incluimos la categoría en el buscador manual
+        (product as any).categoria 
       ]
         .map(value => this.normalizeSearchText(value))
         .join(' ');

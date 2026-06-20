@@ -1,4 +1,4 @@
-// hooks/useAsistencias.ts
+
 'use client'
 
 import { useMemo, useCallback, useState } from 'react'
@@ -19,7 +19,7 @@ export default function useAsistencias(): UseAsistenciasReturn {
   const { user } = useCurrentUser()
   const [mutationError, setMutationError] = useState<string | null>(null)
   
-  // Determinar qué endpoint usar basado en el rol del usuario
+  
   const endpoint = useMemo(() => 
     user?.role?.toLowerCase() === 'cajero' ? '/api/attendance/user' : '/api/attendance',
     [user?.role]

@@ -54,7 +54,7 @@ export default function GratificacionesFilters({
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
-          {/* BÃºsqueda */}
+          {}
           <div className='w-full lg:flex-1'>
             <Label
               htmlFor='search'
@@ -72,7 +72,7 @@ export default function GratificacionesFilters({
           </div>
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
-            {/* Filtro de estado */}
+            {}
             <div className='w-full sm:w-auto min-w-[160px]'>
               <Label
                 htmlFor='status'
@@ -92,7 +92,7 @@ export default function GratificacionesFilters({
               </Select>
             </div>
 
-            {/* Ordenar */}
+            {}
             <div className='w-full sm:w-auto min-w-[180px]'>
               <FilterSelect
                 value={sortBy}
@@ -125,7 +125,7 @@ export default function GratificacionesFilters({
               </Button>
             </div>
 
-            {/* Elementos por pÃ¡gina */}
+            {}
             <div className='w-full sm:w-auto'>
               <SelectElements
                 value={rowsPerPage}
@@ -135,7 +135,7 @@ export default function GratificacionesFilters({
               />
             </div>
 
-            {/* BotÃ³n limpiar filtros */}
+            {}
             <div className='w-full sm:w-auto'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>

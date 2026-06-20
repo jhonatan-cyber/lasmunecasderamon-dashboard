@@ -31,10 +31,10 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
-  // Verificar permiso para asignar permisos
+  
   const canAssignPermissions = hasPermission('roles', 'asignar_permisos');
 
-  // Cargar permisos del rol cuando se selecciona uno
+  
   useEffect(() => {
     if (selectedRole) {
       loadRolePermissions(selectedRole.id);
@@ -44,7 +44,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
     }
   }, [selectedRole]);
 
-  // Sincronizar selectedPermissions cuando cambian los permisos del rol
+  
   useEffect(() => {
     if (rolePermissions.length > 0) {
       const assignedPermissionIds = rolePermissions
@@ -85,7 +85,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
     setIsSaving(true);
     try {
-      // Guardar una copia del estado actual antes de enviar
+      
       const permissionsToSave = [...selectedPermissions];
 
       const result = await updateRolePermissions(selectedRole.id.toString(), permissionsToSave);
@@ -188,7 +188,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
   return (
     <div className='h-full bg-white dark:bg-neutral-900 flex flex-col'>
-      {/* Contenido scrolleable */}
+      {}
       <div className='flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4'>
         {Object.entries(permissionsByModule)
           .sort(([a], [b]) => getModuleDisplayName(a).localeCompare(getModuleDisplayName(b)))
@@ -203,7 +203,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                 key={module}
                 className='border border-gray-200 dark:border-neutral-800 rounded-lg overflow-hidden'
               >
-                {/* Header del módulo */}
+                {}
                 <div
                   className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
                   onClick={() => toggleModuleExpansion(module)}
@@ -251,7 +251,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                   </div>
                 </div>
 
-                {/* Lista de permisos (colapsable) */}
+                {}
                 {isExpanded && (
                   <div className='p-3 space-y-2 bg-white dark:bg-neutral-900'>
                     {permissions.map(permission => (
@@ -290,7 +290,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
           })}
       </div>
 
-      {/* Footer fijo */}
+      {}
       <div className='flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-3 sm:p-4'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm'>
           <div className='flex items-center justify-between sm:justify-start gap-2'>

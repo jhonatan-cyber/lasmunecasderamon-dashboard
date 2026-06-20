@@ -51,14 +51,7 @@ if (!globalThis.__lasMunecasDbPoolListenersAttached) {
 
 export type TransactionQuery = <R>(sql: string, params?: any[]) => Promise<R>;
 
-/**
- * Database query function - returns an array of objects by default
- * Use query<SpecificType[]>(...) for typed results
- *
- * @example
- * const users = await query<{id: number, name: string}[]>('SELECT id, name FROM users')
- * const rows = await query('SELECT * FROM users') // returns any[] - access properties directly
- */
+
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
   const safeParams = (params || []).map(p => {
     if (p === undefined) return null;
@@ -69,11 +62,11 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
   });
 
   try {
-    // Check if SQL contains LIMIT or OFFSET clauses - these cause issues with prepared statements in MySQL 8.4.7
+    
     const hasLimitOrOffset = /LIMIT\s+\?|OFFSET\s+\?/i.test(sql);
 
     if (hasLimitOrOffset && safeParams.length > 0) {
-      // For queries with LIMIT/OFFSET, use manual parameter replacement
+      
       let finalSql = sql;
       let paramIndex = 0;
 
@@ -91,7 +84,7 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
       const [rows] = await pool.query(finalSql);
       return (rows || []) as T;
     } else {
-      // For other queries, use prepared statements normally
+      
       const [rows] =
         safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
 

@@ -1,6 +1,6 @@
 /* eslint-disable */
-// Service Worker Mejorado para PWA
-// Versión: 2.0.0 - Con soporte para notifications push y sync
+
+
 
 const CACHE_NAME = 'lasmunecas-pwa-v2';
 const RUNTIME_CACHE = 'runtime-cache-v2';
@@ -8,10 +8,10 @@ const API_CACHE = 'api-cache-v1';
 
 const PRECACHE_URLS = ['/', '/dashboard', '/login', '/manifest.json'];
 
-// Recursos estáticos a cachear
+
 const STATIC_ASSETS = ['/img/system/logo1.png', '/img/system/logo2.png', '/favicon.ico'];
 
-// Install event - precache critical resources
+
 self.addEventListener('install', event => {
   console.log('[SW] Installing service worker v2...');
   event.waitUntil(
@@ -28,7 +28,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate event - clean old caches
+
 self.addEventListener('activate', event => {
   console.log('[SW] Activating service worker...');
   event.waitUntil(
@@ -46,19 +46,19 @@ self.addEventListener('activate', event => {
   return self.clients.claim();
 });
 
-// Fetch event - advanced caching strategies
+
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
+  
   if (request.method !== 'GET') {
     return;
   }
 
-  // Handle cross-origin requests
+  
   if (url.origin !== self.location.origin) {
-    // Cache external resources (CDN, fonts, etc.)
+    
     if (url.href.includes('fonts.googleapis.com') || url.href.includes('fonts.gstatic.com')) {
       event.respondWith(cacheFirst(request));
       return;
@@ -66,29 +66,29 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // API requests: Network First with cache
+  
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirstWithCache(request, API_CACHE));
     return;
   }
 
-  // Navigation requests: Network First
+  
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  // Static assets: Cache First
+  
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Default: Network First
+  
   event.respondWith(networkFirst(request));
 });
 
-// Strategy: Cache First
+
 async function cacheFirst(request) {
   const cachedResponse = await caches.match(request);
   if (cachedResponse) {
@@ -107,7 +107,7 @@ async function cacheFirst(request) {
   }
 }
 
-// Strategy: Network First
+
 async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
@@ -122,13 +122,13 @@ async function networkFirst(request) {
   }
 }
 
-// Strategy: Network First with API cache
+
 async function networkFirstWithCache(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
-      // Cache GET API responses for 5 minutes
+      
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
@@ -138,7 +138,7 @@ async function networkFirstWithCache(request, cacheName) {
   }
 }
 
-// Helper: Check if static asset
+
 function isStaticAsset(pathname) {
   const staticExtensions = [
     '.js',
@@ -156,7 +156,7 @@ function isStaticAsset(pathname) {
   return staticExtensions.some(ext => pathname.endsWith(ext));
 }
 
-// Push Notifications
+
 self.addEventListener('push', event => {
   if (!event.data) return;
 
@@ -179,7 +179,7 @@ self.addEventListener('push', event => {
   );
 });
 
-// Notification click handler
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
@@ -197,7 +197,7 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
-// Background Sync
+
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-pending-data') {
     event.waitUntil(syncPendingData());
@@ -208,11 +208,11 @@ async function syncPendingData() {
   const cache = await caches.open(RUNTIME_CACHE);
   const requests = await cache.keys();
 
-  // Get pending offline requests and resend them
+  
   console.log('[SW] Background sync: processing pending requests');
 }
 
-// Message handler for cache management
+
 self.addEventListener('message', event => {
   if (!event.data) return;
 

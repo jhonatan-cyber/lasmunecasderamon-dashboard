@@ -7,7 +7,7 @@ export function setupFetchInterceptor() {
   window.fetch = async (...args) => {
     let [input, init] = args;
 
-    // Inyectar automáticamente la fecha del dispositivo en peticiones que envían datos
+    
     if (init && ['POST', 'PUT', 'PATCH'].includes(init.method?.toUpperCase() || '') && typeof init.body === 'string') {
       try {
         const bodyObj = JSON.parse(init.body);
@@ -16,7 +16,7 @@ export function setupFetchInterceptor() {
           init.body = JSON.stringify(bodyObj);
         }
       } catch (e) {
-        // Ignorar si no es JSON
+        
       }
     }
 

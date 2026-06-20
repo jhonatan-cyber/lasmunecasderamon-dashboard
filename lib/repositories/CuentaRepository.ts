@@ -7,7 +7,7 @@ import { NotFoundError, BusinessError } from '@/lib/errors/errors';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { buildFinancialSummary, type CuentaAnulacionRow } from './cuenta/cuentaFinancialSummary';
 
-// ─── Input types for CuentaRepository ───────────────────────────────────────
+
 
 type CuentaDetalle = {
   producto_id: string;
@@ -239,8 +239,8 @@ export class CuentaRepository {
             Math.ceil((endedAt.getTime() - startedAt.getTime()) / 60000)
           );
 
-          // Si el historial viejo quedo mal guardado con consumido=0, lo reconstruimos
-          // desde inicio/fin para que el detalle muestre lo que realmente paso.
+          
+          
           if (
             !Number.isFinite(consumedMinutes) ||
             consumedMinutes <= 0 ||
@@ -704,8 +704,8 @@ export class CuentaRepository {
       }
     }
 
-    // Si se envian habitacion_id y tiempo (productos con comision >= 30k)
-    // Permite tiempo = 0 para cambio de habitación sin timer
+    
+    
     if (body.habitacion_id && (body.tiempo ?? 0) >= 0) {
       const room = await query<any[]>(
         'SELECT nombre, precio, tiempo as room_tiempo, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
@@ -788,7 +788,7 @@ export class CuentaRepository {
         sendNotificationToAll('room_available', { roomId: previousRoomId });
       }
 
-      // Solo enviar notificación de timer si tiempo > 0
+      
       if ((body.tiempo ?? 0) > 0) {
         sendNotificationToAll('timer_started', {
           servicioId: id,
@@ -862,7 +862,7 @@ export class CuentaRepository {
       const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
       if (idCaja) {
         await CashRegisterRepository.updateBalances(trx, idCaja, {
-          // `cajas` no tiene columna `cuenta`; las cuentas se contabilizan como venta
+          
           venta: montoFinal - propinaFinal,
           propina: propinaFinal,
           efectivo: tipoPago === 'efectivo' ? montoFinal : 0,
@@ -872,9 +872,9 @@ export class CuentaRepository {
         });
       }
 
-      // Nota: el registro de comisiones y propinas se delega a SaleService.createSale()
-      // que se invoca en la segunda llamada del hook useCuentaCobro (POST /api/sales).
-      // Aquí solo se actualiza la caja y se libera la habitación.
+      
+      
+      
 
       if (cuenta[0].habitacion_id) {
         await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [

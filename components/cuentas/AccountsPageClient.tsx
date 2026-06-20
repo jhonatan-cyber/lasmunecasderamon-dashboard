@@ -33,18 +33,18 @@ export function AccountsPageClient() {
 
   const cuentasData = useMemo(() => cuentas || [], [cuentas]);
 
-  // Filter by tab and search
+  
   const filteredCuentas = useMemo(() => {
     let result = cuentasData;
 
-    // Filter by tab
+    
     if (activeTab === 'pending') {
       result = result.filter(c => c.estado === 1);
     } else if (activeTab === 'paid') {
       result = result.filter(c => c.estado === 0);
     }
 
-    // Filter by search term
+    
     if (searchTerm) {
       result = result.filter(
         cuenta =>
@@ -58,7 +58,7 @@ export function AccountsPageClient() {
 
   if (isLoading || cajaLoading) return <ReportSkeleton />;
 
-  // Counts for tabs
+  
   const pendingCount = cuentasData.filter(c => c.estado === 1).length;
   const paidCount = cuentasData.filter(c => c.estado === 0).length;
 
@@ -96,7 +96,7 @@ export function AccountsPageClient() {
           onRefresh={() => getCuentas()}
         />
 
-        {/* Tabs */}
+        {}
         <div className='flex justify-center gap-3 border-b pb-1'>
           <button
             onClick={() => {

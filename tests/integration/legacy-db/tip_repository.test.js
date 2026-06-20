@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
 
-// Mocks y utilidades
+
 const queryMock = async (sql, params = []) => {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -61,7 +61,7 @@ const withTransaction = async callback => {
   }
 };
 
-// Implementación mínima del Repositorio para la prueba basándose en lib/repositories/TipRepository.ts
+
 class TipRepository {
   static async getSummary(isAdmin, userId, cajaActiva) {
     let where = '';
@@ -128,7 +128,7 @@ class TipRepository {
     const id = generateUUID();
 
     await withTransaction(async trx => {
-      // Simulación de BaseRepository.insert usando el trx
+      
       const insertWithTrx = async (table, data) => {
         const keys = Object.keys(data);
         const values = Object.values(data);
@@ -165,15 +165,15 @@ async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: TIP REPOSITORY ---');
 
   try {
-    // 1. Obtener un usuario real para las pruebas
+    
     const users = await queryMock('SELECT id_usuario, nick FROM usuarios WHERE estado = 1 LIMIT 1');
     if (users.length === 0) throw new Error('No hay usuarios activos para probar');
     const user = users[0];
     console.log(`OK: Usando usuario para pruebas: ${user.nick} (${user.id_usuario})`);
 
-    // 2. Prueba de register()
+    
     console.log('PRUEBA 1: register()');
-    // Aseguramos que haya alguien logueado para que no falle
+    
     const loginCheck = await queryMock(
       "SELECT l.id_login FROM logins l INNER JOIN usuarios u ON u.id_usuario = l.usuario_id INNER JOIN roles r ON r.id_rol = u.rol_id WHERE l.estado = 1 AND l.en_local = 1 AND r.nombre IN ('cajero', 'garzon') LIMIT 1"
     );
@@ -197,7 +197,7 @@ async function runTests() {
     const regResult = await TipRepository.register(null, 5000);
     console.log('OK: Registro de propina exitoso:', regResult);
 
-    // 3. Prueba de getSummary()
+    
     console.log('PRUEBA 2: getSummary()');
     const summary = await TipRepository.getSummary(true, null, false);
     console.log(`OK: Resumen obtenido. Filas: ${summary.length}`);
@@ -205,12 +205,12 @@ async function runTests() {
       console.log('   Ejemplo:', summary[0].nick, '- Total:', summary[0].total_propinas);
     }
 
-    // 4. Prueba de getByUser()
+    
     console.log('PRUEBA 3: getByUser()');
     const userTips = await TipRepository.getByUser(user.id_usuario);
     console.log(`OK: Propinas del usuario ${user.nick}: ${userTips.length}`);
 
-    // Limpieza de datos de prueba (opcional, pero recomendado)
+    
     console.log('INFO: Limpiando datos de prueba...');
     await queryMock('DELETE FROM detalle_propinas WHERE propina_id = ?', [regResult.id]);
     await queryMock('DELETE FROM propinas WHERE id_propina = ?', [regResult.id]);

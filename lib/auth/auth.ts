@@ -97,9 +97,9 @@ export async function registrarLogin(usuarioId: string | number): Promise<void> 
     }
 
     const now = getNowInBusinessTimezone();
-    const today = now.substring(0, 10); // YYYY-MM-DD
+    const today = now.substring(0, 10); 
 
-    // Buscar si hay un login activo para este usuario
+    
     const existingLogin = await query<any[]>(
       `SELECT id_login, last_login FROM logins WHERE usuario_id = ? AND estado = 1`,
       [usuarioId]
@@ -108,19 +108,19 @@ export async function registrarLogin(usuarioId: string | number): Promise<void> 
     if (existingLogin.length > 0) {
       const lastLoginDate = existingLogin[0].last_login.toString().substring(0, 10);
 
-      // Si ya hay uno con fecha de hoy, no hacer nada
+      
       if (lastLoginDate === today) {
         return;
       }
 
-      // Si existe pero no es de hoy, cambiar estado a 0
+      
       await query(
         `UPDATE logins SET estado = 0 WHERE usuario_id = ? AND estado = 1`,
         [usuarioId]
       );
     }
 
-    // Insertar nuevo login
+    
     await query(
       'INSERT INTO logins (id_login, usuario_id, last_login, estado) VALUES (?, ?, ?, 1)',
       [generateUUID(), usuarioId, now]

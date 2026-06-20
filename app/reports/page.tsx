@@ -11,7 +11,7 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ReportSkeleton } from '@/components/shared/Skeletons';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
-// Lazy loading de reportes pesados
+
 const SalesReport = dynamic(
   () => import('@/components/reports/SalesReport').then(mod => ({ default: mod.SalesReport })),
   {
@@ -87,7 +87,7 @@ export default function ReportsPage() {
   return (
     <PermissionGuard module='reports' action='view'>
       <div className='p-6 space-y-6'>
-        {/* Header */}
+        {}
         <div className='flex items-center justify-between'>
           <div>
             <h1 className='text-3xl font-bold text-gray-900'>Reportes</h1>
@@ -110,7 +110,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Report Types Grid */}
+        {}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
           {reportTypes.map(report => {
             const IconComponent = report.icon;
@@ -145,7 +145,7 @@ export default function ReportsPage() {
           })}
         </div>
 
-        {/* Report Content */}
+        {}
         <div className='mt-8'>
           {activeReport === 'sales' && (
             <div className='space-y-6 animate-in fade-in duration-500'>

@@ -39,7 +39,6 @@ export default function CajeroAsistenciasPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
 
-  // Fetch asistencias
   const fetchAsistencias = async () => {
     setLoading(true);
     try {
@@ -75,7 +74,6 @@ export default function CajeroAsistenciasPage() {
     );
   }
 
-  // Verificar que el usuario sea cajero
   if (user?.role?.toLowerCase() !== 'cajero') {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -87,7 +85,6 @@ export default function CajeroAsistenciasPage() {
     );
   }
 
-  // Filtrado
   const filteredAsistencias = asistencias.filter(asistencia => {
     const matchesSearch =
       asistencia.fecha?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,7 +99,6 @@ export default function CajeroAsistenciasPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Ordenamiento
   const sortedAsistencias = [...filteredAsistencias].sort((a, b) => {
     let aValue: any = a[sortBy as keyof Asistencia];
     let bValue: any = b[sortBy as keyof Asistencia];
@@ -119,13 +115,11 @@ export default function CajeroAsistenciasPage() {
     }
   });
 
-  // PaginaciÃ³n
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedAsistencias = sortedAsistencias.slice(startIndex, endIndex);
   const totalPages = Math.ceil(sortedAsistencias.length / rowsPerPage);
 
-  // CÃ¡lculos
   const totalSalary = asistencias.reduce((sum, asistencia) => sum + (asistencia.sueldo || 0), 0);
   const totalContribution = asistencias.reduce(
     (sum, asistencia) => sum + (asistencia.aporte || 0),
@@ -147,7 +141,6 @@ export default function CajeroAsistenciasPage() {
     return <div className='text-sm text-gray-900'>{date}</div>;
   };
 
-  // Obtener badge de estado
   const getStatusBadge = (estado: number) => {
     if (estado === 1) {
       return (
@@ -166,7 +159,7 @@ export default function CajeroAsistenciasPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {/* Header */}
+      {}
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900'>Listado de Asistencias</h1>
@@ -196,13 +189,13 @@ export default function CajeroAsistenciasPage() {
         </div>
       </div>
 
-      {/* Total a cobrar centrado */}
+      {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
         <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToCollect)}</p>
       </div>
 
-      {/* Filtros */}
+      {}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4 w-full'>
         <div className='w-full'>
           <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
@@ -249,7 +242,7 @@ export default function CajeroAsistenciasPage() {
         />
       </div>
 
-      {/* Selector de filas por pÃ¡gina */}
+      {}
       <div className='flex justify-between items-center'>
         <FilterSelect
           value={rowsPerPage.toString()}
@@ -268,7 +261,7 @@ export default function CajeroAsistenciasPage() {
         />
       </div>
 
-      {/* Tabla */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Asistencias ({filteredAsistencias.length})</CardTitle>
@@ -336,14 +329,14 @@ export default function CajeroAsistenciasPage() {
         </CardContent>
       </Card>
 
-      {/* PaginaciÃ³n */}
+      {}
       {totalPages > 1 && (
         <div className='flex justify-center'>
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
         </div>
       )}
 
-      {/* Modal de registro manual de asistencia */}
+      {}
       <AsistenciaForm
         isOpen={asistenciaFormOpen}
         onOpenChange={setAsistenciaFormOpen}
@@ -352,5 +345,3 @@ export default function CajeroAsistenciasPage() {
     </div>
   );
 }
-
-

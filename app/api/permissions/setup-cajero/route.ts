@@ -2,12 +2,7 @@ import { NextResponse } from 'next/server';
 import { query, generateUUID } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
 
-// Este endpoint es temporal para setup — no requiere auth
-// Agregar a PUBLIC_PATHS en proxy.ts si es necesario
-
-// Todos los permisos que el cajero necesita
 const CAJERO_PERMISSIONS = [
-  // Módulos ya existentes en UserPermissions
   { module: 'users', action: 'view', name: 'Ver usuarios' },
   { module: 'users', action: 'create', name: 'Crear usuarios' },
   { module: 'users', action: 'edit', name: 'Editar usuarios' },
@@ -27,12 +22,12 @@ const CAJERO_PERMISSIONS = [
   { module: 'advances', action: 'create', name: 'Crear anticipos' },
   { module: 'advances', action: 'edit', name: 'Editar anticipos' },
   { module: 'advances', action: 'process', name: 'Procesar anticipos' },
-  // Caja / finanzas
+
   { module: 'cash_register', action: 'view', name: 'Ver caja' },
   { module: 'cash_register', action: 'open', name: 'Abrir caja' },
   { module: 'cash_register', action: 'close', name: 'Cerrar caja' },
   { module: 'cash_register', action: 'withdraw', name: 'Retirar de caja' },
-  // Módulos que no existían en UserPermissions
+
   { module: 'attendance', action: 'view', name: 'Ver asistencias' },
   { module: 'attendance', action: 'create', name: 'Registrar asistencia' },
   { module: 'overtime', action: 'view', name: 'Ver horas extras' },
@@ -57,7 +52,6 @@ const CAJERO_PERMISSIONS = [
 
 export async function POST() {
   try {
-    // 1. Obtener el rol cajero
     const roles = await query<any[]>(
       `SELECT id_rol FROM roles WHERE LOWER(nombre) = 'cajero' LIMIT 1`
     );
@@ -75,7 +69,6 @@ export async function POST() {
     let skipped = 0;
 
     for (const perm of CAJERO_PERMISSIONS) {
-      // 2. Buscar si el permiso ya existe en la tabla permissions
       const existing = await query<any[]>(
         `SELECT id FROM permissions WHERE module = ? AND action = ? AND deleted_at IS NULL LIMIT 1`,
         [perm.module, perm.action]
@@ -84,7 +77,6 @@ export async function POST() {
       let permId: string;
 
       if (existing.length === 0) {
-        // Crear el permiso
         permId = generateUUID();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await query(
@@ -96,7 +88,6 @@ export async function POST() {
         permId = existing[0].id;
       }
 
-      // 3. Verificar si ya está asignado al rol cajero
       const alreadyAssigned = await query<any[]>(
         `SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ? LIMIT 1`,
         [cajeroRoleId, permId]

@@ -6,13 +6,13 @@ import { ConflictError, ValidationError } from '@/lib/errors/errors';
 
 export class RoomRepository {
   private static mapRoomFromDB(row: any): RoomType {
-    // Estado de la habitación: 0=inactiva, 1=libre, 2=ocupada
-    // Se considera ocupada si hay servicios activos (estado = 2) o ventas activas (estado = 2) en esa habitación
+    
+    
     const tieneServiciosActivos = row.servicios_activos > 0;
     const tieneVentasActivas = row.ventas_activas > 0;
     const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
 
-    // Habitaciones de libre ingreso (sin precio o sin comisión) siempre se muestran como libres
+    
     const precio = Number(row.precio || 0);
     const comision = Number(row.comision_anfitriona || 0);
     const esLibreIngreso = precio <= 0 || comision <= 0;
@@ -35,7 +35,7 @@ export class RoomRepository {
     let results: any[];
     if (status !== undefined) {
       if (status === '1') {
-        // Solo habitaciones libres (estado = 1 Y sin servicios/ventas activas)
+        
         results = await query<any[]>(
           `SELECT h.*, 
             (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
@@ -65,7 +65,7 @@ export class RoomRepository {
         );
       }
     } else {
-      // Obtener todas las habitaciones con conteo de servicios y ventas activas
+      
       results = await query<any[]>(
         `SELECT h.*, 
           (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
@@ -86,7 +86,7 @@ export class RoomRepository {
   static async create(data: any): Promise<RoomType | null> {
     const validated = RoomSchema.parse(data);
 
-    // Validar duplicado por nombre
+    
     const dup = await query<any[]>(
       'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?)',
       [validated.name]
@@ -112,7 +112,7 @@ export class RoomRepository {
   static async update(id: string, data: any): Promise<RoomType | null> {
     const validated = RoomSchema.partial().parse(data);
 
-    // Validar duplicado por nombre (excluyendo el actual)
+    
     if (validated.name) {
       const dup = await query<any[]>(
         'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?) AND id_habitacion != ?',
@@ -152,7 +152,7 @@ export class RoomRepository {
   }
 
   static async delete(id: string): Promise<{ success: boolean; deactivated: boolean }> {
-    // Verificar referencias en servicios
+    
     const refs = await query<any[]>(
       'SELECT COUNT(*) AS cnt FROM servicios WHERE habitacion_id = ?',
       [id]
@@ -160,7 +160,7 @@ export class RoomRepository {
     const count = refs[0]?.cnt ?? 0;
 
     if (count > 0) {
-      // Si hay referencias, no eliminar: desactivar por seguridad
+      
       await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, {
         estado: 0,
         fecha_mod: getNowInBusinessTimezone()

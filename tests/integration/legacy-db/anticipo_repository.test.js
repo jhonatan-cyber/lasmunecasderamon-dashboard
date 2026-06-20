@@ -74,7 +74,7 @@ class AnticipoRepository {
       usuario_id: data.usuario_id,
       monto: data.monto,
       motivo: data.motivo || '',
-      estado: data.estado || 2, // 2 = pendiente
+      estado: data.estado || 2, 
       fecha_crea: new Date()
     });
     return id;
@@ -129,7 +129,7 @@ async function runTests() {
       throw new Error('No se pudo recuperar el anticipo creado');
     }
 
-    await AnticipoRepository.updateStatus(testId, 1); // Aprobar
+    await AnticipoRepository.updateStatus(testId, 1); 
     const anticipoAprobado = await AnticipoRepository.getById(testId);
     if (anticipoAprobado && anticipoAprobado.estado === 1) {
       console.log('✅ updateStatus() OK');

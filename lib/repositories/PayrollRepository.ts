@@ -29,19 +29,19 @@ export class PayrollRepository {
   static async pay(userId: string, entregadoPor?: string) {
     const now = getNowInBusinessTimezone();
     await withTransaction(async trx => {
-      // Actualizar asistencias
+      
       await trx(
         'UPDATE asistencias SET estado = 0, fecha_pago = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      // Actualizar detalle de comisiones (por usuario)
+      
       await trx(
         'UPDATE detalle_comisiones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      // Actualizar tabla principal de comisiones (solo si todos los detalles ya fueron pagados)
+      
       await trx(
         `UPDATE comisiones c
          SET c.estado = 2, c.fecha_mod = ?
@@ -53,13 +53,13 @@ export class PayrollRepository {
         [now]
       );
 
-      // Actualizar detalle de propinas (por usuario)
+      
       await trx(
         'UPDATE detalle_propinas SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      // Actualizar tabla principal de propinas (solo si todos los detalles ya fueron pagados)
+      
       await trx(
         `UPDATE propinas p
          SET p.estado = 0, p.fecha_mod = ?
@@ -71,7 +71,7 @@ export class PayrollRepository {
         [now]
       );
 
-      // Actualizar anticipos
+      
       if (entregadoPor) {
         await trx(
           'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1',
@@ -84,13 +84,13 @@ export class PayrollRepository {
         );
       }
 
-      // Actualizar horas extras
+      
       await trx(
         'UPDATE horas_extras SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]
       );
 
-      // Actualizar gratificaciones - ESTE ES EL QUE FALTABA
+      
       await trx(
         'UPDATE gratificaciones SET estado = 0, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
         [now, userId]

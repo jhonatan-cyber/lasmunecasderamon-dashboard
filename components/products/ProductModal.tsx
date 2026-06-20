@@ -51,7 +51,7 @@ export default function SaleProductModal({
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const itemsPerPage = viewMode === 'grid' ? 8 : 5;
 
-  // Hook de selección de productos
+  
   const {
     selectedProducts,
     handleAddToSelection,
@@ -66,7 +66,7 @@ export default function SaleProductModal({
     onAgregarProducto: handleAgregarProducto
   });
 
-  // Resetear estados cuando se abre el modal
+  
   useEffect(() => {
     if (open) {
       setCurrentPage(1);
@@ -75,7 +75,7 @@ export default function SaleProductModal({
     }
   }, [open, clearSelection]);
 
-  // Filtrar productos por búsqueda
+  
   const filteredProductos = useMemo(() => {
     if (!searchTerm) return productos || [];
 
@@ -85,18 +85,18 @@ export default function SaleProductModal({
     ) || [];
   }, [productos, searchTerm]);
 
-  // Calcular productos para la página actual
+  
   const totalPages = Math.ceil(filteredProductos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentProductos = filteredProductos.slice(startIndex, endIndex);
 
-  // Resetear página cuando cambia la búsqueda
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Atajos de teclado
+  
   useEffect(() => {
     if (!open) return;
 
@@ -213,7 +213,7 @@ export default function SaleProductModal({
           </div>
         </DialogHeader>
 
-        {/* Barra de búsqueda y filtros */}
+        {}
         <div className="flex-shrink-0 px-6 py-4 border-b bg-gray-50 space-y-3">
           <div className="flex items-center gap-4">
             <div className="flex-1 relative">
@@ -230,7 +230,7 @@ export default function SaleProductModal({
 
         <div className="flex-1 overflow-y-auto">
           <div className="flex gap-4 h-full">
-            {/* Panel principal de productos */}
+            {}
             <div className="flex-1 px-6 py-4">
               {loading ? (
                 <div className="text-center text-gray-400 py-12 flex flex-col items-center gap-3">
@@ -253,7 +253,7 @@ export default function SaleProductModal({
                 <div className="space-y-4">
                   {viewMode === 'grid' ? renderGridView() : renderTableView()}
 
-                  {/* Paginador */}
+                  {}
                   {totalPages > 1 && (
                     <div className="flex justify-center pt-4">
                       <Paginate
@@ -270,7 +270,7 @@ export default function SaleProductModal({
           </div>
         </div>
 
-        {/* Footer con estadísticas y botones */}
+        {}
         <div className="flex-shrink-0 border-t px-6 py-4 bg-gray-50">
           <div className="flex items-center justify-center">
             <Button

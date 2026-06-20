@@ -775,7 +775,7 @@ export class StatsRepository {
     const minutesElapsed = Number(now.slice(14, 16) || 0);
     const elapsedMinutesToday = Math.max(1, hoursElapsed * 60 + minutesElapsed);
 
-    // Step 1: Get caja_id once (used by multiple queries)
+    
     const cajaRows = await query<any[]>(
       `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
               tarjeta, transferencia, comision, anticipo, devolucion, iva,
@@ -787,7 +787,7 @@ export class StatsRepository {
     const cajaRow = cajaRows[0] || null;
     const cajaId = cajaRow?.id_caja;
 
-    // Step 2: All independent queries run in parallel
+    
     const [
       cajaStatsRows,
       comparisonsRows,
@@ -799,7 +799,7 @@ export class StatsRepository {
       pendingOrdersResult,
       withdrawalsRows
     ] = await Promise.all([
-      // caja stats: ventas, servicios, balance in ONE query
+      
       cajaId
         ? query<any[]>(
             `SELECT 
@@ -829,7 +829,7 @@ export class StatsRepository {
             }
           ]),
 
-      // comparisons: 10 values in single SELECT
+      
       query<any[]>(
         `SELECT
           COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
@@ -865,7 +865,7 @@ export class StatsRepository {
         ]
       ),
 
-      // rankings: existing complex query
+      
       query<any[]>(
         `SELECT * FROM (
           SELECT 'product' AS ranking_type, p.nombre AS item_name, SUM(dv.cantidad) AS primary_value, SUM(dv.sub_total) AS secondary_value
@@ -902,22 +902,22 @@ export class StatsRepository {
         [now, now, now, now, now, now, now, now, now, now]
       ),
 
-      // logged users
+      
       this.getLoggedUsers(),
 
-      // timers
+      
       TimerRepository.getActive(),
 
-      // rooms
+      
       RoomRepository.getAll(),
 
-      // pending service requests count
+      
       ServiceRequestRepository.getPendingCount(),
 
-      // pending orders count
+      
       query<any[]>(`SELECT COUNT(*) as total FROM pedidos WHERE estado = 1`),
 
-      // withdrawals
+      
       cajaId
         ? query<any[]>(
             `SELECT COALESCE(SUM(monto), 0) AS total FROM retiros_caja WHERE caja_id = ?`,
@@ -926,7 +926,7 @@ export class StatsRepository {
         : Promise.resolve([{ total: 0 }])
     ]);
 
-    // Step 3: Compute summary from data already fetched
+    
     const cajaStats = cajaStatsRows[0] || {};
     const occupiedRooms = rooms.filter(room => Number(room.status) === 2).length;
     const freeRooms = rooms.filter(room => Number(room.status) === 1).length;
@@ -997,10 +997,10 @@ export class StatsRepository {
 
     insights.localStatus.orders.open = pendingOrders;
 
-    // Get recent activity
+    
     const recentActivity = await this.getRecentActivity(8);
 
-    // Build cajaStats structure (same as getCajaGeneralStats)
+    
     const cajaStatsResult = buildCajaStatsResult({
       cajaId,
       cajaRow,

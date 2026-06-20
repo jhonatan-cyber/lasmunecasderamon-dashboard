@@ -5,7 +5,7 @@ import { CuentaRepository } from './CuentaRepository';
 
 export class TimerRepository {
   static async getActive() {
-    const now = new Date(); // Referencia real de tiempo
+    const now = new Date(); 
 
     const [activeServices, activeVentas, activeCuentas] = await Promise.all([
       query(`
@@ -115,7 +115,7 @@ export class TimerRepository {
       changed = true;
     }
 
-    // Limpiar cuentas expiradas
+    
     const expiredC = await query<any[]>('SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TIMESTAMPDIFF(SECOND, COALESCE(tiempo_inicio_actual, fecha_crea), ?) >= (COALESCE(tiempo_actual, tiempo) * 60)', [nowStr]);
     for (const c of expiredC) {
       await CuentaRepository.finalizeRoomSession(c.id_cuenta, nowStr);

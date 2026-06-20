@@ -6,7 +6,7 @@ interface CurrentUser {
   lastName: string;
   email?: string;
   role: string;
-  roleId?: number; // ID del rol para comparar con SSE
+  roleId?: number; 
   status: number;
   foto?: string;
   username?: string;
@@ -24,10 +24,7 @@ interface UseCurrentUserReturn {
   refetch: (silent?: boolean) => Promise<void>;
 }
 
-/**
- * Hook optimizado que usa el contexto de autenticación
- * Evita múltiples llamadas al API
- */
+
 export const useCurrentUser = (): UseCurrentUserReturn => {
   const { user, userLoading, refreshUser } = useAuth();
 

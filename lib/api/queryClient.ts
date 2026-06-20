@@ -8,43 +8,43 @@ type RetryError = {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Tiempo de vida del caché (5 minutos)
+      
       staleTime: 5 * 60 * 1000,
-      // Tiempo de caché en memoria (10 minutos)
+      
       gcTime: 10 * 60 * 1000,
-      // Reintentos en caso de error
+      
       retry: (failureCount, error: unknown) => {
-        // No reintentar en errores 4xx (excepto 408, 429)
+        
         const status = (error as RetryError | undefined)?.status;
         if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
           return false;
         }
-        // Máximo 3 reintentos
+        
         return failureCount < 3;
       },
-      // Reintentar con delay exponencial
+      
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Refetch en window focus solo en producción
+      
       refetchOnWindowFocus: process.env.NODE_ENV === 'production',
-      // Refetch en reconnect
+      
       refetchOnReconnect: true,
-      // Refetch en mount
+      
       refetchOnMount: true
     },
     mutations: {
-      // Reintentos para mutaciones
+      
       retry: 1,
-      // Retry delay para mutaciones
+      
       retryDelay: 1000
     }
   }
 });
 
-// ==========================================
-// QUERY KEYS — Centralized for all domains
-// ==========================================
+
+
+
 export const queryKeys = {
-  // Usuarios
+  
   users: {
     all: ['users'] as const,
     lists: () => [...queryKeys.users.all, 'list'] as const,
@@ -53,7 +53,7 @@ export const queryKeys = {
     detail: (id: number) => [...queryKeys.users.details(), id] as const
   },
 
-  // Ventas
+  
   sales: {
     all: ['sales'] as const,
     lists: () => [...queryKeys.sales.all, 'list'] as const,
@@ -63,7 +63,7 @@ export const queryKeys = {
     stats: () => [...queryKeys.sales.all, 'stats'] as const
   },
 
-  // Productos
+  
   products: {
     all: ['products'] as const,
     lists: () => [...queryKeys.products.all, 'list'] as const,
@@ -73,7 +73,7 @@ export const queryKeys = {
     categories: () => [...queryKeys.products.all, 'categories'] as const
   },
 
-  // Clientes
+  
   clients: {
     all: ['clients'] as const,
     lists: () => [...queryKeys.clients.all, 'list'] as const,
@@ -82,7 +82,7 @@ export const queryKeys = {
     detail: (id: number) => [...queryKeys.clients.details(), id] as const
   },
 
-  // Caja
+  
   cashRegister: {
     all: ['cashRegister'] as const,
     status: () => [...queryKeys.cashRegister.all, 'status'] as const,
@@ -91,7 +91,7 @@ export const queryKeys = {
     retiros: () => [...queryKeys.cashRegister.all, 'retiros'] as const
   },
 
-  // Reportes
+  
   reports: {
     all: ['reports'] as const,
     sales: () => [...queryKeys.reports.all, 'sales'] as const,
@@ -99,7 +99,7 @@ export const queryKeys = {
     users: () => [...queryKeys.reports.all, 'users'] as const
   },
 
-  // Cuentas
+  
   cuentas: {
     all: ['cuentas'] as const,
     lists: () => [...queryKeys.cuentas.all, 'list'] as const,
@@ -108,7 +108,7 @@ export const queryKeys = {
     detail: (id: string | number) => [...queryKeys.cuentas.details(), id] as const
   },
 
-  // Servicios
+  
   servicios: {
     all: ['servicios'] as const,
     lists: () => [...queryKeys.servicios.all, 'list'] as const,
@@ -118,7 +118,7 @@ export const queryKeys = {
     temporales: () => [...queryKeys.servicios.all, 'temporal'] as const
   },
 
-  // Órdenes / Pedidos
+  
   orders: {
     all: ['orders'] as const,
     lists: () => [...queryKeys.orders.all, 'list'] as const,
@@ -127,7 +127,7 @@ export const queryKeys = {
     detail: (id: string | number) => [...queryKeys.orders.details(), id] as const
   },
 
-  // Habitaciones
+  
   rooms: {
     all: ['rooms'] as const,
     lists: () => [...queryKeys.rooms.all, 'list'] as const,
@@ -136,28 +136,28 @@ export const queryKeys = {
     detail: (id: string | number) => [...queryKeys.rooms.details(), id] as const
   },
 
-  // Categorías
+  
   categories: {
     all: ['categories'] as const,
     lists: () => [...queryKeys.categories.all, 'list'] as const,
     list: (filters: QueryFilters) => [...queryKeys.categories.lists(), filters] as const
   },
 
-  // Roles
+  
   roles: {
     all: ['roles'] as const,
     lists: () => [...queryKeys.roles.all, 'list'] as const,
     list: (filters: QueryFilters) => [...queryKeys.roles.lists(), filters] as const
   },
 
-  // Propinas
+  
   tips: {
     all: ['tips'] as const,
     resumen: () => [...queryKeys.tips.all, 'resumen'] as const,
     detalle: (usuarioId: string | number) => [...queryKeys.tips.all, 'detalle', usuarioId] as const
   },
 
-  // Comisiones
+  
   commissions: {
     all: ['commissions'] as const,
     lists: () => [...queryKeys.commissions.all, 'list'] as const,
@@ -165,7 +165,7 @@ export const queryKeys = {
     stats: () => [...queryKeys.commissions.all, 'stats'] as const
   },
 
-  // Asistencias
+  
   attendance: {
     all: ['attendance'] as const,
     lists: () => [...queryKeys.attendance.all, 'list'] as const,
@@ -173,7 +173,7 @@ export const queryKeys = {
     stats: () => [...queryKeys.attendance.all, 'stats'] as const
   },
 
-  // Horas extras
+  
   overtime: {
     all: ['overtime'] as const,
     lists: () => [...queryKeys.overtime.all, 'list'] as const,
@@ -181,7 +181,7 @@ export const queryKeys = {
     byUser: (userId: string | number) => [...queryKeys.overtime.all, 'user', userId] as const
   },
 
-  // Anticipos
+  
   advances: {
     all: ['advances'] as const,
     lists: () => [...queryKeys.advances.all, 'list'] as const,
@@ -190,40 +190,40 @@ export const queryKeys = {
       [...queryKeys.advances.all, 'balances', usuarioId] as const
   },
 
-  // Nómina
+  
   payroll: {
     all: ['payroll'] as const,
     summary: () => [...queryKeys.payroll.all, 'summary'] as const,
     list: (filters: QueryFilters) => [...queryKeys.payroll.all, 'list', filters] as const
   },
 
-  // Gratificaciones
+  
   gratifications: {
     all: ['gratifications'] as const,
     lists: () => [...queryKeys.gratifications.all, 'list'] as const,
     list: (filters: QueryFilters) => [...queryKeys.gratifications.lists(), filters] as const
   },
 
-  // Anfitrionas
+  
   anfitrionas: {
     all: ['anfitrionas'] as const,
     disponibles: () => [...queryKeys.anfitrionas.all, 'disponibles'] as const,
     lists: () => [...queryKeys.anfitrionas.all, 'list'] as const
   },
 
-  // Timers
+  
   timers: {
     all: ['timers'] as const,
     active: () => [...queryKeys.timers.all, 'active'] as const
   },
 
-  // Notificaciones
+  
   notifications: {
     all: ['notifications'] as const,
     sse: () => [...queryKeys.notifications.all, 'sse'] as const
   },
 
-  // Dashboard / Stats
+  
   dashboard: {
     all: ['dashboard'] as const,
     summary: () => [...queryKeys.dashboard.all, 'summary'] as const,
@@ -234,14 +234,14 @@ export const queryKeys = {
     composite: () => [...queryKeys.dashboard.all, 'composite'] as const
   },
 
-  // Devoluciones
+  
   returns: {
     all: ['returns'] as const,
     services: () => [...queryKeys.returns.all, 'services'] as const,
     sales: () => [...queryKeys.returns.all, 'sales'] as const
   },
 
-  // Auth
+  
   auth: {
     all: ['auth'] as const,
     check: () => [...queryKeys.auth.all, 'check'] as const,
@@ -249,23 +249,23 @@ export const queryKeys = {
     registerFirstUser: () => [...queryKeys.auth.all, 'register-first-user'] as const
   },
 
-  // Calendario
+  
   calendar: {
     all: ['calendar'] as const,
     range: (startDate: string, endDate: string) =>
       [...queryKeys.calendar.all, 'range', startDate, endDate] as const
   },
 
-  // Reviews
+  
   reviews: {
     all: ['reviews'] as const,
     lists: () => [...queryKeys.reviews.all, 'list'] as const
   }
 };
 
-// ==========================================
-// INVALIDATE HELPERS — One-liners for all domains
-// ==========================================
+
+
+
 export const invalidateQueries = {
   users: () => queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
   sales: () => queryClient.invalidateQueries({ queryKey: queryKeys.sales.all }),

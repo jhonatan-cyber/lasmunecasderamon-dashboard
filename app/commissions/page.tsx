@@ -35,7 +35,6 @@ export default function CommissionsPage() {
     setPage(1);
   };
 
-  // Reset page when tab changes
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setPage(1);
@@ -64,7 +63,6 @@ export default function CommissionsPage() {
     }
   };
 
-  // Ordenar comisiones
   const sortedCommissions = useMemo(() => {
     return [...filteredCommissions].sort((a: any, b: any) => {
       let aVal = a[sortBy];
@@ -77,7 +75,6 @@ export default function CommissionsPage() {
     });
   }, [filteredCommissions, sortBy, sortOrder]);
 
-  // Ordenar comisiones filtradas por tab
   const tabFilteredCommissions = useMemo(() => {
     return sortedCommissions.filter(c => {
       if (activeTab === 'pending') return c.status === 'por_pagar';
@@ -86,14 +83,12 @@ export default function CommissionsPage() {
     });
   }, [sortedCommissions, activeTab]);
 
-  // Paginación
   const totalPages = Math.ceil(tabFilteredCommissions.length / rowsPerPage);
   const paginatedCommissions = tabFilteredCommissions.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
 
-  // Filtrar por tab activo
   const pendingCount = filteredCommissions.filter(c => c.status === 'por_pagar').length;
   const paidCount = filteredCommissions.filter(c => c.status === 'pagado').length;
 
@@ -111,7 +106,7 @@ export default function CommissionsPage() {
           </div>
         </div>
 
-        {/* Estadísticas */}
+        {}
         <CommissionsStatsCards
           totalComisiones={stats?.total_comisiones || 0}
           comisionVentas={stats?.comision_ventas || 0}
@@ -122,7 +117,7 @@ export default function CommissionsPage() {
           isLoading={isLoadingStats}
         />
 
-        {/* Filtros y búsqueda */}
+        {}
         <div className='space-y-4'>
           <CommissionsFilters
             searchTerm={searchTerm}
@@ -137,7 +132,7 @@ export default function CommissionsPage() {
             setPage={setPage}
           />
 
-          {/* Tabs - centrados debajo de los filtros */}
+          {}
           <div className='flex justify-center gap-3 border-b pb-1'>
             <button
               onClick={() => handleTabChange('pending')}
@@ -149,9 +144,13 @@ export default function CommissionsPage() {
             >
               <Clock className='h-4 w-4' />
               Pendientes de Pago
-              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-              }`}>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'pending'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
                 {pendingCount}
               </span>
             </button>
@@ -165,16 +164,18 @@ export default function CommissionsPage() {
             >
               <CheckCircle className='h-4 w-4' />
               Pagadas
-              <span className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-              }`}>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+                }`}
+              >
                 {paidCount}
               </span>
             </button>
           </div>
         </div>
 
-        {/* Lista de comisiones */}
+        {}
         <div className='overflow-x-auto'>
           <CommissionsList
             loading={isLoading}
@@ -187,7 +188,7 @@ export default function CommissionsPage() {
           />
         </div>
 
-        {/* Modal de detalles */}
+        {}
         <CommissionsDetalleModal
           open={showDetailModal}
           onClose={handleCloseDetailModal}
@@ -208,4 +209,3 @@ export default function CommissionsPage() {
     </PermissionGuard>
   );
 }
-

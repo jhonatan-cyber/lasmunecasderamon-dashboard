@@ -18,7 +18,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Cargar estado de colapso desde localStorage
+  
   useEffect(() => {
     const savedCollapsed = localStorage.getItem('sidebar-collapsed');
     if (savedCollapsed !== null) {
@@ -26,16 +26,16 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Guardar estado de colapso en localStorage
+  
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  // Cerrar sidebar cuando cambia el tamaño de la ventana a desktop
+  
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        // lg breakpoint
+        
         setIsSidebarOpen(false);
       }
     };

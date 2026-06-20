@@ -122,7 +122,7 @@ export default function EditServiceModal({
           </div>
         </div>
 
-        {/* Footer con botones */}
+        {}
         <div className="flex-shrink-0 border-t px-4 sm:px-6 py-4">
           <div className="flex gap-3">
             <Button
