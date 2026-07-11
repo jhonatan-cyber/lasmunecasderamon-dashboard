@@ -28,7 +28,7 @@ const PUBLIC_PRECACHE = [
   '/manifest.json',
   '/img/system/logo1.png',
   '/img/system/logo2.png',
-  '/notification.mp3',
+  '/notification.mp3'
 ];
 
 async function generateSW() {
@@ -64,7 +64,7 @@ async function generateSW() {
         const stats = fs.statSync(filePath);
         precacheEntries.push({
           url,
-          revision: stats.mtimeMs.toString(36),
+          revision: stats.mtimeMs.toString(36)
         });
       }
     }
@@ -79,15 +79,12 @@ async function generateSW() {
 
           if (entry.isDirectory()) {
             walkDir(fullPath, relativePath);
-          } else if (
-            /\.(js|css|json)$/i.test(entry.name) &&
-            !entry.name.endsWith('.map')
-          ) {
+          } else if (/\.(js|css|json)$/i.test(entry.name) && !entry.name.endsWith('.map')) {
             const stats = fs.statSync(fullPath);
             const url = `/_next/static/${relativePath.replace(/\\/g, '/')}`;
             precacheEntries.push({
               url,
-              revision: stats.mtimeMs.toString(36),
+              revision: stats.mtimeMs.toString(36)
             });
           }
         }
@@ -97,11 +94,7 @@ async function generateSW() {
     }
 
     // Write manifest JSON
-    fs.writeFileSync(
-      PRECACHE_MANIFEST_DEST,
-      JSON.stringify(precacheEntries, null, 2),
-      'utf-8'
-    );
+    fs.writeFileSync(PRECACHE_MANIFEST_DEST, JSON.stringify(precacheEntries, null, 2), 'utf-8');
     console.log(`   ✅ ${precacheEntries.length} entries written to precache-manifest.json`);
 
     // ── Step 2: Copy template to SW output ───────────────────────────────

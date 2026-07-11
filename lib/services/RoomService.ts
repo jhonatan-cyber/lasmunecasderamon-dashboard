@@ -32,6 +32,8 @@ export class RoomService {
   }
 
   static async reorder(room_orders: Array<{ id: string; orden: number }>) {
-    return await RoomRepository.reorder(room_orders.map(r => ({ id: r.id, display_order: r.orden })));
+    return await RoomRepository.reorder(
+      room_orders.map(r => ({ id: r.id, display_order: r.orden }))
+    );
   }
 }

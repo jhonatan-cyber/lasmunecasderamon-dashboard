@@ -26,7 +26,7 @@ function openDB(): Promise<IDBDatabase> {
 
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = event => {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'key' });
@@ -35,11 +35,11 @@ function openDB(): Promise<IDBDatabase> {
       }
     };
 
-    request.onsuccess = (event) => {
+    request.onsuccess = event => {
       resolve((event.target as IDBOpenDBRequest).result);
     };
 
-    request.onerror = (event) => {
+    request.onerror = event => {
       reject((event.target as IDBOpenDBRequest).error);
     };
   });
@@ -98,7 +98,7 @@ export const indexedDBCache = {
         data,
         timestamp: Date.now(),
         ttl,
-        etag,
+        etag
       };
 
       store.put(entry);
@@ -149,7 +149,7 @@ export const indexedDBCache = {
       } else {
         // Delete keys matching pattern
         const request = store.openCursor();
-        request.onsuccess = (event) => {
+        request.onsuccess = event => {
           const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
           if (cursor) {
             const key = cursor.key as string;
@@ -183,7 +183,7 @@ export const indexedDBCache = {
       const countRequest = store.count();
       const allRequest = store.getAll();
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         countRequest.onsuccess = () => {
           allRequest.onsuccess = () => {
             const entries = allRequest.result || [];
@@ -215,7 +215,7 @@ export const indexedDBCache = {
       let pruned = 0;
 
       return new Promise((resolve, reject) => {
-        request.onsuccess = (event) => {
+        request.onsuccess = event => {
           const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
           if (cursor) {
             const entry = cursor.value as CacheEntry;
@@ -239,5 +239,5 @@ export const indexedDBCache = {
     } catch {
       return 0;
     }
-  },
+  }
 };

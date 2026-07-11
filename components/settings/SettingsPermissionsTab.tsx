@@ -41,7 +41,9 @@ export function SettingsPermissionsTab() {
     }
   }, []);
 
-  useEffect(() => { fetchPermissions(); }, [fetchPermissions]);
+  useEffect(() => {
+    fetchPermissions();
+  }, [fetchPermissions]);
 
   const availableModules = useMemo(() => {
     const modules = new Set(permissions.map(p => p.module));
@@ -94,7 +96,9 @@ export function SettingsPermissionsTab() {
 
   const totalPages = Math.ceil(filteredPermissions.length / pageSize);
 
-  useEffect(() => { setPage(1); }, [searchTerm, moduleFilter, sortBy, sortOrder, pageSize]);
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, moduleFilter, sortBy, sortOrder, pageSize]);
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm('');
@@ -153,7 +157,10 @@ export function SettingsPermissionsTab() {
           await fetchPermissions();
           toast.success('Permiso actualizado correctamente');
         } else {
-          setPermissions(prev => [...prev, { ...permissionData, id: result.id } as unknown as Permission]);
+          setPermissions(prev => [
+            ...prev,
+            { ...permissionData, id: result.id } as unknown as Permission
+          ]);
           toast.success('Permiso creado correctamente');
         }
         setIsPermissionModalOpen(false);
