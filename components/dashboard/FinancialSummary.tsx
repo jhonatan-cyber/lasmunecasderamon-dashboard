@@ -10,7 +10,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/shared/Skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 

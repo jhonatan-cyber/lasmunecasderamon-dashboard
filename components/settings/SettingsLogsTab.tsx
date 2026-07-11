@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Skeleton } from '@/components/shared/Skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 
 type AuditLog = {

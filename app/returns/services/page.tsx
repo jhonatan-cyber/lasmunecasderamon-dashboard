@@ -1,7 +1,6 @@
-/* eslint-disable */
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useServicios } from '@/hooks/servicios/useServicios';
 import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
 import { useDevolucionLogic } from '@/hooks/servicios/useDevolucionLogic';
@@ -50,24 +49,10 @@ export default function DevolucionesServiciosPage() {
     logger.info('🔄 Actualizando servicios después de timer terminado');
   }, []);
 
-  const updateCallbackRef = useRef(updateCallback);
-  const timerUpdateCallbackRef = useRef(timerUpdateCallback);
-
   useEffect(() => {
-    updateCallbackRef.current = updateCallback;
-  }, [updateCallback]);
-
-  useEffect(() => {
-    timerUpdateCallbackRef.current = timerUpdateCallback;
-  }, [timerUpdateCallback]);
-
-  useEffect(() => {
-    setRefreshCallback(() => updateCallbackRef.current);
-  }, [setRefreshCallback]);
-
-  useEffect(() => {
-    setTimerRefreshCallback(() => timerUpdateCallbackRef.current);
-  }, [setTimerRefreshCallback]);
+    setRefreshCallback(() => updateCallback);
+    setTimerRefreshCallback(() => timerUpdateCallback);
+  }, [updateCallback, timerUpdateCallback, setRefreshCallback, setTimerRefreshCallback]);
 
   const serviciosFiltrados = showAnulados
     ? servicios.filter(servicio => servicio.estado === 3)

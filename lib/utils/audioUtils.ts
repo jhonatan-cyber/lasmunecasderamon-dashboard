@@ -1,27 +1,24 @@
-import { Howl } from 'howler';
 import { logger } from './logger';
 
-
-let notificationSound: Howl | null = null;
+let notificationAudio: HTMLAudioElement | null = null;
 
 export const playNotificationSound = () => {
   try {
-    if (!notificationSound) {
-      notificationSound = new Howl({
-        src: ['/notification.mp3'],
-        volume: 0.5,
-        html5: true,
-        preload: true,
-      });
+    if (!notificationAudio) {
+      notificationAudio = new Audio('/notification.mp3');
+      notificationAudio.volume = 0.5;
+      notificationAudio.preload = 'auto';
     }
 
-    if (notificationSound.playing()) {
-      notificationSound.stop();
+    if (!notificationAudio.paused) {
+      notificationAudio.pause();
+      notificationAudio.currentTime = 0;
     }
 
-    notificationSound.play();
+    notificationAudio.play().catch(() => {
+      logger.error('Error al reproducir sonido de notificación');
+    });
   } catch {
-
     logger.error('Error al reproducir sonido de notificación');
   }
 };

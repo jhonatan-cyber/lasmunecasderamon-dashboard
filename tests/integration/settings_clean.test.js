@@ -38,7 +38,7 @@ async function restoreTable(connection, tableName, data) {
 
 async function runIntegrationTest() {
   console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Módulo de Configuración - Limpieza BD ---\n');
-  console.log('âš ï¸  Esta prueba harÃ¡ backup y restauraciÃ³n de datos\n');
+  console.log('âš ï¸  Esta prueba hará backup y restauración de datos\n');
 
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -229,7 +229,7 @@ async function runIntegrationTest() {
     console.log('  - Datos de usuarios, roles, permissions intactos');
     console.log('  - Backup automático creado y eliminado tras prueba');
   } catch (error) {
-    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error.message);
+    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÓN:', error.message);
     console.log('\nâš ï¸  Intentando restaurar desde backup...');
 
     try {
@@ -245,7 +245,7 @@ async function runIntegrationTest() {
         console.log('✅ Restauración de emergencia completada');
       }
     } catch (restoreError) {
-      console.error('âŒ Error en restauraciÃ³n de emergencia:', restoreError.message);
+      console.error('âŒ Error en restauración de emergencia:', restoreError.message);
     }
 
     process.exit(1);

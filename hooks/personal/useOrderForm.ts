@@ -6,6 +6,7 @@ import useRooms from '@/hooks/habitaciones/useRooms';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { appEventBus } from '@/lib/utils/eventBus';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 export type OrderProducto = {
   id_producto?: string | number;
@@ -83,7 +84,8 @@ export function useOrderForm({
     [key: string]: string[];
   }>({});
   const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
-  const [propina, setPropina] = useState(10);
+  const configPropina = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
+  const [propina, setPropina] = useState(configPropina);
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
 

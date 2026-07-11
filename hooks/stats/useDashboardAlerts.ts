@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
+import { useDashboardSSE } from './useDashboardSSE';
 
 export interface DashboardAlertItem {
   id: string;
@@ -27,6 +28,8 @@ export interface DashboardAlertsResponse {
 }
 
 export const useDashboardAlerts = () => {
+  useDashboardSSE();
+
   return useQuery<DashboardAlertsResponse>({
     queryKey: queryKeys.dashboard.alerts(),
     queryFn: async () => {
@@ -41,12 +44,6 @@ export const useDashboardAlerts = () => {
       return result.data;
     },
     staleTime: 30000,
-    refetchInterval: () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        return 60000;
-      }
-      return false;
-    },
     refetchOnWindowFocus: true
   });
 };

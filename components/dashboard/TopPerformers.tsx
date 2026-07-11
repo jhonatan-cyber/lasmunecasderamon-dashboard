@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Medal, Music2, Sofa, Sparkles } from 'lucide-react';
-import { Skeleton } from '@/components/shared/Skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';

@@ -7,6 +7,7 @@ import { Clock } from 'lucide-react';
 import { useEditServiceForm } from '@/hooks/personal';
 import { ServiceFormFields } from './ServiceFormFields';
 import { ServicePriceSummary } from './ServicePriceSummary';
+import { useIvaRate } from '@/components/providers/IvaRateProvider';
 
 interface EditServiceModalProps {
   open: boolean;
@@ -54,6 +55,8 @@ export default function EditServiceModal({
     onResumeMainTimer,
     onTemporaryTimerComplete
   });
+
+  const ivaRate = useIvaRate();
 
   const { precioServicioTotal, precioHabitacionTotal, iva, subTotal, total, multiplicadorTiempo } =
     pricing;
@@ -106,6 +109,7 @@ export default function EditServiceModal({
               tiempo={formData.tiempo}
               onTiempoChange={handleTiempoChange}
               isSaving={isSaving}
+              ivaRate={ivaRate}
             />
 
             <ServicePriceSummary
@@ -118,6 +122,7 @@ export default function EditServiceModal({
               multiplicadorTiempo={multiplicadorTiempo}
               precioServicio={formData.precio_servicio}
               precioHabitacion={formData.precio_habitacion}
+              ivaRate={ivaRate}
             />
           </div>
         </div>

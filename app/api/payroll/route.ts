@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { PayrollRepository } from '@/lib/repositories/PayrollRepository';
+import { PayrollService } from '@/lib/services/PayrollService';
 
 export const GET = withAppApiWrapper(async () => {
-  const data = await PayrollRepository.getSummary();
+  const data = await PayrollService.getSummary();
   return NextResponse.json({ success: true, data });
 });
 
@@ -15,6 +15,6 @@ export const POST = withAppApiWrapper(async (request: Request) => {
       { status: 400 }
     );
 
-  await PayrollRepository.pay(usuario_id, usuario_id);
+  await PayrollService.pay(usuario_id, usuario_id);
   return NextResponse.json({ success: true, message: 'Pago procesado correctamente' });
 });

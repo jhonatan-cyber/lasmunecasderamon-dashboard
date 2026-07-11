@@ -175,13 +175,13 @@ export default function LoggedUsersCards() {
                 {card.logueadas} de {card.total} activos en local
               </p>
 
-              {card.usuarios.length > 0 && (
+              {card.usuarios?.length > 0 && (
                 <div className='space-y-1'>
                   <p className='text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400'>
-                    Usuarios ({card.usuarios.length})
+                    Usuarios ({card.usuarios?.length})
                   </p>
                   <div className='space-y-1 max-h-24 overflow-y-auto pr-1'>
-                    {card.usuarios.map((user: any, userIndex: number) => (
+                    {card.usuarios?.map((user: any, userIndex: number) => (
                       <div
                         key={`${index}-${user.id_usuario}-${userIndex}`}
                         className='text-xs bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-700/60 px-2 py-1 rounded-lg'

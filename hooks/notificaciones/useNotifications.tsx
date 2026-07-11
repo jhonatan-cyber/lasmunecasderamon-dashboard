@@ -38,7 +38,6 @@ export function useNotifications() {
       return res.json();
     },
     staleTime: 20000,
-    refetchInterval: 30000,
     refetchOnWindowFocus: true,
     enabled: !!user
   });

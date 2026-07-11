@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ServiceRequestRepository } from '@/lib/repositories/ServiceRequestRepository';
+import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const estado = searchParams.get('estado') || undefined;
-  const data = await ServiceRequestRepository.getAll(estado);
+  const data = await ServiceRequestService.getAll(estado);
   return NextResponse.json({ success: true, data });
 });
 
 export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
-  const result = await ServiceRequestRepository.create(body, user.id.toString());
+  const result = await ServiceRequestService.create(body, user.id.toString());
 
   sendNotificationToAll('new_service_request', {
     id: result.id,
@@ -30,7 +30,7 @@ export const DELETE = withAppAuth(
     const id = searchParams.get('id');
     if (!id) throw new ValidationError('ID requerido');
 
-    await ServiceRequestRepository.delete(id);
+    await ServiceRequestService.delete(id);
     sendNotificationToAll('service_request_deleted', { id });
     return NextResponse.json({ success: true, message: 'Solicitud eliminada' });
   },

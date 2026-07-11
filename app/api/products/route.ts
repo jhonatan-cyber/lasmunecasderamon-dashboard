@@ -1,6 +1,5 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { ProductService } from '@/lib/services/ProductService';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 
@@ -11,7 +10,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const id = searchParams.get('id');
 
   if (id) {
-    const data = await ProductRepository.getById(id);
+    const data = await ProductService.getById(id);
     if (!data)
       return NextResponse.json(
         { success: false, message: 'Producto no encontrado' },
@@ -21,11 +20,11 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   }
 
   if (term) {
-    const data = await ProductRepository.search(term);
+    const data = await ProductService.search(term);
     return NextResponse.json({ success: true, data });
   }
 
-  const data = await ProductRepository.getAll(categoryId);
+  const data = await ProductService.getAll(categoryId);
   return NextResponse.json({ success: true, data });
 });
 
@@ -115,7 +114,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
 
   if (!id || !action) {
     return NextResponse.json(
-      { success: false, message: 'ID y acción son requeridos' },
+      { success: false, message: 'ID y acci�n son requeridos' },
       { status: 400 }
     );
   }
@@ -123,10 +122,10 @@ export const PATCH = withAppAuth(async (request: Request) => {
   const status = action === 'activate' ? 1 : action === 'deactivate' ? 0 : null;
 
   if (status === null) {
-    return NextResponse.json({ success: false, message: 'Acción no válida' }, { status: 400 });
+    return NextResponse.json({ success: false, message: 'Acci�n no v�lida' }, { status: 400 });
   }
 
-  const data = await ProductRepository.update(id, { status });
+  const data = await ProductService.update(id, { status });
 
   return NextResponse.json({
     success: true,
@@ -142,6 +141,6 @@ export const DELETE = withAppAuth(async (request: Request) => {
   if (!id)
     return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
 
-  await ProductRepository.delete(id);
+  await ProductService.delete(id);
   return NextResponse.json({ success: true, message: 'Producto eliminado correctamente' });
 });

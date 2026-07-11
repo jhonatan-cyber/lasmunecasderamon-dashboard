@@ -6,56 +6,78 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import logger from '@/lib/utils/logger';
+import type { LoginFormData } from '@/hooks/auth/useLoginForm';
 
-interface LoginFormProps {
+interface FormState {
   step: 'login' | 'codigo';
-  handleLogin: (e?: React.FormEvent) => void;
-  handleVerifyCode: (e: React.FormEvent) => void;
-  loginData: any;
-  setLoginData: (data: any) => void;
-  showPassword: boolean;
-  setShowPassword: (show: boolean) => void;
-  emailInputRef: any;
-  passwordInputRef: any;
-  submitButtonRef: any;
-  handleKeyDown: (e: any, ref: any) => void;
-  handlePasswordKeyDown: (e: any) => void;
+  loading: boolean;
   codigo: string;
   setCodigo: (val: string) => void;
-  loading: boolean;
   rateLimitRemaining: number;
   hasUsers: boolean | null;
-  onShowRegister: () => void;
+}
+
+interface PasswordState {
+  showPassword: boolean;
+  setShowPassword: (show: boolean) => void;
+}
+
+interface InputRefs {
+  emailInputRef: React.RefObject<HTMLInputElement | null>;
+  passwordInputRef: React.RefObject<HTMLInputElement | null>;
+  submitButtonRef: React.RefObject<HTMLButtonElement | null>;
+}
+
+interface FormHandlers {
+  handleLogin: (e?: React.FormEvent) => void;
+  handleVerifyCode: (e: React.FormEvent) => void;
+  handleKeyDown: (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    ref: React.RefObject<HTMLInputElement | null>
+  ) => void;
+  handlePasswordKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}
+
+interface ThemeState {
   theme: string;
   toggleTheme: () => void;
   setThemeMode: (mode: string) => void;
+}
+
+interface Callbacks {
+  onShowRegister: () => void;
   onSetStep: (step: 'login' | 'codigo') => void;
 }
 
+interface LoginFormProps {
+  form: FormState;
+  credentials: {
+    loginData: LoginFormData;
+    setLoginData: React.Dispatch<React.SetStateAction<LoginFormData>>;
+  };
+  password: PasswordState;
+  inputRefs: InputRefs;
+  handlers: FormHandlers;
+  theme: ThemeState;
+  callbacks: Callbacks;
+}
+
 export const LoginForm = ({
-  step,
-  handleLogin,
-  handleVerifyCode,
-  loginData,
-  setLoginData,
-  showPassword,
-  setShowPassword,
-  emailInputRef,
-  passwordInputRef,
-  submitButtonRef,
-  handleKeyDown,
-  handlePasswordKeyDown,
-  codigo,
-  setCodigo,
-  loading,
-  rateLimitRemaining,
-  hasUsers,
-  onShowRegister,
-  theme,
-  toggleTheme,
-  setThemeMode,
-  onSetStep
+  form,
+  credentials,
+  password,
+  inputRefs,
+  handlers,
+  theme: themeState,
+  callbacks
 }: LoginFormProps) => {
+  const { step, loading, codigo, setCodigo, rateLimitRemaining, hasUsers } = form;
+  const { loginData, setLoginData } = credentials;
+  const { showPassword, setShowPassword } = password;
+  const { emailInputRef, passwordInputRef, submitButtonRef } = inputRefs;
+  const { handleLogin, handleVerifyCode, handleKeyDown, handlePasswordKeyDown } = handlers;
+  const { theme, toggleTheme, setThemeMode } = themeState;
+  const { onShowRegister, onSetStep } = callbacks;
   const [themeChanging, setThemeChanging] = useState<string | null>(null);
   const passwordTapRef = useRef(0);
   const themeTapRef = useRef(0);
@@ -82,13 +104,7 @@ export const LoginForm = ({
 
   if (step === 'login') {
     return (
-      <form
-        className='space-y-5'
-        noValidate
-        onSubmit={e => {
-          e.preventDefault();
-        }}
-      >
+      <form className='space-y-5' noValidate onSubmit={handleLogin}>
         <div>
           <Label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
             Usuario
@@ -162,18 +178,6 @@ export const LoginForm = ({
           type='submit'
           variant='outline'
           disabled={loading}
-          onPointerDown={e => {
-            e.preventDefault();
-            void handleLogin();
-          }}
-          onMouseDown={e => {
-            e.preventDefault();
-            void handleLogin();
-          }}
-          onClick={e => {
-            e.preventDefault();
-            void handleLogin();
-          }}
           className='rounded-full px-6 bg-black dark:bg-white text-white dark:text-black border-black dark:border-white  dark:hover:bg-gray-200 hover:scale-110 transition-all w-full'
         >
           {loading ? 'Validando...' : 'Iniciar sesión'}

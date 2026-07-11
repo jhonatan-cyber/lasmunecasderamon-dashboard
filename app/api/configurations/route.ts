@@ -2,6 +2,56 @@ import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 import { query } from '@/lib/database/db';
 
+const VALID_CLAVES = new Set([
+  'empresa_nombre',
+  'empresa_rut',
+  'empresa_direccion',
+  'empresa_telefono',
+  'empresa_email',
+  'empresa_facebook',
+  'empresa_instagram',
+  'empresa_whatsapp',
+  'empresa_tiktok',
+  'impuesto_iva',
+  'impuesto_propina',
+  'moneda',
+  'facturacion_activada',
+  'resolucion_sii',
+  'ambiente',
+  'timezone'
+]);
+
+function validateConfig(clave: string, valor: string): string | null {
+  if (!VALID_CLAVES.has(clave)) {
+    return `Clave desconocida: ${clave}`;
+  }
+  if (clave === 'impuesto_iva' || clave === 'impuesto_propina') {
+    const num = Number(valor);
+    if (isNaN(num) || num < 0 || num > 100) {
+      return `${clave} debe estar entre 0 y 100`;
+    }
+  }
+  return null;
+}
+
+async function updateConfig(clave: string, valor: string) {
+  const [existing] = (await query('SELECT id FROM configuraciones WHERE clave = ? LIMIT 1', [
+    clave
+  ])) as any[];
+  if (!existing) {
+    // Insert if key doesn't exist (e.g. empresa_tiktok added later)
+    await query(
+      'INSERT INTO configuraciones (id, clave, valor, categoria, tipo, fecha_crea, fecha_mod) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+      [crypto.randomUUID(), clave, String(valor), 'empresa', 'text']
+    );
+  } else {
+    await query('UPDATE configuraciones SET valor = ?, fecha_mod = NOW() WHERE clave = ?', [
+      String(valor),
+      clave
+    ]);
+  }
+}
+
 export const GET = withAppAuth(async () => {
   const configs = (await query(`
     SELECT id, clave, valor, descripcion, categoria, tipo
@@ -38,16 +88,41 @@ export const GET = withAppAuth(async () => {
 
 export const PUT = withAppAuth(async (req: Request) => {
   const body = await req.json();
-  const { clave, valor } = body;
+  const errors: string[] = [];
 
+  // Batch mode: { configs: [{ clave, valor }] }
+  if (body.configs && Array.isArray(body.configs)) {
+    for (const { clave, valor } of body.configs) {
+      if (!clave) continue;
+      const error = validateConfig(clave, String(valor));
+      if (error) {
+        errors.push(error);
+        continue;
+      }
+      await updateConfig(clave, String(valor));
+    }
+    return NextResponse.json({
+      success: errors.length === 0,
+      message:
+        errors.length > 0
+          ? `${errors.length} configuraciones ignoradas: ${errors.join(', ')}`
+          : `${body.configs.length} configuraciones actualizadas`,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  }
+
+  // Single mode (backwards compatible)
+  const { clave, valor } = body;
   if (!clave) {
     return NextResponse.json({ success: false, error: 'Clave es requerida' }, { status: 400 });
   }
 
-  await query('UPDATE configuraciones SET valor = ?, fecha_mod = NOW() WHERE clave = ?', [
-    String(valor),
-    clave
-  ]);
+  const error = validateConfig(clave, String(valor));
+  if (error) {
+    return NextResponse.json({ success: false, error }, { status: 400 });
+  }
+
+  await updateConfig(clave, String(valor));
 
   return NextResponse.json({ success: true, message: 'Configuración actualizada' });
 });

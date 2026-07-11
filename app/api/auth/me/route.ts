@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { UserRepository } from '@/lib/repositories/UserRepository';
+import { UserService } from '@/lib/services/UserService';
 
 export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
-  const fullUser = await UserRepository.getById(user.id.toString());
+  const fullUser = await UserService.getById(user.id.toString());
   if (!fullUser)
     return NextResponse.json({ success: false, message: 'Usuario no encontrado' }, { status: 404 });
 

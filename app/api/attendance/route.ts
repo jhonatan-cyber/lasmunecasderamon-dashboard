@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
+import { AttendanceService } from '@/lib/services/AttendanceService';
 import { getAuth } from '@/lib/auth/auth-app';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
@@ -9,7 +9,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const month = searchParams.get('month');
   const year = searchParams.get('year');
 
-  const data = await AttendanceRepository.getSummary();
+  const data = await AttendanceService.getSummary();
   return NextResponse.json({ success: true, data: data || [] });
 });
 
@@ -25,7 +25,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   }
 
   try {
-    const result = await AttendanceRepository.registerManual(usuario_id, fecha, hora, estado, user);
+    const result = await AttendanceService.registerManual(usuario_id, fecha, hora, estado, user);
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
+import { AnticipoService } from '@/lib/services/AnticipoService';
 
 export const PUT = withAppAuth(
   async (request: Request) => {
@@ -17,7 +17,7 @@ export const PUT = withAppAuth(
     const action = accion === 'aprobar' ? 'approve' : 'reject';
 
     try {
-      await AnticipoRepository.processSolicitud(token, action);
+      await AnticipoService.processSolicitud(token, action);
       return NextResponse.json({
         success: true,
         message: accion === 'aprobar' ? 'Anticipo aprobado' : 'Anticipo rechazado'

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -22,7 +21,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 import { CuentaWithDetails } from '@/types/cuenta';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
@@ -54,17 +52,7 @@ import { useCuentaTableLogic } from '@/hooks/cuentas/useCuentaTableLogic';
 import { useCountdown, useTimer } from '@/contexts/TimerContext';
 import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
-
-const formatMontoInput = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  return new Intl.NumberFormat('es-CL').format(Number(digits));
-};
-
-const parseMontoInput = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  return digits ? Number(digits) : 0;
-};
+import { useCuentaAnulacion } from '@/hooks/cuentas/useCuentaAnulacion';
 
 interface CuentaTableProps {
   loading: boolean;
@@ -111,7 +99,7 @@ export default function CuentaTable({
   onOrderStatusChange
 }: CuentaTableProps) {
   const { hasPermission } = useUserPermissions();
-  const { getTimerByServicioId, stopTimerByServicioId } = useTimer();
+  const { getTimerByServicioId } = useTimer();
   const { modalState, showConfirm, closeModal } = useConfirmModal();
   const {
     selectedCuentaId,
@@ -130,6 +118,22 @@ export default function CuentaTable({
     getEstadoBadge
   } = useCuentaTableLogic();
 
+  const {
+    anulacionDialogOpen,
+    setAnulacionDialogOpen,
+    cuentaParaAnular,
+    motivoAnulacion,
+    setMotivoAnulacion,
+    montoAnulacion,
+    setMontoAnulacion,
+    anulandoCuenta,
+    handleSolicitarAnulacion,
+    handleConfirmarSolicitudAnulacion,
+    closeAnulacionDialog,
+    handleFinalizarTemporizador,
+    formatMontoInput
+  } = useCuentaAnulacion({ onRefresh, onOrderStatusChange, showConfirm });
+
   const canViewDetails = hasPermission('cuentas', 'ver_detalles');
   const canAddProducts = hasPermission('cuentas', 'agregar_productos');
   const canCobrar = hasPermission('cuentas', 'cobrar');
@@ -139,15 +143,9 @@ export default function CuentaTable({
   const selectedCuentaIdForAction = cuentaSeleccionada
     ? String(cuentaSeleccionada.id_cuenta ?? cuentaSeleccionada.id ?? '')
     : null;
-  const [anulacionDialogOpen, setAnulacionDialogOpen] = useState(false);
-  const [cuentaParaAnular, setCuentaParaAnular] = useState<CuentaWithDetails | null>(null);
-  const [motivoAnulacion, setMotivoAnulacion] = useState('');
-  const [montoAnulacion, setMontoAnulacion] = useState('');
-  const [anulandoCuenta, setAnulandoCuenta] = useState(false);
 
   const handleProductosAgregados = () => {
     hookHandleProductosAgregados();
-
     if (onRefresh) {
       onRefresh();
     }
@@ -155,107 +153,8 @@ export default function CuentaTable({
 
   const handleCuentaCobrada = () => {
     hookHandleCuentaCobrada();
-
     if (onRefresh) {
       onRefresh();
-    }
-  };
-
-  const handleFinalizarTemporizador = async (cuenta: CuentaWithDetails) => {
-    const cuentaId = String(cuenta.id_cuenta ?? (cuenta as any).id ?? '');
-    const activeTimer = cuentaId ? getTimerByServicioId(cuentaId) : null;
-    if (!activeTimer) {
-      toast.error('La cuenta no tiene un temporizador activo');
-      return;
-    }
-
-    const anfitrionas =
-      cuenta.usuarios
-        ?.map((u: any) => u.usuario_nombre)
-        .filter(Boolean)
-        .join(', ') || 'Sin anfitrionas';
-    const cliente = cuenta.cliente_nombre || `Cliente ${cuenta.cliente_id}`;
-    const confirmed = await showConfirm({
-      title: 'Finalizar temporizador',
-      message: `¿Finalizar el temporizador de la cuenta ${cuenta.codigo}?\n\nEl tiempo dejará de correr y la cuenta quedará lista para cobrar.\n\nCliente: ${cliente}\nAnfitriona(s): ${anfitrionas}`,
-      confirmText: 'Sí, finalizar',
-      type: 'question'
-    });
-
-    if (!confirmed) return;
-
-    try {
-      await stopTimerByServicioId(cuentaId);
-      toast.success('Temporizador finalizado');
-      onRefresh?.();
-      onOrderStatusChange?.();
-    } catch {
-      toast.error('No se pudo finalizar el temporizador');
-    }
-  };
-
-  const handleSolicitarAnulacion = async (cuenta: CuentaWithDetails) => {
-    const cuentaId = String(cuenta.id_cuenta ?? (cuenta as any).id ?? '');
-    const activeTimer = cuentaId ? getTimerByServicioId(cuentaId) : null;
-    if (activeTimer?.isActive) {
-      toast.error('Finaliza el temporizador antes de solicitar la anulacion');
-      return;
-    }
-
-    setCuentaParaAnular(cuenta);
-    setMotivoAnulacion('');
-    setMontoAnulacion(formatMontoInput(String(Number(cuenta.total || 0))));
-    setAnulacionDialogOpen(true);
-  };
-
-  const handleConfirmarSolicitudAnulacion = async () => {
-    const cuenta = cuentaParaAnular;
-    if (!cuenta) return;
-    const cuentaId = String(cuenta.id_cuenta ?? (cuenta as any).id ?? '');
-    const motivo = motivoAnulacion.trim();
-    const monto = parseMontoInput(montoAnulacion);
-    if (!motivo) {
-      toast.error('Debes ingresar el motivo de la anulacion');
-      return;
-    }
-    if (!Number.isFinite(monto) || monto <= 0) {
-      toast.error('Debes ingresar un monto mayor a 0');
-      return;
-    }
-    if (monto > Number(cuenta.total || 0)) {
-      toast.error('El monto no puede ser mayor al total de la cuenta');
-      return;
-    }
-
-    setAnulandoCuenta(true);
-    try {
-      const response = await fetch('/api/cuentas/anulacion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cuentaId,
-          clienteNombre: cuenta.cliente_nombre || '',
-          motivo,
-          monto
-        })
-      });
-
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'No se pudo solicitar la anulacion');
-      }
-
-      toast.success('La anulacion fue solicitada por WhatsApp');
-      setAnulacionDialogOpen(false);
-      setCuentaParaAnular(null);
-      setMotivoAnulacion('');
-      setMontoAnulacion('');
-      onRefresh?.();
-      onOrderStatusChange?.();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo solicitar la anulacion');
-    } finally {
-      setAnulandoCuenta(false);
     }
   };
 
@@ -291,7 +190,6 @@ export default function CuentaTable({
         <Card key={cuenta.id_cuenta} className='shadow-sm hover:shadow-md transition-shadow'>
           <CardContent className='p-4'>
             <div className='space-y-3'>
-              {}
               <div className='flex items-center justify-between'>
                 <div className='space-y-2'>
                   <h3 className='font-semibold text-lg text-gray-900'>{cuenta.codigo}</h3>
@@ -302,7 +200,6 @@ export default function CuentaTable({
                 </Badge>
               </div>
 
-              {}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
                   <User className='text-gray-500 w-4 h-4' />
@@ -363,7 +260,6 @@ export default function CuentaTable({
                 </div>
               </div>
 
-              {}
               {hasAnyAction && (
                 <div className='flex items-center gap-2 pt-2 border-t border-gray-100'>
                   {canViewDetails && (
@@ -595,17 +491,17 @@ export default function CuentaTable({
 
   return (
     <>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <MobileCardView />
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <DesktopTableView />
 
-      {}
       <CuentaDetailModal
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         cuentaId={selectedCuentaId}
       />
 
-      {}
       <AgregarProductosModal
         open={agregarProductosOpen}
         onOpenChange={setAgregarProductosOpen}
@@ -613,7 +509,6 @@ export default function CuentaTable({
         onProductosAgregados={handleProductosAgregados}
       />
 
-      {}
       <CobrarCuentaModal
         open={cobrarCuentaOpen}
         onClose={() => setCobrarCuentaOpen(false)}
@@ -638,9 +533,7 @@ export default function CuentaTable({
           if (anulandoCuenta) return;
           setAnulacionDialogOpen(open);
           if (!open) {
-            setCuentaParaAnular(null);
-            setMotivoAnulacion('');
-            setMontoAnulacion('');
+            closeAnulacionDialog();
           }
         }}
       >
@@ -706,12 +599,7 @@ export default function CuentaTable({
           <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
             <Button
               variant='outline'
-              onClick={() => {
-                setAnulacionDialogOpen(false);
-                setCuentaParaAnular(null);
-                setMotivoAnulacion('');
-                setMontoAnulacion('');
-              }}
+              onClick={closeAnulacionDialog}
               className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
               disabled={anulandoCuenta}
             >

@@ -12,6 +12,7 @@ import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { FetchInterceptorInit } from '@/components/providers/FetchInterceptorInit';
 import { SyncProvider } from '@/contexts/SyncContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { IvaRateProvider } from '@/components/providers/IvaRateProvider';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 const AnulacionNotificationModal = dynamic(
@@ -72,7 +73,9 @@ export function ProtectedAppProviders({ children }: { children: ReactNode }) {
       <FetchInterceptorInit />
       <QueryProvider>
         <SyncProvider>
-          <FeatureScopedProviders>{children}</FeatureScopedProviders>
+          <IvaRateProvider>
+            <FeatureScopedProviders>{children}</FeatureScopedProviders>
+          </IvaRateProvider>
         </SyncProvider>
       </QueryProvider>
     </AuthProvider>

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { RoomRepository } from '@/lib/repositories/RoomRepository';
 import { RoomService } from '@/lib/services/RoomService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
@@ -9,7 +8,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const status = searchParams.get('status') || undefined;
 
   if (id) {
-    const data = (await RoomRepository.getAll()).find(r => r.id === id);
+    const data = (await RoomService.getAll()).find(r => r.id === id);
     if (!data)
       return NextResponse.json(
         { success: false, message: 'Habitación no encontrada' },
@@ -18,7 +17,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     return NextResponse.json({ success: true, data });
   }
 
-  const data = await RoomRepository.getAll(status);
+  const data = await RoomService.getAll(status);
   return NextResponse.json({ success: true, data });
 });
 
@@ -37,7 +36,7 @@ export const PUT = withAppAuth(async (request: Request) => {
   if (!targetId)
     return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
 
-  const data = await RoomRepository.update(targetId, body);
+  const data = await RoomService.update(targetId, body);
   return NextResponse.json({
     success: true,
     message: 'Habitación actualizada correctamente',
@@ -56,7 +55,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
       { status: 400 }
     );
 
-  const data = await RoomRepository.updateStatus(id, action);
+  const data = await RoomService.updateStatus(id, action);
   return NextResponse.json({ success: true, message: 'Estado actualizado correctamente', data });
 });
 
@@ -67,6 +66,6 @@ export const DELETE = withAppAuth(async (request: Request) => {
   if (!id)
     return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
 
-  const result = await RoomRepository.delete(id);
+  const result = await RoomService.delete(id);
   return NextResponse.json(result);
 });

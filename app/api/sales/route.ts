@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { SaleService } from '@/lib/services/SaleService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
@@ -13,7 +12,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     caja_id: searchParams.get('caja_id') || undefined,
     search: searchParams.get('search') || undefined
   };
-  const data = await SaleRepository.getAll(params);
+  const data = await SaleService.getAll(params);
   return NextResponse.json({ success: true, data });
 });
 

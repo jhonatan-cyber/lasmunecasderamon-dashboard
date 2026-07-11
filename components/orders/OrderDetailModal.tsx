@@ -1,4 +1,3 @@
-﻿/* eslint-disable */
 'use client';
 
 import { useEffect } from 'react';
@@ -120,127 +119,12 @@ export default function OrderDetailModal({
     };
   }, [open, orderId, onClose]);
 
-  useEffect(() => {
-    if (!open) {
-      setMetodoPago('');
-      setPropina(0);
-      setHabitacionId('');
-      setTiempoHabitacion(30);
-      setPropinaDisplayValue('');
-      setShowMetodoPagoError(false);
-      setIsRegistering(false);
-      setAgregarPropina(false);
-      setConfirmVentaModalOpen(false);
-    } else {
-      if (detail && detail.length > 0) {
-        const propinaOriginal = detail[0]?.propina || 0;
-
-        if (propinaOriginal > 0) {
-          setPropina(propinaOriginal);
-          setPropinaDisplayValue(formatNumberCL(propinaOriginal));
-          setAgregarPropina(true);
-        }
-        const detalleConHabitacion = detail.find(d => d.habitacion_id);
-        if (detalleConHabitacion && detalleConHabitacion.habitacion_id) {
-          const habitacionId = String(detalleConHabitacion.habitacion_id);
-          setHabitacionId(habitacionId);
-        } else {
-          buscarHabitacionActiva();
-        }
-      }
-    }
-  }, [open, detail]);
-
-  const buscarHabitacionActiva = async () => {
-    if (!detail || detail.length === 0) {
-      return;
-    }
-
-    try {
-      const anfitrionasIds: number[] = [];
-
-      const anfitrionaIdsStr = detail[0]?.anfitrionaIds;
-
-      if (anfitrionaIdsStr) {
-        const ids = anfitrionaIdsStr
-          .split(',')
-          .map((id: string) => parseInt(id.trim()))
-          .filter((id: number) => !isNaN(id));
-        anfitrionasIds.push(...ids);
-      }
-
-      detail.forEach(d => {
-        if (d.hostess_id) {
-          anfitrionasIds.push(d.hostess_id);
-        }
-        if (d.anfitrionas_asignadas_ids) {
-          const ids = d.anfitrionas_asignadas_ids
-            .split(',')
-            .map((id: string) => parseInt(id.trim()))
-            .filter((id: number) => !isNaN(id));
-          anfitrionasIds.push(...ids);
-        }
-      });
-
-      const anfitrionasUnicas = [...new Set(anfitrionasIds)];
-
-      if (anfitrionasUnicas.length === 0) {
-        return;
-      }
-
-      const response = await fetch('/api/orders/check-active-room', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ anfitrionasIds: anfitrionasUnicas })
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.hasActiveRoom && data.data) {
-        const habitacionId = String(data.data.habitacionId);
-        setHabitacionId(habitacionId);
-        setTiempoHabitacion(data.data.tiempo || 30);
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'OrderDetailModal:fetchDetail' });
-    }
-  };
-
-  useEffect(() => {
-    if (agregarPropina && detail && detail.length > 0) {
-      const propinaOriginal = detail[0]?.propina || 0;
-      if (propinaOriginal > 0) {
-        setPropina(propinaOriginal);
-        setPropinaDisplayValue(formatNumberCL(propinaOriginal));
-      } else {
-        const totalPedido = detail[0]?.total || 0;
-        const propinaCalculada = Math.round(totalPedido * 0.1);
-        setPropina(propinaCalculada);
-        setPropinaDisplayValue(formatNumberCL(propinaCalculada));
-      }
-    } else {
-      const propinaOriginal = detail[0]?.propina || 0;
-      if (propinaOriginal === 0) {
-        setPropina(0);
-        setPropinaDisplayValue('');
-      }
-    }
-  }, [agregarPropina, detail]);
-
-  useEffect(() => {
-    if (metodoPago && showMetodoPagoError) {
-      setShowMetodoPagoError(false);
-    }
-  }, [metodoPago, showMetodoPagoError]);
-
   const handleRegistrarVenta = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     setShowMetodoPagoError(true);
 
     if (!metodoPago) {
-      toast.error('Selecciona un mÃ©todo de pago');
+      toast.error('Selecciona un método de pago');
       return;
     }
 
@@ -251,7 +135,7 @@ export default function OrderDetailModal({
 
     if (hasChampagneProducts && cantidadAnfitrionas === 0) {
       toast.error(
-        'Para productos de champaÃ±a es obligatorio tener al menos una anfitriona en el pedido'
+        'Para productos de champaña es obligatorio tener al menos una anfitriona en el pedido'
       );
       return;
     }
@@ -259,10 +143,10 @@ export default function OrderDetailModal({
     if (cantidadAnfitrionas > maxAnfitrionas) {
       const extraText =
         hasChampagneProducts && otherCommissionQuantity > 0
-          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisiÃ³n`
+          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
           : '';
       toast.error(
-        `El pedido excede el lÃ­mite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaÃ±a: ${champagneLimit}${extraText})`
+        `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
       );
       return;
     }
@@ -376,10 +260,10 @@ export default function OrderDetailModal({
                   detail[0]?.garzon || undefined
                 );
               } else {
-                toast.error('Error al actualizar estado de habitaciÃ³n');
+                toast.error('Error al actualizar estado de habitación');
               }
             } catch (error) {
-              toast.error('Error al actualizar estado de habitaciÃ³n');
+              toast.error('Error al actualizar estado de habitación');
             }
           }
         }
@@ -513,7 +397,7 @@ export default function OrderDetailModal({
 
   const hasChampagne = detail.some((item: any) => {
     const cat = (item.categoria || '').toLowerCase();
-    return cat.includes('champaÃ±a') || cat.includes('shampaÃ±a') || cat.includes('champagne');
+    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
   });
 
   const hasExpensiveDrinks = detail.some((item: any) => {
@@ -609,7 +493,7 @@ export default function OrderDetailModal({
                           Precio
                         </TableHead>
                         <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                          ComisiÃ³n
+                          Comisión
                         </TableHead>
                         <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>
                           Sub Total

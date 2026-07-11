@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import { logger } from '@/lib/utils/logger';
 import { formatErrorResponse } from '@/lib/errors/errors';
 
+/** @deprecated Use `withRoute` from `@/lib/api/withRoute` instead. */
 export function apiWrapper(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {

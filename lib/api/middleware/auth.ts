@@ -29,7 +29,7 @@ export async function withAuth(
         );
       }
 
-      const user = verifyToken(token);
+      const user = await verifyToken(token);
 
       if (!user) {
         return NextResponse.json(
@@ -87,7 +87,7 @@ export function requireAuth() {
       throw new AppError('Token de autenticación requerido', 'NO_TOKEN', 401);
     }
 
-    const user = verifyToken(token);
+    const user = await verifyToken(token);
 
     if (!user) {
       throw new AppError('Token inválido o expirado', 'INVALID_TOKEN', 401);

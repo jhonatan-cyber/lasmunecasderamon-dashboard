@@ -5,6 +5,7 @@ import LayoutContent from '@/components/layout/LayoutContent';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { siteConfig } from '@/lib/api/site';
+import ServiceWorkerRegister from '@/components/providers/ServiceWorkerRegister';
 
 import './globals.css';
 import '@/styles/sidebar.css';
@@ -84,6 +85,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               closeButton={true}
               duration={4000}
             />
+            <ServiceWorkerRegister />
           </ThemeProvider>
         </ErrorBoundary>
       </body>

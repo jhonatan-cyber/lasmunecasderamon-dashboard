@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
+import { useDashboardSSE } from './useDashboardSSE';
 
 interface DashboardSummary {
   totalAsistencias: number;
@@ -17,6 +18,8 @@ interface DashboardSummary {
 }
 
 export const useDashboardSummary = () => {
+  useDashboardSSE();
+
   return useQuery<DashboardSummary>({
     queryKey: queryKeys.dashboard.summary(),
     queryFn: async () => {
@@ -31,12 +34,6 @@ export const useDashboardSummary = () => {
       return result.data;
     },
     staleTime: 30000,
-    refetchInterval: () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        return 60000;
-      }
-      return false;
-    },
     refetchOnWindowFocus: true
   });
 };

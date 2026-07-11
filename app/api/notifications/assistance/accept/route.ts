@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { NotificationRepository } from '@/lib/repositories/NotificationRepository';
+import { NotificationService } from '@/lib/services/NotificationService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 
@@ -10,7 +10,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
 
   if (!id) throw new ValidationError('El id es requerido');
 
-  await NotificationRepository.markAsRead(id);
+  await NotificationService.markAsRead(id);
 
   sendNotificationToAll('staff_call_accepted', {
     id,

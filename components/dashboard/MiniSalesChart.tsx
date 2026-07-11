@@ -167,8 +167,8 @@ export default function MiniSalesChart() {
   const chartData = useMemo(() => {
     const promedio =
       viewMode === 'month'
-        ? monthData?.summary.promedioMensual || 0
-        : weekData?.summary.promedioDiario || 0;
+        ? monthData?.summary?.promedioMensual || 0
+        : weekData?.summary?.promedioDiario || 0;
 
     if (viewMode === 'month' && monthData?.data) {
       const monthNames = [

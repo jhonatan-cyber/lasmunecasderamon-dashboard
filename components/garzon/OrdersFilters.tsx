@@ -35,7 +35,7 @@ const sortOptions = [
   { value: 'total', label: 'Total' },
   { value: 'subtotal', label: 'Subtotal' },
   { value: 'cliente', label: 'Cliente' },
-  { value: 'codigo', label: 'CÃ³digo' }
+  { value: 'codigo', label: 'Código' }
 ];
 
 const rowsPerPageOptions = [
@@ -71,7 +71,7 @@ export function OrdersFilters({
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder='Buscar por cliente, cÃ³digo, nicks...'
+              placeholder='Buscar por cliente, código, nicks...'
               className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
             />
           </div>
